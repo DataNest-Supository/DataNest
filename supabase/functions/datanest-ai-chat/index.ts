@@ -268,7 +268,7 @@ async function updateTrendCandidate(input:{
   const contentHash=await sha256Text(candidate.normalizedKnowledge);
   const {data:existing,error:existingError}=await input.staging
     .from("ai_learning_candidates")
-    .select("id")
+    .select("id,lifecycle_state,evidence_count")
     .eq("project_id",input.projectId)
     .eq("content_hash",contentHash)
     .limit(1)
@@ -276,7 +276,14 @@ async function updateTrendCandidate(input:{
   if(existingError)throw existingError;
 
   let candidateId=existing?.id?String(existing.id):"";
-  if(candidateId){
+  if(existing?.id){
+    if(!["INTAKE","NEEDS_EVIDENCE"].includes(String(existing.lifecycle_state))){
+      return {
+        candidateId,
+        trendKey:candidate.trendKey,
+        evidenceCount:Number(existing.evidence_count||0)
+      };
+    }
     const {error:updateError}=await input.staging
       .from("ai_learning_candidates")
       .update({
