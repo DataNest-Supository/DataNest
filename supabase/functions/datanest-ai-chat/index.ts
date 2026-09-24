@@ -37,7 +37,7 @@ type JobContext={
   title:string;
   description:string|null;
   priority:number;
-  target_status:string;
+  status:string;
   required_capabilities:unknown;
   requirements:unknown;
   acceptance:unknown;
