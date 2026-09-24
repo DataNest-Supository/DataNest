@@ -241,12 +241,13 @@ export default function ExternalAiSidebar({
   }
 
   function companionFeatures(){
-    const screenWidth=window.screen?.availWidth||window.innerWidth;
-    const screenHeight=window.screen?.availHeight||window.innerHeight;
+    const screenInfo=window.screen as Screen & {availLeft?:number;availTop?:number};
+    const screenWidth=screenInfo.availWidth||window.innerWidth;
+    const screenHeight=screenInfo.availHeight||window.innerHeight;
     const popupWidth=clamp(Math.round(screenWidth*0.38),460,760);
     const popupHeight=clamp(screenHeight-80,620,1100);
-    const left=Math.max(0,(window.screen?.availLeft||0)+screenWidth-popupWidth);
-    const top=Math.max(0,(window.screen?.availTop||0)+40);
+    const left=Math.max(0,(screenInfo.availLeft||0)+screenWidth-popupWidth);
+    const top=Math.max(0,(screenInfo.availTop||0)+40);
     return [
       "popup=yes",
       "resizable=yes",
