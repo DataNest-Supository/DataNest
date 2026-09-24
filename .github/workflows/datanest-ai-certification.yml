@@ -13,11 +13,16 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       # Supabase publishable client configuration is intentionally public.
-      # Only the service-role key and Postgres connection URL remain GitHub secrets.
+      # Only the service-role key and Postgres database password remain GitHub secrets.
       DATANEST_AI_STAGING_URL: https://qchttpcyqlqnhvahprhz.supabase.co
       DATANEST_AI_STAGING_PUBLISHABLE_KEY: sb_publishable_spZZYssbgfnC0qecAPLPVQ_ZqAyugqS
       DATANEST_AI_STAGING_SERVICE_ROLE_KEY: ${{ secrets.DATANEST_AI_STAGING_SERVICE_ROLE_KEY }}
-      DATANEST_AI_STAGING_DB_URL: ${{ secrets.DATANEST_AI_STAGING_DB_URL }}
+      DATANEST_AI_STAGING_DB_PASSWORD: ${{ secrets.DATANEST_AI_STAGING_DB_PASSWORD }}
+      PGHOST: aws-0-eu-central-1.pooler.supabase.com
+      PGPORT: "5432"
+      PGDATABASE: postgres
+      PGUSER: postgres.qchttpcyqlqnhvahprhz
+      PGSSLMODE: require
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.0.0
@@ -38,14 +43,16 @@ jobs:
           test -n "$DATANEST_AI_STAGING_URL" || { echo "DATANEST_AI_STAGING_URL is required"; exit 1; }
           test -n "$DATANEST_AI_STAGING_PUBLISHABLE_KEY" || { echo "DATANEST_AI_STAGING_PUBLISHABLE_KEY is required"; exit 1; }
           test -n "$DATANEST_AI_STAGING_SERVICE_ROLE_KEY" || { echo "DATANEST_AI_STAGING_SERVICE_ROLE_KEY is required"; exit 1; }
-          test -n "$DATANEST_AI_STAGING_DB_URL" || { echo "DATANEST_AI_STAGING_DB_URL is required"; exit 1; }
+          test -n "$DATANEST_AI_STAGING_DB_PASSWORD" || { echo "DATANEST_AI_STAGING_DB_PASSWORD is required"; exit 1; }
           test -n "$DATANEST_AI_E2E_EMAIL" || { echo "DATANEST_AI_E2E_EMAIL is required"; exit 1; }
           test -n "$DATANEST_AI_E2E_PASSWORD" || { echo "DATANEST_AI_E2E_PASSWORD is required"; exit 1; }
 
       - name: Run staging schema acceptance
+        env:
+          PGPASSWORD: ${{ env.DATANEST_AI_STAGING_DB_PASSWORD }}
         run: |
-          psql "$DATANEST_AI_STAGING_DB_URL" -v ON_ERROR_STOP=1 -f tests/sql/datanest_ai_staging_acceptance.sql
-          psql "$DATANEST_AI_STAGING_DB_URL" -v ON_ERROR_STOP=1 -f tests/sql/datanest_ai_production_acceptance.sql
+          psql -v ON_ERROR_STOP=1 -f tests/sql/datanest_ai_staging_acceptance.sql
+          psql -v ON_ERROR_STOP=1 -f tests/sql/datanest_ai_production_acceptance.sql
 
       - name: Seed governed E2E fixtures
         run: npm run seed:e2e:datanest-ai
