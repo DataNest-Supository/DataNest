@@ -1,11 +1,9 @@
 # Resonance DataNest
 
-**Resonance DataNest** is the Resonance AppDev project operating environment.
+**Resonance DataNest** is the Resonance AppDev web control plane. It combines two first-class tools:
 
-Its two core tools are:
-
-- **UNIFI** — project orchestration, planning, manifests, context, checkpoints, artifacts and audit.
-- **TranScheduler** — capability-aware scheduling, dependency handling, reservations, retry/backoff and fair-share execution.
+- **UNIFI** — project orchestration, planning, Job Manifests, context, checkpoints, artifacts and audit.
+- **TranScheduler** — capability-aware scheduling, dependencies, reservations, retry/backoff, execution history and human controls.
 
 ## Canonical stack
 
@@ -13,7 +11,13 @@ Its two core tools are:
 - Branch: `main`
 - Supabase: `sgqdmfgjbprsoqsmgigi`
 - Supabase URL: `https://sgqdmfgjbprsoqsmgigi.supabase.co`
-- Intended Vercel project: `Resonance DataNest`
+- Vercel project: `Resonance DataNest`
+
+## Web UI
+
+The UI includes authenticated access, an overview dashboard, UNIFI Job Manifest planning, TranScheduler queue controls, capability registry, run history, checkpoints, audit history, scheduler settings, responsive navigation, and a deployment health endpoint at `/api/health`.
+
+The sign-in screen intentionally does not create Supabase Auth users. Create authorized users through Supabase Auth administration, then use password or magic-link sign-in.
 
 ## Local development
 
@@ -23,30 +27,28 @@ npm install
 npm run dev
 ```
 
-Set `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in `.env.local`.
-
-## Vercel
-
-Import this repository into Vercel and name the project **Resonance DataNest**.
-
-[Import to Vercel](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FDataNest-Supository%2FDataNest&repository-name=Resonance%20DataNest)
-
-Configure these environment variables in Vercel:
+Required environment values:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://sgqdmfgjbprsoqsmgigi.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<publishable key>
 ```
 
-Never commit privileged credentials.
+Validation:
 
-## Current bootstrap
+```bash
+npm run check
+npm run build
+```
 
-The production Supabase control plane is populated and seeded with:
-- project: Resonance DataNest
-- tool: UNIFI
-- tool: TranScheduler
-- priority and capability policies
-- project bootstrap authority metadata
+## Vercel
 
-See `docs/ARCHITECTURE.md`.
+Import this repository and call the project **Resonance DataNest**:
+
+[Import Resonance DataNest to Vercel](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FDataNest-Supository%2FDataNest&repository-name=Resonance%20DataNest)
+
+Configure the two public Supabase environment variables in Vercel for Production and Preview. Never commit service-role keys, database passwords, access tokens, MFA material or reusable session credentials.
+
+## Scheduling safety
+
+TranScheduler does not treat `UNKNOWN` capability state as permission to execute. Capability availability must be observed explicitly before routing work.
