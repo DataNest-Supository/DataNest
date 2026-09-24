@@ -15,7 +15,7 @@ type Checkpoint = { id:string; job_id:string; completed:string[]; remaining:stri
 type AuditEvent = { id:number; job_id:string|null; event_type:string; actor:string; payload:Record<string,unknown>; created_at:string };
 type Policy = { id:string; policy_key:string; value:Record<string,unknown> };
 type ProjectMember = { project_id:string; user_id:string; role:"owner"|"admin"|"operator"|"viewer"; status:string };
-type ViewKey = "overview"|"ai"|"productlab"|"unifi"|"scheduler"|"capabilities"|"runs"|"checkpoints"|"audit"|"settings";
+type ViewKey = "overview"|"ai"|"productlab"|"unifi"|"scheduler"|"runs"|"checkpoints"|"audit"|"settings";
 type HealthState = { state:"checking"|"online"|"degraded"|"offline"; checkedAt:string|null; message:string };
 type Summary = { total:number; active:number; running:number; blocked:number; available:number; registered:number };
 type ActiveDataNestAiSession = { jobId:string; sessionId:string|null };
@@ -30,7 +30,6 @@ const nav:Array<{key:ViewKey;label:string;group:string;glyph:string}> = [
   {key:"productlab",label:"Product Lab",group:"Research",glyph:"▣"},
   {key:"unifi",label:"UNIFI Planner",group:"Tools",glyph:"◇"},
   {key:"scheduler",label:"TranScheduler",group:"Tools",glyph:"⌁"},
-  {key:"capabilities",label:"Capabilities",group:"Operations",glyph:"◎"},
   {key:"runs",label:"Runs",group:"Operations",glyph:"▶"},
   {key:"checkpoints",label:"Checkpoints",group:"Continuity",glyph:"◆"},
   {key:"audit",label:"Audit",group:"Continuity",glyph:"≡"},
@@ -441,10 +440,9 @@ export default function DataNestApp({session}:{session:Session}) {
         </div>
         {(loadingCore||loadingView)&&<div className="loadingBar" aria-label="Loading DataNest data"><span/></div>}
 
-        {!loadingCore&&project&&view==="overview"&&<Overview project={project} tools={tools} jobs={recentJobs} capabilities={capabilities} counts={summary} setView={setView} canOperate={canOperate}/>}\n        {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError} onActiveSessionChange={setActiveDataNestAiSession}/>}\n        {!loadingCore&&project&&view==="productlab"&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate}/>}
+        {!loadingCore&&project&&view==="overview"&&<Overview project={project} tools={tools} jobs={recentJobs} counts={summary} setView={setView} canOperate={canOperate}/>}\n        {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError} onActiveSessionChange={setActiveDataNestAiSession}/>}\n        {!loadingCore&&project&&view==="productlab"&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate}/>}
         {!loadingCore&&project&&view==="unifi"&&<UnifiPlanner project={project} jobs={jobs} capabilities={capabilities} reload={async()=>{await loadJobsPage(jobPage);await loadSummary(project.id);await loadRecentJobs(project.id);}} setNotice={setNotice} setError={setError} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage}/>}
         {!loadingCore&&view==="scheduler"&&<Scheduler jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage}/>}
-        {!loadingCore&&view==="capabilities"&&<Capabilities capabilities={capabilities}/>}
         {!loadingCore&&view==="runs"&&<Runs runs={runs} jobLookup={jobLookup} page={runPage} total={runCount} onPage={setRunPage}/>}
         {!loadingCore&&view==="checkpoints"&&<Checkpoints checkpoints={checkpoints} jobLookup={jobLookup} page={checkpointPage} total={checkpointCount} onPage={setCheckpointPage}/>}
         {!loadingCore&&view==="audit"&&<Audit events={events} jobLookup={jobLookup} page={eventPage} total={eventCount} onPage={setEventPage}/>}
@@ -463,7 +461,7 @@ export default function DataNestApp({session}:{session:Session}) {
   </div>;
 }
 
-function Overview({project,tools,jobs,capabilities,counts,setView,canOperate}:{project:Project;tools:Tool[];jobs:Job[];capabilities:Capability[];counts:Summary;setView:(v:ViewKey)=>void;canOperate:boolean}) {
+function Overview({project,tools,jobs,counts,setView,canOperate}:{project:Project;tools:Tool[];jobs:Job[];counts:Summary;setView:(v:ViewKey)=>void;canOperate:boolean}) {
   return <>
     <section className="heroPanel">
       <div><p className="eyebrow">PROJECT OPERATING ENVIRONMENT</p><h2>{project.name}</h2><p>{project.description}</p><div className="heroActions"><button className="primaryButton compact" disabled={!canOperate} onClick={()=>setView("unifi")}>{canOperate ? "Create UNIFI job" : "Viewer mode"}</button><button className="secondaryButton compact" onClick={()=>setView("ai")}>Open DataNest AI</button><button className="secondaryButton compact" onClick={()=>setView("productlab")}>Open Product Lab</button><button className="secondaryButton compact" onClick={()=>setView("scheduler")}>Open TranScheduler</button></div></div>
@@ -474,16 +472,10 @@ function Overview({project,tools,jobs,capabilities,counts,setView,canOperate}:{p
       <Metric label="Active work" value={counts.active} note="Not in a final state"/>
       <Metric label="Running" value={counts.running} note="Executing now"/>
       <Metric label="Blocked" value={counts.blocked} note="Needs dependency or action"/>
-      <Metric label="Available capabilities" value={counts.available} note={String(counts.registered)+" registered"}/>
     </section>
-    <section className="twoCol">
-      <div className="panel"><div className="panelHead"><div><p className="eyebrow">TOOLS</p><h3>Operating tools</h3></div></div><div className="toolGrid">
-        {tools.map(tool=><article className="toolCard" key={tool.id}><div className="toolIcon">{tool.tool_key==="unifi"?"◇":"⌁"}</div><div><div className="rowBetween"><h4>{tool.name}</h4><Badge value={tool.enabled?"ACTIVE":"DISABLED"}/></div><p>{tool.role}</p></div></article>)}
-      </div></div>
-      <div className="panel"><div className="panelHead"><div><p className="eyebrow">CAPACITY</p><h3>Execution resources</h3></div><button className="textButton" onClick={()=>setView("capabilities")}>View all</button></div><div className="capMiniList">
-        {capabilities.map(capability=><div className="capMini" key={capability.id}><div><b>{capability.account_key}</b><small>{capability.connector_kind+" · "+capability.capability}</small></div><Badge value={capability.state}/></div>)}
-      </div></div>
-    </section>
+    <section className="panel"><div className="panelHead"><div><p className="eyebrow">TOOLS</p><h3>Operating tools</h3></div></div><div className="toolGrid">
+      {tools.map(tool=><article className="toolCard" key={tool.id}><div className="toolIcon">{tool.tool_key==="unifi"?"◇":"⌁"}</div><div><div className="rowBetween"><h4>{tool.name}</h4><Badge value={tool.enabled?"ACTIVE":"DISABLED"}/></div><p>{tool.role}</p></div></article>)}
+    </div></section>
     <section className="panel"><div className="panelHead"><div><p className="eyebrow">RECENT WORK</p><h3>Latest jobs</h3></div><button className="textButton" onClick={()=>setView("scheduler")}>Open queue</button></div><JobTable jobs={jobs}/></section>
   </>;
 }
@@ -574,12 +566,6 @@ function Scheduler({jobs,capabilities,onStatus,canOperate,page,total,onPage}:{jo
       </div>
       <Pagination page={page} total={total} onPage={onPage}/>
     </section>
-  </>;
-}
-
-function Capabilities({capabilities}:{capabilities:Capability[]}) {
-  return <><section className="sectionIntro"><p className="eyebrow">EXECUTION REGISTRY</p><h2>Capabilities</h2><p>UNKNOWN is deliberately ineligible for execution. A capability must be observed as AVAILABLE before TranScheduler can route work to it.</p></section>
-    <section className="cardGrid">{capabilities.map(capability=><article className="capabilityCard" key={capability.id}><div className="rowBetween"><div className="connectorIcon">{capability.connector_kind.slice(0,2).toUpperCase()}</div><Badge value={capability.state}/></div><h3>{capability.account_key}</h3><p>{capability.connector_kind+" · "+capability.capability}</p><dl><div><dt>Concurrency</dt><dd>{capability.running+"/"+capability.concurrency_limit}</dd></div><div><dt>Confidence</dt><dd>{capability.confidence==null?"—":String(Math.round(capability.confidence*100))+"%"}</dd></div><div><dt>Observed</dt><dd>{formatDate(capability.observed_at)}</dd></div></dl></article>)}</section>
   </>;
 }
 
