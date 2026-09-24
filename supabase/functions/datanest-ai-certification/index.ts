@@ -152,7 +152,18 @@ async function certifyCandidate(input:{
   runs:Array<{id:string;gate:CertificationGate;passed:boolean}>;
 }){
   const existing=await existingCertification(input.staging,input.candidate.id);
-  if(existing)return existing;
+  if(existing){
+    const {error:updateError}=await input.staging
+      .from("ai_learning_candidates")
+      .update({
+        lifecycle_state:"CERTIFIED",
+        certified_at:input.candidate.certified_at||new Date().toISOString(),
+        updated_at:new Date().toISOString()
+      })
+      .eq("id",input.candidate.id);
+    if(updateError)throw updateError;
+    return existing;
+  }
 
   const {data:decision,error:decisionError}=await input.staging
     .from("ai_certification_decisions")
