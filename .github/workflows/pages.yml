@@ -48,3 +48,29 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  verify:
+    name: Verify live Pages deployment
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - name: Verify homepage
+        run: |
+          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors \
+            https://datanest-supository.github.io/DataNest/ \
+            -o /tmp/datanest-home.html
+          grep -q "Resonance DataNest" /tmp/datanest-home.html
+      - name: Verify health endpoint
+        run: |
+          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors \
+            https://datanest-supository.github.io/DataNest/api/health/ \
+            -o /tmp/datanest-health.json
+          grep -q '"ok":true' /tmp/datanest-health.json
+          grep -q '"project":"Resonance DataNest"' /tmp/datanest-health.json
+      - name: Verify runtime configuration
+        run: |
+          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors \
+            https://datanest-supository.github.io/DataNest/runtime-config.js \
+            -o /tmp/runtime-config.js
+          grep -q "https://sgqdmfgjbprsoqsmgigi.supabase.co" /tmp/runtime-config.js
+          grep -q "sb_publishable_" /tmp/runtime-config.js
