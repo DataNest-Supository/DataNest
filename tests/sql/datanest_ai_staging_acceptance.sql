@@ -55,3 +55,19 @@ begin
     raise exception 'browser roles must not have direct staging-table privileges';
   end if;
 end $$;
+
+
+do $$
+begin
+  if to_regclass('supabase_migrations.schema_migrations') is null then
+    raise exception 'Supabase migration history is missing';
+  end if;
+
+  if not exists (
+    select 1
+    from supabase_migrations.schema_migrations
+    where name='register_datanest_ai_staging_baseline'
+  ) then
+    raise exception 'governed staging baseline migration is not registered';
+  end if;
+end $$;
