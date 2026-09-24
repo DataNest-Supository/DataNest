@@ -88,3 +88,11 @@ test("governed release wiring names the certified DataNest AI runtime", () => {
   assert.match(manifest,/datanest-ai-certification@1/);
   assert.match(pages,/datanest-ai-governed-memory-v1/);
 });
+
+
+test("External AI Companion uses certification language instead of scoring language", () => {
+  const source=fs.readFileSync(path.join(root,"src/components/ExternalAiSidebar.tsx"),"utf8");
+  assert.doesNotMatch(source,/contribution points|unscored/i);
+  assert.match(source,/UNCERTIFIED evidence/);
+  assert.match(source,/governed certification/);
+});
