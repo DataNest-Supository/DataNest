@@ -18,7 +18,7 @@ test("shows a recoverable configuration error", async ({ page }) => {
     await route.fulfill({
       status: 200,
       contentType: "application/javascript",
-      body: "window.__DATANEST_CONFIG__={supabaseUrl:'',supabasePublishableKey:''};"
+      body: "window.__DATANEST_CONFIG__={supabaseUrl:'',supabasePublishableKey:'',authoritative:true};"
     });
   });
 
