@@ -102,6 +102,7 @@ create or replace function public.begin_datanest_ai_request(
   message_fingerprint text
 ) returns jsonb
 language sql
+security definer
 set search_path=public,private
 as $$
   select private.begin_datanest_ai_request(target_job,target_client_request_id,message_fingerprint);
@@ -158,6 +159,7 @@ create or replace function public.get_certified_memory_context(
 ) returns jsonb
 language sql
 stable
+security definer
 set search_path=public,private
 as $$
   select private.get_certified_memory_context(target_project,target_job,target_limit);
@@ -220,6 +222,7 @@ create or replace function public.mark_external_ai_session_staged(
   target_trace_id text
 ) returns jsonb
 language sql
+security definer
 set search_path=public,private
 as $$
   select private.mark_external_ai_session_staged(target_session,target_staging_event,target_trace_id);
@@ -303,6 +306,7 @@ create or replace function public.service_promote_certified_memory(
   target_supersedes uuid default null
 ) returns uuid
 language sql
+security definer
 set search_path=public,private
 as $$
   select private.promote_certified_memory(
