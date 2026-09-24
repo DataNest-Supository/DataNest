@@ -65,24 +65,23 @@ jobs:
     needs: deploy
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: actions/setup-node@v7.0.0
-        with:
-          node-version: 22
-      - name: Install test dependencies
-        run: npm ci
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
-      - name: Run rendered browser smoke tests
-        env:
-          PLAYWRIGHT_BASE_URL: https://datanest-supository.github.io
-          DATANEST_APP_PATH: /DataNest/
-        run: npm run test:browser
-      - name: Verify homepage
+      - name: Verify deployed Next.js shell
         run: |
           curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors \
             https://datanest-supository.github.io/DataNest/ \
             -o /tmp/datanest-home.html
           grep -q "Resonance DataNest" /tmp/datanest-home.html
+          if ! grep -q 'class="authShell"' /tmp/datanest-home.html; then
+            echo "Expected Next.js auth shell was not served. Live HTML prefix:"
+            head -c 2000 /tmp/datanest-home.html
+            exit 1
+          fi
+          PAGE_ASSET=$(grep -o '/DataNest/_next/static/chunks/app/page-[^"]*\.js' /tmp/datanest-home.html | head -1)
+          test -n "$PAGE_ASSET"
+          curl --fail --silent --show-error --location --retry 5 --retry-delay 2 --retry-all-errors \
+            "https://datanest-supository.github.io$PAGE_ASSET" \
+            -o /tmp/datanest-page.js
+          test -s /tmp/datanest-page.js
       - name: Verify static health marker
         run: |
           curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors \
@@ -97,6 +96,7 @@ jobs:
             -o /tmp/runtime-config.js
           grep -q "https://sgqdmfgjbprsoqsmgigi.supabase.co" /tmp/runtime-config.js
           grep -q "sb_publishable_" /tmp/runtime-config.js
+          grep -q "authoritative" /tmp/runtime-config.js
       - name: Verify release manifest
         run: |
           curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors \
@@ -107,3 +107,15 @@ jobs:
           grep -q "\"release\":\"external-ai-live-v1\"" /tmp/release-manifest.json
           grep -q "\"frontendCommit\":\"48cb85775c276572be36fea1b19a9b2eef9c631a\"" /tmp/release-manifest.json
           grep -q "\"aiChat\":\"rnd-ai-chat-v3@1\"" /tmp/release-manifest.json
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+      - name: Install test dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run rendered browser smoke tests
+        env:
+          PLAYWRIGHT_BASE_URL: https://datanest-supository.github.io
+          DATANEST_APP_PATH: /DataNest/
+        run: npm run test:browser
