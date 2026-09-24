@@ -40,7 +40,7 @@ test("AI Companion return becomes uncertified evidence in the selected Job",asyn
 
   page.on("popup",popup=>void popup.close());
   await page.getByRole("button",{name:"Open companion + load prompt"}).click();
-  await expect(page.getByText(/READY/).last()).toBeVisible();
+  await expect(page.getByText("COMPANION · READY",{exact:true})).toBeVisible();
 
   const companionResult="AI Companion E2E evidence: preserve traceability before project-wide learning.";
   await page.getByPlaceholder(/External AI response will appear here/i).fill(companionResult);
