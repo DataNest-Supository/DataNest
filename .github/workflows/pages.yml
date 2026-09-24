@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       DATANEST_STATIC_EXPORT: "true"
       NEXT_PUBLIC_BASE_PATH: "/DataNest"
@@ -36,7 +36,9 @@ jobs:
       - name: Write release manifest
         env:
           DATANEST_RELEASE_SHA: ${{ github.sha }}
-          DATANEST_DB_RELEASE: external-ai-live-v1
+          DATANEST_DB_RELEASE: stakeholder-pilot-v1
+          DATANEST_BASELINE_RELEASE: external-ai-live-v1
+          DATANEST_BASELINE_SHA: 48cb85775c276572be36fea1b19a9b2eef9c631a
           DATANEST_EDGE_AI: rnd-ai-chat-v3@1
           DATANEST_EDGE_PROVIDER: manage-ai-provider-v2@1
           DATANEST_EDGE_INVITES: send-job-invite@1
@@ -50,7 +52,7 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: build
     steps:
       - name: Deploy to GitHub Pages
@@ -59,7 +61,7 @@ jobs:
 
   verify:
     name: Verify live Pages deployment
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: deploy
     steps:
       - uses: actions/checkout@v7.0.1
@@ -101,5 +103,7 @@ jobs:
             https://datanest-supository.github.io/DataNest/release-manifest.json \
             -o /tmp/release-manifest.json
           grep -q "\"frontendCommit\":\"$GITHUB_SHA\"" /tmp/release-manifest.json
-          grep -q "\"databaseRelease\":\"external-ai-live-v1\"" /tmp/release-manifest.json
+          grep -q "\"databaseRelease\":\"stakeholder-pilot-v1\"" /tmp/release-manifest.json
+          grep -q "\"release\":\"external-ai-live-v1\"" /tmp/release-manifest.json
+          grep -q "\"frontendCommit\":\"48cb85775c276572be36fea1b19a9b2eef9c631a\"" /tmp/release-manifest.json
           grep -q "\"aiChat\":\"rnd-ai-chat-v3@1\"" /tmp/release-manifest.json
