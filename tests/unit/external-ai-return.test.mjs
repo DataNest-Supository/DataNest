@@ -76,3 +76,84 @@ test("clipboard capture auto-fills on return without importing automatically", (
   assert.match(source, /Paste from clipboard/, "expected a manual clipboard fallback");
   assert.doesNotMatch(source, /Paste \+ import to DataNest/, "clipboard capture must not import automatically");
 });
+
+
+test("clipboard auto-capture only runs after clipboard access is armed", async () => {
+  const mod = await import("../../src/lib/externalAiClipboard.ts");
+  assert.equal(
+    typeof mod.shouldAttemptClipboardAutoCapture,
+    "function",
+    "expected shouldAttemptClipboardAutoCapture to exist"
+  );
+  assert.equal(mod.shouldAttemptClipboardAutoCapture("granted"), true);
+  assert.equal(mod.shouldAttemptClipboardAutoCapture("prompt"), false);
+  assert.equal(mod.shouldAttemptClipboardAutoCapture("denied"), false);
+  assert.equal(mod.shouldAttemptClipboardAutoCapture("unsupported"), false);
+});
+
+test("companion placement preserves the DataNest dock on a maximized desktop", async () => {
+  let mod = null;
+  try {
+    mod = await import("../../src/lib/externalAiWindow.ts");
+  } catch {
+    mod = null;
+  }
+
+  assert.equal(
+    typeof mod?.calculateCompanionPlacement,
+    "function",
+    "expected calculateCompanionPlacement to exist"
+  );
+
+  const placement = mod.calculateCompanionPlacement({
+    screenLeft: 0,
+    screenTop: 0,
+    screenWidth: 1920,
+    screenHeight: 1080,
+    browserLeft: 0,
+    browserTop: 0,
+    browserWidth: 1920,
+    browserHeight: 1000,
+    dockWidth: 500,
+    preferredWidth: 500
+  });
+
+  assert.ok(
+    placement.left + placement.width <= 1920 - 500 - 8,
+    "companion must not cover the right-side DataNest dock"
+  );
+});
+
+test("companion placement uses free screen space to the right when available", async () => {
+  const { calculateCompanionPlacement } = await import("../../src/lib/externalAiWindow.ts");
+  const placement = calculateCompanionPlacement({
+    screenLeft: 0,
+    screenTop: 0,
+    screenWidth: 1920,
+    screenHeight: 1080,
+    browserLeft: 0,
+    browserTop: 20,
+    browserWidth: 1180,
+    browserHeight: 980,
+    dockWidth: 500,
+    preferredWidth: 500
+  });
+
+  assert.ok(placement.left >= 1188, "companion should sit outside DataNest when right-side screen space is available");
+  assert.ok(placement.left + placement.width <= 1920, "companion must remain on-screen");
+});
+
+test("Return to DataNest exposes an explicit clipboard permission arm", () => {
+  const source = fs.readFileSync(
+    path.join(repoRoot, "src/components/ExternalAiSidebar.tsx"),
+    "utf8"
+  );
+
+  assert.match(source, /Enable auto-fill/, "expected a one-time clipboard permission control");
+  assert.match(source, /navigator\.permissions/, "expected clipboard permission state detection");
+  assert.match(
+    source,
+    /shouldAttemptClipboardAutoCapture\(clipboardAccess\)/,
+    "focus capture must be gated on granted clipboard access"
+  );
+});
