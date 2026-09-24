@@ -131,7 +131,7 @@ export default function AiReconciliationPanel({projectId}:{projectId:string}){
 
     <p className="muted">
       Interrupted provider calls remain non-retryable and keep their token reservation until an owner/admin confirms the outcome.
-      Reconciliation records usage/cost evidence but does not automatically accept contribution value.
+      Reconciliation records usage and cost evidence while preserving provider-request integrity.
     </p>
 
     {notice&&<div className="notice goodNotice">{notice}</div>}
