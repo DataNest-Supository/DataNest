@@ -55,6 +55,8 @@ Run:
 BACKUP_FILE="$(ls -t backups/*.datanest-ai-backup | head -1)"
 node scripts/restore-datanest-ai-staging.mjs "$BACKUP_FILE" \
   --target-ref "$DATANEST_AI_STAGING_PROJECT_REF" \
+  --source-ref "$DATANEST_AI_STAGING_PROJECT_REF" \
+  --source-ref "$DATANEST_AI_STAGING_PROJECT_REF" \
   --verify-only
 ```
 
@@ -71,7 +73,9 @@ node scripts/restore-datanest-ai-staging.mjs "$BACKUP_FILE" \
 
 The restore uses primary-key upserts in dependency order. A second restore of the same backup must not create duplicate rows. Re-run verify-only after restore.
 
-The restore utility refuses the known production project ref and refuses any target that does not exactly match `DATANEST_AI_STAGING_PROJECT_REF`.
+The restore utility refuses the known production project ref and refuses any target that does not exactly match the currently configured `DATANEST_AI_STAGING_PROJECT_REF`. It also requires an explicit `--source-ref` matching the encrypted backup's original project ref.
+
+If the original staging project is lost, provision a replacement staging project, configure the staging URL/service key/project-ref variables for that replacement, and restore the encrypted backup with `--source-ref` set to the original staging project ref recorded in the backup. This permits disaster recovery without ever permitting a raw-evidence restore into production.
 
 ## Release gate
 
