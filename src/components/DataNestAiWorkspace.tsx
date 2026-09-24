@@ -37,6 +37,7 @@ type Props={
   openScheduler:()=>void;
   setNotice:(value:string)=>void;
   setError:(value:string)=>void;
+  onActiveSessionChange:(session:{jobId:string;sessionId:string}|null)=>void;
 };
 
 const jobColumns="id,job_number,title,description,priority,status,required_capabilities,created_at,updated_at";
@@ -59,7 +60,8 @@ export default function DataNestAiWorkspace({
   canOperate,
   openScheduler,
   setNotice,
-  setError
+  setError,
+  onActiveSessionChange
 }:Props){
   const [jobs,setJobs]=useState<Job[]>([]);
   const [selectedJobId,setSelectedJobId]=useState("");
@@ -106,6 +108,14 @@ export default function DataNestAiWorkspace({
   },[selectedJobId,sessionId,setError]);
 
   useEffect(()=>{void loadJobs()},[loadJobs]);
+
+  useEffect(()=>{
+    onActiveSessionChange(
+      selectedJobId&&sessionId?{jobId:selectedJobId,sessionId}:null
+    );
+  },[selectedJobId,sessionId,onActiveSessionChange]);
+
+  useEffect(()=>()=>onActiveSessionChange(null),[onActiveSessionChange]);
 
   useEffect(()=>{
     if(!selectedJobId)return;
