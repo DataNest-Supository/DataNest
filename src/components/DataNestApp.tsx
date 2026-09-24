@@ -18,6 +18,7 @@ type ProjectMember = { project_id:string; user_id:string; role:"owner"|"admin"|"
 type ViewKey = "overview"|"ai"|"aiops"|"productlab"|"unifi"|"scheduler"|"capabilities"|"runs"|"checkpoints"|"audit"|"settings";
 type HealthState = { state:"checking"|"online"|"degraded"|"offline"; checkedAt:string|null; message:string };
 type Summary = { total:number; active:number; running:number; blocked:number; available:number; registered:number };
+type ActiveDataNestAiSession = { jobId:string; sessionId:string };
 
 const PAGE_SIZE = 20;
 const finalStates = new Set(["COMPLETED","FAILED","CANCELLED"]);
@@ -78,6 +79,7 @@ export default function DataNestApp({session}:{session:Session}) {
   const [view,setView]=useState<ViewKey>("overview");
   const [mobileOpen,setMobileOpen]=useState(false);
   const [aiSidebarOpen,setAiSidebarOpen]=useState(false);
+  const [activeDataNestAiSession,setActiveDataNestAiSession]=useState<ActiveDataNestAiSession|null>(null);
   const [project,setProject]=useState<Project|null>(null);
   const [membership,setMembership]=useState<ProjectMember|null>(null);
   const [tools,setTools]=useState<Tool[]>([]);
@@ -440,7 +442,7 @@ export default function DataNestApp({session}:{session:Session}) {
         </div>
         {(loadingCore||loadingView)&&<div className="loadingBar" aria-label="Loading DataNest data"><span/></div>}
 
-        {!loadingCore&&project&&view==="overview"&&<Overview project={project} tools={tools} jobs={recentJobs} capabilities={capabilities} counts={summary} setView={setView} canOperate={canOperate}/>}\n        {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError}/>}\n        {!loadingCore&&project&&view==="aiops"&&<AiOperationsDashboard projectId={project.id} currentUserId={session.user.id} canManageAi={canManageAi}/>}\n        {!loadingCore&&project&&view==="productlab"&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate}/>}
+        {!loadingCore&&project&&view==="overview"&&<Overview project={project} tools={tools} jobs={recentJobs} capabilities={capabilities} counts={summary} setView={setView} canOperate={canOperate}/>}\n        {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError} onActiveSessionChange={setActiveDataNestAiSession}/>}\n        {!loadingCore&&project&&view==="aiops"&&<AiOperationsDashboard projectId={project.id} currentUserId={session.user.id} canManageAi={canManageAi}/>}\n        {!loadingCore&&project&&view==="productlab"&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate}/>}
         {!loadingCore&&project&&view==="unifi"&&<UnifiPlanner project={project} jobs={jobs} capabilities={capabilities} reload={async()=>{await loadJobsPage(jobPage);await loadSummary(project.id);await loadRecentJobs(project.id);}} setNotice={setNotice} setError={setError} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage}/>}
         {!loadingCore&&view==="scheduler"&&<Scheduler jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage}/>}
         {!loadingCore&&view==="capabilities"&&<Capabilities capabilities={capabilities}/>}
@@ -454,6 +456,7 @@ export default function DataNestApp({session}:{session:Session}) {
     {!loadingCore&&project&&aiSidebarOpen&&<ExternalAiSidebar
       projectId={project.id}
       currentUserEmail={session.user.email||"Authenticated user"}
+      activeDataNestAiSession={activeDataNestAiSession}
       onClose={()=>setAiSidebarOpen(false)}
       onNotice={setNotice}
       onError={setError}
