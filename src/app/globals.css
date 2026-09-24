@@ -193,3 +193,24 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 }
 
 .rndInputActions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;padding-top:9px;border-top:1px solid rgba(255,255,255,.05)}
+
+/* Stakeholder contribution + BYO AI */
+.stakeholderWorkspace,.productLab{display:grid;gap:16px}
+.stakeholderCols{align-items:start}
+.stakePoolControl{display:flex;align-items:end;gap:10px;margin:0 0 16px;max-width:420px}
+.stakePoolControl label{display:grid;gap:6px;flex:1;color:#b7cadb;font-size:11px;font-weight:700}
+.stakeTable{overflow-x:auto}
+.stakeRow{display:grid;grid-template-columns:minmax(210px,1.7fr) repeat(6,minmax(95px,.7fr));gap:12px;align-items:center;min-width:980px;min-height:58px;border-top:1px solid rgba(255,255,255,.055);font-size:11px}
+.stakeRow>div>b,.stakeRow>div>small{display:block}.stakeRow>div>small{color:var(--muted);margin-top:3px}
+.connectionList{display:grid;gap:9px;margin-top:15px}.connectionCard{padding:13px;border:1px solid var(--line);border-radius:11px;background:rgba(255,255,255,.018)}
+.connectionCard small{display:block;color:var(--muted);margin-top:3px}.connectionCard p{word-break:break-all}.errorText{color:#f7a8b6;font-size:10px;line-height:1.45}
+.realtimeWord{font-size:18px!important;text-transform:uppercase;color:var(--cyan)}
+/* Product Lab */
+.productLabGrid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(320px,.75fr);gap:16px;align-items:start}
+.productPreviewPanel{min-width:0}.productFrameShell{margin-top:12px;border:1px solid var(--line);border-radius:13px;overflow:hidden;background:#fff;min-height:620px}
+.productFrame{display:block;width:100%;height:620px;border:0;background:#fff}.linkButton{text-decoration:none;display:inline-flex;align-items:center}
+.surfaceForm{display:grid;grid-template-columns:.8fr 1.8fr .7fr auto;gap:10px;align-items:end}.surfaceForm label{display:grid;gap:6px;color:#b7cadb;font-size:11px;font-weight:700}
+.testCaseGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px}.testCaseCard label{display:grid;gap:6px;margin-top:12px;color:#b7cadb;font-size:10px;font-weight:700}
+.testActions{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}
+@media(max-width:1050px){.productLabGrid{grid-template-columns:1fr}.surfaceForm{grid-template-columns:1fr 1fr}.surfaceForm button{align-self:end}}
+@media(max-width:650px){.stakePoolControl{align-items:stretch;flex-direction:column}.surfaceForm{grid-template-columns:1fr}.productFrameShell,.productFrame{height:500px;min-height:500px}.testCaseGrid{grid-template-columns:1fr}}
