@@ -76,6 +76,7 @@ export default function ExternalAiSidebar({
   const [launchMode,setLaunchMode]=useState<"sidebar"|"companion"|"popout">("sidebar");
   const [handoff,setHandoff]=useState("");
   const [responseText,setResponseText]=useState("");
+  const [lastImportedId,setLastImportedId]=useState("");
   const [embedUrl,setEmbedUrl]=useState("");
   const [busy,setBusy]=useState(false);
 
@@ -163,6 +164,7 @@ export default function ExternalAiSidebar({
     setLatestUpdate(null);
     setSuggestions([]);
     setResponseText("");
+    setLastImportedId("");
     setEmbedUrl("");
     void loadJobContext(selectedJobId);
   },[selectedJobId,loadJobContext]);
@@ -268,12 +270,20 @@ export default function ExternalAiSidebar({
 
   function companionFeatures(){
     const screenInfo=window.screen as Screen & {availLeft?:number;availTop?:number};
+    const screenLeft=screenInfo.availLeft||0;
+    const screenTop=screenInfo.availTop||0;
     const screenWidth=screenInfo.availWidth||window.innerWidth;
     const screenHeight=screenInfo.availHeight||window.innerHeight;
-    const popupWidth=clamp(Math.round(screenWidth*0.38),460,760);
-    const popupHeight=clamp(screenHeight-80,620,1100);
-    const left=Math.max(0,(screenInfo.availLeft||0)+screenWidth-popupWidth);
-    const top=Math.max(0,(screenInfo.availTop||0)+40);
+    const browserLeft=Number.isFinite(window.screenX)?window.screenX:screenLeft;
+    const browserTop=Number.isFinite(window.screenY)?window.screenY:screenTop;
+    const browserWidth=window.outerWidth||screenWidth;
+    const browserHeight=window.outerHeight||screenHeight;
+    const popupWidth=clamp(width,460,760);
+    const popupHeight=clamp(browserHeight,620,screenHeight);
+    const maxLeft=screenLeft+screenWidth-popupWidth;
+    const maxTop=screenTop+screenHeight-popupHeight;
+    const left=clamp(browserLeft+browserWidth-popupWidth,screenLeft,maxLeft);
+    const top=clamp(browserTop,screenTop,maxTop);
     return [
       "popup=yes",
       "resizable=yes",
@@ -386,10 +396,8 @@ export default function ExternalAiSidebar({
     }
   }
 
-  async function importResponse(event:FormEvent){
-    event.preventDefault();
-    if(!sessionId||!responseText.trim())return;
-
+  async function importResponseContent(content:string){
+    if(!sessionId||!content.trim())return;
     const supabase=getSupabase();
     if(!supabase)return;
 
@@ -398,25 +406,54 @@ export default function ExternalAiSidebar({
     try{
       const {data,error}=await supabase.rpc("import_external_ai_response",{
         target_session:sessionId,
-        response_content:responseText.trim()
+        response_content:content.trim()
       });
       if(error)throw error;
 
       const payload=(data||{}) as Record<string,unknown>;
+      const inputId=String(payload.input_id||"");
       setResponseText("");
+      setLastImportedId(inputId);
       onNotice(
-        "External AI response imported into "+
+        "External AI result imported into "+
         (selectedJob?jobCode(selectedJob):"the Job Manifest")+
         (payload.idempotent?" using the existing tracked import.":".")
       );
       window.dispatchEvent(new CustomEvent("datanest:external-ai-imported",{
-        detail:{jobId:selectedJobId,inputId:String(payload.input_id||"")}
+        detail:{jobId:selectedJobId,inputId}
       }));
     }catch(error){
       onError(error instanceof Error?error.message:"Unable to import external AI response.");
     }finally{
       setBusy(false);
     }
+  }
+
+  async function pasteAndImportResponse(){
+    if(!sessionId){
+      onError("Open a tracked AI companion session before importing a result.");
+      return;
+    }
+    if(!navigator.clipboard?.readText){
+      onError("Clipboard read access is unavailable in this browser. Paste the response into the import box instead.");
+      return;
+    }
+    try{
+      const text=(await navigator.clipboard.readText()).trim();
+      if(!text){
+        onError("The clipboard does not contain an AI response to import.");
+        return;
+      }
+      setResponseText(text);
+      await importResponseContent(text);
+    }catch{
+      onError("Clipboard access was blocked. Copy the AI response, then paste it into the DataNest import box.");
+    }
+  }
+
+  async function importResponse(event:FormEvent){
+    event.preventDefault();
+    await importResponseContent(responseText);
   }
 
   function beginResize(event:React.PointerEvent<HTMLDivElement>){
@@ -578,30 +615,53 @@ export default function ExternalAiSidebar({
         </p>
       </section>}
 
-      {selectedJob&&<details className="externalAiDockSection externalAiHandoff" open={!embedUrl}>
-        <summary>{"Job Manifest handoff · "+jobCode(selectedJob)+" · JOB ID "+selectedJob.id}</summary>
-        <textarea rows={10} readOnly value={handoff||preparedHandoff}/>
-      </details>}
-
       {sessionId&&<form className="externalAiDockSection externalAiImport" onSubmit={importResponse}>
         <div className="rowBetween">
           <div>
             <p className="eyebrow">RETURN TO DATANEST</p>
-            <b>Import external AI response</b>
+            <b>Import external AI result</b>
           </div>
-          <span className="badge good">{launchMode.toUpperCase()} · OPEN</span>
+          <span className="badge good">{lastImportedId?"IMPORTED":launchMode.toUpperCase()+" · OPEN"}</span>
         </div>
+        <p className="externalAiImportHint">
+          Copy the finished AI answer in the companion. DataNest will attach the imported result to this tracked Job Manifest and session.
+        </p>
+        <button
+          className="primaryButton"
+          type="button"
+          disabled={busy}
+          onClick={()=>void pasteAndImportResponse()}
+        >
+          {busy?"Importing…":"Paste + import to DataNest"}
+        </button>
         <textarea
           rows={7}
           value={responseText}
           onChange={event=>setResponseText(event.target.value)}
-          placeholder="Paste the useful external AI response, code recommendation, decision, test result, or development plan here…"
+          placeholder="Or paste/edit the external AI result here before importing…"
         />
-        <button className="primaryButton" disabled={busy||!responseText.trim()}>
-          {busy?"Importing…":"Import response to DataNest"}
-        </button>
-        <small>{"Tracked session "+sessionId.slice(0,8)}</small>
+        <div className="externalAiImportActions">
+          <button className="secondaryButton" disabled={busy||!responseText.trim()}>
+            {busy?"Importing…":"Import typed/pasted result"}
+          </button>
+          <button
+            className="textButton"
+            type="button"
+            disabled={busy||!responseText}
+            onClick={()=>setResponseText("")}
+          >
+            Clear
+          </button>
+        </div>
+        <small>
+          {"Tracked session "+sessionId.slice(0,8)+(lastImportedId?" · Input "+lastImportedId.slice(0,8):"")}
+        </small>
       </form>}
+
+      {selectedJob&&<details className="externalAiDockSection externalAiHandoff" open={false}>
+        <summary>{"Job Manifest handoff · "+jobCode(selectedJob)+" · JOB ID "+selectedJob.id}</summary>
+        <textarea rows={10} readOnly value={handoff||preparedHandoff}/>
+      </details>}
 
       {!sessionId&&<div className="externalAiDockEmpty">
         <div>AI</div>
