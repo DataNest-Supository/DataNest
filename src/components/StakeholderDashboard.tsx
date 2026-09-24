@@ -63,11 +63,11 @@ function formatDate(value:string|null) {
 }
 
 export default function StakeholderDashboard({
-  projectId,currentUserId,canOperate
+  projectId,currentUserId,canManageStake
 }:{
   projectId:string;
   currentUserId:string;
-  canOperate:boolean;
+  canManageStake:boolean;
 }) {
   const [summary,setSummary]=useState<Summary|null>(null);
   const [connections,setConnections]=useState<Connection[]>([]);
@@ -106,7 +106,7 @@ export default function StakeholderDashboard({
         .eq("user_id",currentUserId)
         .order("created_at",{ascending:false})
         .limit(20),
-      canOperate
+      canManageStake
         ? supabase.from("contribution_ledger")
             .select("id,user_id,contribution_type,quantity,unit,points,monetary_value_minor,currency,verified,verification_source,metadata,created_at")
             .eq("project_id",projectId)
@@ -125,7 +125,7 @@ export default function StakeholderDashboard({
     setConnections((connectionsResult.data||[]) as Connection[]);
     setMyContributions((myResult.data||[]) as Contribution[]);
     setPending((pendingResult.data||[]) as Contribution[]);
-  },[projectId,currentUserId,canOperate]);
+  },[projectId,currentUserId,canManageStake]);
 
   useEffect(()=>{void load()},[load]);
 
@@ -227,12 +227,12 @@ export default function StakeholderDashboard({
       <article className="metricCard"><span>Stakeholders</span><strong>{summary?.stakeholders?.length||0}</strong><small>Active contribution profiles</small></article>
       <article className="metricCard"><span>Stakeholder pool</span><strong>{summary?.stakeholder_pool_percent==null?"—":summary.stakeholder_pool_percent+"%"}</strong><small>Owner-defined, non-binding</small></article>
       <article className="metricCard"><span>My AI connections</span><strong>{connections.filter(x=>x.status==="active").length}</strong><small>Vault-encrypted credentials</small></article>
-      <article className="metricCard"><span>Pending credit reviews</span><strong>{canOperate?pending.length:summary?.stakeholders?.find(x=>x.user_id===currentUserId)?.unverified_credit_entries||0}</strong><small>Unverified external AI investment</small></article>
+      <article className="metricCard"><span>Pending credit reviews</span><strong>{canManageStake?pending.length:summary?.stakeholders?.find(x=>x.user_id===currentUserId)?.unverified_credit_entries||0}</strong><small>Unverified external AI investment</small></article>
     </section>
 
     <section className="panel">
       <div className="panelHead"><div><p className="eyebrow">CONTRIBUTION POOL</p><h3>Suggested stakeholder allocation</h3></div><span className="countPill">{summary?.formula_version||"—"}</span></div>
-      {canOperate&&<div className="stakePoolControl">
+      {canManageStake&&<div className="stakePoolControl">
         <label>Stakeholder pool % <input type="number" min="0" max="100" step="0.01" value={pool} onChange={e=>setPool(e.target.value)} placeholder="Not allocated"/></label>
         <button className="secondaryButton compact" type="button" onClick={()=>void savePool()}>Save pool</button>
       </div>}
@@ -308,7 +308,7 @@ export default function StakeholderDashboard({
       </div>
     </section>
 
-    {canOperate&&pending.length>0&&<section className="panel">
+    {canManageStake&&pending.length>0&&<section className="panel">
       <div className="panelHead"><div><p className="eyebrow">OWNER REVIEW</p><h3>Verify stakeholder credit investment</h3></div><span className="countPill">{pending.length} pending</span></div>
       <div className="manifestList">
         {pending.map(c=><article className="manifestCard" key={c.id}>
