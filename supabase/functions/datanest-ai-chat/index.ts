@@ -37,7 +37,7 @@ type JobContext={
   title:string;
   description:string|null;
   priority:number;
-  status:string;
+  target_status:string;
   required_capabilities:unknown;
   requirements:unknown;
   acceptance:unknown;
@@ -205,7 +205,7 @@ async function finishUsageRequest(
 ){
   const {error}=await client.rpc("service_finish_ai_request",{
     target_request:input.requestId,
-    target_status:input.status,
+    target_status:input.target_status,
     input_tokens:input.inputTokens||0,
     output_tokens:input.outputTokens||0,
     estimated_cost_minor:null,
@@ -513,7 +513,7 @@ Deno.serve(async(request:Request)=>{
       },
       finishRequest:async(input)=>finishUsageRequest(serviceClient,{
         requestId:input.requestId,
-        status:input.status,
+        target_status:input.status,
         errorCategory:input.errorCategory||null,
         errorMessage:input.errorCategory==="staging_intake_failed"
           ?"DataNest AI staging intake failed before provider execution."
@@ -575,7 +575,7 @@ Deno.serve(async(request:Request)=>{
               });
               await finishUsageRequest(serviceClient,{
                 requestId:activeRequestId,
-                status:"succeeded",
+                target_status:"succeeded",
                 inputTokens:ext.inputTokens,
                 outputTokens:ext.outputTokens
               });
@@ -594,7 +594,7 @@ Deno.serve(async(request:Request)=>{
               requestStatus=category;
               await finishUsageRequest(serviceClient,{
                 requestId:activeRequestId,
-                status:category,
+                target_status:category,
                 errorCategory:category==="failed"?"provider_failure":"provider_outcome_unknown",
                 errorMessage:category==="failed"
                   ?"Provider rejected or could not complete the request."
@@ -605,7 +605,7 @@ Deno.serve(async(request:Request)=>{
             requestStatus="denied";
             await finishUsageRequest(serviceClient,{
               requestId:activeRequestId,
-              status:"denied",
+              target_status:"denied",
               errorCategory:String((authz as Record<string,unknown>|null)?.reason||"policy_denied"),
               errorMessage:"Provider request blocked by DataNest policy."
             });
@@ -615,7 +615,7 @@ Deno.serve(async(request:Request)=>{
         if(requestStatus==="pending"){
           await finishUsageRequest(serviceClient,{
             requestId:activeRequestId,
-            status:"embedded"
+            target_status:"embedded"
           });
           requestStatus="embedded";
         }
