@@ -1,57 +1,52 @@
-# DataNest
+# Resonance DataNest
 
-Canonical source repository for **Resonance AppDev - DataNest**.
+**Resonance DataNest** is the Resonance AppDev project operating environment.
 
-## Production integration
+Its two core tools are:
 
-- GitHub account: `DataNest-Supository`
-- Repository: `DataNest-Supository/DataNest`
-- Default branch: `main`
-- Supabase project: `DataNest Supository`
-- Supabase project ref: `sgqdmfgjbprsoqsmgigi`
+- **UNIFI** — project orchestration, planning, manifests, context, checkpoints, artifacts and audit.
+- **TranScheduler** — capability-aware scheduling, dependency handling, reservations, retry/backoff and fair-share execution.
+
+## Canonical stack
+
+- GitHub: `DataNest-Supository/DataNest`
+- Branch: `main`
+- Supabase: `sgqdmfgjbprsoqsmgigi`
 - Supabase URL: `https://sgqdmfgjbprsoqsmgigi.supabase.co`
-- Region: `eu-central-1`
+- Intended Vercel project: `Resonance DataNest`
+
+## Local development
+
+```bash
+cp .env.example .env.local
+npm install
+npm run dev
+```
+
+Set `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in `.env.local`.
 
 ## Vercel
 
-Use the canonical GitHub repository when importing this project into Vercel:
+Import this repository into Vercel and name the project **Resonance DataNest**.
 
-[Deploy DataNest to Vercel](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FDataNest-Supository%2FDataNest&repository-name=DataNest)
+[Import to Vercel](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FDataNest-Supository%2FDataNest&repository-name=Resonance%20DataNest)
 
-Expected Vercel project name: `DataNest`
-
-After import, configure the Supabase values below as Vercel Environment Variables
-for Production and Preview deployments. Do not store privileged service-role keys
-or database passwords in the repository.
-
-## Environment
-
-Required application variables:
+Configure these environment variables in Vercel:
 
 ```env
-SUPABASE_URL=https://sgqdmfgjbprsoqsmgigi.supabase.co
-SUPABASE_PUBLISHABLE_KEY=<set-in-local-or-deployment-environment>
+NEXT_PUBLIC_SUPABASE_URL=https://sgqdmfgjbprsoqsmgigi.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<publishable key>
 ```
 
-Framework-specific public aliases such as `NEXT_PUBLIC_SUPABASE_URL` or
-`VITE_SUPABASE_URL` may be derived at deployment time.
+Never commit privileged credentials.
 
-Never commit a Supabase service-role key, database password, personal access
-token, session cookie, or other privileged credential.
+## Current bootstrap
 
-## Authority
+The production Supabase control plane is populated and seeded with:
+- project: Resonance DataNest
+- tool: UNIFI
+- tool: TranScheduler
+- priority and capability policies
+- project bootstrap authority metadata
 
-The canonical DataNest deployment chain is:
-
-```text
-DataNest-Supository/DataNest (main)
-        |
-        v
-Vercel project: DataNest
-        |
-        v
-Supabase: sgqdmfgjbprsoqsmgigi
-```
-
-RONSAS may reference or orchestrate DataNest, but it must not silently substitute
-a different GitHub repository, Vercel project, or Supabase project.
+See `docs/ARCHITECTURE.md`.
