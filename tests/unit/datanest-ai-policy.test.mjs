@@ -1,7 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  allCertificationGatesPassed,
   canAutoCertify,
+  canHumanCertify,
   canUseUncertifiedEvidence,
   requiredCertificationAuthority,
   contextTrustLabel
@@ -56,4 +58,44 @@ test("uncertified evidence is scoped to the same project, job and session", () =
 test("trust labels do not blur provisional and certified evidence", () => {
   assert.equal(contextTrustLabel("uncertified"), "UNCERTIFIED");
   assert.equal(contextTrustLabel("certified"), "CERTIFIED");
+});
+
+
+test("admin cannot certify owner-only architecture knowledge", () => {
+  assert.equal(
+    canHumanCertify("admin",{category:"architecture",riskClass:"high",hasConflict:false}),
+    false
+  );
+  assert.equal(
+    canHumanCertify("owner",{category:"architecture",riskClass:"high",hasConflict:false}),
+    true
+  );
+});
+
+test("admin can certify normal project knowledge", () => {
+  assert.equal(
+    canHumanCertify("admin",{category:"workflow",riskClass:"normal",hasConflict:false}),
+    true
+  );
+});
+
+test("all certification gates require one passing run for every gate", () => {
+  assert.equal(allCertificationGatesPassed([
+    {gate:"AUDIT",passed:true},
+    {gate:"VERIFY",passed:true},
+    {gate:"VALIDATE",passed:true}
+  ]),false);
+  assert.equal(allCertificationGatesPassed([
+    {gate:"AUDIT",passed:true},
+    {gate:"VERIFY",passed:true},
+    {gate:"VALIDATE",passed:true},
+    {gate:"STRESS_TEST",passed:true}
+  ]),true);
+  assert.equal(allCertificationGatesPassed([
+    {gate:"AUDIT",passed:true},
+    {gate:"VERIFY",passed:false},
+    {gate:"VERIFY",passed:true},
+    {gate:"VALIDATE",passed:true},
+    {gate:"STRESS_TEST",passed:true}
+  ]),true);
 });
