@@ -301,7 +301,7 @@ export default function RnDDashboard({
     setChatBusy(true);
     try {
       const message = chatDraft.trim();
-      const { data, error } = await supabase.functions.invoke("rnd-ai-chat", {
+      const { data, error } = await supabase.functions.invoke("rnd-ai-chat-v2", {
         body: {
           jobId: selectedJob.id,
           message
