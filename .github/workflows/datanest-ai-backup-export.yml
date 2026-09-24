@@ -1,0 +1,59 @@
+name: DataNest AI Backup Export
+
+on:
+  push:
+    branches:
+      - ops/datanest-ai-backup-export-20260925
+
+permissions:
+  contents: read
+
+jobs:
+  export-encrypted-backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download encrypted governed backup envelope
+        env:
+          STAGING_SERVICE_ROLE_KEY: ${{ secrets.DATANEST_AI_STAGING_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$STAGING_SERVICE_ROLE_KEY"
+          curl --fail --silent --show-error \
+            -H "Authorization: Bearer $STAGING_SERVICE_ROLE_KEY" \
+            -H "apikey: $STAGING_SERVICE_ROLE_KEY" \
+            "https://qchttpcyqlqnhvahprhz.supabase.co/functions/v1/datanest-ai-backup-download" \
+            --output datanest-ai-governed-backup-20260925.json
+
+      - name: Validate encrypted backup envelope
+        run: |
+          python - <<'PY'
+          import json, pathlib, sys
+          p=pathlib.Path("datanest-ai-governed-backup-20260925.json")
+          data=json.loads(p.read_text(encoding="utf-8"))
+          assert data["format"]=="datanest-ai-encrypted-backup-envelope-v1"
+          assert data["backup_id"]=="datanest-ai-governed-backup-20260925-01"
+          assert data["staging_project_ref"]=="qchttpcyqlqnhvahprhz"
+          assert data["key_location"]=="production Supabase Vault:datanest_ai_backup_key"
+          assert int(data["chunk_count"])>=1
+          chunks=data["chunks"]
+          assert len(chunks)==int(data["chunk_count"])
+          assert all(c["ciphertext"] and c["chunk_sha256"] for c in chunks)
+          print({
+            "backup_id":data["backup_id"],
+            "payload_sha256":data["payload_sha256"],
+            "chunk_count":data["chunk_count"],
+            "plain_chars":data["plain_chars"],
+            "ciphertext_chars":data["ciphertext_chars"],
+            "bytes":p.stat().st_size,
+          })
+          PY
+
+      - name: Upload encrypted backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: datanest-ai-governed-backup-20260925
+          path: datanest-ai-governed-backup-20260925.json
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
