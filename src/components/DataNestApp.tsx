@@ -15,7 +15,7 @@ type Checkpoint = { id:string; job_id:string; completed:string[]; remaining:stri
 type AuditEvent = { id:number; job_id:string|null; event_type:string; actor:string; payload:Record<string,unknown>; created_at:string };
 type Policy = { id:string; policy_key:string; value:Record<string,unknown> };
 type ProjectMember = { project_id:string; user_id:string; role:"owner"|"admin"|"operator"|"viewer"; status:string };
-type ViewKey = "overview"|"ai"|"stakeholders"|"productlab"|"unifi"|"scheduler"|"capabilities"|"runs"|"checkpoints"|"audit"|"settings";
+type ViewKey = "overview"|"ai"|"aiops"|"productlab"|"unifi"|"scheduler"|"capabilities"|"runs"|"checkpoints"|"audit"|"settings";
 type HealthState = { state:"checking"|"online"|"degraded"|"offline"; checkedAt:string|null; message:string };
 type Summary = { total:number; active:number; running:number; blocked:number; available:number; registered:number };
 
@@ -26,7 +26,7 @@ const jobColumns = "id,job_number,title,description,priority,status,required_cap
 const nav:Array<{key:ViewKey;label:string;group:string;glyph:string}> = [
   {key:"overview",label:"Overview",group:"Project",glyph:"◫"},
   {key:"ai",label:"DataNest AI",group:"Research",glyph:"⌬"},
-  {key:"stakeholders",label:"Stakeholders & AI Credit",group:"Research",glyph:"◉"},
+  {key:"aiops",label:"AI Operations",group:"Research",glyph:"◉"},
   {key:"productlab",label:"Product Lab",group:"Research",glyph:"▣"},
   {key:"unifi",label:"UNIFI Planner",group:"Tools",glyph:"◇"},
   {key:"scheduler",label:"TranScheduler",group:"Tools",glyph:"⌁"},
@@ -42,9 +42,9 @@ const DataNestAiWorkspace = dynamic(() => import("@/components/DataNestAiWorkspa
   loading: () => <section className="panel"><p className="muted">Loading DataNest AI…</p></section>
 });
 
-const StakeholderDashboard = dynamic(() => import("@/components/StakeholderDashboard"), {
+const AiOperationsDashboard = dynamic(() => import("@/components/AiOperationsDashboard"), {
   ssr: false,
-  loading: () => <section className="panel"><p className="muted">Loading stakeholder ledger…</p></section>
+  loading: () => <section className="panel"><p className="muted">Loading AI operations…</p></section>
 });
 
 const ProductLab = dynamic(() => import("@/components/ProductLab"), {
@@ -105,7 +105,7 @@ export default function DataNestApp({session}:{session:Session}) {
   const [reloadingLatest,setReloadingLatest]=useState(false);
 
   const canOperate=membership ? ["owner","admin","operator"].includes(membership.role) : false;
-  const canManageStake=membership ? ["owner","admin"].includes(membership.role) : false;
+  const canManageAi=membership ? ["owner","admin"].includes(membership.role) : false;
 
   const loadSummary=useCallback(async(projectId:string)=>{
     const supabase=getSupabase();
@@ -435,7 +435,7 @@ export default function DataNestApp({session}:{session:Session}) {
         </div>
         {(loadingCore||loadingView)&&<div className="loadingBar" aria-label="Loading DataNest data"><span/></div>}
 
-        {!loadingCore&&project&&view==="overview"&&<Overview project={project} tools={tools} jobs={recentJobs} capabilities={capabilities} counts={summary} setView={setView} canOperate={canOperate}/>}\n        {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError}/>}\n        {!loadingCore&&project&&view==="stakeholders"&&<StakeholderDashboard projectId={project.id} currentUserId={session.user.id} canManageStake={canManageStake}/>}\n        {!loadingCore&&project&&view==="productlab"&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate}/>}
+        {!loadingCore&&project&&view==="overview"&&<Overview project={project} tools={tools} jobs={recentJobs} capabilities={capabilities} counts={summary} setView={setView} canOperate={canOperate}/>}\n        {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError}/>}\n        {!loadingCore&&project&&view==="aiops"&&<AiOperationsDashboard projectId={project.id} currentUserId={session.user.id} canManageAi={canManageAi}/>}\n        {!loadingCore&&project&&view==="productlab"&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate}/>}
         {!loadingCore&&project&&view==="unifi"&&<UnifiPlanner project={project} jobs={jobs} capabilities={capabilities} reload={async()=>{await loadJobsPage(jobPage);await loadSummary(project.id);await loadRecentJobs(project.id);}} setNotice={setNotice} setError={setError} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage}/>}
         {!loadingCore&&view==="scheduler"&&<Scheduler jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage}/>}
         {!loadingCore&&view==="capabilities"&&<Capabilities capabilities={capabilities}/>}
