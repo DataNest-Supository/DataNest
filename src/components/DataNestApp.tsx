@@ -98,7 +98,8 @@ export default function DataNestApp({session}:{session:Session}) {
   const [error,setError]=useState("");
   const [health,setHealth]=useState<HealthState>({state:"checking",checkedAt:null,message:"Checking control plane…"});
 
-  const canOperate=membership ? ["owner","admin","operator"].includes(membership.role) : false;\n  const canManageStake=membership ? ["owner","admin"].includes(membership.role) : false;
+  const canOperate=membership ? ["owner","admin","operator"].includes(membership.role) : false;
+  const canManageStake=membership ? ["owner","admin"].includes(membership.role) : false;
 
   const loadSummary=useCallback(async(projectId:string)=>{
     const supabase=getSupabase();
