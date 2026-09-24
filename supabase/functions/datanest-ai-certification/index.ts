@@ -210,6 +210,33 @@ async function certifyCandidate(input:{
   if(updateError)throw updateError;
   return decision as Record<string,unknown>;
 }
+function assertCertificationDecisionCurrent(
+  decision:Record<string,unknown>,
+  candidate:Candidate
+){
+  const required=requiredCertificationAuthority({
+    category:candidate.category,
+    riskClass:candidate.risk_class,
+    hasConflict:candidate.has_conflict
+  });
+  const authority=String(decision.authority||"");
+  const authorityValid=
+    required==="owner"
+      ?authority==="owner"
+      :required==="admin"
+        ?authority==="owner"||authority==="admin"
+        :authority==="owner"||authority==="admin"||authority==="automation";
+
+  if(
+    String(decision.content_hash||"")!==candidate.content_hash ||
+    String(decision.policy_version||"")!==candidate.policy_version ||
+    String(decision.risk_class||"")!==candidate.risk_class ||
+    !authorityValid
+  ){
+    throw new Error("Certification decision is stale for the current candidate seal or required authority.");
+  }
+}
+
 async function sourceLineage(staging:AnyClient,candidateId:string){
   const {data:links,error:linksError}=await staging
     .from("ai_candidate_evidence")
@@ -397,6 +424,7 @@ Deno.serve(async(request:Request)=>{
       }
       const decision=await existingCertification(staging,candidate.id);
       if(!decision)return json({error:"Certified candidate has no certification decision."},409,origin);
+      assertCertificationDecisionCurrent(decision,candidate);
 
       const lineage=await sourceLineage(staging,candidate.id);
       const supersedesMemoryId=typeof body.supersedesMemoryId==="string"&&body.supersedesMemoryId
