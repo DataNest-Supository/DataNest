@@ -163,5 +163,17 @@ create index ai_validation_runs_candidate_gate_idx
   on public.ai_validation_runs(candidate_id,gate,created_at desc);
 create index ai_certification_decisions_candidate_time_idx
   on public.ai_certification_decisions(candidate_id,created_at desc);
+create index ai_intake_events_parent_event_idx
+  on public.ai_intake_events(parent_event_id);
+create index ai_intake_events_session_idx
+  on public.ai_intake_events(session_id);
+create index ai_reasoning_envelopes_session_idx
+  on public.ai_reasoning_envelopes(session_id);
+create index ai_trend_evidence_event_idx
+  on public.ai_trend_evidence(event_id);
+create index ai_candidate_evidence_event_idx
+  on public.ai_candidate_evidence(event_id);
+create index ai_memory_supersessions_candidate_idx
+  on public.ai_memory_supersessions(candidate_id);
 
 commit;
