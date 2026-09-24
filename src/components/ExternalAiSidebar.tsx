@@ -61,12 +61,14 @@ function clamp(value:number,min:number,max:number){
 export default function ExternalAiSidebar({
   projectId,
   currentUserEmail,
+  activeDataNestAiSession,
   onClose,
   onNotice,
   onError
 }:{
   projectId:string;
   currentUserEmail:string;
+  activeDataNestAiSession:{jobId:string;sessionId:string}|null;
   onClose:()=>void;
   onNotice:(message:string)=>void;
   onError:(message:string)=>void;
@@ -500,6 +502,9 @@ export default function ExternalAiSidebar({
         body:{
           sourceType:"ai_companion",
           externalAiSessionId:sessionId,
+          datanestAiSessionId:selectedJob&&activeDataNestAiSession?.jobId===selectedJob.id
+            ?activeDataNestAiSession.sessionId
+            :null,
           content:content.trim()
         }
       });
