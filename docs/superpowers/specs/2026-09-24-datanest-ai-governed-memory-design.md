@@ -85,7 +85,7 @@ A persistent Supabase development branch, provisionally named `datanest-ai-stagi
 - supersession proposals;
 - release/certification evidence.
 
-Raw staged evidence is retained indefinitely.
+Raw staged evidence is retained indefinitely. The staging environment must be a persistent branch, not an ephemeral preview branch, and must not be deleted as part of normal pull-request lifecycle. Because indefinite retention cannot depend on a single branch instance, implementation must include a recoverable backup/export policy for the staging evidence ledger and certification evidence.
 
 Supabase branch data is treated as isolated staging data. Runtime rows are not assumed to transfer to production through branch merge. Production learning is promoted only through the Certification & Promotion Gateway.
 
@@ -149,6 +149,8 @@ For every human or AI Companion input it must:
 - store lineage metadata;
 - return the staged event ID before inference begins.
 
+The browser never receives staging service credentials and does not connect to the staging database with privileged credentials. The Intake Gateway runs server-side, authenticates the production DataNest caller, enforces project/job authorization, and uses server-held staging credentials to write the isolated staging environment.
+
 If the staging write fails, the AI request fails closed. DataNest AI must not silently answer an untracked development input.
 
 ### 5.3 DataNest AI Runtime
@@ -164,6 +166,8 @@ The AI runtime assembles context in this order:
 Uncertified current-session evidence must remain explicitly distinguishable from certified memory in the runtime envelope and UI.
 
 The runtime may route to approved hosted or future local models through DataNest-managed provider policy. The end-user identity remains **DataNest AI**.
+
+Cross-environment reads of current-session staged evidence also occur server-side. Production browser clients receive only authorized application responses, not branch service credentials. Certification-console reads and writes likewise pass through authenticated server-side gateways so staging isolation does not depend on client secrecy.
 
 ### 5.4 Trend Engine
 
@@ -609,6 +613,8 @@ Raw human and AI Companion inputs remain indefinitely in the persistent staging 
 
 Retention applies to evidence even after certification, rejection, or supersession so the system can perform longitudinal trend analysis and later re-audit.
 
+The retention mechanism must survive branch/service recreation through documented, encrypted backup/export and restore procedures. A staging branch deletion must never be treated as an acceptable retention mechanism or normal cleanup step.
+
 ## 21. Migration Strategy
 
 Implementation must use a non-destructive migration sequence:
@@ -664,4 +670,4 @@ The redesign is complete only when all of the following are demonstrated:
 
 This document authorizes the next architectural stage only: creation of a detailed implementation plan after user review of this written specification.
 
-It does not authorize implementation, branch creation, schema deployment, Supabase branch creation, production mutation, or merging to `main` by itself.
+It does not authorize implementation, branch creation, schema deployment, Supabase branch creation, production mutation, or merging to `main` by itself. If Supabase branch creation carries plan or usage cost, implementation must obtain the required cost confirmation before creating it.
