@@ -1,7 +1,13 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
+import {
+  selectExternalAiClipboardCandidate,
+  shouldAttemptClipboardAutoCapture,
+  type ClipboardAutoCaptureAccess
+} from "@/lib/externalAiClipboard";
+import { calculateCompanionPlacement } from "@/lib/externalAiWindow";
 
 type Job = {
   id:string;
@@ -76,14 +82,21 @@ export default function ExternalAiSidebar({
   const [launchMode,setLaunchMode]=useState<"sidebar"|"companion"|"popout">("sidebar");
   const [handoff,setHandoff]=useState("");
   const [responseText,setResponseText]=useState("");
+  const [lastImportedId,setLastImportedId]=useState("");
   const [embedUrl,setEmbedUrl]=useState("");
   const [busy,setBusy]=useState(false);
+  const [clipboardAccess,setClipboardAccess]=useState<ClipboardAutoCaptureAccess>("unknown");
+  const lastClipboardCapture=useRef("");
 
   const selectedJob=useMemo(
     ()=>jobs.find(job=>job.id===selectedJobId)||null,
     [jobs,selectedJobId]
   );
   const selectedProvider=providers.find(item=>item.key===provider)||providers[0];
+  const preparedHandoff=useMemo(
+    ()=>buildHandoff(),
+    [selectedJob,latestUpdate,suggestions,provider,projectId,currentUserEmail,sessionId,traceKey]
+  );
 
   const loadJobs=useCallback(async()=>{
     const supabase=getSupabase();
@@ -156,7 +169,11 @@ export default function ExternalAiSidebar({
     window.localStorage.setItem("datanest.aiSidebar.job",selectedJobId);
     setSessionId("");
     setTraceKey("");
+    setLatestUpdate(null);
+    setSuggestions([]);
     setResponseText("");
+    setLastImportedId("");
+    lastClipboardCapture.current="";
     setEmbedUrl("");
     void loadJobContext(selectedJobId);
   },[selectedJobId,loadJobContext]);
@@ -171,6 +188,8 @@ export default function ExternalAiSidebar({
     setTraceKey("");
     setHandoff("");
     setResponseText("");
+    setLastImportedId("");
+    lastClipboardCapture.current="";
     setEmbedUrl("");
   },[provider]);
 
@@ -184,6 +203,81 @@ export default function ExternalAiSidebar({
     window.addEventListener("datanest:job-selected",handle);
     return()=>window.removeEventListener("datanest:job-selected",handle);
   },[jobs]);
+
+  const refreshClipboardAccess=useCallback(async():Promise<ClipboardAutoCaptureAccess>=>{
+    if(!navigator.clipboard?.readText){
+      setClipboardAccess("unsupported");
+      return "unsupported";
+    }
+
+    if(!navigator.permissions?.query){
+      setClipboardAccess("prompt");
+      return "prompt";
+    }
+
+    try{
+      const permission=await navigator.permissions.query({name:"clipboard-read" as PermissionName});
+      const next=permission.state as ClipboardAutoCaptureAccess;
+      setClipboardAccess(next);
+      return next;
+    }catch{
+      setClipboardAccess("prompt");
+      return "prompt";
+    }
+  },[]);
+
+  useEffect(()=>{
+    if(!sessionId)return;
+    void refreshClipboardAccess();
+  },[sessionId,refreshClipboardAccess]);
+
+  const captureClipboardResponse=useCallback(async(announce=false)=>{
+    if(!sessionId||!navigator.clipboard?.readText)return;
+
+    try{
+      const clipboardText=await navigator.clipboard.readText();
+      const candidate=selectExternalAiClipboardCandidate({
+        clipboardText,
+        currentResponse:responseText,
+        blockedTexts:[handoff,preparedHandoff,lastClipboardCapture.current]
+      });
+
+      if(!candidate){
+        if(announce)onNotice("Clipboard does not contain a new external AI response.");
+        return;
+      }
+
+      lastClipboardCapture.current=candidate;
+      setResponseText(candidate);
+      setLastImportedId("");
+      onNotice("External AI response captured into Return to DataNest. Review it, then click Import.");
+    }catch{
+      if(announce){
+        onError("Clipboard access was blocked. Paste the external AI response into Return to DataNest manually.");
+      }
+    }
+  },[sessionId,responseText,handoff,preparedHandoff,onNotice,onError]);
+
+  useEffect(()=>{
+    if(!sessionId)return;
+
+    const capture=()=>{
+      if(shouldAttemptClipboardAutoCapture(clipboardAccess)){
+        void captureClipboardResponse(false);
+      }
+    };
+    const captureWhenVisible=()=>{
+      if(document.visibilityState==="visible")capture();
+    };
+
+    window.addEventListener("focus",capture);
+    document.addEventListener("visibilitychange",captureWhenVisible);
+
+    return()=>{
+      window.removeEventListener("focus",capture);
+      document.removeEventListener("visibilitychange",captureWhenVisible);
+    };
+  },[sessionId,clipboardAccess,captureClipboardResponse]);
 
   function buildHandoff(trace?:{sessionId?:string;traceKey?:string;providerLabel?:string}){
     if(!selectedJob)return "";
@@ -249,7 +343,7 @@ export default function ExternalAiSidebar({
   }
 
   async function copyHandoff(){
-    const text=handoff||buildHandoff();
+    const text=handoff||preparedHandoff;
     if(!text)return;
     setHandoff(text);
     try{
@@ -262,20 +356,34 @@ export default function ExternalAiSidebar({
 
   function companionFeatures(){
     const screenInfo=window.screen as Screen & {availLeft?:number;availTop?:number};
+    const screenLeft=screenInfo.availLeft||0;
+    const screenTop=screenInfo.availTop||0;
     const screenWidth=screenInfo.availWidth||window.innerWidth;
     const screenHeight=screenInfo.availHeight||window.innerHeight;
-    const popupWidth=clamp(Math.round(screenWidth*0.38),460,760);
-    const popupHeight=clamp(screenHeight-80,620,1100);
-    const left=Math.max(0,(screenInfo.availLeft||0)+screenWidth-popupWidth);
-    const top=Math.max(0,(screenInfo.availTop||0)+40);
+    const browserLeft=Number.isFinite(window.screenX)?window.screenX:screenLeft;
+    const browserTop=Number.isFinite(window.screenY)?window.screenY:screenTop;
+    const browserWidth=window.outerWidth||screenWidth;
+    const browserHeight=window.outerHeight||screenHeight;
+    const placement=calculateCompanionPlacement({
+      screenLeft,
+      screenTop,
+      screenWidth,
+      screenHeight,
+      browserLeft,
+      browserTop,
+      browserWidth,
+      browserHeight,
+      dockWidth:width,
+      preferredWidth:width
+    });
     return [
       "popup=yes",
       "resizable=yes",
       "scrollbars=yes",
-      "width="+popupWidth,
-      "height="+popupHeight,
-      "left="+left,
-      "top="+top
+      "width="+placement.width,
+      "height="+placement.height,
+      "left="+placement.left,
+      "top="+placement.top
     ].join(",");
   }
 
@@ -287,7 +395,7 @@ export default function ExternalAiSidebar({
     return url.toString();
   }
 
-  function openProviderWindow(mode:"companion"|"popout",promptText=handoff){
+  function openProviderWindow(mode:"companion"|"popout",promptText=handoff||preparedHandoff){
     const name=mode==="companion"
       ? "datanest-ai-companion-"+selectedProvider.key
       : "_blank";
@@ -300,7 +408,7 @@ export default function ExternalAiSidebar({
   async function startSession(mode:"sidebar"|"companion"|"popout"){
     if(!selectedJob)return;
 
-    const draftHandoff=buildHandoff();
+    const draftHandoff=preparedHandoff;
     setHandoff(draftHandoff);
     setBusy(true);
     onError("");
@@ -380,10 +488,8 @@ export default function ExternalAiSidebar({
     }
   }
 
-  async function importResponse(event:FormEvent){
-    event.preventDefault();
-    if(!sessionId||!responseText.trim())return;
-
+  async function importResponseContent(content:string){
+    if(!sessionId||!content.trim())return;
     const supabase=getSupabase();
     if(!supabase)return;
 
@@ -392,25 +498,89 @@ export default function ExternalAiSidebar({
     try{
       const {data,error}=await supabase.rpc("import_external_ai_response",{
         target_session:sessionId,
-        response_content:responseText.trim()
+        response_content:content.trim()
       });
       if(error)throw error;
 
       const payload=(data||{}) as Record<string,unknown>;
+      const inputId=String(payload.input_id||"");
       setResponseText("");
+      setLastImportedId(inputId);
       onNotice(
-        "External AI response imported into "+
+        "External AI result imported into "+
         (selectedJob?jobCode(selectedJob):"the Job Manifest")+
         (payload.idempotent?" using the existing tracked import.":".")
       );
       window.dispatchEvent(new CustomEvent("datanest:external-ai-imported",{
-        detail:{jobId:selectedJobId,inputId:String(payload.input_id||"")}
+        detail:{jobId:selectedJobId,inputId}
       }));
     }catch(error){
       onError(error instanceof Error?error.message:"Unable to import external AI response.");
     }finally{
       setBusy(false);
     }
+  }
+
+  async function enableClipboardAutoFill(){
+    if(!sessionId){
+      onError("Open a tracked AI companion session before enabling auto-fill.");
+      return;
+    }
+    if(!navigator.clipboard?.readText){
+      setClipboardAccess("unsupported");
+      onError("This browser does not expose clipboard reading to DataNest. Paste the response manually.");
+      return;
+    }
+
+    try{
+      const clipboardText=await navigator.clipboard.readText();
+      const permissionState=await refreshClipboardAccess();
+      const candidate=selectExternalAiClipboardCandidate({
+        clipboardText,
+        currentResponse:responseText,
+        blockedTexts:[handoff,preparedHandoff,lastClipboardCapture.current]
+      });
+
+      if(candidate){
+        lastClipboardCapture.current=candidate;
+        setResponseText(candidate);
+        setLastImportedId("");
+      }
+
+      if(permissionState==="granted"){
+        onNotice(
+          candidate
+            ?"Auto-fill enabled and the current external AI response was captured. Review it, then click Import."
+            :"Auto-fill enabled. Copy the external AI response and return to DataNest."
+        );
+      }else{
+        onNotice(
+          candidate
+            ?"Clipboard content was captured, but the browser did not grant persistent auto-fill permission."
+            :"Clipboard access was allowed once, but persistent auto-fill permission is not available. Use Paste from clipboard when needed."
+        );
+      }
+    }catch{
+      const permissionState=await refreshClipboardAccess();
+      if(permissionState==="denied"){
+        onError("Clipboard access is blocked for DataNest. Allow clipboard access in the browser site permissions, then click Enable auto-fill again.");
+      }else{
+        onError("Clipboard access was not granted. Click Enable auto-fill and accept the browser clipboard permission prompt.");
+      }
+    }
+  }
+
+  async function pasteClipboardResponse(){
+    if(shouldAttemptClipboardAutoCapture(clipboardAccess)){
+      await captureClipboardResponse(true);
+    }else{
+      await enableClipboardAutoFill();
+    }
+  }
+
+  async function importResponse(event:FormEvent){
+    event.preventDefault();
+    await importResponseContent(responseText);
   }
 
   function beginResize(event:React.PointerEvent<HTMLDivElement>){
@@ -473,6 +643,15 @@ export default function ExternalAiSidebar({
           </div>
           <strong>{selectedJob.title}</strong>
           <small>{"Priority "+selectedJob.priority+" · Updated "+new Date(selectedJob.updated_at).toLocaleString()}</small>
+          <div className="externalAiTraceGrid">
+            <span>Manifest</span><code>{jobCode(selectedJob)}</code>
+            <span>Job ID</span><code>{selectedJob.id}</code>
+            <span>Provider</span><code>{selectedProvider.label}</code>
+            <span>Trace</span><code>{traceKey||"created when companion opens"}</code>
+          </div>
+          <p className="externalAiPromptReady">
+            Job Manifest handoff is prepared. Open the companion, verify the tracking header, then click <b>Send</b>.
+          </p>
         </div>}
 
         {selectedProvider.embed==="blocked"&&<div className="externalAiEmbedNotice" role="status">
@@ -489,7 +668,7 @@ export default function ExternalAiSidebar({
           >{busy
             ?"Opening…"
             :selectedProvider.embed==="blocked"
-              ?"Open companion"
+              ?"Open companion + load prompt"
               :"Open in sidebar"}</button>
           <button
             className="secondaryButton compact"
@@ -563,30 +742,12 @@ export default function ExternalAiSidebar({
         </p>
       </section>}
 
-      {handoff&&<details className="externalAiDockSection externalAiHandoff" open={!embedUrl}>
-        <summary>Job Manifest handoff</summary>
-        <textarea rows={10} readOnly value={handoff}/>
-      </details>}
 
-      {sessionId&&<form className="externalAiDockSection externalAiImport" onSubmit={importResponse}>
-        <div className="rowBetween">
-          <div>
-            <p className="eyebrow">RETURN TO DATANEST</p>
-            <b>Import external AI response</b>
-          </div>
-          <span className="badge good">{launchMode.toUpperCase()} · OPEN</span>
-        </div>
-        <textarea
-          rows={7}
-          value={responseText}
-          onChange={event=>setResponseText(event.target.value)}
-          placeholder="Paste the useful external AI response, code recommendation, decision, test result, or development plan here…"
-        />
-        <button className="primaryButton" disabled={busy||!responseText.trim()}>
-          {busy?"Importing…":"Import response to DataNest"}
-        </button>
-        <small>{"Tracked session "+sessionId.slice(0,8)}</small>
-      </form>}
+
+      {selectedJob&&<details className="externalAiDockSection externalAiHandoff" open={false}>
+        <summary>{"Job Manifest handoff · "+jobCode(selectedJob)+" · JOB ID "+selectedJob.id}</summary>
+        <textarea rows={10} readOnly value={handoff||preparedHandoff}/>
+      </details>}
 
       {!sessionId&&<div className="externalAiDockEmpty">
         <div>AI</div>
@@ -594,5 +755,64 @@ export default function ExternalAiSidebar({
         <p>Providers that permit embedding can open inside this dock. ChatGPT uses managed companion mode so its secure web app opens beside DataNest while the tracked workflow remains here.</p>
       </div>}
     </div>
+
+    <form className="externalAiReturnDock externalAiImport" onSubmit={importResponse}>
+      <div className="rowBetween">
+        <div>
+          <p className="eyebrow">RETURN TO DATANEST</p>
+          <b>External AI response</b>
+        </div>
+        <span className={"badge "+(lastImportedId?"good":clipboardAccess==="granted"?"good":sessionId?"live":"neutral")}>
+          {lastImportedId?"IMPORTED":clipboardAccess==="granted"?"AUTO-FILL ON":sessionId?launchMode.toUpperCase()+" · READY":"WAITING"}
+        </span>
+      </div>
+      <p className="externalAiImportHint">
+        {!sessionId
+          ?"Open a tracked AI companion session to enable response capture and import."
+          :clipboardAccess==="granted"
+            ?"Auto-fill is on. Copy the finished AI answer, return to DataNest, review the captured text, then click Import."
+            :clipboardAccess==="denied"
+              ?"Clipboard access is blocked. Allow clipboard access for DataNest in the browser, then enable auto-fill again."
+              :"Enable auto-fill once so the browser can grant DataNest clipboard-read permission. Manual paste remains available."}
+      </p>
+      <textarea
+        rows={5}
+        disabled={!sessionId}
+        value={responseText}
+        onChange={event=>setResponseText(event.target.value)}
+        placeholder={sessionId
+          ?"External AI response will appear here automatically when copied, or paste/edit it manually…"
+          :"Return to DataNest will activate when a tracked AI session is open."}
+      />
+      <div className="externalAiImportActions">
+        <button
+          className="secondaryButton compact"
+          type="button"
+          disabled={busy||!sessionId}
+          onClick={()=>void pasteClipboardResponse()}
+        >
+          {clipboardAccess==="granted"?"Paste from clipboard":"Enable auto-fill"}
+        </button>
+        <button
+          className="primaryButton compact"
+          disabled={busy||!sessionId||!responseText.trim()}
+        >
+          {busy?"Importing…":"Import to DataNest"}
+        </button>
+        <button
+          className="textButton"
+          type="button"
+          disabled={busy||!responseText}
+          onClick={()=>setResponseText("")}
+        >
+          Clear
+        </button>
+      </div>
+      <small>
+        {sessionId
+          ?"Tracked session "+sessionId.slice(0,8)+(lastImportedId?" · Input "+lastImportedId.slice(0,8):"")
+          :"No tracked session yet"}
+      </small>
+    </form>
   </aside>;
 }

@@ -1,0 +1,159 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+
+test("clipboard candidate keeps only a new external AI response", async () => {
+  let mod = null;
+  try {
+    mod = await import("../../src/lib/externalAiClipboard.ts");
+  } catch {
+    mod = null;
+  }
+
+  assert.equal(
+    typeof mod?.selectExternalAiClipboardCandidate,
+    "function",
+    "expected selectExternalAiClipboardCandidate to exist"
+  );
+
+  const select = mod.selectExternalAiClipboardCandidate;
+  const handoff = "RESONANCE DATANEST — LIVE EXTERNAL AI HANDOFF\n[DATANEST TRACKING HEADER]";
+
+  assert.equal(
+    select({
+      clipboardText: "Completed external AI result",
+      currentResponse: "",
+      blockedTexts: [handoff]
+    }),
+    "Completed external AI result"
+  );
+  assert.equal(select({ clipboardText: "   ", currentResponse: "", blockedTexts: [] }), null);
+  assert.equal(select({ clipboardText: handoff, currentResponse: "", blockedTexts: [handoff] }), null);
+  assert.equal(
+    select({
+      clipboardText: "Completed external AI result",
+      currentResponse: "Completed external AI result",
+      blockedTexts: []
+    }),
+    null
+  );
+});
+
+test("Return to DataNest is an always-visible dock footer, not a scrolling-body child", () => {
+  const source = fs.readFileSync(
+    path.join(repoRoot, "src/components/ExternalAiSidebar.tsx"),
+    "utf8"
+  );
+
+  assert.match(
+    source,
+    /className="externalAiReturnDock externalAiImport"/,
+    "expected a dedicated Return to DataNest dock footer"
+  );
+  assert.doesNotMatch(
+    source,
+    /\{sessionId&&<form className="externalAiReturnDock externalAiImport"/,
+    "Return to DataNest must render even before a session is opened"
+  );
+  assert.match(
+    source,
+    /<\/div>\s*\n\s*<form className="externalAiReturnDock externalAiImport"/,
+    "Return to DataNest must sit after the scrolling AI dock body"
+  );
+});
+
+test("clipboard capture auto-fills on return without importing automatically", () => {
+  const source = fs.readFileSync(
+    path.join(repoRoot, "src/components/ExternalAiSidebar.tsx"),
+    "utf8"
+  );
+
+  assert.match(source, /window\.addEventListener\("focus"/, "expected clipboard capture when DataNest regains focus");
+  assert.match(source, /Paste from clipboard/, "expected a manual clipboard fallback");
+  assert.doesNotMatch(source, /Paste \+ import to DataNest/, "clipboard capture must not import automatically");
+});
+
+
+test("clipboard auto-capture only runs after clipboard access is armed", async () => {
+  const mod = await import("../../src/lib/externalAiClipboard.ts");
+  assert.equal(
+    typeof mod.shouldAttemptClipboardAutoCapture,
+    "function",
+    "expected shouldAttemptClipboardAutoCapture to exist"
+  );
+  assert.equal(mod.shouldAttemptClipboardAutoCapture("granted"), true);
+  assert.equal(mod.shouldAttemptClipboardAutoCapture("prompt"), false);
+  assert.equal(mod.shouldAttemptClipboardAutoCapture("denied"), false);
+  assert.equal(mod.shouldAttemptClipboardAutoCapture("unsupported"), false);
+});
+
+test("companion placement preserves the DataNest dock on a maximized desktop", async () => {
+  let mod = null;
+  try {
+    mod = await import("../../src/lib/externalAiWindow.ts");
+  } catch {
+    mod = null;
+  }
+
+  assert.equal(
+    typeof mod?.calculateCompanionPlacement,
+    "function",
+    "expected calculateCompanionPlacement to exist"
+  );
+
+  const placement = mod.calculateCompanionPlacement({
+    screenLeft: 0,
+    screenTop: 0,
+    screenWidth: 1920,
+    screenHeight: 1080,
+    browserLeft: 0,
+    browserTop: 0,
+    browserWidth: 1920,
+    browserHeight: 1000,
+    dockWidth: 500,
+    preferredWidth: 500
+  });
+
+  assert.ok(
+    placement.left + placement.width <= 1920 - 500 - 8,
+    "companion must not cover the right-side DataNest dock"
+  );
+});
+
+test("companion placement uses free screen space to the right when available", async () => {
+  const { calculateCompanionPlacement } = await import("../../src/lib/externalAiWindow.ts");
+  const placement = calculateCompanionPlacement({
+    screenLeft: 0,
+    screenTop: 0,
+    screenWidth: 1920,
+    screenHeight: 1080,
+    browserLeft: 0,
+    browserTop: 20,
+    browserWidth: 1180,
+    browserHeight: 980,
+    dockWidth: 500,
+    preferredWidth: 500
+  });
+
+  assert.ok(placement.left >= 1188, "companion should sit outside DataNest when right-side screen space is available");
+  assert.ok(placement.left + placement.width <= 1920, "companion must remain on-screen");
+});
+
+test("Return to DataNest exposes an explicit clipboard permission arm", () => {
+  const source = fs.readFileSync(
+    path.join(repoRoot, "src/components/ExternalAiSidebar.tsx"),
+    "utf8"
+  );
+
+  assert.match(source, /Enable auto-fill/, "expected a one-time clipboard permission control");
+  assert.match(source, /navigator\.permissions/, "expected clipboard permission state detection");
+  assert.match(
+    source,
+    /shouldAttemptClipboardAutoCapture\(clipboardAccess\)/,
+    "focus capture must be gated on granted clipboard access"
+  );
+});
