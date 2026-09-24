@@ -4,7 +4,7 @@
 
 **Goal:** Replace UNIFI Copilot and active contribution/stake scoring with a governed DataNest AI runtime that stages every human and AI Companion input, learns project-wide only from certified memory, and promotes knowledge through auditable validation and certification gates.
 
-**Architecture:** The browser remains a static Next.js client authenticated against the production Supabase project. Production Edge Functions authenticate the caller, validate Job access, and bridge to a persistent isolated Supabase staging branch using server-held branch credentials; raw input never bypasses the staging intake gateway. Production stores only certified-memory objects and operational AI usage/policy data, while the persistent staging branch stores immutable raw evidence, sessions, trend clusters, candidates, validation runs, certification decisions, and reasoning envelopes.
+**Architecture:** The browser remains a static Next.js client authenticated against the production Supabase project. Production Edge Functions authenticate the caller, validate Job access, and bridge to a persistent isolated Supabase staging project using server-held branch credentials; raw input never bypasses the staging intake gateway. Production stores only certified-memory objects and operational AI usage/policy data, while the dedicated staging project stores immutable raw evidence, sessions, trend clusters, candidates, validation runs, certification decisions, and reasoning envelopes.
 
 **Tech Stack:** Next.js 15, React 19, TypeScript 5.9, Supabase Postgres/Auth/Edge Functions, `@supabase/supabase-js` 2.x, Node test runner, Playwright 1.55, GitHub Actions, GitHub Pages, Docker.
 
@@ -24,7 +24,7 @@
 - Keep provider connections, server-side credentials, allowlists, usage accounting, budget controls, reconciliation, authentication, authorization, and RLS.
 - Browser code must never receive staging service credentials.
 - All exposed tables use RLS; privileged cross-environment writes happen only server-side.
-- Staging-only DDL must not live in the normal production migration directory, because Supabase branch merges deploy normal migrations to production.
+- Staging-only DDL must not live in the normal production migration directory, because Supabase schema deployments deploy normal migrations to production.
 - Do not merge the DataNest AI implementation to `main` until exact-head CI, database/security checks, stress tests, and browser acceptance pass.
 - Do not merge to `main` without a separate explicit merge instruction after the implementation PR is ready.
 
@@ -112,7 +112,7 @@ This preflight happens at execution time before Task 1 code changes.
 - If PR #1 / `feature/ai-companion-trace-handoff` is still unmerged, create the implementation branch/worktree from its exact current head so External AI Companion trace work is preserved. If it has merged, branch from the resulting exact `main` head.
 - Use the required worktree workflow at execution time; do not develop directly in the existing checkout.
 - Before creating the Supabase branch, retrieve the current branch cost for the project organization, repeat the amount to the user, and obtain the required explicit cost confirmation. Only then create the persistent branch `datanest-ai-staging`.
-- Record the staging branch URL/publishable/service-role/database credentials only in the authorized secret store used for development and CI. Never commit them.
+- Record the staging project URL/publishable/service-role/database credentials only in the authorized secret store used for development and CI. Never commit them.
 - The branch must remain persistent. Do not wire its lifecycle to PR close/merge.
 - Verify whether the persistent branch has a native recoverable backup/PITR mechanism. If it does not, Task 11's encrypted export path becomes a blocking release gate until a durable external destination is selected.
 
@@ -294,7 +294,7 @@ git commit -m "feat: add DataNest AI governance policy primitives"
 **Interfaces:**
 - Consumes: production-authorized UUIDs for project/job/user as opaque provenance values; staging service-role operations.
 - Produces: staging tables `ai_sessions`, `ai_intake_events`, `ai_reasoning_envelopes`, `ai_trend_clusters`, `ai_trend_evidence`, `ai_learning_candidates`, `ai_candidate_evidence`, `ai_validation_runs`, `ai_certification_decisions`, `ai_memory_supersessions`.
-- Important: project/job UUIDs in staging intentionally have no FK to staging `projects/jobs`, because production data is not copied to a new Supabase branch. The production gateway validates those identities before any write.
+- Important: project/job UUIDs in staging intentionally have no FK to staging `projects/jobs`, because production data is not copied to a new Supabase staging project. The production gateway validates those identities before any write.
 
 - [ ] **Step 1: Write the staging acceptance SQL first**
 
@@ -362,7 +362,7 @@ end $$;
 
 - [ ] **Step 2: Verify the acceptance SQL fails before migration**
 
-Run against the new staging branch:
+Run against the new staging project:
 
 ```bash
 psql "$DATANEST_AI_STAGING_DB_URL" -v ON_ERROR_STOP=1 -f tests/sql/datanest_ai_staging_acceptance.sql
@@ -548,7 +548,7 @@ Do not add this file under `supabase/migrations/`; it is staging-only and must n
 
 - [ ] **Step 4: Apply the staging migration only to the branch and run acceptance**
 
-Apply it to the branch with the branch-specific project ref, then run:
+Apply it to the branch with the staging project ref, then run:
 
 ```bash
 psql "$DATANEST_AI_STAGING_DB_URL" -v ON_ERROR_STOP=1 -f tests/sql/datanest_ai_staging_acceptance.sql
@@ -935,9 +935,9 @@ Replace `public.service_finish_ai_request` with the existing usage-accounting lo
 
 Do not drop `contribution_ledger`, stake tables, or historical rows.
 
-- [ ] **Step 6: Validate the migration on the staging branch**
+- [ ] **Step 6: Validate the migration on the staging project**
 
-Apply the production migration to the staging branch first, then run:
+Apply the production migration to the staging project first, then run:
 
 ```bash
 psql "$DATANEST_AI_STAGING_DB_URL" -v ON_ERROR_STOP=1 -f tests/sql/datanest_ai_production_acceptance.sql
@@ -1167,9 +1167,9 @@ npm run check
 
 Expected: PASS.
 
-- [ ] **Step 7: Deploy only to the staging branch for integration testing**
+- [ ] **Step 7: Deploy only to the staging project for integration testing**
 
-Deploy `datanest-ai-chat` to the staging branch with branch-specific secrets. Do not deploy it to production in this task.
+Deploy `datanest-ai-chat` to the staging project with staging-project secrets. Do not deploy it to production in this task.
 
 - [ ] **Step 8: Commit**
 
@@ -1427,7 +1427,7 @@ npm test
 npm run check
 ```
 
-Deploy the function to the staging branch for integration testing, not production.
+Deploy the function to the staging project for integration testing, not production.
 
 - [ ] **Step 6: Commit**
 
@@ -1821,7 +1821,7 @@ git commit -m "feat: retire stake scoring UI and add AI operations"
 - Modify: `package.json`
 
 **Interfaces:**
-- E2E seed consumes staging branch URL + service key + `DATANEST_AI_E2E_EMAIL/PASSWORD`.
+- E2E seed consumes staging project URL + service key + `DATANEST_AI_E2E_EMAIL/PASSWORD`.
 - Browser test consumes branch-hosted preview URL and the same E2E user credentials.
 - Stress test calls `datanest-ai-chat` with concurrent unique IDs plus deliberate duplicates.
 
@@ -1843,7 +1843,7 @@ Keep all existing scripts.
 
 - [ ] **Step 2: Implement deterministic branch seed**
 
-The seed script uses the branch service-role client and never prints credentials:
+The seed script uses the staging-project service-role client and never prints credentials:
 
 ```js
 const admin=createClient(process.env.DATANEST_AI_STAGING_URL,process.env.DATANEST_AI_STAGING_SERVICE_ROLE_KEY,{
@@ -1918,7 +1918,7 @@ if(duplicates.some(result=>result.error||!result.data?.idempotent))throw new Err
 
 Afterward query staging with service role and assert 25 distinct human intake events and 25 distinct output events, and assert no event from a second seeded Job appears in the first Job/session context. Exit non-zero on mismatch.
 
-- [ ] **Step 5: Run E2E/stress on the persistent staging branch**
+- [ ] **Step 5: Run E2E/stress on the dedicated staging project**
 
 Run:
 
@@ -2002,7 +2002,7 @@ The runbook must state:
 - raw evidence is retained indefinitely;
 - native branch backup/PITR, if available, is the primary recovery mechanism;
 - encrypted export is the secondary recovery mechanism;
-- production release is blocked until at least one durable backup destination outside the staging branch is configured and a restore drill succeeds;
+- production release is blocked until at least one durable backup destination outside the staging project is configured and a restore drill succeeds;
 - if native persistent-branch backup is unavailable, stop and obtain user approval for the durable external destination rather than silently choosing one.
 
 This is an explicit blocking gate, not a deferred promise.
@@ -2034,14 +2034,14 @@ node scripts/restore-datanest-ai-staging.mjs "$BACKUP_FILE" \
   --verify-only
 ```
 
-Expected: every exported table reports identical row count and canonical hash on the persistent staging branch. Then perform an idempotent restore of the same backup:
+Expected: every exported table reports identical row count and canonical hash on the dedicated staging project. Then perform an idempotent restore of the same backup:
 
 ```bash
 node scripts/restore-datanest-ai-staging.mjs "$BACKUP_FILE" \
   --target-ref "$DATANEST_AI_STAGING_PROJECT_REF"
 ```
 
-Expected: PASS, no duplicate primary keys, and post-restore counts/hashes remain unchanged. This tests decrypt, validation, target-ref protection, dependency ordering, and upsert behavior without deleting raw retained evidence. Keep the persistent staging branch.
+Expected: PASS, no duplicate primary keys, and post-restore counts/hashes remain unchanged. This tests decrypt, validation, target-ref protection, dependency ordering, and upsert behavior without deleting raw retained evidence. Keep the dedicated staging project.
 
 - [ ] **Step 8: Commit**
 
@@ -2061,7 +2061,7 @@ git commit -m "feat: add recoverable DataNest AI staging backups"
 - Modify: `public/release-manifest.json` only through the generator during build, not by hand.
 
 **Interfaces:**
-- CI consumes repository secrets for the persistent staging branch and E2E account.
+- CI consumes repository secrets for the dedicated staging project and E2E account.
 - Release manifest reports database release `datanest-ai-governed-memory-v1` and Edge Function versions.
 
 - [ ] **Step 1: Extend normal CI without weakening existing checks**
@@ -2096,7 +2096,7 @@ Required secret names:
 - `DATANEST_AI_E2E_EMAIL`
 - `DATANEST_AI_E2E_PASSWORD`
 
-The browser job does not depend on an unspecified Vercel/Pages preview. Build a local static export whose public Supabase runtime points at the persistent staging branch:
+The browser job does not depend on an unspecified Vercel/Pages preview. Build a local static export whose public Supabase runtime points at the dedicated staging project:
 
 ```yaml
 - name: Fail clearly when governed staging secrets are absent
@@ -2213,7 +2213,7 @@ git commit -m "ci: certify DataNest AI governed memory releases"
 - Add final verification evidence to the PR body; do not fabricate or pre-write pass results.
 
 **Interfaces:**
-- Consumes: exact Git commit, persistent staging branch, exact Edge Function versions, full CI/certification results.
+- Consumes: exact Git commit, dedicated staging project, exact Edge Function versions, full CI/certification results.
 - Produces: a review-ready PR; no merge in this task.
 
 - [ ] **Step 1: Rebase/alignment check before final verification**
@@ -2225,7 +2225,7 @@ After any rebase, re-run all checks from Task 12.
 - [ ] **Step 2: Run Supabase advisors on both environments**
 
 Run security and performance advisors against:
-- persistent staging branch;
+- dedicated staging project;
 - production project schema as represented by the candidate migration state before production apply.
 
 No new RLS, exposed-secret, unsafe-function, or missing-index finding attributable to DataNest AI may remain unresolved.
@@ -2291,7 +2291,7 @@ The PR body must summarize:
 - raw human/AI Companion evidence is staged and retained;
 - certified memory is project-wide and traceable;
 - hybrid/tiered certification rules;
-- exact staging branch/ref used;
+- exact staging project/ref used;
 - exact Edge Function versions;
 - exact-head test/security/stress/browser results;
 - known operational backup destination/capability.
@@ -2317,3 +2317,8 @@ Before execution, verify the plan against the approved spec:
 - Retention and recovery: Task 11 and Task 13.
 - Migration/release/rollback boundaries: Tasks 3, 12, 13.
 - No task authorizes a production merge without an explicit later instruction.
+## Execution Topology Amendment — 2026-09-24
+
+**Ruling:** Supabase Pro Branching is not required for the approved functionality. Replace every planned dedicated Supabase staging project with the already-created dedicated staging project **DataNest AI Staging** (project ref `qchttpcyqlqnhvahprhz`, region `eu-central-1`). Production remains project ref `sgqdmfgjbprsoqsmgigi`. All server-only gateway, RLS, certification, retention, backup, stress-test, and promotion requirements remain binding. Staging-only DDL must be applied only to `qchttpcyqlqnhvahprhz` and must never be applied to production. Git branch `feature/datanest-ai-governed-memory` remains the code-isolation boundary.
+
+
