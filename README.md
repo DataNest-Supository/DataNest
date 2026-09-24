@@ -14,7 +14,7 @@
 - Hosting: **provider-agnostic**
 - Optional managed host: **Vercel**
 
-GitHub and Supabase are the required authorities. Vercel is not required for the application to function and is not a completion dependency.
+GitHub and Supabase are the required authorities. Hosting is replaceable infrastructure.
 
 ## Web UI
 
@@ -22,36 +22,53 @@ The UI includes authenticated access, an overview dashboard, UNIFI Job Manifest 
 
 The sign-in screen intentionally does not create Supabase Auth users. Create authorized users through Supabase Auth administration, then use password or magic-link sign-in.
 
-## Local or self-hosted operation
+## Runtime configuration
+
+Preferred environment variables are runtime-resolved:
+
+```env
+SUPABASE_URL=https://sgqdmfgjbprsoqsmgigi.supabase.co
+SUPABASE_PUBLISHABLE_KEY=<publishable key>
+```
+
+The public Supabase configuration is injected by the server at request time, so the same production build/container can be moved between hosts without rebuilding for public configuration changes.
+
+## Local development
 
 ```bash
 cp .env.example .env.local
 npm install
-npm run build
-npm start
+npm run dev
 ```
 
-Required environment values:
+## Production
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://sgqdmfgjbprsoqsmgigi.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<publishable key>
+Node/Windows:
+
+```powershell
+$env:SUPABASE_PUBLISHABLE_KEY="<publishable key>"
+.\scripts\start-production.ps1
 ```
 
-Validation:
+Docker:
+
+```bash
+docker compose up --build -d
+```
+
+See `docs/DEPLOYMENT.md` for provider-agnostic deployment instructions.
+
+## Validation
 
 ```bash
 npm run check
 npm run build
+docker build -t resonance-datanest:ci .
 ```
 
 ## Optional Vercel deployment
 
-If a managed public deployment is desired, this repository can be imported into Vercel as **Resonance DataNest**:
-
-[Import Resonance DataNest to Vercel](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FDataNest-Supository%2FDataNest&repository-name=Resonance%20DataNest)
-
-Configure the two public Supabase environment variables in the deployment environment. Never commit service-role keys, database passwords, access tokens, MFA material or reusable session credentials.
+If a managed public deployment is desired, this repository can still be imported into Vercel as **Resonance DataNest**. Vercel is not required for core operation.
 
 ## Scheduling safety
 

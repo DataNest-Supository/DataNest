@@ -16,3 +16,5 @@ jobs:
       - run: npm install
       - run: npm run check
       - run: npm run build
+      - name: Build provider-agnostic container
+        run: docker build -t resonance-datanest:ci .
