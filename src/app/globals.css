@@ -191,3 +191,5 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
   .rndMessage{max-width:96%}
   .rndChatComposer .rowBetween{align-items:flex-start;flex-direction:column}
 }
+
+.rndInputActions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;padding-top:9px;border-top:1px solid rgba(255,255,255,.05)}
