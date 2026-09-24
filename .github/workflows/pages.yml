@@ -60,10 +60,10 @@ jobs:
             https://datanest-supository.github.io/DataNest/ \
             -o /tmp/datanest-home.html
           grep -q "Resonance DataNest" /tmp/datanest-home.html
-      - name: Verify health endpoint
+      - name: Verify static health marker
         run: |
           curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors \
-            https://datanest-supository.github.io/DataNest/api/health/ \
+            https://datanest-supository.github.io/DataNest/health.json \
             -o /tmp/datanest-health.json
           grep -q '"ok":true' /tmp/datanest-health.json
           grep -q '"project":"Resonance DataNest"' /tmp/datanest-health.json
