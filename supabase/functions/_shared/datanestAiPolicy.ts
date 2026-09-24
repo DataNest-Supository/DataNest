@@ -49,3 +49,28 @@ export function canUseUncertifiedEvidence(
 export function contextTrustLabel(state: TrustState): "UNCERTIFIED" | "CERTIFIED" {
   return state === "certified" ? "CERTIFIED" : "UNCERTIFIED";
 }
+
+
+export function canHumanCertify(
+  role:ProjectRole,
+  candidate:{category:string;riskClass:RiskClass;hasConflict:boolean}
+):boolean {
+  const required=requiredCertificationAuthority(candidate);
+  if(required==="owner")return role==="owner";
+  if(required==="admin")return role==="owner"||role==="admin";
+  return role==="owner"||role==="admin";
+}
+
+export type CertificationGate="AUDIT"|"VERIFY"|"VALIDATE"|"STRESS_TEST";
+
+export function allCertificationGatesPassed(
+  runs:Array<{gate:CertificationGate;passed:boolean}>
+):boolean {
+  const required=new Set<CertificationGate>(["AUDIT","VERIFY","VALIDATE","STRESS_TEST"]);
+  const latest=new Map<CertificationGate,boolean>();
+  for(const run of runs)latest.set(run.gate,run.passed);
+  for(const gate of required){
+    if(latest.get(gate)!==true)return false;
+  }
+  return true;
+}
