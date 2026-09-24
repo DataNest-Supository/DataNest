@@ -98,7 +98,7 @@ export default function DataNestApp({session}:{session:Session}) {
   const [error,setError]=useState("");
   const [health,setHealth]=useState<HealthState>({state:"checking",checkedAt:null,message:"Checking control plane…"});
 
-  const canOperate=membership ? ["owner","admin","operator"].includes(membership.role) : false;
+  const canOperate=membership ? ["owner","admin","operator"].includes(membership.role) : false;\n  const canManageStake=membership ? ["owner","admin"].includes(membership.role) : false;
 
   const loadSummary=useCallback(async(projectId:string)=>{
     const supabase=getSupabase();
@@ -372,7 +372,7 @@ export default function DataNestApp({session}:{session:Session}) {
         </div>
         {(loadingCore||loadingView)&&<div className="loadingBar" aria-label="Loading DataNest data"><span/></div>}
 
-        {!loadingCore&&project&&view==="overview"&&<Overview project={project} tools={tools} jobs={recentJobs} capabilities={capabilities} counts={summary} setView={setView} canOperate={canOperate}/>}\n        {!loadingCore&&project&&view==="rnd"&&<RnDDashboard projectId={project.id} canOperate={canOperate} currentUserEmail={session.user.email||"Authenticated user"} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError}/>}\n        {!loadingCore&&project&&view==="stakeholders"&&<StakeholderDashboard projectId={project.id} currentUserId={session.user.id} canOperate={canOperate}/>}\n        {!loadingCore&&project&&view==="productlab"&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate}/>}
+        {!loadingCore&&project&&view==="overview"&&<Overview project={project} tools={tools} jobs={recentJobs} capabilities={capabilities} counts={summary} setView={setView} canOperate={canOperate}/>}\n        {!loadingCore&&project&&view==="rnd"&&<RnDDashboard projectId={project.id} canOperate={canOperate} currentUserEmail={session.user.email||"Authenticated user"} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError}/>}\n        {!loadingCore&&project&&view==="stakeholders"&&<StakeholderDashboard projectId={project.id} currentUserId={session.user.id} canManageStake={canManageStake}/>}\n        {!loadingCore&&project&&view==="productlab"&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate}/>}
         {!loadingCore&&project&&view==="unifi"&&<UnifiPlanner project={project} jobs={jobs} capabilities={capabilities} reload={async()=>{await loadJobsPage(jobPage);await loadSummary(project.id);await loadRecentJobs(project.id);}} setNotice={setNotice} setError={setError} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage}/>}
         {!loadingCore&&view==="scheduler"&&<Scheduler jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage}/>}
         {!loadingCore&&view==="capabilities"&&<Capabilities capabilities={capabilities}/>}
