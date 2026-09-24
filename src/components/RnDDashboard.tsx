@@ -77,6 +77,14 @@ type Props = {
 
 const jobColumns = "id,job_number,title,description,priority,status,required_capabilities,acceptance,created_at,updated_at";
 
+const externalAiProviders = [
+  { key: "chatgpt", label: "ChatGPT", url: "https://chatgpt.com/" },
+  { key: "gemini", label: "Gemini", url: "https://gemini.google.com/app" },
+  { key: "claude", label: "Claude", url: "https://claude.ai/new" },
+  { key: "grok", label: "Grok", url: "https://grok.com/" },
+  { key: "perplexity", label: "Perplexity", url: "https://www.perplexity.ai/" }
+] as const;
+
 function jobCode(job: Job) {
   return "JOB-" + String(job.job_number).padStart(5, "0");
 }
@@ -131,6 +139,11 @@ export default function RnDDashboard({
   const [chatDraft, setChatDraft] = useState("");
   const [chatRequestId, setChatRequestId] = useState("");
   const [chatBusy, setChatBusy] = useState(false);
+  const [externalProvider, setExternalProvider] = useState("chatgpt");
+  const [externalSessionId, setExternalSessionId] = useState("");
+  const [externalHandoff, setExternalHandoff] = useState("");
+  const [externalResponse, setExternalResponse] = useState("");
+  const [externalBusy, setExternalBusy] = useState(false);
   const [inputType, setInputType] = useState("comment");
   const [inputText, setInputText] = useState("");
   const [inputBusy, setInputBusy] = useState(false);
@@ -237,6 +250,9 @@ export default function RnDDashboard({
   }, [loadJobs]);
 
   useEffect(() => {
+    setExternalSessionId("");
+    setExternalHandoff("");
+    setExternalResponse("");
     if (selectedJobId) void loadWorkspace(selectedJobId);
   }, [selectedJobId, loadWorkspace]);
 
@@ -327,6 +343,147 @@ export default function RnDDashboard({
       setError(chatError instanceof Error ? chatError.message : "Unable to post AI collaboration message.");
     } finally {
       setChatBusy(false);
+    }
+  }
+
+
+  function buildExternalHandoff() {
+    if (!selectedJob) return "";
+
+    const topSuggestions = activeSuggestions.slice(0, 4)
+      .map((item, index) => (index + 1) + ". " + item.prompt)
+      .join("\n");
+
+    const latest = latestUpdate
+      ? [
+          "Latest R&D update:",
+          "- Stage: " + latestUpdate.stage,
+          "- Status: " + latestUpdate.status,
+          "- Progress: " + latestUpdate.progress + "%",
+          "- Summary: " + latestUpdate.summary
+        ].join("\n")
+      : "Latest R&D update: none recorded.";
+
+    return [
+      "RESONANCE DATANEST — EXTERNAL AI LIVE HANDOFF",
+      "",
+      "You are collaborating on a Resonance DataNest Job Manifest.",
+      "Use this context only for the current development task. Do not claim that you changed DataNest, GitHub, Supabase, Vercel, or any external system unless the user separately gives you access and you actually perform the action.",
+      "",
+      "Job Manifest: " + jobCode(selectedJob) + " · " + selectedJob.title,
+      "Status: " + selectedJob.status,
+      "Priority: " + selectedJob.priority,
+      "Description: " + (selectedJob.description || "No description supplied."),
+      "Required capabilities: " + (selectedJob.required_capabilities?.join(", ") || "chat"),
+      "Acceptance criteria: " + JSON.stringify(selectedJob.acceptance || {}),
+      "",
+      latest,
+      "",
+      topSuggestions ? "Current DataNest suggestion queue:\n" + topSuggestions : "Current DataNest suggestion queue: none.",
+      "",
+      "Please work on this Job Manifest live with me. Return concise, implementation-ready output under these headings:",
+      "1. Decision / recommendation",
+      "2. Changes or code to make",
+      "3. Risks / blockers",
+      "4. Validation / acceptance checks",
+      "5. Next action to import back into DataNest",
+      "",
+      "When complete, I will paste your response back into Resonance DataNest so it is tracked as an external-AI R&D input."
+    ].join("\n");
+  }
+
+  async function openExternalAiChat() {
+    if (!selectedJob) return;
+    const provider = externalAiProviders.find((item) => item.key === externalProvider);
+    if (!provider) return;
+
+    const handoff = buildExternalHandoff();
+    setExternalHandoff(handoff);
+    setExternalBusy(true);
+    setError("");
+
+    let copied = false;
+    try {
+      await navigator.clipboard.writeText(handoff);
+      copied = true;
+    } catch {
+      copied = false;
+    }
+
+    const externalWindow = window.open(provider.url, "_blank", "noopener,noreferrer");
+
+    try {
+      const supabase = getSupabase();
+      if (!supabase) throw new Error("Supabase is unavailable.");
+
+      const { data, error } = await supabase.rpc("start_external_ai_session", {
+        target_job: selectedJob.id,
+        target_provider: provider.key
+      });
+      if (error) throw error;
+
+      const payload = (data || {}) as Record<string, unknown>;
+      setExternalSessionId(String(payload.session_id || ""));
+      setNotice(
+        provider.label +
+          " opened in a separate tab using your own account. " +
+          (copied
+            ? "The Job Manifest handoff is on your clipboard—paste it into the external chat."
+            : "Clipboard permission was unavailable; copy the handoff below manually.") +
+          (externalWindow ? "" : " Your browser may have blocked the new tab.")
+      );
+    } catch (launchError) {
+      setError(
+        launchError instanceof Error
+          ? launchError.message
+          : "The external AI chat opened, but DataNest could not track the session."
+      );
+    } finally {
+      setExternalBusy(false);
+    }
+  }
+
+  async function copyExternalHandoff() {
+    const handoff = externalHandoff || buildExternalHandoff();
+    if (!handoff) return;
+    setExternalHandoff(handoff);
+    try {
+      await navigator.clipboard.writeText(handoff);
+      setNotice("External AI Job Manifest handoff copied to clipboard.");
+    } catch {
+      setError("Clipboard access was blocked. Select the handoff text and copy it manually.");
+    }
+  }
+
+  async function importExternalAiResponse(event: FormEvent) {
+    event.preventDefault();
+    if (!externalSessionId || !externalResponse.trim()) return;
+
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    setExternalBusy(true);
+    setError("");
+    try {
+      const { data, error } = await supabase.rpc("import_external_ai_response", {
+        target_session: externalSessionId,
+        response_content: externalResponse.trim()
+      });
+      if (error) throw error;
+
+      const payload = (data || {}) as Record<string, unknown>;
+      setExternalResponse("");
+      setNotice(
+        "External AI response imported into " +
+          jobCode(selectedJob!) +
+          " as tracked R&D input" +
+          (payload.idempotent ? " (existing import reused)." : ".")
+      );
+      await loadWorkspace(selectedJob!.id);
+    } catch (importError) {
+      setError(importError instanceof Error ? importError.message : "Unable to import external AI response.");
+    } finally {
+      setExternalBusy(false);
     }
   }
 
@@ -561,6 +718,62 @@ export default function RnDDashboard({
               <button className="primaryButton compact" disabled={chatBusy || !chatDraft.trim()}>{chatBusy ? "Posting…" : "Send to AI collaboration"}</button>
             </div>
           </form>
+
+          <div className="externalAiLive">
+            <div className="externalAiHeader">
+              <div>
+                <p className="eyebrow">EXTERNAL AI CHAT</p>
+                <h4>Work live with your own AI account</h4>
+              </div>
+              <span className="countPill">BYO ACCOUNT</span>
+            </div>
+            <p className="muted">
+              Open an external AI web chat beside DataNest. The current Job Manifest handoff is copied to your clipboard,
+              the launch is tracked, and you can import the response back into this R&D record. The external provider uses
+              your own account/credits; opening the chat does not create contribution points.
+            </p>
+            <div className="externalAiControls">
+              <label>
+                External AI
+                <select value={externalProvider} onChange={(event) => setExternalProvider(event.target.value)}>
+                  {externalAiProviders.map((provider) => <option key={provider.key} value={provider.key}>{provider.label}</option>)}
+                </select>
+              </label>
+              <button className="secondaryButton compact" type="button" disabled={externalBusy} onClick={() => void openExternalAiChat()}>
+                {externalBusy ? "Opening…" : "Open external AI chat"}
+              </button>
+              <button className="textButton" type="button" onClick={() => void copyExternalHandoff()}>
+                Copy handoff
+              </button>
+            </div>
+
+            {externalHandoff && <details className="externalAiHandoff">
+              <summary>View Job Manifest handoff</summary>
+              <textarea rows={10} readOnly value={externalHandoff} />
+            </details>}
+
+            {externalSessionId && <form className="externalAiImport" onSubmit={importExternalAiResponse}>
+              <div className="rowBetween">
+                <div>
+                  <b>Bring the external AI response back into DataNest</b>
+                  <small>Imported output becomes a tracked external-AI R&D input and remains reported/unscored until independent review.</small>
+                </div>
+                <span className="badge live">SESSION OPEN</span>
+              </div>
+              <textarea
+                rows={5}
+                value={externalResponse}
+                onChange={(event) => setExternalResponse(event.target.value)}
+                placeholder="Paste the external AI response, development plan, code recommendation, test result, or decision here…"
+              />
+              <div className="rowBetween">
+                <small>{"Session " + externalSessionId.slice(0, 8)}</small>
+                <button className="primaryButton compact" disabled={externalBusy || !externalResponse.trim()}>
+                  {externalBusy ? "Importing…" : "Import response to DataNest"}
+                </button>
+              </div>
+            </form>}
+          </div>
         </div>
 
         <div className="panel rndSuggestionPanel">
