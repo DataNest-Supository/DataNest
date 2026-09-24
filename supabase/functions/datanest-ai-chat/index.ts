@@ -191,6 +191,32 @@ async function loadCertifiedMemory(input:{
   return Array.isArray(items)?items as Array<Record<string,unknown>>:[];
 }
 
+
+async function finishUsageRequest(
+  client:AnyClient,
+  input:{
+    requestId:string;
+    status:string;
+    inputTokens?:number;
+    outputTokens?:number;
+    errorCategory?:string|null;
+    errorMessage?:string|null;
+  }
+){
+  const {error}=await client.rpc("service_finish_ai_request",{
+    target_request:input.requestId,
+    target_status:input.status,
+    input_tokens:input.inputTokens||0,
+    output_tokens:input.outputTokens||0,
+    estimated_cost_minor:null,
+    provider_reported_cost_minor:null,
+    reconciled_cost_minor:null,
+    target_error_category:input.errorCategory||null,
+    target_error_message:input.errorMessage||null
+  });
+  if(error)throw error;
+}
+
 async function updateTrendCandidate(input:{
   staging:AnyClient;
   projectId:string;
@@ -485,22 +511,14 @@ Deno.serve(async(request:Request)=>{
           sessionId:String(data.session_id)
         };
       },
-      finishRequest:async(input)=>{
-        const {error}=await serviceClient.rpc("service_finish_ai_request",{
-          target_request:input.requestId,
-          target_status:input.status,
-          input_tokens:0,
-          output_tokens:0,
-          estimated_cost_minor:null,
-          provider_reported_cost_minor:null,
-          reconciled_cost_minor:null,
-          target_error_category:input.errorCategory||null,
-          target_error_message:input.errorCategory==="staging_intake_failed"
-            ?"DataNest AI staging intake failed before provider execution."
-            :null
-        });
-        if(error)throw error;
-      },
+      finishRequest:async(input)=>finishUsageRequest(serviceClient,{
+        requestId:input.requestId,
+        status:input.status,
+        errorCategory:input.errorCategory||null,
+        errorMessage:input.errorCategory==="staging_intake_failed"
+          ?"DataNest AI staging intake failed before provider execution."
+          :null
+      }),
       callProvider:async()=>{
         const [certifiedMemory,events]=await Promise.all([
           loadCertifiedMemory({
@@ -555,16 +573,11 @@ Deno.serve(async(request:Request)=>{
                 governedPrompt,
                 maxOutputTokens:Number((authz as Record<string,unknown>).max_output_tokens||4000)
               });
-              await serviceClient.rpc("service_finish_ai_request",{
-                target_request:activeRequestId,
-                target_status:"succeeded",
-                input_tokens:ext.inputTokens,
-                output_tokens:ext.outputTokens,
-                estimated_cost_minor:null,
-                provider_reported_cost_minor:null,
-                reconciled_cost_minor:null,
-                target_error_category:null,
-                target_error_message:null
+              await finishUsageRequest(serviceClient,{
+                requestId:activeRequestId,
+                status:"succeeded",
+                inputTokens:ext.inputTokens,
+                outputTokens:ext.outputTokens
               });
               requestStatus="succeeded";
               return {
@@ -579,50 +592,31 @@ Deno.serve(async(request:Request)=>{
                 ?"failed"
                 :"unknown";
               requestStatus=category;
-              await serviceClient.rpc("service_finish_ai_request",{
-                target_request:activeRequestId,
-                target_status:category,
-                input_tokens:0,
-                output_tokens:0,
-                estimated_cost_minor:null,
-                provider_reported_cost_minor:null,
-                reconciled_cost_minor:null,
-                target_error_category:category==="failed"?"provider_failure":"provider_outcome_unknown",
-                target_error_message:category==="failed"
+              await finishUsageRequest(serviceClient,{
+                requestId:activeRequestId,
+                status:category,
+                errorCategory:category==="failed"?"provider_failure":"provider_outcome_unknown",
+                errorMessage:category==="failed"
                   ?"Provider rejected or could not complete the request."
                   :"Provider outcome is unknown; DataNest will not retry automatically."
               });
             }
           }else{
             requestStatus="denied";
-            const {error:deniedError}=await serviceClient.rpc("service_finish_ai_request",{
-              target_request:activeRequestId,
-              target_status:"denied",
-              input_tokens:0,
-              output_tokens:0,
-              estimated_cost_minor:null,
-              provider_reported_cost_minor:null,
-              reconciled_cost_minor:null,
-              target_error_category:String((authz as Record<string,unknown>|null)?.reason||"policy_denied"),
-              target_error_message:"Provider request blocked by DataNest policy."
+            await finishUsageRequest(serviceClient,{
+              requestId:activeRequestId,
+              status:"denied",
+              errorCategory:String((authz as Record<string,unknown>|null)?.reason||"policy_denied"),
+              errorMessage:"Provider request blocked by DataNest policy."
             });
-            if(deniedError)throw deniedError;
           }
         }
 
         if(requestStatus==="pending"){
-          const {error:embeddedError}=await serviceClient.rpc("service_finish_ai_request",{
-            target_request:activeRequestId,
-            target_status:"embedded",
-            input_tokens:0,
-            output_tokens:0,
-            estimated_cost_minor:null,
-            provider_reported_cost_minor:null,
-            reconciled_cost_minor:null,
-            target_error_category:null,
-            target_error_message:null
+          await finishUsageRequest(serviceClient,{
+            requestId:activeRequestId,
+            status:"embedded"
           });
-          if(embeddedError)throw embeddedError;
           requestStatus="embedded";
         }
 
