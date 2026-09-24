@@ -173,7 +173,7 @@ export default function DataNestAiWorkspace({
     {selectedJob&&<section className="panel datanestAiCurrentJob">
       <div className="rowBetween">
         <div>
-          <p className="eyebrow">CURRENT JOB CONTEXT</p>
+          <p className="eyebrow">Current Job Context</p>
           <h2>{jobCode(selectedJob)+" · "+selectedJob.title}</h2>
         </div>
         <span className="badge live">{selectedJob.status.replaceAll("_"," ")}</span>
@@ -208,16 +208,16 @@ export default function DataNestAiWorkspace({
           setNotice={setNotice}
           setError={setError}
         />
-        <DataNestAiMemoryPanel items={context.certifiedMemory||[]}/>
+        <div aria-label="Certified Memory"><DataNestAiMemoryPanel items={context.certifiedMemory||[]}/></div>
       </section>
 
-      <DataNestAiCertificationPanel
+      <div aria-label="Learning & Certification"><DataNestAiCertificationPanel
         projectId={projectId}
         role={role}
         onChanged={refreshContext}
         setNotice={setNotice}
         setError={setError}
-      />
+      /></div>
     </>}
     <footer className="datanestAiFootnote">
       <small>
