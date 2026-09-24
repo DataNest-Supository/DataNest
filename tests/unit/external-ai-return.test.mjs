@@ -65,3 +65,14 @@ test("Return to DataNest is an always-visible dock footer, not a scrolling-body 
     "Return to DataNest must sit after the scrolling AI dock body"
   );
 });
+
+test("clipboard capture auto-fills on return without importing automatically", () => {
+  const source = fs.readFileSync(
+    path.join(repoRoot, "src/components/ExternalAiSidebar.tsx"),
+    "utf8"
+  );
+
+  assert.match(source, /window\.addEventListener\("focus"/, "expected clipboard capture when DataNest regains focus");
+  assert.match(source, /Paste from clipboard/, "expected a manual clipboard fallback");
+  assert.doesNotMatch(source, /Paste \+ import to DataNest/, "clipboard capture must not import automatically");
+});
