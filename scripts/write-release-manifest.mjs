@@ -5,7 +5,7 @@ const target=resolve(process.argv[2] || "public/release-manifest.json");
 const manifest={
   project:"Resonance DataNest",
   frontendCommit:process.env.DATANEST_RELEASE_SHA || process.env.GITHUB_SHA || "local",
-  databaseRelease:process.env.DATANEST_DB_RELEASE || "security-integrity-v1",
+  databaseRelease:process.env.DATANEST_DB_RELEASE || "external-ai-live-v1",
   edgeFunctions:{
     aiChat:process.env.DATANEST_EDGE_AI || "rnd-ai-chat-v3@1",
     providerManager:process.env.DATANEST_EDGE_PROVIDER || "manage-ai-provider-v2@1",
