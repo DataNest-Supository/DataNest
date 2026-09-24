@@ -1,0 +1,57 @@
+\set ON_ERROR_STOP on
+
+do $$
+declare
+  missing text[];
+begin
+  select array_agg(required_name)
+  into missing
+  from unnest(array[
+    'ai_sessions',
+    'ai_intake_events',
+    'ai_reasoning_envelopes',
+    'ai_trend_clusters',
+    'ai_trend_evidence',
+    'ai_learning_candidates',
+    'ai_candidate_evidence',
+    'ai_validation_runs',
+    'ai_certification_decisions',
+    'ai_memory_supersessions'
+  ]) required_name
+  where to_regclass('public.' || required_name) is null;
+
+  if missing is not null then
+    raise exception 'missing DataNest AI staging tables: %', missing;
+  end if;
+end $$;
+
+do $$
+declare
+  unprotected text[];
+begin
+  select array_agg(c.relname)
+  into unprotected
+  from pg_class c
+  join pg_namespace n on n.oid=c.relnamespace
+  where n.nspname='public'
+    and c.relname like 'ai_%'
+    and c.relname in (
+      'ai_sessions','ai_intake_events','ai_reasoning_envelopes',
+      'ai_trend_clusters','ai_trend_evidence','ai_learning_candidates',
+      'ai_candidate_evidence','ai_validation_runs','ai_certification_decisions',
+      'ai_memory_supersessions'
+    )
+    and not c.relrowsecurity;
+
+  if unprotected is not null then
+    raise exception 'RLS disabled on staging tables: %', unprotected;
+  end if;
+end $$;
+
+do $$
+begin
+  if has_table_privilege('authenticated','public.ai_intake_events','INSERT')
+     or has_table_privilege('anon','public.ai_intake_events','SELECT') then
+    raise exception 'browser roles must not have direct staging-table privileges';
+  end if;
+end $$;
