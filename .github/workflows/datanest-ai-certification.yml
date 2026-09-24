@@ -12,12 +12,12 @@ jobs:
   certify:
     runs-on: ubuntu-24.04
     env:
-      DATANEST_AI_STAGING_URL: ${{ secrets.DATANEST_AI_STAGING_URL }}
-      DATANEST_AI_STAGING_PUBLISHABLE_KEY: ${{ secrets.DATANEST_AI_STAGING_PUBLISHABLE_KEY }}
+      # Supabase publishable client configuration is intentionally public.
+      # Only the service-role key and Postgres connection URL remain GitHub secrets.
+      DATANEST_AI_STAGING_URL: https://qchttpcyqlqnhvahprhz.supabase.co
+      DATANEST_AI_STAGING_PUBLISHABLE_KEY: sb_publishable_spZZYssbgfnC0qecAPLPVQ_ZqAyugqS
       DATANEST_AI_STAGING_SERVICE_ROLE_KEY: ${{ secrets.DATANEST_AI_STAGING_SERVICE_ROLE_KEY }}
       DATANEST_AI_STAGING_DB_URL: ${{ secrets.DATANEST_AI_STAGING_DB_URL }}
-      DATANEST_AI_E2E_EMAIL: ${{ secrets.DATANEST_AI_E2E_EMAIL }}
-      DATANEST_AI_E2E_PASSWORD: ${{ secrets.DATANEST_AI_E2E_PASSWORD }}
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.0.0
@@ -25,7 +25,14 @@ jobs:
           node-version: 22
       - run: npm ci
 
-      - name: Fail clearly when governed staging secrets are absent
+      - name: Create ephemeral governed E2E credentials
+        shell: bash
+        run: |
+          echo "DATANEST_AI_E2E_EMAIL=datanest-ai-e2e@resonance.invalid" >> "$GITHUB_ENV"
+          PASSWORD="$(node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('hex'))")"
+          echo "DATANEST_AI_E2E_PASSWORD=$PASSWORD" >> "$GITHUB_ENV"
+
+      - name: Validate governed staging configuration
         shell: bash
         run: |
           test -n "$DATANEST_AI_STAGING_URL" || { echo "DATANEST_AI_STAGING_URL is required"; exit 1; }
@@ -47,10 +54,10 @@ jobs:
         env:
           DATANEST_STATIC_EXPORT: "true"
           NEXT_PUBLIC_BASE_PATH: ""
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.DATANEST_AI_STAGING_URL }}
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.DATANEST_AI_STAGING_PUBLISHABLE_KEY }}
-          SUPABASE_URL: ${{ secrets.DATANEST_AI_STAGING_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.DATANEST_AI_STAGING_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ env.DATANEST_AI_STAGING_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ env.DATANEST_AI_STAGING_PUBLISHABLE_KEY }}
+          SUPABASE_URL: ${{ env.DATANEST_AI_STAGING_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ env.DATANEST_AI_STAGING_PUBLISHABLE_KEY }}
           DATANEST_RELEASE_SHA: ${{ github.sha }}
           DATANEST_DB_RELEASE: datanest-ai-governed-memory-v1
           DATANEST_EDGE_AI: datanest-ai-chat@1
