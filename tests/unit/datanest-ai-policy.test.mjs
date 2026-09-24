@@ -99,3 +99,30 @@ test("all certification gates require one passing run for every gate", () => {
     {gate:"STRESS_TEST",passed:true}
   ]),true);
 });
+
+
+test("automatic certification requires the latest passing result for every gate to be automated", async () => {
+  const { allAutomatedCertificationGatesPassed } = await import("../../supabase/functions/_shared/datanestAiPolicy.ts");
+  const automated=[
+    {gate:"AUDIT",passed:true,actor_type:"automation"},
+    {gate:"VERIFY",passed:true,actor_type:"automation"},
+    {gate:"VALIDATE",passed:true,actor_type:"automation"},
+    {gate:"STRESS_TEST",passed:true,actor_type:"automation"}
+  ];
+  assert.equal(allAutomatedCertificationGatesPassed(automated),true);
+  assert.equal(
+    allAutomatedCertificationGatesPassed([
+      ...automated.slice(0,3),
+      {gate:"STRESS_TEST",passed:true,actor_type:"human"}
+    ]),
+    false
+  );
+  assert.equal(
+    allAutomatedCertificationGatesPassed([
+      ...automated,
+      {gate:"VERIFY",passed:false,actor_type:"human"}
+    ]),
+    false,
+    "the latest result for a gate controls its state"
+  );
+});
