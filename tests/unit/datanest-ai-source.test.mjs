@@ -174,3 +174,16 @@ test("existing certification decisions must still match the candidate seal", () 
     /if\(existing\)[\s\S]{0,900}content_hash[\s\S]{0,300}policy_version[\s\S]{0,300}risk_class[\s\S]{0,500}stale/i
   );
 });
+
+
+test("promotion revalidates certification seal and required authority", () => {
+  const source=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-certification/index.ts"),"utf8");
+  assert.match(
+    source,
+    /function assertCertificationDecisionCurrent\([\s\S]{0,1800}requiredCertificationAuthority[\s\S]{0,1200}stale/i
+  );
+  assert.match(
+    source,
+    /if\(action==="promote"\|\|action==="supersede"\)[\s\S]{0,1600}assertCertificationDecisionCurrent\(decision,candidate\)/
+  );
+});
