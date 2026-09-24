@@ -33,3 +33,62 @@
 @media(max-width:1120px){.metricGrid{grid-template-columns:repeat(3,1fr)}.twoCol{grid-template-columns:1fr}.schedulerRow{grid-template-columns:1.4fr 65px .8fr 115px 140px}}
 @media(max-width:900px){.appFrame{grid-template-columns:1fr}.sidebar{position:fixed;left:0;transform:translateX(-102%);width:285px;transition:.2s ease;box-shadow:25px 0 70px rgba(0,0,0,.35)}.sidebar.open{transform:translateX(0)}.scrim{display:block;position:fixed;inset:0;border:0;background:rgba(0,0,0,.5);z-index:15}.closeMenu,.menuButton{display:block}.topbar{padding:15px 20px}.contentPane{padding:22px 18px 50px}.splitView{grid-template-columns:1fr}.stickyPanel{position:static}.schedulerTable,.dataTable{overflow-x:auto}.schedulerRow{min-width:780px}.dataRow{min-width:700px}}
 @media(max-width:650px){.topActions .systemStatus{display:none}.heroPanel,.schedulerHero{align-items:flex-start;flex-direction:column;padding:22px}.stackDiagram{width:100%;min-width:0}.metricGrid{grid-template-columns:1fr 1fr}.toolGrid,.settingsGrid,.checkpointColumns{grid-template-columns:1fr}.fullWidth{grid-column:auto}.jobTable{overflow-x:auto}.jobTableRow{min-width:720px}.fieldRow{grid-template-columns:1fr}.checkRow{flex-direction:column;gap:7px}.authCard{padding:26px 20px}}
+
+
+/* Operational reliability + accessibility */
+button:disabled{opacity:.48;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,a:focus-visible{
+  outline:2px solid var(--cyan);
+  outline-offset:3px
+}
+.statusDot{width:8px;height:8px;border-radius:999px;display:inline-block;flex:0 0 auto;background:#71869a}
+.statusDot.online{background:var(--green);box-shadow:0 0 0 5px rgba(124,226,162,.08)}
+.statusDot.checking{background:var(--blue);box-shadow:0 0 0 5px rgba(131,174,247,.08)}
+.statusDot.degraded{background:var(--amber);box-shadow:0 0 0 5px rgba(242,199,120,.08)}
+.statusDot.offline{background:var(--red);box-shadow:0 0 0 5px rgba(242,139,157,.08)}
+.systemStatus.online{border-color:rgba(124,226,162,.22)}
+.systemStatus.degraded{border-color:rgba(242,199,120,.25)}
+.systemStatus.offline{border-color:rgba(242,139,157,.25)}
+.systemStatus small{color:var(--muted);font-size:10px}
+.bootRow{display:flex;align-items:center;gap:14px;margin-top:18px}
+.bootRow .bootPulse{flex:0 0 auto}
+.authMessageSlot{min-height:34px}
+.pageControls{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.pageControls button{border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.025);padding:7px 10px;color:#b7cadb;cursor:pointer}
+.pageControls span{color:var(--muted);font-size:11px}
+.navGroup button,.jobTableRow,.schedulerRow,.dataRow,.toolCard p,.manifestCard p,.capMini small,.settingRow small{
+  font-size:max(11px, .72rem)
+}
+.securityNote,.manifestMeta span,.policyGrid pre,.timelineItem code{font-size:max(10px,.66rem)}
+
+@media(max-width:650px){
+  .schedulerTable,.jobTable{overflow:visible}
+  .schedulerRow:not(.headerRow){
+    min-width:0;
+    grid-template-columns:1fr auto;
+    gap:8px;
+    padding:14px 0;
+    align-items:start
+  }
+  .schedulerRow.headerRow{display:none}
+  .schedulerRow:not(.headerRow)>div:first-child{grid-column:1/-1}
+  .schedulerRow:not(.headerRow)>.rowActions{grid-column:1/-1;justify-content:flex-start}
+  .jobTableRow{
+    min-width:0;
+    grid-template-columns:1fr auto;
+    gap:8px;
+    padding:14px 0;
+    align-items:start
+  }
+  .jobTableRow>div{grid-column:1/-1}
+  .pageControls{justify-content:space-between}
+}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+    scroll-behavior:auto!important
+  }
+}
