@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
+  allAutomatedCertificationGatesPassed,
   allCertificationGatesPassed,
   canAutoCertify,
   canHumanCertify,
@@ -247,14 +248,26 @@ Deno.serve(async(request:Request)=>{
     }
 
     if(action==="workspace"){
-      const [{data:candidates,error:candidatesError},{data:runs,error:runsError},{data:decisions,error:decisionsError}]=await Promise.all([
-        staging.from("ai_learning_candidates").select("*").eq("project_id",projectId).order("updated_at",{ascending:false}).limit(100),
-        staging.from("ai_validation_runs").select("*").order("created_at",{ascending:false}).limit(500),
-        staging.from("ai_certification_decisions").select("*").order("created_at",{ascending:false}).limit(500)
-      ]);
+      const {data:candidates,error:candidatesError}=await staging
+        .from("ai_learning_candidates")
+        .select("*")
+        .eq("project_id",projectId)
+        .order("updated_at",{ascending:false})
+        .limit(100);
       if(candidatesError)throw candidatesError;
-      if(runsError)throw runsError;
-      if(decisionsError)throw decisionsError;
+      const candidateIds=(candidates||[]).map(candidate=>String(candidate.id));
+      let runs:Record<string,unknown>[]=[];
+      let decisions:Record<string,unknown>[]=[];
+      if(candidateIds.length){
+        const [runsResult,decisionsResult]=await Promise.all([
+          staging.from("ai_validation_runs").select("*").in("candidate_id",candidateIds).order("created_at",{ascending:false}).limit(500),
+          staging.from("ai_certification_decisions").select("*").in("candidate_id",candidateIds).order("created_at",{ascending:false}).limit(500)
+        ]);
+        if(runsResult.error)throw runsResult.error;
+        if(decisionsResult.error)throw decisionsResult.error;
+        runs=(runsResult.data||[]) as Record<string,unknown>[];
+        decisions=(decisionsResult.data||[]) as Record<string,unknown>[];
+      }
       return json({
         role:member.role,
         candidates:(candidates||[]).map(candidate=>({
@@ -277,6 +290,9 @@ Deno.serve(async(request:Request)=>{
     if(action==="record_validation"){
       const gate=String(body.gate||"") as CertificationGate;
       if(!gateOrder.includes(gate))return json({error:"Invalid certification gate."},400,origin);
+      if(gate==="STRESS_TEST"){
+        return json({error:"STRESS_TEST evidence must be recorded by the governed stress suite."},403,origin);
+      }
       const runs=await loadValidationRuns(staging,candidate.id);
       assertGatePrerequisites(gate,runs);
       const passed=Boolean(body.passed);
@@ -306,7 +322,7 @@ Deno.serve(async(request:Request)=>{
       const refreshedCandidate=await loadCandidate(staging,projectId,candidate.id);
       let autoCertification:Record<string,unknown>|null=null;
       if(
-        allCertificationGatesPassed(refreshedRuns) &&
+        allAutomatedCertificationGatesPassed(refreshedRuns) &&
         canAutoCertify({
           category:refreshedCandidate.category,
           riskClass:refreshedCandidate.risk_class,
