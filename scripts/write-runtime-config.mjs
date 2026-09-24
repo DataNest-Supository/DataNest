@@ -10,7 +10,8 @@ writeFileSync(
   target,
   "window.__DATANEST_CONFIG__ = " + JSON.stringify({
     supabaseUrl: url,
-    supabasePublishableKey: key
+    supabasePublishableKey: key,
+    authoritative: true
   }).replace(/</g, "\\u003c") + ";\n",
   "utf8"
 );
