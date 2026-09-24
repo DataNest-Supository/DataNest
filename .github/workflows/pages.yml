@@ -36,9 +36,9 @@ jobs:
       - name: Write release manifest
         env:
           DATANEST_RELEASE_SHA: ${{ github.sha }}
-          DATANEST_DB_RELEASE: external-ai-companion-v1
-          DATANEST_BASELINE_RELEASE: external-ai-sidebar-v1
-          DATANEST_BASELINE_SHA: a7b78c398292d95a3eb0f355507917b899eeb0ee
+          DATANEST_DB_RELEASE: reload-latest-v1
+          DATANEST_BASELINE_RELEASE: external-ai-companion-v1
+          DATANEST_BASELINE_SHA: 36ef62377b347fc6a6fe107fa35895b65e001a01
           DATANEST_EDGE_AI: rnd-ai-chat-v3@1
           DATANEST_EDGE_PROVIDER: manage-ai-provider-v2@1
           DATANEST_EDGE_INVITES: send-job-invite@1
@@ -103,9 +103,9 @@ jobs:
             https://datanest-supository.github.io/DataNest/release-manifest.json \
             -o /tmp/release-manifest.json
           grep -q "\"frontendCommit\":\"$GITHUB_SHA\"" /tmp/release-manifest.json
-          grep -q "\"databaseRelease\":\"external-ai-companion-v1\"" /tmp/release-manifest.json
-          grep -q "\"release\":\"external-ai-sidebar-v1\"" /tmp/release-manifest.json
-          grep -q "\"frontendCommit\":\"a7b78c398292d95a3eb0f355507917b899eeb0ee\"" /tmp/release-manifest.json
+          grep -q "\"databaseRelease\":\"reload-latest-v1\"" /tmp/release-manifest.json
+          grep -q "\"release\":\"external-ai-companion-v1\"" /tmp/release-manifest.json
+          grep -q "\"frontendCommit\":\"36ef62377b347fc6a6fe107fa35895b65e001a01\"" /tmp/release-manifest.json
           grep -q "\"aiChat\":\"rnd-ai-chat-v3@1\"" /tmp/release-manifest.json
       - uses: actions/setup-node@v7.0.0
         with:
