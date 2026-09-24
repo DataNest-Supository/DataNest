@@ -391,8 +391,13 @@ export default function DataNestApp({session}:{session:Session}) {
       <nav className="navStack">
         {groups.map(group=><div className="navGroup" key={group}>
           <p>{group}</p>
-          {nav.filter(item=>item.group===group).map(item=><button key={item.key} className={view===item.key?"active":""} onClick={()=>{setView(item.key);setMobileOpen(false);}}>
-            <span>{item.glyph}</span>{item.label}
+          {nav.filter(item=>item.group===group).map(item=><button
+            key={item.key}
+            className={view===item.key?"active":""}
+            aria-label={item.label}
+            onClick={()=>{setView(item.key);setMobileOpen(false);}}
+          >
+            <span aria-hidden="true">{item.glyph}</span>{item.label}
           </button>)}
         </div>)}
       </nav>
