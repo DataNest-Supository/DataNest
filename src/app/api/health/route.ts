@@ -1,8 +1,11 @@
+export const dynamic = "force-static";
+
 export async function GET() {
   return Response.json({
     ok: true,
     project: "Resonance DataNest",
     tools: ["UNIFI", "TranScheduler"],
-    timestamp: new Date().toISOString()
+    deployment: "provider-agnostic",
+    build: process.env.GITHUB_SHA || "local"
   });
 }
