@@ -228,10 +228,10 @@ export default function AiOperationsDashboard({
 
   return <div className="stakeholderWorkspace">
     <section className="sectionIntro">
-      <p className="eyebrow">AI OPERATIONS</p>
-      <h2>Provider, budget & security controls</h2>
+      <p className="eyebrow">AI ADMINISTRATION</p>
+      <h2>Provider, usage & security controls</h2>
       <p>
-        Manage approved AI routes, protected credentials, usage limits, provider hosts, and unknown provider outcomes without development-value scoring.
+        Manage approved AI routes, protected credentials, infrastructure usage limits, provider hosts, and unknown provider outcomes. Personal connections remain user-scoped; project-wide policy and reconciliation require Owner or Admin access.
       </p>
     </section>
 
@@ -255,7 +255,7 @@ export default function AiOperationsDashboard({
         <small>{budget?.monthly_token_limit??"—"} limit</small>
       </article>
       <article className="metricCard">
-        <span>Known AI cost</span>
+        <span>Provider usage cost</span>
         <strong>{money(budget?.monthly_cost_used_minor,budget?.currency||"ZAR")}</strong>
         <small>{budget?.monthly_cost_limit_minor==null?"No cost ceiling configured":"Limit "+money(budget.monthly_cost_limit_minor,budget.currency)}</small>
       </article>

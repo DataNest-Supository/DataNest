@@ -201,3 +201,21 @@ test("AI Companion intake binds to the active governed DataNest AI session", () 
   assert.match(intake,/preferredSessionId/);
   assert.match(intake,/Active DataNest AI session does not match the authorized user and Job/);
 });
+
+
+test("AI administration is nested under Settings instead of primary navigation", () => {
+  const app=fs.readFileSync(path.join(root,"src/components/DataNestApp.tsx"),"utf8");
+  const admin=fs.readFileSync(path.join(root,"src/components/AiOperationsDashboard.tsx"),"utf8");
+
+  assert.doesNotMatch(app,/label:"AI Operations"/);
+  assert.doesNotMatch(app,/key:"aiops"/);
+  assert.match(app,/aria-label="AI Administration"/);
+  assert.match(app,/view==="settings"[\s\S]*<Settings/);
+  assert.match(app,/<AiOperationsDashboard projectId=\{project\.id\}/);
+
+  assert.match(admin,/AI ADMINISTRATION/);
+  assert.match(admin,/Provider, usage & security controls/);
+  assert.match(admin,/AiReconciliationPanel/);
+  assert.match(admin,/manage-ai-provider-v2/);
+  assert.match(admin,/set_ai_budget_policy/);
+});
