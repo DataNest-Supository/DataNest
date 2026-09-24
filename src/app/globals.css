@@ -312,3 +312,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
   .externalAiCompanionSection{grid-template-columns:1fr}
   .externalAiCompanionIcon{display:none}
 }
+
+/* Traceable companion prompt */
+.externalAiTraceGrid{margin-top:10px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 10px;padding:10px;border:1px solid rgba(109,213,247,.14);border-radius:10px;background:rgba(2,12,22,.42)}
+.externalAiTraceGrid span{font-size:9px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.externalAiTraceGrid code{overflow-wrap:anywhere;color:#dff7ff;font-size:9px;line-height:1.45}
+.externalAiPromptReady{margin-top:8px!important;padding:8px 10px;border-radius:9px;background:rgba(86,226,155,.07);border:1px solid rgba(86,226,155,.16);color:#bff5d8!important}

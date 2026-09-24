@@ -72,6 +72,7 @@ export default function ExternalAiSidebar({
   const [suggestions,setSuggestions]=useState<Suggestion[]>([]);
   const [provider,setProvider]=useState("chatgpt");
   const [sessionId,setSessionId]=useState("");
+  const [traceKey,setTraceKey]=useState("");
   const [launchMode,setLaunchMode]=useState<"sidebar"|"companion"|"popout">("sidebar");
   const [handoff,setHandoff]=useState("");
   const [responseText,setResponseText]=useState("");
@@ -154,6 +155,7 @@ export default function ExternalAiSidebar({
     if(!selectedJobId)return;
     window.localStorage.setItem("datanest.aiSidebar.job",selectedJobId);
     setSessionId("");
+    setTraceKey("");
     setResponseText("");
     setEmbedUrl("");
     void loadJobContext(selectedJobId);
@@ -165,6 +167,10 @@ export default function ExternalAiSidebar({
 
   useEffect(()=>{
     window.localStorage.setItem("datanest.aiSidebar.provider",provider);
+    setSessionId("");
+    setTraceKey("");
+    setHandoff("");
+    setResponseText("");
     setEmbedUrl("");
   },[provider]);
 
@@ -179,8 +185,12 @@ export default function ExternalAiSidebar({
     return()=>window.removeEventListener("datanest:job-selected",handle);
   },[jobs]);
 
-  function buildHandoff(){
+  function buildHandoff(trace?:{sessionId?:string;traceKey?:string;providerLabel?:string}){
     if(!selectedJob)return "";
+
+    const activeSessionId=trace?.sessionId||sessionId||"pending";
+    const activeTraceKey=trace?.traceKey||traceKey||"pending";
+    const activeProvider=trace?.providerLabel||selectedProvider.label;
 
     const latest=latestUpdate
       ? [
@@ -202,11 +212,21 @@ export default function ExternalAiSidebar({
     return [
       "RESONANCE DATANEST — LIVE EXTERNAL AI HANDOFF",
       "",
+      "[DATANEST TRACKING HEADER]",
+      "Project: Resonance DataNest",
+      "Project ID: "+projectId,
+      "Job Manifest: "+jobCode(selectedJob)+" · "+selectedJob.title,
+      "Job ID: "+selectedJob.id,
+      "External AI Session ID: "+activeSessionId,
+      "Trace Key: "+activeTraceKey,
+      "Provider: "+activeProvider,
+      "[/DATANEST TRACKING HEADER]",
+      "",
+      "Preserve the DataNest Trace Key in the first line of your response so the result remains visibly attributable to this Job Manifest.",
       "You are collaborating live on one Resonance DataNest Job Manifest.",
       "Use only the supplied project/job context. Do not claim to have changed GitHub, Supabase, Vercel, DataNest, or another external system unless you actually have authorized tool access and perform that action.",
       "",
       "User: "+currentUserEmail,
-      "Job Manifest: "+jobCode(selectedJob)+" · "+selectedJob.title,
       "Status: "+selectedJob.status,
       "Priority: "+selectedJob.priority,
       "Description: "+(selectedJob.description||"No description supplied."),
@@ -259,21 +279,29 @@ export default function ExternalAiSidebar({
     ].join(",");
   }
 
-  function openProviderWindow(mode:"companion"|"popout"){
+  function providerLaunchUrl(promptText:string){
+    const url=new URL(selectedProvider.url);
+    if(selectedProvider.key==="chatgpt"&&promptText.trim()){
+      url.searchParams.set("prompt",promptText);
+    }
+    return url.toString();
+  }
+
+  function openProviderWindow(mode:"companion"|"popout",promptText=handoff){
     const name=mode==="companion"
       ? "datanest-ai-companion-"+selectedProvider.key
       : "_blank";
     const features=mode==="companion"
       ? "noopener,noreferrer,"+companionFeatures()
       : "noopener,noreferrer,resizable=yes,scrollbars=yes";
-    return window.open(selectedProvider.url,name,features);
+    return window.open(providerLaunchUrl(promptText),name,features);
   }
 
   async function startSession(mode:"sidebar"|"companion"|"popout"){
     if(!selectedJob)return;
 
-    const handoffText=buildHandoff();
-    setHandoff(handoffText);
+    const draftHandoff=buildHandoff();
+    setHandoff(draftHandoff);
     setBusy(true);
     onError("");
 
@@ -301,11 +329,21 @@ export default function ExternalAiSidebar({
       if(error)throw error;
 
       const payload=(data||{}) as Record<string,unknown>;
-      setSessionId(String(payload.session_id||""));
+      const newSessionId=String(payload.session_id||"");
+      const newTraceKey=String(payload.trace_key||"");
+      const trackedHandoff=buildHandoff({
+        sessionId:newSessionId,
+        traceKey:newTraceKey,
+        providerLabel:selectedProvider.label
+      });
+
+      setSessionId(newSessionId);
+      setTraceKey(newTraceKey);
+      setHandoff(trackedHandoff);
       setLaunchMode(mode);
 
       try{
-        await navigator.clipboard.writeText(handoffText);
+        await navigator.clipboard.writeText(trackedHandoff);
       }catch{
         // Manual copy remains available in the sidebar.
       }
@@ -314,21 +352,24 @@ export default function ExternalAiSidebar({
         setEmbedUrl(selectedProvider.url);
         onNotice(
           selectedProvider.label+
-          " opened in the DataNest AI sidebar. If the provider blocks embedded display, switch to companion mode; the handoff remains copied and tracked."
+          " opened in the DataNest AI sidebar. If the provider blocks embedded display, switch to companion mode; the tracked handoff remains copied."
         );
       }else{
         setEmbedUrl("");
+        const launchUrl=providerLaunchUrl(trackedHandoff);
         if(popup){
-          popup.location.href=selectedProvider.url;
+          popup.location.href=launchUrl;
         }else{
-          openProviderWindow(mode);
+          openProviderWindow(mode,trackedHandoff);
         }
         onNotice(
-          selectedProvider.label+
-          (mode==="companion"
-            ? " opened in DataNest companion mode beside the app using your own account. "
-            : " opened in a separate window using your own account. ")+
-          "The Job Manifest handoff is prepared and the session is tracked."
+          selectedProvider.key==="chatgpt"&&mode==="companion"
+            ? "ChatGPT opened with the tracked Job Manifest prompt prefilled. Review the DataNest trace header, then click Send."
+            : selectedProvider.label+
+              (mode==="companion"
+                ? " opened in DataNest companion mode beside the app using your own account. "
+                : " opened in a separate window using your own account. ")+
+              "The tracked Job Manifest handoff is prepared."
         );
       }
     }catch(error){
@@ -476,9 +517,18 @@ export default function ExternalAiSidebar({
             The provider's own secure window handles sign-in and your account/credits.
             DataNest keeps the Job Manifest handoff, tracking, and response import here in the sidebar.
           </p>
+          {selectedJob&&<div className="externalAiTraceGrid">
+            <span>Job</span><code>{jobCode(selectedJob)}</code>
+            <span>Job ID</span><code>{selectedJob.id}</code>
+            <span>Trace</span><code>{traceKey||"pending"}</code>
+            <span>Session</span><code>{sessionId}</code>
+          </div>}
+          {selectedProvider.key==="chatgpt"&&<p className="externalAiPromptReady">
+            Prompt loaded in ChatGPT with this tracking header. Review it, then click <b>Send</b>.
+          </p>}
           <div className="externalAiCompanionActions">
-            <button className="secondaryButton compact" type="button" onClick={()=>openProviderWindow("companion")}>
-              Open / focus companion
+            <button className="secondaryButton compact" type="button" onClick={()=>openProviderWindow("companion",handoff)}>
+              Reopen tracked prompt
             </button>
             <button className="textButton" type="button" onClick={()=>void copyHandoff()}>
               Copy handoff again
