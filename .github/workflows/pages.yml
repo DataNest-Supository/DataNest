@@ -36,10 +36,12 @@ jobs:
       - name: Write release manifest
         env:
           DATANEST_RELEASE_SHA: ${{ github.sha }}
-          DATANEST_DB_RELEASE: companion-handoff-prefill-v1
+          DATANEST_DB_RELEASE: datanest-ai-governed-memory-v1
           DATANEST_BASELINE_RELEASE: reload-latest-v1
           DATANEST_BASELINE_SHA: 592149b0898f6703b28e9fa33e73bd0799cae3fd
-          DATANEST_EDGE_AI: rnd-ai-chat-v3@1
+          DATANEST_EDGE_AI: datanest-ai-chat@1
+          DATANEST_EDGE_INTAKE: datanest-ai-intake@1
+          DATANEST_EDGE_CERTIFICATION: datanest-ai-certification@1
           DATANEST_EDGE_PROVIDER: manage-ai-provider-v2@1
           DATANEST_EDGE_INVITES: send-job-invite@1
         run: node scripts/write-release-manifest.mjs public/release-manifest.json
@@ -103,10 +105,12 @@ jobs:
             https://datanest-supository.github.io/DataNest/release-manifest.json \
             -o /tmp/release-manifest.json
           grep -q "\"frontendCommit\":\"$GITHUB_SHA\"" /tmp/release-manifest.json
-          grep -q "\"databaseRelease\":\"companion-handoff-prefill-v1\"" /tmp/release-manifest.json
+          grep -q "\"databaseRelease\":\"datanest-ai-governed-memory-v1\"" /tmp/release-manifest.json
           grep -q "\"release\":\"reload-latest-v1\"" /tmp/release-manifest.json
           grep -q "\"frontendCommit\":\"592149b0898f6703b28e9fa33e73bd0799cae3fd\"" /tmp/release-manifest.json
-          grep -q "\"aiChat\":\"rnd-ai-chat-v3@1\"" /tmp/release-manifest.json
+          grep -q "\"aiChat\":\"datanest-ai-chat@1\"" /tmp/release-manifest.json
+          grep -q "\"externalIntake\":\"datanest-ai-intake@1\"" /tmp/release-manifest.json
+          grep -q "\"certification\":\"datanest-ai-certification@1\"" /tmp/release-manifest.json
       - uses: actions/setup-node@v7.0.0
         with:
           node-version: 22
