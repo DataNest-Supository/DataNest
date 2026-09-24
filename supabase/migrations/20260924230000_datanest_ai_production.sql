@@ -350,7 +350,7 @@ begin
     raise insufficient_privilege using message='Service role required.';
   end if;
 
-  if target_status not in ('succeeded','failed','unknown','denied') then
+  if target_status not in ('succeeded','failed','unknown','denied','embedded') then
     raise exception 'Invalid AI request terminal status.';
   end if;
 
