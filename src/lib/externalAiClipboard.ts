@@ -28,3 +28,9 @@ export function selectExternalAiClipboardCandidate({
 
   return candidate;
 }
+
+export type ClipboardAutoCaptureAccess = "unknown"|"prompt"|"granted"|"denied"|"unsupported";
+
+export function shouldAttemptClipboardAutoCapture(access:ClipboardAutoCaptureAccess):boolean{
+  return access==="granted";
+}
