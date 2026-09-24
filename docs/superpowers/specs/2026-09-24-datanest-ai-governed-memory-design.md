@@ -6,6 +6,11 @@
 **Parent implementation context:** `feature/ai-companion-trace-handoff` at the approved design point  
 **Target implementation branch:** `feature/datanest-ai-governed-memory` after implementation planning approval
 
+## Execution Topology Amendment — 2026-09-24
+
+Supabase Branching is unavailable on the current plan. The approved staging trust boundary is therefore implemented as a **dedicated Supabase project** named `DataNest AI Staging` (project ref `qchttpcyqlqnhvahprhz`) in the same Supabase organization and region as production. This amendment preserves the functional design: separate database/API/Auth credentials, isolated raw evidence, server-only cross-environment access, explicit certification/promotion, independent retention/recovery, and no raw runtime data merge into production. Any earlier reference in this document to a dedicated Supabase staging project is superseded by this dedicated staging project. Git feature-branch isolation remains unchanged.
+
+
 ## 1. Purpose
 
 Replace the current user-facing **UNIFI Copilot** and R&D-contribution workflow with **DataNest AI**, a governed internal AI layer that continuously learns from human development input and AI Companion returns without allowing raw or unverified input to become production memory.
@@ -73,7 +78,7 @@ Production must not become the primary storage location for raw human or AI Comp
 
 ### 4.2 Persistent DataNest AI Staging
 
-A persistent Supabase development branch, provisionally named `datanest-ai-staging`, holds:
+A dedicated Supabase staging project named `DataNest AI Staging` (project ref `qchttpcyqlqnhvahprhz`), holds:
 
 - immutable raw intake events;
 - DataNest AI sessions;
@@ -87,7 +92,7 @@ A persistent Supabase development branch, provisionally named `datanest-ai-stagi
 
 Raw staged evidence is retained indefinitely. The staging environment must be a persistent branch, not an ephemeral preview branch, and must not be deleted as part of normal pull-request lifecycle. Because indefinite retention cannot depend on a single branch instance, implementation must include a recoverable backup/export policy for the staging evidence ledger and certification evidence.
 
-Supabase branch data is treated as isolated staging data. Runtime rows are not assumed to transfer to production through branch merge. Production learning is promoted only through the Certification & Promotion Gateway.
+Supabase staging-project data is treated as isolated staging data. Runtime rows are not assumed to transfer to production through schema deployment. Production learning is promoted only through the Certification & Promotion Gateway.
 
 ### 4.3 Git Implementation Staging
 
@@ -613,7 +618,7 @@ Raw human and AI Companion inputs remain indefinitely in the persistent staging 
 
 Retention applies to evidence even after certification, rejection, or supersession so the system can perform longitudinal trend analysis and later re-audit.
 
-The retention mechanism must survive branch/service recreation through documented, encrypted backup/export and restore procedures. A staging branch deletion must never be treated as an acceptable retention mechanism or normal cleanup step.
+The retention mechanism must survive branch/service recreation through documented, encrypted backup/export and restore procedures. A staging project deletion must never be treated as an acceptable retention mechanism or normal cleanup step.
 
 ## 21. Migration Strategy
 

@@ -185,7 +185,7 @@ export default function ProductLab({
 
     setRunNotes(current=>({...current,[testCase.id]:""}));
     setEvidenceUrls(current=>({...current,[testCase.id]:""}));
-    setNotice("Test evidence recorded for "+shortCommit(surface.build_commit)+". Contribution is tracked once per tester/test-version/build and awaits independent acceptance.");
+    setNotice("Test evidence recorded for "+shortCommit(surface.build_commit)+". Test evidence is recorded once per tester/test-version/build.");
     await load();
   }
 
@@ -197,7 +197,7 @@ export default function ProductLab({
     <section className="sectionIntro">
       <p className="eyebrow">PRODUCT LAB</p>
       <h2>Versioned Live Product Display & Testing</h2>
-      <p>Every result is tied to a test-case version and product build. Repeated runs remain visible evidence, but contribution scoring is deduplicated per tester, test version and build.</p>
+      <p>Every result is tied to a test-case version and product build. Repeated runs remain visible as versioned validation evidence.</p>
     </section>
 
     {notice&&<div className="notice goodNotice">{notice}</div>}
@@ -238,7 +238,7 @@ export default function ProductLab({
       <div className="panel">
         <div className="panelHead"><div><p className="eyebrow">TEST CASES</p><h3>Collaborative validation</h3></div><span className="countPill">{visibleCases.length}</span></div>
         <form className="plannerForm" onSubmit={addTestCase}>
-          <label>Test title<input value={caseTitle} onChange={e=>setCaseTitle(e.target.value)} placeholder="e.g. Job invite appears in stakeholder workspace" required/></label>
+          <label>Test title<input value={caseTitle} onChange={e=>setCaseTitle(e.target.value)} placeholder="e.g. Job invite appears in DataNest workspace" required/></label>
           <label>Expected result<textarea rows={3} value={caseExpected} onChange={e=>setCaseExpected(e.target.value)} required/></label>
           <label>Notes<textarea rows={2} value={caseDescription} onChange={e=>setCaseDescription(e.target.value)}/></label>
           <button className="secondaryButton" disabled={!selectedSurfaceId}>Add versioned test case</button>

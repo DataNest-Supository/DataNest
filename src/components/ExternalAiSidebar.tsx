@@ -61,12 +61,14 @@ function clamp(value:number,min:number,max:number){
 export default function ExternalAiSidebar({
   projectId,
   currentUserEmail,
+  activeDataNestAiSession,
   onClose,
   onNotice,
   onError
 }:{
   projectId:string;
   currentUserEmail:string;
+  activeDataNestAiSession:{jobId:string;sessionId:string|null}|null;
   onClose:()=>void;
   onNotice:(message:string)=>void;
   onError:(message:string)=>void;
@@ -117,12 +119,14 @@ export default function ExternalAiSidebar({
     const next=(data||[]) as Job[];
     setJobs(next);
     setSelectedJobId(current=>{
+      const activeJobId=activeDataNestAiSession?.jobId||"";
+      if(activeJobId&&next.some(job=>job.id===activeJobId))return activeJobId;
       if(current&&next.some(job=>job.id===current))return current;
       const remembered=typeof window!=="undefined"?window.localStorage.getItem("datanest.aiSidebar.job")||"":"";
       if(remembered&&next.some(job=>job.id===remembered))return remembered;
       return next[0]?.id||"";
     });
-  },[projectId,onError]);
+  },[projectId,onError,activeDataNestAiSession?.jobId]);
 
   const loadJobContext=useCallback(async(jobId:string)=>{
     if(!jobId)return;
@@ -163,6 +167,13 @@ export default function ExternalAiSidebar({
     if(savedProvider&&providers.some(item=>item.key===savedProvider))setProvider(savedProvider);
     void loadJobs();
   },[loadJobs]);
+
+  useEffect(()=>{
+    const activeJobId=activeDataNestAiSession?.jobId||"";
+    if(activeJobId&&jobs.some(job=>job.id===activeJobId)&&selectedJobId!==activeJobId){
+      setSelectedJobId(activeJobId);
+    }
+  },[activeDataNestAiSession?.jobId,jobs,selectedJobId]);
 
   useEffect(()=>{
     if(!selectedJobId)return;
@@ -338,7 +349,7 @@ export default function ExternalAiSidebar({
       "4. Validation / acceptance checks",
       "5. Next action to import back into DataNest",
       "",
-      "I will import the relevant result back into Resonance DataNest as tracked external-AI R&D input."
+      "I will return the relevant result to Resonance DataNest as traceable uncertified AI Companion evidence."
     ].join("\n");
   }
 
@@ -496,23 +507,32 @@ export default function ExternalAiSidebar({
     setBusy(true);
     onError("");
     try{
-      const {data,error}=await supabase.rpc("import_external_ai_response",{
-        target_session:sessionId,
-        response_content:content.trim()
+      const {data,error}=await supabase.functions.invoke("datanest-ai-intake",{
+        body:{
+          sourceType:"ai_companion",
+          externalAiSessionId:sessionId,
+          datanestAiSessionId:selectedJob&&
+            activeDataNestAiSession?.jobId===selectedJob.id&&
+            activeDataNestAiSession.sessionId
+              ?activeDataNestAiSession.sessionId
+              :null,
+          content:content.trim()
+        }
       });
       if(error)throw error;
 
       const payload=(data||{}) as Record<string,unknown>;
-      const inputId=String(payload.input_id||"");
+      const eventId=String(payload.eventId||"");
+      const stagedTraceId=String(payload.traceId||traceKey||"");
       setResponseText("");
-      setLastImportedId(inputId);
+      setLastImportedId(eventId);
       onNotice(
-        "External AI result imported into "+
+        "External AI result staged as UNCERTIFIED evidence for "+
         (selectedJob?jobCode(selectedJob):"the Job Manifest")+
-        (payload.idempotent?" using the existing tracked import.":".")
+        (payload.idempotent?" using the existing trace.":".")
       );
-      window.dispatchEvent(new CustomEvent("datanest:external-ai-imported",{
-        detail:{jobId:selectedJobId,inputId}
+      window.dispatchEvent(new CustomEvent("datanest:external-ai-staged",{
+        detail:{jobId:selectedJobId,eventId,traceId:stagedTraceId}
       }));
     }catch(error){
       onError(error instanceof Error?error.message:"Unable to import external AI response.");
@@ -682,8 +702,8 @@ export default function ExternalAiSidebar({
         </div>
 
         <p className="externalAiPrivacyNote">
-          Uses your external AI account/credits. Launching a session creates no contribution points.
-          Imported work remains reported/unscored until independent review.
+          Uses your external AI account/credits. Returned work is staged as UNCERTIFIED evidence
+          and cannot become project-wide memory until governed certification.
         </p>
       </section>
 

@@ -157,3 +157,22 @@ test("Return to DataNest exposes an explicit clipboard permission arm", () => {
     "focus capture must be gated on granted clipboard access"
   );
 });
+
+
+test("external AI return uses governed staging intake rather than legacy job_inputs import", () => {
+  const source = fs.readFileSync(
+    path.join(repoRoot, "src/components/ExternalAiSidebar.tsx"),
+    "utf8"
+  );
+  assert.match(source, /functions\.invoke\("datanest-ai-intake"/);
+  assert.doesNotMatch(source, /rpc\("import_external_ai_response"/);
+  assert.match(source, /datanest:external-ai-staged/);
+});
+
+test("handoff no longer describes imported output as R&D contribution", () => {
+  const source = fs.readFileSync(
+    path.join(repoRoot, "src/components/ExternalAiSidebar.tsx"),
+    "utf8"
+  );
+  assert.doesNotMatch(source, /external-AI R&D input/);
+});

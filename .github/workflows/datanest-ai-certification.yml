@@ -1,0 +1,117 @@
+name: DataNest AI Certification
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    env:
+      # Supabase publishable client configuration is intentionally public.
+      # Only the service-role key and Postgres database password remain GitHub secrets.
+      DATANEST_AI_STAGING_URL: https://qchttpcyqlqnhvahprhz.supabase.co
+      DATANEST_AI_STAGING_PUBLISHABLE_KEY: sb_publishable_spZZYssbgfnC0qecAPLPVQ_ZqAyugqS
+      DATANEST_AI_STAGING_SERVICE_ROLE_KEY: ${{ secrets.DATANEST_AI_STAGING_SERVICE_ROLE_KEY }}
+      DATANEST_AI_STAGING_DB_PASSWORD: ${{ secrets.DATANEST_AI_STAGING_DB_PASSWORD }}
+      PGHOST: aws-0-eu-central-1.pooler.supabase.com
+      PGPORT: "5432"
+      PGDATABASE: postgres
+      PGUSER: postgres.qchttpcyqlqnhvahprhz
+      PGSSLMODE: require
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+      - run: npm ci
+
+      - name: Create ephemeral governed E2E credentials
+        shell: bash
+        run: |
+          echo "DATANEST_AI_E2E_EMAIL=datanest-ai-e2e@resonance.invalid" >> "$GITHUB_ENV"
+          PASSWORD="$(node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('hex'))")"
+          echo "DATANEST_AI_E2E_PASSWORD=$PASSWORD" >> "$GITHUB_ENV"
+
+      - name: Validate governed staging configuration
+        shell: bash
+        run: |
+          test -n "$DATANEST_AI_STAGING_URL" || { echo "DATANEST_AI_STAGING_URL is required"; exit 1; }
+          test -n "$DATANEST_AI_STAGING_PUBLISHABLE_KEY" || { echo "DATANEST_AI_STAGING_PUBLISHABLE_KEY is required"; exit 1; }
+          test -n "$DATANEST_AI_STAGING_SERVICE_ROLE_KEY" || { echo "DATANEST_AI_STAGING_SERVICE_ROLE_KEY is required"; exit 1; }
+          test -n "$DATANEST_AI_STAGING_DB_PASSWORD" || { echo "DATANEST_AI_STAGING_DB_PASSWORD is required"; exit 1; }
+          test -n "$DATANEST_AI_E2E_EMAIL" || { echo "DATANEST_AI_E2E_EMAIL is required"; exit 1; }
+          test -n "$DATANEST_AI_E2E_PASSWORD" || { echo "DATANEST_AI_E2E_PASSWORD is required"; exit 1; }
+
+      - name: Run staging schema acceptance
+        env:
+          PGPASSWORD: ${{ env.DATANEST_AI_STAGING_DB_PASSWORD }}
+        run: |
+          psql -v ON_ERROR_STOP=1 -f tests/sql/datanest_ai_staging_acceptance.sql
+          psql -v ON_ERROR_STOP=1 -f tests/sql/datanest_ai_production_acceptance.sql
+
+      - name: Seed governed E2E fixtures
+        run: npm run seed:e2e:datanest-ai
+
+      - name: Build static DataNest against governed staging
+        env:
+          DATANEST_STATIC_EXPORT: "true"
+          NEXT_PUBLIC_BASE_PATH: ""
+          NEXT_PUBLIC_SUPABASE_URL: ${{ env.DATANEST_AI_STAGING_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ env.DATANEST_AI_STAGING_PUBLISHABLE_KEY }}
+          SUPABASE_URL: ${{ env.DATANEST_AI_STAGING_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ env.DATANEST_AI_STAGING_PUBLISHABLE_KEY }}
+          DATANEST_RELEASE_SHA: ${{ github.sha }}
+          DATANEST_DB_RELEASE: datanest-ai-governed-memory-v1
+          DATANEST_EDGE_AI: datanest-ai-chat@1
+          DATANEST_EDGE_INTAKE: datanest-ai-intake@1
+          DATANEST_EDGE_CERTIFICATION: datanest-ai-certification@1
+          DATANEST_EDGE_PROVIDER: manage-ai-provider-v2@1
+          DATANEST_EDGE_INVITES: send-job-invite@1
+        run: |
+          node scripts/write-runtime-config.mjs public/runtime-config.js
+          node scripts/write-release-manifest.mjs public/release-manifest.json
+          npm run build
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run governed browser acceptance
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
+          DATANEST_APP_PATH: /
+        shell: bash
+        run: |
+          python3 -m http.server 4173 --directory out >/tmp/datanest-ai-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          for i in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:4173/ >/dev/null || {
+            cat /tmp/datanest-ai-http.log
+            exit 1
+          }
+          npm run test:browser:datanest-ai
+
+      - name: Run governed stress acceptance
+        run: npm run test:stress:datanest-ai
+
+      - name: Write certification evidence
+        shell: bash
+        run: |
+          mkdir -p certification-artifacts
+          node -e 'const fs=require("fs"); fs.writeFileSync("certification-artifacts/datanest-ai-certification.json", JSON.stringify({commit:process.env.GITHUB_SHA,status:"passed",suite:"datanest-ai-governed-memory-v1",completedAt:new Date().toISOString()})+"\n")'
+
+      - uses: actions/upload-artifact@v4.6.2
+        with:
+          name: datanest-ai-certification-${{ github.sha }}
+          path: certification-artifacts/datanest-ai-certification.json
+          if-no-files-found: error
