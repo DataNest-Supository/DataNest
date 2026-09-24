@@ -1,0 +1,33 @@
+{
+  "type": "datanest_ai_retention_recovery",
+  "timestamp_utc": "2026-09-24T21:59:00Z",
+  "staging_project_ref": "qchttpcyqlqnhvahprhz",
+  "production_vault_secret_name": "datanest_ai_backup_key",
+  "encryption": "OpenPGP symmetric AES-256 via PostgreSQL pgcrypto",
+  "plaintext_sha256": "9d1888e2685f11f92a2ccf5f46d2fda0402b424d4a6f4a06d094bc9de67a5ac6",
+  "plaintext_bytes": 449738,
+  "ciphertext_base64_chars": 50382,
+  "recovery_verified": true,
+  "recovery_counts": {
+    "ai_sessions": 18,
+    "ai_intake_events": 113,
+    "ai_reasoning_envelopes": 54,
+    "ai_trend_clusters": 3,
+    "ai_trend_evidence": 54,
+    "ai_learning_candidates": 51,
+    "ai_candidate_evidence": 1207,
+    "ai_validation_runs": 4,
+    "ai_certification_decisions": 1,
+    "ai_memory_supersessions": 0
+  },
+  "storage": {
+    "intended_dropbox_path": "/DataNest-AI-Backups/",
+    "dropbox_folder_created": true,
+    "encrypted_file_uploaded": false,
+    "blocker": "Dropbox MCP upload requires an injected file object; current workspace rejected file-id handoff. No claim of completed Dropbox upload."
+  },
+  "merge_gate": {
+    "status": "blocked",
+    "reason": "Encrypted backup must be physically present in approved external storage before merge."
+  }
+}
