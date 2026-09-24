@@ -1,0 +1,59 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {
+  canAutoCertify,
+  canUseUncertifiedEvidence,
+  requiredCertificationAuthority,
+  contextTrustLabel
+} from "../../supabase/functions/_shared/datanestAiPolicy.ts";
+
+test("owner-only categories never auto-certify", () => {
+  for (const category of ["architecture","security","authorization","governance","destructive","production_policy"]) {
+    assert.equal(
+      requiredCertificationAuthority({ category, riskClass: "low", hasConflict: false }),
+      "owner"
+    );
+    assert.equal(
+      canAutoCertify({
+        category,
+        riskClass: "low",
+        hasConflict: false,
+        allGatesPassed: true,
+        evidenceCount: 10
+      }),
+      false
+    );
+  }
+});
+
+test("repeated low-risk non-conflicting knowledge can auto-certify after all gates", () => {
+  assert.equal(
+    canAutoCertify({
+      category: "workflow",
+      riskClass: "low",
+      hasConflict: false,
+      allGatesPassed: true,
+      evidenceCount: 2
+    }),
+    true
+  );
+});
+
+test("conflict forces owner review", () => {
+  assert.equal(
+    requiredCertificationAuthority({ category: "workflow", riskClass: "low", hasConflict: true }),
+    "owner"
+  );
+});
+
+test("uncertified evidence is scoped to the same project, job and session", () => {
+  const evidence = { projectId: "p1", jobId: "j1", sessionId: "s1" };
+  assert.equal(canUseUncertifiedEvidence(evidence, { projectId: "p1", jobId: "j1", sessionId: "s1" }), true);
+  assert.equal(canUseUncertifiedEvidence(evidence, { projectId: "p1", jobId: "j2", sessionId: "s1" }), false);
+  assert.equal(canUseUncertifiedEvidence(evidence, { projectId: "p1", jobId: "j1", sessionId: "s2" }), false);
+});
+
+test("trust labels do not blur provisional and certified evidence", () => {
+  assert.equal(contextTrustLabel("uncertified"), "UNCERTIFIED");
+  assert.equal(contextTrustLabel("certified"), "CERTIFIED");
+});
