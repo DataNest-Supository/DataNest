@@ -31,11 +31,17 @@ type Suggestion = {
 };
 
 const providers = [
-  {key:"chatgpt",label:"ChatGPT",url:"https://chatgpt.com/"},
-  {key:"gemini",label:"Gemini",url:"https://gemini.google.com/app"},
-  {key:"claude",label:"Claude",url:"https://claude.ai/new"},
-  {key:"grok",label:"Grok",url:"https://grok.com/"},
-  {key:"perplexity",label:"Perplexity",url:"https://www.perplexity.ai/"}
+  {
+    key:"chatgpt",
+    label:"ChatGPT",
+    url:"https://chatgpt.com/",
+    embed:"blocked",
+    embedReason:"ChatGPT blocks third-party iframe embedding. DataNest uses companion mode instead."
+  },
+  {key:"gemini",label:"Gemini",url:"https://gemini.google.com/app",embed:"unknown",embedReason:""},
+  {key:"claude",label:"Claude",url:"https://claude.ai/new",embed:"unknown",embedReason:""},
+  {key:"grok",label:"Grok",url:"https://grok.com/",embed:"unknown",embedReason:""},
+  {key:"perplexity",label:"Perplexity",url:"https://www.perplexity.ai/",embed:"unknown",embedReason:""}
 ] as const;
 
 function jobCode(job:Job){
@@ -66,7 +72,7 @@ export default function ExternalAiSidebar({
   const [suggestions,setSuggestions]=useState<Suggestion[]>([]);
   const [provider,setProvider]=useState("chatgpt");
   const [sessionId,setSessionId]=useState("");
-  const [launchMode,setLaunchMode]=useState<"sidebar"|"popout">("sidebar");
+  const [launchMode,setLaunchMode]=useState<"sidebar"|"companion"|"popout">("sidebar");
   const [handoff,setHandoff]=useState("");
   const [responseText,setResponseText]=useState("");
   const [embedUrl,setEmbedUrl]=useState("");
@@ -234,7 +240,37 @@ export default function ExternalAiSidebar({
     }
   }
 
-  async function startSession(mode:"sidebar"|"popout"){
+  function companionFeatures(){
+    const screenWidth=window.screen?.availWidth||window.innerWidth;
+    const screenHeight=window.screen?.availHeight||window.innerHeight;
+    const popupWidth=clamp(Math.round(screenWidth*0.38),460,760);
+    const popupHeight=clamp(screenHeight-80,620,1100);
+    const left=Math.max(0,(window.screen?.availLeft||0)+screenWidth-popupWidth);
+    const top=Math.max(0,(window.screen?.availTop||0)+40);
+    return [
+      "popup=yes",
+      "noopener=yes",
+      "noreferrer=yes",
+      "resizable=yes",
+      "scrollbars=yes",
+      "width="+popupWidth,
+      "height="+popupHeight,
+      "left="+left,
+      "top="+top
+    ].join(",");
+  }
+
+  function openProviderWindow(mode:"companion"|"popout"){
+    const name=mode==="companion"
+      ? "datanest-ai-companion-"+selectedProvider.key
+      : "_blank";
+    const features=mode==="companion"
+      ? companionFeatures()
+      : "noopener,noreferrer,resizable=yes,scrollbars=yes";
+    return window.open(selectedProvider.url,name,features);
+  }
+
+  async function startSession(mode:"sidebar"|"companion"|"popout"){
     if(!selectedJob)return;
 
     const handoffText=buildHandoff();
@@ -243,8 +279,14 @@ export default function ExternalAiSidebar({
     onError("");
 
     let popup:Window|null=null;
-    if(mode==="popout"){
-      popup=window.open("about:blank","_blank","noopener,noreferrer");
+    if(mode==="companion"||mode==="popout"){
+      const name=mode==="companion"
+        ? "datanest-ai-companion-"+selectedProvider.key
+        : "_blank";
+      const features=mode==="companion"
+        ? companionFeatures()
+        : "noopener,noreferrer,resizable=yes,scrollbars=yes";
+      popup=window.open("about:blank",name,features);
     }
 
     try{
@@ -272,17 +314,21 @@ export default function ExternalAiSidebar({
         setEmbedUrl(selectedProvider.url);
         onNotice(
           selectedProvider.label+
-          " opened in the DataNest AI sidebar. If the provider blocks embedded display, use Pop out; the handoff remains copied and tracked."
+          " opened in the DataNest AI sidebar. If the provider blocks embedded display, switch to companion mode; the handoff remains copied and tracked."
         );
       }else{
+        setEmbedUrl("");
         if(popup){
           popup.location.href=selectedProvider.url;
         }else{
-          window.open(selectedProvider.url,"_blank","noopener,noreferrer");
+          openProviderWindow(mode);
         }
         onNotice(
           selectedProvider.label+
-          " opened in a separate window using your own account. The Job Manifest handoff was prepared for this tracked session."
+          (mode==="companion"
+            ? " opened in DataNest companion mode beside the app using your own account. "
+            : " opened in a separate window using your own account. ")+
+          "The Job Manifest handoff is prepared and the session is tracked."
         );
       }
     }catch(error){
@@ -388,13 +434,22 @@ export default function ExternalAiSidebar({
           <small>{"Priority "+selectedJob.priority+" · Updated "+new Date(selectedJob.updated_at).toLocaleString()}</small>
         </div>}
 
+        {selectedProvider.embed==="blocked"&&<div className="externalAiEmbedNotice" role="status">
+          <b>{selectedProvider.label+" uses companion mode"}</b>
+          <span>{selectedProvider.embedReason}</span>
+        </div>}
+
         <div className="externalAiLaunchButtons">
           <button
             className="primaryButton compact"
             type="button"
             disabled={busy||!selectedJob}
-            onClick={()=>void startSession("sidebar")}
-          >{busy?"Opening…":"Open in sidebar"}</button>
+            onClick={()=>void startSession(selectedProvider.embed==="blocked"?"companion":"sidebar")}
+          >{busy
+            ?"Opening…"
+            :selectedProvider.embed==="blocked"
+              ?"Open companion"
+              :"Open in sidebar"}</button>
           <button
             className="secondaryButton compact"
             type="button"
@@ -411,6 +466,26 @@ export default function ExternalAiSidebar({
           Imported work remains reported/unscored until independent review.
         </p>
       </section>
+
+      {launchMode==="companion"&&sessionId&&<section className="externalAiCompanionSection">
+        <div className="externalAiCompanionIcon">↗</div>
+        <div>
+          <p className="eyebrow">COMPANION MODE</p>
+          <h3>{selectedProvider.label+" is open beside DataNest"}</h3>
+          <p>
+            The provider's own secure window handles sign-in and your account/credits.
+            DataNest keeps the Job Manifest handoff, tracking, and response import here in the sidebar.
+          </p>
+          <div className="externalAiCompanionActions">
+            <button className="secondaryButton compact" type="button" onClick={()=>openProviderWindow("companion")}>
+              Open / focus companion
+            </button>
+            <button className="textButton" type="button" onClick={()=>void copyHandoff()}>
+              Copy handoff again
+            </button>
+          </div>
+        </div>
+      </section>}
 
       {embedUrl&&<section className="externalAiEmbedSection">
         <div className="rowBetween">
@@ -433,8 +508,8 @@ export default function ExternalAiSidebar({
           />
         </div>
         <p className="externalAiFrameFallback">
-          Some AI providers block iframe embedding for security. If this panel refuses to load or sign in, use <b>Pop out</b>;
-          the DataNest session, handoff and import workflow remain active.
+          Some AI providers block iframe embedding for security. If this panel refuses to load or sign in, use <b>Pop out</b>.
+          DataNest does not bypass provider framing protections; the tracked handoff/import workflow remains active.
         </p>
       </section>}
 
@@ -466,7 +541,7 @@ export default function ExternalAiSidebar({
       {!sessionId&&<div className="externalAiDockEmpty">
         <div>AI</div>
         <h3>Choose a Job Manifest and provider</h3>
-        <p>Open the provider inside this dock when embedding is supported, or use the pop-out fallback while DataNest stays open.</p>
+        <p>Providers that permit embedding can open inside this dock. ChatGPT uses managed companion mode so its secure web app opens beside DataNest while the tracked workflow remains here.</p>
       </div>}
     </div>
   </aside>;
