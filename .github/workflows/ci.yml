@@ -20,7 +20,7 @@ jobs:
       - name: Write release manifest
         env:
           DATANEST_RELEASE_SHA: ${{ github.sha }}
-          DATANEST_DB_RELEASE: security-integrity-v1
+          DATANEST_DB_RELEASE: external-ai-live-v1
           DATANEST_EDGE_AI: rnd-ai-chat-v3@1
           DATANEST_EDGE_PROVIDER: manage-ai-provider-v2@1
           DATANEST_EDGE_INVITES: send-job-invite@1
