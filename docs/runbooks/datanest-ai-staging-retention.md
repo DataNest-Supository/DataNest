@@ -19,9 +19,9 @@ Rejected, superseded, and certified evidence stays available for longitudinal tr
 
 1. Use any native Supabase backup/PITR capability available for the staging project as the primary recovery mechanism.
 2. Maintain encrypted DataNest AI exports as a secondary recovery mechanism.
-3. Before production release, at least one durable backup destination outside the staging project must be configured and a restore/verification drill must pass.
+3. Before production release, at least one durable encrypted backup copy must be physically stored outside the staging project and a restore/verification drill must pass. An approved local-PC backup location qualifies when the encrypted file and manifest are retained deliberately rather than left as a temporary browser download.
 
-If native recoverable backup/PITR is unavailable for the current Supabase plan, stop the production release and obtain explicit approval for the durable external backup destination. Do not silently choose a new storage provider.
+If native recoverable backup/PITR is unavailable for the current Supabase plan, stop the production release and obtain explicit approval for the durable off-staging backup destination. Approved destinations may include a controlled local-PC backup folder or another explicitly approved external store. Do not silently choose a new storage provider.
 
 ## Required secrets
 
@@ -84,8 +84,23 @@ Production promotion is blocked unless all are true:
 - staging evidence project is healthy and long-lived;
 - encrypted export succeeds;
 - restore/verify drill succeeds;
-- a durable destination outside the staging project is documented;
-- the backup key is recoverable from the approved secret store;
+- a durable encrypted backup copy is physically present outside the staging project and its location is documented;
+- the backup manifest records the expected SHA-256 and the stored copy is verified against it;
+- the backup key is recoverable from the approved secret store and is not stored alongside the backup file;
 - exact-head governed certification CI passes.
 
 A failed retention/recovery gate cannot be downgraded to a warning.
+
+
+### Approved local-PC acceptance
+
+A local-PC copy satisfies the physical backup gate when all of the following are true:
+
+- the encrypted backup file is saved in a deliberate backup folder outside temporary browser/download cache;
+- the non-secret manifest is saved beside it;
+- the stored encrypted file's SHA-256 is verified against the recorded manifest value;
+- the decryption key remains only in the approved secret store;
+- the restore/verification drill has already passed; and
+- the operator records the verified local path in the PR release evidence.
+
+A suitable Windows example is `C:\Users\Ashley\Documents\RONSAS\Backups\DataNest-AI\`. The exact path may differ, but it must be durable and intentionally retained.

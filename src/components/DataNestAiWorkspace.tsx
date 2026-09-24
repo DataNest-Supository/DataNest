@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 import DataNestAiChatPanel,{type DataNestAiEvent} from "@/components/DataNestAiChatPanel";
 import DataNestAiMemoryPanel,{type CertifiedMemoryItem} from "@/components/DataNestAiMemoryPanel";
@@ -68,6 +68,7 @@ export default function DataNestAiWorkspace({
   const [sessionId,setSessionId]=useState("");
   const [context,setContext]=useState<ContextResponse|null>(null);
   const [loading,setLoading]=useState(true);
+  const selectedJobIdRef=useRef("");
 
   const selectedJob=useMemo(
     ()=>jobs.find(job=>job.id===selectedJobId)||null,
@@ -87,22 +88,28 @@ export default function DataNestAiWorkspace({
     const next=(data||[]) as Job[];
     setJobs(next);
     setSelectedJobId(current=>{
-      if(current&&next.some(job=>job.id===current))return current;
-      return next[0]?.id||"";
+      const nextId=current&&next.some(job=>job.id===current)
+        ?current
+        :next[0]?.id||"";
+      selectedJobIdRef.current=nextId;
+      return nextId;
     });
   },[projectId,setError]);
 
   const refreshContext=useCallback(async()=>{
     if(!selectedJobId)return;
+    const requestedJobId=selectedJobId;
     const supabase=getSupabase();
     if(!supabase)return;
     setLoading(true);
     const {data,error}=await supabase.functions.invoke("datanest-ai-chat",{
-      body:{action:"context",jobId:selectedJobId,sessionId:sessionId||null}
+      body:{action:"context",jobId:requestedJobId,sessionId:sessionId||null}
     });
+    if(selectedJobIdRef.current!==requestedJobId)return;
     setLoading(false);
     if(error){setError(error.message);return;}
     const payload=data as ContextResponse;
+    if(payload.job?.id!==requestedJobId)return;
     setContext(payload);
     if(payload.sessionId)setSessionId(payload.sessionId);
   },[selectedJobId,sessionId,setError]);
@@ -172,7 +179,7 @@ export default function DataNestAiWorkspace({
       {jobs.map(job=><button
         key={job.id}
         className={"rndJobChip "+(job.id===selectedJobId?"active":"")}
-        onClick={()=>setSelectedJobId(job.id)}
+        onClick={()=>{selectedJobIdRef.current=job.id;setSelectedJobId(job.id)}}
       >
         <span>{jobCode(job)}</span>
         <b>{job.title}</b>
