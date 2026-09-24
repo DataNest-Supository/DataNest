@@ -61,3 +61,31 @@ begin
     raise exception 'AI usage paths still create contribution rows';
   end if;
 end $$;
+
+do $$
+declare
+  wrapper_count integer;
+begin
+  select count(*) into wrapper_count
+  from pg_proc p
+  join pg_namespace n on n.oid=p.pronamespace
+  where n.nspname='public'
+    and p.prosecdef
+    and p.oid in (
+      'public.begin_datanest_ai_request(uuid,uuid,text)'::regprocedure,
+      'public.get_certified_memory_context(uuid,uuid,integer)'::regprocedure,
+      'public.mark_external_ai_session_staged(uuid,uuid,text)'::regprocedure,
+      'public.service_promote_certified_memory(uuid,text,text,uuid,uuid[],text[],text,numeric,text,text,uuid)'::regprocedure
+    );
+
+  if wrapper_count <> 4 then
+    raise exception 'DataNest AI public RPC wrappers must be SECURITY DEFINER gateways';
+  end if;
+
+  if has_function_privilege('authenticated','private.begin_datanest_ai_request(uuid,uuid,text)','execute')
+     or has_function_privilege('authenticated','private.get_certified_memory_context(uuid,uuid,integer)','execute')
+     or has_function_privilege('authenticated','private.mark_external_ai_session_staged(uuid,uuid,text)','execute')
+     or has_function_privilege('authenticated','private.promote_certified_memory(uuid,text,text,uuid,uuid[],text[],text,numeric,text,text,uuid)','execute') then
+    raise exception 'authenticated must not execute private DataNest AI privileged functions directly';
+  end if;
+end $$;
