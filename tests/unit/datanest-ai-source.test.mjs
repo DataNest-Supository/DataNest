@@ -96,3 +96,18 @@ test("External AI Companion uses certification language instead of scoring langu
   assert.match(source,/UNCERTIFIED evidence/);
   assert.match(source,/governed certification/);
 });
+
+
+test("certification workspace scopes evidence rows to project candidates", () => {
+  const source=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-certification/index.ts"),"utf8");
+  assert.match(source,/const candidateIds=.*candidates/);
+  assert.match(source,/ai_validation_runs"\)[\s\S]*?\.in\("candidate_id",candidateIds\)/);
+  assert.match(source,/ai_certification_decisions"\)[\s\S]*?\.in\("candidate_id",candidateIds\)/);
+});
+
+test("browser certification console cannot self-pass the stress-test gate", () => {
+  const source=fs.readFileSync(path.join(root,"src/components/DataNestAiCertificationPanel.tsx"),"utf8");
+  assert.match(source,/gate==="STRESS_TEST"/);
+  assert.match(source,/Recorded by governed stress suite/);
+  assert.doesNotMatch(source,/onClick=.*record_validation[\s\S]{0,900}STRESS_TEST/);
+});
