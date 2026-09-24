@@ -1,7 +1,8 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
+import { selectExternalAiClipboardCandidate } from "@/lib/externalAiClipboard";
 
 type Job = {
   id:string;
@@ -79,6 +80,7 @@ export default function ExternalAiSidebar({
   const [lastImportedId,setLastImportedId]=useState("");
   const [embedUrl,setEmbedUrl]=useState("");
   const [busy,setBusy]=useState(false);
+  const lastClipboardCapture=useRef("");
 
   const selectedJob=useMemo(
     ()=>jobs.find(job=>job.id===selectedJobId)||null,
@@ -165,6 +167,7 @@ export default function ExternalAiSidebar({
     setSuggestions([]);
     setResponseText("");
     setLastImportedId("");
+    lastClipboardCapture.current="";
     setEmbedUrl("");
     void loadJobContext(selectedJobId);
   },[selectedJobId,loadJobContext]);
@@ -179,6 +182,8 @@ export default function ExternalAiSidebar({
     setTraceKey("");
     setHandoff("");
     setResponseText("");
+    setLastImportedId("");
+    lastClipboardCapture.current="";
     setEmbedUrl("");
   },[provider]);
 
@@ -192,6 +197,50 @@ export default function ExternalAiSidebar({
     window.addEventListener("datanest:job-selected",handle);
     return()=>window.removeEventListener("datanest:job-selected",handle);
   },[jobs]);
+
+  const captureClipboardResponse=useCallback(async(announce=false)=>{
+    if(!sessionId||!navigator.clipboard?.readText)return;
+
+    try{
+      const clipboardText=await navigator.clipboard.readText();
+      const candidate=selectExternalAiClipboardCandidate({
+        clipboardText,
+        currentResponse:responseText,
+        blockedTexts:[handoff,preparedHandoff,lastClipboardCapture.current]
+      });
+
+      if(!candidate){
+        if(announce)onNotice("Clipboard does not contain a new external AI response.");
+        return;
+      }
+
+      lastClipboardCapture.current=candidate;
+      setResponseText(candidate);
+      setLastImportedId("");
+      onNotice("External AI response captured into Return to DataNest. Review it, then click Import.");
+    }catch{
+      if(announce){
+        onError("Clipboard access was blocked. Paste the external AI response into Return to DataNest manually.");
+      }
+    }
+  },[sessionId,responseText,handoff,preparedHandoff,onNotice,onError]);
+
+  useEffect(()=>{
+    if(!sessionId)return;
+
+    const capture=()=>{void captureClipboardResponse(false);};
+    const captureWhenVisible=()=>{
+      if(document.visibilityState==="visible")capture();
+    };
+
+    window.addEventListener("focus",capture);
+    document.addEventListener("visibilitychange",captureWhenVisible);
+
+    return()=>{
+      window.removeEventListener("focus",capture);
+      document.removeEventListener("visibilitychange",captureWhenVisible);
+    };
+  },[sessionId,captureClipboardResponse]);
 
   function buildHandoff(trace?:{sessionId?:string;traceKey?:string;providerLabel?:string}){
     if(!selectedJob)return "";
@@ -429,26 +478,8 @@ export default function ExternalAiSidebar({
     }
   }
 
-  async function pasteAndImportResponse(){
-    if(!sessionId){
-      onError("Open a tracked AI companion session before importing a result.");
-      return;
-    }
-    if(!navigator.clipboard?.readText){
-      onError("Clipboard read access is unavailable in this browser. Paste the response into the import box instead.");
-      return;
-    }
-    try{
-      const text=(await navigator.clipboard.readText()).trim();
-      if(!text){
-        onError("The clipboard does not contain an AI response to import.");
-        return;
-      }
-      setResponseText(text);
-      await importResponseContent(text);
-    }catch{
-      onError("Clipboard access was blocked. Copy the AI response, then paste it into the DataNest import box.");
-    }
+  async function pasteClipboardResponse(){
+    await captureClipboardResponse(true);
   }
 
   async function importResponse(event:FormEvent){
@@ -615,48 +646,7 @@ export default function ExternalAiSidebar({
         </p>
       </section>}
 
-      {sessionId&&<form className="externalAiDockSection externalAiImport" onSubmit={importResponse}>
-        <div className="rowBetween">
-          <div>
-            <p className="eyebrow">RETURN TO DATANEST</p>
-            <b>Import external AI result</b>
-          </div>
-          <span className="badge good">{lastImportedId?"IMPORTED":launchMode.toUpperCase()+" · OPEN"}</span>
-        </div>
-        <p className="externalAiImportHint">
-          Copy the finished AI answer in the companion. DataNest will attach the imported result to this tracked Job Manifest and session.
-        </p>
-        <button
-          className="primaryButton"
-          type="button"
-          disabled={busy}
-          onClick={()=>void pasteAndImportResponse()}
-        >
-          {busy?"Importing…":"Paste + import to DataNest"}
-        </button>
-        <textarea
-          rows={7}
-          value={responseText}
-          onChange={event=>setResponseText(event.target.value)}
-          placeholder="Or paste/edit the external AI result here before importing…"
-        />
-        <div className="externalAiImportActions">
-          <button className="secondaryButton" disabled={busy||!responseText.trim()}>
-            {busy?"Importing…":"Import typed/pasted result"}
-          </button>
-          <button
-            className="textButton"
-            type="button"
-            disabled={busy||!responseText}
-            onClick={()=>setResponseText("")}
-          >
-            Clear
-          </button>
-        </div>
-        <small>
-          {"Tracked session "+sessionId.slice(0,8)+(lastImportedId?" · Input "+lastImportedId.slice(0,8):"")}
-        </small>
-      </form>}
+
 
       {selectedJob&&<details className="externalAiDockSection externalAiHandoff" open={false}>
         <summary>{"Job Manifest handoff · "+jobCode(selectedJob)+" · JOB ID "+selectedJob.id}</summary>
@@ -669,5 +659,60 @@ export default function ExternalAiSidebar({
         <p>Providers that permit embedding can open inside this dock. ChatGPT uses managed companion mode so its secure web app opens beside DataNest while the tracked workflow remains here.</p>
       </div>}
     </div>
+
+    <form className="externalAiReturnDock externalAiImport" onSubmit={importResponse}>
+      <div className="rowBetween">
+        <div>
+          <p className="eyebrow">RETURN TO DATANEST</p>
+          <b>External AI response</b>
+        </div>
+        <span className={"badge "+(lastImportedId?"good":sessionId?"live":"neutral")}>
+          {lastImportedId?"IMPORTED":sessionId?launchMode.toUpperCase()+" · READY":"WAITING"}
+        </span>
+      </div>
+      <p className="externalAiImportHint">
+        {sessionId
+          ?"Copy the finished AI answer. When DataNest regains focus it will auto-fill this box; review it before importing."
+          :"Open a tracked AI companion session to enable automatic response capture and import."}
+      </p>
+      <textarea
+        rows={5}
+        disabled={!sessionId}
+        value={responseText}
+        onChange={event=>setResponseText(event.target.value)}
+        placeholder={sessionId
+          ?"External AI response will appear here automatically when copied, or paste/edit it manually…"
+          :"Return to DataNest will activate when a tracked AI session is open."}
+      />
+      <div className="externalAiImportActions">
+        <button
+          className="secondaryButton compact"
+          type="button"
+          disabled={busy||!sessionId}
+          onClick={()=>void pasteClipboardResponse()}
+        >
+          Paste from clipboard
+        </button>
+        <button
+          className="primaryButton compact"
+          disabled={busy||!sessionId||!responseText.trim()}
+        >
+          {busy?"Importing…":"Import to DataNest"}
+        </button>
+        <button
+          className="textButton"
+          type="button"
+          disabled={busy||!responseText}
+          onClick={()=>setResponseText("")}
+        >
+          Clear
+        </button>
+      </div>
+      <small>
+        {sessionId
+          ?"Tracked session "+sessionId.slice(0,8)+(lastImportedId?" · Input "+lastImportedId.slice(0,8):"")
+          :"No tracked session yet"}
+      </small>
+    </form>
   </aside>;
 }
