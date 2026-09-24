@@ -49,7 +49,24 @@ async function ensureCompanionSession(input:{
   jobId:string;
   userId:string;
   externalSessionId:string;
+  preferredSessionId:string|null;
 }){
+  if(input.preferredSessionId){
+    const {data,error}=await input.staging
+      .from("ai_sessions")
+      .select("id,project_id,job_id,user_id")
+      .eq("id",input.preferredSessionId)
+      .eq("project_id",input.projectId)
+      .eq("job_id",input.jobId)
+      .eq("user_id",input.userId)
+      .maybeSingle();
+    if(error)throw error;
+    if(!data){
+      throw new Error("Active DataNest AI session does not match the authorized user and Job.");
+    }
+    return {id:String(data.id)};
+  }
+
   const {data,error}=await input.staging
     .from("ai_sessions")
     .upsert({
@@ -101,6 +118,7 @@ Deno.serve(async(request:Request)=>{
       return json({error:"sourceType must be ai_companion."},400,origin);
     }
     const externalAiSessionId=String(body.externalAiSessionId||"");
+    const datanestAiSessionId=String(body.datanestAiSessionId||"").trim();
     const content=String(body.content||"").trim();
     if(!externalAiSessionId||!content){
       return json({error:"externalAiSessionId and content are required."},400,origin);
@@ -145,7 +163,8 @@ Deno.serve(async(request:Request)=>{
       projectId:String(session.project_id),
       jobId:String(session.job_id),
       userId:user.id,
-      externalSessionId:String(session.id)
+      externalSessionId:String(session.id),
+      preferredSessionId:datanestAiSessionId||null
     });
 
     const {data:existing,error:existingError}=await staging
