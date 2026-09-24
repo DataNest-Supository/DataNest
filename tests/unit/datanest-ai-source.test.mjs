@@ -64,3 +64,27 @@ test("DataNest AI governed E2E and stress harness is wired", () => {
     "tests/stress/datanest-ai-stress.mjs"
   ]) assert.equal(fs.existsSync(path.join(root,file)),true,file+" must exist");
 });
+
+
+test("governed release wiring names the certified DataNest AI runtime", () => {
+  const ci=fs.readFileSync(path.join(root,".github/workflows/ci.yml"),"utf8");
+  const pages=fs.readFileSync(path.join(root,".github/workflows/pages.yml"),"utf8");
+  const manifest=fs.readFileSync(path.join(root,"scripts/write-release-manifest.mjs"),"utf8");
+  const certification=fs.readFileSync(path.join(root,".github/workflows/datanest-ai-certification.yml"),"utf8");
+  const config=fs.readFileSync(path.join(root,"supabase/config.toml"),"utf8");
+
+  assert.match(ci,/Retired Copilot\/contribution-scoring source remains active/);
+  assert.match(certification,/DATANEST_AI_STAGING_SERVICE_ROLE_KEY/);
+  assert.match(certification,/test:browser:datanest-ai/);
+  assert.match(certification,/test:stress:datanest-ai/);
+
+  for(const fn of ["datanest-ai-chat","datanest-ai-intake","datanest-ai-certification"]){
+    assert.match(config,new RegExp("\\[functions\\."+fn.replaceAll("-","\\-")+"\\][\\s\\S]*?verify_jwt = true"));
+  }
+
+  assert.match(manifest,/datanest-ai-governed-memory-v1/);
+  assert.match(manifest,/datanest-ai-chat@1/);
+  assert.match(manifest,/datanest-ai-intake@1/);
+  assert.match(manifest,/datanest-ai-certification@1/);
+  assert.match(pages,/datanest-ai-governed-memory-v1/);
+});
