@@ -124,3 +124,22 @@ test("certification workspace orders validation runs oldest to newest for latest
   const source=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-certification/index.ts"),"utf8");
   assert.match(source,/ai_validation_runs"\)[\s\S]{0,250}order\("created_at",\{ascending:true\}\)/);
 });
+
+
+test("embedded DataNest AI turns finalize usage requests", () => {
+  const gateway=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-chat/index.ts"),"utf8");
+  const migration=fs.readFileSync(path.join(root,"supabase/migrations/20260924230000_datanest_ai_production.sql"),"utf8");
+  assert.match(migration,/target_status not in \('succeeded','failed','unknown','denied','embedded'\)/);
+  assert.match(
+    gateway,
+    /requestStatus==="pending"[\s\S]{0,700}target_status:"embedded"[\s\S]{0,400}requestStatus="embedded"/
+  );
+});
+
+test("policy-denied provider requests are finalized as denied before embedded fallback", () => {
+  const gateway=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-chat/index.ts"),"utf8");
+  assert.match(
+    gateway,
+    /requestStatus="denied"[\s\S]{0,700}target_status:"denied"/
+  );
+});
