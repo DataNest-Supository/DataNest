@@ -107,15 +107,8 @@ let secondJob=(await admin.from("jobs")
   .maybeSingle());
 if(secondJob.error)throw secondJob.error;
 if(!secondJob.data){
-  const latest=await admin.from("jobs")
-    .select("job_number")
-    .eq("project_id",projectId)
-    .order("job_number",{ascending:false})
-    .limit(1);
-  if(latest.error)throw latest.error;
   const inserted=await admin.from("jobs").insert({
     project_id:projectId,
-    job_number:Number(latest.data?.[0]?.job_number||0)+1,
     title:secondJobTitle,
     description:"Cross-Job isolation acceptance fixture.",
     priority:10,
