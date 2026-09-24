@@ -8,7 +8,10 @@
     "start": "next start",
     "check": "tsc --noEmit",
     "test:browser": "playwright test",
-    "test": "node --test --experimental-strip-types tests/unit/*.test.mjs"
+    "test": "node --test --experimental-strip-types tests/unit/*.test.mjs",
+    "test:browser:datanest-ai": "playwright test tests/browser/datanest-ai.spec.ts",
+    "test:stress:datanest-ai": "node tests/stress/datanest-ai-stress.mjs",
+    "seed:e2e:datanest-ai": "node scripts/seed-datanest-ai-e2e.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
