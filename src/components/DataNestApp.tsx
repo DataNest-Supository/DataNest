@@ -15,7 +15,7 @@ type Checkpoint = { id:string; job_id:string; completed:string[]; remaining:stri
 type AuditEvent = { id:number; job_id:string|null; event_type:string; actor:string; payload:Record<string,unknown>; created_at:string };
 type Policy = { id:string; policy_key:string; value:Record<string,unknown> };
 type ProjectMember = { project_id:string; user_id:string; role:"owner"|"admin"|"operator"|"viewer"; status:string };
-type ViewKey = "overview"|"rnd"|"stakeholders"|"productlab"|"unifi"|"scheduler"|"capabilities"|"runs"|"checkpoints"|"audit"|"settings";
+type ViewKey = "overview"|"ai"|"stakeholders"|"productlab"|"unifi"|"scheduler"|"capabilities"|"runs"|"checkpoints"|"audit"|"settings";
 type HealthState = { state:"checking"|"online"|"degraded"|"offline"; checkedAt:string|null; message:string };
 type Summary = { total:number; active:number; running:number; blocked:number; available:number; registered:number };
 
@@ -25,7 +25,7 @@ const jobColumns = "id,job_number,title,description,priority,status,required_cap
 
 const nav:Array<{key:ViewKey;label:string;group:string;glyph:string}> = [
   {key:"overview",label:"Overview",group:"Project",glyph:"◫"},
-  {key:"rnd",label:"R&D Dashboard",group:"Research",glyph:"⌬"},
+  {key:"ai",label:"DataNest AI",group:"Research",glyph:"⌬"},
   {key:"stakeholders",label:"Stakeholders & AI Credit",group:"Research",glyph:"◉"},
   {key:"productlab",label:"Product Lab",group:"Research",glyph:"▣"},
   {key:"unifi",label:"UNIFI Planner",group:"Tools",glyph:"◇"},
@@ -37,9 +37,9 @@ const nav:Array<{key:ViewKey;label:string;group:string;glyph:string}> = [
   {key:"settings",label:"Settings",group:"System",glyph:"⚙"}
 ];
 
-const RnDDashboard = dynamic(() => import("@/components/RnDDashboard"), {
+const DataNestAiWorkspace = dynamic(() => import("@/components/DataNestAiWorkspace"), {
   ssr: false,
-  loading: () => <section className="panel"><p className="muted">Loading R&D workspace…</p></section>
+  loading: () => <section className="panel"><p className="muted">Loading DataNest AI…</p></section>
 });
 
 const StakeholderDashboard = dynamic(() => import("@/components/StakeholderDashboard"), {
@@ -435,7 +435,7 @@ export default function DataNestApp({session}:{session:Session}) {
         </div>
         {(loadingCore||loadingView)&&<div className="loadingBar" aria-label="Loading DataNest data"><span/></div>}
 
-        {!loadingCore&&project&&view==="overview"&&<Overview project={project} tools={tools} jobs={recentJobs} capabilities={capabilities} counts={summary} setView={setView} canOperate={canOperate}/>}\n        {!loadingCore&&project&&view==="rnd"&&<RnDDashboard projectId={project.id} canOperate={canOperate} currentUserEmail={session.user.email||"Authenticated user"} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError}/>}\n        {!loadingCore&&project&&view==="stakeholders"&&<StakeholderDashboard projectId={project.id} currentUserId={session.user.id} canManageStake={canManageStake}/>}\n        {!loadingCore&&project&&view==="productlab"&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate}/>}
+        {!loadingCore&&project&&view==="overview"&&<Overview project={project} tools={tools} jobs={recentJobs} capabilities={capabilities} counts={summary} setView={setView} canOperate={canOperate}/>}\n        {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError}/>}\n        {!loadingCore&&project&&view==="stakeholders"&&<StakeholderDashboard projectId={project.id} currentUserId={session.user.id} canManageStake={canManageStake}/>}\n        {!loadingCore&&project&&view==="productlab"&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate}/>}
         {!loadingCore&&project&&view==="unifi"&&<UnifiPlanner project={project} jobs={jobs} capabilities={capabilities} reload={async()=>{await loadJobsPage(jobPage);await loadSummary(project.id);await loadRecentJobs(project.id);}} setNotice={setNotice} setError={setError} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage}/>}
         {!loadingCore&&view==="scheduler"&&<Scheduler jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage}/>}
         {!loadingCore&&view==="capabilities"&&<Capabilities capabilities={capabilities}/>}
@@ -459,7 +459,7 @@ export default function DataNestApp({session}:{session:Session}) {
 function Overview({project,tools,jobs,capabilities,counts,setView,canOperate}:{project:Project;tools:Tool[];jobs:Job[];capabilities:Capability[];counts:Summary;setView:(v:ViewKey)=>void;canOperate:boolean}) {
   return <>
     <section className="heroPanel">
-      <div><p className="eyebrow">PROJECT OPERATING ENVIRONMENT</p><h2>{project.name}</h2><p>{project.description}</p><div className="heroActions"><button className="primaryButton compact" disabled={!canOperate} onClick={()=>setView("unifi")}>{canOperate ? "Create UNIFI job" : "Viewer mode"}</button><button className="secondaryButton compact" onClick={()=>setView("rnd")}>Open R&D</button><button className="secondaryButton compact" onClick={()=>setView("productlab")}>Open Product Lab</button><button className="secondaryButton compact" onClick={()=>setView("scheduler")}>Open TranScheduler</button></div></div>
+      <div><p className="eyebrow">PROJECT OPERATING ENVIRONMENT</p><h2>{project.name}</h2><p>{project.description}</p><div className="heroActions"><button className="primaryButton compact" disabled={!canOperate} onClick={()=>setView("unifi")}>{canOperate ? "Create UNIFI job" : "Viewer mode"}</button><button className="secondaryButton compact" onClick={()=>setView("ai")}>Open DataNest AI</button><button className="secondaryButton compact" onClick={()=>setView("productlab")}>Open Product Lab</button><button className="secondaryButton compact" onClick={()=>setView("scheduler")}>Open TranScheduler</button></div></div>
       <div className="stackDiagram"><div>GitHub <b>DataNest</b></div><span>↓</span><div>App Runtime <b>Provider-agnostic</b></div><span>↓</span><div>Supabase <b>Control Plane</b></div></div>
     </section>
     <section className="metricGrid">
