@@ -16,15 +16,24 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run check
+      - name: Guard retired Copilot and scoring source
+        run: |
+          if grep -R --line-number --exclude-dir=node_modules --exclude-dir=docs \
+            -E 'UNIFI Copilot|submit_external_ai_credit|suggested_product_stake' src supabase/functions; then
+            echo "Retired Copilot/contribution-scoring source remains active."
+            exit 1
+          fi
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
       - name: Write release manifest
         env:
           DATANEST_RELEASE_SHA: ${{ github.sha }}
-          DATANEST_DB_RELEASE: companion-handoff-prefill-v1
+          DATANEST_DB_RELEASE: datanest-ai-governed-memory-v1
           DATANEST_BASELINE_RELEASE: reload-latest-v1
           DATANEST_BASELINE_SHA: 592149b0898f6703b28e9fa33e73bd0799cae3fd
-          DATANEST_EDGE_AI: rnd-ai-chat-v3@1
+          DATANEST_EDGE_AI: datanest-ai-chat@1
+          DATANEST_EDGE_INTAKE: datanest-ai-intake@1
+          DATANEST_EDGE_CERTIFICATION: datanest-ai-certification@1
           DATANEST_EDGE_PROVIDER: manage-ai-provider-v2@1
           DATANEST_EDGE_INVITES: send-job-invite@1
         run: node scripts/write-release-manifest.mjs public/release-manifest.json
