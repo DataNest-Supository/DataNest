@@ -219,3 +219,18 @@ test("AI administration is nested under Settings instead of primary navigation",
   assert.match(admin,/manage-ai-provider-v2/);
   assert.match(admin,/set_ai_budget_policy/);
 });
+
+
+test("Overview omits capacity and Operations omits the Capabilities surface", () => {
+  const source=fs.readFileSync(path.join(root,"src/components/DataNestApp.tsx"),"utf8");
+
+  assert.doesNotMatch(source,/label:"Capabilities"/);
+  assert.doesNotMatch(source,/key:"capabilities"/);
+  assert.doesNotMatch(source,/view==="capabilities"/);
+  assert.doesNotMatch(source,/Available capabilities/);
+  assert.doesNotMatch(source,/>CAPACITY</);
+  assert.doesNotMatch(source,/function Capabilities\(/);
+
+  assert.match(source,/<Scheduler jobs=\{jobs\} capabilities=\{capabilities\}/);
+  assert.match(source,/<UnifiPlanner project=\{project\} jobs=\{jobs\} capabilities=\{capabilities\}/);
+});
