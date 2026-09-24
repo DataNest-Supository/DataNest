@@ -169,7 +169,7 @@ function Overview({project,tools,jobs,capabilities,counts,setView}:{project:Proj
   return <>
     <section className="heroPanel">
       <div><p className="eyebrow">PROJECT OPERATING ENVIRONMENT</p><h2>{project.name}</h2><p>{project.description}</p><div className="heroActions"><button className="primaryButton compact" onClick={()=>setView("unifi")}>Create UNIFI job</button><button className="secondaryButton compact" onClick={()=>setView("scheduler")}>Open TranScheduler</button></div></div>
-      <div className="stackDiagram"><div>GitHub <b>DataNest</b></div><span>↓</span><div>Vercel <b>Resonance DataNest</b></div><span>↓</span><div>Supabase <b>Control Plane</b></div></div>
+      <div className="stackDiagram"><div>GitHub <b>DataNest</b></div><span>↓</span><div>App Runtime <b>Provider-agnostic</b></div><span>↓</span><div>Supabase <b>Control Plane</b></div></div>
     </section>
     <section className="metricGrid">
       <Metric label="Total jobs" value={counts.total} note="Project work units"/>
@@ -292,7 +292,7 @@ function Audit({events,jobs}:{events:AuditEvent[];jobs:Job[]}) {
 
 function Settings({project,tools,policies}:{project:Project|null;tools:Tool[];policies:Policy[]}) {
   return <section className="settingsGrid">
-    <div className="panel"><p className="eyebrow">PROJECT</p><h3>{project?.name||"Resonance DataNest"}</h3><dl className="settingsList"><div><dt>Slug</dt><dd>{project?.slug||"resonance-datanest"}</dd></div><div><dt>Status</dt><dd><Badge value={project?.status||"ACTIVE"}/></dd></div><div><dt>GitHub</dt><dd>DataNest-Supository/DataNest</dd></div><div><dt>Supabase</dt><dd>sgqdmfgjbprsoqsmgigi</dd></div><div><dt>Vercel</dt><dd>Resonance DataNest</dd></div></dl></div>
+    <div className="panel"><p className="eyebrow">PROJECT</p><h3>{project?.name||"Resonance DataNest"}</h3><dl className="settingsList"><div><dt>Slug</dt><dd>{project?.slug||"resonance-datanest"}</dd></div><div><dt>Status</dt><dd><Badge value={project?.status||"ACTIVE"}/></dd></div><div><dt>GitHub</dt><dd>DataNest-Supository/DataNest</dd></div><div><dt>Supabase</dt><dd>sgqdmfgjbprsoqsmgigi</dd></div><div><dt>Hosting</dt><dd>Provider-agnostic</dd></div><div><dt>Optional host</dt><dd>Vercel</dd></div></dl></div>
     <div className="panel"><p className="eyebrow">TOOLS</p><h3>Tool registry</h3>{tools.map(t=><div className="settingRow" key={t.id}><div><b>{t.name}</b><small>{t.role}</small></div><Badge value={t.enabled?"ACTIVE":"DISABLED"}/></div>)}</div>
     <div className="panel fullWidth"><p className="eyebrow">SCHEDULER</p><h3>Policies</h3><div className="policyGrid">{policies.map(p=><article key={p.id}><b>{p.policy_key}</b><pre>{JSON.stringify(p.value,null,2)}</pre></article>)}</div></div>
   </section>;
