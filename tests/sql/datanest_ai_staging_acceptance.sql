@@ -71,3 +71,28 @@ begin
     raise exception 'governed staging baseline migration is not registered';
   end if;
 end $$;
+
+
+do $$
+declare
+  secured_count integer;
+begin
+  select count(*) into secured_count
+  from pg_proc p
+  join pg_namespace n on n.oid=p.pronamespace
+  where n.nspname='public'
+    and p.prosecdef
+    and p.oid in (
+      'public.accept_pending_job_invites()'::regprocedure,
+      'public.get_project_dashboard_summary(uuid)'::regprocedure,
+      'public.start_external_ai_sidebar_session(uuid,text,text)'::regprocedure
+    );
+
+  if secured_count <> 3 then
+    raise exception 'authenticated public/private gateway hardening is incomplete: %/3 secured', secured_count;
+  end if;
+
+  if has_schema_privilege('authenticated','private','USAGE') then
+    raise exception 'authenticated must not receive broad USAGE on the private schema';
+  end if;
+end $$;
