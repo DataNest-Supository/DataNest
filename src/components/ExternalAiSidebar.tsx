@@ -68,7 +68,7 @@ export default function ExternalAiSidebar({
 }:{
   projectId:string;
   currentUserEmail:string;
-  activeDataNestAiSession:{jobId:string;sessionId:string}|null;
+  activeDataNestAiSession:{jobId:string;sessionId:string|null}|null;
   onClose:()=>void;
   onNotice:(message:string)=>void;
   onError:(message:string)=>void;
@@ -511,9 +511,11 @@ export default function ExternalAiSidebar({
         body:{
           sourceType:"ai_companion",
           externalAiSessionId:sessionId,
-          datanestAiSessionId:selectedJob&&activeDataNestAiSession?.jobId===selectedJob.id
-            ?activeDataNestAiSession.sessionId
-            :null,
+          datanestAiSessionId:selectedJob&&
+            activeDataNestAiSession?.jobId===selectedJob.id&&
+            activeDataNestAiSession.sessionId
+              ?activeDataNestAiSession.sessionId
+              :null,
           content:content.trim()
         }
       });

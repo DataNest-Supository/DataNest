@@ -18,7 +18,7 @@ type ProjectMember = { project_id:string; user_id:string; role:"owner"|"admin"|"
 type ViewKey = "overview"|"ai"|"aiops"|"productlab"|"unifi"|"scheduler"|"capabilities"|"runs"|"checkpoints"|"audit"|"settings";
 type HealthState = { state:"checking"|"online"|"degraded"|"offline"; checkedAt:string|null; message:string };
 type Summary = { total:number; active:number; running:number; blocked:number; available:number; registered:number };
-type ActiveDataNestAiSession = { jobId:string; sessionId:string };
+type ActiveDataNestAiSession = { jobId:string; sessionId:string|null };
 
 const PAGE_SIZE = 20;
 const finalStates = new Set(["COMPLETED","FAILED","CANCELLED"]);
