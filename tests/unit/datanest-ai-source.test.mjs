@@ -31,3 +31,23 @@ test("old UNIFI Copilot identity is absent from runtime UI source", () => {
     assert.doesNotMatch(source,/UNIFI Copilot/);
   }
 });
+
+
+test("active client source no longer references contribution or stake scoring RPCs", () => {
+  const files=[
+    "src/components/DataNestApp.tsx",
+    "src/components/AiOperationsDashboard.tsx",
+    "src/components/AiReconciliationPanel.tsx",
+    "src/components/ProductLab.tsx"
+  ];
+  const source=files.map(file=>fs.readFileSync(path.join(root,file),"utf8")).join("\n");
+  for(const forbidden of [
+    "contribution_ledger",
+    "get_stakeholder_summary",
+    "submit_external_ai_credit",
+    "accept_contribution",
+    "reject_contribution",
+    "reverse_contribution",
+    "suggested_product_stake"
+  ]) assert.equal(source.includes(forbidden),false,forbidden+" must be retired from active client source");
+});
