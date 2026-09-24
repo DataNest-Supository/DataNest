@@ -106,8 +106,10 @@ test("certification workspace scopes evidence rows to project candidates", () =>
 });
 
 test("browser certification console cannot self-pass the stress-test gate", () => {
-  const source=fs.readFileSync(path.join(root,"src/components/DataNestAiCertificationPanel.tsx"),"utf8");
-  assert.match(source,/gate==="STRESS_TEST"/);
-  assert.match(source,/Recorded by governed stress suite/);
-  assert.doesNotMatch(source,/onClick=.*record_validation[\s\S]{0,900}STRESS_TEST/);
+  const panel=fs.readFileSync(path.join(root,"src/components/DataNestAiCertificationPanel.tsx"),"utf8");
+  const gateway=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-certification/index.ts"),"utf8");
+  assert.match(panel,/gate==="STRESS_TEST"/);
+  assert.match(panel,/Recorded by governed stress suite/);
+  assert.doesNotMatch(panel,/onClick=.*record_validation[\s\S]{0,900}STRESS_TEST/);
+  assert.match(gateway,/gate==="STRESS_TEST"[\s\S]{0,300}governed stress suite/i);
 });
