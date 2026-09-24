@@ -243,16 +243,16 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 
 /* Persistent external AI sidebar */
 .aiSidebarToggle.active{border-color:rgba(109,213,247,.45);background:rgba(54,185,229,.12);color:#dff7ff}
-.externalAiDock{position:sticky;top:0;height:100vh;min-width:380px;max-width:760px;border-left:1px solid var(--line);background:rgba(5,14,25,.97);backdrop-filter:blur(28px);display:flex;flex-direction:column;z-index:24;box-shadow:-24px 0 70px rgba(0,0,0,.18)}
+.externalAiDock{position:sticky;top:0;align-self:start;height:100dvh;min-width:380px;max-width:760px;border-left:1px solid var(--line);background:linear-gradient(180deg,rgba(7,16,29,.99),rgba(5,14,25,.985));backdrop-filter:blur(28px);display:flex;flex-direction:column;z-index:24;box-shadow:inset 1px 0 0 rgba(109,213,247,.025)}
 .externalAiResizeHandle{position:absolute;left:-5px;top:0;bottom:0;width:10px;cursor:col-resize;z-index:3}
 .externalAiResizeHandle::after{content:"";position:absolute;left:4px;top:36%;width:2px;height:84px;border-radius:999px;background:rgba(109,213,247,.22)}
 .externalAiResizeHandle:hover::after{background:rgba(109,213,247,.62)}
-.externalAiDockHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 16px 14px;border-bottom:1px solid var(--line);background:rgba(7,16,29,.78);position:sticky;top:0;z-index:2}
+.externalAiDockHeader{min-height:82px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 16px;border-bottom:1px solid var(--line);background:rgba(7,16,29,.9);position:sticky;top:0;z-index:4}
 .externalAiDockHeader h2{margin:2px 0 0;font-size:17px;letter-spacing:-.02em}
 .externalAiDockActions{display:flex;align-items:center;gap:8px}
 .iconButton{width:32px;height:32px;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.025);color:#b9cfdf;cursor:pointer;font-size:18px;display:grid;place-items:center}
 .iconButton:hover{border-color:rgba(109,213,247,.35);color:#fff}
-.externalAiDockBody{overflow:auto;padding:14px;display:grid;gap:12px}
+.externalAiDockBody{overflow:auto;padding:18px 16px 24px;display:grid;gap:12px;background:radial-gradient(circle at 75% 0%,rgba(54,185,229,.055),transparent 24rem)}
 .externalAiDockSection{padding:14px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.018);display:grid;gap:11px}
 .externalAiDockSection label{display:grid;gap:6px;color:#b7cadb;font-size:10px;font-weight:800}
 .externalAiDockSection select,.externalAiDockSection textarea{width:100%}
@@ -269,8 +269,12 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .externalAiFrameFallback{margin:0;color:var(--muted);font-size:10px;line-height:1.5}
 .externalAiHandoff summary{cursor:pointer;color:var(--cyan);font-size:10px;font-weight:900}
 .externalAiHandoff textarea{margin-top:8px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:10px}
+.externalAiImport{position:sticky;bottom:12px;z-index:3;background:rgba(8,22,38,.985);border-color:rgba(109,213,247,.22);box-shadow:0 -14px 36px rgba(0,0,0,.28)}
 .externalAiImport .badge{font-size:8px}
 .externalAiImport small{color:var(--muted)}
+.externalAiImportHint{margin:0;color:#9eb5c8;font-size:10px;line-height:1.55}
+.externalAiImportActions{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.externalAiImportActions .textButton{justify-self:end}
 .externalAiDockEmpty{min-height:180px;display:grid;place-items:center;text-align:center;padding:22px;color:var(--muted)}
 .externalAiDockEmpty>div{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:rgba(109,213,247,.09);color:var(--cyan);font-weight:900}
 .externalAiDockEmpty h3{margin:8px 0 0;color:#dbeaf5}
@@ -278,7 +282,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .rndExternalAiShortcut{margin-top:14px;padding:12px;border:1px solid rgba(109,213,247,.15);border-radius:11px;background:rgba(109,213,247,.035);display:flex;align-items:center;justify-content:space-between;gap:14px}
 .rndExternalAiShortcut>div{display:grid;gap:3px}.rndExternalAiShortcut small{color:var(--muted);font-size:10px}
 
-@media(max-width:1280px){
+@media(max-width:1080px){
   .appFrame.aiDockOpen{grid-template-columns:270px minmax(0,1fr)}
   .externalAiDock{position:fixed;right:0;top:0;width:min(520px,92vw)!important;max-width:92vw;min-width:0;box-shadow:-28px 0 80px rgba(0,0,0,.42)}
 }
@@ -296,6 +300,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
   .externalAiFrameWrap{min-height:320px;height:48vh}
   .externalAiLaunchButtons{grid-template-columns:1fr}
   .externalAiLaunchButtons .textButton{grid-column:auto}
+  .externalAiImportActions{grid-template-columns:1fr}
+  .externalAiImportActions .textButton{justify-self:start}
   .rndExternalAiShortcut{align-items:flex-start;flex-direction:column}
 }
 
