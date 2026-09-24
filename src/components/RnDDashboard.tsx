@@ -42,6 +42,7 @@ type AiMessage = {
   author_label: string;
   content: string;
   status: string;
+  metadata: Record<string, unknown>;
   created_at: string;
 };
 
@@ -191,7 +192,7 @@ export default function RnDDashboard({
         .limit(50),
       supabase
         .from("ai_messages")
-        .select("id,author_type,author_label,content,status,created_at")
+        .select("id,author_type,author_label,content,status,metadata,created_at")
         .eq("job_id", jobId)
         .order("created_at", { ascending: true })
         .limit(100),
@@ -299,12 +300,22 @@ export default function RnDDashboard({
 
     setChatBusy(true);
     try {
-      const { error } = await supabase.rpc("post_job_ai_message", {
-        target_job: selectedJob.id,
-        message_content: chatDraft.trim()
+      const message = chatDraft.trim();
+      const { data, error } = await supabase.functions.invoke("rnd-ai-chat", {
+        body: {
+          jobId: selectedJob.id,
+          message
+        }
       });
       if (error) throw error;
+      const payload = (data || {}) as Record<string, unknown>;
+      const providerMode = String(payload.providerMode || "embedded");
       setChatDraft("");
+      setNotice(
+        providerMode === "external"
+          ? "UNIFI Copilot responded through the configured external AI provider."
+          : "UNIFI Copilot responded in embedded server-side mode."
+      );
       await loadWorkspace(selectedJob.id);
     } catch (chatError) {
       setError(chatError instanceof Error ? chatError.message : "Unable to post AI collaboration message.");
@@ -348,6 +359,25 @@ export default function RnDDashboard({
     const row = Array.isArray(data) ? data[0] : data;
     const stepKey = String((row as Record<string, unknown> | null)?.step_key || "AI step");
     setNotice(stepKey + " added to the Job Manifest execution plan.");
+    await loadWorkspace(selectedJobId);
+  }
+
+  async function updateInputStatus(input: JobInput, status: "acknowledged" | "incorporated" | "rejected") {
+    if (!canOperate) return;
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const { error } = await supabase.rpc("update_job_input_status", {
+      target_input: input.id,
+      target_status: status
+    });
+
+    if (error) {
+      setError(error.message);
+      return;
+    }
+
+    setNotice("R&D input marked " + status + ".");
     await loadWorkspace(selectedJobId);
   }
 
@@ -497,10 +527,18 @@ export default function RnDDashboard({
             <div><p className="eyebrow">AI COLLABORATION</p><h3>UNIFI Copilot</h3></div>
             <span className="countPill">{messages.length + " messages"}</span>
           </div>
-          <p className="muted rndChatIntro">Queue-backed collaboration keeps every prompt auditable. External model execution can consume the same prompt queue without changing this workflow.</p>
+          <p className="muted rndChatIntro">Server-side UNIFI Copilot collaboration keeps every turn auditable and job-scoped. Embedded mode works immediately; a protected external AI provider can be connected without changing this workflow.</p>
           <div className="rndChatLog" aria-live="polite">
             {messages.map((message) => <article key={message.id} className={"rndMessage " + message.author_type}>
-              <div className="rowBetween"><b>{message.author_label}</b><small>{formatDate(message.created_at)}</small></div>
+              <div className="rowBetween">
+                <b>{message.author_label}</b>
+                <small>
+                  {message.author_type === "ai" && message.metadata?.provider_mode
+                    ? String(message.metadata.provider_mode).toUpperCase() + " · "
+                    : ""}
+                  {formatDate(message.created_at)}
+                </small>
+              </div>
               <p>{message.content}</p>
             </article>)}
             {!messages.length && <div className="rndEmptyMini">Start with a question, a development decision, or one of the suggestion prompts.</div>}
@@ -564,6 +602,11 @@ export default function RnDDashboard({
               <div className="rowBetween"><b>{input.actor_label}</b><small>{formatDate(input.created_at)}</small></div>
               <div className="manifestMeta"><span>{input.input_type}</span><span>{input.status}</span></div>
               <p>{input.content}</p>
+              {canOperate && input.input_type !== "chat" && input.status !== "incorporated" && input.status !== "rejected" && <div className="rndInputActions">
+                {input.status === "open" && <button className="secondaryButton compact" type="button" onClick={() => void updateInputStatus(input, "acknowledged")}>Acknowledge</button>}
+                <button className="primaryButton compact" type="button" onClick={() => void updateInputStatus(input, "incorporated")}>Incorporate</button>
+                <button className="secondaryButton compact" type="button" onClick={() => void updateInputStatus(input, "rejected")}>Reject</button>
+              </div>}
             </article>)}
             {!inputs.length && <div className="rndEmptyMini">No tracked R&D input yet.</div>}
           </div>
