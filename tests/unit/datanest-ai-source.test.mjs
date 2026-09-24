@@ -51,3 +51,16 @@ test("active client source no longer references contribution or stake scoring RP
     "suggested_product_stake"
   ]) assert.equal(source.includes(forbidden),false,forbidden+" must be retired from active client source");
 });
+
+
+test("DataNest AI governed E2E and stress harness is wired", () => {
+  const pkg=JSON.parse(fs.readFileSync(path.join(root,"package.json"),"utf8"));
+  assert.equal(pkg.scripts["test:browser:datanest-ai"],"playwright test tests/browser/datanest-ai.spec.ts");
+  assert.equal(pkg.scripts["test:stress:datanest-ai"],"node tests/stress/datanest-ai-stress.mjs");
+  assert.equal(pkg.scripts["seed:e2e:datanest-ai"],"node scripts/seed-datanest-ai-e2e.mjs");
+  for(const file of [
+    "scripts/seed-datanest-ai-e2e.mjs",
+    "tests/browser/datanest-ai.spec.ts",
+    "tests/stress/datanest-ai-stress.mjs"
+  ]) assert.equal(fs.existsSync(path.join(root,file)),true,file+" must exist");
+});
