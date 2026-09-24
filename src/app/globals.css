@@ -252,7 +252,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .externalAiDockActions{display:flex;align-items:center;gap:8px}
 .iconButton{width:32px;height:32px;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.025);color:#b9cfdf;cursor:pointer;font-size:18px;display:grid;place-items:center}
 .iconButton:hover{border-color:rgba(109,213,247,.35);color:#fff}
-.externalAiDockBody{overflow:auto;padding:18px 16px 24px;display:grid;gap:12px;background:radial-gradient(circle at 75% 0%,rgba(54,185,229,.055),transparent 24rem)}
+.externalAiDockBody{flex:1 1 auto;min-height:0;overflow:auto;padding:18px 16px 24px;display:grid;gap:12px;background:radial-gradient(circle at 75% 0%,rgba(54,185,229,.055),transparent 24rem)}
 .externalAiDockSection{padding:14px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.018);display:grid;gap:11px}
 .externalAiDockSection label{display:grid;gap:6px;color:#b7cadb;font-size:10px;font-weight:800}
 .externalAiDockSection select,.externalAiDockSection textarea{width:100%}
@@ -269,11 +269,13 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .externalAiFrameFallback{margin:0;color:var(--muted);font-size:10px;line-height:1.5}
 .externalAiHandoff summary{cursor:pointer;color:var(--cyan);font-size:10px;font-weight:900}
 .externalAiHandoff textarea{margin-top:8px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:10px}
-.externalAiImport{position:sticky;bottom:12px;z-index:3;background:rgba(8,22,38,.985);border-color:rgba(109,213,247,.22);box-shadow:0 -14px 36px rgba(0,0,0,.28)}
+.externalAiReturnDock{flex:0 0 auto;max-height:min(46dvh,430px);overflow:auto;padding:14px 16px 16px;border-top:1px solid rgba(109,213,247,.2);background:linear-gradient(180deg,rgba(9,24,41,.99),rgba(6,17,30,.995));box-shadow:0 -14px 36px rgba(0,0,0,.22);display:grid;gap:10px;z-index:5}
+.externalAiReturnDock.externalAiImport{margin:0;padding-top:14px}
 .externalAiImport .badge{font-size:8px}
 .externalAiImport small{color:var(--muted)}
 .externalAiImportHint{margin:0;color:#9eb5c8;font-size:10px;line-height:1.55}
-.externalAiImportActions{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.externalAiImportActions{display:grid;grid-template-columns:auto minmax(140px,1fr) auto;gap:8px;align-items:center}
+.externalAiImportActions .primaryButton{width:100%}
 .externalAiImportActions .textButton{justify-self:end}
 .externalAiDockEmpty{min-height:180px;display:grid;place-items:center;text-align:center;padding:22px;color:var(--muted)}
 .externalAiDockEmpty>div{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:rgba(109,213,247,.09);color:var(--cyan);font-weight:900}
@@ -300,6 +302,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
   .externalAiFrameWrap{min-height:320px;height:48vh}
   .externalAiLaunchButtons{grid-template-columns:1fr}
   .externalAiLaunchButtons .textButton{grid-column:auto}
+  .externalAiReturnDock{max-height:54dvh;padding:12px 10px 12px}
   .externalAiImportActions{grid-template-columns:1fr}
   .externalAiImportActions .textButton{justify-self:start}
   .rndExternalAiShortcut{align-items:flex-start;flex-direction:column}
