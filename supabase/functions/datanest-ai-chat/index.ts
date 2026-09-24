@@ -196,7 +196,7 @@ async function finishUsageRequest(
   client:AnyClient,
   input:{
     requestId:string;
-    status:string;
+    target_status:string;
     inputTokens?:number;
     outputTokens?:number;
     errorCategory?:string|null;
