@@ -12,6 +12,7 @@ type Run = { id:string; job_id:string; run_number:number; connector_kind:string;
 type Checkpoint = { id:string; job_id:string; completed:string[]; remaining:string[]; resume_instruction:string|null; created_at:string };
 type AuditEvent = { id:number; job_id:string|null; event_type:string; actor:string; payload:Record<string,unknown>; created_at:string };
 type Policy = { id:string; policy_key:string; value:Record<string,unknown> };
+type ProjectMember = { project_id:string; user_id:string; role:"owner"|"admin"|"operator"|"viewer"; status:string };
 type ViewKey = "overview"|"unifi"|"scheduler"|"capabilities"|"runs"|"checkpoints"|"audit"|"settings";
 
 const nav:Array<{key:ViewKey;label:string;group:string;glyph:string}> = [
@@ -52,6 +53,7 @@ export default function DataNestApp({session}:{session:Session}) {
   const [checkpoints,setCheckpoints]=useState<Checkpoint[]>([]);
   const [events,setEvents]=useState<AuditEvent[]>([]);
   const [policies,setPolicies]=useState<Policy[]>([]);
+  const [membership,setMembership]=useState<ProjectMember|null>(null);
   const [loading,setLoading]=useState(true);
   const [notice,setNotice]=useState("");
   const [error,setError]=useState("");
@@ -67,16 +69,17 @@ export default function DataNestApp({session}:{session:Session}) {
     }
     const p=pResult.data as Project;
     setProject(p);
-    const [t,j,c,r,cp,e,sp]=await Promise.all([
+    const [t,j,c,r,cp,e,sp,m]=await Promise.all([
       supabase.from("tool_registry").select("*").eq("project_id",p.id).order("name"),
       supabase.from("jobs").select("*").eq("project_id",p.id).order("priority",{ascending:false}).order("created_at"),
       supabase.from("capabilities").select("*").eq("project_id",p.id).order("account_key"),
       supabase.from("runs").select("*").order("started_at",{ascending:false}).limit(100),
       supabase.from("checkpoints").select("*").order("created_at",{ascending:false}).limit(100),
       supabase.from("events").select("*").eq("project_id",p.id).order("created_at",{ascending:false}).limit(200),
-      supabase.from("scheduler_policies").select("*").eq("project_id",p.id).order("policy_key")
+      supabase.from("scheduler_policies").select("*").eq("project_id",p.id).order("policy_key"),
+      supabase.from("project_members").select("project_id,user_id,role,status").eq("project_id",p.id).eq("user_id",session.user.id).single()
     ]);
-    const firstError=t.error||j.error||c.error||r.error||cp.error||e.error||sp.error;
+    const firstError=t.error||j.error||c.error||r.error||cp.error||e.error||sp.error||m.error;
     if(firstError) setError(firstError.message);
     else {
       setTools((t.data||[]) as Tool[]);
@@ -86,17 +89,21 @@ export default function DataNestApp({session}:{session:Session}) {
       setCheckpoints((cp.data||[]) as Checkpoint[]);
       setEvents((e.data||[]) as AuditEvent[]);
       setPolicies((sp.data||[]) as Policy[]);
+      setMembership((m.data||null) as ProjectMember|null);
     }
     setLoading(false);
-  },[]);
+  },[session.user.id]);
 
   useEffect(()=>{ load(); },[load]);
 
   async function signOut(){ await getSupabase()?.auth.signOut(); }
 
+  const canOperate=membership ? ["owner","admin","operator"].includes(membership.role) : false;
+
   async function updateJobStatus(job:Job,status:string) {
     const supabase=getSupabase();
     if(!supabase||!project) return;
+    if(!canOperate){setError("Your DataNest role is read-only.");return;}
     setNotice(""); setError("");
     const {error:updateError}=await supabase.from("jobs").update({status,updated_at:new Date().toISOString()}).eq("id",job.id);
     if(updateError){setError(updateError.message);return;}
@@ -135,7 +142,7 @@ export default function DataNestApp({session}:{session:Session}) {
         </div>)}
       </nav>
       <div className="sidebarFooter">
-        <div className="userMini"><div className="avatar">{(session.user.email||"U").slice(0,1).toUpperCase()}</div><div><b>{session.user.email?.split("@")[0]||"Authorized user"}</b><small>Authenticated</small></div></div>
+        <div className="userMini"><div className="avatar">{(session.user.email||"U").slice(0,1).toUpperCase()}</div><div><b>{session.user.email?.split("@")[0]||"Authorized user"}</b><small>{membership ? membership.role.toUpperCase()+" · Authenticated" : "Authenticated"}</small></div></div>
         <button className="textButton" onClick={signOut}>Sign out</button>
       </div>
     </aside>
@@ -151,24 +158,24 @@ export default function DataNestApp({session}:{session:Session}) {
         {notice&&<div className="notice goodNotice">{notice}</div>}
         {error&&<div className="notice errorNotice">{error}</div>}
         {loading&&<div className="loadingBar"><span/></div>}
-        {!loading&&project&&view==="overview"&&<Overview project={project} tools={tools} jobs={jobs} capabilities={capabilities} counts={counts} setView={setView}/>}
-        {!loading&&project&&view==="unifi"&&<UnifiPlanner project={project} jobs={jobs} capabilities={capabilities} reload={load} setNotice={setNotice} setError={setError}/>}
-        {!loading&&view==="scheduler"&&<Scheduler jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus}/>}
+        {!loading&&project&&view==="overview"&&<Overview project={project} tools={tools} jobs={jobs} capabilities={capabilities} counts={counts} setView={setView} canOperate={canOperate}/>}
+        {!loading&&project&&view==="unifi"&&<UnifiPlanner project={project} jobs={jobs} capabilities={capabilities} reload={load} setNotice={setNotice} setError={setError} canOperate={canOperate}/>}
+        {!loading&&view==="scheduler"&&<Scheduler jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate}/>}
         {!loading&&view==="capabilities"&&<Capabilities capabilities={capabilities}/>}
         {!loading&&view==="runs"&&<Runs runs={runs} jobs={jobs}/>}
         {!loading&&view==="checkpoints"&&<Checkpoints checkpoints={checkpoints} jobs={jobs}/>}
         {!loading&&view==="audit"&&<Audit events={events} jobs={jobs}/>}
-        {!loading&&view==="settings"&&<Settings project={project} tools={tools} policies={policies}/>}
+        {!loading&&view==="settings"&&<Settings project={project} tools={tools} policies={policies} membership={membership}/>}
       </div>
     </main>
   </div>;
 }
 
-function Overview({project,tools,jobs,capabilities,counts,setView}:{project:Project;tools:Tool[];jobs:Job[];capabilities:Capability[];counts:{total:number;active:number;running:number;blocked:number;available:number};setView:(v:ViewKey)=>void}) {
+function Overview({project,tools,jobs,capabilities,counts,setView,canOperate}:{project:Project;tools:Tool[];jobs:Job[];capabilities:Capability[];counts:{total:number;active:number;running:number;blocked:number;available:number};setView:(v:ViewKey)=>void;canOperate:boolean}) {
   const recent=jobs.slice(0,5);
   return <>
     <section className="heroPanel">
-      <div><p className="eyebrow">PROJECT OPERATING ENVIRONMENT</p><h2>{project.name}</h2><p>{project.description}</p><div className="heroActions"><button className="primaryButton compact" onClick={()=>setView("unifi")}>Create UNIFI job</button><button className="secondaryButton compact" onClick={()=>setView("scheduler")}>Open TranScheduler</button></div></div>
+      <div><p className="eyebrow">PROJECT OPERATING ENVIRONMENT</p><h2>{project.name}</h2><p>{project.description}</p><div className="heroActions"><button className="primaryButton compact" disabled={!canOperate} onClick={()=>setView("unifi")}>{canOperate ? "Create UNIFI job" : "Viewer mode"}</button><button className="secondaryButton compact" onClick={()=>setView("scheduler")}>Open TranScheduler</button></div></div>
       <div className="stackDiagram"><div>GitHub <b>DataNest</b></div><span>↓</span><div>App Runtime <b>Provider-agnostic</b></div><span>↓</span><div>Supabase <b>Control Plane</b></div></div>
     </section>
     <section className="metricGrid">
@@ -194,7 +201,7 @@ function Metric({label,value,note}:{label:string;value:number;note:string}) {
   return <article className="metricCard"><span>{label}</span><strong>{value}</strong><small>{note}</small></article>;
 }
 
-function UnifiPlanner({project,jobs,capabilities,reload,setNotice,setError}:{project:Project;jobs:Job[];capabilities:Capability[];reload:()=>Promise<void>;setNotice:(v:string)=>void;setError:(v:string)=>void}) {
+function UnifiPlanner({project,jobs,capabilities,reload,setNotice,setError,canOperate}:{project:Project;jobs:Job[];capabilities:Capability[];reload:()=>Promise<void>;setNotice:(v:string)=>void;setError:(v:string)=>void;canOperate:boolean}) {
   const [title,setTitle]=useState("");
   const [description,setDescription]=useState("");
   const [priority,setPriority]=useState(50);
@@ -208,6 +215,7 @@ function UnifiPlanner({project,jobs,capabilities,reload,setNotice,setError}:{pro
     event.preventDefault();
     const supabase=getSupabase();
     if(!supabase||!title.trim()) return;
+    if(!canOperate){setError("Your DataNest role is read-only.");return;}
     setSaving(true); setNotice(""); setError("");
     const {data,error}=await supabase.from("jobs").insert({
       project_id:project.id,title:title.trim(),description:description.trim()||null,priority,status:"PLANNED",
@@ -228,6 +236,7 @@ function UnifiPlanner({project,jobs,capabilities,reload,setNotice,setError}:{pro
   const prepared=jobs.filter(x=>["PLANNED","READY","QUEUED"].includes(x.status));
   return <section className="splitView">
     <div className="panel stickyPanel"><p className="eyebrow">UNIFI</p><h2>Job Manifest Planner</h2><p className="muted">Prepare work completely before consuming scarce execution capacity.</p>
+      {!canOperate&&<div className="notice errorNotice">Viewer access is read-only. Ask a DataNest owner or admin for operator access to create jobs.</div>}
       <form className="plannerForm" onSubmit={createJob}>
         <label>Job title<input value={title} onChange={e=>setTitle(e.target.value)} required placeholder="e.g. Validate production deployment"/></label>
         <label>Objective / context<textarea value={description} onChange={e=>setDescription(e.target.value)} rows={6} placeholder="What must be done, constraints, expected output…"/></label>
@@ -236,7 +245,7 @@ function UnifiPlanner({project,jobs,capabilities,reload,setNotice,setError}:{pro
           <label>Required capability<select value={capability} onChange={e=>setCapability(e.target.value)}>{known.map(x=><option key={x}>{x}</option>)}</select></label>
         </div>
         <div className="checkRow"><label><input type="checkbox" checked={tests} onChange={e=>setTests(e.target.checked)}/> Tests required</label><label><input type="checkbox" checked={artifact} onChange={e=>setArtifact(e.target.checked)}/> Artifact required</label></div>
-        <button className="primaryButton" disabled={saving}>{saving?"Creating…":"Create Job Manifest"}</button>
+        <button className="primaryButton" disabled={saving||!canOperate}>{saving?"Creating…":"Create Job Manifest"}</button>
       </form>
     </div>
     <div className="panel"><div className="panelHead"><div><p className="eyebrow">PLANNING</p><h3>Prepared jobs</h3></div><span className="countPill">{prepared.length+" planned"}</span></div><div className="manifestList">
@@ -246,7 +255,7 @@ function UnifiPlanner({project,jobs,capabilities,reload,setNotice,setError}:{pro
   </section>;
 }
 
-function Scheduler({jobs,capabilities,onStatus}:{jobs:Job[];capabilities:Capability[];onStatus:(j:Job,s:string)=>Promise<void>}) {
+function Scheduler({jobs,capabilities,onStatus,canOperate}:{jobs:Job[];capabilities:Capability[];onStatus:(j:Job,s:string)=>Promise<void>;canOperate:boolean}) {
   const [filter,setFilter]=useState("ALL");
   const visible=filter==="ALL"?jobs:jobs.filter(x=>x.status===filter);
   return <>
@@ -254,9 +263,11 @@ function Scheduler({jobs,capabilities,onStatus}:{jobs:Job[];capabilities:Capabil
     <section className="panel"><div className="filterBar">{["ALL","PLANNED","READY","QUEUED","RUNNING","MANUAL_ACTION","BLOCKED","COMPLETED"].map(x=><button key={x} className={filter===x?"active":""} onClick={()=>setFilter(x)}>{x.replace("_"," ")}</button>)}</div>
       <div className="schedulerTable"><div className="schedulerRow headerRow"><span>Job</span><span>Priority</span><span>Capability</span><span>Status</span><span>Controls</span></div>
         {visible.map(job=><div className="schedulerRow" key={job.id}><div><b>{jobCode(job)}</b><small>{job.title}</small></div><span>{"P"+job.priority}</span><span>{job.required_capabilities?.join(", ")||"chat"}</span><Badge value={job.status}/><div className="rowActions">
-          {!finalStates.has(job.status)&&job.status!=="PAUSED"&&<button onClick={()=>onStatus(job,"PAUSED")}>Pause</button>}
-          {job.status==="PAUSED"&&<button onClick={()=>onStatus(job,"READY")}>Resume</button>}
-          {!finalStates.has(job.status)&&<button onClick={()=>onStatus(job,"CANCELLED")}>Cancel</button>}
+          {canOperate ? <>
+            {!finalStates.has(job.status)&&job.status!=="PAUSED"&&<button onClick={()=>onStatus(job,"PAUSED")}>Pause</button>}
+            {job.status==="PAUSED"&&<button onClick={()=>onStatus(job,"READY")}>Resume</button>}
+            {!finalStates.has(job.status)&&<button onClick={()=>onStatus(job,"CANCELLED")}>Cancel</button>}
+          </> : <span className="muted">Read only</span>}
         </div></div>)}
       </div>
     </section>
@@ -290,9 +301,9 @@ function Audit({events,jobs}:{events:AuditEvent[];jobs:Job[]}) {
   </div></section>;
 }
 
-function Settings({project,tools,policies}:{project:Project|null;tools:Tool[];policies:Policy[]}) {
+function Settings({project,tools,policies,membership}:{project:Project|null;tools:Tool[];policies:Policy[];membership:ProjectMember|null}) {
   return <section className="settingsGrid">
-    <div className="panel"><p className="eyebrow">PROJECT</p><h3>{project?.name||"Resonance DataNest"}</h3><dl className="settingsList"><div><dt>Slug</dt><dd>{project?.slug||"resonance-datanest"}</dd></div><div><dt>Status</dt><dd><Badge value={project?.status||"ACTIVE"}/></dd></div><div><dt>GitHub</dt><dd>DataNest-Supository/DataNest</dd></div><div><dt>Supabase</dt><dd>sgqdmfgjbprsoqsmgigi</dd></div><div><dt>Hosting</dt><dd>Provider-agnostic</dd></div><div><dt>Optional host</dt><dd>Vercel</dd></div></dl></div>
+    <div className="panel"><p className="eyebrow">PROJECT</p><h3>{project?.name||"Resonance DataNest"}</h3><dl className="settingsList"><div><dt>Slug</dt><dd>{project?.slug||"resonance-datanest"}</dd></div><div><dt>Status</dt><dd><Badge value={project?.status||"ACTIVE"}/></dd></div><div><dt>Access role</dt><dd><Badge value={(membership?.role||"viewer").toUpperCase()}/></dd></div><div><dt>GitHub</dt><dd>DataNest-Supository/DataNest</dd></div><div><dt>Supabase</dt><dd>sgqdmfgjbprsoqsmgigi</dd></div><div><dt>Hosting</dt><dd>Provider-agnostic</dd></div><div><dt>Optional host</dt><dd>Vercel</dd></div></dl></div>
     <div className="panel"><p className="eyebrow">TOOLS</p><h3>Tool registry</h3>{tools.map(t=><div className="settingRow" key={t.id}><div><b>{t.name}</b><small>{t.role}</small></div><Badge value={t.enabled?"ACTIVE":"DISABLED"}/></div>)}</div>
     <div className="panel fullWidth"><p className="eyebrow">SCHEDULER</p><h3>Policies</h3><div className="policyGrid">{policies.map(p=><article key={p.id}><b>{p.policy_key}</b><pre>{JSON.stringify(p.value,null,2)}</pre></article>)}</div></div>
   </section>;
