@@ -153,6 +153,16 @@ async function certifyCandidate(input:{
 }){
   const existing=await existingCertification(input.staging,input.candidate.id);
   if(existing){
+    const sealedContentHash=String(existing.content_hash||"");
+    const sealedPolicyVersion=String(existing.policy_version||"");
+    const sealedRiskClass=String(existing.risk_class||"");
+    if(
+      sealedContentHash!==input.candidate.content_hash ||
+      sealedPolicyVersion!==input.candidate.policy_version ||
+      sealedRiskClass!==input.candidate.risk_class
+    ){
+      throw new Error("Existing certification is stale for the current candidate state.");
+    }
     const {error:updateError}=await input.staging
       .from("ai_learning_candidates")
       .update({
