@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
   buildGovernedPrompt,
   executeChatTurn,
@@ -25,7 +25,7 @@ const allowedOrigins=new Set([
 const dedicatedStagingRef="qchttpcyqlqnhvahprhz";
 const policyVersion="datanest-ai-governed-memory-v1";
 
-type AnyClient=ReturnType<typeof createClient>;
+type AnyClient=SupabaseClient<any>;
 
 type JobContext={
   id:string;
@@ -315,6 +315,7 @@ Deno.serve(async(request:Request)=>{
     let certifiedMemoryIds:string[]=[];
     let provisionalIds:string[]=[];
     let requestStatus="pending";
+    let activeRequestId="";
 
     const result=await executeChatTurn({
       beginRequest:async()=>{
@@ -326,8 +327,9 @@ Deno.serve(async(request:Request)=>{
         if(error)throw error;
         const row=(data||{}) as Record<string,unknown>;
         requestStatus=String(row.status||"pending");
+        activeRequestId=String(row.id||"");
         return {
-          id:String(row.id||""),
+          id:activeRequestId,
           isNew:Boolean(row.is_new),
           status:requestStatus
         };
@@ -431,11 +433,7 @@ Deno.serve(async(request:Request)=>{
           const connection=connectionData as ProviderConnection;
           const {data:authz,error:authzError}=await serviceClient.rpc(
             "service_authorize_ai_request",{
-              target_request:String((await userClient.rpc("begin_datanest_ai_request",{
-                target_job:job.id,
-                target_client_request_id:clientRequestId,
-                message_fingerprint:fingerprint
-              })).data?.id||""),
+              target_request:activeRequestId,
               target_connection:connection.id
             }
           );
@@ -447,14 +445,8 @@ Deno.serve(async(request:Request)=>{
                 governedPrompt,
                 maxOutputTokens:Number((authz as Record<string,unknown>).max_output_tokens||4000)
               });
-              const beginAgain=await userClient.rpc("begin_datanest_ai_request",{
-                target_job:job.id,
-                target_client_request_id:clientRequestId,
-                message_fingerprint:fingerprint
-              });
-              const requestId=String((beginAgain.data as Record<string,unknown>|null)?.id||"");
               await serviceClient.rpc("service_finish_ai_request",{
-                target_request:requestId,
+                target_request:activeRequestId,
                 target_status:"succeeded",
                 input_tokens:ext.inputTokens,
                 output_tokens:ext.outputTokens,
@@ -477,13 +469,8 @@ Deno.serve(async(request:Request)=>{
                 ?"failed"
                 :"unknown";
               requestStatus=category;
-              const beginAgain=await userClient.rpc("begin_datanest_ai_request",{
-                target_job:job.id,
-                target_client_request_id:clientRequestId,
-                message_fingerprint:fingerprint
-              });
               await serviceClient.rpc("service_finish_ai_request",{
-                target_request:String((beginAgain.data as Record<string,unknown>|null)?.id||""),
+                target_request:activeRequestId,
                 target_status:category,
                 input_tokens:0,
                 output_tokens:0,
