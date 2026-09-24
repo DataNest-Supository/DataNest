@@ -119,12 +119,14 @@ export default function ExternalAiSidebar({
     const next=(data||[]) as Job[];
     setJobs(next);
     setSelectedJobId(current=>{
+      const activeJobId=activeDataNestAiSession?.jobId||"";
+      if(activeJobId&&next.some(job=>job.id===activeJobId))return activeJobId;
       if(current&&next.some(job=>job.id===current))return current;
       const remembered=typeof window!=="undefined"?window.localStorage.getItem("datanest.aiSidebar.job")||"":"";
       if(remembered&&next.some(job=>job.id===remembered))return remembered;
       return next[0]?.id||"";
     });
-  },[projectId,onError]);
+  },[projectId,onError,activeDataNestAiSession?.jobId]);
 
   const loadJobContext=useCallback(async(jobId:string)=>{
     if(!jobId)return;
@@ -165,6 +167,13 @@ export default function ExternalAiSidebar({
     if(savedProvider&&providers.some(item=>item.key===savedProvider))setProvider(savedProvider);
     void loadJobs();
   },[loadJobs]);
+
+  useEffect(()=>{
+    const activeJobId=activeDataNestAiSession?.jobId||"";
+    if(activeJobId&&jobs.some(job=>job.id===activeJobId)&&selectedJobId!==activeJobId){
+      setSelectedJobId(activeJobId);
+    }
+  },[activeDataNestAiSession?.jobId,jobs,selectedJobId]);
 
   useEffect(()=>{
     if(!selectedJobId)return;
