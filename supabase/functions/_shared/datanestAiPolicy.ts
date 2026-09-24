@@ -74,3 +74,16 @@ export function allCertificationGatesPassed(
   }
   return true;
 }
+
+
+export function allAutomatedCertificationGatesPassed(
+  runs:Array<{gate:CertificationGate;passed:boolean;actor_type:string}>
+):boolean {
+  const latest=new Map<CertificationGate,{passed:boolean;actor_type:string}>();
+  for(const run of runs)latest.set(run.gate,{passed:run.passed,actor_type:run.actor_type});
+  for(const gate of ["AUDIT","VERIFY","VALIDATE","STRESS_TEST"] as CertificationGate[]){
+    const state=latest.get(gate);
+    if(!state||state.passed!==true||state.actor_type!=="automation")return false;
+  }
+  return true;
+}
