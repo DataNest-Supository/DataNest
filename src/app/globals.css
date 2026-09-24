@@ -214,3 +214,15 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .testActions{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}
 @media(max-width:1050px){.productLabGrid{grid-template-columns:1fr}.surfaceForm{grid-template-columns:1fr 1fr}.surfaceForm button{align-self:end}}
 @media(max-width:650px){.stakePoolControl{align-items:stretch;flex-direction:column}.surfaceForm{grid-template-columns:1fr}.productFrameShell,.productFrame{height:500px;min-height:500px}.testCaseGrid{grid-template-columns:1fr}}
+
+/* Integrity / spend controls */
+.dangerText{color:#ff9fb0!important}
+.compactPolicyForm{grid-template-columns:1fr auto;align-items:end}
+.productSurfaceForm{grid-template-columns:.8fr 1.5fr .65fr 1fr .9fr auto}
+.productionBanner{margin:10px 0 12px;padding:10px 12px;border:1px solid rgba(255,120,120,.35);background:rgba(255,90,90,.08);border-radius:10px;color:#ffc1c7;font-size:11px;font-weight:800;letter-spacing:.04em}
+.productionTag{color:#ff9fb0;font-weight:800}
+.testEvidence{display:grid;gap:4px;margin-top:10px;padding-top:9px;border-top:1px solid rgba(255,255,255,.05)}
+.testEvidence small{color:var(--muted)}
+.testEvidence a{font-size:10px;color:var(--cyan)}
+@media(max-width:1150px){.productSurfaceForm{grid-template-columns:1fr 1fr 1fr}}
+@media(max-width:700px){.compactPolicyForm,.productSurfaceForm{grid-template-columns:1fr}}
