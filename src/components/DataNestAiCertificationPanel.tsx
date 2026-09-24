@@ -145,6 +145,13 @@ export default function DataNestAiCertificationPanel({
           <div className="datanestAiGateRow">
             {gateOrder.map(gate=>{
               const passed=gateState.get(gate)===true;
+              if(gate==="STRESS_TEST"){
+                return <span
+                  className={passed?"secondaryButton compact active":"secondaryButton compact"}
+                  key={gate}
+                  title="Recorded by governed stress suite"
+                >{passed?"✓ ":""}STRESS TEST · Recorded by governed stress suite</span>;
+              }
               return <button
                 key={gate}
                 className={passed?"secondaryButton compact active":"secondaryButton compact"}
