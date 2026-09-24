@@ -9,6 +9,9 @@ import {
   callOpenAiCompatibleProvider,
   type ProviderConnection
 } from "../_shared/provider.ts";
+import {
+  candidateFromRepeatedEvidence
+} from "../_shared/datanestAiTrends.ts";
 
 declare const Deno:{
   env:{get:(name:string)=>string|undefined};
@@ -188,6 +191,112 @@ async function loadCertifiedMemory(input:{
   return Array.isArray(items)?items as Array<Record<string,unknown>>:[];
 }
 
+async function updateTrendCandidate(input:{
+  staging:AnyClient;
+  projectId:string;
+  inputEventId:string;
+}):Promise<{candidateId:string|null;trendKey:string|null;evidenceCount:number}>{
+  const {data,error}=await input.staging
+    .from("ai_intake_events")
+    .select("id,content")
+    .eq("project_id",input.projectId)
+    .in("source_type",["human","ai_companion"])
+    .order("created_at",{ascending:false})
+    .limit(100);
+  if(error)throw error;
+
+  const evidence=(data||[]) as Array<{id:string;content:string}>;
+  const current=evidence.find(item=>item.id===input.inputEventId);
+  if(!current)return {candidateId:null,trendKey:null,evidenceCount:0};
+
+  const ordered=[
+    current,
+    ...evidence.filter(item=>item.id!==input.inputEventId)
+  ];
+  const candidate=candidateFromRepeatedEvidence(ordered);
+  if(!candidate)return {candidateId:null,trendKey:null,evidenceCount:1};
+
+  const {data:cluster,error:clusterError}=await input.staging
+    .from("ai_trend_clusters")
+    .upsert({
+      project_id:input.projectId,
+      trend_key:candidate.trendKey,
+      category:candidate.category,
+      normalized_label:candidate.normalizedKnowledge.slice(0,500),
+      evidence_count:candidate.evidenceIds.length,
+      last_seen_at:new Date().toISOString()
+    },{onConflict:"project_id,trend_key"})
+    .select("id")
+    .single();
+  if(clusterError||!cluster)throw clusterError||new Error("Unable to record DataNest AI trend.");
+
+  const trendEvidence=candidate.evidenceIds.map(eventId=>({
+    cluster_id:String(cluster.id),
+    event_id:eventId
+  }));
+  const {error:trendEvidenceError}=await input.staging
+    .from("ai_trend_evidence")
+    .upsert(trendEvidence,{onConflict:"cluster_id,event_id"});
+  if(trendEvidenceError)throw trendEvidenceError;
+
+  const contentHash=await sha256Text(candidate.normalizedKnowledge);
+  const {data:existing,error:existingError}=await input.staging
+    .from("ai_learning_candidates")
+    .select("id")
+    .eq("project_id",input.projectId)
+    .eq("content_hash",contentHash)
+    .limit(1)
+    .maybeSingle();
+  if(existingError)throw existingError;
+
+  let candidateId=existing?.id?String(existing.id):"";
+  if(candidateId){
+    const {error:updateError}=await input.staging
+      .from("ai_learning_candidates")
+      .update({
+        evidence_count:candidate.evidenceIds.length,
+        category:candidate.category,
+        risk_class:candidate.riskClass,
+        updated_at:new Date().toISOString()
+      })
+      .eq("id",candidateId);
+    if(updateError)throw updateError;
+  }else{
+    const {data:created,error:createError}=await input.staging
+      .from("ai_learning_candidates")
+      .insert({
+        project_id:input.projectId,
+        normalized_knowledge:candidate.normalizedKnowledge,
+        category:candidate.category,
+        risk_class:candidate.riskClass,
+        lifecycle_state:"INTAKE",
+        evidence_count:candidate.evidenceIds.length,
+        has_conflict:false,
+        policy_version:policyVersion,
+        content_hash:contentHash
+      })
+      .select("id")
+      .single();
+    if(createError||!created)throw createError||new Error("Unable to create DataNest AI learning candidate.");
+    candidateId=String(created.id);
+  }
+
+  const candidateEvidence=candidate.evidenceIds.map(eventId=>({
+    candidate_id:candidateId,
+    event_id:eventId
+  }));
+  const {error:candidateEvidenceError}=await input.staging
+    .from("ai_candidate_evidence")
+    .upsert(candidateEvidence,{onConflict:"candidate_id,event_id"});
+  if(candidateEvidenceError)throw candidateEvidenceError;
+
+  return {
+    candidateId,
+    trendKey:candidate.trendKey,
+    evidenceCount:candidate.evidenceIds.length
+  };
+}
+
 function embeddedResponse(job:JobContext,message:string){
   const code="JOB-"+String(job.job_number||0).padStart(5,"0");
   return [
@@ -316,6 +425,7 @@ Deno.serve(async(request:Request)=>{
     let provisionalIds:string[]=[];
     let requestStatus="pending";
     let activeRequestId="";
+    let trendAnalysis:{status:"not_applicable"|"recorded"|"failed";candidateId?:string|null;trendKey?:string|null;evidenceCount?:number;error?:string}={status:"not_applicable"};
 
     const result=await executeChatTurn({
       beginRequest:async()=>{
@@ -539,6 +649,22 @@ Deno.serve(async(request:Request)=>{
             request_status:requestStatus
           });
         if(error)throw error;
+
+        try{
+          const trend=await updateTrendCandidate({
+            staging:stagingClient,
+            projectId:job.project_id,
+            inputEventId:String(inputEvent.id||"")
+          });
+          trendAnalysis=trend.candidateId
+            ?{status:"recorded",...trend}
+            :{status:"not_applicable",...trend};
+        }catch(trendError){
+          trendAnalysis={
+            status:"failed",
+            error:trendError instanceof Error?trendError.message:"Trend analysis failed."
+          };
+        }
       }
     },{message});
 
@@ -546,7 +672,8 @@ Deno.serve(async(request:Request)=>{
       ...result,
       trustState:"UNCERTIFIED",
       certifiedMemoryIds,
-      requestStatus
+      requestStatus,
+      trendAnalysis
     },200,origin);
   }catch(error){
     const message=error instanceof Error?error.message:"Unable to process DataNest AI request.";
