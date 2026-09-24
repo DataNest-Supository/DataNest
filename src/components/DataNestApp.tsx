@@ -102,6 +102,7 @@ export default function DataNestApp({session}:{session:Session}) {
   const [notice,setNotice]=useState("");
   const [error,setError]=useState("");
   const [health,setHealth]=useState<HealthState>({state:"checking",checkedAt:null,message:"Checking control plane…"});
+  const [reloadingLatest,setReloadingLatest]=useState(false);
 
   const canOperate=membership ? ["owner","admin","operator"].includes(membership.role) : false;
   const canManageStake=membership ? ["owner","admin"].includes(membership.role) : false;
@@ -311,6 +312,40 @@ export default function DataNestApp({session}:{session:Session}) {
 
   async function signOut(){ await getSupabase()?.auth.signOut(); }
 
+  async function reloadLatestVersion(){
+    if(reloadingLatest)return;
+    setReloadingLatest(true);
+    setError("");
+    setNotice("Checking the latest deployed DataNest release…");
+
+    const now=Date.now();
+    let releaseKey=String(now);
+
+    try{
+      const manifestUrl=new URL("./release-manifest.json",window.location.href);
+      manifestUrl.searchParams.set("_reload",String(now));
+      const response=await fetch(manifestUrl.toString(),{
+        cache:"no-store",
+        headers:{"Cache-Control":"no-cache"}
+      });
+
+      if(response.ok){
+        const manifest=(await response.json()) as {frontendCommit?:string;databaseRelease?:string};
+        if(manifest.frontendCommit){
+          releaseKey=manifest.frontendCommit.slice(0,16);
+        }
+      }
+    }catch{
+      // The timestamped navigation below still forces a fresh document request.
+    }
+
+    const nextUrl=new URL(window.location.href);
+    nextUrl.searchParams.set("release",releaseKey);
+    nextUrl.searchParams.set("_reload",String(now));
+    nextUrl.hash="";
+    window.location.replace(nextUrl.toString());
+  }
+
   async function updateJobStatus(job:Job,status:string) {
     const supabase=getSupabase();
     if(!supabase||!project) return;
@@ -378,6 +413,13 @@ export default function DataNestApp({session}:{session:Session}) {
             onClick={()=>setAiSidebarOpen(value=>!value)}
             aria-pressed={aiSidebarOpen}
           >{aiSidebarOpen?"Hide AI Sidebar":"AI Sidebar"}</button>
+          <button
+            className="secondaryButton compact"
+            type="button"
+            disabled={reloadingLatest}
+            onClick={()=>void reloadLatestVersion()}
+            title="Fetch the latest release manifest and reopen DataNest with a cache-busting release URL."
+          >{reloadingLatest?"Reloading…":"Reload latest"}</button>
           <button className="secondaryButton compact" onClick={()=>project&&void Promise.all([loadSummary(project.id),loadRecentJobs(project.id),checkControlPlane(project.id)])}>Refresh</button>
           <div className={"systemStatus "+health.state} title={health.message}>
             <span className={"statusDot "+health.state}/>
