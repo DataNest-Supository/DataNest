@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
+import AiReconciliationPanel from "@/components/AiReconciliationPanel";
 
 type Stakeholder = {
   user_id:string;
@@ -495,6 +496,8 @@ export default function StakeholderDashboard({
         </div>
       </div>
     </section>}
+
+    {canManageStake&&<AiReconciliationPanel projectId={projectId}/>}
 
     {canManageStake&&pending.length>0&&<section className="panel">
       <div className="panelHead"><div><p className="eyebrow">INDEPENDENT REVIEW</p><h3>Reported or verified activity awaiting acceptance</h3></div><span className="countPill">{pending.length} pending</span></div>
