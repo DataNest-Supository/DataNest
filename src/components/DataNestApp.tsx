@@ -1,8 +1,10 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
+import JobInviteForm from "@/components/JobInviteForm";
 
 type Project = { id:string; slug:string; name:string; description:string|null; status:string; created_at:string };
 type Tool = { id:string; tool_key:string; name:string; role:string; enabled:boolean; config:Record<string,unknown> };
@@ -23,6 +25,7 @@ const jobColumns = "id,job_number,title,description,priority,status,required_cap
 
 const nav:Array<{key:ViewKey;label:string;group:string;glyph:string}> = [
   {key:"overview",label:"Overview",group:"Project",glyph:"◫"},
+  {key:"rnd",label:"R&D Dashboard",group:"Research",glyph:"⌬"},
   {key:"unifi",label:"UNIFI Planner",group:"Tools",glyph:"◇"},
   {key:"scheduler",label:"TranScheduler",group:"Tools",glyph:"⌁"},
   {key:"capabilities",label:"Capabilities",group:"Operations",glyph:"◎"},
@@ -31,6 +34,11 @@ const nav:Array<{key:ViewKey;label:string;group:string;glyph:string}> = [
   {key:"audit",label:"Audit",group:"Continuity",glyph:"≡"},
   {key:"settings",label:"Settings",group:"System",glyph:"⚙"}
 ];
+
+const RnDDashboard = dynamic(() => import("@/components/RnDDashboard"), {
+  ssr: false,
+  loading: () => <section className="panel"><p className="muted">Loading R&D workspace…</p></section>
+});
 
 function formatDate(value:string|null) {
   if (!value) return "—";
@@ -139,6 +147,8 @@ export default function DataNestApp({session}:{session:Session}) {
     if(!supabase) return;
     setLoadingCore(true);
     setError("");
+
+    await supabase.rpc("accept_pending_job_invites");
 
     const pResult=await supabase
       .from("projects")
@@ -350,7 +360,7 @@ export default function DataNestApp({session}:{session:Session}) {
         </div>
         {(loadingCore||loadingView)&&<div className="loadingBar" aria-label="Loading DataNest data"><span/></div>}
 
-        {!loadingCore&&project&&view==="overview"&&<Overview project={project} tools={tools} jobs={recentJobs} capabilities={capabilities} counts={summary} setView={setView} canOperate={canOperate}/>}
+        {!loadingCore&&project&&view==="overview"&&<Overview project={project} tools={tools} jobs={recentJobs} capabilities={capabilities} counts={summary} setView={setView} canOperate={canOperate}/>}\n        {!loadingCore&&project&&view==="rnd"&&<RnDDashboard projectId={project.id} canOperate={canOperate} currentUserEmail={session.user.email||"Authenticated user"} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError}/>}
         {!loadingCore&&project&&view==="unifi"&&<UnifiPlanner project={project} jobs={jobs} capabilities={capabilities} reload={async()=>{await loadJobsPage(jobPage);await loadSummary(project.id);await loadRecentJobs(project.id);}} setNotice={setNotice} setError={setError} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage}/>}
         {!loadingCore&&view==="scheduler"&&<Scheduler jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage}/>}
         {!loadingCore&&view==="capabilities"&&<Capabilities capabilities={capabilities}/>}
