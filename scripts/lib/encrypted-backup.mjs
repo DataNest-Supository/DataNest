@@ -68,3 +68,32 @@ export function canonicalJson(value){
 export function canonicalHash(value){
   return createHash("sha256").update(canonicalJson(value)).digest("hex");
 }
+
+
+export function validateRestoreRefs({
+  backupSourceRef,
+  expectedSourceRef,
+  targetRef,
+  configuredStagingRef,
+  productionRef
+}){
+  for(const [name,value] of Object.entries({
+    backupSourceRef,
+    expectedSourceRef,
+    targetRef,
+    configuredStagingRef,
+    productionRef
+  })){
+    if(typeof value!=="string"||!value.trim())throw new Error(name+" is required.");
+  }
+  if(targetRef===productionRef){
+    throw new Error("Refusing to restore DataNest AI raw evidence into the production project.");
+  }
+  if(targetRef!==configuredStagingRef){
+    throw new Error("Target ref must match the configured staging project.");
+  }
+  if(backupSourceRef!==expectedSourceRef){
+    throw new Error("Backup source project ref does not match the explicitly expected source ref.");
+  }
+  return true;
+}
