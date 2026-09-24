@@ -1,0 +1,8 @@
+[functions.datanest-ai-chat]
+verify_jwt = true
+
+[functions.datanest-ai-intake]
+verify_jwt = true
+
+[functions.datanest-ai-certification]
+verify_jwt = true
