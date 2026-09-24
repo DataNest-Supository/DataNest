@@ -226,3 +226,17 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .testEvidence a{font-size:10px;color:var(--cyan)}
 @media(max-width:1150px){.productSurfaceForm{grid-template-columns:1fr 1fr 1fr}}
 @media(max-width:700px){.compactPolicyForm,.productSurfaceForm{grid-template-columns:1fr}}
+
+/* External AI live handoff */
+.externalAiLive{margin-top:14px;padding:14px;border:1px solid rgba(100,214,255,.18);border-radius:12px;background:rgba(44,151,198,.045)}
+.externalAiHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.externalAiHeader h4{margin:3px 0 0;font-size:14px}
+.externalAiControls{display:grid;grid-template-columns:minmax(150px,.8fr) auto auto;gap:9px;align-items:end;margin-top:12px}
+.externalAiControls label{display:grid;gap:6px;color:#b7cadb;font-size:10px;font-weight:700}
+.externalAiHandoff{margin-top:12px}
+.externalAiHandoff summary{cursor:pointer;color:var(--cyan);font-size:10px;font-weight:800}
+.externalAiHandoff textarea{margin-top:8px;width:100%;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:10px}
+.externalAiImport{display:grid;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06)}
+.externalAiImport .rowBetween>div{display:grid;gap:3px}
+.externalAiImport small{color:var(--muted)}
+@media(max-width:760px){.externalAiControls{grid-template-columns:1fr}.externalAiControls button{width:100%}}
