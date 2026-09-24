@@ -107,18 +107,23 @@ export default function DataNestApp({session}:{session:Session}) {
     const supabase=getSupabase();
     if(!supabase) return;
     setHealth(current=>({...current,state:"checking",message:"Checking control plane…"}));
-    const controller=new AbortController();
-    const timer=window.setTimeout(()=>controller.abort(),5000);
     try {
-      const {data,error:healthError}=await supabase
+      const query=supabase
         .from("projects")
         .select("id,status")
         .eq("id",projectId)
-        .maybeSingle()
-        .abortSignal(controller.signal);
-      if(healthError) throw healthError;
+        .maybeSingle();
+
+      const result=await Promise.race([
+        query,
+        new Promise<never>((_,reject)=>{
+          window.setTimeout(()=>reject(new Error("Control plane check timed out.")),5000);
+        })
+      ]);
+
+      if(result.error) throw result.error;
       const checkedAt=new Date().toISOString();
-      if(!data) setHealth({state:"degraded",checkedAt,message:"Project data is not currently visible."});
+      if(!result.data) setHealth({state:"degraded",checkedAt,message:"Project data is not currently visible."});
       else setHealth({state:"online",checkedAt,message:"Supabase control plane responded."});
     } catch (healthError) {
       setHealth({
@@ -126,8 +131,6 @@ export default function DataNestApp({session}:{session:Session}) {
         checkedAt:new Date().toISOString(),
         message:healthError instanceof Error ? healthError.message : "Control plane check failed."
       });
-    } finally {
-      window.clearTimeout(timer);
     }
   },[]);
 
