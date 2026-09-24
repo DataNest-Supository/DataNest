@@ -52,6 +52,10 @@ const ProductLab = dynamic(() => import("@/components/ProductLab"), {
   loading: () => <section className="panel"><p className="muted">Loading Product Lab…</p></section>
 });
 
+const ExternalAiSidebar = dynamic(() => import("@/components/ExternalAiSidebar"), {
+  ssr: false
+});
+
 function formatDate(value:string|null) {
   if (!value) return "—";
   return new Intl.DateTimeFormat(undefined,{month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(value));
@@ -73,6 +77,7 @@ function pageRange(page:number) {
 export default function DataNestApp({session}:{session:Session}) {
   const [view,setView]=useState<ViewKey>("overview");
   const [mobileOpen,setMobileOpen]=useState(false);
+  const [aiSidebarOpen,setAiSidebarOpen]=useState(false);
   const [project,setProject]=useState<Project|null>(null);
   const [membership,setMembership]=useState<ProjectMember|null>(null);
   const [tools,setTools]=useState<Tool[]>([]);
@@ -281,6 +286,16 @@ export default function DataNestApp({session}:{session:Session}) {
 
   useEffect(()=>{ void loadCore(); },[loadCore]);
   useEffect(()=>{
+    const saved=window.localStorage.getItem("datanest.aiSidebar.open");
+    if(saved==="true")setAiSidebarOpen(true);
+    const open=()=>setAiSidebarOpen(true);
+    window.addEventListener("datanest:open-ai-sidebar",open);
+    return()=>window.removeEventListener("datanest:open-ai-sidebar",open);
+  },[]);
+  useEffect(()=>{
+    window.localStorage.setItem("datanest.aiSidebar.open",String(aiSidebarOpen));
+  },[aiSidebarOpen]);
+  useEffect(()=>{
     if(!project) return;
     if(view==="unifi"||view==="scheduler") void loadJobsPage(jobPage);
   },[view,jobPage,project,loadJobsPage]);
@@ -330,7 +345,7 @@ export default function DataNestApp({session}:{session:Session}) {
         ? "Control plane degraded"
         : "Control plane offline";
 
-  return <div className="appFrame">
+  return <div className={"appFrame "+(aiSidebarOpen?"aiDockOpen":"")}>
     <aside className={"sidebar "+(mobileOpen?"open":"")}>
       <div className="sidebarTop">
         <div className="logo">RD</div>
@@ -358,6 +373,11 @@ export default function DataNestApp({session}:{session:Session}) {
         <button className="menuButton" onClick={()=>setMobileOpen(true)} aria-label="Open menu">☰</button>
         <div><p className="eyebrow">RESONANCE DATANEST</p><h1>{currentLabel}</h1></div>
         <div className="topActions">
+          <button
+            className={"secondaryButton compact aiSidebarToggle "+(aiSidebarOpen?"active":"")}
+            onClick={()=>setAiSidebarOpen(value=>!value)}
+            aria-pressed={aiSidebarOpen}
+          >{aiSidebarOpen?"Hide AI Sidebar":"AI Sidebar"}</button>
           <button className="secondaryButton compact" onClick={()=>project&&void Promise.all([loadSummary(project.id),loadRecentJobs(project.id),checkControlPlane(project.id)])}>Refresh</button>
           <div className={"systemStatus "+health.state} title={health.message}>
             <span className={"statusDot "+health.state}/>
@@ -383,6 +403,14 @@ export default function DataNestApp({session}:{session:Session}) {
         {!loadingCore&&view==="settings"&&<Settings project={project} tools={tools} policies={policies} membership={membership}/>}
       </div>
     </main>
+
+    {!loadingCore&&project&&aiSidebarOpen&&<ExternalAiSidebar
+      projectId={project.id}
+      currentUserEmail={session.user.email||"Authenticated user"}
+      onClose={()=>setAiSidebarOpen(false)}
+      onNotice={setNotice}
+      onError={setError}
+    />}
   </div>;
 }
 
