@@ -129,6 +129,7 @@ export default function RnDDashboard({
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [chatDraft, setChatDraft] = useState("");
+  const [chatRequestId, setChatRequestId] = useState("");
   const [chatBusy, setChatBusy] = useState(false);
   const [inputType, setInputType] = useState("comment");
   const [inputText, setInputText] = useState("");
@@ -301,20 +302,25 @@ export default function RnDDashboard({
     setChatBusy(true);
     try {
       const message = chatDraft.trim();
-      const { data, error } = await supabase.functions.invoke("rnd-ai-chat-v2", {
+      const requestId = chatRequestId || crypto.randomUUID();
+      if (!chatRequestId) setChatRequestId(requestId);
+      const { data, error } = await supabase.functions.invoke("rnd-ai-chat-v3", {
         body: {
           jobId: selectedJob.id,
-          message
+          message,
+          clientRequestId: requestId
         }
       });
       if (error) throw error;
       const payload = (data || {}) as Record<string, unknown>;
       const providerMode = String(payload.providerMode || "embedded");
       setChatDraft("");
+      setChatRequestId("");
+      const requestStatus = String(payload.requestStatus || providerMode);
       setNotice(
         providerMode === "external"
-          ? "UNIFI Copilot responded through the configured external AI provider."
-          : "UNIFI Copilot responded in embedded server-side mode."
+          ? "UNIFI Copilot responded through the configured stakeholder AI provider. Usage is verified separately from contribution acceptance."
+          : "UNIFI Copilot responded in embedded server-side mode. Request state: " + requestStatus + "."
       );
       await loadWorkspace(selectedJob.id);
     } catch (chatError) {
@@ -547,7 +553,7 @@ export default function RnDDashboard({
             <textarea
               rows={4}
               value={chatDraft}
-              onChange={(event) => setChatDraft(event.target.value)}
+              onChange={(event) => { setChatDraft(event.target.value); setChatRequestId(""); }}
               placeholder="Collaborate with UNIFI Copilot about this Job Manifest…"
             />
             <div className="rowBetween">
