@@ -51,11 +51,12 @@ export default function AuthGate() {
     }
     setBusy(true);
     setMessage("");
+    const redirect = window.location.href.split("#")[0].split("?")[0];
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
         shouldCreateUser: false,
-        emailRedirectTo: window.location.origin
+        emailRedirectTo: redirect
       }
     });
     setBusy(false);
@@ -73,11 +74,11 @@ export default function AuthGate() {
           <div className="brandMark">RD</div>
           <p className="eyebrow">RESONANCE APPDEV</p>
           <h1>Resonance DataNest</h1>
-          <p className="lede">The UI is built, but this deployment is missing its public Supabase environment values.</p>
+          <p className="lede">The UI is built, but this deployment is missing its public Supabase runtime configuration.</p>
           <div className="setupBox">
-            <b>Required environment variables</b>
-            <code>NEXT_PUBLIC_SUPABASE_URL</code>
-            <code>NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY</code>
+            <b>Required public runtime values</b>
+            <code>SUPABASE_URL</code>
+            <code>SUPABASE_PUBLISHABLE_KEY</code>
           </div>
         </section>
       </main>

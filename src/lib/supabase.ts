@@ -15,14 +15,8 @@ export function getSupabase(): SupabaseClient | null {
   if (client !== undefined) return client;
 
   const runtime = typeof window !== "undefined" ? window.__DATANEST_CONFIG__ : undefined;
-  const url =
-    runtime?.supabaseUrl ||
-    process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    "";
-  const key =
-    runtime?.supabasePublishableKey ||
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    "";
+  const url = runtime?.supabaseUrl || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const key = runtime?.supabasePublishableKey || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
 
   if (!url || !key) {
     client = null;
