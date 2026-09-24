@@ -686,8 +686,8 @@ export default function ExternalAiSidebar({
         </div>
 
         <p className="externalAiPrivacyNote">
-          Uses your external AI account/credits. Launching a session creates no contribution points.
-          Imported work remains reported/unscored until independent review.
+          Uses your external AI account/credits. Returned work is staged as UNCERTIFIED evidence
+          and cannot become project-wide memory until governed certification.
         </p>
       </section>
 
