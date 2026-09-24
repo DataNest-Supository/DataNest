@@ -80,17 +80,8 @@ async function ensureJob(projectId){
   if(existing.error)throw existing.error;
   if(existing.data)return existing.data;
 
-  const latest=await admin.from("jobs")
-    .select("job_number")
-    .eq("project_id",projectId)
-    .order("job_number",{ascending:false})
-    .limit(1);
-  if(latest.error)throw latest.error;
-  const jobNumber=Math.max(1,Number(latest.data?.[0]?.job_number||0)+1);
-
   const inserted=await admin.from("jobs").insert({
     project_id:projectId,
-    job_number:jobNumber,
     title:"DataNest AI E2E Job",
     description:"Deterministic staging-only Job Manifest for governed DataNest AI acceptance.",
     priority:70,
