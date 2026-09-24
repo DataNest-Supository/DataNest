@@ -532,6 +532,15 @@ revoke all on public.ai_validation_runs from anon, authenticated;
 revoke all on public.ai_certification_decisions from anon, authenticated;
 revoke all on public.ai_memory_supersessions from anon, authenticated;
 
+create index ai_intake_events_session_time_idx
+  on public.ai_intake_events(project_id,job_id,session_id,created_at);
+create index ai_learning_candidates_project_state_idx
+  on public.ai_learning_candidates(project_id,lifecycle_state,updated_at);
+create index ai_validation_runs_candidate_gate_idx
+  on public.ai_validation_runs(candidate_id,gate,created_at desc);
+create index ai_certification_decisions_candidate_time_idx
+  on public.ai_certification_decisions(candidate_id,created_at desc);
+
 commit;
 ```
 
@@ -605,7 +614,7 @@ begin
   end if;
 end $$;
 
-do $$
+do $
 begin
   if to_regprocedure('public.begin_datanest_ai_request(uuid,uuid,text)') is null then
     raise exception 'begin_datanest_ai_request missing';
@@ -613,7 +622,24 @@ begin
   if to_regprocedure('public.get_certified_memory_context(uuid,uuid,integer)') is null then
     raise exception 'get_certified_memory_context missing';
   end if;
-end $$;
+  if to_regprocedure('public.mark_external_ai_session_staged(uuid,uuid,text)') is null then
+    raise exception 'mark_external_ai_session_staged missing';
+  end if;
+end $;
+
+do $
+declare
+  finish_def text;
+  reconcile_def text;
+begin
+  select pg_get_functiondef('public.service_finish_ai_request(uuid,text,bigint,bigint,bigint,bigint,bigint,text,text)'::regprocedure)
+    into finish_def;
+  select pg_get_functiondef('private.reconcile_unknown_ai_request(uuid,text,bigint,bigint,bigint,text)'::regprocedure)
+    into reconcile_def;
+  if finish_def ilike '%insert_contribution%' or reconcile_def ilike '%insert_contribution%' then
+    raise exception 'AI usage paths still create contribution rows';
+  end if;
+end $;
 ```
 
 - [ ] **Step 2: Verify RED on a disposable/staging database**
@@ -651,10 +677,10 @@ create table public.certified_memory (
 );
 
 alter table public.certified_memory enable row level security;
+revoke all on public.certified_memory from anon,authenticated;
 
-create policy certified_memory_select on public.certified_memory
-for select to authenticated
-using (private.has_project_access(project_id));
+create index certified_memory_project_active_idx
+  on public.certified_memory(project_id,active,promoted_at desc);
 
 create or replace function public.begin_datanest_ai_request(
   target_job uuid,
@@ -716,6 +742,64 @@ $$;
 ```
 
 Also add `staging_trace_id text` and `staging_event_id uuid` to `external_ai_sessions` without an FK to staging.
+
+Define the ownership-checked linkage RPC now so Task 7 does not invent an interface later:
+
+```sql
+create or replace function public.mark_external_ai_session_staged(
+  target_session uuid,
+  target_staging_event uuid,
+  target_trace_id text
+) returns jsonb
+language plpgsql
+security definer
+set search_path=public,private,auth
+as $
+declare
+  caller uuid := auth.uid();
+  s public.external_ai_sessions%rowtype;
+begin
+  if caller is null then
+    raise insufficient_privilege using message='Authentication is required.';
+  end if;
+
+  select * into s
+  from public.external_ai_sessions
+  where id=target_session
+  for update;
+  if not found then raise exception 'External AI session not found.'; end if;
+  if s.user_id <> caller then
+    raise insufficient_privilege using message='External AI session ownership is required.';
+  end if;
+  if not (private.is_project_member(s.project_id) or private.is_job_collaborator(s.job_id)) then
+    raise insufficient_privilege using message='Job collaboration access is required.';
+  end if;
+
+  if s.staging_event_id is not null then
+    return jsonb_build_object(
+      'session_id',s.id,'staging_event_id',s.staging_event_id,
+      'trace_id',s.staging_trace_id,'idempotent',true
+    );
+  end if;
+
+  update public.external_ai_sessions
+  set status='imported',
+      staging_event_id=target_staging_event,
+      staging_trace_id=target_trace_id,
+      imported_at=now(),
+      updated_at=now()
+  where id=s.id;
+
+  return jsonb_build_object(
+    'session_id',s.id,'staging_event_id',target_staging_event,
+    'trace_id',target_trace_id,'idempotent',false
+  );
+end;
+$;
+
+revoke all on function public.mark_external_ai_session_staged(uuid,uuid,text) from public,anon;
+grant execute on function public.mark_external_ai_session_staged(uuid,uuid,text) to authenticated;
+```
 
 - [ ] **Step 4: Add certified-memory read/promotion functions**
 
@@ -816,6 +900,12 @@ begin
   return new_id;
 end;
 $$;
+
+revoke all on function public.begin_datanest_ai_request(uuid,uuid,text) from public,anon;
+grant execute on function public.begin_datanest_ai_request(uuid,uuid,text) to authenticated;
+
+revoke all on function public.get_certified_memory_context(uuid,uuid,integer) from public,anon;
+grant execute on function public.get_certified_memory_context(uuid,uuid,integer) to authenticated;
 
 revoke all on function public.service_promote_certified_memory(
   uuid,text,text,uuid,uuid[],text[],text,numeric,text,text,uuid
@@ -996,8 +1086,10 @@ const session = await ensureStagingSession(stagingService, {
   projectId: job.project_id,
   jobId: job.id,
   userId: user.id,
-  clientSessionId: body.sessionId
+  existingSessionId: body.sessionId || null
 });
+// If existingSessionId is null, create ai_sessions with a generated client_session_id.
+// If it is present, load by ai_sessions.id and verify project/job/user ownership before reuse.
 
 // HARD GATE: this insert must succeed before provider authorization/call.
 const inputEvent = await insertStagingEvent(stagingService, {
@@ -1143,7 +1235,53 @@ Run the specific test; expect missing module failure.
 
 - [ ] **Step 3: Implement deterministic trend helpers**
 
-Use normalized lowercase alphanumeric tokens, a fixed stop-word set, Jaccard similarity, and explicit high-risk keyword/category mapping. Candidate creation requires at least two evidence items with similarity >= 0.5. It returns `lifecycleState:"INTAKE"`; it never returns `CERTIFIED`.
+Use normalized lowercase alphanumeric tokens, a fixed stop-word set, Jaccard similarity, and explicit high-risk keyword/category mapping:
+
+```ts
+const stopWords=new Set(["the","a","an","and","or","to","of","for","in","on","with","is","be","as"]);
+
+export function normalizeTrendTokens(value:string):string[] {
+  return [...new Set(
+    value.toLowerCase().replace(/[^a-z0-9 ]+/g," ").split(/\s+/)
+      .filter(token=>token.length>2&&!stopWords.has(token))
+  )].sort();
+}
+
+export function evidenceSimilarity(a:string[],b:string[]):number {
+  const left=new Set(a), right=new Set(b);
+  const intersection=[...left].filter(token=>right.has(token)).length;
+  const union=new Set([...left,...right]).size;
+  return union===0?0:intersection/union;
+}
+
+export function classifyLearningRisk(value:string):{category:string;riskClass:"low"|"normal"|"high"} {
+  const text=value.toLowerCase();
+  if (/auth|authorization|rls|permission|role/.test(text)) return {category:"authorization",riskClass:"high"};
+  if (/security|secret|credential|encryption/.test(text)) return {category:"security",riskClass:"high"};
+  if (/architecture|schema|migration/.test(text)) return {category:"architecture",riskClass:"high"};
+  if (/delete|destroy|drop|purge/.test(text)) return {category:"destructive",riskClass:"high"};
+  return {category:"workflow",riskClass:"low"};
+}
+
+export function candidateFromRepeatedEvidence(events:Array<{id:string;content:string}>) {
+  if(events.length<2)return null;
+  const anchor=events[0];
+  const similar=events.filter(event=>
+    evidenceSimilarity(normalizeTrendTokens(anchor.content),normalizeTrendTokens(event.content))>=0.5
+  );
+  if(similar.length<2)return null;
+  const risk=classifyLearningRisk(similar.map(x=>x.content).join(" "));
+  return {
+    normalizedKnowledge:anchor.content.trim(),
+    category:risk.category,
+    riskClass:risk.riskClass,
+    lifecycleState:"INTAKE" as const,
+    evidenceIds:similar.map(x=>x.id)
+  };
+}
+```
+
+Candidate creation requires at least two similar evidence items. It returns `lifecycleState:"INTAKE"`; it never returns `CERTIFIED`.
 
 - [ ] **Step 4: Integrate trend update after a successful staged input/output**
 
@@ -1226,6 +1364,42 @@ For every action:
 4. use staging service credentials to read/write candidate evidence;
 5. never trust `role`, `riskClass`, `hasConflict`, or lifecycle state from the request body when authoritative staged values exist.
 
+The handler core must derive the role and candidate server-side:
+
+```ts
+const {data:userData,error:userError}=await userClient.auth.getUser();
+if(userError||!userData.user)return json({error:"Authentication is required."},401,origin);
+
+const {data:member,error:memberError}=await userClient
+  .from("project_members")
+  .select("role,status")
+  .eq("project_id",body.projectId)
+  .eq("user_id",userData.user.id)
+  .eq("status","active")
+  .maybeSingle();
+
+if(memberError||!member)return json({error:"Active project membership is required."},403,origin);
+
+const {data:candidate,error:candidateError}=await staging
+  .from("ai_learning_candidates")
+  .select("*")
+  .eq("id",body.candidateId)
+  .eq("project_id",body.projectId)
+  .single();
+
+if(candidateError||!candidate)return json({error:"Candidate not found."},404,origin);
+
+const candidatePolicy={
+  category:candidate.category,
+  riskClass:candidate.risk_class,
+  hasConflict:candidate.has_conflict
+};
+
+if(body.action==="certify"&&!canHumanCertify(member.role,candidatePolicy)){
+  return json({error:"Certification authority is insufficient."},403,origin);
+}
+```
+
 For `certify`:
 - load latest passing run for each required gate;
 - compute required authority;
@@ -1304,16 +1478,46 @@ Run the specific test and confirm it fails on the old RPC call.
 
 - [ ] **Step 3: Implement `datanest-ai-intake`**
 
-The function must:
-- authenticate the caller;
-- load `external_ai_sessions` with the user JWT and verify ownership;
-- verify Job access;
-- extract `trace_key` from `context_snapshot`;
-- create/reuse a staging `ai_sessions` row for the production external session;
-- SHA-256 the returned content;
-- insert `ai_intake_events` with `source_type='ai_companion'`, provider, production session ID, trace key metadata;
-- update production `external_ai_sessions.staging_trace_id`, `staging_event_id`, `status='imported'`, and `imported_at` using a narrowly scoped production RPC or service-role update;
-- be idempotent when the same external session has already been staged.
+The function must authenticate the caller, load the caller-owned external session, preserve its trace key/provider/JOB lineage, and stage it before marking the production session imported:
+
+```ts
+const {data:session,error:sessionError}=await userClient
+  .from("external_ai_sessions")
+  .select("id,project_id,job_id,user_id,provider,status,context_snapshot,staging_event_id,staging_trace_id")
+  .eq("id",body.externalAiSessionId)
+  .single();
+if(sessionError||!session)return json({error:"External AI session not found."},404,origin);
+
+if(session.staging_event_id){
+  return json({
+    eventId:session.staging_event_id,
+    traceId:session.staging_trace_id,
+    jobId:session.job_id,
+    trustState:"UNCERTIFIED",
+    idempotent:true
+  },200,origin);
+}
+
+const traceId=String(session.context_snapshot?.trace_key||"");
+const contentHash=await sha256Text(String(body.content||""));
+const staged=await stageCompanionEvent(stagingService,{
+  projectId:session.project_id,
+  jobId:session.job_id,
+  userId:session.user_id,
+  externalAiSessionId:session.id,
+  provider:session.provider,
+  traceId,
+  content:String(body.content||"").trim(),
+  contentHash
+});
+
+const {data:linked,error:linkError}=await userClient.rpc("mark_external_ai_session_staged",{
+  target_session:session.id,
+  target_staging_event:staged.id,
+  target_trace_id:traceId
+});
+if(linkError)throw linkError;
+```
 
 It must not insert `job_inputs`.
 
@@ -1422,19 +1626,57 @@ Run the specific test and confirm missing component/navigation failures.
 
 `DataNestAiWorkspace` loads accessible jobs from production RLS, maintains selected Job/session, dispatches `datanest:job-selected`, and calls `datanest-ai-chat` with `action:"context"`.
 
-It listens for `datanest:external-ai-staged` and refreshes current-session context when the event Job matches the selected Job.
+Use this state/refresh shape:
+
+```tsx
+const [selectedJobId,setSelectedJobId]=useState("");
+const [sessionId,setSessionId]=useState("");
+const [context,setContext]=useState<DataNestAiContext|null>(null);
+
+const refreshContext=useCallback(async()=>{
+  if(!selectedJobId)return;
+  const supabase=getSupabase();
+  if(!supabase)return;
+  const {data,error}=await supabase.functions.invoke("datanest-ai-chat",{
+    body:{action:"context",jobId:selectedJobId,sessionId:sessionId||null}
+  });
+  if(error)throw error;
+  setContext(data as DataNestAiContext);
+  if((data as DataNestAiContext).sessionId)setSessionId((data as DataNestAiContext).sessionId);
+},[selectedJobId,sessionId]);
+
+useEffect(()=>{
+  if(!selectedJobId)return;
+  window.dispatchEvent(new CustomEvent("datanest:job-selected",{detail:{jobId:selectedJobId}}));
+  void refreshContext();
+},[selectedJobId,refreshContext]);
+```
+
+Listen for `datanest:external-ai-staged` and refresh current-session context when the event Job matches the selected Job.
 
 - [ ] **Step 4: Build the chat panel**
 
-Each turn displays:
-- author;
-- timestamp;
-- JOB code;
-- trace ID;
-- trust badge;
-- provider route for AI output.
+Each turn displays author, timestamp, JOB code, trace ID, trust badge, and provider route for AI output. Submit with a stable request UUID:
 
-The composer sends a generated UUID `clientRequestId`. On success, it stores the returned `sessionId` and renders the response. On failure before staging, it leaves the draft recoverable and displays the gateway error.
+```tsx
+const requestId=requestIdRef.current||crypto.randomUUID();
+requestIdRef.current=requestId;
+const {data,error}=await supabase.functions.invoke("datanest-ai-chat",{
+  body:{
+    action:"chat",
+    jobId,
+    sessionId:sessionId||null,
+    clientRequestId:requestId,
+    message:draft.trim()
+  }
+});
+if(error)throw error;
+setSessionId(String(data.sessionId));
+setDraft("");
+requestIdRef.current="";
+```
+
+On failure before staging, keep both the draft and request ID so the user can retry idempotently.
 
 - [ ] **Step 5: Build memory and certification panels**
 
@@ -1520,11 +1762,18 @@ Expected: FAIL because the current stakeholder dashboard and Product Lab copy st
 
 - [ ] **Step 3: Create AI Operations from the operational subset**
 
-Move only these behaviors from `StakeholderDashboard.tsx`:
-- provider connection list and connect/disable/delete actions;
-- project AI budget status and edit controls;
-- provider-domain allowlist controls;
-- `AiReconciliationPanel`.
+Move only provider connection/rotation, project budget, provider-domain allowlist, and `AiReconciliationPanel`. The component state starts as:
+
+```tsx
+export default function AiOperationsDashboard({
+  projectId,currentUserId,canManageAi
+}:{projectId:string;currentUserId:string;canManageAi:boolean}) {
+  const [connections,setConnections]=useState<Connection[]>([]);
+  const [budget,setBudget]=useState<BudgetStatus|null>(null);
+  const [allowlist,setAllowlist]=useState<AllowDomain[]>([]);
+  // provider connection form + budget form + allowlist form only
+}
+```
 
 Remove all `Stakeholder`, `Contribution`, `StakeHistory`, credit form, stake pool, pending/accepted contribution, and scoring-history state/queries/functions/UI.
 
@@ -1594,12 +1843,26 @@ Keep all existing scripts.
 
 - [ ] **Step 2: Implement deterministic branch seed**
 
-The seed script must idempotently:
-- create/update the E2E Auth user using the branch service-role client;
-- upsert `projects.slug='resonance-datanest'`;
-- upsert active owner membership for that user;
-- insert one Job titled `DataNest AI E2E Job` if absent;
-- print only the project/job IDs, never credentials.
+The seed script uses the branch service-role client and never prints credentials:
+
+```js
+const admin=createClient(process.env.DATANEST_AI_STAGING_URL,process.env.DATANEST_AI_STAGING_SERVICE_ROLE_KEY,{
+  auth:{persistSession:false,autoRefreshToken:false}
+});
+const email=process.env.DATANEST_AI_E2E_EMAIL;
+const password=process.env.DATANEST_AI_E2E_PASSWORD;
+if(!email||!password)throw new Error("E2E credentials are required.");
+
+const listed=await admin.auth.admin.listUsers();
+let user=listed.data.users.find(item=>item.email===email);
+if(!user){
+  const created=await admin.auth.admin.createUser({email,password,email_confirm:true});
+  if(created.error)throw created.error;
+  user=created.data.user;
+}
+```
+
+Then idempotently upsert `projects.slug='resonance-datanest'`, active owner membership, and one Job titled `DataNest AI E2E Job`. Print only project/job IDs.
 
 - [ ] **Step 3: Write browser acceptance flow**
 
@@ -1630,16 +1893,30 @@ Certification UI actions that require the full gate chain can use seeded validat
 
 - [ ] **Step 4: Write stress test**
 
-The stress script:
-- signs in the E2E user;
-- resolves the seeded Job ID;
-- sends 25 concurrent unique chat requests using deterministic UUIDs;
-- sends 5 duplicate retries of one already-completed request;
-- asserts 25 distinct human intake events and 25 distinct output events;
-- asserts duplicate retries return cached/idempotent results;
-- queries staging with service role and asserts no event from a second seeded Job appears in the first Job/session context.
+The stress test sends concurrent unique requests and deliberate duplicates:
 
-Exit non-zero on any mismatch.
+```js
+const requests=Array.from({length:25},(_,index)=>({
+  clientRequestId:crypto.randomUUID(),
+  message:`stress-message-${index}`
+}));
+const results=await Promise.all(requests.map(item=>
+  client.functions.invoke("datanest-ai-chat",{
+    body:{action:"chat",jobId,sessionId,clientRequestId:item.clientRequestId,message:item.message}
+  })
+));
+if(results.some(result=>result.error))throw new Error("unique stress request failed");
+
+const duplicateId=requests[0].clientRequestId;
+const duplicates=await Promise.all(Array.from({length:5},()=>
+  client.functions.invoke("datanest-ai-chat",{
+    body:{action:"chat",jobId,sessionId,clientRequestId:duplicateId,message:requests[0].message}
+  })
+));
+if(duplicates.some(result=>result.error||!result.data?.idempotent))throw new Error("duplicate request was not idempotent");
+```
+
+Afterward query staging with service role and assert 25 distinct human intake events and 25 distinct output events, and assert no event from a second seeded Job appears in the first Job/session context. Exit non-zero on mismatch.
 
 - [ ] **Step 5: Run E2E/stress on the persistent staging branch**
 
