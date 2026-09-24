@@ -595,7 +595,35 @@ Deno.serve(async(request:Request)=>{
             }
           }else{
             requestStatus="denied";
+            const {error:deniedError}=await serviceClient.rpc("service_finish_ai_request",{
+              target_request:activeRequestId,
+              target_status:"denied",
+              input_tokens:0,
+              output_tokens:0,
+              estimated_cost_minor:null,
+              provider_reported_cost_minor:null,
+              reconciled_cost_minor:null,
+              target_error_category:String((authz as Record<string,unknown>|null)?.reason||"policy_denied"),
+              target_error_message:"Provider request blocked by DataNest policy."
+            });
+            if(deniedError)throw deniedError;
           }
+        }
+
+        if(requestStatus==="pending"){
+          const {error:embeddedError}=await serviceClient.rpc("service_finish_ai_request",{
+            target_request:activeRequestId,
+            target_status:"embedded",
+            input_tokens:0,
+            output_tokens:0,
+            estimated_cost_minor:null,
+            provider_reported_cost_minor:null,
+            reconciled_cost_minor:null,
+            target_error_category:null,
+            target_error_message:null
+          });
+          if(embeddedError)throw embeddedError;
+          requestStatus="embedded";
         }
 
         return {
