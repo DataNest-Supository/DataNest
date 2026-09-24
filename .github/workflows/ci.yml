@@ -9,14 +9,22 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.0.0
         with:
           node-version: 22
       - run: npm ci
       - run: npm run check
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
+      - name: Write release manifest
+        env:
+          DATANEST_RELEASE_SHA: ${{ github.sha }}
+          DATANEST_DB_RELEASE: security-integrity-v1
+          DATANEST_EDGE_AI: rnd-ai-chat-v3@1
+          DATANEST_EDGE_PROVIDER: manage-ai-provider-v2@1
+          DATANEST_EDGE_INVITES: send-job-invite@1
+        run: node scripts/write-release-manifest.mjs public/release-manifest.json
       - run: npm run build
       - name: Build provider-agnostic container
         run: docker build -t resonance-datanest:ci .
