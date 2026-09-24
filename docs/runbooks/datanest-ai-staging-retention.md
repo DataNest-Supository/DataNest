@@ -56,7 +56,6 @@ BACKUP_FILE="$(ls -t backups/*.datanest-ai-backup | head -1)"
 node scripts/restore-datanest-ai-staging.mjs "$BACKUP_FILE" \
   --target-ref "$DATANEST_AI_STAGING_PROJECT_REF" \
   --source-ref "$DATANEST_AI_STAGING_PROJECT_REF" \
-  --source-ref "$DATANEST_AI_STAGING_PROJECT_REF" \
   --verify-only
 ```
 
@@ -68,7 +67,8 @@ After verify-only succeeds:
 
 ```bash
 node scripts/restore-datanest-ai-staging.mjs "$BACKUP_FILE" \
-  --target-ref "$DATANEST_AI_STAGING_PROJECT_REF"
+  --target-ref "$DATANEST_AI_STAGING_PROJECT_REF" \
+  --source-ref "$DATANEST_AI_STAGING_PROJECT_REF"
 ```
 
 The restore uses primary-key upserts in dependency order. A second restore of the same backup must not create duplicate rows. Re-run verify-only after restore.
