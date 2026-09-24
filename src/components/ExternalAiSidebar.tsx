@@ -84,6 +84,10 @@ export default function ExternalAiSidebar({
     [jobs,selectedJobId]
   );
   const selectedProvider=providers.find(item=>item.key===provider)||providers[0];
+  const preparedHandoff=useMemo(
+    ()=>buildHandoff(),
+    [selectedJob,latestUpdate,suggestions,provider,projectId,currentUserEmail,sessionId,traceKey]
+  );
 
   const loadJobs=useCallback(async()=>{
     const supabase=getSupabase();
@@ -156,6 +160,8 @@ export default function ExternalAiSidebar({
     window.localStorage.setItem("datanest.aiSidebar.job",selectedJobId);
     setSessionId("");
     setTraceKey("");
+    setLatestUpdate(null);
+    setSuggestions([]);
     setResponseText("");
     setEmbedUrl("");
     void loadJobContext(selectedJobId);
@@ -249,7 +255,7 @@ export default function ExternalAiSidebar({
   }
 
   async function copyHandoff(){
-    const text=handoff||buildHandoff();
+    const text=handoff||preparedHandoff;
     if(!text)return;
     setHandoff(text);
     try{
@@ -287,7 +293,7 @@ export default function ExternalAiSidebar({
     return url.toString();
   }
 
-  function openProviderWindow(mode:"companion"|"popout",promptText=handoff){
+  function openProviderWindow(mode:"companion"|"popout",promptText=handoff||preparedHandoff){
     const name=mode==="companion"
       ? "datanest-ai-companion-"+selectedProvider.key
       : "_blank";
@@ -300,7 +306,7 @@ export default function ExternalAiSidebar({
   async function startSession(mode:"sidebar"|"companion"|"popout"){
     if(!selectedJob)return;
 
-    const draftHandoff=buildHandoff();
+    const draftHandoff=preparedHandoff;
     setHandoff(draftHandoff);
     setBusy(true);
     onError("");
@@ -473,6 +479,15 @@ export default function ExternalAiSidebar({
           </div>
           <strong>{selectedJob.title}</strong>
           <small>{"Priority "+selectedJob.priority+" · Updated "+new Date(selectedJob.updated_at).toLocaleString()}</small>
+          <div className="externalAiTraceGrid">
+            <span>Manifest</span><code>{jobCode(selectedJob)}</code>
+            <span>Job ID</span><code>{selectedJob.id}</code>
+            <span>Provider</span><code>{selectedProvider.label}</code>
+            <span>Trace</span><code>{traceKey||"created when companion opens"}</code>
+          </div>
+          <p className="externalAiPromptReady">
+            Job Manifest handoff is prepared. Open the companion, verify the tracking header, then click <b>Send</b>.
+          </p>
         </div>}
 
         {selectedProvider.embed==="blocked"&&<div className="externalAiEmbedNotice" role="status">
@@ -489,7 +504,7 @@ export default function ExternalAiSidebar({
           >{busy
             ?"Opening…"
             :selectedProvider.embed==="blocked"
-              ?"Open companion"
+              ?"Open companion + load prompt"
               :"Open in sidebar"}</button>
           <button
             className="secondaryButton compact"
@@ -563,9 +578,9 @@ export default function ExternalAiSidebar({
         </p>
       </section>}
 
-      {handoff&&<details className="externalAiDockSection externalAiHandoff" open={!embedUrl}>
-        <summary>Job Manifest handoff</summary>
-        <textarea rows={10} readOnly value={handoff}/>
+      {selectedJob&&<details className="externalAiDockSection externalAiHandoff" open={!embedUrl}>
+        <summary>{"Job Manifest handoff · "+jobCode(selectedJob)+" · JOB ID "+selectedJob.id}</summary>
+        <textarea rows={10} readOnly value={handoff||preparedHandoff}/>
       </details>}
 
       {sessionId&&<form className="externalAiDockSection externalAiImport" onSubmit={importResponse}>
