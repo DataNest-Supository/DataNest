@@ -338,7 +338,7 @@ export default function ExternalAiSidebar({
       "4. Validation / acceptance checks",
       "5. Next action to import back into DataNest",
       "",
-      "I will import the relevant result back into Resonance DataNest as tracked external-AI R&D input."
+      "I will return the relevant result to Resonance DataNest as traceable uncertified AI Companion evidence."
     ].join("\n");
   }
 
@@ -496,23 +496,27 @@ export default function ExternalAiSidebar({
     setBusy(true);
     onError("");
     try{
-      const {data,error}=await supabase.rpc("import_external_ai_response",{
-        target_session:sessionId,
-        response_content:content.trim()
+      const {data,error}=await supabase.functions.invoke("datanest-ai-intake",{
+        body:{
+          sourceType:"ai_companion",
+          externalAiSessionId:sessionId,
+          content:content.trim()
+        }
       });
       if(error)throw error;
 
       const payload=(data||{}) as Record<string,unknown>;
-      const inputId=String(payload.input_id||"");
+      const eventId=String(payload.eventId||"");
+      const stagedTraceId=String(payload.traceId||traceKey||"");
       setResponseText("");
-      setLastImportedId(inputId);
+      setLastImportedId(eventId);
       onNotice(
-        "External AI result imported into "+
+        "External AI result staged as UNCERTIFIED evidence for "+
         (selectedJob?jobCode(selectedJob):"the Job Manifest")+
-        (payload.idempotent?" using the existing tracked import.":".")
+        (payload.idempotent?" using the existing trace.":".")
       );
-      window.dispatchEvent(new CustomEvent("datanest:external-ai-imported",{
-        detail:{jobId:selectedJobId,inputId}
+      window.dispatchEvent(new CustomEvent("datanest:external-ai-staged",{
+        detail:{jobId:selectedJobId,eventId,traceId:stagedTraceId}
       }));
     }catch(error){
       onError(error instanceof Error?error.message:"Unable to import external AI response.");
