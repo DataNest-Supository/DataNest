@@ -11,7 +11,10 @@
 - Branch: `main`
 - Supabase: `sgqdmfgjbprsoqsmgigi`
 - Supabase URL: `https://sgqdmfgjbprsoqsmgigi.supabase.co`
-- Vercel project: `Resonance DataNest`
+- Hosting: **provider-agnostic**
+- Optional managed host: **Vercel**
+
+GitHub and Supabase are the required authorities. Vercel is not required for the application to function and is not a completion dependency.
 
 ## Web UI
 
@@ -19,12 +22,13 @@ The UI includes authenticated access, an overview dashboard, UNIFI Job Manifest 
 
 The sign-in screen intentionally does not create Supabase Auth users. Create authorized users through Supabase Auth administration, then use password or magic-link sign-in.
 
-## Local development
+## Local or self-hosted operation
 
 ```bash
 cp .env.example .env.local
 npm install
-npm run dev
+npm run build
+npm start
 ```
 
 Required environment values:
@@ -41,13 +45,13 @@ npm run check
 npm run build
 ```
 
-## Vercel
+## Optional Vercel deployment
 
-Import this repository and call the project **Resonance DataNest**:
+If a managed public deployment is desired, this repository can be imported into Vercel as **Resonance DataNest**:
 
 [Import Resonance DataNest to Vercel](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FDataNest-Supository%2FDataNest&repository-name=Resonance%20DataNest)
 
-Configure the two public Supabase environment variables in Vercel for Production and Preview. Never commit service-role keys, database passwords, access tokens, MFA material or reusable session credentials.
+Configure the two public Supabase environment variables in the deployment environment. Never commit service-role keys, database passwords, access tokens, MFA material or reusable session credentials.
 
 ## Scheduling safety
 
