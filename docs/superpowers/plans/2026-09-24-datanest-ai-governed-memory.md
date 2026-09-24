@@ -2022,7 +2022,26 @@ Expected: PASS.
 
 - [ ] **Step 7: Perform one staging export/restore drill**
 
-Export from the staging branch, restore into a disposable validation target or schema that is not production, compare row counts/hashes, then delete only the disposable target. Keep the persistent staging branch.
+Exercise the real encrypted restore path without deleting retained evidence. Add a `--verify-only` mode to `restore-datanest-ai-staging.mjs` that decrypts the backup, validates the format, computes per-table row counts plus SHA-256 over canonical JSON, and queries the target branch to compare the same IDs/hashes without writing.
+
+Run:
+
+```bash
+node scripts/export-datanest-ai-staging.mjs
+BACKUP_FILE="$(ls -t backups/*.datanest-ai-backup | head -1)"
+node scripts/restore-datanest-ai-staging.mjs "$BACKUP_FILE" \
+  --target-ref "$DATANEST_AI_STAGING_PROJECT_REF" \
+  --verify-only
+```
+
+Expected: every exported table reports identical row count and canonical hash on the persistent staging branch. Then perform an idempotent restore of the same backup:
+
+```bash
+node scripts/restore-datanest-ai-staging.mjs "$BACKUP_FILE" \
+  --target-ref "$DATANEST_AI_STAGING_PROJECT_REF"
+```
+
+Expected: PASS, no duplicate primary keys, and post-restore counts/hashes remain unchanged. This tests decrypt, validation, target-ref protection, dependency ordering, and upsert behavior without deleting raw retained evidence. Keep the persistent staging branch.
 
 - [ ] **Step 8: Commit**
 
@@ -2037,6 +2056,7 @@ git commit -m "feat: add recoverable DataNest AI staging backups"
 - Modify: `.github/workflows/ci.yml`
 - Create: `.github/workflows/datanest-ai-certification.yml`
 - Modify: `.github/workflows/pages.yml`
+- Create: `supabase/config.toml`
 - Modify: `scripts/write-release-manifest.mjs`
 - Modify: `public/release-manifest.json` only through the generator during build, not by hand.
 
@@ -2076,17 +2096,85 @@ Required secret names:
 - `DATANEST_AI_E2E_EMAIL`
 - `DATANEST_AI_E2E_PASSWORD`
 
+The browser job does not depend on an unspecified Vercel/Pages preview. Build a local static export whose public Supabase runtime points at the persistent staging branch:
+
+```yaml
+- name: Fail clearly when governed staging secrets are absent
+  shell: bash
+  env:
+    STAGING_URL: ${{ secrets.DATANEST_AI_STAGING_URL }}
+    STAGING_KEY: ${{ secrets.DATANEST_AI_STAGING_PUBLISHABLE_KEY }}
+    STAGING_DB: ${{ secrets.DATANEST_AI_STAGING_DB_URL }}
+    E2E_EMAIL: ${{ secrets.DATANEST_AI_E2E_EMAIL }}
+    E2E_PASSWORD: ${{ secrets.DATANEST_AI_E2E_PASSWORD }}
+  run: |
+    test -n "$STAGING_URL" || { echo "DATANEST_AI_STAGING_URL is required"; exit 1; }
+    test -n "$STAGING_KEY" || { echo "DATANEST_AI_STAGING_PUBLISHABLE_KEY is required"; exit 1; }
+    test -n "$STAGING_DB" || { echo "DATANEST_AI_STAGING_DB_URL is required"; exit 1; }
+    test -n "$E2E_EMAIL" || { echo "DATANEST_AI_E2E_EMAIL is required"; exit 1; }
+    test -n "$E2E_PASSWORD" || { echo "DATANEST_AI_E2E_PASSWORD is required"; exit 1; }
+
+- name: Build static DataNest against governed staging
+  env:
+    DATANEST_STATIC_EXPORT: "true"
+    NEXT_PUBLIC_BASE_PATH: ""
+    NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.DATANEST_AI_STAGING_URL }}
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.DATANEST_AI_STAGING_PUBLISHABLE_KEY }}
+    SUPABASE_URL: ${{ secrets.DATANEST_AI_STAGING_URL }}
+    SUPABASE_PUBLISHABLE_KEY: ${{ secrets.DATANEST_AI_STAGING_PUBLISHABLE_KEY }}
+  run: |
+    node scripts/write-runtime-config.mjs public/runtime-config.js
+    npm run build
+
+- name: Serve static export
+  run: |
+    python3 -m http.server 4173 --directory out >/tmp/datanest-ai-http.log 2>&1 &
+    echo $! > /tmp/datanest-ai-http.pid
+    for i in {1..30}; do
+      curl --fail --silent http://127.0.0.1:4173/ >/dev/null && exit 0
+      sleep 1
+    done
+    cat /tmp/datanest-ai-http.log
+    exit 1
+
+- name: Run governed browser acceptance
+  env:
+    PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
+    DATANEST_APP_PATH: /
+    DATANEST_AI_E2E_EMAIL: ${{ secrets.DATANEST_AI_E2E_EMAIL }}
+    DATANEST_AI_E2E_PASSWORD: ${{ secrets.DATANEST_AI_E2E_PASSWORD }}
+  run: npm run test:browser:datanest-ai
+```
+
 Jobs:
 1. install Node 22 dependencies;
 2. run staging and production SQL acceptance against the branch;
 3. seed E2E;
-4. run browser acceptance against the preview deployment;
-5. run stress test;
-6. emit a machine-readable certification artifact containing exact commit SHA and pass/fail results.
+4. build and serve the local static export against staging;
+5. run browser acceptance against that local export;
+6. run stress tests;
+7. emit a machine-readable certification artifact containing exact commit SHA and pass/fail results.
 
 Do not make a missing secret look like success; the governed acceptance job must fail with a clear configuration message.
 
-- [ ] **Step 3: Update release manifest identities**
+- [ ] **Step 3: Commit explicit Edge Function authentication configuration**
+
+Create `supabase/config.toml`:
+
+```toml
+[functions.datanest-ai-chat]
+verify_jwt = true
+
+[functions.datanest-ai-intake]
+verify_jwt = true
+
+[functions.datanest-ai-certification]
+verify_jwt = true
+```
+
+This keeps JWT verification explicit and consistent when the three new functions are deployed through the Supabase CLI/GitHub integration. The functions themselves still perform caller and role checks; JWT verification is not treated as sufficient authorization.
+
+- [ ] **Step 4: Update release manifest identities**
 
 Set:
 - database release: `datanest-ai-governed-memory-v1`;
@@ -2098,7 +2186,7 @@ Set:
 
 Update the live Pages verification greps to match these exact values.
 
-- [ ] **Step 4: Run the complete local/static verification**
+- [ ] **Step 5: Run the complete local/static verification**
 
 ```bash
 npm ci
@@ -2111,10 +2199,10 @@ docker build -t resonance-datanest:datanest-ai-cert .
 
 Expected: all PASS.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add .github/workflows/ci.yml .github/workflows/datanest-ai-certification.yml .github/workflows/pages.yml scripts/write-release-manifest.mjs
+git add .github/workflows/ci.yml .github/workflows/datanest-ai-certification.yml .github/workflows/pages.yml supabase/config.toml scripts/write-release-manifest.mjs
 git commit -m "ci: certify DataNest AI governed memory releases"
 ```
 
