@@ -249,8 +249,6 @@ export default function ExternalAiSidebar({
     const top=Math.max(0,(window.screen?.availTop||0)+40);
     return [
       "popup=yes",
-      "noopener=yes",
-      "noreferrer=yes",
       "resizable=yes",
       "scrollbars=yes",
       "width="+popupWidth,
@@ -265,7 +263,7 @@ export default function ExternalAiSidebar({
       ? "datanest-ai-companion-"+selectedProvider.key
       : "_blank";
     const features=mode==="companion"
-      ? companionFeatures()
+      ? "noopener,noreferrer,"+companionFeatures()
       : "noopener,noreferrer,resizable=yes,scrollbars=yes";
     return window.open(selectedProvider.url,name,features);
   }
@@ -285,8 +283,9 @@ export default function ExternalAiSidebar({
         : "_blank";
       const features=mode==="companion"
         ? companionFeatures()
-        : "noopener,noreferrer,resizable=yes,scrollbars=yes";
+        : "popup=yes,resizable=yes,scrollbars=yes";
       popup=window.open("about:blank",name,features);
+      if(popup)popup.opener=null;
     }
 
     try{
