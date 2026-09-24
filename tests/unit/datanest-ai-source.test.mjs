@@ -143,3 +143,16 @@ test("policy-denied provider requests are finalized as denied before embedded fa
     /requestStatus="denied"[\s\S]{0,700}target_status:"denied"/
   );
 });
+
+
+test("all AI usage finalization checks RPC errors", () => {
+  const gateway=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-chat/index.ts"),"utf8");
+  assert.match(
+    gateway,
+    /async function finishUsageRequest\([\s\S]{0,900}service_finish_ai_request[\s\S]{0,500}if\(error\)throw error/
+  );
+  assert.doesNotMatch(
+    gateway,
+    /await serviceClient\.rpc\("service_finish_ai_request"/
+  );
+});
