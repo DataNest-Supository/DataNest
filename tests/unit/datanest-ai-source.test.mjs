@@ -187,3 +187,17 @@ test("promotion revalidates certification seal and required authority", () => {
     /if\(action==="promote"\|\|action==="supersede"\)[\s\S]{0,1600}assertCertificationDecisionCurrent\(decision,candidate\)/
   );
 });
+
+
+test("AI Companion intake binds to the active governed DataNest AI session", () => {
+  const app=fs.readFileSync(path.join(root,"src/components/DataNestApp.tsx"),"utf8");
+  const workspace=fs.readFileSync(path.join(root,"src/components/DataNestAiWorkspace.tsx"),"utf8");
+  const sidebar=fs.readFileSync(path.join(root,"src/components/ExternalAiSidebar.tsx"),"utf8");
+  const intake=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-intake/index.ts"),"utf8");
+
+  assert.match(app,/activeDataNestAiSession/);
+  assert.match(workspace,/onActiveSessionChange/);
+  assert.match(sidebar,/datanestAiSessionId/);
+  assert.match(intake,/preferredSessionId/);
+  assert.match(intake,/Active DataNest AI session does not match the authorized user and Job/);
+});
