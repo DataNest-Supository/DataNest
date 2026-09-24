@@ -113,3 +113,14 @@ test("browser certification console cannot self-pass the stress-test gate", () =
   assert.doesNotMatch(panel,/onClick=.*record_validation[\s\S]{0,900}STRESS_TEST/);
   assert.match(gateway,/gate==="STRESS_TEST"[\s\S]{0,300}governed stress suite/i);
 });
+
+
+test("certification retry reconciles candidate state after an existing decision", () => {
+  const source=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-certification/index.ts"),"utf8");
+  assert.match(source,/if\(existing\)\{[\s\S]{0,700}lifecycle_state:"CERTIFIED"[\s\S]{0,300}return existing/);
+});
+
+test("certification workspace orders validation runs oldest to newest for latest-state reduction", () => {
+  const source=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-certification/index.ts"),"utf8");
+  assert.match(source,/ai_validation_runs"\)[\s\S]{0,250}order\("created_at",\{ascending:true\}\)/);
+});
