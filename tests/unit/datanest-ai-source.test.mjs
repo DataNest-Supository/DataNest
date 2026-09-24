@@ -171,7 +171,7 @@ test("existing certification decisions must still match the candidate seal", () 
   const source=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-certification/index.ts"),"utf8");
   assert.match(
     source,
-    /if\(existing\)[\s\S]{0,900}content_hash[\s\S]{0,300}policy_version[\s\S]{0,300}risk_class[\s\S]{0,500}stale/i
+    /if\(existing\)[\s\S]{0,500}assertCertificationDecisionCurrent\(existing,input\.candidate\)/
   );
 });
 
