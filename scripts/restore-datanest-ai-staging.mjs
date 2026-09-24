@@ -3,13 +3,16 @@ import { createClient } from "@supabase/supabase-js";
 import {
   canonicalHash,
   decryptBackup,
-  parseBackupKey
+  parseBackupKey,
+  validateRestoreRefs
 } from "./lib/encrypted-backup.mjs";
 
 const [backupFile,...args]=process.argv.slice(2);
 const targetIndex=args.indexOf("--target-ref");
+const sourceIndex=args.indexOf("--source-ref");
 const verifyOnly=args.includes("--verify-only");
 const targetRef=targetIndex>=0?args[targetIndex+1]:"";
+const expectedSourceRef=sourceIndex>=0?args[sourceIndex+1]:"";
 
 const url=process.env.DATANEST_AI_STAGING_URL;
 const serviceKey=process.env.DATANEST_AI_STAGING_SERVICE_ROLE_KEY;
@@ -17,25 +20,23 @@ const configuredStagingRef=process.env.DATANEST_AI_STAGING_PROJECT_REF;
 const productionRef=process.env.DATANEST_PRODUCTION_PROJECT_REF||"sgqdmfgjbprsoqsmgigi";
 const backupKey=parseBackupKey(process.env.DATANEST_AI_BACKUP_KEY);
 
-if(!backupFile||!targetRef){
-  throw new Error("Usage: restore-datanest-ai-staging.mjs <backup> --target-ref <staging-ref> [--verify-only]");
+if(!backupFile||!targetRef||!expectedSourceRef){
+  throw new Error("Usage: restore-datanest-ai-staging.mjs <backup> --target-ref <staging-ref> --source-ref <backup-source-ref> [--verify-only]");
 }
 if(!url||!serviceKey||!configuredStagingRef){
   throw new Error("Staging URL, service-role key and staging project ref are required.");
 }
-if(targetRef===productionRef){
-  throw new Error("Refusing to restore DataNest AI raw evidence into the production project.");
-}
-if(targetRef!==configuredStagingRef){
-  throw new Error("Target ref must match DATANEST_AI_STAGING_PROJECT_REF.");
-}
-
 const encrypted=await fs.readFile(backupFile,"utf8");
 const payload=JSON.parse(decryptBackup(encrypted,backupKey).toString("utf8"));
 if(payload?.formatVersion!==1)throw new Error("Unsupported backup formatVersion.");
-if(payload?.projectRef!==configuredStagingRef){
-  throw new Error("Backup source project ref does not match the configured staging project.");
-}
+
+validateRestoreRefs({
+  backupSourceRef:String(payload?.projectRef||""),
+  expectedSourceRef,
+  targetRef,
+  configuredStagingRef,
+  productionRef
+});
 
 const admin=createClient(url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
 const tableOrder=[
