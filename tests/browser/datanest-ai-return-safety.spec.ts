@@ -9,11 +9,21 @@ async function signIn(page:import("@playwright/test").Page){
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button",{name:"Sign in"}).click();
-  await expect(page.getByRole("button",{name:"DataNest AI",exact:true})).toBeVisible({timeout:15000});
+  await expect(page.getByRole("button",{name:/Quick switch/})).toBeVisible({timeout:15000});
+}
+
+async function openWorkspace(page:import("@playwright/test").Page,label:string){
+  await page.keyboard.press("Control+K");
+  const dialog=page.getByRole("dialog",{name:"Quick switch DataNest workspace"});
+  await expect(dialog).toBeVisible();
+  const search=dialog.getByLabel("Search DataNest workspaces");
+  await search.fill(label);
+  await dialog.getByRole("option",{name:new RegExp(label,"i")}).first().click();
+  await expect(dialog).toBeHidden();
 }
 
 async function openAiSidebar(page:import("@playwright/test").Page){
-  await page.getByRole("button",{name:"DataNest AI",exact:true}).click();
+  await openWorkspace(page,"DataNest AI");
   await expect(page.getByText("DataNest AI E2E Job",{exact:true}).first()).toBeVisible();
   await page.getByText("DataNest AI E2E Job",{exact:true}).first().click();
   await page.getByRole("button",{name:"AI Sidebar"}).click();

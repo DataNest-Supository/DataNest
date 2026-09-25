@@ -9,9 +9,17 @@ async function signIn(page:import("@playwright/test").Page){
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button",{name:"Sign in"}).click();
-  await expect(
-    page.getByRole("button",{name:"DataNest AI",exact:true})
-  ).toBeVisible({timeout:15000});
+  await expect(page.getByRole("button",{name:/Quick switch/})).toBeVisible({timeout:15000});
+}
+
+async function openWorkspace(page:import("@playwright/test").Page,label:string){
+  await page.keyboard.press("Control+K");
+  const dialog=page.getByRole("dialog",{name:"Quick switch DataNest workspace"});
+  await expect(dialog).toBeVisible();
+  const search=dialog.getByLabel("Search DataNest workspaces");
+  await search.fill(label);
+  await dialog.getByRole("option",{name:new RegExp(label,"i")}).first().click();
+  await expect(dialog).toBeHidden();
 }
 
 test("quick switch searches workspaces and navigates with Ctrl+K",async({page})=>{
@@ -123,7 +131,7 @@ test("quick switch traps focus and restores the opening control",async({page})=>
 test("workspace deep links survive reload and follow browser history",async({page})=>{
   await signIn(page);
 
-  await page.getByRole("button",{name:"Think Tanks",exact:true}).click();
+  await openWorkspace(page,"Think Tanks");
   await expect(page).toHaveURL(/(?:\?|&)view=thinktank(?:&|$)/);
   await expect(page.getByText("THINK TANKS + DATANEST AI",{exact:true})).toBeVisible();
 
@@ -131,7 +139,7 @@ test("workspace deep links survive reload and follow browser history",async({pag
   await expect(page).toHaveURL(/(?:\?|&)view=thinktank(?:&|$)/);
   await expect(page.getByText("THINK TANKS + DATANEST AI",{exact:true})).toBeVisible();
 
-  await page.getByRole("button",{name:"DataNest AI",exact:true}).click();
+  await openWorkspace(page,"DataNest AI");
   await expect(page).toHaveURL(/(?:\?|&)view=ai(?:&|$)/);
 
   await page.goBack();
@@ -149,6 +157,7 @@ test("mobile TranScheduler avoids horizontal table scrolling",async({page})=>{
   await page.setViewportSize({width:390,height:844});
 
   await page.getByRole("button",{name:"Open menu"}).click();
+  await page.getByText("Tools",{exact:true}).click();
   await page.getByRole("button",{name:"TranScheduler",exact:true}).click();
   await expect(page).toHaveURL(/(?:\?|&)view=scheduler(?:&|$)/);
 
@@ -285,7 +294,7 @@ test("Governance exposes governed project membership and non-voter pending state
 
 test("Transparency publishes the external audit return and pending validation state",async({page})=>{
   await signIn(page);
-  await page.getByRole("button",{name:"Transparency",exact:true}).click();
+  await openWorkspace(page,"Transparency");
 
   await expect(page.getByRole("heading",{name:"Audit library + public accountability record",exact:true})).toBeVisible();
   await expect(page.getByText(/EXTERNAL AUDIT RETURN · 25 SEP 2026/)).toBeVisible();
