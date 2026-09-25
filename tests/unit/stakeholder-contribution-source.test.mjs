@@ -48,3 +48,12 @@ test("stakeholder UI exposes simple and detailed views without restoring retired
   assert.match(workspace,/Not legal ownership/);
   assert.doesNotMatch(workspace,/Operations Capabilities/);
 });
+
+
+test("external AI import propagates the authoritative staged session to DataNest AI",()=>{
+  const sidebar = readFileSync(new URL("../../src/components/ExternalAiSidebar.tsx", import.meta.url),"utf8");
+  const aiWorkspace = readFileSync(new URL("../../src/components/DataNestAiWorkspace.tsx", import.meta.url),"utf8");
+  assert.match(sidebar,/sessionId:stagedSessionId/);
+  assert.match(aiWorkspace,/stagedSessionId&&stagedSessionId!==sessionId/);
+  assert.match(aiWorkspace,/setSessionId\(stagedSessionId\)/);
+});
