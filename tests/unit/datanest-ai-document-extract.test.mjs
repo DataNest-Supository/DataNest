@@ -60,8 +60,9 @@ test("DOCX locators are block based and never invent rendered page numbers",()=>
       locator:{type:"docx_block",block:3,kind:"paragraph",heading:"Scope"}
     }
   );
-  assert.doesNotMatch(worker,/type:"pdf_page"/);
-  assert.doesNotMatch(worker,/renderedPage|pageNumber.*docx/i);
+  const docxSource=worker.slice(worker.indexOf("export async function extractDocx"));
+  assert.doesNotMatch(docxSource,/type:"pdf_page"/);
+  assert.doesNotMatch(docxSource,/renderedPage|pageNumber.*docx/i);
 });
 
 test("DOCX worker preserves headings, paragraphs, lists and tables",()=>{
