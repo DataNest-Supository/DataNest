@@ -353,7 +353,7 @@ async function updateTrendCandidate(input:{
     }
   }
 
-  if(existing){
+  if(existing?.id){
     if(!["INTAKE","NEEDS_EVIDENCE"].includes(String(existing.lifecycle_state))){
       return {
         candidateId,
