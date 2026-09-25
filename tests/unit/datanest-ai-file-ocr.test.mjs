@@ -125,7 +125,7 @@ test("blank OCR page text fails instead of becoming successful extraction",async
 
 test("worker sends only needs-OCR pages and persists OCR lineage",()=>{
   assert.match(worker,/status:Array\.isArray\(extracted\.ocrPages\)&&extracted\.ocrPages\.length\?"OCR":"CHUNKING"/);
-  assert.match(worker,/^PDF page \(\\d\+\) needs OCR\\\.\$/);
+  assert.ok(worker.includes('String(warning).match(/^PDF page (\\d+) needs OCR\\.$/)'));
   assert.match(worker,/runPdfOcr\(\{[\s\S]{0,220}pages:requestedPages/);
   assert.match(worker,/extraction_method:"pdfjs-native\+ocr"/);
   assert.match(worker,/ocr:chunk\.extractionMethod==="ocr"/);
