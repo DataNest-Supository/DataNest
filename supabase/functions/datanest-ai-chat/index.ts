@@ -10,7 +10,9 @@ import {
   type ProviderConnection
 } from "../_shared/provider.ts";
 import {
-  candidateFromRepeatedEvidence
+  bestCandidateByEvidenceOverlap,
+  candidateFromRepeatedEvidence,
+  stableCandidateIdFromHash
 } from "../_shared/datanestAiTrends.ts";
 import { chronologicalFromNewestFirst } from "../_shared/datanestAiContinuity.ts";
 
@@ -266,17 +268,91 @@ async function updateTrendCandidate(input:{
     .upsert(trendEvidence,{onConflict:"cluster_id,event_id"});
   if(trendEvidenceError)throw trendEvidenceError;
 
+  const {data:overlapLinks,error:overlapLinksError}=await input.staging
+    .from("ai_candidate_evidence")
+    .select("candidate_id,event_id")
+    .in("event_id",candidate.evidenceIds);
+  if(overlapLinksError)throw overlapLinksError;
+
+  const overlapCandidateId=bestCandidateByEvidenceOverlap(
+    (overlapLinks||[]).map(link=>({
+      candidateId:String(link.candidate_id),
+      eventId:String(link.event_id)
+    })),
+    candidate.evidenceIds
+  );
+
   const contentHash=await sha256Text(candidate.normalizedKnowledge);
-  const {data:existing,error:existingError}=await input.staging
-    .from("ai_learning_candidates")
-    .select("id,lifecycle_state,evidence_count")
-    .eq("project_id",input.projectId)
-    .eq("content_hash",contentHash)
-    .limit(1)
-    .maybeSingle();
-  if(existingError)throw existingError;
+  const candidateIdentityHash=await sha256Text(`${input.projectId}\n${candidate.trendKey}`);
+  const stableCandidateId=stableCandidateIdFromHash(candidateIdentityHash);
+  type MutableCandidate={id:string;lifecycle_state:string;evidence_count:number};
+
+  let existing:MutableCandidate|null=null;
+  if(overlapCandidateId){
+    const {data,error}=await input.staging
+      .from("ai_learning_candidates")
+      .select("id,lifecycle_state,evidence_count")
+      .eq("id",overlapCandidateId)
+      .eq("project_id",input.projectId)
+      .maybeSingle();
+    if(error)throw error;
+    existing=data&&["INTAKE","NEEDS_EVIDENCE"].includes(String(data.lifecycle_state))
+      ?data as MutableCandidate
+      :null;
+  }
+
+  if(!existing){
+    const {data,error}=await input.staging
+      .from("ai_learning_candidates")
+      .select("id,lifecycle_state,evidence_count")
+      .eq("project_id",input.projectId)
+      .eq("content_hash",contentHash)
+      .limit(1)
+      .maybeSingle();
+    if(error)throw error;
+    existing=data as MutableCandidate|null;
+  }
 
   let candidateId=existing?.id?String(existing.id):"";
+  if(!existing){
+    const {data:created,error:createError}=await input.staging
+      .from("ai_learning_candidates")
+      .insert({
+        id:stableCandidateId,
+        project_id:input.projectId,
+        normalized_knowledge:candidate.normalizedKnowledge,
+        category:candidate.category,
+        risk_class:candidate.riskClass,
+        lifecycle_state:"INTAKE",
+        evidence_count:candidate.evidenceIds.length,
+        has_conflict:false,
+        policy_version:policyVersion,
+        content_hash:contentHash
+      })
+      .select("id,lifecycle_state,evidence_count")
+      .single();
+
+    if(createError){
+      if(createError.code!=="23505")throw createError;
+      const {data:concurrentCandidate,error:concurrentError}=await input.staging
+        .from("ai_learning_candidates")
+        .select("id,lifecycle_state,evidence_count")
+        .eq("id",stableCandidateId)
+        .eq("project_id",input.projectId)
+        .maybeSingle();
+      if(concurrentError)throw concurrentError;
+      if(!concurrentCandidate){
+        throw new Error("Deterministic candidate identity collided outside the current project.");
+      }
+      existing=concurrentCandidate as MutableCandidate;
+      candidateId=String(concurrentCandidate.id);
+    }else if(created){
+      candidateId=String(created.id);
+    }else{
+      throw new Error("Unable to create DataNest AI learning candidate.");
+    }
+  }
+
   if(existing?.id){
     if(!["INTAKE","NEEDS_EVIDENCE"].includes(String(existing.lifecycle_state))){
       return {
@@ -288,6 +364,8 @@ async function updateTrendCandidate(input:{
     const {error:updateError}=await input.staging
       .from("ai_learning_candidates")
       .update({
+        normalized_knowledge:candidate.normalizedKnowledge,
+        content_hash:contentHash,
         evidence_count:candidate.evidenceIds.length,
         category:candidate.category,
         risk_class:candidate.riskClass,
@@ -295,24 +373,10 @@ async function updateTrendCandidate(input:{
       })
       .eq("id",candidateId);
     if(updateError)throw updateError;
-  }else{
-    const {data:created,error:createError}=await input.staging
-      .from("ai_learning_candidates")
-      .insert({
-        project_id:input.projectId,
-        normalized_knowledge:candidate.normalizedKnowledge,
-        category:candidate.category,
-        risk_class:candidate.riskClass,
-        lifecycle_state:"INTAKE",
-        evidence_count:candidate.evidenceIds.length,
-        has_conflict:false,
-        policy_version:policyVersion,
-        content_hash:contentHash
-      })
-      .select("id")
-      .single();
-    if(createError||!created)throw createError||new Error("Unable to create DataNest AI learning candidate.");
-    candidateId=String(created.id);
+  }
+
+  if(!candidateId){
+    throw new Error("Unable to resolve DataNest AI learning candidate.");
   }
 
   const candidateEvidence=candidate.evidenceIds.map(eventId=>({

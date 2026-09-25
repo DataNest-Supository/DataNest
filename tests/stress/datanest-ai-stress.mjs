@@ -99,6 +99,18 @@ if(outputs.data.length!==25){
   throw new Error("Expected 25 distinct DataNest AI output events; received "+outputs.data.length+".");
 }
 
+const candidateLinks=await admin.from("ai_candidate_evidence")
+  .select("candidate_id,event_id")
+  .in("event_id",human.data.map(item=>item.id));
+if(candidateLinks.error)throw candidateLinks.error;
+const candidateIds=[...new Set(candidateLinks.data.map(item=>String(item.candidate_id)))];
+if(candidateIds.length!==1){
+  throw new Error(
+    "Repeated stress evidence created "+candidateIds.length+
+    " learning candidates; expected exactly one reusable candidate."
+  );
+}
+
 const secondJobTitle="DataNest AI Cross-Job Isolation E2E";
 let secondJob=(await admin.from("jobs")
   .select("id")
@@ -136,5 +148,6 @@ console.log(JSON.stringify({
   duplicateRetries:5,
   humanEvents:human.data.length,
   outputEvents:outputs.data.length,
+  learningCandidates:candidateIds.length,
   crossJobLeakage:0
 }));

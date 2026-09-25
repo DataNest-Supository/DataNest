@@ -259,3 +259,27 @@ test("DataNest AI surfaces the returned assistant turn before refreshing the gov
     /sessionId:sessionOverride\|\|sessionId\|\|null/
   );
 });
+
+
+test("trend analysis reuses an existing intake candidate before creating a duplicate", () => {
+  const gateway=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-chat/index.ts"),"utf8");
+  assert.match(gateway,/bestCandidateByEvidenceOverlap/);
+  assert.match(
+    gateway,
+    /ai_candidate_evidence"\)[\s\S]{0,500}\.in\("event_id",candidate\.evidenceIds\)/
+  );
+  assert.match(
+    gateway,
+    /overlapCandidateId[\s\S]{0,1200}lifecycle_state[\s\S]{0,1200}normalized_knowledge:candidate\.normalizedKnowledge/
+  );
+});
+
+
+test("trend candidate creation uses a deterministic project-scoped id for concurrent requests", () => {
+  const gateway=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-chat/index.ts"),"utf8");
+  assert.match(gateway,/stableCandidateIdFromHash/);
+  assert.match(gateway,/candidateIdentityHash/);
+  assert.match(gateway,/input\.projectId[\s\S]{0,120}candidate\.trendKey/);
+  assert.match(gateway,/id:stableCandidateId/);
+  assert.match(gateway,/23505/);
+});

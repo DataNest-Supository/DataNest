@@ -5,7 +5,9 @@ import {
   classifyLearningRisk,
   evidenceSimilarity,
   normalizeTrendTokens,
-  trendKeyForTokens
+  trendKeyForTokens,
+  bestCandidateByEvidenceOverlap,
+  stableCandidateIdFromHash
 } from "../../supabase/functions/_shared/datanestAiTrends.ts";
 
 test("near-duplicate requirements cluster", () => {
@@ -39,4 +41,53 @@ test("repeated evidence can produce a low-risk candidate but not a certification
   assert.equal(candidate?.lifecycleState,"INTAKE");
   assert.equal(candidate?.riskClass,"low");
   assert.ok(candidate?.evidenceIds.length===2);
+});
+
+
+test("repeated trend evidence reuses the candidate with the strongest evidence overlap", () => {
+  const candidateId=bestCandidateByEvidenceOverlap(
+    [
+      {candidateId:"candidate-a",eventId:"e1"},
+      {candidateId:"candidate-a",eventId:"e2"},
+      {candidateId:"candidate-b",eventId:"e2"},
+      {candidateId:"candidate-b",eventId:"e3"}
+    ],
+    ["e1","e2","e4"]
+  );
+  assert.equal(candidateId,"candidate-a");
+});
+
+test("candidate reuse requires at least two shared evidence events", () => {
+  const candidateId=bestCandidateByEvidenceOverlap(
+    [{candidateId:"candidate-a",eventId:"e1"}],
+    ["e1","e2"]
+  );
+  assert.equal(candidateId,null);
+});
+
+
+test("candidate reuse requires substantial overlap for larger trend evidence sets", () => {
+  const links=[
+    {candidateId:"candidate-a",eventId:"e1"},
+    {candidateId:"candidate-a",eventId:"e2"},
+    {candidateId:"candidate-a",eventId:"e3"},
+    {candidateId:"candidate-a",eventId:"e4"}
+  ];
+  assert.equal(
+    bestCandidateByEvidenceOverlap(links,["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10"]),
+    null
+  );
+});
+
+
+test("stable candidate ids map the same SHA-256 digest to the same UUID", () => {
+  const digest="0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+  const first=stableCandidateIdFromHash(digest);
+  const second=stableCandidateIdFromHash(digest);
+  assert.equal(first,second);
+  assert.match(first,/^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+});
+
+test("stable candidate ids reject malformed digests", () => {
+  assert.throws(()=>stableCandidateIdFromHash("not-a-sha256"),/sha-256/i);
 });
