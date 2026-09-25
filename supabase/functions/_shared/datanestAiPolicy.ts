@@ -29,10 +29,13 @@ export function canAutoCertify(input: {
   hasConflict: boolean;
   allGatesPassed: boolean;
   evidenceCount: number;
+  confidence?: number|null;
 }): boolean {
   return (
     input.allGatesPassed &&
-    input.evidenceCount >= 2 &&
+    input.evidenceCount >= 3 &&
+    typeof input.confidence === "number" &&
+    input.confidence >= 0.78 &&
     requiredCertificationAuthority(input) === "automation"
   );
 }
