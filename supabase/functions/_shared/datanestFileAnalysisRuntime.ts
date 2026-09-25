@@ -121,7 +121,7 @@ async function loadAnalysisChunks(client:any,readyItems:any[]):Promise<FileAnaly
       content:String(row.content||""),
       locator:metadata.locator
     } as FileAnalysisChunk;
-  }).filter(chunk=>chunk.id&&chunk.fileHash&&chunk.content&&chunk.locator);
+  }).filter((chunk:FileAnalysisChunk)=>chunk.id&&chunk.fileHash&&chunk.content&&chunk.locator);
 }
 
 async function stageFileUploadEvents(client:any,submission:any,readyItems:any[],chunks:FileAnalysisChunk[]){
@@ -334,7 +334,7 @@ export async function processFileSubmissionAnalysis(client:any,submissionId:stri
               instruction:submission.instruction?String(submission.instruction):null,
               selectedChunks:selected,
               certifiedMemory:frozenMemory,
-              frozenSessionEvidence:frozenEvents.map(item=>item.content),
+              frozenSessionEvidence:frozenEvents.map((item:{id:string;content:string})=>item.content),
               failedFiles
             }),
             maxOutputTokens:4000
