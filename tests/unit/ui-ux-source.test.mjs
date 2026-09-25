@@ -89,7 +89,7 @@ test("quick switch command palette is keyboard accessible and searchable", () =>
 
 test("quick switch preserves canonical workspace navigation", () => {
   assert.match(appSource, /onClick=\{\(\)=>chooseCommandView\(item\.key\)\}/);
-  assert.match(appSource, /function chooseCommandView\(nextView:ViewKey\)[\s\S]*?setView\(nextView\)[\s\S]*?setCommandOpen\(false\)/);
+  assert.match(appSource, /function chooseCommandView\(nextView:ViewKey\)[\s\S]*?setView\(nextView\)[\s\S]*?closeCommandPalette\(\)/);
 });
 
 
