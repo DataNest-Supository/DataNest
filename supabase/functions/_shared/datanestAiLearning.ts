@@ -29,7 +29,7 @@ export async function updateTrendCandidate(input:{
     .limit(250);
   if(error)throw error;
 
-  const evidence=(data||[]).map(item=>({
+  const evidence=(data||[]).map((item:any)=>({
     id:String(item.id),
     content:String(item.content),
     jobId:String(item.job_id||""),
@@ -83,7 +83,7 @@ export async function updateTrendCandidate(input:{
   if(overlapLinksError)throw overlapLinksError;
 
   const overlapCandidateId=bestCandidateByEvidenceOverlap(
-    (overlapLinks||[]).map(link=>({
+    (overlapLinks||[]).map((link:any)=>({
       candidateId:String(link.candidate_id),
       eventId:String(link.event_id)
     })),
@@ -208,7 +208,7 @@ export async function updateTrendCandidate(input:{
   if(linkedEvidenceError)throw linkedEvidenceError;
   const activeEvidence=new Set(candidate.evidenceIds);
   const staleEvidence=(linkedEvidence||[])
-    .map(item=>String(item.event_id))
+    .map((item:any)=>String(item.event_id))
     .filter(eventId=>!activeEvidence.has(eventId));
   if(staleEvidence.length){
     const {error:staleEvidenceError}=await input.staging
