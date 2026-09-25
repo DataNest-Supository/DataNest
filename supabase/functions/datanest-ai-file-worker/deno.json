@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "pdfjs-dist/": "npm:pdfjs-dist@6.3.289/",
+    "jszip": "npm:jszip@3.10.2",
+    "fast-xml-parser": "npm:fast-xml-parser@5.11.1"
+  }
+}
