@@ -63,3 +63,17 @@ test("candidate reuse requires at least two shared evidence events", () => {
   );
   assert.equal(candidateId,null);
 });
+
+
+test("candidate reuse requires substantial overlap for larger trend evidence sets", () => {
+  const links=[
+    {candidateId:"candidate-a",eventId:"e1"},
+    {candidateId:"candidate-a",eventId:"e2"},
+    {candidateId:"candidate-a",eventId:"e3"},
+    {candidateId:"candidate-a",eventId:"e4"}
+  ];
+  assert.equal(
+    bestCandidateByEvidenceOverlap(links,["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10"]),
+    null
+  );
+});
