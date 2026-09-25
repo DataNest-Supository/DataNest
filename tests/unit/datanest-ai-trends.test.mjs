@@ -6,7 +6,8 @@ import {
   evidenceSimilarity,
   normalizeTrendTokens,
   trendKeyForTokens,
-  bestCandidateByEvidenceOverlap
+  bestCandidateByEvidenceOverlap,
+  stableCandidateIdFromHash
 } from "../../supabase/functions/_shared/datanestAiTrends.ts";
 
 test("near-duplicate requirements cluster", () => {
@@ -76,4 +77,17 @@ test("candidate reuse requires substantial overlap for larger trend evidence set
     bestCandidateByEvidenceOverlap(links,["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10"]),
     null
   );
+});
+
+
+test("stable candidate ids map the same SHA-256 digest to the same UUID", () => {
+  const digest="0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+  const first=stableCandidateIdFromHash(digest);
+  const second=stableCandidateIdFromHash(digest);
+  assert.equal(first,second);
+  assert.match(first,/^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+});
+
+test("stable candidate ids reject malformed digests", () => {
+  assert.throws(()=>stableCandidateIdFromHash("not-a-sha256"),/sha-256/i);
 });
