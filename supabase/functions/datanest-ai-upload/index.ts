@@ -186,6 +186,17 @@ async function createSubmission(input:{
       :[];
     const certifiedMemoryIds=memoryItems.map(item=>String(item.id||"")).filter(Boolean);
 
+    const {data:frozenEvents,error:frozenEventsError}=await input.staging
+      .from("ai_intake_events")
+      .select("id")
+      .eq("project_id",authorization.projectId)
+      .eq("job_id",jobId)
+      .eq("session_id",sessionId)
+      .order("created_at",{ascending:true})
+      .limit(100);
+    if(frozenEventsError)throw frozenEventsError;
+    const frozenSessionEventIds=(frozenEvents||[]).map(item=>String(item.id));
+
     const {data:created,error:createError}=await input.staging
       .from("ai_file_submissions")
       .insert({
@@ -197,6 +208,7 @@ async function createSubmission(input:{
         client_request_id:clientRequestId,
         instruction,
         certified_memory_ids:certifiedMemoryIds,
+        frozen_session_event_ids:frozenSessionEventIds,
         status:"UPLOADING",
         file_count:files.length
       })
