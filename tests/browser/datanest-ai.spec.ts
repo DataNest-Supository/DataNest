@@ -99,3 +99,18 @@ test("Governance exposes governed project membership and non-voter pending state
   await expect(page.getByText(/1 ACTIVE VOTER/)).toBeVisible();
   await expect(page.getByText(/acceptance requires the matching authenticated account/i)).toBeVisible();
 });
+
+
+test("Transparency publishes the accessible audit library",async({page})=>{
+  await signIn(page);
+  await page.getByRole("button",{name:"Transparency",exact:true}).click();
+
+  await expect(page.getByRole("heading",{name:"Audit library + public accountability record",exact:true})).toBeVisible();
+  await expect(page.getByText(/External Full-System Audit Brief/).first()).toBeVisible();
+  await expect(page.getByText(/awaiting completed audit/i)).toBeVisible();
+  await expect(page.getByText(/No audit result is implied by publication of the methodology/i)).toBeVisible();
+
+  await page.getByRole("button",{name:"Load complete transcription",exact:true}).click();
+  await expect(page.getByLabel("Complete accessible transcription of the External Full-System Audit Brief")).toContainText("END OF EXTERNAL AUDIT BRIEF");
+  await expect(page.getByRole("button",{name:"Download as accessible text",exact:true})).toBeVisible();
+});
