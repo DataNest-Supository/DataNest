@@ -243,7 +243,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 
 /* Persistent external AI sidebar */
 .aiSidebarToggle.active{border-color:rgba(109,213,247,.45);background:rgba(54,185,229,.12);color:#dff7ff}
-.externalAiDock{position:sticky;top:0;align-self:start;height:100dvh;min-width:380px;max-width:760px;border-left:1px solid var(--line);background:linear-gradient(180deg,rgba(7,16,29,.99),rgba(5,14,25,.985));backdrop-filter:blur(28px);display:flex;flex-direction:column;z-index:24;box-shadow:inset 1px 0 0 rgba(109,213,247,.025)}
+.externalAiDock{position:sticky;top:0;align-self:start;height:100dvh;min-width:380px;max-width:min(760px,42vw);border-left:1px solid var(--line);background:linear-gradient(180deg,rgba(7,16,29,.99),rgba(5,14,25,.985));backdrop-filter:blur(28px);display:flex;flex-direction:column;z-index:24;box-shadow:inset 1px 0 0 rgba(109,213,247,.025)}
 .externalAiResizeHandle{position:absolute;left:-5px;top:0;bottom:0;width:10px;cursor:col-resize;z-index:3}
 .externalAiResizeHandle::after{content:"";position:absolute;left:4px;top:36%;width:2px;height:84px;border-radius:999px;background:rgba(109,213,247,.22)}
 .externalAiResizeHandle:hover::after{background:rgba(109,213,247,.62)}
@@ -287,7 +287,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 @media(max-width:1180px) and (min-width:901px){
   .appFrame.aiDockOpen{grid-template-columns:220px minmax(0,1fr) minmax(360px,42vw)}
   .appFrame.aiDockOpen .sidebar{padding-left:12px;padding-right:12px}
-  .appFrame.aiDockOpen .externalAiDock{width:100%!important;min-width:360px;max-width:none}
+  .appFrame.aiDockOpen .externalAiDock{width:100%!important;min-width:360px;max-width:min(760px,42vw)}
   .appFrame.aiDockOpen .topbar{padding-left:20px;padding-right:20px}
   .appFrame.aiDockOpen .contentPane{padding-left:20px;padding-right:20px}
   .appFrame.aiDockOpen .systemStatus small{display:none}
@@ -418,7 +418,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .topbarTitle{min-width:0}
 .topbarContext{margin:4px 0 0;color:var(--muted);font-size:11px;line-height:1.4;max-width:680px}
 .sidebar{padding-top:16px}
-.navStack{scrollbar-width:thin;scrollbar-color:rgba(109,213,247,.2) transparent}
+.navStack{flex:1 1 auto;min-height:0;scrollbar-width:thin;scrollbar-color:rgba(109,213,247,.2) transparent}
 .navGroup button{min-height:42px}
 .navGroup button.active{box-shadow:inset 3px 0 0 var(--cyan),0 8px 24px rgba(0,0,0,.08)}
 .heroCopy{min-width:0;flex:1}
@@ -437,6 +437,11 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .workspaceArrow{color:#5d7891;font-size:16px}
 .panel+.panel{margin-top:16px}
 .metricCard,.panel,.workspaceCard{backdrop-filter:blur(18px)}
+.mobileNavActions{display:none}
+.mobileSystemStatus{display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;color:#b4c8da;font-size:11px}
+.mobileSystemStatus.online{border-color:rgba(124,226,162,.22)}
+.mobileSystemStatus.degraded{border-color:rgba(242,199,120,.25)}
+.mobileSystemStatus.offline{border-color:rgba(242,139,157,.25)}
 @media(max-width:1200px){
   .workspaceGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .topbarContext{max-width:460px}
@@ -451,6 +456,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 @media(max-width:720px){
   .topbarContext{display:none}
   .releaseAction,.refreshAction{display:none}
+  .mobileNavActions{display:grid;gap:8px;margin:10px 0 8px;padding-top:10px;border-top:1px solid var(--line)}
+  .mobileNavActions .secondaryButton{width:100%;text-align:center}
   .topActions{margin-left:auto}
   .metricGrid{grid-template-columns:1fr 1fr}
   .workspaceGrid{grid-template-columns:1fr}

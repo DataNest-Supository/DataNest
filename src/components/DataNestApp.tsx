@@ -455,6 +455,24 @@ export default function DataNestApp({session}:{session:Session}) {
       </nav>
       <div className="sidebarFooter">
         <div className="userMini"><div className="avatar">{(session.user.email||"U").slice(0,1).toUpperCase()}</div><div><b>{session.user.email?.split("@")[0]||"Authorized user"}</b><small>{membership ? membership.role.toUpperCase()+" · Authenticated" : "Authenticated"}</small></div></div>
+        <div className="mobileNavActions" aria-label="Mobile workspace actions">
+          <div className={"mobileSystemStatus "+health.state} title={health.message}>
+            <span className={"statusDot "+health.state}/>
+            <span>{healthLabel}</span>
+          </div>
+          <button
+            className="secondaryButton compact"
+            type="button"
+            disabled={!project}
+            onClick={()=>project&&void Promise.all([loadSummary(project.id),loadRecentJobs(project.id),checkControlPlane(project.id)])}
+          >Refresh workspace</button>
+          <button
+            className="secondaryButton compact"
+            type="button"
+            disabled={reloadingLatest}
+            onClick={()=>void reloadLatestVersion()}
+          >{reloadingLatest?"Reloading…":"Reload latest"}</button>
+        </div>
         <button className="textButton" onClick={signOut}>Sign out</button>
       </div>
     </aside>
