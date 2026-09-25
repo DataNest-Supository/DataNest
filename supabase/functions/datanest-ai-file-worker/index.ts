@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { FILE_BUCKET, MAX_FILE_BYTES, canonicalBlobPath } from "../_shared/datanestFileDomain.ts";
 import { extractTxt, extractCsv, extractJson } from "../_shared/datanestFileExtract.ts";
 import { extractPdf, extractDocx } from "./documentExtract.ts";
+import { runPdfOcr } from "../_shared/datanestFileOcr.ts";
 
 declare const Deno:{
   env:{get:(name:string)=>string|undefined};
@@ -112,12 +113,12 @@ async function extractByType(name:string,bytes:Uint8Array){
   if(ext===".pdf"){
     try{
       const result=await extractPdf(bytes);
-      if(result.pages.some(page=>page.needsOcr)){
-        const error=new Error("One or more PDF pages require OCR.");
-        (error as any).code="OCR_REQUIRED_UNAVAILABLE";
-        throw error;
-      }
-      return {result,method:"pdfjs-native",version:"pdfjs-dist@6.3.289"};
+      return {
+        result,
+        method:"pdfjs-native",
+        version:"pdfjs-dist@6.3.289",
+        ocrPages:result.pages.filter(page=>page.needsOcr).map(page=>page.page)
+      };
     }catch(error){
       if(/password|encrypted/i.test(String((error as Error)?.message||""))){
         (error as any).code="ENCRYPTED_FILE_UNSUPPORTED";
@@ -209,7 +210,15 @@ async function persistArtifact(client:any,item:any,hash:string,detectedMime:stri
       identity_sha256:identityHash,
       visibility:"private",
       content:chunkContent,
-      metadata:{locator:chunk.locator,file_sha256:hash,file_trace_id:item.trace_id}
+      metadata:{
+        locator:chunk.locator,
+        file_sha256:hash,
+        file_trace_id:item.trace_id,
+        extraction_method:chunk.extractionMethod||item.extraction_method,
+        extraction_version:chunk.extractionVersion||item.extraction_version,
+        ocr:chunk.extractionMethod==="ocr",
+        confidence:chunk.confidence??null
+      }
     });
   }
   if(rows.length){
@@ -310,7 +319,7 @@ async function processItem(client:any,itemId:string){
           extraction_warnings:extracted.result.warnings,
           extraction_method:extracted.method,
           extraction_version:extracted.version,
-          status:"CHUNKING",
+          status:Array.isArray(extracted.ocrPages)&&extracted.ocrPages.length?"OCR":"CHUNKING",
           updated_at:new Date().toISOString()
         })
         .eq("id",itemId)
@@ -321,9 +330,81 @@ async function processItem(client:any,itemId:string){
     }
 
     if(String(current.status)==="OCR"){
-      const error=new Error("OCR is required but is not available in worker v1.");
-      (error as any).code="OCR_REQUIRED_UNAVAILABLE";
-      throw error;
+      const {data:submission,error:submissionError}=await client
+        .from("ai_file_submissions")
+        .select("project_id,user_id")
+        .eq("id",current.submission_id)
+        .single();
+      if(submissionError||!submission)throw submissionError||new Error("File submission context is unavailable.");
+
+      const {data:connectionData,error:connectionError}=await client.rpc(
+        "service_get_ai_provider_connection_v3",{
+          target_project:submission.project_id,
+          target_user:submission.user_id,
+          target_connection:null
+        }
+      );
+      if(connectionError)throw connectionError;
+      if(!connectionData){
+        const unavailable=new Error("No OCR-capable provider route is configured.");
+        (unavailable as any).code="OCR_REQUIRED_UNAVAILABLE";
+        throw unavailable;
+      }
+
+      const warnings=Array.isArray(current.extraction_warnings)?current.extraction_warnings:[];
+      const requestedPages=[...new Set(warnings
+        .map((warning:any)=>String(warning).match(/^PDF page (\d+) needs OCR\.$/)?.[1])
+        .filter(Boolean)
+        .map((value:string)=>Number(value))
+      )].sort((a,b)=>a-b);
+      if(!requestedPages.length){
+        const invalid=new Error("OCR checkpoint does not identify deficient pages.");
+        (invalid as any).code="OCR_FAILED";
+        throw invalid;
+      }
+
+      const bytes=await readObject(storage,String(current.storage_object_path));
+      const ocrPages=await runPdfOcr({
+        connection:connectionData,
+        pdfBytes:bytes,
+        pages:requestedPages
+      });
+
+      const nativeChunks=Array.isArray(current.extracted_chunks)?current.extracted_chunks:[];
+      const requestedSet=new Set(requestedPages);
+      const preserved=nativeChunks.filter((chunk:any)=>
+        chunk?.locator?.type!=="pdf_page"||!requestedSet.has(Number(chunk.locator.page))
+      );
+      const ocrChunks=ocrPages.map(page=>({
+        text:page.text,
+        locator:{type:"pdf_page",page:page.page},
+        extractionMethod:page.extractionMethod,
+        extractionVersion:page.extractionVersion,
+        confidence:page.confidence
+      }));
+      const merged=[...preserved,...ocrChunks].sort((a:any,b:any)=>{
+        const pageA=a?.locator?.type==="pdf_page"?Number(a.locator.page):Number.MAX_SAFE_INTEGER;
+        const pageB=b?.locator?.type==="pdf_page"?Number(b.locator.page):Number.MAX_SAFE_INTEGER;
+        return pageA-pageB;
+      });
+
+      const {data:ocrCheckpoint,error:ocrError}=await client
+        .from("ai_file_submission_items")
+        .update({
+          extracted_chunks:merged,
+          extraction_warnings:[],
+          extraction_method:"pdfjs-native+ocr",
+          extraction_version:"pdfjs-dist@6.3.289+datanest-ocr-v1",
+          status:"CHUNKING",
+          last_error_code:null,
+          last_error_message:null,
+          updated_at:new Date().toISOString()
+        })
+        .eq("id",itemId)
+        .select("*")
+        .single();
+      if(ocrError||!ocrCheckpoint)throw ocrError||new Error("Unable to persist OCR checkpoint.");
+      current=ocrCheckpoint;
     }
 
     if(String(current.status)==="CHUNKING"){
