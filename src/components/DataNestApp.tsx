@@ -470,9 +470,10 @@ export default function DataNestApp({session}:{session:Session}) {
   }
 
   function handleCommandSearchKeyDown(event:import("react").KeyboardEvent<HTMLInputElement>){
-    if(event.key!=="Enter"||!commandItems[0])return;
-    event.preventDefault();
-    chooseCommandView(commandItems[0].key);
+    if(event.key==="Enter"&&commandItems[0]){
+      event.preventDefault();
+      chooseCommandView(commandItems[0].key);
+    }
   }
 
   function chooseCommandView(nextView:ViewKey){
