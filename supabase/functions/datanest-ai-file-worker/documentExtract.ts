@@ -3,6 +3,8 @@ import JSZip from "jszip";
 import { XMLParser } from "fast-xml-parser";
 import {
   MAX_EXTRACT_CHARS,
+  assertDocxArchiveBudget,
+  pdfPageAssessment,
   type ExtractedChunk,
   type StructuredExtraction
 } from "../_shared/datanestFileExtract.ts";
@@ -17,15 +19,6 @@ function splitBounded(text:string,locator:ExtractedChunk["locator"]):ExtractedCh
     chunks.push({text:text.slice(offset,offset+MAX_EXTRACT_CHARS),locator});
   }
   return chunks;
-}
-
-function printableRatio(value:string){
-  if(!value.length)return 0;
-  let printable=0;
-  for(const char of value){
-    if(!/\p{Cc}/u.test(char)||char==="\n"||char==="\t")printable++;
-  }
-  return printable/value.length;
 }
 
 export async function extractPdf(bytes:Uint8Array):Promise<StructuredExtraction&{
@@ -47,9 +40,9 @@ export async function extractPdf(bytes:Uint8Array):Promise<StructuredExtraction&
         .join(" ")
         .replace(/\s+/g," ")
         .trim();
-      const textChars=text.replace(/\s/g,"").length;
-      const needsOcr=textChars<40||printableRatio(text)<0.6;
-      pages.push({page:pageNumber,text,needsOcr});
+      const assessed=pdfPageAssessment(pageNumber,text);
+      const needsOcr=assessed.needsOcr;
+      pages.push({page:pageNumber,text:assessed.text,needsOcr});
       fullText.push(text);
       chunks.push(...splitBounded(text,{type:"pdf_page",page:pageNumber}));
     }
@@ -147,8 +140,11 @@ export async function extractDocx(bytes:Uint8Array):Promise<StructuredExtraction
 }>{
   const zip=await JSZip.loadAsync(bytes);
   const entries=Object.values(zip.files);
-  if(entries.length>MAX_DOCX_ENTRIES)throw new Error("DOCX exceeds the 10,000 entry limit.");
-  if(!zip.file("word/document.xml"))throw new Error("DOCX is missing word/document.xml.");
+  assertDocxArchiveBudget({
+    entryCount:entries.length,
+    expandedBytes:0,
+    hasDocumentXml:Boolean(zip.file("word/document.xml"))
+  });
 
   let expandedBytes=0;
   const expanded=new Map<string,Uint8Array>();
@@ -156,9 +152,11 @@ export async function extractDocx(bytes:Uint8Array):Promise<StructuredExtraction
     if(entry.dir)continue;
     const data=await entry.async("uint8array");
     expandedBytes+=data.byteLength;
-    if(expandedBytes>MAX_DOCX_EXPANDED_BYTES){
-      throw new Error("DOCX expanded content exceeds the 100 MiB limit.");
-    }
+    assertDocxArchiveBudget({
+      entryCount:entries.length,
+      expandedBytes,
+      hasDocumentXml:true
+    });
     expanded.set(entry.name,data);
   }
 
