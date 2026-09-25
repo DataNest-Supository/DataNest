@@ -82,3 +82,16 @@ Project-member invitations are a separate governance boundary from Job collabora
 - After the invited person authenticates with the matching account/email, DataNest automatically accepts valid pending invitations and activates the membership.
 - Invitations expire after seven days and may be revoked before acceptance. Revoked/expired invitations are not formal voters.
 - The invitation audit trail remains in `project_member_invitations` and emits project events for sent, accepted and revoked states.
+
+
+## Transparency and audit library
+Transparency is a read-only continuity surface that publishes audit methodology, accessible source transcriptions, audit-result status, and later remediation evidence.
+
+- Transparency is separate from the operational Audit event log. The Audit view records system events; Transparency publishes review artifacts and accountability context.
+- Publishing an audit brief does not imply that the audit has been completed or that any finding has been validated.
+- Each document records type, version, publication status, audit-result status, baseline source commit and database release.
+- The first published artifact is the External Full-System Audit Brief v1.0. The formatted source artifact was DOCX; DataNest publishes the complete source-controlled text transcription as the accessible representation.
+- Accessible transcriptions must preserve the source wording and clearly identify any normalization or transformation.
+- Audit artifacts are informational evidence only. Publication does not grant governance, financial, ownership or role authority.
+- Future external results should be linked to stable AUD-xxx finding IDs and remediation evidence such as Job Manifests, PRs, migrations, tests, releases and post-release verification.
+- Transparency artifacts must never publish passwords, service-role keys, reusable cookies, PATs, MFA recovery material or protected personal data.

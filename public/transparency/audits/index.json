@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-09-25",
+  "documents": [
+    {
+      "id": "external-full-system-audit-brief-v1",
+      "title": "Resonance DataNest / RONSAS External Full-System Audit Brief",
+      "document_type": "audit_brief",
+      "version": "1.0",
+      "status": "published",
+      "audit_result_status": "awaiting_external_audit",
+      "published_at": "2026-09-25",
+      "baseline": {
+        "source_commit": "ac93d51828707d398dfa9c5a471d8a6ed4c9059f",
+        "database_release": "datanest-project-member-invitations-v1"
+      },
+      "source_artifact": {
+        "filename": "Resonance_DataNest_External_Full_System_Audit_Brief.docx",
+        "format": "DOCX",
+        "note": "Original formatted audit artifact. DataNest publishes a complete accessible text transcription as the transparency representation."
+      },
+      "accessibility": {
+        "html_summary": true,
+        "full_text_transcription": true,
+        "text_download": true,
+        "parts": [
+          "part-01.txt",
+          "part-02.txt",
+          "part-03.txt",
+          "part-04.txt",
+          "part-05.txt",
+          "part-06.txt",
+          "part-07.txt",
+          "part-08.txt"
+        ]
+      },
+      "authority": {
+        "governance_effect": false,
+        "financial_effect": false,
+        "ownership_effect": false,
+        "role_effect": false
+      }
+    }
+  ]
+}

@@ -15,7 +15,7 @@ type Checkpoint = { id:string; job_id:string; completed:string[]; remaining:stri
 type AuditEvent = { id:number; job_id:string|null; event_type:string; actor:string; payload:Record<string,unknown>; created_at:string };
 type Policy = { id:string; policy_key:string; value:Record<string,unknown> };
 type ProjectMember = { project_id:string; user_id:string; role:"owner"|"admin"|"operator"|"viewer"; status:string };
-type ViewKey = "overview"|"stakeholder"|"sparks"|"governance"|"thinktank"|"ai"|"productlab"|"unifi"|"scheduler"|"runs"|"checkpoints"|"audit"|"settings";
+type ViewKey = "overview"|"stakeholder"|"sparks"|"governance"|"thinktank"|"ai"|"productlab"|"unifi"|"scheduler"|"runs"|"checkpoints"|"audit"|"transparency"|"settings";
 type HealthState = { state:"checking"|"online"|"degraded"|"offline"; checkedAt:string|null; message:string };
 type Summary = { total:number; active:number; running:number; blocked:number; available:number; registered:number };
 type ActiveDataNestAiSession = { jobId:string; sessionId:string|null };
@@ -37,6 +37,7 @@ const nav:Array<{key:ViewKey;label:string;group:string;glyph:string}> = [
   {key:"runs",label:"Runs",group:"Operations",glyph:"▶"},
   {key:"checkpoints",label:"Checkpoints",group:"Continuity",glyph:"◆"},
   {key:"audit",label:"Audit",group:"Continuity",glyph:"≡"},
+  {key:"transparency",label:"Transparency",group:"Continuity",glyph:"◎"},
   {key:"settings",label:"Settings",group:"System",glyph:"⚙"}
 ];
 
@@ -73,6 +74,11 @@ const AiOperationsDashboard = dynamic(() => import("@/components/AiOperationsDas
 const ProductLab = dynamic(() => import("@/components/ProductLab"), {
   ssr: false,
   loading: () => <section className="panel"><p className="muted">Loading Product Lab…</p></section>
+});
+
+const TransparencyWorkspace = dynamic(() => import("@/components/TransparencyWorkspace"), {
+  ssr: false,
+  loading: () => <section className="panel"><p className="muted">Loading Transparency…</p></section>
 });
 
 const ExternalAiSidebar = dynamic(() => import("@/components/ExternalAiSidebar"), {
@@ -473,6 +479,7 @@ export default function DataNestApp({session}:{session:Session}) {
         {!loadingCore&&view==="runs"&&<Runs runs={runs} jobLookup={jobLookup} page={runPage} total={runCount} onPage={setRunPage}/>}
         {!loadingCore&&view==="checkpoints"&&<Checkpoints checkpoints={checkpoints} jobLookup={jobLookup} page={checkpointPage} total={checkpointCount} onPage={setCheckpointPage}/>}
         {!loadingCore&&view==="audit"&&<Audit events={events} jobLookup={jobLookup} page={eventPage} total={eventCount} onPage={setEventPage}/>}
+        {!loadingCore&&view==="transparency"&&<TransparencyWorkspace/>}
         {!loadingCore&&view==="settings"&&<Settings project={project} tools={tools} policies={policies} membership={membership} currentUserId={session.user.id} canManageAi={canManageAi}/>} 
       </div>
     </main>
@@ -491,7 +498,7 @@ export default function DataNestApp({session}:{session:Session}) {
 function Overview({project,tools,jobs,counts,setView,canOperate}:{project:Project;tools:Tool[];jobs:Job[];counts:Summary;setView:(v:ViewKey)=>void;canOperate:boolean}) {
   return <>
     <section className="heroPanel">
-      <div><p className="eyebrow">PROJECT OPERATING ENVIRONMENT</p><h2>{project.name}</h2><p>{project.description}</p><div className="heroActions"><button className="primaryButton compact" disabled={!canOperate} onClick={()=>setView("unifi")}>{canOperate ? "Create UNIFI job" : "Viewer mode"}</button><button className="secondaryButton compact" onClick={()=>setView("stakeholder")}>Open Stakeholder</button><button className="secondaryButton compact" onClick={()=>setView("sparks")}>Open Sparks</button><button className="secondaryButton compact" onClick={()=>setView("governance")}>Open Governance</button><button className="secondaryButton compact" onClick={()=>setView("thinktank")}>Open Think Tanks</button><button className="secondaryButton compact" onClick={()=>setView("ai")}>Open DataNest AI</button><button className="secondaryButton compact" onClick={()=>setView("productlab")}>Open Product Lab</button><button className="secondaryButton compact" onClick={()=>setView("scheduler")}>Open TranScheduler</button></div></div>
+      <div><p className="eyebrow">PROJECT OPERATING ENVIRONMENT</p><h2>{project.name}</h2><p>{project.description}</p><div className="heroActions"><button className="primaryButton compact" disabled={!canOperate} onClick={()=>setView("unifi")}>{canOperate ? "Create UNIFI job" : "Viewer mode"}</button><button className="secondaryButton compact" onClick={()=>setView("stakeholder")}>Open Stakeholder</button><button className="secondaryButton compact" onClick={()=>setView("sparks")}>Open Sparks</button><button className="secondaryButton compact" onClick={()=>setView("governance")}>Open Governance</button><button className="secondaryButton compact" onClick={()=>setView("thinktank")}>Open Think Tanks</button><button className="secondaryButton compact" onClick={()=>setView("ai")}>Open DataNest AI</button><button className="secondaryButton compact" onClick={()=>setView("productlab")}>Open Product Lab</button><button className="secondaryButton compact" onClick={()=>setView("scheduler")}>Open TranScheduler</button><button className="secondaryButton compact" onClick={()=>setView("transparency")}>Open Transparency</button></div></div>
       <div className="stackDiagram"><div>GitHub <b>DataNest</b></div><span>↓</span><div>App Runtime <b>Provider-agnostic</b></div><span>↓</span><div>Supabase <b>Control Plane</b></div></div>
     </section>
     <section className="metricGrid">
