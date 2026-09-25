@@ -51,3 +51,15 @@ test("AI Companion return becomes uncertified evidence in the selected Job",asyn
   await expect(page.getByText(companionResult,{exact:true})).toBeVisible();
   await expect(page.getByText("UNCERTIFIED",{exact:true}).last()).toBeVisible();
 });
+
+
+test("Think Tanks expose project-scoped collaboration and reviewed-memory boundaries",async({page})=>{
+  await signIn(page);
+  await page.getByRole("button",{name:"Think Tanks",exact:true}).click();
+
+  await expect(page.getByText("THINK TANKS + DATANEST AI",{exact:true})).toBeVisible();
+  await expect(page.getByText("Discuss → Ask → Decide → Act → Review → Remember",{exact:true})).toBeVisible();
+  await expect(page.getByRole("button",{name:"Project Commons",exact:true})).toBeVisible();
+  await expect(page.getByText(/Project-wide discussion; link a channel to a Job to invoke DataNest AI/)).toBeVisible();
+  await expect(page.getByText(/reusable learning reaches project memory only after independent human review/i)).toBeVisible();
+});
