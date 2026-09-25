@@ -175,4 +175,11 @@ begin
   ) then
     raise exception 'Contribution Intelligence refresh fix migration is not registered';
   end if;
+
+  if not exists (
+    select 1 from supabase_migrations.schema_migrations
+    where name='harden_contribution_intelligence_indexes'
+  ) then
+    raise exception 'Contribution Intelligence hardening migration is not registered';
+  end if;
 end $$;
