@@ -175,10 +175,11 @@ export default function ExternalAiSidebar({
 
   useEffect(()=>{
     const activeJobId=activeDataNestAiSession?.jobId||"";
-    if(activeJobId&&jobs.some(job=>job.id===activeJobId)&&selectedJobId!==activeJobId){
-      setSelectedJobId(activeJobId);
+    // Follow changes to the active AI job, not manual changes in this dock.
+    if(activeJobId&&jobs.some(job=>job.id===activeJobId)){
+      setSelectedJobId(current=>current===activeJobId?current:activeJobId);
     }
-  },[activeDataNestAiSession?.jobId,jobs,selectedJobId]);
+  },[activeDataNestAiSession?.jobId,jobs]);
 
   useEffect(()=>{
     if(!selectedJobId)return;
