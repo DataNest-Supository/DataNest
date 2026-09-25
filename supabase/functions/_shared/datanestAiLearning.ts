@@ -43,12 +43,12 @@ export async function updateTrendCandidate(input:{
       ?item.metadata as Record<string,unknown>
       :{}
   }));
-  const current=evidence.find(item=>item.id===input.inputEventId);
+  const current=evidence.find((item:any)=>item.id===input.inputEventId);
   if(!current)return {candidateId:null,trendKey:null,evidenceCount:0};
 
   const ordered=[
     current,
-    ...evidence.filter(item=>item.id!==input.inputEventId)
+    ...evidence.filter((item:any)=>item.id!==input.inputEventId)
   ];
   const candidate=candidateFromRepeatedEvidence(ordered);
   if(!candidate)return {candidateId:null,trendKey:null,evidenceCount:1};
@@ -209,7 +209,7 @@ export async function updateTrendCandidate(input:{
   const activeEvidence=new Set(candidate.evidenceIds);
   const staleEvidence=(linkedEvidence||[])
     .map((item:any)=>String(item.event_id))
-    .filter(eventId=>!activeEvidence.has(eventId));
+    .filter((eventId:string)=>!activeEvidence.has(eventId));
   if(staleEvidence.length){
     const {error:staleEvidenceError}=await input.staging
       .from("ai_candidate_evidence")
