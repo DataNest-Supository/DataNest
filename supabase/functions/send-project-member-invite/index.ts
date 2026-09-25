@@ -61,6 +61,10 @@ Deno.serve(async (req: Request) => {
     auth: { persistSession: false }
   });
 
+  const emailClient = createClient(supabaseUrl, anonKey, {
+    auth: { persistSession: false }
+  });
+
   const service = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false }
   });
@@ -155,20 +159,16 @@ Deno.serve(async (req: Request) => {
 
   const redirectTo = "https://datanest-supository.github.io/DataNest/";
   let invitedUserId: string | null = existingUserId ? String(existingUserId) : null;
-  let delivery: "invite" | "magic-link" = "invite";
+  let delivery: "invite" | "recovery" = "invite";
 
   if (invitedUserId) {
-    delivery = "magic-link";
-    const { error: magicError } = await service.auth.signInWithOtp({
-      email,
-      options: {
-        shouldCreateUser: false,
-        emailRedirectTo: redirectTo
-      }
+    delivery = "recovery";
+    const { error: recoveryError } = await emailClient.auth.resetPasswordForEmail(email, {
+      redirectTo
     });
 
-    if (magicError) {
-      return json(req, { error: magicError.message }, 400);
+    if (recoveryError) {
+      return json(req, { error: recoveryError.message }, 400);
     }
   } else {
     const { data: inviteData, error: inviteError } = await service.auth.admin.inviteUserByEmail(

@@ -77,5 +77,6 @@ test("project invite Edge Function requires JWT and service-role mediation",()=>
   assert.match(edge,/service_register_project_member_invite_v1/);
   assert.match(edge,/service_resolve_project_invite_user_v1/);
   assert.match(edge,/inviteUserByEmail/);
-  assert.match(edge,/signInWithOtp/);
+  assert.match(edge,/resetPasswordForEmail/);
+  assert.doesNotMatch(edge,/signInWithOtp/);
 });
