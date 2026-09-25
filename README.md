@@ -31,7 +31,7 @@ GitHub and Supabase are the required authorities. Hosting remains replaceable in
 
 ## Web UI
 
-The UI includes authenticated access, an overview dashboard, UNIFI Job Manifest planning, TranScheduler queue controls, capability registry, run history, checkpoints, audit history, scheduler settings, responsive navigation, and deployment health checks.
+The UI includes authenticated access, an overview dashboard, UNIFI Job Manifest planning, TranScheduler queue controls, capability registry, run history, checkpoints, audit history, a Transparency audit library, scheduler settings, responsive navigation, and deployment health checks.
 
 The sign-in screen intentionally does not create Supabase Auth users. Create authorized users through Supabase Auth administration, then use password or magic-link sign-in.
 
@@ -88,3 +88,8 @@ Vercel can remain enabled as a secondary managed host. It is not required for co
 ## Scheduling safety
 
 TranScheduler does not treat `UNKNOWN` capability state as permission to execute. Capability availability must be observed explicitly before routing work.
+
+
+## Transparency
+
+The **Transparency** workspace publishes audit methodology and accessible audit-source transcriptions separately from the operational Audit event log. The initial library contains the complete accessible transcription of the Resonance DataNest / RONSAS External Full-System Audit Brief v1.0 and explicitly marks external audit results as pending until a completed review is supplied.
