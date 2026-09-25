@@ -10,6 +10,7 @@ import {
   type ProviderConnection
 } from "../_shared/provider.ts";
 import {
+  bestCandidateByEvidenceOverlap,
   candidateFromRepeatedEvidence
 } from "../_shared/datanestAiTrends.ts";
 import { chronologicalFromNewestFirst } from "../_shared/datanestAiContinuity.ts";
@@ -266,8 +267,36 @@ async function updateTrendCandidate(input:{
     .upsert(trendEvidence,{onConflict:"cluster_id,event_id"});
   if(trendEvidenceError)throw trendEvidenceError;
 
+  const {data:overlapLinks,error:overlapLinksError}=await input.staging
+    .from("ai_candidate_evidence")
+    .select("candidate_id,event_id")
+    .in("event_id",candidate.evidenceIds);
+  if(overlapLinksError)throw overlapLinksError;
+
+  const overlapCandidateId=bestCandidateByEvidenceOverlap(
+    (overlapLinks||[]).map(link=>({
+      candidateId:String(link.candidate_id),
+      eventId:String(link.event_id)
+    })),
+    candidate.evidenceIds
+  );
+
   const contentHash=await sha256Text(candidate.normalizedKnowledge);
-  const {data:existing,error:existingError}=await input.staging
+  let overlapCandidate:null|{id:string;lifecycle_state:string;evidence_count:number}=null;
+  if(overlapCandidateId){
+    const {data,error}=await input.staging
+      .from("ai_learning_candidates")
+      .select("id,lifecycle_state,evidence_count")
+      .eq("id",overlapCandidateId)
+      .eq("project_id",input.projectId)
+      .maybeSingle();
+    if(error)throw error;
+    overlapCandidate=data as typeof overlapCandidate;
+  }
+
+  const {data:existing,error:existingError}=overlapCandidate
+    ?{data:overlapCandidate,error:null}
+    :await input.staging
     .from("ai_learning_candidates")
     .select("id,lifecycle_state,evidence_count")
     .eq("project_id",input.projectId)
@@ -288,6 +317,8 @@ async function updateTrendCandidate(input:{
     const {error:updateError}=await input.staging
       .from("ai_learning_candidates")
       .update({
+        normalized_knowledge:candidate.normalizedKnowledge,
+        content_hash:contentHash,
         evidence_count:candidate.evidenceIds.length,
         category:candidate.category,
         risk_class:candidate.riskClass,
