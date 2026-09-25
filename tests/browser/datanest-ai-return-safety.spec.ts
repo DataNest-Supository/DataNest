@@ -142,3 +142,29 @@ test("provider launch keeps work out of URLs and sidebar resizing works by keybo
   await expect.poll(()=>dock.evaluate(element=>element.getBoundingClientRect().width)).toBe(originalWidth);
   await expect(page.locator(".externalAiReturnDock textarea")).toBeVisible();
 });
+
+test("a new tracked session for the same Job does not inherit clipboard consent",async({page,context})=>{
+  await signIn(page);
+  await context.grantPermissions(["clipboard-read","clipboard-write"],{
+    origin:new URL(page.url()).origin
+  });
+  await openAiSidebar(page);
+  page.on("popup",popup=>void popup.close());
+  const launch=page.getByRole("button",{name:"Open companion + copy handoff",exact:true});
+  await launch.click();
+  const response=page.locator(".externalAiReturnDock textarea");
+  await expect(response).toBeEnabled();
+  await page.bringToFront();
+  await page.getByRole("button",{name:"Enable session auto-fill",exact:true}).click();
+  await expect(page.getByText("AUTO-FILL ON",{exact:true})).toBeVisible();
+  const reviewed="Reviewed draft preserved while opening a fresh tracked session.";
+  await response.fill(reviewed);
+  const sessionLabel=page.locator(".externalAiReturnDock small");
+  const previousSession=await sessionLabel.innerText();
+  await launch.click();
+  await expect(launch).toBeEnabled();
+  await expect(sessionLabel).not.toHaveText(previousSession);
+  await expect(page.getByText("AUTO-FILL ON",{exact:true})).toHaveCount(0);
+  await expect(page.getByRole("button",{name:"Enable session auto-fill",exact:true})).toBeEnabled();
+  await expect(response).toHaveValue(reviewed);
+});
