@@ -14,10 +14,10 @@ const mutableLearningStates=new Set([
 ]);
 
 export async function updateTrendCandidate(input:{
-  staging:AnyClient;
+  staging:any;
   projectId:string;
   inputEventId:string;
-  input.policyVersion:string;
+  policyVersion:string;
   sourceTypes?:string[];
 }):Promise<{candidateId:string|null;trendKey:string|null;evidenceCount:number}>{
   const {data,error}=await input.staging
@@ -228,14 +228,14 @@ export async function updateTrendCandidate(input:{
     confidence:candidate.confidence,
     hasConflict:candidate.hasConflict,
     contentHash,
-    input.policyVersion,
+    policyVersion:input.policyVersion,
     evidenceHash
   });
 
   if(automatedGates.length){
     const seal=candidateValidationSeal({
       contentHash,
-      input.policyVersion,
+      policyVersion:input.policyVersion,
       evidenceHash,
       evidenceCount:candidate.evidenceIds.length,
       riskClass:candidate.riskClass,
