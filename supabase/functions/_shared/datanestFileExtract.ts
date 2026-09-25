@@ -29,43 +29,47 @@ function splitLines(value:string){
 export function extractTxt(value:string):StructuredExtraction{
   const lines=splitLines(value);
   const chunks:ExtractedChunk[]=[];
-  let start=0;
   let current:string[]=[];
-  let chars=0;
+  let currentChars=0;
+  let chunkStartLine=1;
 
-  const flush=()=>{
+  const flush=(endLine:number)=>{
     if(!current.length)return;
     chunks.push({
       text:current.join("\n"),
-      locator:{type:"lines",start:start+1,end:start+current.length}
+      locator:{type:"lines",start:chunkStartLine,end:endLine}
     });
-    start+=current.length;
     current=[];
-    chars=0;
+    currentChars=0;
   };
 
-  for(const line of lines){
+  for(let lineIndex=0;lineIndex<lines.length;lineIndex++){
+    const line=lines[lineIndex];
+    const lineNumber=lineIndex+1;
     const additional=(current.length?1:0)+line.length;
-    if(current.length&&chars+additional>MAX_EXTRACT_CHARS)flush();
+
+    if(current.length&&currentChars+additional>MAX_EXTRACT_CHARS){
+      flush(lineNumber-1);
+      chunkStartLine=lineNumber;
+    }
 
     if(line.length<=MAX_EXTRACT_CHARS){
-      if(!current.length)start=lines.indexOf(line,start);
+      if(!current.length)chunkStartLine=lineNumber;
       current.push(line);
-      chars+=(current.length>1?1:0)+line.length;
+      currentChars+=(current.length>1?1:0)+line.length;
       continue;
     }
 
-    flush();
-    const lineNumber=lines.indexOf(line,start)+1;
+    flush(lineNumber-1);
     for(let offset=0;offset<line.length;offset+=MAX_EXTRACT_CHARS){
       chunks.push({
         text:line.slice(offset,offset+MAX_EXTRACT_CHARS),
         locator:{type:"lines",start:lineNumber,end:lineNumber}
       });
     }
-    start=lineNumber;
+    chunkStartLine=lineNumber+1;
   }
-  flush();
+  flush(lines.length);
 
   return {text:value,chunks,warnings:[]};
 }
