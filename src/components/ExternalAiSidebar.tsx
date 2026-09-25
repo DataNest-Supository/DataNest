@@ -510,8 +510,8 @@ export default function ExternalAiSidebar({
       : "_blank";
     const placement=mode==="companion"?companionPlacement():null;
     const features=mode==="companion"
-      ? "noopener,noreferrer,"+companionFeatures()
-      : "noopener,noreferrer,resizable=yes,scrollbars=yes";
+      ? companionFeatures()
+      : "popup=yes,resizable=yes,scrollbars=yes";
     const popup=window.open("about:blank",name,features);
     if(popup){
       popup.opener=null;
