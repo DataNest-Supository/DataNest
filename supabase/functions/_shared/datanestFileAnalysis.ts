@@ -177,7 +177,7 @@ function polarity(value:string){
 
 function scalarSignatures(value:string){
   const normalized=value.toLowerCase().replace(/,/g,"");
-  const matches=normalized.matchAll(/\b(-?\d+(?:\.\d+)?)\s*(%|ms|s|sec|secs|seconds?|min|mins|minutes?|h|hr|hrs|hours?|kb|mb|gb|tb|mg|g|kg|ml|l|zar|usd|eur|r)\b/g);
+  const matches=normalized.matchAll(/\b(-?\d+(?:\.\d+)?)\s*(%|ms|s|sec|secs|seconds?|min|mins|minutes?|day|days|h|hr|hrs|hours?|kb|mb|gb|tb|mg|g|kg|ml|l|zar|usd|eur|r)\b/g);
   return [...new Set(
     [...matches].map(match=>Number(match[1])+"|"+String(match[2]).toLowerCase())
   )].sort();
