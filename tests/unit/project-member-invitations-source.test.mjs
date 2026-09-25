@@ -37,7 +37,7 @@ test("project invitations require authenticated acceptance before project access
       < app.indexOf('.from("projects")'),
     "project invite acceptance must run before project visibility is evaluated"
   );
-  assert.match(migration,/pm\.status = 'active'/);
+  assert.match(migration,/pm\.status\s*=\s*'active'/);
   assert.match(migration,/lower\(email\)=caller_email/);
   assert.match(migration,/expires_at>now\(\)/);
 });
