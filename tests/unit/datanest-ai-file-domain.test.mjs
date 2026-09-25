@@ -68,7 +68,7 @@ test("browser upload helper pins signed Supabase TUS safety settings",()=>{
   assert.match(source,/chunkSize:6\*1024\*1024/);
   assert.match(source,/removeFingerprintOnSuccess:true/);
   assert.match(source,/"x-signature":token/);
-  assert.match(source,/\.storage\.supabase\.co/);
+  assert.match(source,/\\\.storage\\\.supabase\\\.co/);
   assert.match(source,/crypto\.subtle\.digest\("SHA-256"/);
 });
 
