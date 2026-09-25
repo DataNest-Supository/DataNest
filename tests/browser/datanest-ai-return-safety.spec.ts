@@ -9,7 +9,7 @@ async function signIn(page:import("@playwright/test").Page){
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button",{name:"Sign in"}).click();
-  await expect(page.getByText("Resonance DataNest",{exact:true}).first()).toBeVisible();
+  await expect(page.getByRole("button",{name:"DataNest AI",exact:true})).toBeVisible({timeout:15000});
 }
 
 async function openAiSidebar(page:import("@playwright/test").Page){
@@ -29,9 +29,23 @@ test("clipboard auto-fill preserves an edited response until explicit paste",asy
 
   page.on("popup",popup=>void popup.close());
   await page.getByRole("button",{name:"Open companion + load prompt"}).click();
-  await expect(page.getByText("COMPANION · READY",{exact:true})).toBeVisible();
-
   const response=page.getByPlaceholder(/External AI response will appear here/i);
+  await expect(response).toBeEnabled();
+  await expect(page.getByText("AUTO-FILL ON",{exact:true})).toBeVisible();
+  await page.bringToFront();
+
+  // Observe completion of the real asynchronous read, not just event dispatch.
+  await page.evaluate(()=>{
+    const clipboard=navigator.clipboard;
+    const readText=clipboard.readText.bind(clipboard);
+    Object.defineProperty(clipboard,"readText",{configurable:true,value:async()=>{
+      const text=await readText();
+      document.documentElement.dataset.clipboardReads=String(
+        Number(document.documentElement.dataset.clipboardReads||"0")+1
+      );
+      return text;
+    }});
+  });
   const initial="Initial governed clipboard response.";
   await page.evaluate(async text=>navigator.clipboard.writeText(text),initial);
   await page.evaluate(()=>window.dispatchEvent(new Event("focus")));
@@ -42,7 +56,9 @@ test("clipboard auto-fill preserves an edited response until explicit paste",asy
 
   const unrelated="Unrelated clipboard text copied after the edit.";
   await page.evaluate(async text=>navigator.clipboard.writeText(text),unrelated);
+  const readsBefore=await page.locator("html").getAttribute("data-clipboard-reads");
   await page.evaluate(()=>window.dispatchEvent(new Event("focus")));
+  await expect.poll(async()=>Number(await page.locator("html").getAttribute("data-clipboard-reads"))).toBeGreaterThan(Number(readsBefore||"0"));
   await expect(response).toHaveValue(edited);
 
   await expect(page.getByRole("button",{name:"Paste from clipboard"})).toBeVisible();
@@ -56,17 +72,18 @@ test("switching jobs replaces the tracked handoff with the newly selected manife
 
   page.on("popup",popup=>void popup.close());
   await page.getByRole("button",{name:"Open companion + load prompt"}).click();
-  await expect(page.getByText("COMPANION · READY",{exact:true})).toBeVisible();
+  await expect(page.getByPlaceholder(/External AI response will appear here/i)).toBeEnabled();
 
   const handoff=page.locator("details.externalAiHandoff textarea");
   await expect(handoff).toHaveValue(/Job Manifest: JOB-\d+ · DataNest AI E2E Job\n/);
 
-  const jobSelect=page.getByLabel("Job Manifest");
+  const jobSelect=page.getByRole("combobox",{name:/^Job Manifest/});
   const target=jobSelect.locator("option").filter({hasText:"DataNest AI E2E Job B"}).first();
   const switchJobId=await target.getAttribute("value");
   if(!switchJobId)throw new Error("DataNest AI E2E Job B fixture is required.");
   await jobSelect.selectOption(switchJobId);
 
+  await expect(jobSelect).toHaveValue(switchJobId);
   await expect(handoff).toHaveValue(/Job Manifest: JOB-\d+ · DataNest AI E2E Job B\n/);
   await expect(handoff).not.toHaveValue(/Job Manifest: JOB-\d+ · DataNest AI E2E Job\n/);
 });
