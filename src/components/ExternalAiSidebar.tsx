@@ -7,7 +7,7 @@ import {
   shouldAttemptClipboardAutoCapture,
   type ClipboardAutoCaptureAccess
 } from "@/lib/externalAiClipboard";
-import { calculateCompanionPlacement } from "@/lib/externalAiWindow";
+import { calculateCompanionPlacement, companionReserveForActualWindow, type CompanionPlacement } from "@/lib/externalAiWindow";
 
 type Job = {
   id:string;
@@ -477,12 +477,25 @@ export default function ExternalAiSidebar({
     try{popup.focus();}catch{}
   }
 
-  function trackCompanionWindow(popup:Window,placement:ReturnType<typeof companionPlacement>){
+  function trackCompanionWindow(popup:Window,placement:CompanionPlacement){
     if(companionClosePollRef.current!==null){
       window.clearInterval(companionClosePollRef.current);
     }
     companionWindowRef.current=popup;
-    if(onCompanionReserve)onCompanionReserve(placement.reserveRight);
+
+    let reserve=0;
+    try{
+      reserve=companionReserveForActualWindow(placement,{
+        left:popup.screenX,
+        top:popup.screenY,
+        width:popup.outerWidth,
+        height:popup.outerHeight
+      });
+    }catch{
+      reserve=0;
+    }
+    if(onCompanionReserve)onCompanionReserve(reserve);
+
     companionClosePollRef.current=window.setInterval(()=>{
       if(popup.closed){
         clearCompanionTracking();
