@@ -87,7 +87,7 @@ test("governed release wiring names the certified DataNest AI runtime", () => {
   assert.match(manifest,/datanest-ai-chat@1/);
   assert.match(manifest,/datanest-ai-intake@1/);
   assert.match(manifest,/datanest-ai-certification@1/);
-  assert.match(manifest,/send-project-member-invite@1/);
+  assert.match(manifest,/send-project-member-invite@2/);
   assert.match(pages,/datanest-project-member-invitations-v1/);
 });
 
@@ -165,7 +165,15 @@ test("certified learning candidates are frozen against later trend evidence", ()
   assert.match(gateway,/select\("id,lifecycle_state,evidence_count"\)/);
   assert.match(
     gateway,
-    /if\(existing\?\.id\)[\s\S]{0,800}!\["INTAKE","NEEDS_EVIDENCE"\]\.includes\(String\(existing\.lifecycle_state\)\)[\s\S]{0,450}return \{[\s\S]{0,180}candidateId/
+    /const mutableLearningStates=new Set\(\[[\s\S]{0,220}"INTAKE"[\s\S]{0,220}"VALIDATED"[\s\S]{0,80}\]\)/
+  );
+  assert.doesNotMatch(
+    gateway,
+    /const mutableLearningStates=new Set\(\[[\s\S]{0,300}"CERTIFIED"/
+  );
+  assert.match(
+    gateway,
+    /if\(existing\?\.id\)[\s\S]{0,900}!mutableLearningStates\.has\(String\(existing\.lifecycle_state\)\)[\s\S]{0,450}return \{[\s\S]{0,180}candidateId/
   );
 });
 
@@ -282,4 +290,20 @@ test("trend candidate creation uses a deterministic project-scoped id for concur
   assert.match(gateway,/input\.projectId[\s\S]{0,120}candidate\.trendKey/);
   assert.match(gateway,/id:stableCandidateId/);
   assert.match(gateway,/23505/);
+});
+
+
+test("low-risk learning validation is automated and candidate-sealed", () => {
+  const gateway=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-chat/index.ts"),"utf8");
+  assert.match(gateway,/automatedLearningGateResults/);
+  assert.match(gateway,/candidateValidationSeal/);
+  assert.match(gateway,/from\("ai_validation_runs"\)[\s\S]{0,1200}actor_type:"automation"/);
+  assert.match(gateway,/candidate_evidence[\s\S]{0,1400}delete\(\)[\s\S]{0,400}staleEvidence/);
+});
+
+test("certification accepts only validation runs for the current candidate evidence seal", () => {
+  const source=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-certification/index.ts"),"utf8");
+  assert.match(source,/async function currentValidationRuns[\s\S]{0,2200}validationRunMatchesSeal/);
+  assert.match(source,/loadCandidateEvidenceIds[\s\S]{0,1800}sha256Text\(evidenceIds\.join\("\\n"\)\)/);
+  assert.match(source,/results:\{\.\.\.providedResults,\.\.\.current\.seal\}/);
 });

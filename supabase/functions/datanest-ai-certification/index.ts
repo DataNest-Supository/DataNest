@@ -9,6 +9,12 @@ import {
   type ProjectRole,
   type RiskClass
 } from "../_shared/datanestAiPolicy.ts";
+import { sha256Text } from "../_shared/datanestAiRuntime.ts";
+import { resolveDataNestAiStaging } from "../_shared/datanestAiStaging.ts";
+import {
+  candidateValidationSeal,
+  validationRunMatchesSeal
+} from "../_shared/datanestAiValidation.ts";
 
 declare const Deno:{
   env:{get:(name:string)=>string|undefined};
@@ -22,7 +28,6 @@ const allowedOrigins=new Set([
   "http://127.0.0.1:4173",
   "http://localhost:4173"
 ]);
-const dedicatedStagingRef="qchttpcyqlqnhvahprhz";
 const currentPolicyVersion="datanest-ai-governed-memory-v2";
 const gateOrder:CertificationGate[]=["AUDIT","VERIFY","VALIDATE","STRESS_TEST"];
 const lifecycleAfterGate:Record<CertificationGate,string>={
@@ -70,11 +75,12 @@ function requireEnv(name:string){
   return value;
 }
 function stagingConfig(supabaseUrl:string,serviceKey:string){
-  const configuredUrl=Deno.env.get("DATANEST_AI_STAGING_URL");
-  const configuredKey=Deno.env.get("DATANEST_AI_STAGING_SERVICE_ROLE_KEY");
-  if(configuredUrl&&configuredKey)return {url:configuredUrl,key:configuredKey};
-  if(supabaseUrl.includes(dedicatedStagingRef))return {url:supabaseUrl,key:serviceKey};
-  throw new Error("Dedicated DataNest AI staging credentials are required in production.");
+  return resolveDataNestAiStaging({
+    supabaseUrl,
+    serviceKey,
+    configuredUrl:Deno.env.get("DATANEST_AI_STAGING_URL"),
+    configuredKey:Deno.env.get("DATANEST_AI_STAGING_SERVICE_ROLE_KEY")
+  });
 }
 async function loadMember(client:AnyClient,projectId:string,userId:string):Promise<Member>{
   const {data,error}=await client
@@ -115,6 +121,33 @@ async function loadValidationRuns(staging:AnyClient,candidateId:string){
     actor_user_id:string|null;
     created_at:string;
   }>;
+}
+async function loadCandidateEvidenceIds(staging:AnyClient,candidateId:string):Promise<string[]>{
+  const {data,error}=await staging
+    .from("ai_candidate_evidence")
+    .select("event_id")
+    .eq("candidate_id",candidateId);
+  if(error)throw error;
+  return [...new Set((data||[]).map(item=>String(item.event_id)).filter(Boolean))].sort();
+}
+async function currentValidationRuns(staging:AnyClient,candidate:Candidate){
+  const [runs,evidenceIds]=await Promise.all([
+    loadValidationRuns(staging,candidate.id),
+    loadCandidateEvidenceIds(staging,candidate.id)
+  ]);
+  const evidenceHash=await sha256Text(evidenceIds.join("\n"));
+  const seal=candidateValidationSeal({
+    contentHash:candidate.content_hash,
+    policyVersion:candidate.policy_version,
+    evidenceHash,
+    evidenceCount:candidate.evidence_count,
+    riskClass:candidate.risk_class,
+    hasConflict:candidate.has_conflict
+  });
+  return {
+    seal,
+    runs:runs.filter(run=>validationRunMatchesSeal(run.results,seal))
+  };
 }
 function latestGateState(runs:Array<{gate:CertificationGate;passed:boolean}>){
   const state=new Map<CertificationGate,boolean>();
@@ -333,9 +366,12 @@ Deno.serve(async(request:Request)=>{
       if(gate==="STRESS_TEST"){
         return json({error:"STRESS_TEST evidence must be recorded by the governed stress suite."},403,origin);
       }
-      const runs=await loadValidationRuns(staging,candidate.id);
-      assertGatePrerequisites(gate,runs);
+      const current=await currentValidationRuns(staging,candidate);
+      assertGatePrerequisites(gate,current.runs);
       const passed=Boolean(body.passed);
+      const providedResults=typeof body.results==="object"&&body.results!==null
+        ?body.results as Record<string,unknown>
+        :{};
       const {data:run,error:runError}=await staging
         .from("ai_validation_runs")
         .insert({
@@ -343,7 +379,7 @@ Deno.serve(async(request:Request)=>{
           gate,
           suite_version:String(body.suiteVersion||candidate.policy_version||currentPolicyVersion),
           passed,
-          results:typeof body.results==="object"&&body.results!==null?body.results:{},
+          results:{...providedResults,...current.seal},
           actor_type:"human",
           actor_user_id:user.id
         })
@@ -358,8 +394,9 @@ Deno.serve(async(request:Request)=>{
         .eq("id",candidate.id);
       if(updateError)throw updateError;
 
-      const refreshedRuns=await loadValidationRuns(staging,candidate.id);
       const refreshedCandidate=await loadCandidate(staging,projectId,candidate.id);
+      const refreshedValidation=await currentValidationRuns(staging,refreshedCandidate);
+      const refreshedRuns=refreshedValidation.runs;
       let autoCertification:Record<string,unknown>|null=null;
       if(
         allAutomatedCertificationGatesPassed(refreshedRuns) &&
@@ -385,7 +422,7 @@ Deno.serve(async(request:Request)=>{
     }
 
     if(action==="certify"){
-      const runs=await loadValidationRuns(staging,candidate.id);
+      const {runs}=await currentValidationRuns(staging,candidate);
       if(!allCertificationGatesPassed(runs)){
         return json({error:"All audit, verify, validate and stress-test gates must pass before certification."},409,origin);
       }

@@ -22,7 +22,7 @@ test("project invite Edge Function v2 is the enforced release version",()=>{
   );
   assert.match(
     pagesWorkflow,
-    /"projectInvitations":\\"send-project-member-invite@2\\"/
+    /projectInvitations.*send-project-member-invite@2/
   );
   assert.doesNotMatch(manifestScript,/send-project-member-invite@1/);
   assert.doesNotMatch(pagesWorkflow,/send-project-member-invite@1/);

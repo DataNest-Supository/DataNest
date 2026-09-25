@@ -35,7 +35,7 @@ function configured(url,key=stagingKey){
   return {DATANEST_AI_STAGING_URL:url,DATANEST_AI_STAGING_SERVICE_ROLE_KEY:key};
 }
 
-for(const slug of ["datanest-ai-chat","datanest-ai-intake"]){
+for(const slug of ["datanest-ai-chat","datanest-ai-intake","datanest-ai-certification"]){
   for(const suffix of ["","/"]){
     test(`${slug}: configured dedicated staging${suffix?" with slash":""} remains valid`,()=>{
       const result=resolverFor(slug,configured(staging+suffix))(production,localKey);
