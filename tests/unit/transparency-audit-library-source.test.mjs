@@ -48,3 +48,13 @@ test("transparency UI provides accessible read and download paths",()=>{
   assert.match(workspace,/aria-label="Complete accessible transcription of the External Full-System Audit Brief"/);
   assert.doesNotMatch(workspace,/dangerouslySetInnerHTML/);
 });
+
+
+test("public transparency index is source controlled and result state is explicit",()=>{
+  const html=readFileSync(new URL("../../public/transparency/index.html",import.meta.url),"utf8");
+  assert.match(html,/Transparency and Audit Library/);
+  assert.match(html,/Awaiting completed external audit/);
+  assert.match(html,/Publishing an audit brief does not imply that an external audit has been completed/);
+  assert.match(html,/Transcript part 1/);
+  assert.match(html,/Audit document registry \(JSON\)/);
+});
