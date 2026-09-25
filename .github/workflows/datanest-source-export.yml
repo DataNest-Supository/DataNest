@@ -1,0 +1,34 @@
+name: DataNest pinned source snapshot
+on:
+  push:
+    branches: [fix/datanest-staging-routing-20260925]
+    paths: [.github/workflows/datanest-source-export.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: d6beb5b982767ef8c4d7681ad67f0b3151a05a8f
+          persist-credentials: false
+      - name: Export tracked source only
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = d6beb5b982767ef8c4d7681ad67f0b3151a05a8f
+          test "$(git rev-parse HEAD^{tree})" = 64ff3d8165f31be0c9fd301379830c6f820fcaae
+          mkdir -p /tmp/datanest-source-snapshot
+          git archive --format=tar.gz HEAD > /tmp/datanest-source-snapshot/source.tar.gz
+          git rev-parse HEAD HEAD^{tree} > /tmp/datanest-source-snapshot/source-identity.txt
+          git ls-tree -r HEAD > /tmp/datanest-source-snapshot/tree.txt
+          cd /tmp/datanest-source-snapshot
+          sha256sum source.tar.gz > SHA256SUMS
+      - uses: actions/upload-artifact@v4.6.2
+        with:
+          name: datanest-source-d6beb5b
+          path: /tmp/datanest-source-snapshot/
+          retention-days: 7
+          if-no-files-found: error
