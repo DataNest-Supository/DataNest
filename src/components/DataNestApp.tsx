@@ -128,6 +128,7 @@ export default function DataNestApp({session}:{session:Session}) {
   const [mobileOpen,setMobileOpen]=useState(false);
   const [commandOpen,setCommandOpen]=useState(false);
   const [commandQuery,setCommandQuery]=useState("");
+  const [commandActiveIndex,setCommandActiveIndex]=useState(-1);
   const commandInputRef=useRef<HTMLInputElement|null>(null);
   const commandReturnFocusRef=useRef<HTMLElement|null>(null);
   const [aiSidebarOpen,setAiSidebarOpen]=useState(false);
@@ -439,6 +440,7 @@ export default function DataNestApp({session}:{session:Session}) {
   function openCommandPalette(){
     commandReturnFocusRef.current=document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setCommandQuery("");
+    setCommandActiveIndex(-1);
     setCommandOpen(true);
     setMobileOpen(false);
   }
@@ -446,6 +448,7 @@ export default function DataNestApp({session}:{session:Session}) {
   function closeCommandPalette(){
     setCommandOpen(false);
     setCommandQuery("");
+    setCommandActiveIndex(-1);
     window.setTimeout(()=>{
       commandReturnFocusRef.current?.focus();
       commandReturnFocusRef.current=null;
@@ -470,9 +473,23 @@ export default function DataNestApp({session}:{session:Session}) {
   }
 
   function handleCommandSearchKeyDown(event:import("react").KeyboardEvent<HTMLInputElement>){
+    if(event.key==="ArrowDown"&&commandQuery.trim()&&commandItems.length){
+      event.preventDefault();
+      setCommandActiveIndex(index=>(index+1)%commandItems.length);
+      return;
+    }
+    if(event.key==="ArrowUp"&&commandQuery.trim()&&commandItems.length){
+      event.preventDefault();
+      setCommandActiveIndex(index=>(index-1+commandItems.length)%commandItems.length);
+      return;
+    }
     if(event.key==="Enter"&&commandQuery.trim()&&commandItems[0]){
       event.preventDefault();
-      chooseCommandView(commandItems[0].key);
+      if(commandActiveIndex>0&&commandItems[commandActiveIndex]){
+        chooseCommandView(commandItems[commandActiveIndex].key);
+      }else{
+        chooseCommandView(commandItems[0].key);
+      }
     }
   }
 
@@ -619,7 +636,11 @@ export default function DataNestApp({session}:{session:Session}) {
             ref={commandInputRef}
             type="search"
             value={commandQuery}
-            onChange={event=>setCommandQuery(event.target.value)}
+            onChange={event=>{
+              const nextQuery=event.target.value;
+              setCommandQuery(nextQuery);
+              setCommandActiveIndex(nextQuery.trim()?0:-1);
+            }}
             onKeyDown={handleCommandSearchKeyDown}
             placeholder="Search workspaces, tools, research…"
             aria-label="Search DataNest workspaces"
@@ -627,11 +648,11 @@ export default function DataNestApp({session}:{session:Session}) {
           <kbd>Esc</kbd>
         </label>
         <div className="commandResults" role="listbox" aria-label="DataNest workspaces">
-          {commandItems.map(item=><button
-            className={"commandResult "+(view===item.key?"active":"")}
+          {commandItems.map((item,index)=><button
+            className={"commandResult "+((commandActiveIndex===index||view===item.key)?"active":"")}
             type="button"
             role="option"
-            aria-selected={view===item.key}
+            aria-selected={commandActiveIndex===index}
             key={item.key}
             onClick={()=>chooseCommandView(item.key)}
           >

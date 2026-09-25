@@ -70,6 +70,29 @@ test("quick switch opens the first matching workspace with Enter",async({page})=
 });
 
 
+test("quick switch moves keyboard selection with ArrowDown before Enter",async({page})=>{
+  await signIn(page);
+
+  await page.keyboard.press("Control+K");
+  const dialog=page.getByRole("dialog",{name:"Quick switch DataNest workspace"});
+  const search=dialog.getByLabel("Search DataNest workspaces");
+  await expect(search).toBeFocused();
+
+  await search.fill("Research");
+  const options=dialog.getByRole("option");
+  await expect(options).toHaveCount(3);
+  await expect(dialog.getByRole("option",{name:/Think Tanks/})).toHaveAttribute("aria-selected","true");
+
+  await page.keyboard.press("ArrowDown");
+  await expect(dialog.getByRole("option",{name:/DataNest AI/})).toHaveAttribute("aria-selected","true");
+
+  await page.keyboard.press("Enter");
+  await expect(dialog).toBeHidden();
+  await expect(page).toHaveURL(/(?:\\?|&)view=ai(?:&|$)/);
+  await expect(page.getByRole("heading",{name:"DataNest AI",exact:true}).first()).toBeVisible();
+});
+
+
 test("quick switch traps focus and restores the opening control",async({page})=>{
   await signIn(page);
 
