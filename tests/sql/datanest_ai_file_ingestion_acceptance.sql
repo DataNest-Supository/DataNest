@@ -47,6 +47,16 @@ begin
   end if;
 
   if not exists (
+    select 1 from information_schema.columns
+    where table_schema='public'
+      and table_name='ai_file_submissions'
+      and column_name='certified_memory_snapshot'
+      and data_type='jsonb'
+  ) then
+    raise exception 'frozen certified memory snapshot column missing';
+  end if;
+
+  if not exists (
     select 1 from pg_constraint c
     join pg_class rel on rel.oid=c.conrelid
     join pg_namespace n on n.oid=rel.relnamespace
