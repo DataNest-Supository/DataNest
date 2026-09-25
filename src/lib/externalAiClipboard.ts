@@ -11,7 +11,7 @@ export function selectExternalAiClipboardCandidate({
   blockedTexts=[],
   allowReplace=false
 }:ExternalAiClipboardCandidateInput):string|null{
-  // Focus/visibility capture must never replace a response under review.
+  // Automatic capture must never replace a response already under review.
   if(!allowReplace&&currentResponse.trim())return null;
   const candidate=clipboardText.trim();
   if(!candidate)return null;
@@ -35,6 +35,9 @@ export function selectExternalAiClipboardCandidate({
 
 export type ClipboardAutoCaptureAccess = "unknown"|"prompt"|"granted"|"denied"|"unsupported";
 
-export function shouldAttemptClipboardAutoCapture(access:ClipboardAutoCaptureAccess):boolean{
-  return access==="granted";
+export function shouldAttemptClipboardAutoCapture(
+  access:ClipboardAutoCaptureAccess,
+  enabled:boolean
+):boolean{
+  return enabled&&access==="granted";
 }

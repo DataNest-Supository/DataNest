@@ -78,17 +78,18 @@ test("clipboard capture auto-fills on return without importing automatically", (
 });
 
 
-test("clipboard auto-capture only runs after clipboard access is armed", async () => {
+test("clipboard auto-capture requires both permission and session opt-in", async () => {
   const mod = await import("../../src/lib/externalAiClipboard.ts");
   assert.equal(
     typeof mod.shouldAttemptClipboardAutoCapture,
     "function",
     "expected shouldAttemptClipboardAutoCapture to exist"
   );
-  assert.equal(mod.shouldAttemptClipboardAutoCapture("granted"), true);
-  assert.equal(mod.shouldAttemptClipboardAutoCapture("prompt"), false);
-  assert.equal(mod.shouldAttemptClipboardAutoCapture("denied"), false);
-  assert.equal(mod.shouldAttemptClipboardAutoCapture("unsupported"), false);
+  assert.equal(mod.shouldAttemptClipboardAutoCapture("granted", false), false);
+  assert.equal(mod.shouldAttemptClipboardAutoCapture("granted", true), true);
+  assert.equal(mod.shouldAttemptClipboardAutoCapture("prompt", true), false);
+  assert.equal(mod.shouldAttemptClipboardAutoCapture("denied", true), false);
+  assert.equal(mod.shouldAttemptClipboardAutoCapture("unsupported", true), false);
 });
 
 test("companion placement preserves the DataNest dock on a maximized desktop", async () => {
@@ -143,18 +144,20 @@ test("companion placement uses free screen space to the right when available", a
   assert.ok(placement.left + placement.width <= 1920, "companion must remain on-screen");
 });
 
-test("Return to DataNest exposes an explicit clipboard permission arm", () => {
+test("Return to DataNest defaults to manual paste and exposes session-only auto-fill", () => {
   const source = fs.readFileSync(
     path.join(repoRoot, "src/components/ExternalAiSidebar.tsx"),
     "utf8"
   );
 
-  assert.match(source, /Enable auto-fill/, "expected a one-time clipboard permission control");
+  assert.match(source, /Paste from clipboard/, "expected manual paste as the default control");
+  assert.match(source, /Enable session auto-fill/, "expected explicit session auto-fill opt-in");
+  assert.match(source, /Turn off auto-fill/, "expected an explicit auto-fill off control");
   assert.match(source, /navigator\.permissions/, "expected clipboard permission state detection");
   assert.match(
     source,
-    /shouldAttemptClipboardAutoCapture\(clipboardAccess\)/,
-    "focus capture must be gated on granted clipboard access"
+    /shouldAttemptClipboardAutoCapture\(clipboardAccess,autoCaptureEnabled\)/,
+    "focus capture must require both granted clipboard access and explicit session opt-in"
   );
 });
 
@@ -177,6 +180,7 @@ test("handoff no longer describes imported output as R&D contribution", () => {
   assert.doesNotMatch(source, /external-AI R&D input/);
 });
 
+
 test("automatic clipboard capture preserves a response being reviewed or edited", async () => {
   const { selectExternalAiClipboardCandidate: select } = await import("../../src/lib/externalAiClipboard.ts");
   assert.equal(select({ clipboardText: "Unrelated newly copied text", currentResponse: "Reviewed response with my edits" }), null);
@@ -187,4 +191,23 @@ test("explicit paste may replace a draft but still rejects copied handoff instru
   const { selectExternalAiClipboardCandidate: select } = await import("../../src/lib/externalAiClipboard.ts");
   assert.equal(select({ clipboardText: "Replacement response", currentResponse: "Existing draft", allowReplace: true }), "Replacement response");
   assert.equal(select({ clipboardText: "RESONANCE DATANEST — LIVE EXTERNAL AI HANDOFF\n[DATANEST TRACKING HEADER]", currentResponse: "Existing draft", allowReplace: true }), null);
+});
+
+test("external provider launch does not put handoff or email into a URL", () => {
+  const source = fs.readFileSync(
+    path.join(repoRoot, "src/components/ExternalAiSidebar.tsx"),
+    "utf8"
+  );
+  assert.doesNotMatch(source, /searchParams\.set\("prompt"/);
+  assert.doesNotMatch(source, /"User: "\+currentUserEmail/);
+  assert.match(source, /Provider windows open without DataNest work content in the URL/);
+});
+
+test("external AI sidebar exposes keyboard width controls", () => {
+  const source = fs.readFileSync(
+    path.join(repoRoot, "src/components/ExternalAiSidebar.tsx"),
+    "utf8"
+  );
+  assert.match(source, /aria-label="Narrow AI sidebar"/);
+  assert.match(source, /aria-label="Widen AI sidebar"/);
 });

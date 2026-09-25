@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { sha256Text } from "../_shared/datanestAiRuntime.ts";
+import { replayContentMatches } from "../_shared/datanestAiContinuity.ts";
 
 declare const Deno:{
   env:{get:(name:string)=>string|undefined};
@@ -142,11 +143,24 @@ Deno.serve(async(request:Request)=>{
       .single();
     if(jobError||!job)return json({error:"Job collaboration access is required."},403,origin);
 
+    const contentHash=await sha256Text(content);
     if(session.staging_event_id){
+      const {data:linkedEvent,error:linkedEventError}=await staging
+        .from("ai_intake_events")
+        .select("id,trace_id,content_hash,session_id,external_ai_session_id")
+        .eq("id",String(session.staging_event_id))
+        .maybeSingle();
+      if(linkedEventError)throw linkedEventError;
+      if(!linkedEvent||String(linkedEvent.external_ai_session_id)!==String(session.id)){
+        return json({error:"The linked external AI evidence could not be verified."},409,origin);
+      }
+      if(!replayContentMatches(String(linkedEvent.content_hash||""),contentHash)){
+        return json({error:"This external AI session is already staged with different content."},409,origin);
+      }
       return json({
-        eventId:String(session.staging_event_id),
-        traceId:String(session.staging_trace_id||""),
-        sessionId:"",
+        eventId:String(linkedEvent.id),
+        traceId:String(linkedEvent.trace_id||session.staging_trace_id||""),
+        sessionId:String(linkedEvent.session_id||""),
         jobId:String(session.job_id),
         trustState:"UNCERTIFIED",
         idempotent:true
@@ -156,7 +170,6 @@ Deno.serve(async(request:Request)=>{
     const traceKey=String(
       (session.context_snapshot as Record<string,unknown>|null)?.trace_key||""
     )||"DN-AI-"+crypto.randomUUID();
-    const contentHash=await sha256Text(content);
 
     const stagingSession=await ensureCompanionSession({
       staging,
@@ -177,7 +190,7 @@ Deno.serve(async(request:Request)=>{
     if(existingError)throw existingError;
 
     let staged=existing as Record<string,unknown>|null;
-    if(staged&&String(staged.content_hash)!==contentHash){
+    if(staged&&!replayContentMatches(String(staged.content_hash||""),contentHash)){
       return json({error:"This external AI session is already staged with different content."},409,origin);
     }
 
