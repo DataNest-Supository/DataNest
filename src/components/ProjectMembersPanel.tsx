@@ -1,7 +1,8 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
+import { activeMemberInviteError, projectInviteConfirmation, projectInviteError } from "@/lib/project-invite-feedback";
 
 type Member={
   user_id:string;
@@ -54,41 +55,57 @@ export default function ProjectMembersPanel({
   const [busy,setBusy]=useState(false);
   const [email,setEmail]=useState("");
   const [role,setRole]=useState<"admin"|"operator"|"viewer">("viewer");
+  const [inviteFeedback,setInviteFeedback]=useState<{kind:"success"|"error";message:string}|null>(null);
+  const sending=useRef(false);
 
-  const load=useCallback(async()=>{
+  const load=useCallback(async(refresh=false)=>{
     const supabase=getSupabase();if(!supabase)return;
-    setLoading(true);
-    const {data,error}=await supabase.rpc("get_project_membership_workspace_v1",{target_project:projectId});
-    if(error){setError(error.message);setWorkspace(null);}
-    else setWorkspace((data||null) as Workspace|null);
-    setLoading(false);
+    if(!refresh)setLoading(true);
+    try{
+      const {data,error}=await supabase.rpc("get_project_membership_workspace_v1",{target_project:projectId});
+      if(error)throw error;
+      setWorkspace((data||null) as Workspace|null);
+      return true;
+    }catch(error){
+      setError(error instanceof Error?error.message:"Unable to refresh project membership.");
+      if(!refresh)setWorkspace(null);
+      return false;
+    }finally{setLoading(false);}
   },[projectId,setError]);
 
   useEffect(()=>{void load();},[load]);
 
   async function sendInvite(event:FormEvent){
     event.preventDefault();
+    if(sending.current)return;
     const supabase=getSupabase();
-    if(!supabase||!workspace?.can_invite||!email.trim())return;
-
-    setBusy(true);setError("");
+    const recipient=email.trim().toLowerCase();
+    setInviteFeedback(null);setNotice("");setError("");
+    const validationError=!supabase?"The invite service is unavailable. Reload and try again."
+      :!workspace?.can_invite?"Owner or admin access is required to invite project members."
+      :!recipient?"Enter an email address."
+      :activeMemberInviteError(recipient,workspace.members);
+    if(validationError){setInviteFeedback({kind:"error",message:validationError});return;}
+    if(!supabase)return;
+    sending.current=true;
+    setBusy(true);
     try{
       const {data,error}=await supabase.functions.invoke("send-project-member-invite",{
-        body:{projectId,email:email.trim().toLowerCase(),role}
+        body:{projectId,email:recipient,role}
       });
       if(error)throw error;
-      const payload=(data||{}) as Record<string,unknown>;
-      const delivery=String(payload.delivery||"invite");
+      const message=projectInviteConfirmation(data,recipient);
       setEmail("");
-      setNotice(
-        delivery==="magic-link"
-          ?"Existing account invited by magic link. Voting remains disabled until that person signs in and accepts."
-          :"Project invitation sent. Voting remains disabled until that person authenticates and accepts."
-      );
-      await load();
+      setInviteFeedback({kind:"success",message});
+      setNotice(message);
+      const refreshed=await load(true);
+      if(!refreshed)setInviteFeedback({kind:"success",message:`${message} The members list could not refresh; reload it before sending again.`});
     }catch(inviteError){
-      setError(inviteError instanceof Error?inviteError.message:"Unable to send project-member invitation.");
+      const message=await projectInviteError(inviteError);
+      setInviteFeedback({kind:"error",message});
+      setError(message);
     }finally{
+      sending.current=false;
       setBusy(false);
     }
   }
@@ -121,18 +138,19 @@ export default function ProjectMembersPanel({
 
     <p className="muted">Only authenticated members with <b>active</b> project membership can cast formal governance votes. Sending an invitation never creates an independent vote by itself.</p>
 
-    {workspace.can_invite&&<form className="settingsGrid" onSubmit={sendInvite}>
+    {workspace.can_invite&&<form className="settingsGrid" onSubmit={sendInvite} aria-busy={busy} aria-describedby="project-invite-feedback">
       <label>Invite email
         <input
           type="email"
           required
+          disabled={busy}
           value={email}
           onChange={event=>setEmail(event.target.value)}
           placeholder="reviewer@example.com"
         />
       </label>
       <label>Project role
-        <select value={role} onChange={event=>setRole(event.target.value as "admin"|"operator"|"viewer")}>
+        <select disabled={busy} value={role} onChange={event=>setRole(event.target.value as "admin"|"operator"|"viewer")}>
           <option value="viewer">Viewer · formal vote + read access</option>
           <option value="operator">Operator · formal vote + operational access</option>
           {workspace.can_invite_admin&&<option value="admin">Admin · formal vote + administration</option>}
@@ -141,10 +159,16 @@ export default function ProjectMembersPanel({
       <div>
         <p className="muted">For independent protocol review, <b>Viewer</b> is sufficient unless the person also needs operational or administrative authority.</p>
       </div>
-      <button className="primaryButton" disabled={busy||!email.trim()}>
+      <button type="submit" className="primaryButton" disabled={busy||!email.trim()}>
         {busy?"Sending…":"Send project invite"}
       </button>
     </form>}
+    <div id="project-invite-feedback" aria-live="polite" aria-atomic="true">
+      {inviteFeedback&&<div className={`notice ${inviteFeedback.kind==="error"?"errorNotice":"goodNotice"}`} role={inviteFeedback.kind==="error"?"alert":"status"}>
+        {inviteFeedback.message}
+      </div>}
+    </div>
+    <p className="muted">Voting remains disabled until that person signs in and accepts the project invitation.</p>
 
     <div className="dataTable">
       <div className="dataRow headerRow"><span>Member</span><span>Role</span><span>Status</span><span>Formal vote</span><span>Updated</span></div>
