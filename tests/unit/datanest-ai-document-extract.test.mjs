@@ -74,7 +74,7 @@ test("DOCX worker preserves headings, paragraphs, lists and tables",()=>{
 });
 
 test("worker parser packages are exact pinned versions",()=>{
-  assert.equal(deno.imports["pdfjs-dist/"],"npm:pdfjs-dist@6.3.289/");
+  assert.equal(deno.imports["pdfjs-dist/legacy/build/pdf.mjs"],"npm:pdfjs-dist@6.3.289/legacy/build/pdf.mjs");
   assert.equal(deno.imports.jszip,"npm:jszip@3.10.2");
   assert.equal(deno.imports["fast-xml-parser"],"npm:fast-xml-parser@5.11.1");
 });
