@@ -5,7 +5,8 @@ import {
   classifyLearningRisk,
   evidenceSimilarity,
   normalizeTrendTokens,
-  trendKeyForTokens
+  trendKeyForTokens,
+  bestCandidateByEvidenceOverlap
 } from "../../supabase/functions/_shared/datanestAiTrends.ts";
 
 test("near-duplicate requirements cluster", () => {
@@ -39,4 +40,26 @@ test("repeated evidence can produce a low-risk candidate but not a certification
   assert.equal(candidate?.lifecycleState,"INTAKE");
   assert.equal(candidate?.riskClass,"low");
   assert.ok(candidate?.evidenceIds.length===2);
+});
+
+
+test("repeated trend evidence reuses the candidate with the strongest evidence overlap", () => {
+  const candidateId=bestCandidateByEvidenceOverlap(
+    [
+      {candidateId:"candidate-a",eventId:"e1"},
+      {candidateId:"candidate-a",eventId:"e2"},
+      {candidateId:"candidate-b",eventId:"e2"},
+      {candidateId:"candidate-b",eventId:"e3"}
+    ],
+    ["e1","e2","e4"]
+  );
+  assert.equal(candidateId,"candidate-a");
+});
+
+test("candidate reuse requires at least two shared evidence events", () => {
+  const candidateId=bestCandidateByEvidenceOverlap(
+    [{candidateId:"candidate-a",eventId:"e1"}],
+    ["e1","e2"]
+  );
+  assert.equal(candidateId,null);
 });
