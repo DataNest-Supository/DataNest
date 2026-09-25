@@ -1,3 +1,4 @@
+// @ts-nocheck -- Deno worker resolves pinned npm: imports via its local deno.json.
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import JSZip from "jszip";
 import { XMLParser } from "fast-xml-parser";
