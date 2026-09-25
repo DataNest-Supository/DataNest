@@ -39,3 +39,27 @@ test("desktop AI dock cannot consume more than 42 percent of the viewport", () =
     "mid-size desktop layout must not remove the dock width cap"
   );
 });
+
+test("workspace navigation persists in the URL and follows browser history", () => {
+  assert.match(appSource, /const viewKeys = new Set<ViewKey>/);
+  assert.match(appSource, /searchParams\.get\("view"\)/);
+  assert.match(appSource, /searchParams\.set\("view",next\)/);
+  assert.match(appSource, /history\.pushState/);
+  assert.match(appSource, /addEventListener\("popstate",syncViewFromUrl\)/);
+  assert.match(appSource, /removeEventListener\("popstate",syncViewFromUrl\)/);
+});
+
+test("workspace navigation canonicalizes overview and invalid view URLs", () => {
+  assert.match(
+    appSource,
+    /requested&&\(!valid\|\|requested==="overview"\)[\s\S]*?searchParams\.delete\("view"\)[\s\S]*?history\.replaceState/,
+    "overview and invalid workspace parameters should be cleaned without creating a history loop"
+  );
+});
+
+test("mobile navigation exposes menu relationships and closes with Escape", () => {
+  assert.match(appSource, /id="datanest-navigation" aria-label="DataNest navigation"/);
+  assert.match(appSource, /aria-controls="datanest-navigation" aria-expanded=\{mobileOpen\}/);
+  assert.match(appSource, /aria-label="Project workspaces"/);
+  assert.match(appSource, /event\.key==="Escape"/);
+});

@@ -14,6 +14,30 @@ async function signIn(page:import("@playwright/test").Page){
   ).toBeVisible({timeout:15000});
 }
 
+test("workspace deep links survive reload and follow browser history",async({page})=>{
+  await signIn(page);
+
+  await page.getByRole("button",{name:"Think Tanks",exact:true}).click();
+  await expect(page).toHaveURL(/(?:\?|&)view=thinktank(?:&|$)/);
+  await expect(page.getByText("THINK TANKS + DATANEST AI",{exact:true})).toBeVisible();
+
+  await page.reload();
+  await expect(page).toHaveURL(/(?:\?|&)view=thinktank(?:&|$)/);
+  await expect(page.getByText("THINK TANKS + DATANEST AI",{exact:true})).toBeVisible();
+
+  await page.getByRole("button",{name:"DataNest AI",exact:true}).click();
+  await expect(page).toHaveURL(/(?:\?|&)view=ai(?:&|$)/);
+
+  await page.goBack();
+  await expect(page).toHaveURL(/(?:\?|&)view=thinktank(?:&|$)/);
+  await expect(page.getByText("THINK TANKS + DATANEST AI",{exact:true})).toBeVisible();
+
+  await page.goForward();
+  await expect(page).toHaveURL(/(?:\?|&)view=ai(?:&|$)/);
+  await expect(page.getByRole("heading",{name:"DataNest AI",exact:true}).first()).toBeVisible();
+});
+
+
 test("human input is traced and remains uncertified",async({page})=>{
   await signIn(page);
   await page.getByRole("button",{name:"DataNest AI",exact:true}).click();
