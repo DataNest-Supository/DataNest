@@ -41,6 +41,23 @@ const nav:Array<{key:ViewKey;label:string;group:string;glyph:string}> = [
   {key:"settings",label:"Settings",group:"System",glyph:"⚙"}
 ];
 
+const viewDescriptions:Record<ViewKey,string> = {
+  overview:"Project command center and current work at a glance.",
+  stakeholder:"Capture stakeholder input and review contribution context.",
+  sparks:"Develop raw ideas into traceable project inputs.",
+  governance:"Review sovereign governance controls and decisions.",
+  thinktank:"Coordinate structured research and collaborative thinking.",
+  ai:"Work with governed DataNest AI memory and project context.",
+  productlab:"Test and review product surfaces before release.",
+  unifi:"Plan complete, traceable Job Manifests before execution.",
+  scheduler:"Route prepared work through capability-aware scheduling.",
+  runs:"Review execution history and connector outcomes.",
+  checkpoints:"Resume project work from durable continuation points.",
+  audit:"Inspect immutable operational events and traceability.",
+  transparency:"Review published audit methodology, evidence, and findings.",
+  settings:"Manage project, tool, AI administration, and scheduler policy."
+};
+
 const StakeholderWorkspace = dynamic(() => import("@/components/StakeholderWorkspace"), {
   ssr: false,
   loading: () => <section className="panel"><p className="muted">Loading stakeholder workspace…</p></section>
@@ -404,6 +421,7 @@ export default function DataNestApp({session}:{session:Session}) {
 
   const jobLookup=useMemo(()=>new Map([...recentJobs,...jobs].map(job=>[job.id,job])),[recentJobs,jobs]);
   const currentLabel=nav.find(item=>item.key===view)?.label||"Overview";
+  const currentDescription=viewDescriptions[view];
   const groups=Array.from(new Set(nav.map(item=>item.group)));
   const healthLabel=health.state==="checking"
     ? "Checking control plane"
@@ -428,6 +446,7 @@ export default function DataNestApp({session}:{session:Session}) {
             key={item.key}
             className={view===item.key?"active":""}
             aria-label={item.label}
+            aria-current={view===item.key?"page":undefined}
             onClick={()=>{setView(item.key);setMobileOpen(false);}}
           >
             <span aria-hidden="true">{item.glyph}</span>{item.label}
@@ -444,7 +463,7 @@ export default function DataNestApp({session}:{session:Session}) {
     <main className="mainPane">
       <header className="topbar">
         <button className="menuButton" onClick={()=>setMobileOpen(true)} aria-label="Open menu">☰</button>
-        <div><p className="eyebrow">RESONANCE DATANEST</p><h1>{currentLabel}</h1></div>
+        <div className="topbarTitle"><p className="eyebrow">RESONANCE DATANEST</p><h1>{currentLabel}</h1><p className="topbarContext">{currentDescription}</p></div>
         <div className="topActions">
           <button
             className={"secondaryButton compact aiSidebarToggle "+(aiSidebarOpen?"active":"")}
@@ -452,13 +471,13 @@ export default function DataNestApp({session}:{session:Session}) {
             aria-pressed={aiSidebarOpen}
           >{aiSidebarOpen?"Hide AI Sidebar":"AI Sidebar"}</button>
           <button
-            className="secondaryButton compact"
+            className="secondaryButton compact releaseAction"
             type="button"
             disabled={reloadingLatest}
             onClick={()=>void reloadLatestVersion()}
             title="Fetch the latest release manifest and reopen DataNest with a cache-busting release URL."
           >{reloadingLatest?"Reloading…":"Reload latest"}</button>
-          <button className="secondaryButton compact" onClick={()=>project&&void Promise.all([loadSummary(project.id),loadRecentJobs(project.id),checkControlPlane(project.id)])}>Refresh</button>
+          <button className="secondaryButton compact refreshAction" onClick={()=>project&&void Promise.all([loadSummary(project.id),loadRecentJobs(project.id),checkControlPlane(project.id)])}>Refresh</button>
           <div className={"systemStatus "+health.state} title={health.message}>
             <span className={"statusDot "+health.state}/>
             <span>{healthLabel}<small>{health.checkedAt ? " · "+formatDate(health.checkedAt) : ""}</small></span>
@@ -496,21 +515,69 @@ export default function DataNestApp({session}:{session:Session}) {
 }
 
 function Overview({project,tools,jobs,counts,setView,canOperate}:{project:Project;tools:Tool[];jobs:Job[];counts:Summary;setView:(v:ViewKey)=>void;canOperate:boolean}) {
+  const workspaces:Array<{key:ViewKey;label:string;description:string;glyph:string}> = [
+    {key:"ai",label:"DataNest AI",description:"Governed project memory and AI collaboration.",glyph:"⌬"},
+    {key:"unifi",label:"UNIFI Planner",description:"Prepare complete, traceable Job Manifests.",glyph:"◇"},
+    {key:"scheduler",label:"TranScheduler",description:"Route work through capability-aware scheduling.",glyph:"⌁"},
+    {key:"stakeholder",label:"Stakeholder",description:"Capture and review stakeholder contributions.",glyph:"✦"},
+    {key:"sparks",label:"Sparks",description:"Develop early ideas into project inputs.",glyph:"✧"},
+    {key:"governance",label:"Governance",description:"Review controls, decisions, and accountability.",glyph:"◆"},
+    {key:"thinktank",label:"Think Tanks",description:"Coordinate structured collaborative research.",glyph:"◈"},
+    {key:"productlab",label:"Product Lab",description:"Review and test product surfaces before release.",glyph:"▣"},
+    {key:"transparency",label:"Transparency",description:"Inspect audit evidence, methodology, and findings.",glyph:"◎"}
+  ];
+
   return <>
     <section className="heroPanel">
-      <div><p className="eyebrow">PROJECT OPERATING ENVIRONMENT</p><h2>{project.name}</h2><p>{project.description}</p><div className="heroActions"><button className="primaryButton compact" disabled={!canOperate} onClick={()=>setView("unifi")}>{canOperate ? "Create UNIFI job" : "Viewer mode"}</button><button className="secondaryButton compact" onClick={()=>setView("stakeholder")}>Open Stakeholder</button><button className="secondaryButton compact" onClick={()=>setView("sparks")}>Open Sparks</button><button className="secondaryButton compact" onClick={()=>setView("governance")}>Open Governance</button><button className="secondaryButton compact" onClick={()=>setView("thinktank")}>Open Think Tanks</button><button className="secondaryButton compact" onClick={()=>setView("ai")}>Open DataNest AI</button><button className="secondaryButton compact" onClick={()=>setView("productlab")}>Open Product Lab</button><button className="secondaryButton compact" onClick={()=>setView("scheduler")}>Open TranScheduler</button><button className="secondaryButton compact" onClick={()=>setView("transparency")}>Open Transparency</button></div></div>
-      <div className="stackDiagram"><div>GitHub <b>DataNest</b></div><span>↓</span><div>App Runtime <b>Provider-agnostic</b></div><span>↓</span><div>Supabase <b>Control Plane</b></div></div>
+      <div className="heroCopy">
+        <p className="eyebrow">PROJECT COMMAND CENTER</p>
+        <h2>{project.name}</h2>
+        <p>{project.description}</p>
+        <div className="heroActions">
+          <button className="primaryButton compact" disabled={!canOperate} onClick={()=>setView("unifi")}>{canOperate ? "Create UNIFI job" : "Viewer mode"}</button>
+          <button className="secondaryButton compact" onClick={()=>setView("ai")}>Open DataNest AI</button>
+          <button className="secondaryButton compact" onClick={()=>setView("scheduler")}>Open TranScheduler</button>
+        </div>
+      </div>
+      <div className="stackDiagram" aria-label="DataNest platform stack">
+        <div>GitHub <b>DataNest</b></div><span>↓</span>
+        <div>App Runtime <b>Provider-agnostic</b></div><span>↓</span>
+        <div>Supabase <b>Control Plane</b></div>
+      </div>
     </section>
-    <section className="metricGrid">
+
+    <section className="metricGrid" aria-label="Project work summary">
       <Metric label="Total jobs" value={counts.total} note="Project work units"/>
       <Metric label="Active work" value={counts.active} note="Not in a final state"/>
       <Metric label="Running" value={counts.running} note="Executing now"/>
       <Metric label="Blocked" value={counts.blocked} note="Needs dependency or action"/>
     </section>
-    <section className="panel"><div className="panelHead"><div><p className="eyebrow">TOOLS</p><h3>Operating tools</h3></div></div><div className="toolGrid">
-      {tools.map(tool=><article className="toolCard" key={tool.id}><div className="toolIcon">{tool.tool_key==="unifi"?"◇":"⌁"}</div><div><div className="rowBetween"><h4>{tool.name}</h4><Badge value={tool.enabled?"ACTIVE":"DISABLED"}/></div><p>{tool.role}</p></div></article>)}
-    </div></section>
-    <section className="panel"><div className="panelHead"><div><p className="eyebrow">RECENT WORK</p><h3>Latest jobs</h3></div><button className="textButton" onClick={()=>setView("scheduler")}>Open queue</button></div><JobTable jobs={jobs}/></section>
+
+    <section className="workspaceSection" aria-labelledby="workspace-heading">
+      <div className="workspaceSectionHead">
+        <div><p className="eyebrow">WORKSPACES</p><h3 id="workspace-heading">Go where the work happens</h3></div>
+        <p>Open a focused workspace without scanning the full navigation.</p>
+      </div>
+      <div className="workspaceGrid">
+        {workspaces.map(item=><button className="workspaceCard" type="button" key={item.key} onClick={()=>setView(item.key)}>
+          <span className="workspaceGlyph" aria-hidden="true">{item.glyph}</span>
+          <span><b>{item.label}</b><small>{item.description}</small></span>
+          <span className="workspaceArrow" aria-hidden="true">→</span>
+        </button>)}
+      </div>
+    </section>
+
+    <section className="panel">
+      <div className="panelHead"><div><p className="eyebrow">TOOLS</p><h3>Operating tools</h3></div></div>
+      <div className="toolGrid">
+        {tools.map(tool=><article className="toolCard" key={tool.id}><div className="toolIcon">{tool.tool_key==="unifi"?"◇":"⌁"}</div><div><div className="rowBetween"><h4>{tool.name}</h4><Badge value={tool.enabled?"ACTIVE":"DISABLED"}/></div><p>{tool.role}</p></div></article>)}
+      </div>
+    </section>
+
+    <section className="panel">
+      <div className="panelHead"><div><p className="eyebrow">RECENT WORK</p><h3>Latest jobs</h3></div><button className="textButton" onClick={()=>setView("scheduler")}>Open queue</button></div>
+      <JobTable jobs={jobs}/>
+    </section>
   </>;
 }
 
