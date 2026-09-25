@@ -352,7 +352,6 @@ declare
   caller uuid := auth.uid();
   channel_row public.think_tank_channels%rowtype;
   new_id uuid;
-  existing_message public.think_tank_messages%rowtype;
 begin
   if caller is null then
     raise insufficient_privilege using message='Authentication is required.';
@@ -456,6 +455,7 @@ declare
   caller uuid := auth.uid();
   ctx record;
   usage public.ai_usage_requests%rowtype;
+  existing_message public.think_tank_messages%rowtype;
   new_id uuid;
 begin
   if caller is null then
@@ -1033,7 +1033,7 @@ begin
       reviewed_at=now(),
       review_notes=nullif(btrim(coalesce(target_notes,'')),''),
       promoted_memory_id=case when target_status='approved' then memory_id else promoted_memory_id end,
-      contribution_id=case when target_status='approved' then new_contribution_id else public.think_tank_learning_candidates.contribution_id end
+      contribution_id=case when target_status='approved' then new_contribution_id else candidate.contribution_id end
   where id=candidate.id;
 
   insert into public.events(project_id,job_id,event_type,actor,payload)
