@@ -78,7 +78,7 @@ export function candidateFromRepeatedEvidence(
 export function bestCandidateByEvidenceOverlap(
   links:Array<{candidateId:string;eventId:string}>,
   evidenceIds:string[],
-  minimumOverlap=2
+  minimumOverlap=Math.max(2,Math.ceil(evidenceIds.length*0.5))
 ):string|null {
   const evidence=new Set(evidenceIds);
   const counts=new Map<string,number>();
