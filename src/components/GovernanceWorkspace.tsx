@@ -251,17 +251,11 @@ export default function GovernanceWorkspace({
     <section className="heroPanel">
       <div>
         <p className="eyebrow">RESONANCE SOVEREIGN GOVERNANCE</p>
-        <h2>Transparent project governance with immutable decision history</h2>
+        <h2>Project governance</h2>
         <p>DataNest separates project governance from legal ownership, contracts, royalties, financial authority and project roles. Protocol text becomes adopted only after a governed proposal receives independent support and is ratified.</p>
         <div className="heroActions"><button className="secondaryButton compact" onClick={()=>void load()}>Refresh</button></div>
       </div>
-      <div className="stackDiagram">
-        <div>Protocol <b>Draft</b></div><span>↓</span>
-        <div>Proposal <b>Open</b></div><span>↓</span>
-        <div>Members <b>Vote</b></div><span>↓</span>
-        <div>Decision <b>Recorded</b></div><span>↓</span>
-        <div>Protocol <b>Ratified</b></div>
-      </div>
+
     </section>
 
     <section className="metricGrid">
@@ -271,10 +265,10 @@ export default function GovernanceWorkspace({
       <article className="metricCard"><span>Open disputes</span><strong>{openDisputes.length}</strong><small>Source history preserved</small></article>
     </section>
 
-    <ProjectMembersPanel projectId={projectId} setNotice={setNotice} setError={setError}/>
+    <details className="panel quietDisclosure"><summary>Project members and invitations</summary><ProjectMembersPanel projectId={projectId} setNotice={setNotice} setError={setError}/></details>
 
-    <section className="panel">
-      <div className="panelHead"><div><p className="eyebrow">GOVERNANCE BOUNDARY</p><h3>What governance can and cannot do</h3></div><span className="countPill">{workspace.member_role?workspace.member_role.toUpperCase():"PROJECT ACCESS"}</span></div>
+    <details className="panel quietDisclosure">
+      <summary>Governance rules and boundaries</summary>
       <dl className="settingsList">
         <div><dt>Formal vote basis</dt><dd>{String(workspace.boundaries.formal_vote_basis||"one_active_project_member_one_vote").replaceAll("_"," ")}</dd></div>
         <div><dt>Sparks or reputation weight votes</dt><dd>{boolText(workspace.boundaries.sparks_weight_votes||workspace.boundaries.reputation_weight_votes)}</dd></div>
@@ -283,7 +277,7 @@ export default function GovernanceWorkspace({
         <div><dt>Grant project roles</dt><dd>{boolText(workspace.boundaries.governance_grants_project_roles)}</dd></div>
         <div><dt>Rewrite disputed source records</dt><dd>{boolText(workspace.boundaries.dispute_resolution_mutates_source_records)}</dd></div>
       </dl>
-    </section>
+    </details>
 
     <section className="panel">
       <div className="panelHead"><div><p className="eyebrow">RATIFIED PROTOCOL</p><h3>{workspace.ratified_protocol?.title||"No adopted protocol yet"}</h3></div>{workspace.ratified_protocol&&<span className="countPill">v{workspace.ratified_protocol.version}</span>}</div>
@@ -296,8 +290,8 @@ export default function GovernanceWorkspace({
       </article>:<div className="emptyState"><div>◇</div><h3>No human-ratified protocol</h3><p>DataNest has not invented mission, vision or governance text on your behalf. Create a draft, open a protocol-change proposal, obtain independent support, close the vote, then ratify it.</p></div>}
     </section>
 
-    {canManage&&<section className="panel">
-      <div className="panelHead"><div><p className="eyebrow">PROTOCOL AUTHORING</p><h3>Create an immutable protocol draft</h3></div><span className="countPill">Owner / admin</span></div>
+    {canManage&&<details className="panel quietDisclosure">
+      <summary>Create a protocol draft</summary>
       <form className="settingsGrid" onSubmit={createProtocolDraft}>
         <label>Title<input value={protocolTitle} onChange={e=>setProtocolTitle(e.target.value)} placeholder="Resonance Sovereign Governance Protocol"/></label>
         <label>Mission<input value={protocolMission} onChange={e=>setProtocolMission(e.target.value)} placeholder="Optional mission statement"/></label>
@@ -306,20 +300,20 @@ export default function GovernanceWorkspace({
         <label>Principles · one per line<textarea rows={5} value={protocolPrinciples} onChange={e=>setProtocolPrinciples(e.target.value)} placeholder={"Traceable decisions\nIndependent review\nHuman accountability"}/></label>
         <button className="primaryButton" disabled={busy||!protocolTitle.trim()||!protocolBody.trim()}>Create protocol draft</button>
       </form>
-    </section>}
+    </details>}
 
-    <section className="panel">
-      <div className="panelHead"><div><p className="eyebrow">DRAFT PROTOCOLS</p><h3>Awaiting governance</h3></div><span className="countPill">{workspace.draft_protocols.length}</span></div>
+    <details className="panel quietDisclosure">
+      <summary>Protocol drafts</summary>
       {workspace.draft_protocols.length?<div className="dataTable">
         <div className="dataRow headerRow"><span>Version</span><span>Title</span><span>Hash</span><span>Proposed</span><span>State</span></div>
         {workspace.draft_protocols.map(item=><div className="dataRow" key={item.id}>
           <b>v{item.version}</b><span>{item.title}</span><span>{item.content_hash.slice(0,12)}</span><span>{date(item.proposed_at)}</span><span>draft</span>
         </div>)}
       </div>:<p className="muted">No protocol drafts are awaiting governance.</p>}
-    </section>
+    </details>
 
-    <section className="panel">
-      <div className="panelHead"><div><p className="eyebrow">PROPOSALS</p><h3>Open a governance proposal</h3></div><span className="countPill">{workspace.can_vote?"FORMAL MEMBER":"READ / DISPUTE ACCESS"}</span></div>
+    <details className="panel quietDisclosure">
+      <summary>Create a proposal</summary>
       {workspace.can_vote?<form className="settingsGrid" onSubmit={createProposal}>
         <label>Type<select value={proposalType} onChange={e=>setProposalType(e.target.value)}>
           <option value="operational_rule">Operational rule</option>
@@ -338,7 +332,7 @@ export default function GovernanceWorkspace({
         <label>Body<textarea rows={4} value={proposalBody} onChange={e=>setProposalBody(e.target.value)} placeholder="Proposal details and intended project effect"/></label>
         <button className="primaryButton" disabled={busy||!proposalTitle.trim()||!proposalSummary.trim()||!proposalBody.trim()||(proposalType==="protocol_change"&&!proposalProtocolId)}>Open proposal</button>
       </form>:<p className="muted">Formal voting and proposal creation require active project membership. Project-access stakeholders may still review governance records and file disputes.</p>}
-    </section>
+    </details>
 
     <section className="panel">
       <div className="panelHead"><div><p className="eyebrow">PROPOSAL REGISTER</p><h3>Votes and decisions</h3></div><span className="countPill">{workspace.proposals.length}</span></div>

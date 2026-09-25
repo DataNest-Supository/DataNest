@@ -579,8 +579,8 @@ export default function DataNestApp({session}:{session:Session}) {
       </div>
       <div className="projectPill"><span className="liveDot"/><div><small>PROJECT</small><strong>{project?.name||"Resonance DataNest"}</strong></div></div>
       <nav className="navStack" aria-label="Project workspaces">
-        {groups.map(group=><div className="navGroup" key={group}>
-          <p>{group}</p>
+        {groups.map(group=><details className="navGroup navDisclosure" key={group+String(nav.some(item=>item.group===group&&item.key===view))} open={group==="Project"||nav.some(item=>item.group===group&&item.key===view)}>
+          <summary>{group}</summary>
           {nav.filter(item=>item.group===group).map(item=><button
             key={item.key}
             className={view===item.key?"active":""}
@@ -590,7 +590,7 @@ export default function DataNestApp({session}:{session:Session}) {
           >
             <span aria-hidden="true">{item.glyph}</span>{item.label}
           </button>)}
-        </div>)}
+        </details>)}
       </nav>
       <div className="sidebarFooter">
         <div className="userMini"><div className="avatar">{(session.user.email||"U").slice(0,1).toUpperCase()}</div><div><b>{session.user.email?.split("@")[0]||"Authorized user"}</b><small>{membership ? membership.role.toUpperCase()+" · Authenticated" : "Authenticated"}</small></div></div>
@@ -684,7 +684,15 @@ export default function DataNestApp({session}:{session:Session}) {
             className={"secondaryButton compact aiSidebarToggle "+(aiSidebarOpen?"active":"")}
             onClick={()=>setAiSidebarOpen(value=>!value)}
             aria-pressed={aiSidebarOpen}
-          >{aiSidebarOpen?"Hide AI Sidebar":"AI Sidebar"}</button>
+          >{aiSidebarOpen?"Hide AI":"AI assistant"}</button>
+          <details className="workspaceOptions" onKeyDown={event=>{
+            if(event.key==="Escape"){
+              event.currentTarget.open=false;
+              event.currentTarget.querySelector("summary")?.focus();
+            }
+          }}>
+            <summary className="secondaryButton compact">Options</summary>
+            <div className="workspaceOptionsMenu">
           <button
             className="secondaryButton compact releaseAction"
             type="button"
@@ -697,6 +705,8 @@ export default function DataNestApp({session}:{session:Session}) {
             <span className={"statusDot "+health.state}/>
             <span>{healthLabel}<small>{health.checkedAt ? " · "+formatDate(health.checkedAt) : ""}</small></span>
           </div>
+            </div>
+          </details>
         </div>
       </header>
 
@@ -707,7 +717,13 @@ export default function DataNestApp({session}:{session:Session}) {
         </div>
         {(loadingCore||loadingView)&&<div className="loadingBar" aria-label="Loading DataNest data"><span/></div>}
 
-        {!loadingCore&&project&&view==="overview"&&<Overview project={project} tools={tools} jobs={recentJobs} counts={summary} setView={setView} canOperate={canOperate}/>}\n        {!loadingCore&&project&&view==="stakeholder"&&<StakeholderWorkspace projectId={project.id} currentUserId={session.user.id} canReview={canManageAi}/>}\n        {!loadingCore&&project&&view==="sparks"&&<SparksWorkspace projectId={project.id} currentUserId={session.user.id} canOperate={canOperate} canManage={canManageAi} setNotice={setNotice} setError={setError}/>}\n        {!loadingCore&&project&&view==="governance"&&<GovernanceWorkspace projectId={project.id} currentUserId={session.user.id} canManage={canManageAi} setNotice={setNotice} setError={setError}/>}\n        {!loadingCore&&project&&view==="thinktank"&&<ThinkTankWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} canReview={canManageAi} setNotice={setNotice} setError={setError}/>}\n        {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError} onActiveSessionChange={setActiveDataNestAiSession}/>}\n        {!loadingCore&&project&&view==="productlab"&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate}/>}
+        {!loadingCore&&project&&view==="overview"&&<Overview project={project} tools={tools} jobs={recentJobs} counts={summary} setView={setView} canOperate={canOperate}/>}
+        {!loadingCore&&project&&view==="stakeholder"&&<StakeholderWorkspace projectId={project.id} currentUserId={session.user.id} canReview={canManageAi}/>}
+        {!loadingCore&&project&&view==="sparks"&&<SparksWorkspace projectId={project.id} currentUserId={session.user.id} canOperate={canOperate} canManage={canManageAi} setNotice={setNotice} setError={setError}/>}
+        {!loadingCore&&project&&view==="governance"&&<GovernanceWorkspace projectId={project.id} currentUserId={session.user.id} canManage={canManageAi} setNotice={setNotice} setError={setError}/>}
+        {!loadingCore&&project&&view==="thinktank"&&<ThinkTankWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} canReview={canManageAi} setNotice={setNotice} setError={setError}/>}
+        {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError} onActiveSessionChange={setActiveDataNestAiSession}/>}
+        {!loadingCore&&project&&view==="productlab"&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate}/>}
         {!loadingCore&&project&&view==="unifi"&&<UnifiPlanner project={project} jobs={jobs} capabilities={capabilities} reload={async()=>{await loadJobsPage(jobPage);await loadSummary(project.id);await loadRecentJobs(project.id);}} setNotice={setNotice} setError={setError} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage}/>}
         {!loadingCore&&view==="scheduler"&&<Scheduler jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage}/>}
         {!loadingCore&&view==="runs"&&<Runs runs={runs} jobLookup={jobLookup} page={runPage} total={runCount} onPage={setRunPage}/>}
@@ -754,11 +770,7 @@ function Overview({project,tools,jobs,counts,setView,canOperate}:{project:Projec
           <button className="secondaryButton compact" onClick={()=>setView("scheduler")}>Open TranScheduler</button>
         </div>
       </div>
-      <div className="stackDiagram" aria-label="DataNest platform stack">
-        <div>GitHub <b>DataNest</b></div><span>↓</span>
-        <div>App Runtime <b>Provider-agnostic</b></div><span>↓</span>
-        <div>Supabase <b>Control Plane</b></div>
-      </div>
+
     </section>
 
     <section className="metricGrid" aria-label="Project work summary">
@@ -768,11 +780,8 @@ function Overview({project,tools,jobs,counts,setView,canOperate}:{project:Projec
       <Metric label="Blocked" value={counts.blocked} note="Needs dependency or action"/>
     </section>
 
-    <section className="workspaceSection" aria-labelledby="workspace-heading">
-      <div className="workspaceSectionHead">
-        <div><p className="eyebrow">WORKSPACES</p><h3 id="workspace-heading">Go where the work happens</h3></div>
-        <p>Open a focused workspace without scanning the full navigation.</p>
-      </div>
+    <details className="workspaceSection quietDisclosure" aria-labelledby="workspace-heading">
+      <summary id="workspace-heading">Browse all workspaces</summary>
       <div className="workspaceGrid">
         {workspaces.map(item=><button className="workspaceCard" type="button" key={item.key} onClick={()=>setView(item.key)}>
           <span className="workspaceGlyph" aria-hidden="true">{item.glyph}</span>
@@ -780,14 +789,14 @@ function Overview({project,tools,jobs,counts,setView,canOperate}:{project:Projec
           <span className="workspaceArrow" aria-hidden="true">→</span>
         </button>)}
       </div>
-    </section>
+    </details>
 
-    <section className="panel">
-      <div className="panelHead"><div><p className="eyebrow">TOOLS</p><h3>Operating tools</h3></div></div>
+    <details className="panel quietDisclosure">
+      <summary>Operating tools</summary>
       <div className="toolGrid">
         {tools.map(tool=><article className="toolCard" key={tool.id}><div className="toolIcon">{tool.tool_key==="unifi"?"◇":"⌁"}</div><div><div className="rowBetween"><h4>{tool.name}</h4><Badge value={tool.enabled?"ACTIVE":"DISABLED"}/></div><p>{tool.role}</p></div></article>)}
       </div>
-    </section>
+    </details>
 
     <section className="panel">
       <div className="panelHead"><div><p className="eyebrow">RECENT WORK</p><h3>Latest jobs</h3></div><button className="textButton" onClick={()=>setView("scheduler")}>Open queue</button></div>

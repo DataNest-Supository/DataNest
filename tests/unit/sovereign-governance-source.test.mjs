@@ -19,7 +19,7 @@ test("Sovereign Governance is exposed as a project workspace",()=>{
   assert.match(app,/label:"Governance"/);
   assert.match(app,/view==="governance"/);
   assert.match(workspace,/RESONANCE SOVEREIGN GOVERNANCE/);
-  assert.match(workspace,/Transparent project governance with immutable decision history/);
+  assert.match(workspace,/<h2>Project governance<\/h2>/);
 });
 
 test("migration does not silently pre-ratify a human governance protocol",()=>{

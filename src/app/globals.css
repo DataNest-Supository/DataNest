@@ -542,3 +542,37 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
   .schedulerRow .rowActions{display:flex;flex-wrap:wrap;gap:7px}
   .schedulerRow .rowActions button{min-height:34px;padding:7px 10px}
 }
+
+/* Focused workspace layout: reveal secondary controls on demand. */
+body{background:var(--bg)}
+.heroPanel{padding:24px;background:var(--panel);box-shadow:none;border-color:var(--line)}
+.heroPanel h2{font-size:clamp(24px,3vw,32px);line-height:1.2}
+.heroPanel p{font-size:13px;max-width:70ch}
+.metricCard,.panel,.workspaceCard{box-shadow:none;backdrop-filter:none}
+.metricCard strong{font-size:27px}
+.navDisclosure{margin-bottom:8px}
+.navDisclosure>summary{padding:11px 10px;color:var(--muted);font-size:11px;font-weight:700;cursor:pointer}
+.navDisclosure[open]>summary{margin-bottom:3px}
+.navDisclosure>summary::marker,.quietDisclosure>summary::marker{color:var(--muted)}
+.quietDisclosure{margin:16px 0}
+.quietDisclosure>summary{cursor:pointer;font-size:14px;font-weight:650;color:var(--text);line-height:1.6}
+.quietDisclosure[open]>summary{margin-bottom:18px}
+.quietDisclosure>summary:focus-visible,.navDisclosure>summary:focus-visible,.workspaceOptions>summary:focus-visible{outline:2px solid var(--cyan);outline-offset:4px;border-radius:4px}
+.workspaceSection.quietDisclosure{border-block:1px solid var(--line);padding:18px 0}
+.workspaceOptions{position:relative}
+.workspaceOptions>summary{cursor:pointer;white-space:nowrap;list-style:none;min-height:36px;display:flex;align-items:center;gap:8px}
+.workspaceOptions>summary::after{content:"⌄";color:var(--muted)}
+.workspaceOptions>summary::-webkit-details-marker{display:none}
+.workspaceOptionsMenu{position:absolute;right:0;top:calc(100% + 10px);width:min(290px,calc(100vw - 28px));padding:12px;display:grid;gap:10px;border:1px solid var(--line-strong);border-radius:12px;background:#0c1b2e;box-shadow:0 16px 40px rgba(0,0,0,.3)}
+.workspaceOptionsMenu .systemStatus{border:0;padding:8px 4px;line-height:1.5}
+.workspaceOptionsMenu .systemStatus small{display:block}
+.topbarContext{max-width:55ch}
+@media(max-width:720px){
+  .topbar{gap:10px;flex-wrap:wrap}
+  .topbarTitle{min-width:140px}
+  .topActions{gap:6px}
+  .workspaceOptionsMenu .releaseAction,.workspaceOptionsMenu .refreshAction{display:block}
+  .workspaceOptionsMenu .systemStatus{display:flex}
+  .heroPanel{padding:20px}
+  .quietDisclosure{padding:18px}
+}
