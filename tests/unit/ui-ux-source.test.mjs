@@ -133,4 +133,5 @@ test("quick switch supports arrow-key result selection before Enter", () => {
   assert.match(appSource, /event\.key==="ArrowUp"/);
   assert.match(appSource, /commandItems\[commandActiveIndex\]/);
   assert.match(appSource, /aria-selected=\{commandActiveIndex===index\}/);
+  assert.match(cssSource, /\.commandResult\.selected/);
 });
