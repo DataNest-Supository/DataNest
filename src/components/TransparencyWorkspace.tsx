@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 const auditDomains = [
   "UI / UX / information architecture",
   "Accessibility and interaction quality",
@@ -31,12 +33,42 @@ const invariantHighlights = [
   "Normal user UI must not silently reintroduce Capacity or Operations Capabilities."
 ];
 
-type TransparencyWorkspaceProps = {
-  releaseSha: string;
-};
+const auditPartUrls = Array.from({length:8},(_,index)=>`./transparency/audits/external-full-system-audit-brief/part-${String(index+1).padStart(2,"0")}.txt`);
 
-export default function TransparencyWorkspace({releaseSha}:TransparencyWorkspaceProps){
-  const docxHref="./transparency/audits/Resonance_DataNest_External_Full_System_Audit_Brief.docx";
+export default function TransparencyWorkspace(){
+  const [fullBrief,setFullBrief]=useState("");
+  const [briefLoading,setBriefLoading]=useState(false);
+  const [briefError,setBriefError]=useState("");
+
+  async function loadFullBrief(){
+    if(fullBrief||briefLoading)return;
+    setBriefLoading(true);
+    setBriefError("");
+    try{
+      const responses=await Promise.all(auditPartUrls.map(url=>fetch(url,{cache:"no-store"})));
+      const failed=responses.find(response=>!response.ok);
+      if(failed)throw new Error(`Unable to load audit transcript (${failed.status}).`);
+      const parts=await Promise.all(responses.map(response=>response.text()));
+      setFullBrief(parts.join(""));
+    }catch(error){
+      setBriefError(error instanceof Error?error.message:"Unable to load the accessible audit transcript.");
+    }finally{
+      setBriefLoading(false);
+    }
+  }
+
+  function downloadAccessibleBrief(){
+    if(!fullBrief)return;
+    const blob=new Blob([fullBrief],{type:"text/plain;charset=utf-8"});
+    const href=URL.createObjectURL(blob);
+    const anchor=document.createElement("a");
+    anchor.href=href;
+    anchor.download="Resonance_DataNest_External_Full_System_Audit_Brief_Accessible.txt";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(href);
+  }
 
   return <div className="transparencyWorkspace">
     <section className="heroPanel transparencyHero" aria-labelledby="transparency-title">
@@ -48,9 +80,9 @@ export default function TransparencyWorkspace({releaseSha}:TransparencyWorkspace
           Audit documents are informational evidence: they do not grant project roles, financial authority, ownership or governance power.
         </p>
         <div className="heroActions">
-          <a className="primaryButton compact linkButton" href={docxHref} download>
-            Download audit brief (DOCX)
-          </a>
+          <button className="primaryButton compact" type="button" onClick={()=>void loadFullBrief()} disabled={briefLoading}>
+            {briefLoading?"Loading brief…":"Load full accessible brief"}
+          </button>
           <a className="secondaryButton compact linkButton" href="#audit-accessible-summary">
             Read accessible summary
           </a>
@@ -94,24 +126,50 @@ export default function TransparencyWorkspace({releaseSha}:TransparencyWorkspace
           <div><dt>Published</dt><dd>25 Sep 2026</dd></div>
           <div><dt>Baseline source commit</dt><dd><code>ac93d51828707d398dfa9c5a471d8a6ed4c9059f</code></dd></div>
           <div><dt>Baseline DB release</dt><dd><code>datanest-project-member-invitations-v1</code></dd></div>
-          <div><dt>Current UI commit</dt><dd><code>{releaseSha}</code></dd></div>
+          <div><dt>Publication form</dt><dd>Accessible HTML summary + full source-controlled text transcription</dd></div>
           <div><dt>Document type</dt><dd>Audit brief / audit return template</dd></div>
           <div><dt>Audit result</dt><dd>Not yet supplied</dd></div>
         </dl>
         <div className="heroActions">
-          <a className="secondaryButton compact linkButton" href={docxHref} download>
-            Download original DOCX
-          </a>
+          <button className="secondaryButton compact" type="button" onClick={()=>void loadFullBrief()} disabled={briefLoading}>
+            {fullBrief?"Accessible brief loaded":briefLoading?"Loading…":"Open full accessible transcript"}
+          </button>
+          {fullBrief&&<button className="secondaryButton compact" type="button" onClick={downloadAccessibleBrief}>Download accessible text</button>}
           <a
             className="textButton linkButton"
-            href="https://github.com/DataNest-Supository/DataNest"
+            href="https://github.com/DataNest-Supository/DataNest/tree/main/public/transparency/audits/external-full-system-audit-brief"
             target="_blank"
             rel="noreferrer"
           >
-            View source repository
+            View source-controlled transcript
           </a>
         </div>
       </article>
+    </section>
+
+    <section className="panel" id="full-audit-brief" aria-labelledby="full-audit-brief-heading">
+      <div className="panelHead">
+        <div><p className="eyebrow">FULL ACCESSIBLE DOCUMENT</p><h3 id="full-audit-brief-heading">External Full-System Audit Brief · complete transcription</h3></div>
+        <span className="countPill">VERSION 1.0</span>
+      </div>
+      <p className="muted">
+        The formatted source artifact was authored as DOCX. For accessibility and transparency, DataNest also publishes the complete text transcription as static, source-controlled content.
+        No audit result is implied by publication of the methodology.
+      </p>
+      {!fullBrief&&<div className="transparencyLoadBox">
+        <button className="primaryButton compact" type="button" onClick={()=>void loadFullBrief()} disabled={briefLoading}>
+          {briefLoading?"Loading complete transcription…":"Load complete transcription"}
+        </button>
+        <span>Loads the eight static audit-text parts from this DataNest release.</span>
+      </div>}
+      {briefError&&<div className="notice errorNotice" role="alert">{briefError}</div>}
+      {fullBrief&&<>
+        <div className="transparencyTranscriptActions">
+          <button className="secondaryButton compact" type="button" onClick={downloadAccessibleBrief}>Download as accessible text</button>
+          <span>{fullBrief.length.toLocaleString()+" characters"}</span>
+        </div>
+        <pre className="transparencyTranscript" tabIndex={0} aria-label="Complete accessible transcription of the External Full-System Audit Brief">{fullBrief}</pre>
+      </>}
     </section>
 
     <section className="panel" id="audit-accessible-summary" aria-labelledby="accessible-summary-heading">
