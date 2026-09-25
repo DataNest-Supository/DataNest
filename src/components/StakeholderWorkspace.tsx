@@ -306,7 +306,7 @@ export default function StakeholderWorkspace({
 
     <section className="panel">
       <div className="panelHead"><div><p className="eyebrow">N0NYMOUS SQUAD</p><h3>Rolling top contributors</h3></div><span className="countPill">{intelligence?.squad?.length||0}/10</span></div>
-      {squadMembership.member_code&&<div className="notice goodNotice">You are currently {String(squadMembership.member_code)} at rank #{String(squadMembership.rank)}.</div>}
+      {Boolean(squadMembership.member_code)&&<div className="notice goodNotice">You are currently {String(squadMembership.member_code)} at rank #{String(squadMembership.rank)}.</div>}
       {intelligence?.squad?.length?<div className="dataTable">
         <div className="dataRow headerRow"><span>Member</span><span>Rank</span><span>Reputation</span><span>Trust</span><span>Authority</span></div>
         {intelligence.squad.map(member=><div className="dataRow" key={member.member_code}>
