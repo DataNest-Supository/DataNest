@@ -95,3 +95,15 @@ Transparency is a read-only continuity surface that publishes audit methodology,
 - Audit artifacts are informational evidence only. Publication does not grant governance, financial, ownership or role authority.
 - Future external results should be linked to stable AUD-xxx finding IDs and remediation evidence such as Job Manifests, PRs, migrations, tests, releases and post-release verification.
 - Transparency artifacts must never publish passwords, service-role keys, reusable cookies, PATs, MFA recovery material or protected personal data.
+
+
+### External audit returns and remediation evidence
+A published audit return is retained separately from the audit methodology and from DataNest's own validation state.
+
+- The 25 Sep 2026 external audit return is preserved unchanged at `public/transparency/audits/external-full-system-audit-return-2026-09-25/report.md`.
+- Stable `AUD-001` through `AUD-014` identifiers are indexed in `findings.json`; the auditor's proposed optimization backlog is indexed separately in `remediation-backlog.json`.
+- Structured indexes are derived accessibility/workflow views. They never replace or rewrite the source artifact.
+- External severity/status is reported evidence, not automatic DataNest confirmation. Every imported finding begins with `pending_datanest_validation`.
+- The external auditor explicitly limited the audit to public/read-only and commit-pinned source evidence. It is not a full production certification and has no certification, governance, financial, ownership or role effect.
+- A finding may be marked validated, remediated or closed only when current-release reproduction and governed implementation evidence are attached.
+- Remediation evidence should connect the finding to its Job Manifest, branch/PR, acceptance test, migration/function change where relevant, release, deployment verification and closure rationale.
