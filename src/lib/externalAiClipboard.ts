@@ -2,13 +2,17 @@ export type ExternalAiClipboardCandidateInput = {
   clipboardText:string;
   currentResponse:string;
   blockedTexts?:string[];
+  allowReplace?:boolean;
 };
 
 export function selectExternalAiClipboardCandidate({
   clipboardText,
   currentResponse,
-  blockedTexts=[]
+  blockedTexts=[],
+  allowReplace=false
 }:ExternalAiClipboardCandidateInput):string|null{
+  // Focus/visibility capture must never replace a response under review.
+  if(!allowReplace&&currentResponse.trim())return null;
   const candidate=clipboardText.trim();
   if(!candidate)return null;
   if(candidate===currentResponse.trim())return null;
