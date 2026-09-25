@@ -66,6 +66,28 @@ test("mobile TranScheduler avoids horizontal table scrolling",async({page})=>{
 });
 
 
+test("mobile TranScheduler status filter uses a compact select",async({page})=>{
+  await signIn(page);
+  await page.setViewportSize({width:390,height:844});
+
+  await page.getByRole("button",{name:"Open menu"}).click();
+  await page.getByRole("button",{name:"TranScheduler",exact:true}).click();
+
+  const statusFilter=page.getByLabel("Status filter");
+  await expect(statusFilter).toBeVisible();
+  await expect(page.locator(".schedulerFilterDesktop")).toBeHidden();
+
+  await statusFilter.selectOption("RUNNING");
+  await expect(statusFilter).toHaveValue("RUNNING");
+
+  const rows=page.locator(".schedulerRow:not(.headerRow)");
+  const count=await rows.count();
+  for(let index=0;index<count;index++){
+    await expect(rows.nth(index).locator('[data-label="Status"]')).toContainText("RUNNING");
+  }
+});
+
+
 test("human input is traced and remains uncertified",async({page})=>{
   await signIn(page);
   await page.getByRole("button",{name:"DataNest AI",exact:true}).click();
