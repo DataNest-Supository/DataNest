@@ -75,3 +75,15 @@ test("mobile operational tables become labeled cards without forced horizontal w
     "mobile operational rows should be self-contained labeled cards rather than horizontal tables"
   );
 });
+
+
+test("mobile scheduler uses a compact status select while desktop keeps filter chips", () => {
+  assert.match(appSource, /className="schedulerFilterMobile"/);
+  assert.match(appSource, /aria-label="Status filter"/);
+  assert.match(appSource, /className="filterBar schedulerFilterDesktop"/);
+  assert.match(
+    cssSource,
+    /@media\(max-width:720px\)\{[\s\S]*?\.schedulerFilterDesktop\{display:none\}[\s\S]*?\.schedulerFilterMobile\{display:grid/,
+    "mobile should replace the chip grid with a compact select"
+  );
+});
