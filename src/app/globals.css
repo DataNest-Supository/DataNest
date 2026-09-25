@@ -352,3 +352,43 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
   .datanestAiHero{display:grid}
   .datanestAiPrimaryGrid{grid-template-columns:1fr}
 }
+
+
+/* Transparency + accessible audit library */
+.transparencyWorkspace{display:grid;gap:16px}
+.transparencyHero{align-items:flex-start}
+.transparencyDocCard{padding:18px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.018);display:grid;gap:14px}
+.transparencyDocHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.transparencyDocHeader h3{margin:4px 0 0;font-size:17px}
+.transparencyMeta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.transparencyMeta>div{display:grid;grid-template-columns:minmax(150px,.7fr) minmax(0,1.3fr);gap:12px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.transparencyMeta>div:nth-last-child(-n+2){border-bottom:0}
+.transparencyMeta dt{color:var(--muted);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+.transparencyMeta dd{margin:0;color:#c8d9e6;font-size:11px;overflow-wrap:anywhere}
+.transparencyMeta code{font-size:10px}
+.transparencyDomainList{list-style:none;padding:0;margin:14px 0 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.transparencyDomainList li{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.012)}
+.transparencyDomainList li span{color:var(--cyan);font-size:10px;font-weight:900}
+.transparencyDomainList li b{font-size:11px;line-height:1.4}
+.transparencyChecklist{margin:12px 0 0;padding-left:20px;display:grid;gap:9px}
+.transparencyChecklist li{color:#b7cadb;font-size:11px;line-height:1.55}
+.transparencyLifecycle{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:12px}
+.transparencyLifecycle article{padding:13px;border:1px solid var(--line);border-radius:11px;background:rgba(255,255,255,.015)}
+.transparencyLifecycle b{font-size:10px}
+.transparencyLifecycle p{margin:7px 0 0;color:var(--muted);font-size:10px;line-height:1.55}
+.transparencyLoadBox{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;padding:13px;border:1px dashed var(--line);border-radius:11px}
+.transparencyLoadBox span{color:var(--muted);font-size:10px}
+.transparencyTranscriptActions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}
+.transparencyTranscriptActions span{color:var(--muted);font-size:10px}
+.transparencyTranscript{margin:10px 0 0;padding:18px;border:1px solid var(--line);border-radius:12px;background:#07101b;color:#d6e5f0;white-space:pre-wrap;overflow-wrap:anywhere;max-height:70vh;overflow:auto;font:11px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;tab-size:2}
+.transparencyTranscript:focus{outline:2px solid var(--cyan);outline-offset:2px}
+@media(max-width:1050px){
+  .transparencyLifecycle{grid-template-columns:1fr 1fr}
+}
+@media(max-width:760px){
+  .transparencyMeta,.transparencyDomainList,.transparencyLifecycle{grid-template-columns:1fr}
+  .transparencyMeta>div{grid-template-columns:1fr}
+  .transparencyMeta>div:nth-last-child(-n+2){border-bottom:1px solid var(--line)}
+  .transparencyMeta>div:last-child{border-bottom:0}
+  .transparencyDocHeader,.transparencyTranscriptActions{align-items:flex-start;flex-direction:column}
+}
