@@ -41,6 +41,8 @@ const nav:Array<{key:ViewKey;label:string;group:string;glyph:string}> = [
   {key:"settings",label:"Settings",group:"System",glyph:"⚙"}
 ];
 
+const viewKeys = new Set<ViewKey>(nav.map(item=>item.key));
+
 const viewDescriptions:Record<ViewKey,string> = {
   overview:"Project command center and current work at a glance.",
   stakeholder:"Capture stakeholder input and review contribution context.",
@@ -122,6 +124,7 @@ function pageRange(page:number) {
 
 export default function DataNestApp({session}:{session:Session}) {
   const [view,setView]=useState<ViewKey>("overview");
+  const [viewReady,setViewReady]=useState(false);
   const [mobileOpen,setMobileOpen]=useState(false);
   const [aiSidebarOpen,setAiSidebarOpen]=useState(false);
   const [activeDataNestAiSession,setActiveDataNestAiSession]=useState<ActiveDataNestAiSession|null>(null);
@@ -337,6 +340,47 @@ export default function DataNestApp({session}:{session:Session}) {
 
   useEffect(()=>{ void loadCore(); },[loadCore]);
   useEffect(()=>{
+    const syncViewFromUrl=()=>{
+      const url=new URL(window.location.href);
+      const requested=url.searchParams.get("view");
+      const valid=requested&&viewKeys.has(requested as ViewKey);
+      const next=valid ? requested as ViewKey : "overview";
+
+      if(requested&&(!valid||requested==="overview")){
+        url.searchParams.delete("view");
+        window.history.replaceState(window.history.state,"",url.toString());
+      }
+
+      setView(next);
+      setViewReady(true);
+    };
+
+    syncViewFromUrl();
+    window.addEventListener("popstate",syncViewFromUrl);
+    return()=>window.removeEventListener("popstate",syncViewFromUrl);
+  },[]);
+  useEffect(()=>{
+    if(!viewReady)return;
+    const url=new URL(window.location.href);
+    const current=url.searchParams.get("view");
+    const next=view==="overview" ? null : view;
+    if(current===next)return;
+
+    if(next)url.searchParams.set("view",next);
+    else url.searchParams.delete("view");
+
+    window.history.pushState(window.history.state,"",url.toString());
+    window.scrollTo({top:0,left:0,behavior:"auto"});
+  },[view,viewReady]);
+  useEffect(()=>{
+    if(!mobileOpen)return;
+    const closeOnEscape=(event:KeyboardEvent)=>{
+      if(event.key==="Escape")setMobileOpen(false);
+    };
+    window.addEventListener("keydown",closeOnEscape);
+    return()=>window.removeEventListener("keydown",closeOnEscape);
+  },[mobileOpen]);
+  useEffect(()=>{
     const saved=window.localStorage.getItem("datanest.aiSidebar.open");
     if(saved==="true")setAiSidebarOpen(true);
     const open=()=>setAiSidebarOpen(true);
@@ -432,14 +476,14 @@ export default function DataNestApp({session}:{session:Session}) {
         : "Control plane offline";
 
   return <div className={"appFrame "+(aiSidebarOpen?"aiDockOpen":"")}>
-    <aside className={"sidebar "+(mobileOpen?"open":"")}>
+    <aside id="datanest-navigation" aria-label="DataNest navigation" className={"sidebar "+(mobileOpen?"open":"")}>
       <div className="sidebarTop">
         <div className="logo">RD</div>
         <div><p className="eyebrow">RESONANCE</p><b>DataNest</b></div>
-        <button className="closeMenu" onClick={()=>setMobileOpen(false)} aria-label="Close menu">×</button>
+        <button className="closeMenu" onClick={()=>setMobileOpen(false)} aria-label="Close menu" aria-controls="datanest-navigation">×</button>
       </div>
       <div className="projectPill"><span className="liveDot"/><div><small>PROJECT</small><strong>{project?.name||"Resonance DataNest"}</strong></div></div>
-      <nav className="navStack">
+      <nav className="navStack" aria-label="Project workspaces">
         {groups.map(group=><div className="navGroup" key={group}>
           <p>{group}</p>
           {nav.filter(item=>item.group===group).map(item=><button
@@ -480,7 +524,7 @@ export default function DataNestApp({session}:{session:Session}) {
 
     <main className="mainPane">
       <header className="topbar">
-        <button className="menuButton" onClick={()=>setMobileOpen(true)} aria-label="Open menu">☰</button>
+        <button className="menuButton" onClick={()=>setMobileOpen(true)} aria-label="Open menu" aria-controls="datanest-navigation" aria-expanded={mobileOpen}>☰</button>
         <div className="topbarTitle"><p className="eyebrow">RESONANCE DATANEST</p><h1>{currentLabel}</h1><p className="topbarContext">{currentDescription}</p></div>
         <div className="topActions">
           <button
