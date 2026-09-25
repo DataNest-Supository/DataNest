@@ -147,7 +147,7 @@ begin
     raise exception 'Dispute resolutions must preserve source records.';
   end if;
 
-  if vote_constraints not ilike '%vote_weight = 1%' then
+  if vote_constraints not ilike '%vote_weight = (1)::numeric%' then
     raise exception 'Governance voting must remain one active project member, one vote.';
   end if;
 end $$;
