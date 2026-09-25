@@ -92,7 +92,7 @@ export default function DataNestAiChatPanel({
           ?"DataNest AI responded and recorded this turn as UNCERTIFIED evidence. A repeated pattern was staged for governed learning review."
           :"DataNest AI responded and recorded this turn as traceable UNCERTIFIED evidence for "+jobCode+"."
       );
-      await onContextRefresh(nextSession||undefined);
+      await onContextRefresh(nextSession);
       setReturnedTurn(null);
     }catch(sendError){
       setError(sendError instanceof Error?sendError.message:"Unable to send DataNest AI input.");
