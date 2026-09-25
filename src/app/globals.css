@@ -197,7 +197,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 /* Stakeholder contribution + BYO AI */
 .stakeholderWorkspace,.productLab{display:grid;gap:16px}
 .stakeholderCols{align-items:start}
-.stakePoolControl{display:flex;align-items:end;gap:10px;margin:0 0 16px;max-width:420px}
+.stakePoolControl{display:flex;align-items:flex-end;gap:10px;margin:0 0 16px;max-width:420px}
 .stakePoolControl label{display:grid;gap:6px;flex:1;color:#b7cadb;font-size:11px;font-weight:700}
 .stakeTable{overflow-x:auto}
 .stakeRow{display:grid;grid-template-columns:minmax(210px,1.7fr) repeat(6,minmax(95px,.7fr));gap:12px;align-items:center;min-width:980px;min-height:58px;border-top:1px solid rgba(255,255,255,.055);font-size:11px}

@@ -176,3 +176,15 @@ test("handoff no longer describes imported output as R&D contribution", () => {
   );
   assert.doesNotMatch(source, /external-AI R&D input/);
 });
+
+test("automatic clipboard capture preserves a response being reviewed or edited", async () => {
+  const { selectExternalAiClipboardCandidate: select } = await import("../../src/lib/externalAiClipboard.ts");
+  assert.equal(select({ clipboardText: "Unrelated newly copied text", currentResponse: "Reviewed response with my edits" }), null);
+  assert.equal(select({ clipboardText: "New response", currentResponse: "   " }), "New response");
+});
+
+test("explicit paste may replace a draft but still rejects copied handoff instructions", async () => {
+  const { selectExternalAiClipboardCandidate: select } = await import("../../src/lib/externalAiClipboard.ts");
+  assert.equal(select({ clipboardText: "Replacement response", currentResponse: "Existing draft", allowReplace: true }), "Replacement response");
+  assert.equal(select({ clipboardText: "RESONANCE DATANEST — LIVE EXTERNAL AI HANDOFF\n[DATANEST TRACKING HEADER]", currentResponse: "Existing draft", allowReplace: true }), null);
+});

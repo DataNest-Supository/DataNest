@@ -191,7 +191,7 @@ export default function AuthGate() {
         <div className="brandMark">RD</div>
         <p className="eyebrow">RESONANCE APPDEV</p>
         <h1>Resonance DataNest</h1>
-        <p className="lede">UNIFI project orchestration and TranScheduler capability-aware execution in one control plane.</p>
+        <p className="lede">Plan projects, collaborate with DataNest AI, and review traceable work in one workspace.</p>
 
         <form onSubmit={signIn} className="authForm" aria-busy={busy}>
           <label>
@@ -227,7 +227,7 @@ export default function AuthGate() {
         <div className="authMessageSlot" aria-live="polite" role="status">
           {message && <div className="authMessage">{message}</div>}
         </div>
-        <p className="securityNote">Access is restricted to existing Supabase Auth users. This screen does not create accounts.</p>
+        <p className="securityNote">Sign in with your authorized account. Need access? Ask your project administrator for an invitation.</p>
       </section>
     </main>
   );

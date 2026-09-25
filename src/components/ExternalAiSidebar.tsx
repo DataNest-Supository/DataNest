@@ -83,7 +83,12 @@ export default function ExternalAiSidebar({
   const [traceKey,setTraceKey]=useState("");
   const [launchMode,setLaunchMode]=useState<"sidebar"|"companion"|"popout">("sidebar");
   const [handoff,setHandoff]=useState("");
-  const [responseText,setResponseText]=useState("");
+  const [responseText,setResponseTextState]=useState("");
+  const responseTextRef=useRef("");
+  const setResponseText=useCallback((value:string)=>{
+    responseTextRef.current=value;
+    setResponseTextState(value);
+  },[]);
   const [lastImportedId,setLastImportedId]=useState("");
   const [embedUrl,setEmbedUrl]=useState("");
   const [busy,setBusy]=useState(false);
@@ -182,6 +187,7 @@ export default function ExternalAiSidebar({
     setTraceKey("");
     setLatestUpdate(null);
     setSuggestions([]);
+    setHandoff("");
     setResponseText("");
     setLastImportedId("");
     lastClipboardCapture.current="";
@@ -249,7 +255,8 @@ export default function ExternalAiSidebar({
       const clipboardText=await navigator.clipboard.readText();
       const candidate=selectExternalAiClipboardCandidate({
         clipboardText,
-        currentResponse:responseText,
+        currentResponse:responseTextRef.current,
+        allowReplace:announce,
         blockedTexts:[handoff,preparedHandoff,lastClipboardCapture.current]
       });
 
@@ -558,7 +565,7 @@ export default function ExternalAiSidebar({
       const permissionState=await refreshClipboardAccess();
       const candidate=selectExternalAiClipboardCandidate({
         clipboardText,
-        currentResponse:responseText,
+        currentResponse:responseTextRef.current,
         blockedTexts:[handoff,preparedHandoff,lastClipboardCapture.current]
       });
 
@@ -791,7 +798,7 @@ export default function ExternalAiSidebar({
         {!sessionId
           ?"Open a tracked AI companion session to enable response capture and import."
           :clipboardAccess==="granted"
-            ?"Auto-fill is on. Copy the finished AI answer, return to DataNest, review the captured text, then click Import."
+            ?"Auto-fill is on for an empty response. Your edits are preserved. Use Paste from clipboard to replace the draft, review it, then click Import."
             :clipboardAccess==="denied"
               ?"Clipboard access is blocked. Allow clipboard access for DataNest in the browser, then enable auto-fill again."
               :"Enable auto-fill once so the browser can grant DataNest clipboard-read permission. Manual paste remains available."}

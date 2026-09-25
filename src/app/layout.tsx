@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 export const metadata = {
   title: "Resonance DataNest",
-  description: "UNIFI + TranScheduler project operating environment"
+  description: "Plan projects, collaborate with DataNest AI, and review traceable work in one workspace."
 };
 
 export default function RootLayout({children}:{children:ReactNode}) {
