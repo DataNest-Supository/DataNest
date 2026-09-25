@@ -284,13 +284,18 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .rndExternalAiShortcut{margin-top:14px;padding:12px;border:1px solid rgba(109,213,247,.15);border-radius:11px;background:rgba(109,213,247,.035);display:flex;align-items:center;justify-content:space-between;gap:14px}
 .rndExternalAiShortcut>div{display:grid;gap:3px}.rndExternalAiShortcut small{color:var(--muted);font-size:10px}
 
-@media(max-width:1080px){
-  .appFrame.aiDockOpen{grid-template-columns:270px minmax(0,1fr)}
-  .externalAiDock{position:fixed;right:0;top:0;width:min(520px,92vw)!important;max-width:92vw;min-width:0;box-shadow:-28px 0 80px rgba(0,0,0,.42)}
+@media(max-width:1180px) and (min-width:901px){
+  .appFrame.aiDockOpen{grid-template-columns:220px minmax(0,1fr) minmax(360px,42vw)}
+  .appFrame.aiDockOpen .sidebar{padding-left:12px;padding-right:12px}
+  .appFrame.aiDockOpen .externalAiDock{width:100%!important;min-width:360px;max-width:none}
+  .appFrame.aiDockOpen .topbar{padding-left:20px;padding-right:20px}
+  .appFrame.aiDockOpen .contentPane{padding-left:20px;padding-right:20px}
+  .appFrame.aiDockOpen .systemStatus small{display:none}
+  .externalAiDockBody{overscroll-behavior:contain}
 }
 @media(max-width:900px){
   .appFrame.aiDockOpen{grid-template-columns:1fr}
-  .externalAiDock{width:min(520px,100vw)!important;max-width:100vw}
+  .externalAiDock{position:fixed;right:0;top:0;width:min(520px,100vw)!important;max-width:100vw;min-width:0;box-shadow:-28px 0 80px rgba(0,0,0,.42)}
   .externalAiResizeHandle{display:none}
   .topActions{gap:7px}
   .aiSidebarToggle{white-space:nowrap}
@@ -298,7 +303,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 @media(max-width:650px){
   .topActions .aiSidebarToggle{display:inline-flex}
   .externalAiDock{inset:0;width:100vw!important;max-width:100vw}
-  .externalAiDockBody{padding:10px}
+  .externalAiDockHeader{padding:14px 12px;min-height:72px}
+  .externalAiDockActions .badge{display:none}
+  .externalAiDockBody{padding:10px;overscroll-behavior:contain}
   .externalAiFrameWrap{min-height:320px;height:48vh}
   .externalAiLaunchButtons{grid-template-columns:1fr}
   .externalAiLaunchButtons .textButton{grid-column:auto}
