@@ -79,14 +79,14 @@ async function ensureEnvelope(client:any,row:Record<string,unknown>){
   return data;
 }
 
-async function loadFrozenSessionEvidence(client:any,ids:string[]){
+async function loadFrozenSessionEvidence(client:any,ids:string[]):Promise<Array<{id:string;content:string}>>{
   if(!ids.length)return [] as Array<{id:string;content:string}>;
   const {data,error}=await client
     .from("ai_intake_events")
     .select("id,content")
     .in("id",ids);
   if(error)throw error;
-  const byId=new Map((data||[]).map((item:any)=>[String(item.id),String(item.content||"")]));
+  const byId=new Map<string,string>((data||[]).map((item:any)=>[String(item.id),String(item.content||"")] as [string,string]));
   return ids
     .map(id=>({id,content:byId.get(id)||""}))
     .filter(item=>item.content);
@@ -334,7 +334,7 @@ export async function processFileSubmissionAnalysis(client:any,submissionId:stri
               instruction:submission.instruction?String(submission.instruction):null,
               selectedChunks:selected,
               certifiedMemory:frozenMemory,
-              frozenSessionEvidence:frozenEvents.map((item:{id:string;content:string})=>item.content),
+              frozenSessionEvidence:frozenEvents.map(item=>item.content),
               failedFiles
             }),
             maxOutputTokens:4000
