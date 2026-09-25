@@ -12,6 +12,7 @@ import {
 import {
   candidateFromRepeatedEvidence
 } from "../_shared/datanestAiTrends.ts";
+import { chronologicalFromNewestFirst } from "../_shared/datanestAiContinuity.ts";
 
 declare const Deno:{
   env:{get:(name:string)=>string|undefined};
@@ -159,10 +160,10 @@ async function loadSessionEvents(input:{
     .eq("project_id",input.projectId)
     .eq("job_id",input.jobId)
     .eq("session_id",input.sessionId)
-    .order("created_at",{ascending:true})
+    .order("created_at",{ascending:false})
     .limit(100);
   if(error)throw error;
-  const rows=(data||[]) as StagedEvent[];
+  const rows=chronologicalFromNewestFirst((data||[]) as StagedEvent[]);
   const mapped=rows.map(row=>({
     ...row,
     projectId:row.project_id,
