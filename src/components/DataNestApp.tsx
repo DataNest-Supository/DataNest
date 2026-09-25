@@ -191,7 +191,10 @@ export default function DataNestApp({session}:{session:Session}) {
     setLoadingCore(true);
     setError("");
 
-    await supabase.rpc("accept_pending_job_invites");
+    await Promise.all([
+      supabase.rpc("accept_pending_project_member_invites_v1"),
+      supabase.rpc("accept_pending_job_invites")
+    ]);
 
     const pResult=await supabase
       .from("projects")

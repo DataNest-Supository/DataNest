@@ -6,3 +6,7 @@ verify_jwt = true
 
 [functions.datanest-ai-certification]
 verify_jwt = true
+
+
+[functions.send-project-member-invite]
+verify_jwt = true

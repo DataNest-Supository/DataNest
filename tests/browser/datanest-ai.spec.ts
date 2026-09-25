@@ -87,3 +87,15 @@ test("Sovereign Governance exposes project-scoped governance boundaries",async({
   await expect(page.getByText(/has not invented mission, vision or governance text on your behalf/i)).toBeVisible();
   await expect(page.getByText(/do not amend signed agreements, create legal ownership, create royalty entitlements, grant project roles or create financial authority/i)).toBeVisible();
 });
+
+
+test("Governance exposes governed project membership and non-voter pending state",async({page})=>{
+  await signIn(page);
+  await page.getByRole("button",{name:"Governance",exact:true}).click();
+
+  await expect(page.getByText("FORMAL MEMBERSHIP",{exact:true})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"Project members + governance voters",exact:true})).toBeVisible();
+  await expect(page.getByText(/Sending an invitation never creates an independent vote by itself/i)).toBeVisible();
+  await expect(page.getByText(/1 ACTIVE VOTER/)).toBeVisible();
+  await expect(page.getByText(/acceptance requires the matching authenticated account/i)).toBeVisible();
+});
