@@ -7,7 +7,7 @@ import {
   shouldAttemptClipboardAutoCapture,
   type ClipboardAutoCaptureAccess
 } from "@/lib/externalAiClipboard";
-import { calculateCompanionPlacement } from "@/lib/externalAiWindow";
+import { calculateCompanionPlacement, companionReserveForActualWindow, type CompanionPlacement } from "@/lib/externalAiWindow";
 
 type Job = {
   id:string;
@@ -101,6 +101,8 @@ export default function ExternalAiSidebar({
   const clipboardContextRef=useRef("");
   const clipboardConsentRef=useRef(false);
   const pendingAutoReturnSession=useRef("");
+  const companionPopupRef=useRef<Window|null>(null);
+  const companionClosePollRef=useRef<number|null>(null);
   const clipboardContextKey=JSON.stringify([projectId,currentUserEmail,selectedJobId,provider,sessionId]);
 
   const setAutoCaptureEnabled=useCallback((enabled:boolean)=>{
@@ -320,6 +322,13 @@ export default function ExternalAiSidebar({
     }
   },[sessionId,responseText,handoff,preparedHandoff,onNotice,onError,clipboardContextKey,isCurrentClipboardRead]);
 
+  useEffect(()=>()=>{
+    if(companionClosePollRef.current!==null){
+      window.clearInterval(companionClosePollRef.current);
+    }
+    onCompanionReserve?.(0);
+  },[onCompanionReserve]);
+
   useEffect(()=>{
     if(!sessionId)return;
 
@@ -453,6 +462,45 @@ export default function ExternalAiSidebar({
     ].join(",");
   }
 
+  function clearCompanionTracking(){
+    if(companionClosePollRef.current!==null){
+      window.clearInterval(companionClosePollRef.current);
+      companionClosePollRef.current=null;
+    }
+    companionPopupRef.current=null;
+    onCompanionReserve?.(0);
+  }
+
+  function trackCompanionWindow(popup:Window|null,placement:CompanionPlacement|null){
+    if(companionClosePollRef.current!==null){
+      window.clearInterval(companionClosePollRef.current);
+      companionClosePollRef.current=null;
+    }
+    companionPopupRef.current=popup;
+
+    if(!popup||!placement){
+      onCompanionReserve?.(0);
+      return;
+    }
+
+    let reserve=0;
+    try{
+      reserve=companionReserveForActualWindow(placement,{
+        left:popup.screenX,
+        top:popup.screenY,
+        width:popup.outerWidth,
+        height:popup.outerHeight
+      });
+    }catch{
+      reserve=0;
+    }
+    onCompanionReserve?.(reserve);
+
+    companionClosePollRef.current=window.setInterval(()=>{
+      if(popup.closed)clearCompanionTracking();
+    },400);
+  }
+
   function providerLaunchUrl(promptText=""){
     const url=new URL(selectedProvider.url);
     if(selectedProvider.key==="chatgpt"&&promptText.trim()){
@@ -465,10 +513,20 @@ export default function ExternalAiSidebar({
     const name=mode==="companion"
       ? "datanest-ai-companion-"+selectedProvider.key
       : "_blank";
+    const placement=mode==="companion"?companionPlacement():null;
     const features=mode==="companion"
-      ? "noopener,noreferrer,"+companionFeatures()
-      : "noopener,noreferrer,resizable=yes,scrollbars=yes";
-    return window.open(providerLaunchUrl(promptText),name,features);
+      ? companionFeatures()
+      : "popup=yes,resizable=yes,scrollbars=yes";
+    const popup=window.open("about:blank",name,features);
+    if(popup){
+      popup.opener=null;
+      if(mode==="companion")trackCompanionWindow(popup,placement);
+      else clearCompanionTracking();
+      popup.location.href=providerLaunchUrl(promptText);
+    }else if(mode==="companion"){
+      clearCompanionTracking();
+    }
+    return popup;
   }
 
   async function startSession(mode:"sidebar"|"companion"|"popout"){
@@ -491,7 +549,6 @@ export default function ExternalAiSidebar({
         ? "datanest-ai-companion-"+selectedProvider.key
         : "_blank";
       const placement=mode==="companion"?companionPlacement():null;
-      if(placement&&onCompanionReserve)onCompanionReserve(placement.reserveRight);
       const features=mode==="companion"
         ? [
             "popup=yes",
@@ -504,7 +561,13 @@ export default function ExternalAiSidebar({
           ].join(",")
         : "popup=yes,resizable=yes,scrollbars=yes";
       popup=window.open("about:blank",name,features);
-      if(popup)popup.opener=null;
+      if(popup){
+        popup.opener=null;
+        if(mode==="companion")trackCompanionWindow(popup,placement);
+        else clearCompanionTracking();
+      }else if(mode==="companion"){
+        clearCompanionTracking();
+      }
     }
 
     try{
@@ -574,6 +637,7 @@ export default function ExternalAiSidebar({
       }
     }catch(error){
       if(popup&&!popup.closed)popup.close();
+      if(mode==="companion")clearCompanionTracking();
       onError(error instanceof Error?error.message:"Unable to start external AI session.");
     }finally{
       setBusy(false);
