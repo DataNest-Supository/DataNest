@@ -29,7 +29,7 @@ const allowedOrigins=new Set([
   "http://localhost:4173"
 ]);
 const dedicatedStagingRef="qchttpcyqlqnhvahprhz";
-const policyVersion="datanest-ai-governed-memory-v1";
+const policyVersion="datanest-ai-governed-memory-v2";
 
 type AnyClient=SupabaseClient<any>;
 
@@ -227,14 +227,24 @@ async function updateTrendCandidate(input:{
 }):Promise<{candidateId:string|null;trendKey:string|null;evidenceCount:number}>{
   const {data,error}=await input.staging
     .from("ai_intake_events")
-    .select("id,content")
+    .select("id,content,job_id,session_id,source_type,source_user_id,metadata")
     .eq("project_id",input.projectId)
     .in("source_type",["human","ai_companion"])
     .order("created_at",{ascending:false})
-    .limit(100);
+    .limit(250);
   if(error)throw error;
 
-  const evidence=(data||[]) as Array<{id:string;content:string}>;
+  const evidence=(data||[]).map(item=>({
+    id:String(item.id),
+    content:String(item.content),
+    jobId:String(item.job_id||""),
+    sessionId:String(item.session_id||""),
+    sourceType:String(item.source_type||""),
+    sourceUserId:item.source_user_id?String(item.source_user_id):null,
+    metadata:typeof item.metadata==="object"&&item.metadata!==null
+      ?item.metadata as Record<string,unknown>
+      :{}
+  }));
   const current=evidence.find(item=>item.id===input.inputEventId);
   if(!current)return {candidateId:null,trendKey:null,evidenceCount:0};
 
@@ -325,7 +335,8 @@ async function updateTrendCandidate(input:{
         risk_class:candidate.riskClass,
         lifecycle_state:"INTAKE",
         evidence_count:candidate.evidenceIds.length,
-        has_conflict:false,
+        has_conflict:candidate.hasConflict,
+        confidence:candidate.confidence,
         policy_version:policyVersion,
         content_hash:contentHash
       })
@@ -369,6 +380,9 @@ async function updateTrendCandidate(input:{
         evidence_count:candidate.evidenceIds.length,
         category:candidate.category,
         risk_class:candidate.riskClass,
+        has_conflict:candidate.hasConflict,
+        confidence:candidate.confidence,
+        policy_version:policyVersion,
         updated_at:new Date().toISOString()
       })
       .eq("id",candidateId);
