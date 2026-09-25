@@ -169,17 +169,111 @@ export default function DataNestAiWorkspace({
   }
 
   return <div className="datanestAiWorkspace">
-    <section className="datanestAiHero">
-      <div>
-        <p className="eyebrow">DATANEST AI</p>
-        <h2>Chat → Trace → Learn → Validate → Certify → Remember</h2>
+    <section className={"datanestAiHero datanestAiHeroV2 "+(loading?"isWorking":"isReady")} aria-label="DataNest AI development command center">
+      <div className="datanestAiHeroGrid" aria-hidden="true"/>
+      <div className="datanestAiHeroGlow datanestAiHeroGlowOne" aria-hidden="true"/>
+      <div className="datanestAiHeroGlow datanestAiHeroGlowTwo" aria-hidden="true"/>
+
+      <div className="datanestAiHeroCopy">
+        <div className="datanestAiHeroBadge">
+          <span className="datanestAiSignalMark" aria-hidden="true">✦</span>
+          AI-POWERED DEVELOPMENT
+        </div>
+        <h2><span>DataNest</span> AI</h2>
+        <h3>Your intelligent development partner with <strong>project-wide memory.</strong></h3>
         <p>
-          DataNest AI uses certified project memory plus UNCERTIFIED evidence from the selected Job/session. Raw evidence remains isolated from project-wide memory until certification.
+          {selectedJob?.description||"Bring human intent, AI Companion evidence and certified project memory into one governed development workspace."}
         </p>
+
+        <div className="datanestAiCapabilityRail" aria-label="DataNest AI capabilities">
+          <span><i aria-hidden="true">▰</i>Project context</span>
+          <span><i aria-hidden="true">&lt;/&gt;</i>Development tools</span>
+          <span><i aria-hidden="true">◇</i>AI collaboration</span>
+          <span><i aria-hidden="true">◫</i>Persistent memory</span>
+        </div>
+
+        <div className="datanestAiHeroActions">
+          <button
+            className="primaryButton datanestAiHeroPrimary"
+            type="button"
+            onClick={()=>{
+              const input=document.querySelector<HTMLTextAreaElement>(".datanestAiComposer textarea");
+              input?.scrollIntoView({behavior:"smooth",block:"center"});
+              window.setTimeout(()=>input?.focus(),350);
+            }}
+          >Start development chat <span aria-hidden="true">→</span></button>
+          <button className="secondaryButton datanestAiHeroSecondary" type="button" onClick={openScheduler}>
+            Open TranScheduler
+          </button>
+          <button className="textButton datanestAiHeroRefresh" type="button" onClick={()=>void refreshAll()}>
+            Refresh AI context
+          </button>
+        </div>
       </div>
-      <div className="rndHeroActions">
-        <button className="secondaryButton compact" onClick={()=>void refreshAll()}>Refresh DataNest AI</button>
-        <button className="secondaryButton compact" onClick={openScheduler}>Open TranScheduler</button>
+
+      <div className="datanestAiHeroVisual" aria-label="Animated DataNest AI governed context pipeline">
+        <article className="datanestAiFloatCard datanestAiContextCard">
+          <span className="datanestAiFloatIcon" aria-hidden="true">▰</span>
+          <div>
+            <b>Project Context</b>
+            <small>{selectedJob?jobCode(selectedJob):"Job manifest"}</small>
+            <small>Source · Documentation · Architecture</small>
+          </div>
+        </article>
+
+        <article className="datanestAiFloatCard datanestAiExternalCard">
+          <span className="datanestAiFloatIcon" aria-hidden="true">⌁</span>
+          <div>
+            <b>External AI</b>
+            <small>Companion mode</small>
+            <small>Traceable returned output</small>
+          </div>
+        </article>
+
+        <div className="datanestAiCoreStage" aria-hidden="true">
+          <div className="datanestAiOrbit datanestAiOrbitOne"/>
+          <div className="datanestAiOrbit datanestAiOrbitTwo"/>
+          <div className="datanestAiOrbit datanestAiOrbitThree"/>
+          <span className="datanestAiPacket packetOne"/>
+          <span className="datanestAiPacket packetTwo"/>
+          <span className="datanestAiPacket packetThree"/>
+          <span className="datanestAiPacket packetFour"/>
+          <div className="datanestAiCoreSphere">
+            <span className="datanestAiCoreGlyph">⌬</span>
+            <b>DataNest AI</b>
+            <small>{loading?"Synchronising":"Governed & ready"}</small>
+          </div>
+          <div className="datanestAiCoreBeam"/>
+          <div className="datanestAiCoreBase">
+            <i/><i/><i/>
+          </div>
+        </div>
+
+        <article className="datanestAiFloatCard datanestAiToolsCard">
+          <span className="datanestAiFloatIcon" aria-hidden="true">&gt;_</span>
+          <div>
+            <b>Development Tools</b>
+            <small>Remote desktop · Cloud browser</small>
+            <small>CMD scripts · Codex functions</small>
+          </div>
+        </article>
+
+        <article className="datanestAiFloatCard datanestAiMemoryCard">
+          <span className="datanestAiFloatIcon" aria-hidden="true">◫</span>
+          <div>
+            <b>Certified Memory</b>
+            <small>{context?.certifiedMemory?.length||0} project-wide item{(context?.certifiedMemory?.length||0)===1?"":"s"}</small>
+            <small>Governed validation · Provenance</small>
+          </div>
+        </article>
+
+        <div className="datanestAiActivity" aria-hidden="true">
+          <span/><span/><span/><span/><span/><span/><span/><span/><span/>
+        </div>
+        <div className="datanestAiPipelineLabel">
+          <span className="datanestAiPipelineDot"/>
+          {loading?"AI context pipeline synchronising":"Governed AI pipeline ready"}
+        </div>
       </div>
     </section>
 
