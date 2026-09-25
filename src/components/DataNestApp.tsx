@@ -719,13 +719,19 @@ function Scheduler({jobs,capabilities,onStatus,canOperate,page,total,onPage}:{jo
     <section className="schedulerHero"><div><p className="eyebrow">TRANSCHEDULER</p><h2>Capability-aware execution queue</h2><p>Dependencies, availability, concurrency, policy and human controls determine when work may execute.</p></div><div className="schedulerPulse"><span>{capabilities.filter(item=>item.state==="AVAILABLE").length}</span><small>available resources</small></div></section>
     <section className="panel"><div className="filterBar">{["ALL","PLANNED","READY","QUEUED","RUNNING","MANUAL_ACTION","BLOCKED","COMPLETED"].map(item=><button key={item} className={filter===item?"active":""} onClick={()=>setFilter(item)}>{item.replace("_"," ")}</button>)}</div>
       <div className="schedulerTable"><div className="schedulerRow headerRow"><span>Job</span><span>Priority</span><span>Capability</span><span>Status</span><span>Controls</span></div>
-        {visible.map(job=><div className="schedulerRow" key={job.id}><div><b>{jobCode(job)}</b><small>{job.title}</small></div><span>{"P"+job.priority}</span><span>{job.required_capabilities?.join(", ")||"chat"}</span><Badge value={job.status}/><div className="rowActions">
-          {canOperate ? <>
-            {!finalStates.has(job.status)&&job.status!=="PAUSED"&&<button onClick={()=>void onStatus(job,"PAUSED")}>Pause</button>}
-            {job.status==="PAUSED"&&<button onClick={()=>void onStatus(job,"READY")}>Resume</button>}
-            {!finalStates.has(job.status)&&<button onClick={()=>void onStatus(job,"CANCELLED")}>Cancel</button>}
-          </> : <span className="muted">Read only</span>}
-        </div></div>)}
+        {visible.map(job=><div className="schedulerRow" key={job.id}>
+          <div data-label="Job"><b>{jobCode(job)}</b><small>{job.title}</small></div>
+          <span data-label="Priority">{"P"+job.priority}</span>
+          <span data-label="Capability">{job.required_capabilities?.join(", ")||"chat"}</span>
+          <span data-label="Status"><Badge value={job.status}/></span>
+          <div className="rowActions" data-label="Controls">
+            {canOperate ? <>
+              {!finalStates.has(job.status)&&job.status!=="PAUSED"&&<button onClick={()=>void onStatus(job,"PAUSED")}>Pause</button>}
+              {job.status==="PAUSED"&&<button onClick={()=>void onStatus(job,"READY")}>Resume</button>}
+              {!finalStates.has(job.status)&&<button onClick={()=>void onStatus(job,"CANCELLED")}>Cancel</button>}
+            </> : <span className="muted">Read only</span>}
+          </div>
+        </div>)}
       </div>
       <Pagination page={page} total={total} onPage={onPage}/>
     </section>
@@ -735,7 +741,13 @@ function Scheduler({jobs,capabilities,onStatus,canOperate,page,total,onPage}:{jo
 function Runs({runs,jobLookup,page,total,onPage}:{runs:Run[];jobLookup:Map<string,Job>;page:number;total:number;onPage:(p:number)=>void}) {
   return <section className="panel"><div className="panelHead"><div><p className="eyebrow">EXECUTION HISTORY</p><h2>Runs</h2></div><span className="countPill">{total}</span></div>
     {runs.length?<div className="dataTable"><div className="dataRow headerRow"><span>Run</span><span>Job</span><span>Connector</span><span>Status</span><span>Started</span></div>
-      {runs.map(run=>{const job=jobLookup.get(run.job_id);return <div className="dataRow" key={run.id}><b>{"RUN-"+run.run_number}</b><span>{job?jobCode(job):run.job_id.slice(0,8)}</span><span>{run.connector_kind}</span><Badge value={run.status}/><span>{formatDate(run.started_at)}</span></div>;})}
+      {runs.map(run=>{const job=jobLookup.get(run.job_id);return <div className="dataRow" key={run.id}>
+        <b data-label="Run">{"RUN-"+run.run_number}</b>
+        <span data-label="Job">{job?jobCode(job):run.job_id.slice(0,8)}</span>
+        <span data-label="Connector">{run.connector_kind}</span>
+        <span data-label="Status"><Badge value={run.status}/></span>
+        <span data-label="Started">{formatDate(run.started_at)}</span>
+      </div>;})}
     </div>:<EmptyState title="No execution runs yet" text="Runs will appear when TranScheduler dispatches jobs."/>}
     <Pagination page={page} total={total} onPage={onPage}/>
   </section>;
@@ -772,7 +784,13 @@ function Settings({
 }
 
 function JobTable({jobs}:{jobs:Job[]}) {
-  return <div className="jobTable">{jobs.map(job=><div className="jobTableRow" key={job.id}><b>{jobCode(job)}</b><div><strong>{job.title}</strong><small>{formatDate(job.created_at)}</small></div><span>{"P"+job.priority}</span><span>{job.required_capabilities?.join(", ")||"chat"}</span><Badge value={job.status}/></div>)}{!jobs.length&&<EmptyState title="No jobs yet" text="Use UNIFI to create the first Job Manifest."/>}</div>;
+  return <div className="jobTable">{jobs.map(job=><div className="jobTableRow" key={job.id}>
+    <b data-label="Job">{jobCode(job)}</b>
+    <div data-label="Title"><strong>{job.title}</strong><small>{formatDate(job.created_at)}</small></div>
+    <span data-label="Priority">{"P"+job.priority}</span>
+    <span data-label="Capability">{job.required_capabilities?.join(", ")||"chat"}</span>
+    <span data-label="Status"><Badge value={job.status}/></span>
+  </div>)}{!jobs.length&&<EmptyState title="No jobs yet" text="Use UNIFI to create the first Job Manifest."/>}</div>;
 }
 
 function Pagination({page,total,onPage}:{page:number;total:number;onPage:(p:number)=>void}) {
