@@ -438,6 +438,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .panel+.panel{margin-top:16px}
 .metricCard,.panel,.workspaceCard{backdrop-filter:blur(18px)}
 .mobileNavActions{display:none}
+.schedulerFilterMobile{display:none}
 .mobileSystemStatus{display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;color:#b4c8da;font-size:11px}
 .mobileSystemStatus.online{border-color:rgba(124,226,162,.22)}
 .mobileSystemStatus.degraded{border-color:rgba(242,199,120,.25)}
@@ -473,6 +474,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 
 /* 2026-09-25 mobile operational card UX */
 @media(max-width:720px){
+  .schedulerFilterDesktop{display:none}
+  .schedulerFilterMobile{display:grid;gap:6px;margin-bottom:12px;color:#b7cadb;font-size:11px;font-weight:700}
+  .schedulerFilterMobile select{min-height:42px}
   .jobTable,.schedulerTable,.dataTable{overflow:visible!important}
   .jobTableRow,.schedulerRow,.dataRow{
     min-width:0!important;
