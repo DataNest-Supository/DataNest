@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 import {
   selectExternalAiClipboardCandidate,
@@ -93,8 +93,35 @@ export default function ExternalAiSidebar({
   const [embedUrl,setEmbedUrl]=useState("");
   const [busy,setBusy]=useState(false);
   const [clipboardAccess,setClipboardAccess]=useState<ClipboardAutoCaptureAccess>("unknown");
-  const [autoCaptureEnabled,setAutoCaptureEnabled]=useState(false);
+  const [autoCaptureEnabled,setAutoCaptureEnabledState]=useState(false);
   const lastClipboardCapture=useRef("");
+  const clipboardGeneration=useRef(0);
+  const clipboardContextRef=useRef("");
+  const clipboardConsentRef=useRef(false);
+  const clipboardContextKey=JSON.stringify([projectId,currentUserEmail,selectedJobId,provider,sessionId]);
+
+  const setAutoCaptureEnabled=useCallback((enabled:boolean)=>{
+    // Invalidate pending reads immediately, even before React renders an opt-out.
+    clipboardGeneration.current+=1;
+    clipboardConsentRef.current=enabled;
+    setAutoCaptureEnabledState(enabled);
+  },[]);
+
+  useLayoutEffect(()=>{
+    clipboardContextRef.current=clipboardContextKey;
+    setAutoCaptureEnabled(false);
+    return()=>{
+      clipboardGeneration.current+=1;
+      clipboardContextRef.current="";
+      clipboardConsentRef.current=false;
+    };
+  },[clipboardContextKey,setAutoCaptureEnabled]);
+
+  const isCurrentClipboardRead=useCallback((context:string,generation:number,requiresConsent:boolean)=>
+    Boolean(context)&&context===clipboardContextRef.current&&
+    generation===clipboardGeneration.current&&
+    (!requiresConsent||clipboardConsentRef.current)
+  ,[]);
 
   const selectedJob=useMemo(
     ()=>jobs.find(job=>job.id===selectedJobId)||null,
@@ -254,9 +281,13 @@ export default function ExternalAiSidebar({
 
   const captureClipboardResponse=useCallback(async(announce=false)=>{
     if(!sessionId||!navigator.clipboard?.readText)return;
+    const readContext=clipboardContextKey;
+    const readGeneration=clipboardGeneration.current;
+    if(!isCurrentClipboardRead(readContext,readGeneration,!announce))return;
 
     try{
       const clipboardText=await navigator.clipboard.readText();
+      if(!isCurrentClipboardRead(readContext,readGeneration,!announce))return;
       const candidate=selectExternalAiClipboardCandidate({
         clipboardText,
         currentResponse:responseTextRef.current,
@@ -274,11 +305,11 @@ export default function ExternalAiSidebar({
       setLastImportedId("");
       onNotice("External AI response captured into Return to DataNest. Review it, then click Import.");
     }catch{
-      if(announce){
+      if(announce&&isCurrentClipboardRead(readContext,readGeneration,false)){
         onError("Clipboard access was blocked. Paste the external AI response into Return to DataNest manually.");
       }
     }
-  },[sessionId,responseText,handoff,preparedHandoff,onNotice,onError]);
+  },[sessionId,responseText,handoff,preparedHandoff,onNotice,onError,clipboardContextKey,isCurrentClipboardRead]);
 
   useEffect(()=>{
     if(!sessionId)return;
@@ -425,6 +456,8 @@ export default function ExternalAiSidebar({
 
   async function startSession(mode:"sidebar"|"companion"|"popout"){
     if(!selectedJob)return;
+    // A new tracked session requires fresh consent; preserve the reviewed draft.
+    setAutoCaptureEnabled(false);
 
     const draftHandoff=preparedHandoff;
     setHandoff(draftHandoff);
@@ -559,10 +592,14 @@ export default function ExternalAiSidebar({
       onError("This browser does not expose clipboard reading to DataNest. Paste the response manually.");
       return;
     }
+    const readContext=clipboardContextKey;
+    const readGeneration=clipboardGeneration.current;
+    if(!isCurrentClipboardRead(readContext,readGeneration,false))return;
 
     try{
       const clipboardText=await navigator.clipboard.readText();
       const permissionState=await refreshClipboardAccess();
+      if(!isCurrentClipboardRead(readContext,readGeneration,false))return;
       const candidate=selectExternalAiClipboardCandidate({
         clipboardText,
         currentResponse:responseTextRef.current,
@@ -591,8 +628,9 @@ export default function ExternalAiSidebar({
         );
       }
     }catch{
-      setAutoCaptureEnabled(false);
       const permissionState=await refreshClipboardAccess();
+      if(!isCurrentClipboardRead(readContext,readGeneration,false))return;
+      setAutoCaptureEnabled(false);
       if(permissionState==="denied"){
         onError("Clipboard access is blocked for DataNest. Allow clipboard access in the browser site permissions, then click Enable auto-fill again.");
       }else{
