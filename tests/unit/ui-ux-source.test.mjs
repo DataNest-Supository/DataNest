@@ -103,3 +103,12 @@ test("mobile scheduler uses a compact status select while desktop keeps filter c
     "mobile should replace the chip grid with a compact select"
   );
 });
+
+
+test("quick switch traps modal focus and restores focus to its opener", () => {
+  assert.match(appSource, /commandReturnFocusRef/);
+  assert.match(appSource, /function closeCommandPalette\(\)/);
+  assert.match(appSource, /function trapCommandFocus\(/);
+  assert.match(appSource, /onKeyDown=\{trapCommandFocus\}/);
+  assert.match(appSource, /commandReturnFocusRef\.current\?\.focus\(\)/);
+});
