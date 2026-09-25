@@ -63,3 +63,15 @@ test("Think Tanks expose project-scoped collaboration and reviewed-memory bounda
   await expect(page.getByText(/Project-wide discussion; link a channel to a Job to invoke DataNest AI/)).toBeVisible();
   await expect(page.getByText(/reusable learning reaches project memory only after independent human review/i)).toBeVisible();
 });
+
+
+test("Sparks workspace exposes internal utility boundaries",async({page})=>{
+  await signIn(page);
+  await page.getByRole("button",{name:"Sparks",exact:true}).click();
+
+  await expect(page.getByText("SPARKS · INTERNAL UTILITY",{exact:true})).toBeVisible();
+  await expect(page.getByText("Earned contribution utility, not money",{exact:true})).toBeVisible();
+  await expect(page.getByText(/cannot be bought for cash, redeemed for cash, transferred peer-to-peer, traded/i)).toBeVisible();
+  await expect(page.getByText(/platform spending is disabled in v1/i)).toBeVisible();
+  await expect(page.getByText(/Ledger entries are append-only/i)).toBeVisible();
+});
