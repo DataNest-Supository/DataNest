@@ -30,10 +30,10 @@ async function openAiSidebar(page:import("@playwright/test").Page){
   await expect(assistant).toBeVisible();
   await assistant.click();
   await expect(page.getByText("RETURN TO DATANEST")).toBeVisible();
-  await expect(page.getByRole("button",{name:"Open companion + load handoff",exact:true})).toBeEnabled();
+  await expect(page.getByRole("button",{name:/^Open companion \+/})).toBeEnabled();
 }
 
-test("session auto-fill requires opt-in, preserves edits, and stops when disabled",async({page,context})=>{
+test("companion launch arms session auto-return when clipboard permission already exists",async({page,context})=>{
   await signIn(page);
   await context.grantPermissions(["clipboard-read","clipboard-write"],{
     origin:new URL(page.url()).origin
@@ -41,11 +41,10 @@ test("session auto-fill requires opt-in, preserves edits, and stops when disable
   await openAiSidebar(page);
 
   page.on("popup",popup=>void popup.close());
-  await page.getByRole("button",{name:"Open companion + load handoff"}).click();
-  const response=page.getByPlaceholder(/Paste or type the external AI response here/i);
+  await page.getByRole("button",{name:/^Open companion \+/}).click();
+  const response=page.getByPlaceholder(/Copy the completed external AI response/i);
   await expect(response).toBeEnabled();
-  await expect(page.getByText("AUTO-FILL ON",{exact:true})).toHaveCount(0);
-  await page.bringToFront();
+  await expect(page.getByText("AUTO-RETURN ON",{exact:true})).toBeVisible();
 
   // Wrap the REAL clipboard read: observe both attempted and completed reads.
   await page.evaluate(()=>{
@@ -66,30 +65,24 @@ test("session auto-fill requires opt-in, preserves edits, and stops when disable
   });
   const initial="Initial governed clipboard response.";
   await page.evaluate(async text=>navigator.clipboard.writeText(text),initial);
-  const startsBeforeOptIn=await page.evaluate(()=>{
-    window.dispatchEvent(new Event("focus"));
-    return document.documentElement.dataset.clipboardStarts;
-  });
-  expect(startsBeforeOptIn).toBe("0");
-  await expect(response).toHaveValue("");
-
-  await page.getByRole("button",{name:"Enable session auto-fill",exact:true}).click();
-  await expect(page.getByText("AUTO-FILL ON",{exact:true})).toBeVisible();
+  const readsBeforeReturn=Number(await page.locator("html").getAttribute("data-clipboard-reads")||"0");
+  await page.evaluate(()=>window.dispatchEvent(new Event("focus")));
+  await expect.poll(async()=>Number(await page.locator("html").getAttribute("data-clipboard-reads"))).toBeGreaterThan(readsBeforeReturn);
   await expect(response).toHaveValue(initial);
 
   const edited="Initial governed clipboard response - reviewed and edited.";
   await response.fill(edited);
   const unrelated="Unrelated clipboard text copied after the edit.";
   await page.evaluate(async text=>navigator.clipboard.writeText(text),unrelated);
-  const readsBefore=await page.locator("html").getAttribute("data-clipboard-reads");
+  const readsBeforeEditReturn=Number(await page.locator("html").getAttribute("data-clipboard-reads")||"0");
   await page.evaluate(()=>window.dispatchEvent(new Event("focus")));
-  await expect.poll(async()=>Number(await page.locator("html").getAttribute("data-clipboard-reads"))).toBeGreaterThan(Number(readsBefore||"0"));
+  await expect.poll(async()=>Number(await page.locator("html").getAttribute("data-clipboard-reads"))).toBeGreaterThan(readsBeforeEditReturn);
   await expect(response).toHaveValue(edited);
 
   await page.getByRole("button",{name:"Paste from clipboard",exact:true}).click();
   await expect(response).toHaveValue(unrelated);
-  await page.getByRole("button",{name:"Turn off auto-fill",exact:true}).click();
-  await expect(page.getByRole("button",{name:"Enable session auto-fill",exact:true})).toBeVisible();
+  await page.getByRole("button",{name:"Turn off auto-return",exact:true}).click();
+  await expect(page.getByRole("button",{name:"Enable session auto-return",exact:true})).toBeVisible();
   await response.fill("");
   const readCounts=await page.evaluate(()=>{
     const before=document.documentElement.dataset.clipboardStarts;
@@ -105,8 +98,8 @@ test("switching jobs replaces the tracked handoff with the newly selected manife
   await openAiSidebar(page);
 
   page.on("popup",popup=>void popup.close());
-  await page.getByRole("button",{name:"Open companion + load handoff"}).click();
-  await expect(page.getByPlaceholder(/Paste or type the external AI response here/i)).toBeEnabled();
+  await page.getByRole("button",{name:/^Open companion \+/}).click();
+  await expect(page.getByPlaceholder(/Copy the completed external AI response/i)).toBeEnabled();
 
   const handoff=page.locator("details.externalAiHandoff textarea");
   await expect(handoff).toHaveValue(/Job Manifest: JOB-\d+ \u00b7 DataNest AI E2E Job\n/);
@@ -120,7 +113,7 @@ test("switching jobs replaces the tracked handoff with the newly selected manife
   await expect(handoff).toHaveValue(/Job Manifest: JOB-\d+ \u00b7 DataNest AI E2E Job B\n/);
   await expect(handoff).not.toHaveValue(/Job Manifest: JOB-\d+ \u00b7 DataNest AI E2E Job\n/);
   await expect(page.locator(".externalAiReturnDock textarea")).toBeDisabled();
-  await expect(page.getByRole("button",{name:"Enable session auto-fill",exact:true})).toBeDisabled();
+  await expect(page.getByRole("button",{name:"Enable session auto-return",exact:true})).toBeDisabled();
 });
 
 test("provider launch preloads traced work without user email and sidebar resizing works by keyboard",async({page,context})=>{
@@ -133,7 +126,7 @@ test("provider launch preloads traced work without user email and sidebar resizi
     status:200,contentType:"text/html",body:"<!doctype html><title>Provider navigation fixture</title>"
   }));
   const popupReady=page.waitForEvent("popup");
-  await page.getByRole("button",{name:"Open companion + load handoff"}).click();
+  await page.getByRole("button",{name:/^Open companion \+/}).click();
   const popup=await popupReady;
   await popup.waitForURL(url=>url.hostname==="chatgpt.com"&&Boolean(url.searchParams.get("prompt")));
   const providerUrl=new URL(popup.url());
@@ -160,20 +153,19 @@ test("provider launch preloads traced work without user email and sidebar resizi
   await expect(page.locator(".externalAiReturnDock textarea")).toBeVisible();
 });
 
-test("a new tracked session for the same Job does not inherit clipboard consent",async({page,context})=>{
+test("each tracked companion launch re-arms auto-return only through that launch gesture",async({page,context})=>{
   await signIn(page);
   await context.grantPermissions(["clipboard-read","clipboard-write"],{
     origin:new URL(page.url()).origin
   });
   await openAiSidebar(page);
   page.on("popup",popup=>void popup.close());
-  const launch=page.getByRole("button",{name:"Open companion + load handoff",exact:true});
+  const launch=page.getByRole("button",{name:/^Open companion \+/});
   await launch.click();
   const response=page.locator(".externalAiReturnDock textarea");
   await expect(response).toBeEnabled();
   await page.bringToFront();
-  await page.getByRole("button",{name:"Enable session auto-fill",exact:true}).click();
-  await expect(page.getByText("AUTO-FILL ON",{exact:true})).toBeVisible();
+  await expect(page.getByText("AUTO-RETURN ON",{exact:true})).toBeVisible();
   const reviewed="Reviewed draft preserved while opening a fresh tracked session.";
   await response.fill(reviewed);
   const sessionLabel=page.locator(".externalAiReturnDock small");
@@ -181,8 +173,8 @@ test("a new tracked session for the same Job does not inherit clipboard consent"
   await launch.click();
   await expect(launch).toBeEnabled();
   await expect(sessionLabel).not.toHaveText(previousSession);
-  await expect(page.getByText("AUTO-FILL ON",{exact:true})).toHaveCount(0);
-  await expect(page.getByRole("button",{name:"Enable session auto-fill",exact:true})).toBeEnabled();
+  await expect(page.getByText("AUTO-RETURN ON",{exact:true})).toBeVisible();
+  await expect(page.getByRole("button",{name:"Turn off auto-return",exact:true})).toBeEnabled();
   await expect(response).toHaveValue(reviewed);
 });
 
@@ -196,12 +188,11 @@ async function holdRealClipboardRead(
   });
   await openAiSidebar(page);
   page.on("popup",popup=>void popup.close());
-  await page.getByRole("button",{name:"Open companion + load handoff",exact:true}).click();
+  await page.getByRole("button",{name:/^Open companion \+/}).click();
   const response=page.locator(".externalAiReturnDock textarea");
   await expect(response).toBeEnabled();
   await page.bringToFront();
-  await page.getByRole("button",{name:"Enable session auto-fill",exact:true}).click();
-  await expect(page.getByText("AUTO-FILL ON",{exact:true})).toBeVisible();
+  await expect(page.getByText("AUTO-RETURN ON",{exact:true})).toBeVisible();
   await response.fill("");
   // Delay only delivery of a REAL clipboard result; do not substitute its value.
   await page.evaluate(async()=>{
@@ -237,10 +228,10 @@ async function releaseRealClipboardRead(page:import("@playwright/test").Page){
   await expect.poll(async()=>Number(await page.locator("html").getAttribute("data-released-clipboard-reads"))).toBeGreaterThan(0);
 }
 
-test("disabling auto-fill discards an already pending clipboard result",async({page,context})=>{
+test("disabling auto-return discards an already pending clipboard result",async({page,context})=>{
   const response=await holdRealClipboardRead(page,context);
-  await page.getByRole("button",{name:"Turn off auto-fill",exact:true}).click();
-  await expect(page.getByRole("button",{name:"Enable session auto-fill",exact:true})).toBeVisible();
+  await page.getByRole("button",{name:"Turn off auto-return",exact:true}).click();
+  await expect(page.getByRole("button",{name:"Enable session auto-return",exact:true})).toBeVisible();
   await releaseRealClipboardRead(page);
   await expect(response).toHaveValue("");
 });

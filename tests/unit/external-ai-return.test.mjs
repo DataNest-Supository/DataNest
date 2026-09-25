@@ -150,20 +150,23 @@ test("companion placement uses free screen space to the right when available", a
   assert.equal(placement.reserveRight, 0, "unused screen space should not reserve DataNest layout width");
 });
 
-test("Return to DataNest defaults to manual paste and exposes session-only auto-fill", () => {
+test("Return to DataNest keeps manual fallback while reusing granted permission for session auto-return", () => {
   const source = fs.readFileSync(
     path.join(repoRoot, "src/components/ExternalAiSidebar.tsx"),
     "utf8"
   );
 
-  assert.match(source, /Paste from clipboard/, "expected manual paste as the default control");
-  assert.match(source, /Enable session auto-fill/, "expected explicit session auto-fill opt-in");
-  assert.match(source, /Turn off auto-fill/, "expected an explicit auto-fill off control");
+  assert.match(source, /Paste from clipboard/, "expected manual paste fallback");
+  assert.match(source, /Enable session auto-return/, "expected explicit first-time auto-return control");
+  assert.match(source, /Turn off auto-return/, "expected an explicit auto-return off control");
+  assert.match(source, /Open companion \+ auto-return/, "expected one-click relaunch when clipboard permission already exists");
+  assert.match(source, /pendingAutoReturnSession/, "expected auto-return to bind to one tracked session only");
   assert.match(source, /navigator\.permissions/, "expected clipboard permission state detection");
+  assert.match(source, /Import to DataNest/, "captured responses must still require explicit governed import");
   assert.match(
     source,
     /shouldAttemptClipboardAutoCapture\(clipboardAccess,autoCaptureEnabled\)/,
-    "focus capture must require both granted clipboard access and explicit session opt-in"
+    "focus capture must require both granted clipboard access and session auto-return consent"
   );
 });
 
