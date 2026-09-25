@@ -291,7 +291,9 @@ async function updateTrendCandidate(input:{
       .eq("project_id",input.projectId)
       .maybeSingle();
     if(error)throw error;
-    overlapCandidate=data as typeof overlapCandidate;
+    overlapCandidate=data&&String(data.lifecycle_state)==="INTAKE"
+      ?data as typeof overlapCandidate
+      :null;
   }
 
   const {data:existing,error:existingError}=overlapCandidate
