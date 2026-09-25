@@ -45,7 +45,7 @@ test("AI Companion return becomes uncertified evidence in the selected Job",asyn
   await expect(page.getByText("COMPANION · READY",{exact:true})).toBeVisible();
 
   const companionResult="AI Companion E2E evidence: preserve traceability before project-wide learning.";
-  await page.getByPlaceholder(/External AI response will appear here/i).fill(companionResult);
+  await page.getByPlaceholder(/Paste or type the external AI response here/i).fill(companionResult);
   await page.getByRole("button",{name:"Import to DataNest"}).click();
   await expect(page.getByText(/staged as UNCERTIFIED evidence/i)).toBeVisible();
 
