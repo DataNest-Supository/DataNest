@@ -5,6 +5,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "re
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
 import JobInviteForm from "@/components/JobInviteForm";
+import ResonanceHome from "@/components/ResonanceHome";
 
 type Project = { id:string; slug:string; name:string; description:string|null; status:string; created_at:string };
 type Tool = { id:string; tool_key:string; name:string; role:string; enabled:boolean; config:Record<string,unknown> };
@@ -25,7 +26,7 @@ const finalStates = new Set(["COMPLETED","FAILED","CANCELLED"]);
 const jobColumns = "id,job_number,title,description,priority,status,required_capabilities,acceptance,created_at,updated_at";
 
 const nav:Array<{key:ViewKey;label:string;group:string;glyph:string}> = [
-  {key:"overview",label:"Overview",group:"Project",glyph:"◫"},
+  {key:"overview",label:"AI & I",group:"Project",glyph:"◎"},
   {key:"stakeholder",label:"Stakeholder",group:"Project",glyph:"✦"},
   {key:"sparks",label:"Sparks",group:"Project",glyph:"✧"},
   {key:"governance",label:"Governance",group:"Project",glyph:"◆"},
@@ -44,7 +45,7 @@ const nav:Array<{key:ViewKey;label:string;group:string;glyph:string}> = [
 const viewKeys = new Set<ViewKey>(nav.map(item=>item.key));
 
 const viewDescriptions:Record<ViewKey,string> = {
-  overview:"Project command center and current work at a glance.",
+  overview:"Human intent and governed AI collaboration at a glance.",
   stakeholder:"Capture stakeholder input and review contribution context.",
   sparks:"Develop raw ideas into traceable project inputs.",
   governance:"Review sovereign governance controls and decisions.",
@@ -717,7 +718,7 @@ export default function DataNestApp({session}:{session:Session}) {
         </div>
         {(loadingCore||loadingView)&&<div className="loadingBar" aria-label="Loading DataNest data"><span/></div>}
 
-        {!loadingCore&&project&&view==="overview"&&<Overview project={project} tools={tools} jobs={recentJobs} counts={summary} setView={setView} canOperate={canOperate}/>}
+        {!loadingCore&&project&&view==="overview"&&<ResonanceHome project={project} jobs={recentJobs} counts={summary} canOperate={canOperate} onNavigate={setView}/>}
         {!loadingCore&&project&&view==="stakeholder"&&<StakeholderWorkspace projectId={project.id} currentUserId={session.user.id} canReview={canManageAi}/>}
         {!loadingCore&&project&&view==="sparks"&&<SparksWorkspace projectId={project.id} currentUserId={session.user.id} canOperate={canOperate} canManage={canManageAi} setNotice={setNotice} setError={setError}/>}
         {!loadingCore&&project&&view==="governance"&&<GovernanceWorkspace projectId={project.id} currentUserId={session.user.id} canManage={canManageAi} setNotice={setNotice} setError={setError}/>}
