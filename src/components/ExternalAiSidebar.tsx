@@ -100,6 +100,7 @@ export default function ExternalAiSidebar({
   const clipboardGeneration=useRef(0);
   const clipboardContextRef=useRef("");
   const clipboardConsentRef=useRef(false);
+  const pendingAutoReturnSession=useRef("");
   const clipboardContextKey=JSON.stringify([projectId,currentUserEmail,selectedJobId,provider,sessionId]);
 
   const setAutoCaptureEnabled=useCallback((enabled:boolean)=>{
@@ -111,13 +112,15 @@ export default function ExternalAiSidebar({
 
   useLayoutEffect(()=>{
     clipboardContextRef.current=clipboardContextKey;
-    setAutoCaptureEnabled(false);
+    const autoReturnReady=Boolean(sessionId)&&pendingAutoReturnSession.current===sessionId;
+    setAutoCaptureEnabled(autoReturnReady);
+    if(autoReturnReady)pendingAutoReturnSession.current="";
     return()=>{
       clipboardGeneration.current+=1;
       clipboardContextRef.current="";
       clipboardConsentRef.current=false;
     };
-  },[clipboardContextKey,setAutoCaptureEnabled]);
+  },[clipboardContextKey,sessionId,setAutoCaptureEnabled]);
 
   const isCurrentClipboardRead=useCallback((context:string,generation:number,requiresConsent:boolean)=>
     Boolean(context)&&context===clipboardContextRef.current&&
@@ -219,6 +222,7 @@ export default function ExternalAiSidebar({
     setLatestUpdate(null);
     setSuggestions([]);
     setHandoff("");
+    pendingAutoReturnSession.current="";
     setAutoCaptureEnabled(false);
     setResponseText("");
     setLastImportedId("");
@@ -236,6 +240,7 @@ export default function ExternalAiSidebar({
     setSessionId("");
     setTraceKey("");
     setHandoff("");
+    pendingAutoReturnSession.current="";
     setAutoCaptureEnabled(false);
     setResponseText("");
     setLastImportedId("");
@@ -277,9 +282,11 @@ export default function ExternalAiSidebar({
   },[]);
 
   useEffect(()=>{
-    if(!sessionId)return;
+    // Permission status can be queried without prompting. Knowing it before
+    // launch lets a previously-approved browser permission become one-click
+    // session auto-return, while first-time permission remains explicit.
     void refreshClipboardAccess();
-  },[sessionId,refreshClipboardAccess]);
+  },[refreshClipboardAccess]);
 
   const captureClipboardResponse=useCallback(async(announce=false)=>{
     if(!sessionId||!navigator.clipboard?.readText)return;
@@ -466,7 +473,11 @@ export default function ExternalAiSidebar({
 
   async function startSession(mode:"sidebar"|"companion"|"popout"){
     if(!selectedJob)return;
-    // A new tracked session requires fresh consent; preserve the reviewed draft.
+    // Every tracked session starts with auto-return off. Opening a companion is
+    // the session-level opt-in only when the browser has already granted
+    // clipboard-read permission; first-time permission remains an explicit
+    // Return to DataNest action.
+    pendingAutoReturnSession.current="";
     setAutoCaptureEnabled(false);
 
     const draftHandoff=preparedHandoff;
@@ -515,6 +526,13 @@ export default function ExternalAiSidebar({
         traceKey:newTraceKey,
         providerLabel:selectedProvider.label
       });
+      const autoReturnAccess=
+        mode==="companion"&&selectedProvider.key==="chatgpt"
+          ?await refreshClipboardAccess()
+          :null;
+      if(autoReturnAccess==="granted"){
+        pendingAutoReturnSession.current=newSessionId;
+      }
 
       setSessionId(newSessionId);
       setTraceKey(newTraceKey);
@@ -543,7 +561,10 @@ export default function ExternalAiSidebar({
         }
         onNotice(
           selectedProvider.key==="chatgpt"&&mode==="companion"
-            ? "ChatGPT opened with the tracked Job Manifest preloaded. Review the DataNest trace header, then send."
+            ? "ChatGPT opened with the tracked Job Manifest preloaded. "+
+              (autoReturnAccess==="granted"
+                ?"Session auto-return is armed: copy the completed response in ChatGPT, then return to DataNest for review and import."
+                :"For automatic return, enable session auto-return once in DataNest. Manual paste remains available.")
             : selectedProvider.label+
               (mode==="companion"
                 ? " opened in DataNest companion mode beside the app using your own account. "
@@ -604,7 +625,7 @@ export default function ExternalAiSidebar({
 
   async function enableClipboardAutoFill(){
     if(!sessionId){
-      onError("Open a tracked AI companion session before enabling auto-fill.");
+      onError("Open a tracked AI companion session before enabling auto-return.");
       return;
     }
     if(!navigator.clipboard?.readText){
@@ -636,15 +657,15 @@ export default function ExternalAiSidebar({
         setAutoCaptureEnabled(true);
         onNotice(
           candidate
-            ?"Session auto-fill enabled and the current external AI response was captured. Review it, then click Import."
-            :"Session auto-fill enabled. Copy the external AI response and return to DataNest."
+            ?"Session auto-return enabled and the current external AI response was captured. Review it, then click Import."
+            :"Session auto-return enabled. Copy the external AI response and return to DataNest."
         );
       }else{
         setAutoCaptureEnabled(false);
         onNotice(
           candidate
-            ?"Clipboard content was captured once; session auto-fill remains off because persistent clipboard permission is unavailable."
-            :"Clipboard access was allowed once; session auto-fill remains off. Use Paste from clipboard when needed."
+            ?"Clipboard content was captured once; session auto-return remains off because persistent clipboard permission is unavailable."
+            :"Clipboard access was allowed once; session auto-return remains off. Use Paste from clipboard when needed."
         );
       }
     }catch{
@@ -652,9 +673,9 @@ export default function ExternalAiSidebar({
       if(!isCurrentClipboardRead(readContext,readGeneration,false))return;
       setAutoCaptureEnabled(false);
       if(permissionState==="denied"){
-        onError("Clipboard access is blocked for DataNest. Allow clipboard access in the browser site permissions, then click Enable auto-fill again.");
+        onError("Clipboard access is blocked for DataNest. Allow clipboard access in the browser site permissions, then click Enable auto-return again.");
       }else{
-        onError("Clipboard access was not granted. Click Enable auto-fill and accept the browser clipboard permission prompt.");
+        onError("Clipboard access was not granted. Click Enable session auto-return and accept the browser clipboard permission prompt.");
       }
     }
   }
@@ -666,7 +687,7 @@ export default function ExternalAiSidebar({
 
   function disableClipboardAutoFill(){
     setAutoCaptureEnabled(false);
-    onNotice("Session auto-fill is off. Manual paste remains available.");
+    onNotice("Session auto-return is off. Manual paste remains available.");
   }
 
   async function importResponse(event:FormEvent){
@@ -763,7 +784,9 @@ export default function ExternalAiSidebar({
           >{busy
             ?"Opening…"
             :selectedProvider.embed==="blocked"
-              ?"Open companion + load handoff"
+              ?clipboardAccess==="granted"
+                ?"Open companion + auto-return"
+                :"Open companion + load handoff"
               :"Open in sidebar"}</button>
           <button
             className="secondaryButton compact"
@@ -799,7 +822,10 @@ export default function ExternalAiSidebar({
             <span>Session</span><code>{sessionId}</code>
           </div>}
           {selectedProvider.key==="chatgpt"&&<p className="externalAiPromptReady">
-            The tracked handoff is preloaded in ChatGPT and copied to your clipboard as fallback. Review the tracking header, then send.
+            The tracked handoff is preloaded in ChatGPT and copied to your clipboard as fallback.
+            {autoCaptureEnabled&&clipboardAccess==="granted"
+              ?" Auto-return is armed for this tracked session."
+              :" Enable session auto-return once if you want copied ChatGPT responses to appear automatically when you return."}
           </p>}
           <div className="externalAiCompanionActions">
             <button className="secondaryButton compact" type="button" onClick={()=>openProviderWindow("companion",handoff)}>
@@ -859,17 +885,17 @@ export default function ExternalAiSidebar({
           <b>External AI response</b>
         </div>
         <span className={"badge "+(lastImportedId?"good":autoCaptureEnabled&&clipboardAccess==="granted"?"good":sessionId?"live":"neutral")}>
-          {lastImportedId?"IMPORTED":autoCaptureEnabled&&clipboardAccess==="granted"?"AUTO-FILL ON":sessionId?launchMode.toUpperCase()+" · READY":"WAITING"}
+          {lastImportedId?"IMPORTED":autoCaptureEnabled&&clipboardAccess==="granted"?"AUTO-RETURN ON":sessionId?launchMode.toUpperCase()+" · READY":"WAITING"}
         </span>
       </div>
       <p className="externalAiImportHint">
         {!sessionId
           ?"Open a tracked AI companion session to enable response capture and import."
           :autoCaptureEnabled&&clipboardAccess==="granted"
-            ?"Session auto-fill is on for this tracked session only. Existing drafts are preserved; use Paste from clipboard for an explicit replacement."
+            ?"Session auto-return is on for this tracked session only. Existing drafts are preserved; use Paste from clipboard for an explicit replacement."
             :clipboardAccess==="denied"
               ?"Clipboard access is blocked. Manual typing remains available, or allow clipboard access for DataNest in the browser."
-              :"Manual paste is the default. Enable session auto-fill only when you want DataNest to read newly copied text as you return to this session."}
+              :"Manual paste remains available. Enable session auto-return once to let DataNest read newly copied text when you return to this tracked session."}
       </p>
       <textarea
         rows={5}
@@ -877,7 +903,7 @@ export default function ExternalAiSidebar({
         value={responseText}
         onChange={event=>setResponseText(event.target.value)}
         placeholder={sessionId
-          ?"Paste or type the external AI response here. Session auto-fill is optional."
+          ?"Copy the completed external AI response, return to DataNest, then review it here before import. Manual paste is always available."
           :"Return to DataNest will activate when a tracked AI session is open."}
       />
       <div className="externalAiImportActions">
@@ -895,7 +921,7 @@ export default function ExternalAiSidebar({
           disabled={busy||!sessionId}
           onClick={()=>autoCaptureEnabled?disableClipboardAutoFill():void enableClipboardAutoFill()}
         >
-          {autoCaptureEnabled?"Turn off auto-fill":"Enable session auto-fill"}
+          {autoCaptureEnabled?"Turn off auto-return":"Enable session auto-return"}
         </button>
         <button
           className="primaryButton compact"

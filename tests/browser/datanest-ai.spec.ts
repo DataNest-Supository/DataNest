@@ -231,14 +231,14 @@ test("AI Companion return becomes uncertified evidence in the selected Job",asyn
   await expect(assistant).toBeVisible();
   await assistant.click();
   await expect(page.getByText("RETURN TO DATANEST")).toBeVisible();
-  await expect(page.getByRole("button",{name:"Open companion + load handoff",exact:true})).toBeEnabled();
+  await expect(page.getByRole("button",{name:/^Open companion \+/})).toBeEnabled();
 
   page.on("popup",popup=>void popup.close());
-  await page.getByRole("button",{name:"Open companion + load handoff"}).click();
+  await page.getByRole("button",{name:/^Open companion \+/}).click();
   await expect(page.getByText("COMPANION · READY",{exact:true})).toBeVisible();
 
   const companionResult="AI Companion E2E evidence: preserve traceability before project-wide learning.";
-  await page.getByPlaceholder(/Paste or type the external AI response here/i).fill(companionResult);
+  await page.getByPlaceholder(/Copy the completed external AI response/i).fill(companionResult);
   await page.getByRole("button",{name:"Import to DataNest"}).click();
   await expect(page.getByText(/staged as UNCERTIFIED evidence/i)).toBeVisible();
 
