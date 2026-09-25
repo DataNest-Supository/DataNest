@@ -5,7 +5,7 @@ const target=resolve(process.argv[2] || "public/release-manifest.json");
 const manifest={
   project:"Resonance DataNest",
   frontendCommit:process.env.DATANEST_RELEASE_SHA || process.env.GITHUB_SHA || "local",
-  databaseRelease:process.env.DATANEST_DB_RELEASE || "datanest-sparks-economy-v1",
+  databaseRelease:process.env.DATANEST_DB_RELEASE || "datanest-sovereign-governance-v1",
   baseline:{
     release:process.env.DATANEST_BASELINE_RELEASE || "reload-latest-v1",
     frontendCommit:process.env.DATANEST_BASELINE_SHA || "592149b0898f6703b28e9fa33e73bd0799cae3fd"
