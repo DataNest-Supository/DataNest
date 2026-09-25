@@ -25,9 +25,8 @@ Standalone/Docker deployments continue to expose the server health endpoint at `
 - Supabase URL: `https://sgqdmfgjbprsoqsmgigi.supabase.co`
 - Primary free host: **GitHub Pages**
 - Hosting architecture: **provider-agnostic**
-- Optional managed host: **Vercel**
 
-GitHub and Supabase are the required authorities. Hosting remains replaceable infrastructure.
+GitHub and Supabase are the required authorities. GitHub Pages is the active public host; other hosting remains replaceable infrastructure.
 
 ## Web UI
 
@@ -80,10 +79,6 @@ docker build -t resonance-datanest:ci .
 ```
 
 Every GitHub Pages deployment also verifies the live homepage, static health marker, and published Supabase runtime configuration from a GitHub-hosted runner.
-
-## Optional Vercel deployment
-
-Vercel can remain enabled as a secondary managed host. It is not required for core operation.
 
 ## Scheduling safety
 
