@@ -576,3 +576,144 @@ body{background:var(--bg)}
   .heroPanel{padding:20px}
   .quietDisclosure{padding:18px}
 }
+
+/* 2026-09-25 Reson8 / Resonance AppDev brand alignment */
+:root{
+  --bg:hsl(265 30% 4%);
+  --panel:hsl(265 20% 8% / .88);
+  --line:hsl(265 15% 16%);
+  --line-strong:hsl(295 90% 60% / .34);
+  --text:hsl(0 0% 98%);
+  --muted:hsl(265 10% 65%);
+  --violet:hsl(265 85% 65%);
+  --magenta:hsl(295 90% 60%);
+  --pink:hsl(325 90% 65%);
+  --cyan:hsl(190 90% 60%);
+  --cyan-2:hsl(295 90% 60%);
+  --blue:hsl(265 85% 65%);
+  --gradient-brand:linear-gradient(135deg,hsl(265 85% 65%),hsl(295 90% 60%),hsl(325 90% 65%));
+  --gradient-brand-soft:linear-gradient(135deg,hsl(265 85% 65% / .15),hsl(325 90% 65% / .15));
+  --shadow-glow:0 0 60px hsl(295 90% 60% / .35);
+  --font-sans:"Inter",ui-sans-serif,system-ui,sans-serif;
+  --font-display:"Space Grotesk","Inter",ui-sans-serif,system-ui,sans-serif;
+  --font-serif:"Lora",ui-serif,Georgia,serif;
+  --font-mono:"JetBrains Mono",ui-monospace,monospace;
+  font-family:var(--font-sans)
+}
+html{background:var(--bg)}
+body{
+  background-color:var(--bg);
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%,hsl(295 90% 60% / .18),transparent),
+    radial-gradient(ellipse 60% 40% at 80% 60%,hsl(265 85% 65% / .12),transparent),
+    radial-gradient(ellipse 60% 40% at 10% 90%,hsl(325 90% 65% / .10),transparent);
+  background-attachment:fixed
+}
+.sidebar{
+  background:linear-gradient(180deg,hsl(265 30% 5% / .97),hsl(265 30% 4% / .95));
+  border-right-color:hsl(265 15% 18%)
+}
+.sidebarTop{gap:11px;padding-bottom:17px}
+.brandLogo{
+  width:46px;height:46px;flex:0 0 auto;object-fit:cover;object-position:center;
+  border:1px solid hsl(295 90% 60% / .34);border-radius:14px;
+  box-shadow:0 0 28px hsl(295 90% 60% / .22),0 0 18px hsl(190 90% 60% / .12)
+}
+.brandCopy{min-width:0;display:grid;align-content:center}
+.brandCopy .eyebrow{margin-bottom:2px;color:hsl(295 90% 72%);font-size:9px}
+.brandCopy b{
+  font-family:var(--font-display);font-size:18px;letter-spacing:-.03em;line-height:1.05
+}
+.brandCopy small{margin-top:3px;color:var(--muted);font-size:9px}
+.eyebrow{color:hsl(295 90% 72%)}
+.topbar{
+  background:hsl(265 30% 4% / .78);
+  border-bottom-color:hsl(265 15% 16%);
+  box-shadow:0 12px 32px hsl(265 30% 2% / .16)
+}
+.topbar h1,.heroPanel h2,.schedulerHero h2,.sectionIntro h2,.authCard h1,
+.commandPaletteHeader h2,.emptyState h3{font-family:var(--font-display)}
+.projectPill{
+  border-color:hsl(265 15% 20%);
+  background:linear-gradient(135deg,hsl(265 20% 9% / .88),hsl(295 90% 60% / .035))
+}
+.navGroup button.active{
+  background:hsl(295 90% 60% / .09);
+  color:hsl(0 0% 98%);
+  box-shadow:inset 3px 0 0 var(--magenta),0 8px 24px hsl(295 90% 60% / .06)
+}
+.navGroup button.active span{color:hsl(295 90% 72%)}
+.primaryButton{
+  color:#fff;border-color:hsl(295 90% 68% / .8);
+  background:var(--gradient-brand);
+  box-shadow:0 9px 26px hsl(295 90% 60% / .16)
+}
+.primaryButton:hover{
+  transform:translateY(-1px);
+  box-shadow:0 12px 34px hsl(295 90% 60% / .28)
+}
+.secondaryButton:hover{
+  border-color:hsl(295 90% 60% / .38);
+  background:hsl(295 90% 60% / .07)
+}
+.textButton{color:hsl(295 90% 72%)}
+input,textarea,select{background:hsl(265 20% 6% / .72);border-color:hsl(265 15% 20%)}
+input:focus,textarea:focus,select:focus{
+  border-color:hsl(295 90% 60% / .65);
+  box-shadow:0 0 0 3px hsl(295 90% 60% / .12)
+}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,a:focus-visible{
+  outline-color:hsl(295 90% 64%)
+}
+.metricCard,.panel,.capabilityCard,.checkpointCard,.workspaceCard{
+  background:linear-gradient(180deg,hsl(265 20% 9% / .92),hsl(265 20% 7% / .84));
+  border-color:hsl(265 15% 18% / .92)
+}
+.workspaceCard:hover{
+  border-color:hsl(295 90% 60% / .35);
+  background:hsl(295 90% 60% / .055)
+}
+.workspaceGlyph,.toolIcon,.connectorIcon{
+  background:hsl(295 90% 60% / .08);
+  color:hsl(295 90% 72%)
+}
+.commandPalette{
+  border-color:hsl(295 90% 60% / .30);
+  background:linear-gradient(180deg,hsl(265 20% 8% / .995),hsl(265 30% 4% / .995));
+  box-shadow:0 36px 100px hsl(265 30% 1% / .62)
+}
+.workspaceOptionsMenu{background:hsl(265 20% 8% / .995)}
+.authShell{
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%,hsl(295 90% 60% / .20),transparent),
+    radial-gradient(ellipse 55% 45% at 12% 90%,hsl(325 90% 65% / .10),transparent)
+}
+.authCard{
+  width:min(100%,490px);
+  border-color:hsl(295 90% 60% / .30);
+  background:linear-gradient(180deg,hsl(265 20% 9% / .96),hsl(265 20% 6% / .95));
+  box-shadow:0 35px 100px hsl(265 30% 1% / .55),var(--shadow-glow)
+}
+.authBrandLockup{display:grid;gap:14px;margin-bottom:20px}
+.authBrandImage{
+  display:block;width:100%;aspect-ratio:3/2;object-fit:cover;object-position:center;
+  border:1px solid hsl(295 90% 60% / .30);border-radius:18px;
+  box-shadow:0 18px 50px hsl(295 90% 60% / .13)
+}
+.authBrandCopy{display:flex;align-items:baseline;justify-content:space-between;gap:14px}
+.authBrandCopy .eyebrow{margin:0;color:hsl(295 90% 72%)}
+.authProductName{
+  font-family:var(--font-display);font-size:20px;font-weight:700;letter-spacing:-.03em
+}
+.authCard h1{margin-top:0}
+.bootPulse{border-color:hsl(295 90% 60% / .16);border-top-color:var(--magenta)}
+.loadingBar span{background:var(--gradient-brand)}
+.externalAiDock,.externalAiDockHeader,.externalAiReturnDock{
+  background-color:hsl(265 30% 4% / .985)
+}
+@media(max-width:650px){
+  .brandLogo{width:42px;height:42px}
+  .authBrandImage{border-radius:14px}
+  .authBrandCopy{align-items:flex-start;flex-direction:column;gap:4px}
+}
+
