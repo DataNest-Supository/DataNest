@@ -810,10 +810,17 @@ function UnifiPlanner({project,jobs,capabilities,reload,setNotice,setError,canOp
 
 function Scheduler({jobs,capabilities,onStatus,canOperate,page,total,onPage}:{jobs:Job[];capabilities:Capability[];onStatus:(j:Job,s:string)=>Promise<void>;canOperate:boolean;page:number;total:number;onPage:(p:number)=>void}) {
   const [filter,setFilter]=useState("ALL");
+  const filterOptions=["ALL","PLANNED","READY","QUEUED","RUNNING","MANUAL_ACTION","BLOCKED","COMPLETED"];
   const visible=filter==="ALL"?jobs:jobs.filter(item=>item.status===filter);
   return <>
     <section className="schedulerHero"><div><p className="eyebrow">TRANSCHEDULER</p><h2>Capability-aware execution queue</h2><p>Dependencies, availability, concurrency, policy and human controls determine when work may execute.</p></div><div className="schedulerPulse"><span>{capabilities.filter(item=>item.state==="AVAILABLE").length}</span><small>available resources</small></div></section>
-    <section className="panel"><div className="filterBar">{["ALL","PLANNED","READY","QUEUED","RUNNING","MANUAL_ACTION","BLOCKED","COMPLETED"].map(item=><button key={item} className={filter===item?"active":""} onClick={()=>setFilter(item)}>{item.replace("_"," ")}</button>)}</div>
+    <section className="panel">
+      <label className="schedulerFilterMobile">Status filter
+        <select aria-label="Status filter" value={filter} onChange={event=>setFilter(event.target.value)}>
+          {filterOptions.map(item=><option key={item} value={item}>{item.replace("_"," ")}</option>)}
+        </select>
+      </label>
+      <div className="filterBar schedulerFilterDesktop">{filterOptions.map(item=><button key={item} className={filter===item?"active":""} onClick={()=>setFilter(item)}>{item.replace("_"," ")}</button>)}</div>
       <div className="schedulerTable"><div className="schedulerRow headerRow"><span>Job</span><span>Priority</span><span>Capability</span><span>Status</span><span>Controls</span></div>
         {visible.map(job=><div className="schedulerRow" key={job.id}>
           <div data-label="Job"><b>{jobCode(job)}</b><small>{job.title}</small></div>
