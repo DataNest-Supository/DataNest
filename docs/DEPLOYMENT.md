@@ -61,6 +61,6 @@ docker run --rm -p 3000:3000 \
 
 ## Managed hosts
 
-Railway, Vercel, Render, Fly.io, Azure Container Apps, AWS, a Windows/Linux VM, or another Node/container host can all run this application. Vercel is optional, not architectural.
+GitHub Pages is the active public host. Railway, Render, Fly.io, Azure Container Apps, AWS, a Windows/Linux VM, or another Node/container host can be used later if a replacement is deliberately selected.
 
 For Supabase Auth passwordless links, add the final public application origin to the allowed redirect URLs in Supabase Auth before relying on magic-link sign-in.

@@ -1,0 +1,35 @@
+/* Project membership: compact, status-first invite UX */
+.membershipPanel{overflow:hidden}
+.projectInviteForm{display:grid;gap:12px;margin:16px 0 22px}
+.projectInviteFields{display:grid;grid-template-columns:minmax(240px,1.35fr) minmax(220px,.95fr) auto;gap:10px;align-items:end}
+.projectInviteFields label{display:grid;gap:6px;color:#b7cadb;font-size:11px;font-weight:700}
+.projectInviteAction{min-height:43px;white-space:nowrap}
+.inviteContext{padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-size:11px;line-height:1.55;color:var(--muted);background:rgba(255,255,255,.018)}
+.inviteContext b{color:var(--text)}
+.inviteContext.good{border-color:rgba(124,226,162,.2);background:rgba(124,226,162,.06);color:#b7d9c3}
+.inviteContext.warn{border-color:rgba(242,199,120,.22);background:rgba(242,199,120,.06);color:#d8c495}
+.membershipIdentity{min-width:0}
+.membershipIdentity b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.membershipIdentity small{display:block;margin-top:3px;color:#627d96;font-size:9px;letter-spacing:.02em}
+.membershipTable .dataRow{grid-template-columns:minmax(220px,1.55fr) minmax(90px,.65fr) minmax(90px,.65fr) minmax(100px,.65fr) minmax(130px,.85fr)}
+.membershipSectionHead{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+.inviteRowActions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.dangerTextButton{color:var(--red)}
+.membershipFootnote{margin:16px 0 0;font-size:10px}
+@media(max-width:1180px){
+  .projectInviteFields{grid-template-columns:1fr 1fr}
+  .projectInviteAction{grid-column:1/-1}
+}
+@media(max-width:900px){
+  .projectInviteFields{grid-template-columns:1fr}
+  .projectInviteAction{grid-column:auto}
+}
+@media(max-width:720px){
+  .membershipPanel{padding:16px}
+  .membershipPanel>.panelHead{align-items:flex-start}
+  .membershipTable .dataRow{grid-template-columns:1fr 1fr}
+  .membershipTable .dataRow>[data-label="Member"],
+  .membershipTable .dataRow>[data-label="Invitee"],
+  .membershipTable .dataRow>[data-label="Action"]{grid-column:1/-1}
+  .membershipIdentity b{white-space:normal;overflow-wrap:anywhere}
+}

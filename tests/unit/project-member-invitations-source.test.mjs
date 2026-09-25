@@ -80,3 +80,20 @@ test("project invite Edge Function requires JWT and service-role mediation",()=>
   assert.match(edge,/resetPasswordForEmail/);
   assert.doesNotMatch(edge,/signInWithOtp/);
 });
+
+
+test("project membership UI distinguishes active members from pending invites",()=>{
+  assert.match(panel,/Already a member/);
+  assert.match(panel,/Already active/);
+  assert.match(panel,/Invitation already pending/);
+  assert.match(panel,/Resend project invite/);
+  assert.match(panel,/resendInvite/);
+  assert.match(panel,/memberAlreadyActive/);
+});
+
+test("project membership UI keeps identifiers secondary and responsive",()=>{
+  assert.match(panel,/shortId/);
+  assert.match(panel,/membershipIdentity/);
+  assert.match(panel,/inviteContext/);
+  assert.match(panel,/projectInviteFields/);
+});
