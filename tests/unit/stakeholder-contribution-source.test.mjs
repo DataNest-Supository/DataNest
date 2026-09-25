@@ -57,3 +57,15 @@ test("external AI import propagates the authoritative staged session to DataNest
   assert.match(aiWorkspace,/stagedSessionId&&stagedSessionId!==sessionId/);
   assert.match(aiWorkspace,/setSessionId\(stagedSessionId\)/);
 });
+
+
+test("Stakeholder workspace hotfix removes ambiguous model_version references",()=>{
+  const hotfix=readFileSync(
+    new URL("../../supabase/migrations/20260925040000_fix_contribution_workspace_model_version_ambiguity.sql", import.meta.url),
+    "utf8"
+  );
+  assert.match(hotfix,/active_scoring_model_version text/);
+  assert.match(hotfix,/select csm\.model_version into active_scoring_model_version/);
+  assert.doesNotMatch(hotfix,/select model_version into model_version/);
+  assert.match(hotfix,/'scoring_model_version',active_scoring_model_version/);
+});
