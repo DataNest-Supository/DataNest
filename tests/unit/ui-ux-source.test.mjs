@@ -75,3 +75,19 @@ test("mobile operational tables become labeled cards without forced horizontal w
     "mobile operational rows should be self-contained labeled cards rather than horizontal tables"
   );
 });
+
+
+test("quick switch command palette is keyboard accessible and searchable", () => {
+  assert.match(appSource, /aria-label="Quick switch DataNest workspace"/);
+  assert.match(appSource, /aria-label="Search DataNest workspaces"/);
+  assert.match(appSource, /event\.ctrlKey\|\|event\.metaKey/);
+  assert.match(appSource, /event\.key\.toLowerCase\(\)==="k"/);
+  assert.match(appSource, /aria-keyshortcuts="Control\+K Meta\+K"/);
+  assert.match(appSource, /viewDescriptions\[item\.key\]/);
+  assert.match(appSource, /commandInputRef\.current\?\.focus\(\)/);
+});
+
+test("quick switch preserves canonical workspace navigation", () => {
+  assert.match(appSource, /onClick=\{\(\)=>chooseCommandView\(item\.key\)\}/);
+  assert.match(appSource, /function chooseCommandView\(nextView:ViewKey\)[\s\S]*?setView\(nextView\)[\s\S]*?setCommandOpen\(false\)/);
+});

@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
 import JobInviteForm from "@/components/JobInviteForm";
@@ -126,6 +126,9 @@ export default function DataNestApp({session}:{session:Session}) {
   const [view,setView]=useState<ViewKey>("overview");
   const [viewReady,setViewReady]=useState(false);
   const [mobileOpen,setMobileOpen]=useState(false);
+  const [commandOpen,setCommandOpen]=useState(false);
+  const [commandQuery,setCommandQuery]=useState("");
+  const commandInputRef=useRef<HTMLInputElement|null>(null);
   const [aiSidebarOpen,setAiSidebarOpen]=useState(false);
   const [activeDataNestAiSession,setActiveDataNestAiSession]=useState<ActiveDataNestAiSession|null>(null);
   const [project,setProject]=useState<Project|null>(null);
@@ -156,6 +159,15 @@ export default function DataNestApp({session}:{session:Session}) {
 
   const canOperate=membership ? ["owner","admin","operator"].includes(membership.role) : false;
   const canManageAi=membership ? ["owner","admin"].includes(membership.role) : false;
+
+  const commandItems=useMemo(()=>{
+    const query=commandQuery.trim().toLowerCase();
+    if(!query)return nav;
+    return nav.filter(item=>{
+      const haystack=[item.label,item.group,viewDescriptions[item.key]].join(" ").toLowerCase();
+      return haystack.includes(query);
+    });
+  },[commandQuery]);
 
   const loadSummary=useCallback(async(projectId:string)=>{
     const supabase=getSupabase();
@@ -381,6 +393,25 @@ export default function DataNestApp({session}:{session:Session}) {
     return()=>window.removeEventListener("keydown",closeOnEscape);
   },[mobileOpen]);
   useEffect(()=>{
+    const handleCommandShortcut=(event:KeyboardEvent)=>{
+      const isQuickSwitch=(event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==="k";
+      if(isQuickSwitch){
+        event.preventDefault();
+        setCommandQuery("");
+        setCommandOpen(current=>!current);
+        return;
+      }
+      if(event.key==="Escape"&&commandOpen)setCommandOpen(false);
+    };
+    window.addEventListener("keydown",handleCommandShortcut);
+    return()=>window.removeEventListener("keydown",handleCommandShortcut);
+  },[commandOpen]);
+  useEffect(()=>{
+    if(!commandOpen)return;
+    const timer=window.setTimeout(()=>commandInputRef.current?.focus(),0);
+    return()=>window.clearTimeout(timer);
+  },[commandOpen]);
+  useEffect(()=>{
     const saved=window.localStorage.getItem("datanest.aiSidebar.open");
     if(saved==="true")setAiSidebarOpen(true);
     const open=()=>setAiSidebarOpen(true);
@@ -403,6 +434,19 @@ export default function DataNestApp({session}:{session:Session}) {
     const timer=window.setInterval(()=>void checkControlPlane(project.id),60000);
     return ()=>window.clearInterval(timer);
   },[project,checkControlPlane]);
+
+  function openCommandPalette(){
+    setCommandQuery("");
+    setCommandOpen(true);
+    setMobileOpen(false);
+  }
+
+  function chooseCommandView(nextView:ViewKey){
+    setView(nextView);
+    setCommandOpen(false);
+    setCommandQuery("");
+    setMobileOpen(false);
+  }
 
   async function signOut(){ await getSupabase()?.auth.signOut(); }
 
@@ -522,11 +566,63 @@ export default function DataNestApp({session}:{session:Session}) {
     </aside>
     {mobileOpen&&<button className="scrim" onClick={()=>setMobileOpen(false)} aria-label="Close navigation"/>}
 
+    {commandOpen&&<div className="commandPaletteBackdrop" onMouseDown={()=>setCommandOpen(false)}>
+      <section
+        className="commandPalette"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Quick switch DataNest workspace"
+        onMouseDown={event=>event.stopPropagation()}
+      >
+        <div className="commandPaletteHeader">
+          <div><p className="eyebrow">QUICK SWITCH</p><h2>Go to a DataNest workspace</h2></div>
+          <button className="iconButton" type="button" onClick={()=>setCommandOpen(false)} aria-label="Close quick switch">×</button>
+        </div>
+        <label className="commandSearch">
+          <span className="srOnly">Search DataNest workspaces</span>
+          <input
+            ref={commandInputRef}
+            type="search"
+            value={commandQuery}
+            onChange={event=>setCommandQuery(event.target.value)}
+            placeholder="Search workspaces, tools, research…"
+            aria-label="Search DataNest workspaces"
+          />
+          <kbd>Esc</kbd>
+        </label>
+        <div className="commandResults" role="listbox" aria-label="DataNest workspaces">
+          {commandItems.map(item=><button
+            className={"commandResult "+(view===item.key?"active":"")}
+            type="button"
+            role="option"
+            aria-selected={view===item.key}
+            key={item.key}
+            onClick={()=>chooseCommandView(item.key)}
+          >
+            <span className="commandGlyph" aria-hidden="true">{item.glyph}</span>
+            <span className="commandResultCopy"><b>{item.label}</b><small>{item.group+" · "+viewDescriptions[item.key]}</small></span>
+            {view===item.key?<span className="commandCurrent">Current</span>:<span className="workspaceArrow" aria-hidden="true">→</span>}
+          </button>)}
+          {!commandItems.length&&<div className="commandEmpty">No DataNest workspace matches “{commandQuery}”.</div>}
+        </div>
+        <div className="commandPaletteFooter"><span>Ctrl/Cmd + K to toggle</span><span>Tab to move · Enter to open</span></div>
+      </section>
+    </div>}
+
     <main className="mainPane">
       <header className="topbar">
         <button className="menuButton" onClick={()=>setMobileOpen(true)} aria-label="Open menu" aria-controls="datanest-navigation" aria-expanded={mobileOpen}>☰</button>
         <div className="topbarTitle"><p className="eyebrow">RESONANCE DATANEST</p><h1>{currentLabel}</h1><p className="topbarContext">{currentDescription}</p></div>
         <div className="topActions">
+          <button
+            className="secondaryButton compact quickSwitchButton"
+            type="button"
+            onClick={openCommandPalette}
+            aria-haspopup="dialog"
+            aria-expanded={commandOpen}
+            aria-keyshortcuts="Control+K Meta+K"
+            title="Search and switch DataNest workspaces (Ctrl/Cmd + K)"
+          >Quick switch <kbd className="shortcutHint">Ctrl K</kbd></button>
           <button
             className={"secondaryButton compact aiSidebarToggle "+(aiSidebarOpen?"active":"")}
             onClick={()=>setAiSidebarOpen(value=>!value)}

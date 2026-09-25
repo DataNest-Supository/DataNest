@@ -14,6 +14,28 @@ async function signIn(page:import("@playwright/test").Page){
   ).toBeVisible({timeout:15000});
 }
 
+test("quick switch searches workspaces and navigates with Ctrl+K",async({page})=>{
+  await signIn(page);
+
+  await page.keyboard.press("Control+K");
+  const dialog=page.getByRole("dialog",{name:"Quick switch DataNest workspace"});
+  await expect(dialog).toBeVisible();
+
+  const search=dialog.getByLabel("Search DataNest workspaces");
+  await expect(search).toBeFocused();
+  await search.fill("Transparency");
+  await dialog.getByRole("option",{name:/Transparency/}).click();
+
+  await expect(page).toHaveURL(/(?:\?|&)view=transparency(?:&|$)/);
+  await expect(page.getByRole("heading",{name:"Audit library + public accountability record",exact:true})).toBeVisible();
+
+  await page.keyboard.press("Control+K");
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+});
+
+
 test("workspace deep links survive reload and follow browser history",async({page})=>{
   await signIn(page);
 
