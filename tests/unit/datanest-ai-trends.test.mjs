@@ -4,6 +4,7 @@ import {
   candidateFromRepeatedEvidence,
   classifyLearningRisk,
   evidenceSimilarity,
+  isSyntheticLearningEvidence,
   normalizeTrendTokens,
   trendKeyForTokens,
   bestCandidateByEvidenceOverlap,
@@ -35,14 +36,41 @@ test("one-off evidence does not become an auto candidate", () => {
 
 test("repeated evidence can produce a low-risk candidate but not a certification", () => {
   const candidate=candidateFromRepeatedEvidence([
-    {id:"e1",content:"Use the compact job header in DataNest AI"},
-    {id:"e2",content:"Keep the compact job header for DataNest AI"}
+    {id:"e1",content:"Use the compact job header in DataNest AI",sessionId:"s1",jobId:"j1",sourceType:"human",sourceUserId:"u1"},
+    {id:"e2",content:"Keep the compact job header for DataNest AI",sessionId:"s2",jobId:"j1",sourceType:"human",sourceUserId:"u1"}
   ]);
   assert.equal(candidate?.lifecycleState,"INTAKE");
   assert.equal(candidate?.riskClass,"low");
   assert.ok(candidate?.evidenceIds.length===2);
+  assert.equal(candidate?.independentEvidenceCount,2);
+  assert.ok((candidate?.confidence||0)>0.5);
 });
 
+test("stress fixtures are excluded from learning", () => {
+  const stress={id:"e1",content:"stress-1790286496786-ebc9f6df-message-24"};
+  assert.equal(isSyntheticLearningEvidence(stress),true);
+  assert.equal(candidateFromRepeatedEvidence([
+    stress,
+    {id:"e2",content:"stress-1790286496786-ebc9f6df-message-1"}
+  ]),null);
+});
+
+test("fixture metadata is excluded from learning", () => {
+  assert.equal(isSyntheticLearningEvidence({
+    id:"e1",
+    content:"Keep trace IDs visible for every request",
+    metadata:{test_fixture:"acceptance-suite"}
+  }),true);
+});
+
+test("explicit contradictory evidence is flagged for owner review", () => {
+  const candidate=candidateFromRepeatedEvidence([
+    {id:"e1",content:"Use compact job header for DataNest workflow",sessionId:"s1"},
+    {id:"e2",content:"Do not use compact job header for DataNest workflow",sessionId:"s2"}
+  ]);
+  assert.equal(candidate?.hasConflict,true);
+  assert.ok((candidate?.confidence||1)<0.5);
+});
 
 test("repeated trend evidence reuses the candidate with the strongest evidence overlap", () => {
   const candidateId=bestCandidateByEvidenceOverlap(
@@ -65,7 +93,6 @@ test("candidate reuse requires at least two shared evidence events", () => {
   assert.equal(candidateId,null);
 });
 
-
 test("candidate reuse requires substantial overlap for larger trend evidence sets", () => {
   const links=[
     {candidateId:"candidate-a",eventId:"e1"},
@@ -78,7 +105,6 @@ test("candidate reuse requires substantial overlap for larger trend evidence set
     null
   );
 });
-
 
 test("stable candidate ids map the same SHA-256 digest to the same UUID", () => {
   const digest="0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
