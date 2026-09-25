@@ -117,6 +117,9 @@ create index if not exists contribution_anomaly_contribution_idx
 create index if not exists contribution_anomaly_reviewed_by_idx
   on public.contribution_anomaly_signals(reviewed_by)
   where reviewed_by is not null;
+create index if not exists contribution_reputation_models_created_by_idx
+  on public.contribution_reputation_models(created_by)
+  where created_by is not null;
 
 create table if not exists public.stakeholder_progression_recommendations (
   id uuid primary key default gen_random_uuid(),
@@ -143,6 +146,8 @@ create index if not exists stakeholder_progression_user_idx
 create index if not exists stakeholder_progression_reviewed_by_idx
   on public.stakeholder_progression_recommendations(reviewed_by)
   where reviewed_by is not null;
+create index if not exists stakeholder_progression_snapshot_idx
+  on public.stakeholder_progression_recommendations(basis_snapshot_id);
 
 create table if not exists public.n0nymous_squad_memberships (
   id uuid primary key default gen_random_uuid(),
@@ -164,6 +169,10 @@ create table if not exists public.n0nymous_squad_memberships (
 create index if not exists n0nymous_squad_active_idx
   on public.n0nymous_squad_memberships(project_id,status,rank)
   where status='active';
+create index if not exists n0nymous_squad_snapshot_idx
+  on public.n0nymous_squad_memberships(snapshot_id);
+create index if not exists n0nymous_squad_user_idx
+  on public.n0nymous_squad_memberships(user_id,status,created_at desc);
 
 insert into public.contribution_reputation_models(
   project_id,model_version,status,
@@ -334,7 +343,22 @@ begin
         reviewed_at=now(),
         review_notes='Lifecycle changed before review.'
     where id=recommendation.id;
-    raise exception 'Stakeholder lifecycle changed; recommendation superseded.';
+
+    insert into public.events(project_id,event_type,actor,payload)
+    values(
+      recommendation.project_id,
+      'STAKEHOLDER_PROGRESSION_SUPERSEDED',
+      coalesce(auth.jwt()->>'email',caller::text),
+      jsonb_build_object(
+        'recommendation_id',recommendation.id,
+        'subject_user_id',recommendation.user_id,
+        'expected_stage',recommendation.current_stage,
+        'actual_stage',current_profile.lifecycle_stage,
+        'grants_project_role',false
+      )
+    );
+
+    return recommendation.id;
   end if;
 
   update public.stakeholder_progression_recommendations
@@ -395,6 +419,7 @@ declare
   rolling_batch uuid;
   lifetime_batch uuid;
   refreshed integer := 0;
+  inserted_count integer := 0;
 begin
   if caller is null then
     raise insufficient_privilege using message='Authentication is required.';
@@ -674,7 +699,8 @@ begin
       now()
     from ranked;
 
-    get diagnostics refreshed = refreshed + row_count;
+    get diagnostics inserted_count = row_count;
+    refreshed := refreshed + inserted_count;
 
     if window_name='rolling_90' then
       rolling_batch := batch;
