@@ -186,6 +186,7 @@ test("mobile TranScheduler status filter uses a compact select",async({page})=>{
   await page.setViewportSize({width:390,height:844});
 
   await page.getByRole("button",{name:"Open menu"}).click();
+  await page.getByText("Tools",{exact:true}).click();
   await page.getByRole("button",{name:"TranScheduler",exact:true}).click();
 
   const statusFilter=page.getByLabel("Status filter");
@@ -205,7 +206,7 @@ test("mobile TranScheduler status filter uses a compact select",async({page})=>{
 
 test("human input is traced and remains uncertified",async({page})=>{
   await signIn(page);
-  await page.getByRole("button",{name:"DataNest AI",exact:true}).click();
+  await openWorkspace(page,"DataNest AI");
   await expect(page.getByText("DataNest AI E2E Job",{exact:true}).first()).toBeVisible();
   await page.getByText("DataNest AI E2E Job",{exact:true}).first().click();
 
@@ -222,12 +223,15 @@ test("human input is traced and remains uncertified",async({page})=>{
 
 test("AI Companion return becomes uncertified evidence in the selected Job",async({page})=>{
   await signIn(page);
-  await page.getByRole("button",{name:"DataNest AI",exact:true}).click();
+  await openWorkspace(page,"DataNest AI");
   await expect(page.getByText("DataNest AI E2E Job",{exact:true}).first()).toBeVisible();
   await page.getByText("DataNest AI E2E Job",{exact:true}).first().click();
 
-  await page.getByRole("button",{name:"AI Sidebar"}).click();
+  const assistant=page.getByRole("button",{name:"AI assistant",exact:true});
+  await expect(assistant).toBeVisible();
+  await assistant.click();
   await expect(page.getByText("RETURN TO DATANEST")).toBeVisible();
+  await expect(page.getByRole("button",{name:"Open companion + load handoff",exact:true})).toBeEnabled();
 
   page.on("popup",popup=>void popup.close());
   await page.getByRole("button",{name:"Open companion + load handoff"}).click();
@@ -246,7 +250,7 @@ test("AI Companion return becomes uncertified evidence in the selected Job",asyn
 
 test("Think Tanks expose project-scoped collaboration and reviewed-memory boundaries",async({page})=>{
   await signIn(page);
-  await page.getByRole("button",{name:"Think Tanks",exact:true}).click();
+  await openWorkspace(page,"Think Tanks");
 
   await expect(page.getByText("THINK TANKS + DATANEST AI",{exact:true})).toBeVisible();
   await expect(page.getByText("Discuss → Ask → Decide → Act → Review → Remember",{exact:true})).toBeVisible();
@@ -270,10 +274,10 @@ test("Sparks workspace exposes internal utility boundaries",async({page})=>{
 
 test("Sovereign Governance exposes project-scoped governance boundaries",async({page})=>{
   await signIn(page);
-  await page.getByRole("button",{name:"Governance",exact:true}).click();
+  await openWorkspace(page,"Governance");
 
   await expect(page.getByText("RESONANCE SOVEREIGN GOVERNANCE",{exact:true})).toBeVisible();
-  await expect(page.getByText("Transparent project governance with immutable decision history",{exact:true})).toBeVisible();
+  await expect(page.getByText(/DataNest separates project governance from legal ownership, contracts, royalties, financial authority and project roles/i)).toBeVisible();
   await expect(page.getByRole("heading",{name:"No human-ratified protocol",exact:true})).toBeVisible();
   await expect(page.getByText(/has not invented mission, vision or governance text on your behalf/i)).toBeVisible();
   await expect(page.getByText(/do not amend signed agreements, create legal ownership, create royalty entitlements, grant project roles or create financial authority/i)).toBeVisible();
@@ -282,8 +286,9 @@ test("Sovereign Governance exposes project-scoped governance boundaries",async({
 
 test("Governance exposes governed project membership and non-voter pending state",async({page})=>{
   await signIn(page);
-  await page.getByRole("button",{name:"Governance",exact:true}).click();
+  await openWorkspace(page,"Governance");
 
+  await page.getByText("Project members and invitations",{exact:true}).click();
   await expect(page.getByText("FORMAL MEMBERSHIP",{exact:true})).toBeVisible();
   await expect(page.getByRole("heading",{name:"Project members + governance voters",exact:true})).toBeVisible();
   await expect(page.getByText(/Sending an invitation never creates an independent vote by itself/i)).toBeVisible();

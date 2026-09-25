@@ -26,8 +26,11 @@ async function openAiSidebar(page:import("@playwright/test").Page){
   await openWorkspace(page,"DataNest AI");
   await expect(page.getByText("DataNest AI E2E Job",{exact:true}).first()).toBeVisible();
   await page.getByText("DataNest AI E2E Job",{exact:true}).first().click();
-  await page.getByRole("button",{name:"AI Sidebar"}).click();
+  const assistant=page.getByRole("button",{name:"AI assistant",exact:true});
+  await expect(assistant).toBeVisible();
+  await assistant.click();
   await expect(page.getByText("RETURN TO DATANEST")).toBeVisible();
+  await expect(page.getByRole("button",{name:"Open companion + load handoff",exact:true})).toBeEnabled();
 }
 
 test("session auto-fill requires opt-in, preserves edits, and stops when disabled",async({page,context})=>{
