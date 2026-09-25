@@ -11,13 +11,15 @@
     "test": "node --test --experimental-strip-types tests/unit/*.test.mjs",
     "test:browser:datanest-ai": "playwright test tests/browser/datanest-ai.spec.ts tests/browser/datanest-ai-return-safety.spec.ts",
     "test:stress:datanest-ai": "node tests/stress/datanest-ai-stress.mjs",
-    "seed:e2e:datanest-ai": "node scripts/seed-datanest-ai-e2e.mjs"
+    "seed:e2e:datanest-ai": "node scripts/seed-datanest-ai-e2e.mjs",
+    "test:stress:datanest-ai-files": "node tests/stress/datanest-ai-file-stress.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
     "next": "^15.5.2",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "tus-js-client": "4.3.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0",
