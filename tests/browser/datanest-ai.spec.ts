@@ -9,7 +9,9 @@ async function signIn(page:import("@playwright/test").Page){
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button",{name:"Sign in"}).click();
-  await expect(page.getByText("Resonance DataNest",{exact:true}).first()).toBeVisible();
+  await expect(
+    page.getByRole("button",{name:"DataNest AI",exact:true})
+  ).toBeVisible({timeout:15000});
 }
 
 test("human input is traced and remains uncertified",async({page})=>{
