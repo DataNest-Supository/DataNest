@@ -236,3 +236,26 @@ test("Overview omits capacity and Operations omits the Capabilities surface", ()
   assert.match(source,/<Scheduler jobs=\{jobs\} capabilities=\{capabilities\}/);
   assert.match(source,/<UnifiPlanner project=\{project\} jobs=\{jobs\} capabilities=\{capabilities\}/);
 });
+
+
+test("DataNest AI surfaces the returned assistant turn before refreshing the governed session", () => {
+  const chat=fs.readFileSync(path.join(root,"src/components/DataNestAiChatPanel.tsx"),"utf8");
+  const workspace=fs.readFileSync(path.join(root,"src/components/DataNestAiWorkspace.tsx"),"utf8");
+
+  assert.match(chat,/payload\.assistant/);
+  assert.match(chat,/source_type:"datanest_ai"/);
+  assert.match(chat,/await onContextRefresh\(nextSession\)/);
+  assert.ok(
+    chat.indexOf("payload.assistant") < chat.indexOf("await onContextRefresh(nextSession)"),
+    "the returned assistant payload must be surfaced before the server context refresh"
+  );
+
+  assert.match(
+    workspace,
+    /const refreshContext=useCallback\(async\(sessionOverride\?:string\)=>/
+  );
+  assert.match(
+    workspace,
+    /sessionId:sessionOverride\|\|sessionId\|\|null/
+  );
+});

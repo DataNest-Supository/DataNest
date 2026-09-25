@@ -96,14 +96,14 @@ export default function DataNestAiWorkspace({
     });
   },[projectId,setError]);
 
-  const refreshContext=useCallback(async()=>{
+  const refreshContext=useCallback(async(sessionOverride?:string)=>{
     if(!selectedJobId)return;
     const requestedJobId=selectedJobId;
     const supabase=getSupabase();
     if(!supabase)return;
     setLoading(true);
     const {data,error}=await supabase.functions.invoke("datanest-ai-chat",{
-      body:{action:"context",jobId:requestedJobId,sessionId:sessionId||null}
+      body:{action:"context",jobId:requestedJobId,sessionId:sessionOverride||sessionId||null}
     });
     if(selectedJobIdRef.current!==requestedJobId)return;
     setLoading(false);
