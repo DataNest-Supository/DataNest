@@ -112,3 +112,11 @@ test("quick switch traps modal focus and restores focus to its opener", () => {
   assert.match(appSource, /onKeyDown=\{trapCommandFocus\}/);
   assert.match(appSource, /commandReturnFocusRef\.current\?\.focus\(\)/);
 });
+
+
+test("quick switch opens the first search result with Enter", () => {
+  assert.match(appSource, /function handleCommandSearchKeyDown\(/);
+  assert.match(appSource, /event\.key==="Enter"/);
+  assert.match(appSource, /commandItems\[0\]/);
+  assert.match(appSource, /chooseCommandView\(commandItems\[0\]\.key\)/);
+});
