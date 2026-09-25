@@ -77,6 +77,7 @@ test("mobile operational tables become labeled cards without forced horizontal w
 });
 
 
+// TDD RED: compact mobile scheduler filter is intentionally absent from production code.
 test("mobile scheduler uses a compact status select while desktop keeps filter chips", () => {
   assert.match(appSource, /className="schedulerFilterMobile"/);
   assert.match(appSource, /aria-label="Status filter"/);
