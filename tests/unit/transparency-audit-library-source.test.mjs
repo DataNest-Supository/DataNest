@@ -7,7 +7,7 @@ const workspace=readFileSync(new URL("../../src/components/TransparencyWorkspace
 const registry=JSON.parse(readFileSync(new URL("../../public/transparency/audits/index.json",import.meta.url),"utf8"));
 const auditReturn=readFileSync(new URL("../../public/transparency/audits/external-full-system-audit-return-2026-09-25/report.md",import.meta.url),"utf8");
 const findings=JSON.parse(readFileSync(new URL("../../public/transparency/audits/external-full-system-audit-return-2026-09-25/findings.json",import.meta.url),"utf8"));
-const backlog=JSON.parse(readFileSync(new URL("../../public/transparency/audits/external-full-system-audit-return-2026-09-25/remediation-backlog.json",import.meta.url),"utf8");
+const backlog=JSON.parse(readFileSync(new URL("../../public/transparency/audits/external-full-system-audit-return-2026-09-25/remediation-backlog.json",import.meta.url),"utf8"));
 
 const fullBrief=Array.from({length:8},(_,index)=>
   readFileSync(
