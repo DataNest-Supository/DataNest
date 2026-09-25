@@ -291,6 +291,7 @@ Deno.serve(async(request:Request)=>{
         .from("ai_learning_candidates")
         .select("*")
         .eq("project_id",projectId)
+        .neq("lifecycle_state","REJECTED")
         .order("updated_at",{ascending:false})
         .limit(100);
       if(candidatesError)throw candidatesError;
