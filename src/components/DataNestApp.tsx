@@ -21,6 +21,7 @@ type Summary = { total:number; active:number; running:number; blocked:number; av
 type ActiveDataNestAiSession = { jobId:string; sessionId:string|null };
 
 const PAGE_SIZE = 20;
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const finalStates = new Set(["COMPLETED","FAILED","CANCELLED"]);
 const jobColumns = "id,job_number,title,description,priority,status,required_capabilities,acceptance,created_at,updated_at";
 
@@ -243,7 +244,7 @@ export default function DataNestApp({session}:{session:Session}) {
       .maybeSingle();
 
     if(pResult.error || !pResult.data) {
-      setError(pResult.error?.message || "You do not have access to Resonance DataNest.");
+      setError(pResult.error?.message || "You do not have access to DataNest.");
       setLoadingCore(false);
       return;
     }
@@ -573,11 +574,11 @@ export default function DataNestApp({session}:{session:Session}) {
   return <div className={"appFrame "+(aiSidebarOpen?"aiDockOpen":"")}>
     <aside id="datanest-navigation" aria-label="DataNest navigation" className={"sidebar "+(mobileOpen?"open":"")}>
       <div className="sidebarTop">
-        <div className="logo">RD</div>
-        <div><p className="eyebrow">RESONANCE</p><b>DataNest</b></div>
+        <img className="brandLogo" src={BASE_PATH+"/resonance-appdev-brand.webp"} alt="" aria-hidden="true" />
+        <div className="brandCopy"><p className="eyebrow">RESONANCE APPDEV</p><b>DataNest</b><small>Product workspace</small></div>
         <button className="closeMenu" onClick={()=>setMobileOpen(false)} aria-label="Close menu" aria-controls="datanest-navigation">×</button>
       </div>
-      <div className="projectPill"><span className="liveDot"/><div><small>PROJECT</small><strong>{project?.name||"Resonance DataNest"}</strong></div></div>
+      <div className="projectPill"><span className="liveDot"/><div><small>PRODUCT</small><strong>DataNest</strong></div></div>
       <nav className="navStack" aria-label="Project workspaces">
         {groups.map(group=><details className="navGroup navDisclosure" key={group+String(nav.some(item=>item.group===group&&item.key===view))} open={group==="Project"||nav.some(item=>item.group===group&&item.key===view)}>
           <summary>{group}</summary>
@@ -669,7 +670,7 @@ export default function DataNestApp({session}:{session:Session}) {
     <main className="mainPane">
       <header className="topbar">
         <button className="menuButton" onClick={()=>setMobileOpen(true)} aria-label="Open menu" aria-controls="datanest-navigation" aria-expanded={mobileOpen}>☰</button>
-        <div className="topbarTitle"><p className="eyebrow">RESONANCE DATANEST</p><h1>{currentLabel}</h1><p className="topbarContext">{currentDescription}</p></div>
+        <div className="topbarTitle"><p className="eyebrow">RESONANCE APPDEV · DATANEST</p><h1>{currentLabel}</h1><p className="topbarContext">{currentDescription}</p></div>
         <div className="topActions">
           <button
             className="secondaryButton compact quickSwitchButton"
@@ -943,7 +944,7 @@ function Settings({
   canManageAi:boolean;
 }) {
   return <section className="settingsGrid">
-    <div className="panel"><p className="eyebrow">PROJECT</p><h3>{project?.name||"Resonance DataNest"}</h3><dl className="settingsList"><div><dt>Slug</dt><dd>{project?.slug||"resonance-datanest"}</dd></div><div><dt>Status</dt><dd><Badge value={project?.status||"ACTIVE"}/></dd></div><div><dt>Access role</dt><dd><Badge value={(membership?.role||"viewer").toUpperCase()}/></dd></div><div><dt>GitHub</dt><dd>DataNest-Supository/DataNest</dd></div><div><dt>Supabase</dt><dd>sgqdmfgjbprsoqsmgigi</dd></div><div><dt>Hosting</dt><dd>Provider-agnostic</dd></div><div><dt>Optional host</dt><dd>Vercel</dd></div></dl></div>
+    <div className="panel"><p className="eyebrow">PROJECT</p><h3>{project?.name||"DataNest"}</h3><dl className="settingsList"><div><dt>Slug</dt><dd>{project?.slug||"resonance-datanest"}</dd></div><div><dt>Status</dt><dd><Badge value={project?.status||"ACTIVE"}/></dd></div><div><dt>Access role</dt><dd><Badge value={(membership?.role||"viewer").toUpperCase()}/></dd></div><div><dt>GitHub</dt><dd>DataNest-Supository/DataNest</dd></div><div><dt>Supabase</dt><dd>sgqdmfgjbprsoqsmgigi</dd></div><div><dt>Hosting</dt><dd>Provider-agnostic</dd></div><div><dt>Optional host</dt><dd>Vercel</dd></div></dl></div>
     <div className="panel"><p className="eyebrow">TOOLS</p><h3>Tool registry</h3>{tools.map(tool=><div className="settingRow" key={tool.id}><div><b>{tool.name}</b><small>{tool.role}</small></div><Badge value={tool.enabled?"ACTIVE":"DISABLED"}/></div>)}</div>
     {project&&<div className="fullWidth" aria-label="AI Administration">
       <AiOperationsDashboard projectId={project.id} currentUserId={currentUserId} canManageAi={canManageAi}/>
