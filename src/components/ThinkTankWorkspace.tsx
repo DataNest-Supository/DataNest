@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 
 type Role="owner"|"admin"|"operator"|"viewer";
@@ -73,6 +73,7 @@ export default function ThinkTankWorkspace({
   const [aiSessionId,setAiSessionId]=useState("");
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
+  const threadLoadGeneration=useRef(0);
 
   const [channelName,setChannelName]=useState("");
   const [channelDescription,setChannelDescription]=useState("");
@@ -136,6 +137,7 @@ export default function ThinkTankWorkspace({
   },[setError]);
 
   const loadThread=useCallback(async(threadId:string)=>{
+    const requestGeneration=++threadLoadGeneration.current;
     const supabase=getSupabase();
     if(!supabase||!threadId){
       setMessages([]);setDecisions([]);setActions([]);setLearnings([]);setAiSessionId("");
@@ -157,6 +159,7 @@ export default function ThinkTankWorkspace({
       supabase.from("think_tank_ai_sessions")
         .select("session_id").eq("thread_id",threadId).eq("user_id",currentUserId).maybeSingle()
     ]);
+    if(requestGeneration!==threadLoadGeneration.current)return;
     const firstError=messageResult.error||decisionResult.error||actionResult.error||learningResult.error||sessionResult.error;
     if(firstError){setError(firstError.message);return;}
     setMessages((messageResult.data||[]) as Message[]);
