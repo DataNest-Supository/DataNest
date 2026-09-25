@@ -45,7 +45,7 @@ jobs:
           DATANEST_EDGE_CERTIFICATION: datanest-ai-certification@1
           DATANEST_EDGE_PROVIDER: manage-ai-provider-v2@1
           DATANEST_EDGE_INVITES: send-job-invite@1
-          DATANEST_EDGE_PROJECT_INVITES: send-project-member-invite@1
+          DATANEST_EDGE_PROJECT_INVITES: send-project-member-invite@2
         run: node scripts/write-release-manifest.mjs public/release-manifest.json
       - run: npm run build
       - uses: actions/upload-pages-artifact@v5.0.0
