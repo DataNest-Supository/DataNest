@@ -18,7 +18,7 @@ type Props = {
   sessionId:string;
   events:DataNestAiEvent[];
   onSessionChange:(sessionId:string)=>void;
-  onContextRefresh:()=>Promise<void>;
+  onContextRefresh:(sessionOverride?:string)=>Promise<void>;
   setNotice:(value:string)=>void;
   setError:(value:string)=>void;
 };
@@ -41,6 +41,7 @@ export default function DataNestAiChatPanel({
 }:Props){
   const [draft,setDraft]=useState("");
   const [busy,setBusy]=useState(false);
+  const [returnedTurn,setReturnedTurn]=useState<DataNestAiEvent|null>(null);
   const requestIdRef=useRef("");
 
   async function send(event:FormEvent){
@@ -68,19 +69,41 @@ export default function DataNestAiChatPanel({
       const payload=(data||{}) as Record<string,unknown>;
       const nextSession=String(payload.sessionId||sessionId||"");
       if(nextSession)onSessionChange(nextSession);
+
+      const assistant=String(payload.assistant||"").trim();
+      const outputTraceId=String(payload.outputTraceId||"").trim();
+      if(assistant){
+        setReturnedTurn({
+          id:outputTraceId||requestId+"-assistant",
+          trace_id:outputTraceId||"DN-AI-pending",
+          source_type:"datanest_ai",
+          source_provider:String(payload.providerLabel||payload.providerMode||"DataNest AI"),
+          content:assistant,
+          created_at:new Date().toISOString()
+        });
+      }
+
       setDraft("");
       requestIdRef.current="";
+      const trend=(payload.trendAnalysis||{}) as Record<string,unknown>;
+      const candidateId=String(trend.candidateId||"");
       setNotice(
-        "DataNest AI recorded this turn as traceable UNCERTIFIED evidence for "+
-        jobCode+"."
+        candidateId
+          ?"DataNest AI responded and recorded this turn as UNCERTIFIED evidence. A repeated pattern was staged for governed learning review."
+          :"DataNest AI responded and recorded this turn as traceable UNCERTIFIED evidence for "+jobCode+"."
       );
-      await onContextRefresh();
+      await onContextRefresh(nextSession);
+      setReturnedTurn(null);
     }catch(sendError){
       setError(sendError instanceof Error?sendError.message:"Unable to send DataNest AI input.");
     }finally{
       setBusy(false);
     }
   }
+
+  const visibleEvents=returnedTurn&&!events.some(item=>item.trace_id===returnedTurn.trace_id)
+    ?[...events,returnedTurn]
+    :events;
 
   return <section className="panel datanestAiChatPanel">
     <div className="panelHead">
@@ -96,7 +119,7 @@ export default function DataNestAiChatPanel({
     </p>
 
     <div className="datanestAiTranscript" aria-live="polite">
-      {events.map(item=>{
+      {visibleEvents.map(item=>{
         const assistant=item.source_type==="datanest_ai";
         const companion=item.source_type==="ai_companion";
         return <article className={"datanestAiTurn "+(assistant?"assistant":"evidence")} key={item.id}>
