@@ -6,6 +6,9 @@ declare const Deno:{
   env:{get:(name:string)=>string|undefined};
   serve:(handler:(request:Request)=>Response|Promise<Response>)=>void;
 };
+declare const EdgeRuntime:{
+  waitUntil:(promise:Promise<unknown>)=>void;
+};
 
 type AnyClient=SupabaseClient<any>;
 type UploadDescriptor={name:string;size:number;type?:string|null;clientSha256?:string|null};
@@ -113,6 +116,20 @@ async function enqueue(staging:AnyClient,itemId:string){
     target_item:itemId
   });
   if(error)throw error;
+}
+
+function wakeFileWorker(stagingUrl:string,stagingKey:string){
+  const endpoint=stagingUrl.replace(/\/$/,"")+"/functions/v1/datanest-ai-file-worker";
+  EdgeRuntime.waitUntil(
+    fetch(endpoint,{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "x-datanest-worker-auth":stagingKey
+      },
+      body:JSON.stringify({action:"drain"})
+    }).catch(()=>undefined)
+  );
 }
 
 async function createSubmission(input:{
@@ -281,7 +298,12 @@ Deno.serve(async(request:Request)=>{
         .eq("status","UPLOADING");
       if(updateError)throw updateError;
       let wakeQueued=true;
-      try{await enqueue(staging,itemId);}catch{wakeQueued=false;}
+      try{
+        await enqueue(staging,itemId);
+        wakeFileWorker(stagingEnv.url,stagingEnv.key);
+      }catch{
+        wakeQueued=false;
+      }
       return json({itemId,status:"QUEUED",wakeQueued},200,origin);
     }
 
@@ -313,6 +335,7 @@ Deno.serve(async(request:Request)=>{
         .eq("status","FAILED");
       if(updateError)throw updateError;
       await enqueue(staging,itemId);
+      wakeFileWorker(stagingEnv.url,stagingEnv.key);
       return json({itemId,status:"QUEUED"},200,origin);
     }
 
