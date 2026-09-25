@@ -183,3 +183,28 @@ begin
     raise exception 'Contribution Intelligence hardening migration is not registered';
   end if;
 end $$;
+
+
+do $$
+declare
+  workspace_def text;
+begin
+  select pg_get_functiondef(
+    'public.get_contribution_workspace(uuid)'::regprocedure
+  ) into workspace_def;
+
+  if workspace_def ilike '%select model_version into model_version%' then
+    raise exception 'Stakeholder workspace retains ambiguous model_version reference';
+  end if;
+
+  if workspace_def not ilike '%csm.model_version%active_scoring_model_version%' then
+    raise exception 'Stakeholder workspace must use a qualified scoring-model column and distinct local variable';
+  end if;
+
+  if not exists (
+    select 1 from supabase_migrations.schema_migrations
+    where name='fix_contribution_workspace_model_version_ambiguity'
+  ) then
+    raise exception 'Stakeholder workspace ambiguity hotfix migration is not registered';
+  end if;
+end $$;
