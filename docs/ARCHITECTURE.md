@@ -39,3 +39,17 @@ Think Tanks are project-scoped collaboration spaces. Channels can be project-wid
 - Approved Think Tank learning is stored in `certified_memory` as `think_tank_human_reviewed`. This is reviewed retrieval memory, not automatic model training.
 - Approval also submits a `reusable_knowledge` contribution for the normal contribution pipeline. It remains submitted/unscored/uncertified and cannot mint Sparks until that independent pipeline completes.
 - Think Tank recognition, AI output and memory approval do not grant project roles, legal ownership, royalty rights or financial authority.
+
+
+## Sparks internal-utility economy
+Sparks are an internal DataNest utility layer backed by the append-only Spark ledger.
+
+- Certified contributions may mint Project Sparks under the existing versioned contribution-scoring policy.
+- Project Sparks can only be reserved for owner/admin-published project services in v1.
+- A service request moves the required amount from the spendable Project account into the stakeholder's Locked account using append-only hold entries.
+- Cancellation or rejection returns the held amount with compensating release entries.
+- Fulfillment consumes the held amount with a service-spend entry. Historical award entries are never edited.
+- The redemption path serializes account access and rejects requests above the available spendable balance.
+- Cash purchase, cash redemption, peer-to-peer transfer, external transfer, secondary markets and platform spending are disabled by database policy constraints in v1.
+- Spending does not change contribution history, reputation, legal ownership, royalty entitlement or project authority.
+- Platform Spark accounts remain separate and visible but are not spendable in this release.
