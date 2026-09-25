@@ -98,7 +98,7 @@ The feature consists of six isolated units:
    - Queue file-processing messages by IDs only; never place source bytes in queue payloads.
    - New worker Edge Function: `datanest-ai-file-worker`.
    - The queue is the source of truth for work durability.
-   - An immediate worker invocation may be used as a low-latency wake-up, while a scheduled sweeper also consumes outstanding messages so work is not lost if the wake-up fails.
+   - An immediate worker invocation may be used as a low-latency wake-up, while a scheduled sweeper runs at least once per minute and also consumes outstanding messages so work is not lost if the wake-up fails.
 
 5. **Extraction and citation pipeline**
    - New shared extraction modules under `supabase/functions/_shared`.
@@ -357,6 +357,8 @@ The verifiable lineage is:
 
 OCR is a fallback capability behind a narrow adapter interface. Native extraction always runs first.
 
+The v1 OCR adapter uses the existing DataNest provider-routing layer and requires a provider connection explicitly marked as OCR/vision-capable; v1 does not introduce a separate OCR SaaS dependency. A release must not claim scanned-PDF support unless an OCR-capable route is configured and passes acceptance tests.
+
 The v1 OCR adapter must:
 
 - accept only pages already identified as requiring OCR;
@@ -438,9 +440,9 @@ At submission time DataNest records the context needed to make the later backgro
 - optional user instruction;
 - submission and file trace IDs;
 - relevant session event boundary/reference;
-- certified-memory context identifiers or a stable retrieval boundary.
+- an exact snapshot of the certified-memory IDs visible to this Job at submission time.
 
-Later chat messages do not silently change the purpose of the in-flight upload analysis.
+Later chat messages do not silently change the purpose of the in-flight upload analysis. The analyzer loads the recorded certified-memory IDs rather than substituting memory that was promoted after the submission began.
 
 ### 11.3 Retrieval
 
