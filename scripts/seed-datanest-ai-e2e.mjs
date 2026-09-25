@@ -71,20 +71,20 @@ async function ensureProject(userId){
   return project;
 }
 
-async function ensureJob(projectId){
+async function ensureJob(projectId,{title,description,priority}){
   const existing=await admin.from("jobs")
     .select("id,job_number,title")
     .eq("project_id",projectId)
-    .eq("title","DataNest AI E2E Job")
+    .eq("title",title)
     .maybeSingle();
   if(existing.error)throw existing.error;
   if(existing.data)return existing.data;
 
   const inserted=await admin.from("jobs").insert({
     project_id:projectId,
-    title:"DataNest AI E2E Job",
-    description:"Deterministic staging-only Job Manifest for governed DataNest AI acceptance.",
-    priority:70,
+    title,
+    description,
+    priority,
     status:"READY",
     required_capabilities:["chat"],
     requirements:{environment:"staging"},
@@ -97,6 +97,21 @@ async function ensureJob(projectId){
 const user=await ensureUser();
 if(!user)throw new Error("Unable to resolve E2E user.");
 const project=await ensureProject(user.id);
-const job=await ensureJob(project.id);
+const job=await ensureJob(project.id,{
+  title:"DataNest AI E2E Job",
+  description:"Deterministic staging-only Job Manifest for governed DataNest AI acceptance.",
+  priority:70
+});
+const switchJob=await ensureJob(project.id,{
+  title:"DataNest AI E2E Job B",
+  description:"Second deterministic staging-only Job Manifest for governed context-switch acceptance.",
+  priority:60
+});
 
-console.log(JSON.stringify({projectId:project.id,jobId:job.id,jobNumber:job.job_number}));
+console.log(JSON.stringify({
+  projectId:project.id,
+  jobId:job.id,
+  jobNumber:job.job_number,
+  switchJobId:switchJob.id,
+  switchJobNumber:switchJob.job_number
+}));
