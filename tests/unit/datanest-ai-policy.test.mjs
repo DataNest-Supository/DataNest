@@ -21,23 +21,47 @@ test("owner-only categories never auto-certify", () => {
         riskClass: "low",
         hasConflict: false,
         allGatesPassed: true,
-        evidenceCount: 10
+        evidenceCount: 10,
+        confidence: 1
       }),
       false
     );
   }
 });
 
-test("repeated low-risk non-conflicting knowledge can auto-certify after all gates", () => {
+test("low-risk automation requires stronger support and confidence", () => {
   assert.equal(
     canAutoCertify({
       category: "workflow",
       riskClass: "low",
       hasConflict: false,
       allGatesPassed: true,
-      evidenceCount: 2
+      evidenceCount: 3,
+      confidence: 0.9
     }),
     true
+  );
+  assert.equal(
+    canAutoCertify({
+      category: "workflow",
+      riskClass: "low",
+      hasConflict: false,
+      allGatesPassed: true,
+      evidenceCount: 2,
+      confidence: 0.95
+    }),
+    false
+  );
+  assert.equal(
+    canAutoCertify({
+      category: "workflow",
+      riskClass: "low",
+      hasConflict: false,
+      allGatesPassed: true,
+      evidenceCount: 5,
+      confidence: 0.5
+    }),
+    false
   );
 });
 
@@ -59,7 +83,6 @@ test("trust labels do not blur provisional and certified evidence", () => {
   assert.equal(contextTrustLabel("uncertified"), "UNCERTIFIED");
   assert.equal(contextTrustLabel("certified"), "CERTIFIED");
 });
-
 
 test("admin cannot certify owner-only architecture knowledge", () => {
   assert.equal(
@@ -99,7 +122,6 @@ test("all certification gates require one passing run for every gate", () => {
     {gate:"STRESS_TEST",passed:true}
   ]),true);
 });
-
 
 test("automatic certification requires the latest passing result for every gate to be automated", async () => {
   const { allAutomatedCertificationGatesPassed } = await import("../../supabase/functions/_shared/datanestAiPolicy.ts");
