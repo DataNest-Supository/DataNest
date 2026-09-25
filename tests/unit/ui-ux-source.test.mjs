@@ -7,6 +7,8 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const appSource = fs.readFileSync(path.join(repoRoot, "src/components/DataNestApp.tsx"), "utf8");
 const cssSource = fs.readFileSync(path.join(repoRoot, "src/app/globals.css"), "utf8");
+const authSource = fs.readFileSync(path.join(repoRoot, "src/components/AuthGate.tsx"), "utf8");
+const layoutSource = fs.readFileSync(path.join(repoRoot, "src/app/layout.tsx"), "utf8");
 
 test("mobile navigation keeps refresh and release controls reachable", () => {
   assert.match(appSource, /className="mobileNavActions"/);
@@ -134,3 +136,18 @@ test("quick switch supports arrow-key result selection before Enter", () => {
   assert.match(appSource, /commandItems\[commandActiveIndex\]/);
   assert.match(appSource, /aria-selected=\{commandActiveIndex===index\}/);
 });
+
+test("DataNest uses the Resonance AppDev parent brand and Reson8 visual system", () => {
+  assert.match(appSource, /resonance-appdev-brand\.webp/);
+  assert.match(appSource, /RESONANCE APPDEV · DATANEST/);
+  assert.match(appSource, /<small>PRODUCT<\/small><strong>DataNest<\/strong>/);
+  assert.match(authSource, /<span className="authProductName">DataNest<\/span>/);
+  assert.match(authSource, /alt="Resonance AppDev"/);
+  assert.doesNotMatch(authSource, /<h1>Resonance DataNest<\/h1>/);
+  assert.match(layoutSource, /title: "DataNest \| Resonance AppDev"/);
+  assert.match(layoutSource, /family=Inter:wght@400;500;600;700;800&family=Space\+Grotesk/);
+  assert.match(cssSource, /--font-display:"Space Grotesk","Inter"/);
+  assert.match(cssSource, /--gradient-brand:linear-gradient\(135deg,hsl\(265 85% 65%\),hsl\(295 90% 60%\),hsl\(325 90% 65%\)\)/);
+  assert.match(cssSource, /radial-gradient\(ellipse 80% 50% at 50% -10%,hsl\(295 90% 60% \/ \.18\),transparent\)/);
+});
+
