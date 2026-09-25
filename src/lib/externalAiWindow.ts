@@ -97,7 +97,7 @@ export type ActualCompanionWindow = {
 export function companionReserveForActualWindow(
   desired:CompanionPlacement,
   actual:ActualCompanionWindow
-){
+):number{
   if(desired.reserveRight<=0)return 0;
 
   const edgeTolerance=48;
