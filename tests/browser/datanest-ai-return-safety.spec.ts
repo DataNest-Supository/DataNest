@@ -168,3 +168,81 @@ test("a new tracked session for the same Job does not inherit clipboard consent"
   await expect(page.getByRole("button",{name:"Enable session auto-fill",exact:true})).toBeEnabled();
   await expect(response).toHaveValue(reviewed);
 });
+
+async function holdRealClipboardRead(
+  page:import("@playwright/test").Page,
+  context:import("@playwright/test").BrowserContext
+){
+  await signIn(page);
+  await context.grantPermissions(["clipboard-read","clipboard-write"],{
+    origin:new URL(page.url()).origin
+  });
+  await openAiSidebar(page);
+  page.on("popup",popup=>void popup.close());
+  await page.getByRole("button",{name:"Open companion + copy handoff",exact:true}).click();
+  const response=page.locator(".externalAiReturnDock textarea");
+  await expect(response).toBeEnabled();
+  await page.bringToFront();
+  await page.getByRole("button",{name:"Enable session auto-fill",exact:true}).click();
+  await expect(page.getByText("AUTO-FILL ON",{exact:true})).toBeVisible();
+  await response.fill("");
+  // Delay only delivery of a REAL clipboard result; do not substitute its value.
+  await page.evaluate(async()=>{
+    await navigator.clipboard.writeText("Stale clipboard result from the previous capture context.");
+    const readText=navigator.clipboard.readText.bind(navigator.clipboard);
+    document.documentElement.dataset.heldClipboardReads="0";
+    document.documentElement.dataset.releasedClipboardReads="0";
+    Object.defineProperty(navigator.clipboard,"readText",{configurable:true,value:async()=>{
+      const text=await readText();
+      document.documentElement.dataset.heldClipboardReads=String(
+        Number(document.documentElement.dataset.heldClipboardReads||"0")+1
+      );
+      await new Promise<void>(resolve=>window.addEventListener(
+        "datanest:test-release-clipboard",()=>resolve(),{once:true}
+      ));
+      document.documentElement.dataset.releasedClipboardReads=String(
+        Number(document.documentElement.dataset.releasedClipboardReads||"0")+1
+      );
+      return text;
+    }});
+    window.dispatchEvent(new Event("focus"));
+  });
+  await expect.poll(async()=>Number(await page.locator("html").getAttribute("data-held-clipboard-reads"))).toBeGreaterThan(0);
+  return response;
+}
+
+async function releaseRealClipboardRead(page:import("@playwright/test").Page){
+  await page.evaluate(async()=>{
+    window.dispatchEvent(new Event("datanest:test-release-clipboard"));
+    // Let promise continuations and React's rendered state settle, not just the event.
+    await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));
+  });
+  await expect.poll(async()=>Number(await page.locator("html").getAttribute("data-released-clipboard-reads"))).toBeGreaterThan(0);
+}
+
+test("disabling auto-fill discards an already pending clipboard result",async({page,context})=>{
+  const response=await holdRealClipboardRead(page,context);
+  await page.getByRole("button",{name:"Turn off auto-fill",exact:true}).click();
+  await expect(page.getByRole("button",{name:"Enable session auto-fill",exact:true})).toBeVisible();
+  await releaseRealClipboardRead(page);
+  await expect(response).toHaveValue("");
+});
+
+for(const changedContext of ["Job","provider"] as const){
+  test("a pending clipboard result is discarded after changing "+changedContext,async({page,context})=>{
+    const response=await holdRealClipboardRead(page,context);
+    if(changedContext==="Job"){
+      const jobSelect=page.getByRole("combobox",{name:/^Job Manifest/});
+      const option=jobSelect.locator("option").filter({hasText:"DataNest AI E2E Job B"}).first();
+      const id=await option.getAttribute("value");
+      if(!id)throw new Error("The second deterministic Job fixture is required.");
+      await jobSelect.selectOption(id);
+      await expect(jobSelect).toHaveValue(id);
+    }else{
+      await page.getByRole("combobox",{name:/^External AI/}).selectOption("gemini");
+    }
+    await expect(response).toBeDisabled();
+    await releaseRealClipboardRead(page);
+    await expect(response).toHaveValue("");
+  });
+}
