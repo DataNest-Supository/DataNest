@@ -91,3 +91,22 @@ export function bestCandidateByEvidenceOverlap(
     .sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
   return ranked[0]?.[0]||null;
 }
+
+
+export function stableCandidateIdFromHash(sha256Digest:string):string {
+  const digest=sha256Digest.toLowerCase();
+  if(!/^[0-9a-f]{64}$/.test(digest)){
+    throw new Error("Stable candidate ids require a SHA-256 digest.");
+  }
+  const hex=digest.slice(0,32).split("");
+  hex[12]="5";
+  hex[16]=((Number.parseInt(hex[16],16)&0x3)|0x8).toString(16);
+  const value=hex.join("");
+  return [
+    value.slice(0,8),
+    value.slice(8,12),
+    value.slice(12,16),
+    value.slice(16,20),
+    value.slice(20,32)
+  ].join("-");
+}
