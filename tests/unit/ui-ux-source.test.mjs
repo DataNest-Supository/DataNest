@@ -120,3 +120,8 @@ test("quick switch opens the first search result with Enter", () => {
   assert.match(appSource, /commandItems\[0\]/);
   assert.match(appSource, /chooseCommandView\(commandItems\[0\]\.key\)/);
 });
+
+
+test("quick switch Enter does nothing for an empty search", () => {
+  assert.match(appSource, /commandQuery\.trim\(\)/);
+});
