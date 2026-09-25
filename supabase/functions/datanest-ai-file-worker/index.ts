@@ -4,6 +4,7 @@ import { FILE_BUCKET, MAX_FILE_BYTES, canonicalBlobPath } from "../_shared/datan
 import { extractTxt, extractCsv, extractJson } from "../_shared/datanestFileExtract.ts";
 import { extractPdf, extractDocx } from "./documentExtract.ts";
 import { runPdfOcr } from "../_shared/datanestFileOcr.ts";
+import { drainFileAnalysis } from "../_shared/datanestFileAnalysisRuntime.ts";
 
 declare const Deno:{
   env:{get:(name:string)=>string|undefined};
@@ -235,14 +236,30 @@ async function updateSubmissionState(client:any,submissionId:string){
     .eq("submission_id",submissionId);
   if(error)throw error;
   const statuses=(items||[]).map((item:any)=>String(item.status));
-  let status="PROCESSING";
-  if(statuses.length&&statuses.every((value:string)=>value==="FAILED"))status="FAILED";
-  else if(statuses.length&&statuses.every((value:string)=>value==="READY"||value==="FAILED"))status="PROCESSING";
+  const terminal=statuses.length>0&&statuses.every((value:string)=>value==="READY"||value==="FAILED");
+
+  const {data:submission,error:submissionError}=await client
+    .from("ai_file_submissions")
+    .select("status,response_event_id")
+    .eq("id",submissionId)
+    .single();
+  if(submissionError)throw submissionError;
+  if(submission.response_event_id)return String(submission.status);
+
+  let status=terminal?"ANALYZING":"PROCESSING";
+  if(terminal&&String(submission.status)!=="ANALYZING"){
+    const {error:queueError}=await client.rpc("service_enqueue_datanest_file_analysis",{
+      target_submission:submissionId
+    });
+    if(queueError)throw queueError;
+  }
+
   const {error:updateError}=await client
     .from("ai_file_submissions")
     .update({status,updated_at:new Date().toISOString()})
     .eq("id",submissionId);
   if(updateError)throw updateError;
+  return status;
 }
 
 async function processItem(client:any,itemId:string){
@@ -253,8 +270,12 @@ async function processItem(client:any,itemId:string){
     .maybeSingle();
   if(itemError)throw itemError;
   if(!item)return {itemId,status:"MISSING",ack:true};
-  if(item.status==="READY")return {itemId,status:"READY",ack:true,idempotent:true};
+  if(item.status==="READY"){
+    await updateSubmissionState(client,String(item.submission_id));
+    return {itemId,status:"READY",ack:true,idempotent:true};
+  }
   if(item.status==="FAILED"&&DETERMINISTIC_CODES.has(String(item.last_error_code||""))){
+    await updateSubmissionState(client,String(item.submission_id));
     return {itemId,status:"FAILED",ack:true,idempotent:true};
   }
 
@@ -268,6 +289,7 @@ async function processItem(client:any,itemId:string){
       completed_at:new Date().toISOString(),
       updated_at:new Date().toISOString()
     }).eq("id",itemId);
+    await updateSubmissionState(client,String(item.submission_id));
     return {itemId,status:"FAILED",ack:true};
   }
 
@@ -481,8 +503,22 @@ Deno.serve(async(request:Request)=>{
 
   try{
     const client=createClient(url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
-    const results=await drain(client);
-    return json({processed:results.length,results});
+    const body=await request.json().catch(()=>({})) as Record<string,unknown>;
+    const action=String(body.action||"drain");
+
+    if(action==="analysis"||action==="drain-analysis"){
+      const analysis=await drainFileAnalysis(client);
+      return json({processed:analysis.length,analysis});
+    }
+    if(action!=="drain")return json({error:"Unsupported worker action."},400);
+
+    const ingestion=await drain(client);
+    const analysis=await drainFileAnalysis(client);
+    return json({
+      processed:ingestion.length+analysis.length,
+      ingestion,
+      analysis
+    });
   }catch(error){
     return json({error:error instanceof Error?error.message:"Worker failed."},500);
   }
