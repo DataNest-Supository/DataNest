@@ -38,7 +38,7 @@ test("session auto-fill requires opt-in, preserves edits, and stops when disable
   await openAiSidebar(page);
 
   page.on("popup",popup=>void popup.close());
-  await page.getByRole("button",{name:"Open companion + copy handoff"}).click();
+  await page.getByRole("button",{name:"Open companion + load handoff"}).click();
   const response=page.getByPlaceholder(/Paste or type the external AI response here/i);
   await expect(response).toBeEnabled();
   await expect(page.getByText("AUTO-FILL ON",{exact:true})).toHaveCount(0);
@@ -102,7 +102,7 @@ test("switching jobs replaces the tracked handoff with the newly selected manife
   await openAiSidebar(page);
 
   page.on("popup",popup=>void popup.close());
-  await page.getByRole("button",{name:"Open companion + copy handoff"}).click();
+  await page.getByRole("button",{name:"Open companion + load handoff"}).click();
   await expect(page.getByPlaceholder(/Paste or type the external AI response here/i)).toBeEnabled();
 
   const handoff=page.locator("details.externalAiHandoff textarea");
@@ -120,7 +120,7 @@ test("switching jobs replaces the tracked handoff with the newly selected manife
   await expect(page.getByRole("button",{name:"Enable session auto-fill",exact:true})).toBeDisabled();
 });
 
-test("provider launch keeps work out of URLs and sidebar resizing works by keyboard",async({page,context})=>{
+test("provider launch preloads traced work without user email and sidebar resizing works by keyboard",async({page,context})=>{
   await page.setViewportSize({width:1600,height:1000});
   await signIn(page);
   await openAiSidebar(page);
@@ -130,11 +130,15 @@ test("provider launch keeps work out of URLs and sidebar resizing works by keybo
     status:200,contentType:"text/html",body:"<!doctype html><title>Provider navigation fixture</title>"
   }));
   const popupReady=page.waitForEvent("popup");
-  await page.getByRole("button",{name:"Open companion + copy handoff"}).click();
+  await page.getByRole("button",{name:"Open companion + load handoff"}).click();
   const popup=await popupReady;
-  await popup.waitForURL("https://chatgpt.com/");
+  await popup.waitForURL(url=>url.hostname==="chatgpt.com"&&Boolean(url.searchParams.get("prompt")));
   const providerUrl=new URL(popup.url());
-  expect(providerUrl.search).toBe("");
+  const prompt=providerUrl.searchParams.get("prompt")||"";
+  expect(prompt).toContain("RESONANCE DATANEST — LIVE EXTERNAL AI HANDOFF");
+  expect(prompt).toContain("[DATANEST TRACKING HEADER]");
+  expect(prompt).toContain("Trace Key: DN-");
+  expect(prompt).not.toContain(process.env.DATANEST_AI_E2E_EMAIL!);
   expect(providerUrl.hash).toBe("");
   await popup.close();
   await page.bringToFront();
@@ -160,7 +164,7 @@ test("a new tracked session for the same Job does not inherit clipboard consent"
   });
   await openAiSidebar(page);
   page.on("popup",popup=>void popup.close());
-  const launch=page.getByRole("button",{name:"Open companion + copy handoff",exact:true});
+  const launch=page.getByRole("button",{name:"Open companion + load handoff",exact:true});
   await launch.click();
   const response=page.locator(".externalAiReturnDock textarea");
   await expect(response).toBeEnabled();
@@ -189,7 +193,7 @@ async function holdRealClipboardRead(
   });
   await openAiSidebar(page);
   page.on("popup",popup=>void popup.close());
-  await page.getByRole("button",{name:"Open companion + copy handoff",exact:true}).click();
+  await page.getByRole("button",{name:"Open companion + load handoff",exact:true}).click();
   const response=page.locator(".externalAiReturnDock textarea");
   await expect(response).toBeEnabled();
   await page.bringToFront();

@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
 import JobInviteForm from "@/components/JobInviteForm";
@@ -133,6 +133,7 @@ export default function DataNestApp({session}:{session:Session}) {
   const commandInputRef=useRef<HTMLInputElement|null>(null);
   const commandReturnFocusRef=useRef<HTMLElement|null>(null);
   const [aiSidebarOpen,setAiSidebarOpen]=useState(false);
+  const [companionReserve,setCompanionReserve]=useState(0);
   const [activeDataNestAiSession,setActiveDataNestAiSession]=useState<ActiveDataNestAiSession|null>(null);
   const [project,setProject]=useState<Project|null>(null);
   const [membership,setMembership]=useState<ProjectMember|null>(null);
@@ -571,7 +572,10 @@ export default function DataNestApp({session}:{session:Session}) {
         ? "Control plane degraded"
         : "Control plane offline";
 
-  return <div className={"appFrame "+(aiSidebarOpen?"aiDockOpen":"")}>
+  return <div
+    className={"appFrame "+(aiSidebarOpen?"aiDockOpen ":"")+(companionReserve>0?"companionRailReserved":"")}
+    style={companionReserve>0?({"--companion-reserve":companionReserve+"px"} as CSSProperties):undefined}
+  >
     <aside id="datanest-navigation" aria-label="DataNest navigation" className={"sidebar "+(mobileOpen?"open":"")}>
       <div className="sidebarTop">
         <div className="logo">RD</div>
@@ -683,7 +687,11 @@ export default function DataNestApp({session}:{session:Session}) {
           >Quick switch <kbd className="shortcutHint">Ctrl K</kbd></button>
           <button
             className={"secondaryButton compact aiSidebarToggle "+(aiSidebarOpen?"active":"")}
-            onClick={()=>setAiSidebarOpen(value=>!value)}
+            onClick={()=>setAiSidebarOpen(value=>{
+              const next=!value;
+              if(!next)setCompanionReserve(0);
+              return next;
+            })}
             aria-pressed={aiSidebarOpen}
           >{aiSidebarOpen?"Hide AI":"AI assistant"}</button>
           <details className="workspaceOptions" onKeyDown={event=>{
@@ -739,9 +747,10 @@ export default function DataNestApp({session}:{session:Session}) {
       projectId={project.id}
       currentUserEmail={session.user.email||"Authenticated user"}
       activeDataNestAiSession={activeDataNestAiSession}
-      onClose={()=>setAiSidebarOpen(false)}
+      onClose={()=>{setAiSidebarOpen(false);setCompanionReserve(0);}}
       onNotice={setNotice}
       onError={setError}
+      onCompanionReserve={setCompanionReserve}
     />}
   </div>;
 }

@@ -119,9 +119,14 @@ test("companion placement preserves the DataNest dock on a maximized desktop", a
     preferredWidth: 500
   });
 
+  assert.equal(
+    placement.left + placement.width,
+    1920,
+    "maximized desktop companion should dock to the right edge"
+  );
   assert.ok(
-    placement.left + placement.width <= 1920 - 500 - 8,
-    "companion must not cover the right-side DataNest dock"
+    placement.reserveRight >= placement.width,
+    "DataNest must reserve the companion footprint so the dock stays visible"
   );
 });
 
@@ -142,6 +147,7 @@ test("companion placement uses free screen space to the right when available", a
 
   assert.ok(placement.left >= 1188, "companion should sit outside DataNest when right-side screen space is available");
   assert.ok(placement.left + placement.width <= 1920, "companion must remain on-screen");
+  assert.equal(placement.reserveRight, 0, "unused screen space should not reserve DataNest layout width");
 });
 
 test("Return to DataNest defaults to manual paste and exposes session-only auto-fill", () => {
@@ -193,14 +199,15 @@ test("explicit paste may replace a draft but still rejects copied handoff instru
   assert.equal(select({ clipboardText: "RESONANCE DATANEST — LIVE EXTERNAL AI HANDOFF\n[DATANEST TRACKING HEADER]", currentResponse: "Existing draft", allowReplace: true }), null);
 });
 
-test("external provider launch does not put handoff or email into a URL", () => {
+test("ChatGPT companion preloads the tracked handoff while omitting user email", () => {
   const source = fs.readFileSync(
     path.join(repoRoot, "src/components/ExternalAiSidebar.tsx"),
     "utf8"
   );
-  assert.doesNotMatch(source, /searchParams\.set\("prompt"/);
+  assert.match(source, /searchParams\.set\("prompt",promptText\)/);
+  assert.match(source, /providerLaunchUrl\(trackedHandoff\)/);
   assert.doesNotMatch(source, /"User: "\+currentUserEmail/);
-  assert.match(source, /Provider windows open without DataNest work content in the URL/);
+  assert.match(source, /User identity: intentionally omitted from external handoff/);
 });
 
 test("external AI sidebar exposes keyboard width controls", () => {
@@ -210,4 +217,15 @@ test("external AI sidebar exposes keyboard width controls", () => {
   );
   assert.match(source, /aria-label="Narrow AI sidebar"/);
   assert.match(source, /aria-label="Widen AI sidebar"/);
+});
+
+
+test("DataNest app reserves and clears the companion rail", () => {
+  const source = fs.readFileSync(
+    path.join(repoRoot, "src/components/DataNestApp.tsx"),
+    "utf8"
+  );
+  assert.match(source, /companionRailReserved/);
+  assert.match(source, /onCompanionReserve=\{setCompanionReserve\}/);
+  assert.match(source, /setCompanionReserve\(0\)/);
 });

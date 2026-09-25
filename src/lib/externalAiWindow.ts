@@ -16,6 +16,7 @@ export type CompanionPlacement = {
   top:number;
   width:number;
   height:number;
+  reserveRight:number;
 };
 
 function clamp(value:number,min:number,max:number){
@@ -24,6 +25,9 @@ function clamp(value:number,min:number,max:number){
 
 export function calculateCompanionPlacement(input:CompanionPlacementInput):CompanionPlacement{
   const gap=8;
+  const minCompanionWidth=360;
+  const navReserve=220;
+  const minMainWidth=360;
   const screenRight=input.screenLeft+input.screenWidth;
   const screenBottom=input.screenTop+input.screenHeight;
   const browserRight=input.browserLeft+input.browserWidth;
@@ -32,18 +36,32 @@ export function calculateCompanionPlacement(input:CompanionPlacementInput):Compa
 
   let width=clamp(input.preferredWidth,460,760);
   let left:number;
+  let reserveRight=0;
 
   if(freeRight>=width+gap){
+    // Best case: keep the provider completely outside DataNest.
     left=browserRight+gap;
+  }else if(freeLeft>=width+gap){
+    // Prefer unused screen space over covering the app.
+    left=input.browserLeft-gap-width;
   }else{
-    const mainSpace=input.browserWidth-input.dockWidth-gap*2;
-    if(mainSpace>=360){
-      width=Math.min(width,mainSpace);
-      left=browserRight-input.dockWidth-gap-width;
-    }else if(freeLeft>=width+gap){
-      left=input.browserLeft-gap-width;
+    // When DataNest is maximized, reserve a right-hand visual rail inside the
+    // app and place the companion directly over that reserved rail. This makes
+    // the external window read as an extension of the DataNest dock instead of
+    // floating over the middle of the workspace.
+    const maxDockedWidth=
+      input.browserWidth-input.dockWidth-navReserve-minMainWidth-gap;
+
+    if(maxDockedWidth>=minCompanionWidth){
+      width=Math.min(width,maxDockedWidth);
+      left=screenRight-width;
+      const overlap=Math.max(0,browserRight-left);
+      reserveRight=overlap>0?Math.min(input.browserWidth,overlap+gap):0;
     }else{
-      width=Math.min(width,Math.max(320,input.screenWidth-input.dockWidth-gap*2));
+      // Very narrow desktops cannot support four usable columns. Preserve the
+      // Return to DataNest dock and fall back to the previous non-dock overlay.
+      const mainSpace=input.browserWidth-input.dockWidth-gap*2;
+      width=Math.min(width,Math.max(320,mainSpace));
       left=clamp(
         browserRight-input.dockWidth-gap-width,
         input.screenLeft,
@@ -59,5 +77,11 @@ export function calculateCompanionPlacement(input:CompanionPlacementInput):Compa
     Math.max(input.screenTop,screenBottom-height)
   );
 
-  return {left:Math.round(left),top:Math.round(top),width:Math.round(width),height:Math.round(height)};
+  return {
+    left:Math.round(left),
+    top:Math.round(top),
+    width:Math.round(width),
+    height:Math.round(height),
+    reserveRight:Math.round(reserveRight)
+  };
 }

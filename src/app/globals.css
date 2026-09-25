@@ -608,3 +608,13 @@ box-shadow:0 34px 110px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.035)}
 @media(max-width:700px){.aiIHero{padding:26px 20px}.aiIHero h2{font-size:clamp(44px,15vw,64px)}.aiICoreStage{min-height:280px;transform:scale(.84);margin:-18px}.orbitOuter{width:315px;height:315px}.orbitMiddle{width:240px;height:240px}.coreNode{width:118px;height:118px}.humanCore{left:3%}.aiCore{right:3%}.aiIStatsGrid{grid-template-columns:1fr 1fr}.aiIStatsGrid article{padding:17px;min-height:112px}.aiIStatsGrid strong{font-size:29px}.aiIFlowRail{grid-template-columns:1fr 10px 1fr}.aiIFlowRail>i{width:10px}.aiIFlowRail>i:nth-of-type(2){display:none}.aiIFlowRail button:nth-of-type(3){margin-top:10px}.aiIFlowRail button:nth-of-type(4){margin-top:10px}.aiIFlowRail{row-gap:10px}.aiIFlowRail button:nth-of-type(3){grid-column:1}.aiIFlowRail button:nth-of-type(4){grid-column:3}.aiIFlowRail>i:nth-of-type(3){display:none}}
 @media(max-width:470px){.aiIStatsGrid{grid-template-columns:1fr}.aiICoreStage{transform:scale(.72);margin:-42px}.aiIFlowRail{grid-template-columns:1fr}.aiIFlowRail>i{display:none}.aiIFlowRail button:nth-of-type(3),.aiIFlowRail button:nth-of-type(4){grid-column:auto;margin-top:0}}
 @media(prefers-reduced-motion:reduce){.ambientOrb,.signalDot,.coreOrbit,.signalArc,.coreCenter,.coreBridge i,.stateBarTrack span,.aiIFlowRail>i::after{animation:none!important}}
+
+
+/* External AI companion rail: on wide desktops, reserve the provider popup
+   footprint so ChatGPT docks beside DataNest instead of covering the workspace. */
+@media(min-width:1181px){
+  .appFrame.aiDockOpen.companionRailReserved{
+    grid-template-columns:270px minmax(0,1fr) auto var(--companion-reserve,0px);
+    overflow-x:hidden;
+  }
+}
