@@ -99,7 +99,9 @@ export default function ExternalAiSidebar({
   const lastClipboardCapture=useRef("");
   const clipboardGeneration=useRef(0);
   const clipboardContextRef=useRef("");
-  const clipboardConsentRef=useRef(false);\n  const companionPopupRef=useRef<Window|null>(null);\n  const companionClosePollRef=useRef<number|null>(null);
+  const clipboardConsentRef=useRef(false);
+  const companionPopupRef=useRef<Window|null>(null);
+  const companionClosePollRef=useRef<number|null>(null);
   const clipboardContextKey=JSON.stringify([projectId,currentUserEmail,selectedJobId,provider,sessionId]);
 
   const setAutoCaptureEnabled=useCallback((enabled:boolean)=>{
