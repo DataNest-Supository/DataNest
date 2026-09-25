@@ -74,7 +74,7 @@ async function authorizeJob(userClient:AnyClient,jobId:string){
 async function loadSubmission(staging:AnyClient,submissionId:string,jobId:string){
   const {data,error}=await staging
     .from("ai_file_submissions")
-    .select("*")
+    .select("id,trace_id,project_id,job_id,session_id,user_id,instruction,status,file_count,response_event_id,analysis_attempt_count,last_analysis_error_code,last_analysis_error_message,created_at,updated_at,completed_at")
     .eq("id",submissionId)
     .eq("job_id",jobId)
     .maybeSingle();
@@ -184,7 +184,16 @@ async function createSubmission(input:{
     const memoryItems=Array.isArray((memory as Record<string,unknown>|null)?.items)
       ?(memory as {items:Array<Record<string,unknown>>}).items
       :[];
-    const certifiedMemoryIds=memoryItems.map(item=>String(item.id||"")).filter(Boolean);
+    const certifiedMemorySnapshot=memoryItems.map(item=>({
+      id:String(item.id||""),
+      normalized_knowledge:String(item.normalized_knowledge||""),
+      category:item.category==null?null:String(item.category),
+      content_hash:item.content_hash==null?null:String(item.content_hash),
+      effective_version:Number(item.effective_version||0),
+      certification_class:item.certification_class==null?null:String(item.certification_class),
+      confidence:item.confidence==null?null:Number(item.confidence)
+    })).filter(item=>item.id&&item.normalized_knowledge);
+    const certifiedMemoryIds=certifiedMemorySnapshot.map(item=>item.id);
 
     const {data:frozenEvents,error:frozenEventsError}=await input.staging
       .from("ai_intake_events")
@@ -208,6 +217,7 @@ async function createSubmission(input:{
         client_request_id:clientRequestId,
         instruction,
         certified_memory_ids:certifiedMemoryIds,
+        certified_memory_snapshot:certifiedMemorySnapshot,
         frozen_session_event_ids:frozenSessionEventIds,
         status:"UPLOADING",
         file_count:files.length
