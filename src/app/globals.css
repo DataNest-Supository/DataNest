@@ -392,3 +392,16 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
   .transparencyMeta>div:last-child{border-bottom:0}
   .transparencyDocHeader,.transparencyTranscriptActions{align-items:flex-start;flex-direction:column}
 }
+
+
+/* External audit return publication */
+.transparencyDocumentGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.transparencyFindingsWrap{overflow:auto;margin-top:12px;border:1px solid var(--line);border-radius:12px}
+.transparencyFindingsTable{width:100%;border-collapse:collapse;min-width:980px}
+.transparencyFindingsTable th,.transparencyFindingsTable td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:10px;line-height:1.45}
+.transparencyFindingsTable th{position:sticky;top:0;background:#0a1623;color:#9fb6c8;text-transform:uppercase;letter-spacing:.05em;font-size:9px;z-index:1}
+.transparencyFindingsTable tr:last-child td{border-bottom:0}
+.transparencyFindingsTable td:first-child{white-space:nowrap}
+.transparencyFindingsTable td:first-child small{display:block;color:var(--muted);margin-top:4px}
+.transparencyFindingsTable .badge{white-space:normal;text-align:center}
+@media(max-width:960px){.transparencyDocumentGrid{grid-template-columns:1fr}}

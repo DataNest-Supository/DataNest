@@ -1,6 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+type Finding = {
+  id:string;
+  title:string;
+  domain:string;
+  severity:string;
+  confidence:string;
+  reported_status:string;
+  priority:string;
+  validation_state:string;
+};
+
+type FindingsDocument = {
+  audit_id:string;
+  audit_date:string;
+  audit_type:string;
+  source_baseline:string;
+  certification_status:string;
+  validation_state:string;
+  findings:Finding[];
+};
 
 const auditDomains = [
   "UI / UX / information architecture",
@@ -33,42 +54,80 @@ const invariantHighlights = [
   "Normal user UI must not silently reintroduce Capacity or Operations Capabilities."
 ];
 
-const auditPartUrls = Array.from({length:8},(_,index)=>`./transparency/audits/external-full-system-audit-brief/part-${String(index+1).padStart(2,"0")}.txt`);
+const briefPartUrls = Array.from({length:8},(_,index)=>`./transparency/audits/external-full-system-audit-brief/part-${String(index+1).padStart(2,"0")}.txt`);
+const auditReturnBase="./transparency/audits/external-full-system-audit-return-2026-09-25";
+const auditReturnUrl=auditReturnBase+"/report.md";
+const findingsUrl=auditReturnBase+"/findings.json";
+const backlogUrl=auditReturnBase+"/remediation-backlog.json";
+
+function downloadText(filename:string,text:string){
+  const blob=new Blob([text],{type:"text/plain;charset=utf-8"});
+  const href=URL.createObjectURL(blob);
+  const anchor=document.createElement("a");
+  anchor.href=href;
+  anchor.download=filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(href);
+}
 
 export default function TransparencyWorkspace(){
   const [fullBrief,setFullBrief]=useState("");
   const [briefLoading,setBriefLoading]=useState(false);
   const [briefError,setBriefError]=useState("");
+  const [auditReturn,setAuditReturn]=useState("");
+  const [auditReturnLoading,setAuditReturnLoading]=useState(false);
+  const [auditReturnError,setAuditReturnError]=useState("");
+  const [findings,setFindings]=useState<FindingsDocument|null>(null);
+  const [findingsError,setFindingsError]=useState("");
+
+  useEffect(()=>{
+    let cancelled=false;
+    void fetch(findingsUrl,{cache:"no-store"})
+      .then(response=>{
+        if(!response.ok)throw new Error(`Unable to load findings (${response.status}).`);
+        return response.json() as Promise<FindingsDocument>;
+      })
+      .then(data=>{if(!cancelled)setFindings(data);})
+      .catch(error=>{if(!cancelled)setFindingsError(error instanceof Error?error.message:"Unable to load audit findings.");});
+    return()=>{cancelled=true;};
+  },[]);
 
   async function loadFullBrief(){
     if(fullBrief||briefLoading)return;
     setBriefLoading(true);
     setBriefError("");
     try{
-      const responses=await Promise.all(auditPartUrls.map(url=>fetch(url,{cache:"no-store"})));
+      const responses=await Promise.all(briefPartUrls.map(url=>fetch(url,{cache:"no-store"})));
       const failed=responses.find(response=>!response.ok);
-      if(failed)throw new Error(`Unable to load audit transcript (${failed.status}).`);
+      if(failed)throw new Error(`Unable to load audit brief transcript (${failed.status}).`);
       const parts=await Promise.all(responses.map(response=>response.text()));
       setFullBrief(parts.join(""));
     }catch(error){
-      setBriefError(error instanceof Error?error.message:"Unable to load the accessible audit transcript.");
+      setBriefError(error instanceof Error?error.message:"Unable to load the accessible audit brief.");
     }finally{
       setBriefLoading(false);
     }
   }
 
-  function downloadAccessibleBrief(){
-    if(!fullBrief)return;
-    const blob=new Blob([fullBrief],{type:"text/plain;charset=utf-8"});
-    const href=URL.createObjectURL(blob);
-    const anchor=document.createElement("a");
-    anchor.href=href;
-    anchor.download="Resonance_DataNest_External_Full_System_Audit_Brief_Accessible.txt";
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(href);
+  async function loadAuditReturn(){
+    if(auditReturn||auditReturnLoading)return;
+    setAuditReturnLoading(true);
+    setAuditReturnError("");
+    try{
+      const response=await fetch(auditReturnUrl,{cache:"no-store"});
+      if(!response.ok)throw new Error(`Unable to load audit return (${response.status}).`);
+      setAuditReturn(await response.text());
+    }catch(error){
+      setAuditReturnError(error instanceof Error?error.message:"Unable to load the external audit return.");
+    }finally{
+      setAuditReturnLoading(false);
+    }
   }
+
+  const highCount=findings?.findings.filter(item=>item.severity.startsWith("HIGH")).length||9;
+  const mediumCount=findings?.findings.filter(item=>item.severity.startsWith("MEDIUM")).length||5;
 
   return <div className="transparencyWorkspace">
     <section className="heroPanel transparencyHero" aria-labelledby="transparency-title">
@@ -76,31 +135,34 @@ export default function TransparencyWorkspace(){
         <p className="eyebrow">TRANSPARENCY</p>
         <h2 id="transparency-title">Audit library + public accountability record</h2>
         <p>
-          DataNest publishes audit methodology, source documents, status and remediation evidence so stakeholders can inspect how the system is reviewed.
+          DataNest publishes audit methodology, external audit returns, finding status and remediation evidence so stakeholders can inspect how the system is reviewed.
           Audit documents are informational evidence: they do not grant project roles, financial authority, ownership or governance power.
         </p>
         <div className="heroActions">
-          <button className="primaryButton compact" type="button" onClick={()=>void loadFullBrief()} disabled={briefLoading}>
-            {briefLoading?"Loading brief…":"Load full accessible brief"}
+          <button className="primaryButton compact" type="button" onClick={()=>void loadAuditReturn()} disabled={auditReturnLoading}>
+            {auditReturnLoading?"Loading audit return…":"Read external audit return"}
           </button>
-          <a className="secondaryButton compact linkButton" href="#audit-accessible-summary">
-            Read accessible summary
-          </a>
+          <a className="secondaryButton compact linkButton" href="#published-findings">View 14 findings</a>
         </div>
       </div>
       <div className="stackDiagram" aria-label="Transparency lifecycle">
         <div>Audit brief <b>Published</b></div><span aria-hidden="true">↓</span>
-        <div>External review <b>Pending</b></div><span aria-hidden="true">↓</span>
-        <div>Findings <b>Not yet published</b></div><span aria-hidden="true">↓</span>
-        <div>Remediation <b>Traceable</b></div>
+        <div>External return <b>Published</b></div><span aria-hidden="true">↓</span>
+        <div>DataNest validation <b>Pending</b></div><span aria-hidden="true">↓</span>
+        <div>Remediation <b>Not yet validated</b></div>
       </div>
     </section>
 
     <section className="metricGrid" aria-label="Transparency status">
-      <article className="metricCard"><span>Published source documents</span><strong>1</strong><small>Audit methodology / brief</small></article>
-      <article className="metricCard"><span>External audit results</span><strong>0</strong><small>Awaiting completed audit</small></article>
-      <article className="metricCard"><span>Open published findings</span><strong>0</strong><small>No external results imported yet</small></article>
-      <article className="metricCard"><span>Remediation records</span><strong>0</strong><small>Created after validated findings</small></article>
+      <article className="metricCard"><span>Published audit documents</span><strong>2</strong><small>Methodology + external return</small></article>
+      <article className="metricCard"><span>External audit returns</span><strong>1</strong><small>Read-only / source-review scope</small></article>
+      <article className="metricCard"><span>Published findings</span><strong>14</strong><small>{highCount+" high/verification · "+mediumCount+" medium"}</small></article>
+      <article className="metricCard"><span>Validated / closed</span><strong>0</strong><small>DataNest validation pending</small></article>
+    </section>
+
+    <section className="notice errorNotice" role="note" aria-label="Audit coverage limitation">
+      <b>Coverage boundary:</b> this external return is a substantive read-only public/source audit, not a full production certification.
+      Authenticated UI behavior, deployed database controls, production mutations and output quality were not verified by the external auditor.
     </section>
 
     <section className="panel" aria-labelledby="audit-library-heading">
@@ -109,63 +171,132 @@ export default function TransparencyWorkspace(){
         <span className="countPill">READ ONLY</span>
       </div>
 
-      <article className="transparencyDocCard">
-        <div className="transparencyDocHeader">
-          <div>
-            <p className="eyebrow">AUDIT METHODOLOGY · VERSION 1.0</p>
-            <h3>Resonance DataNest / RONSAS External Full-System Audit Brief</h3>
+      <div className="transparencyDocumentGrid">
+        <article className="transparencyDocCard">
+          <div className="transparencyDocHeader">
+            <div>
+              <p className="eyebrow">AUDIT METHODOLOGY · VERSION 1.0</p>
+              <h3>External Full-System Audit Brief</h3>
+            </div>
+            <span className="badge good">PUBLISHED</span>
           </div>
-          <span className="badge good">PUBLISHED</span>
+          <p>
+            The governing audit specification covering UI, architecture, workflows, AI, governance, output quality,
+            reliability, security, deployment and optimization.
+          </p>
+          <dl className="transparencyMeta">
+            <div><dt>Published</dt><dd>25 Sep 2026</dd></div>
+            <div><dt>Baseline source</dt><dd><code>ac93d51828707d398dfa9c5a471d8a6ed4c9059f</code></dd></div>
+            <div><dt>Baseline DB release</dt><dd><code>datanest-project-member-invitations-v1</code></dd></div>
+            <div><dt>Audit result</dt><dd>External return received 25 Sep 2026</dd></div>
+          </dl>
+          <div className="heroActions">
+            <button className="secondaryButton compact" type="button" onClick={()=>void loadFullBrief()} disabled={briefLoading}>
+              {fullBrief?"Brief loaded":briefLoading?"Loading…":"Open full brief"}
+            </button>
+            <a className="textButton linkButton" href="./transparency/audits/index.json">Document registry</a>
+          </div>
+        </article>
+
+        <article className="transparencyDocCard">
+          <div className="transparencyDocHeader">
+            <div>
+              <p className="eyebrow">EXTERNAL AUDIT RETURN · 25 SEP 2026</p>
+              <h3>Read-only public + commit-pinned source review</h3>
+            </div>
+            <span className="badge warn">VALIDATION PENDING</span>
+          </div>
+          <p>
+            The external auditor reported 14 actionable findings and explicitly declined to certify production readiness without authenticated, database, deployment and runtime-output evidence.
+          </p>
+          <dl className="transparencyMeta">
+            <div><dt>Source baseline</dt><dd><code>ac93d51828707d398dfa9c5a471d8a6ed4c9059f</code></dd></div>
+            <div><dt>Findings</dt><dd>14 reported · 0 DataNest-validated/closed</dd></div>
+            <div><dt>Scope</dt><dd>Public artifacts + commit-pinned static source review</dd></div>
+            <div><dt>Certification effect</dt><dd>None · not a full production certification</dd></div>
+          </dl>
+          <div className="heroActions">
+            <button className="primaryButton compact" type="button" onClick={()=>void loadAuditReturn()} disabled={auditReturnLoading}>
+              {auditReturn?"Audit return loaded":auditReturnLoading?"Loading…":"Open full audit return"}
+            </button>
+            <a className="secondaryButton compact linkButton" href={findingsUrl}>Findings JSON</a>
+            <a className="secondaryButton compact linkButton" href={backlogUrl}>Reported backlog JSON</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section className="panel" id="published-findings" aria-labelledby="published-findings-heading">
+      <div className="panelHead">
+        <div><p className="eyebrow">EXTERNAL FINDINGS</p><h3 id="published-findings-heading">AUD-001 → AUD-014</h3></div>
+        <span className="countPill">{findings?findings.findings.length:"14"} REPORTED</span>
+      </div>
+      <p className="muted">
+        Severity, title, domain and reported status are preserved from the external return. The separate DataNest validation state starts as PENDING and must be changed only by reproducible validation/remediation evidence.
+      </p>
+      {findingsError&&<div className="notice errorNotice" role="alert">{findingsError}</div>}
+      {!findings&&!findingsError&&<p className="muted">Loading structured findings…</p>}
+      {findings&&<div className="transparencyFindingsWrap">
+        <table className="transparencyFindingsTable">
+          <thead><tr><th>ID</th><th>Finding</th><th>Domain</th><th>Severity</th><th>Reported status</th><th>DataNest validation</th></tr></thead>
+          <tbody>
+            {findings.findings.map(item=><tr key={item.id}>
+              <td><b>{item.id}</b><small>{item.priority}</small></td>
+              <td>{item.title}</td>
+              <td>{item.domain}</td>
+              <td><span className={"badge "+(item.severity.startsWith("HIGH")?"bad":"warn")}>{item.severity}</span></td>
+              <td>{item.reported_status}</td>
+              <td><span className="badge neutral">PENDING</span></td>
+            </tr>)}
+          </tbody>
+        </table>
+      </div>}
+      <div className="heroActions">
+        <a className="secondaryButton compact linkButton" href={findingsUrl}>Download structured findings</a>
+        <a className="secondaryButton compact linkButton" href={backlogUrl}>Download reported remediation backlog</a>
+      </div>
+    </section>
+
+    <section className="panel" id="full-audit-return" aria-labelledby="full-audit-return-heading">
+      <div className="panelHead">
+        <div><p className="eyebrow">IMMUTABLE SOURCE ARTIFACT</p><h3 id="full-audit-return-heading">External audit return · exact uploaded Markdown</h3></div>
+        <span className="countPill">SOURCE PRESERVED</span>
+      </div>
+      <p className="muted">
+        DataNest preserves the uploaded Markdown unchanged. Structured findings and backlog files are derived indexes for accessibility and workflow and do not replace the source artifact.
+        The structured index interprets only the formal audit-return sections; any trailing non-report scratchpad text remains preserved in the raw artifact but is not treated as a finding.
+      </p>
+      {!auditReturn&&<div className="transparencyLoadBox">
+        <button className="primaryButton compact" type="button" onClick={()=>void loadAuditReturn()} disabled={auditReturnLoading}>
+          {auditReturnLoading?"Loading complete audit return…":"Load complete audit return"}
+        </button>
+        <a className="secondaryButton compact linkButton" href={auditReturnUrl}>Open raw Markdown</a>
+      </div>}
+      {auditReturnError&&<div className="notice errorNotice" role="alert">{auditReturnError}</div>}
+      {auditReturn&&<>
+        <div className="transparencyTranscriptActions">
+          <button className="secondaryButton compact" type="button" onClick={()=>downloadText("Resonance_DataNest_External_Audit_Return_2026-09-25.md",auditReturn)}>Download exact Markdown</button>
+          <span>{auditReturn.length.toLocaleString()+" characters"}</span>
         </div>
-        <p>
-          Independent evidence-based audit specification covering UI, architecture, workflows, AI, governance, output quality,
-          reliability, security, deployment and optimization. It includes PASS / PARTIAL / FAIL / NOT TESTED criteria,
-          structured finding IDs and a paste-back return template.
-        </p>
-        <dl className="transparencyMeta">
-          <div><dt>Published</dt><dd>25 Sep 2026</dd></div>
-          <div><dt>Baseline source commit</dt><dd><code>ac93d51828707d398dfa9c5a471d8a6ed4c9059f</code></dd></div>
-          <div><dt>Baseline DB release</dt><dd><code>datanest-project-member-invitations-v1</code></dd></div>
-          <div><dt>Publication form</dt><dd>Accessible HTML summary + full source-controlled text transcription</dd></div>
-          <div><dt>Document type</dt><dd>Audit brief / audit return template</dd></div>
-          <div><dt>Audit result</dt><dd>Not yet supplied</dd></div>
-        </dl>
-        <div className="heroActions">
-          <button className="secondaryButton compact" type="button" onClick={()=>void loadFullBrief()} disabled={briefLoading}>
-            {fullBrief?"Accessible brief loaded":briefLoading?"Loading…":"Open full accessible transcript"}
-          </button>
-          {fullBrief&&<button className="secondaryButton compact" type="button" onClick={downloadAccessibleBrief}>Download accessible text</button>}
-          <a
-            className="textButton linkButton"
-            href="https://github.com/DataNest-Supository/DataNest/tree/main/public/transparency/audits/external-full-system-audit-brief"
-            target="_blank"
-            rel="noreferrer"
-          >
-            View source-controlled transcript
-          </a>
-        </div>
-      </article>
+        <pre className="transparencyTranscript" tabIndex={0} aria-label="Complete external audit return source artifact">{auditReturn}</pre>
+      </>}
     </section>
 
     <section className="panel" id="full-audit-brief" aria-labelledby="full-audit-brief-heading">
       <div className="panelHead">
-        <div><p className="eyebrow">FULL ACCESSIBLE DOCUMENT</p><h3 id="full-audit-brief-heading">External Full-System Audit Brief · complete transcription</h3></div>
+        <div><p className="eyebrow">AUDIT METHODOLOGY</p><h3 id="full-audit-brief-heading">External Full-System Audit Brief · complete transcription</h3></div>
         <span className="countPill">VERSION 1.0</span>
       </div>
-      <p className="muted">
-        The formatted source artifact was authored as DOCX. For accessibility and transparency, DataNest also publishes the complete text transcription as static, source-controlled content.
-        No audit result is implied by publication of the methodology.
-      </p>
       {!fullBrief&&<div className="transparencyLoadBox">
-        <button className="primaryButton compact" type="button" onClick={()=>void loadFullBrief()} disabled={briefLoading}>
-          {briefLoading?"Loading complete transcription…":"Load complete transcription"}
+        <button className="secondaryButton compact" type="button" onClick={()=>void loadFullBrief()} disabled={briefLoading}>
+          {briefLoading?"Loading complete brief…":"Load complete audit brief"}
         </button>
-        <span>Loads the eight static audit-text parts from this DataNest release.</span>
+        <span>The methodology remains independently readable alongside the audit return.</span>
       </div>}
       {briefError&&<div className="notice errorNotice" role="alert">{briefError}</div>}
       {fullBrief&&<>
         <div className="transparencyTranscriptActions">
-          <button className="secondaryButton compact" type="button" onClick={downloadAccessibleBrief}>Download as accessible text</button>
+          <button className="secondaryButton compact" type="button" onClick={()=>downloadText("Resonance_DataNest_External_Full_System_Audit_Brief_Accessible.txt",fullBrief)}>Download accessible brief</button>
           <span>{fullBrief.length.toLocaleString()+" characters"}</span>
         </div>
         <pre className="transparencyTranscript" tabIndex={0} aria-label="Complete accessible transcription of the External Full-System Audit Brief">{fullBrief}</pre>
@@ -174,13 +305,9 @@ export default function TransparencyWorkspace(){
 
     <section className="panel" id="audit-accessible-summary" aria-labelledby="accessible-summary-heading">
       <div className="panelHead">
-        <div><p className="eyebrow">ACCESSIBLE SUMMARY</p><h3 id="accessible-summary-heading">What the external audit must inspect</h3></div>
+        <div><p className="eyebrow">AUDIT SCOPE</p><h3 id="accessible-summary-heading">Original audit domains</h3></div>
         <span className="countPill">{auditDomains.length+" DOMAINS"}</span>
       </div>
-      <p className="muted">
-        This HTML summary is provided alongside the original document so the audit scope is readable without opening a downloadable file.
-        The original DOCX remains the controlling audit brief for the complete checklist and return template.
-      </p>
       <ol className="transparencyDomainList">
         {auditDomains.map((domain,index)=><li key={domain}><span>{String(index+1).padStart(2,"0")}</span><b>{domain}</b></li>)}
       </ol>
@@ -194,35 +321,19 @@ export default function TransparencyWorkspace(){
       <ul className="transparencyChecklist">
         {invariantHighlights.map(item=><li key={item}>{item}</li>)}
       </ul>
-      <p className="muted">
-        An optimization proposal that removes one of these controls must be rejected or redesigned unless a separate governed change explicitly replaces the invariant.
-      </p>
     </section>
 
     <section className="panel" aria-labelledby="publication-model-heading">
       <div className="panelHead">
-        <div><p className="eyebrow">PUBLICATION MODEL</p><h3 id="publication-model-heading">How future audit evidence appears here</h3></div>
+        <div><p className="eyebrow">REMEDIATION GOVERNANCE</p><h3 id="publication-model-heading">Finding → validation → governed fix → closure</h3></div>
       </div>
       <div className="transparencyLifecycle">
-        <article><b>1 · Source document</b><p>Audit brief, policy, methodology or evidence pack is published with version and baseline.</p></article>
-        <article><b>2 · External result</b><p>Completed external audit is added unchanged or clearly marked as normalized/transcribed for accessibility.</p></article>
-        <article><b>3 · Validation</b><p>Findings are reproduced or marked unverified; severity, evidence and affected system area remain attributable.</p></article>
-        <article><b>4 · Remediation</b><p>Accepted work links to Job Manifest, PR, release, migration, tests and post-release verification.</p></article>
-        <article><b>5 · Closure</b><p>Finding is closed only when evidence demonstrates the issue is corrected or the risk is formally accepted.</p></article>
+        <article><b>1 · Reported finding</b><p>External source wording and evidence remain attributable and unchanged.</p></article>
+        <article><b>2 · DataNest validation</b><p>Reproduce against the current release or mark not reproduced / evidence required.</p></article>
+        <article><b>3 · Governed work</b><p>Accepted remediation links to a Job Manifest, branch/PR and exact acceptance test.</p></article>
+        <article><b>4 · Release evidence</b><p>Certification, migration/function evidence where relevant, deployment and live verification.</p></article>
+        <article><b>5 · Closure</b><p>Finding closes only with reproducible evidence or explicit governed risk acceptance.</p></article>
       </div>
-    </section>
-
-    <section className="panel" aria-labelledby="accessibility-heading">
-      <div className="panelHead">
-        <div><p className="eyebrow">ACCESSIBILITY</p><h3 id="accessibility-heading">Transparency must be usable, not merely downloadable</h3></div>
-      </div>
-      <ul className="transparencyChecklist">
-        <li>Document purpose, status, version, baseline and audit-result state are shown in normal HTML.</li>
-        <li>Download links use descriptive accessible names rather than icon-only controls.</li>
-        <li>Audit methodology and audit findings are visually and semantically distinguished.</li>
-        <li>No secret, credential, session cookie, service-role key or protected personal data should be published in transparency artifacts.</li>
-        <li>Future audit results should include an accessible HTML summary even when the original evidence is PDF, DOCX or another file format.</li>
-      </ul>
     </section>
   </div>;
 }

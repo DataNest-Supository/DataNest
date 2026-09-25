@@ -8,7 +8,7 @@
       "document_type": "audit_brief",
       "version": "1.0",
       "status": "published",
-      "audit_result_status": "awaiting_external_audit",
+      "audit_result_status": "external_audit_return_received",
       "published_at": "2026-09-25",
       "baseline": {
         "source_commit": "ac93d51828707d398dfa9c5a471d8a6ed4c9059f",
@@ -39,6 +39,53 @@
         "financial_effect": false,
         "ownership_effect": false,
         "role_effect": false
+      },
+      "audit_result_id": "external-full-system-audit-return-2026-09-25"
+    },
+    {
+      "id": "external-full-system-audit-return-2026-09-25",
+      "title": "Resonance DataNest / RONSAS External Audit Return",
+      "document_type": "audit_return",
+      "version": "1.0",
+      "status": "published",
+      "audit_result_status": "published_pending_datanest_validation",
+      "published_at": "2026-09-25",
+      "audit_date": "2026-09-25",
+      "audit_type": "read-only public-surface inspection and commit-pinned source review",
+      "baseline": {
+        "source_commit": "ac93d51828707d398dfa9c5a471d8a6ed4c9059f",
+        "production_certified": false
+      },
+      "coverage": {
+        "authenticated_runtime": false,
+        "production_mutations": false,
+        "production_database_controls": false,
+        "runtime_output_quality": false
+      },
+      "findings": {
+        "total": 14,
+        "high_or_verification_priority": 9,
+        "medium": 5,
+        "validation_state": "pending_datanest_validation",
+        "source": "external-full-system-audit-return-2026-09-25/findings.json"
+      },
+      "remediation": {
+        "proposed_backlog_items": 13,
+        "validated_or_closed": 0,
+        "source": "external-full-system-audit-return-2026-09-25/remediation-backlog.json"
+      },
+      "source_artifact": {
+        "filename": "Pasted markdown(20260925-075334).md",
+        "format": "Markdown/plain text",
+        "path": "external-full-system-audit-return-2026-09-25/report.md",
+        "note": "Exact uploaded audit return is preserved as the immutable source artifact. Structured findings/backlog are derived indexes for accessibility and workflow."
+      },
+      "authority": {
+        "governance_effect": false,
+        "financial_effect": false,
+        "ownership_effect": false,
+        "role_effect": false,
+        "certification_effect": false
       }
     }
   ]
