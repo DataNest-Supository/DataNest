@@ -39,6 +39,7 @@ jobs:
         run: |
           echo "DATANEST_AI_E2E_EMAIL=datanest-ai-e2e@resonance.invalid" >> "$GITHUB_ENV"
           PASSWORD="$(node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('hex'))")"
+          echo "::add-mask::$PASSWORD"
           echo "DATANEST_AI_E2E_PASSWORD=$PASSWORD" >> "$GITHUB_ENV"
 
       - name: Validate governed staging configuration
@@ -109,7 +110,7 @@ jobs:
             cat /tmp/datanest-ai-http.log
             exit 1
           }
-          npm run test:browser:datanest-ai
+          npm run test:browser:datanest-ai -- --workers=1
 
       - name: Run governed stress acceptance
         run: npm run test:stress:datanest-ai
