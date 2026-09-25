@@ -31,7 +31,7 @@
   <h1>Transparency and Audit Library</h1>
   <p>
     This public page exposes audit methodology and accessible source transcriptions separately from the operational DataNest audit log.
-    Publishing an audit brief does not imply that an external audit has been completed or that findings have been validated.
+    Publishing an audit brief or external return does not mean findings are validated or that production is certified. DataNest publishes source evidence, reported findings, validation state, and later remediation evidence separately.
   </p>
 
   <section class="card" aria-labelledby="audit-brief-title">
@@ -43,7 +43,7 @@
     </p>
     <dl>
       <dt>Published</dt><dd>25 Sep 2026</dd>
-      <dt>Audit result</dt><dd>Awaiting completed external audit</dd>
+      <dt>Audit result</dt><dd>External audit return received 25 Sep 2026</dd>
       <dt>Baseline source</dt><dd><code>ac93d51828707d398dfa9c5a471d8a6ed4c9059f</code></dd>
       <dt>Baseline DB release</dt><dd><code>datanest-project-member-invitations-v1</code></dd>
       <dt>Source format</dt><dd>DOCX</dd>
@@ -53,6 +53,30 @@
       <a href="audits/index.json">Audit document registry (JSON)</a>
       <a href="../">Open DataNest</a>
       <a href="https://github.com/DataNest-Supository/DataNest">Source repository</a>
+    </div>
+  </section>
+
+
+
+  <section class="card" aria-labelledby="audit-return-title">
+    <span class="status">EXTERNAL AUDIT RETURN PUBLISHED</span>
+    <h2 id="audit-return-title">Read-only public + commit-pinned source review · 25 Sep 2026</h2>
+    <p>
+      The external return reports 14 findings against source baseline
+      <code>ac93d51828707d398dfa9c5a471d8a6ed4c9059f</code>. It explicitly states that authenticated UI behavior,
+      deployed database controls, production mutations and runtime output quality were not verified, so this publication is not a full production certification.
+    </p>
+    <dl>
+      <dt>Published findings</dt><dd>14</dd>
+      <dt>High / verification priority</dt><dd>9</dd>
+      <dt>Medium</dt><dd>5</dd>
+      <dt>DataNest-validated / closed</dt><dd>0</dd>
+      <dt>Validation state</dt><dd>Pending current-release reproduction and evidence review</dd>
+    </dl>
+    <div class="links">
+      <a href="audits/external-full-system-audit-return-2026-09-25/report.md">Exact uploaded audit return (Markdown)</a>
+      <a href="audits/external-full-system-audit-return-2026-09-25/findings.json">Structured findings (JSON)</a>
+      <a href="audits/external-full-system-audit-return-2026-09-25/remediation-backlog.json">Reported remediation backlog (JSON)</a>
     </div>
   </section>
 
