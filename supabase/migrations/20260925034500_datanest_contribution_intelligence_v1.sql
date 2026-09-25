@@ -444,7 +444,7 @@ begin
   select
     target_project,
     c.user_id,
-    min(c.id),
+    min(c.id::text)::uuid,
     'reused_evidence',
     'high',
     1,
