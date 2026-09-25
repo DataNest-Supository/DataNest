@@ -125,3 +125,12 @@ test("quick switch opens the first search result with Enter", () => {
 test("quick switch Enter does nothing for an empty search", () => {
   assert.match(appSource, /commandQuery\.trim\(\)/);
 });
+
+
+test("quick switch supports arrow-key result selection before Enter", () => {
+  assert.match(appSource, /commandActiveIndex/);
+  assert.match(appSource, /event\.key==="ArrowDown"/);
+  assert.match(appSource, /event\.key==="ArrowUp"/);
+  assert.match(appSource, /commandItems\[commandActiveIndex\]/);
+  assert.match(appSource, /aria-selected=\{commandActiveIndex===index\}/);
+});
