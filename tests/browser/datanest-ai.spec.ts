@@ -36,6 +36,23 @@ test("quick switch searches workspaces and navigates with Ctrl+K",async({page})=
 });
 
 
+test("quick switch ignores Enter until a search is typed",async({page})=>{
+  await signIn(page);
+
+  await page.keyboard.press("Control+K");
+  const dialog=page.getByRole("dialog",{name:"Quick switch DataNest workspace"});
+  const search=dialog.getByLabel("Search DataNest workspaces");
+  await expect(search).toBeFocused();
+
+  await page.keyboard.press("Enter");
+  await expect(dialog).toBeVisible();
+  await expect(search).toBeFocused();
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+});
+
+
 test("quick switch opens the first matching workspace with Enter",async({page})=>{
   await signIn(page);
 
