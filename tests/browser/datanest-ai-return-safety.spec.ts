@@ -146,6 +146,11 @@ test("provider launch preloads traced work without user email and sidebar resizi
   await popup.close();
   await page.bringToFront();
 
+  await expect.poll(async()=>{
+    const box=await page.locator("aside.externalAiDock").boundingBox();
+    return box?Math.round(1600-(box.x+box.width)):Number.POSITIVE_INFINITY;
+  }).toBeLessThanOrEqual(2);
+
   const handoff=page.locator("details.externalAiHandoff textarea");
   await expect(handoff).toHaveValue(/Trace Key: DN-/);
   expect(await handoff.inputValue()).not.toContain(process.env.DATANEST_AI_E2E_EMAIL!);
