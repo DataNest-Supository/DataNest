@@ -66,6 +66,11 @@ jobs:
       - name: Seed governed E2E fixtures
         run: npm run seed:e2e:datanest-ai
 
+      - name: Run candidate backend acceptance
+        env:
+          DATANEST_CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node tests/stress/datanest-ai-backend-acceptance.mjs
+
       - name: Build static DataNest against governed staging
         env:
           DATANEST_STATIC_EXPORT: "true"
@@ -125,3 +130,12 @@ jobs:
           name: datanest-ai-certification-${{ github.sha }}
           path: certification-artifacts/datanest-ai-certification.json
           if-no-files-found: error
+
+      - name: Preserve backend acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: datanest-ai-backend-acceptance-${{ github.sha }}
+          path: certification-artifacts/datanest-ai-backend-acceptance.json
+          if-no-files-found: warn
+          retention-days: 7
