@@ -23,7 +23,7 @@ const allowedOrigins=new Set([
   "http://localhost:4173"
 ]);
 const dedicatedStagingRef="qchttpcyqlqnhvahprhz";
-const policyVersion="datanest-ai-governed-memory-v1";
+const currentPolicyVersion="datanest-ai-governed-memory-v2";
 const gateOrder:CertificationGate[]=["AUDIT","VERIFY","VALIDATE","STRESS_TEST"];
 const lifecycleAfterGate:Record<CertificationGate,string>={
   AUDIT:"AUDITED",
@@ -175,7 +175,7 @@ async function certifyCandidate(input:{
       actor_user_id:input.actorUserId,
       risk_class:input.candidate.risk_class,
       reason:input.reason,
-      policy_version:policyVersion,
+      policy_version:input.candidate.policy_version,
       content_hash:input.candidate.content_hash,
       evidence:{
         validation_run_ids:input.runs.filter(run=>run.passed).map(run=>run.id),
@@ -340,7 +340,7 @@ Deno.serve(async(request:Request)=>{
         .insert({
           candidate_id:candidate.id,
           gate,
-          suite_version:String(body.suiteVersion||policyVersion),
+          suite_version:String(body.suiteVersion||candidate.policy_version||currentPolicyVersion),
           passed,
           results:typeof body.results==="object"&&body.results!==null?body.results:{},
           actor_type:"human",
@@ -367,7 +367,8 @@ Deno.serve(async(request:Request)=>{
           riskClass:refreshedCandidate.risk_class,
           hasConflict:refreshedCandidate.has_conflict,
           allGatesPassed:true,
-          evidenceCount:refreshedCandidate.evidence_count
+          evidenceCount:refreshedCandidate.evidence_count,
+          confidence:refreshedCandidate.confidence
         })
       ){
         autoCertification=await certifyCandidate({
