@@ -352,6 +352,7 @@ declare
   caller uuid := auth.uid();
   channel_row public.think_tank_channels%rowtype;
   new_id uuid;
+  existing_message public.think_tank_messages%rowtype;
 begin
   if caller is null then
     raise insufficient_privilege using message='Authentication is required.';
@@ -489,17 +490,31 @@ begin
     raise insufficient_privilege using message='The AI response is not linked to an authorized DataNest AI request.';
   end if;
 
-  insert into public.think_tank_messages(
-    project_id,thread_id,initiated_by,actor_kind,message_type,body,
-    source_request_id,source_trace_id
-  )
-  values(
-    ctx.project_id,target_thread,caller,'datanest_ai','ai_response',btrim(target_body),
-    target_request,btrim(target_trace_id)
-  )
-  on conflict(source_request_id) where source_request_id is not null and actor_kind='datanest_ai'
-  do update set body=excluded.body,source_trace_id=excluded.source_trace_id
-  returning id into new_id;
+  select * into existing_message
+  from public.think_tank_messages
+  where source_request_id=target_request
+    and actor_kind='datanest_ai'
+  limit 1;
+
+  if found then
+    if existing_message.thread_id<>target_thread then
+      raise exception 'This DataNest AI request is already attached to a different Think Tank thread.';
+    end if;
+    update public.think_tank_messages
+    set body=btrim(target_body),source_trace_id=btrim(target_trace_id)
+    where id=existing_message.id;
+    new_id := existing_message.id;
+  else
+    insert into public.think_tank_messages(
+      project_id,thread_id,initiated_by,actor_kind,message_type,body,
+      source_request_id,source_trace_id
+    )
+    values(
+      ctx.project_id,target_thread,caller,'datanest_ai','ai_response',btrim(target_body),
+      target_request,btrim(target_trace_id)
+    )
+    returning id into new_id;
+  end if;
 
   update public.think_tank_threads
   set updated_at=now()
@@ -910,7 +925,7 @@ declare
   existing_memory uuid;
   memory_id uuid;
   next_version bigint;
-  contribution_id uuid;
+  new_contribution_id uuid;
 begin
   if caller is null then
     raise insufficient_privilege using message='Authentication is required.';
@@ -1006,9 +1021,9 @@ begin
         'uncertified',
         'not_eligible'
       )
-      returning id into contribution_id;
+      returning id into new_contribution_id;
     else
-      contribution_id := candidate.contribution_id;
+      new_contribution_id := candidate.contribution_id;
     end if;
   end if;
 
@@ -1018,7 +1033,7 @@ begin
       reviewed_at=now(),
       review_notes=nullif(btrim(coalesce(target_notes,'')),''),
       promoted_memory_id=case when target_status='approved' then memory_id else promoted_memory_id end,
-      contribution_id=case when target_status='approved' then contribution_id else contribution_id end
+      contribution_id=case when target_status='approved' then new_contribution_id else public.think_tank_learning_candidates.contribution_id end
   where id=candidate.id;
 
   insert into public.events(project_id,job_id,event_type,actor,payload)
@@ -1030,7 +1045,7 @@ begin
       'trace_key',candidate.trace_key,
       'review_status',target_status,
       'certified_memory_id',memory_id,
-      'contribution_id',contribution_id,
+      'contribution_id',new_contribution_id,
       'automatic_model_training',false,
       'contribution_auto_accepted',false
     )
@@ -1040,7 +1055,7 @@ begin
     'candidate_id',candidate.id,
     'status',target_status,
     'certified_memory_id',memory_id,
-    'contribution_id',contribution_id,
+    'contribution_id',new_contribution_id,
     'automatic_model_training',false,
     'contribution_auto_accepted',false
   );
