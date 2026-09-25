@@ -469,6 +469,13 @@ export default function DataNestApp({session}:{session:Session}) {
     }
   }
 
+  function handleCommandSearchKeyDown(event:import("react").KeyboardEvent<HTMLInputElement>){
+    if(event.key==="Enter"&&commandQuery.trim()&&commandItems[0]){
+      event.preventDefault();
+      chooseCommandView(commandItems[0].key);
+    }
+  }
+
   function chooseCommandView(nextView:ViewKey){
     setView(nextView);
     closeCommandPalette();
@@ -613,6 +620,7 @@ export default function DataNestApp({session}:{session:Session}) {
             type="search"
             value={commandQuery}
             onChange={event=>setCommandQuery(event.target.value)}
+            onKeyDown={handleCommandSearchKeyDown}
             placeholder="Search workspaces, tools, research…"
             aria-label="Search DataNest workspaces"
           />
