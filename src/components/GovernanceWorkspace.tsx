@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
+import ProjectMembersPanel from "@/components/ProjectMembersPanel";
 
 type Protocol={
   id:string;project_id:string;protocol_key:string;version:number;title:string;mission:string|null;vision:string|null;
@@ -269,6 +270,8 @@ export default function GovernanceWorkspace({
       <article className="metricCard"><span>Decisions</span><strong>{workspace.decisions.length}</strong><small>Immutable decision records</small></article>
       <article className="metricCard"><span>Open disputes</span><strong>{openDisputes.length}</strong><small>Source history preserved</small></article>
     </section>
+
+    <ProjectMembersPanel projectId={projectId} setNotice={setNotice} setError={setError}/>
 
     <section className="panel">
       <div className="panelHead"><div><p className="eyebrow">GOVERNANCE BOUNDARY</p><h3>What governance can and cannot do</h3></div><span className="countPill">{workspace.member_role?workspace.member_role.toUpperCase():"PROJECT ACCESS"}</span></div>
