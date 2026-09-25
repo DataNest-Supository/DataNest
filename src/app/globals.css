@@ -1191,3 +1191,693 @@ code,pre{
   body::before{background-size:34px 34px;opacity:.65}
   .metricCard:hover,.workspaceCard:hover,.toolCard:hover,.manifestCard:hover,.connectionCard:hover,.rndSuggestion:hover{transform:none}
 }
+/* DataNest AI hero command center v3 */
+.datanestAiWorkspace{
+  gap:16px;
+}
+.datanestAiHeroV2{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  min-height:430px;
+  display:grid;
+  grid-template-columns:minmax(0,.93fr) minmax(0,1.07fr);
+  gap:clamp(22px,3vw,42px);
+  align-items:center;
+  padding:clamp(24px,3vw,38px);
+  border:1px solid rgba(132,87,255,.56);
+  border-radius:22px;
+  background:
+    radial-gradient(circle at 76% 38%,rgba(64,205,255,.15),transparent 28%),
+    radial-gradient(circle at 54% 68%,rgba(247,55,255,.17),transparent 30%),
+    radial-gradient(circle at 15% 0%,rgba(102,74,255,.14),transparent 30%),
+    linear-gradient(135deg,rgba(20,7,48,.98),rgba(5,5,24,.985) 58%,rgba(3,12,27,.985));
+  box-shadow:
+    0 34px 96px rgba(0,0,0,.32),
+    0 0 0 1px rgba(255,68,226,.06),
+    0 0 44px rgba(109,72,255,.09),
+    inset 0 1px 0 rgba(255,255,255,.05);
+}
+.datanestAiHeroV2::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-2;
+  pointer-events:none;
+  background:
+    linear-gradient(115deg,rgba(255,255,255,.05),transparent 18%,transparent 72%,rgba(67,223,255,.035)),
+    radial-gradient(circle at 50% 50%,transparent 30%,rgba(4,1,16,.18) 100%);
+}
+.datanestAiHeroGrid{
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  background-image:
+    linear-gradient(rgba(92,218,255,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,75,224,.035) 1px,transparent 1px);
+  background-size:38px 38px;
+  mask-image:linear-gradient(to right,transparent 0%,rgba(0,0,0,.35) 32%,black 65%,rgba(0,0,0,.8));
+  opacity:.6;
+}
+.datanestAiHeroGlow{
+  position:absolute;
+  border-radius:999px;
+  filter:blur(28px);
+  pointer-events:none;
+  z-index:-1;
+}
+.datanestAiHeroGlowOne{
+  width:260px;
+  height:260px;
+  right:18%;
+  top:12%;
+  background:radial-gradient(circle,rgba(56,214,255,.16),transparent 68%);
+}
+.datanestAiHeroGlowTwo{
+  width:280px;
+  height:280px;
+  right:30%;
+  bottom:-34%;
+  background:radial-gradient(circle,rgba(255,47,231,.18),transparent 70%);
+}
+.datanestAiHeroCopy{
+  position:relative;
+  z-index:2;
+  min-width:0;
+}
+.datanestAiHeroBadge{
+  width:max-content;
+  max-width:100%;
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  padding:7px 12px;
+  border:1px solid rgba(147,97,255,.42);
+  border-radius:999px;
+  background:linear-gradient(90deg,rgba(111,70,255,.12),rgba(245,59,255,.08));
+  color:#c8b8ff;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  box-shadow:inset 0 1px rgba(255,255,255,.04);
+}
+.datanestAiSignalMark{
+  color:#ff60e8;
+  text-shadow:0 0 12px rgba(255,68,226,.7);
+}
+.datanestAiHeroV2 h2{
+  margin:16px 0 6px;
+  font-size:clamp(44px,5.1vw,72px);
+  line-height:.96;
+  letter-spacing:-.062em;
+  color:#fff;
+}
+.datanestAiHeroV2 h2 span{
+  background:linear-gradient(90deg,#ff4ddf 0%,#b270ff 34%,#5bdfff 74%,#dffbff 100%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+  text-shadow:none;
+}
+.datanestAiHeroV2 h3{
+  margin:0;
+  max-width:570px;
+  font-size:clamp(19px,2vw,27px);
+  line-height:1.2;
+  letter-spacing:-.025em;
+  color:#f4efff;
+}
+.datanestAiHeroV2 h3 strong{
+  color:#77e9ff;
+  font-weight:850;
+  text-shadow:0 0 18px rgba(74,222,255,.16);
+}
+.datanestAiHeroV2 .datanestAiHeroCopy>p{
+  margin:17px 0 0;
+  max-width:62ch;
+  color:#c4bed2;
+  font-size:12px;
+  line-height:1.68;
+}
+.datanestAiCapabilityRail{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:20px;
+}
+.datanestAiCapabilityRail span{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  min-height:32px;
+  padding:6px 10px;
+  border:1px solid rgba(78,219,255,.20);
+  border-radius:9px;
+  background:linear-gradient(180deg,rgba(18,27,65,.74),rgba(8,9,30,.78));
+  color:#d7d4e8;
+  font-size:9px;
+  font-weight:750;
+  box-shadow:inset 0 1px rgba(255,255,255,.035),0 8px 20px rgba(0,0,0,.12);
+}
+.datanestAiCapabilityRail i{
+  color:#55e4ff;
+  font-style:normal;
+  font:900 10px ui-monospace,SFMono-Regular,Consolas,monospace;
+  text-shadow:0 0 9px rgba(65,224,255,.34);
+}
+.datanestAiHeroActions{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:9px;
+  margin-top:20px;
+}
+.datanestAiHeroPrimary{
+  min-height:44px;
+  padding-inline:17px;
+  border-radius:11px;
+}
+.datanestAiHeroPrimary span{
+  margin-left:18px;
+  font-size:15px;
+}
+.datanestAiHeroSecondary{
+  min-height:44px;
+  padding-inline:16px;
+  border-radius:11px;
+}
+.datanestAiHeroRefresh{
+  padding-inline:8px;
+  color:#a9a2bb;
+}
+.datanestAiHeroRefresh:hover{
+  color:#6ce7ff;
+}
+.datanestAiHeroVisual{
+  position:relative;
+  min-width:0;
+  min-height:360px;
+  align-self:stretch;
+}
+.datanestAiFloatCard{
+  position:absolute;
+  z-index:4;
+  display:grid;
+  grid-template-columns:32px minmax(0,1fr);
+  gap:9px;
+  align-items:start;
+  width:min(190px,37%);
+  padding:11px 12px;
+  border:1px solid rgba(87,221,255,.34);
+  border-radius:12px;
+  background:
+    linear-gradient(145deg,rgba(22,13,62,.90),rgba(4,13,31,.89));
+  box-shadow:
+    0 14px 36px rgba(0,0,0,.27),
+    0 0 22px rgba(48,213,255,.08),
+    inset 0 1px rgba(255,255,255,.05);
+  backdrop-filter:blur(12px);
+}
+.datanestAiFloatCard::after{
+  content:"";
+  position:absolute;
+  inset:-1px;
+  border-radius:inherit;
+  pointer-events:none;
+  background:linear-gradient(110deg,rgba(255,61,229,.24),transparent 34%,transparent 64%,rgba(59,225,255,.19));
+  mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  mask-composite:exclude;
+  -webkit-mask-composite:xor;
+  padding:1px;
+}
+.datanestAiFloatCard b{
+  display:block;
+  font-size:10px;
+  color:#fff;
+}
+.datanestAiFloatCard small{
+  display:block;
+  margin-top:3px;
+  color:#aab9cb;
+  font-size:8px;
+  line-height:1.35;
+}
+.datanestAiFloatIcon{
+  width:30px;
+  height:30px;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(105,224,255,.22);
+  border-radius:9px;
+  background:linear-gradient(135deg,rgba(255,63,226,.13),rgba(75,224,255,.09));
+  color:#61e8ff;
+  font-weight:900;
+  font-size:11px;
+  box-shadow:0 0 16px rgba(71,220,255,.09);
+}
+.datanestAiContextCard{left:0;top:4%}
+.datanestAiExternalCard{right:0;top:8%}
+.datanestAiToolsCard{left:2%;bottom:7%}
+.datanestAiMemoryCard{right:0;bottom:7%}
+.datanestAiCoreStage{
+  position:absolute;
+  left:50%;
+  top:49%;
+  width:min(280px,53%);
+  aspect-ratio:1;
+  transform:translate(-50%,-50%);
+  display:grid;
+  place-items:center;
+}
+.datanestAiCoreSphere{
+  position:relative;
+  z-index:4;
+  width:39%;
+  aspect-ratio:1;
+  display:grid;
+  place-content:center;
+  text-align:center;
+  border-radius:50%;
+  border:1px solid rgba(107,226,255,.72);
+  background:
+    radial-gradient(circle at 40% 28%,rgba(255,255,255,.16),transparent 16%),
+    radial-gradient(circle at 52% 50%,rgba(255,48,231,.34),rgba(96,67,255,.28) 38%,rgba(23,207,255,.18) 62%,rgba(4,5,26,.96) 78%);
+  box-shadow:
+    0 0 20px rgba(76,223,255,.42),
+    0 0 54px rgba(252,54,237,.27),
+    inset 0 0 24px rgba(125,99,255,.34);
+}
+.datanestAiCoreSphere::before{
+  content:"";
+  position:absolute;
+  inset:8%;
+  border-radius:50%;
+  border:1px dashed rgba(176,239,255,.24);
+}
+.datanestAiCoreGlyph{
+  color:#eefcff;
+  font-size:29px;
+  line-height:1;
+  text-shadow:
+    0 0 9px #30e6ff,
+    0 0 16px rgba(255,55,229,.85);
+}
+.datanestAiCoreSphere b{
+  display:block;
+  margin-top:6px;
+  color:#fff;
+  font-size:10px;
+  letter-spacing:-.01em;
+}
+.datanestAiCoreSphere small{
+  margin-top:3px;
+  color:#8df0ff;
+  font-size:6.8px;
+  text-transform:uppercase;
+  letter-spacing:.09em;
+}
+.datanestAiOrbit{
+  position:absolute;
+  border:1px solid rgba(82,226,255,.50);
+  border-radius:50%;
+  box-shadow:0 0 13px rgba(82,226,255,.14),inset 0 0 13px rgba(255,47,231,.07);
+}
+.datanestAiOrbit::before,
+.datanestAiOrbit::after{
+  content:"";
+  position:absolute;
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#65efff;
+  box-shadow:0 0 12px #5ce7ff,0 0 22px rgba(255,60,235,.3);
+}
+.datanestAiOrbit::before{left:5%;top:45%}
+.datanestAiOrbit::after{right:8%;bottom:23%;background:#ff58e2}
+.datanestAiOrbitOne{
+  inset:19%;
+  transform:rotate(18deg) scaleX(1.55) scaleY(.72);
+}
+.datanestAiOrbitTwo{
+  inset:13%;
+  border-color:rgba(255,75,228,.58);
+  transform:rotate(-28deg) scaleX(1.42) scaleY(.62);
+}
+.datanestAiOrbitThree{
+  inset:7%;
+  border-style:dashed;
+  border-color:rgba(146,104,255,.45);
+  transform:rotate(62deg) scaleX(1.18) scaleY(.88);
+}
+.datanestAiPacket{
+  position:absolute;
+  z-index:3;
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  background:#70edff;
+  box-shadow:0 0 11px #5ee8ff,0 0 22px rgba(82,224,255,.55);
+}
+.packetOne{left:17%;top:31%}
+.packetTwo{right:18%;top:26%;background:#ff60e6}
+.packetThree{left:27%;bottom:20%;background:#9a7cff}
+.packetFour{right:25%;bottom:23%}
+.datanestAiCoreBeam{
+  position:absolute;
+  z-index:1;
+  width:12%;
+  height:43%;
+  left:44%;
+  top:50%;
+  background:linear-gradient(180deg,rgba(95,238,255,.52),rgba(145,93,255,.22) 54%,rgba(255,54,228,.06));
+  filter:blur(5px);
+  clip-path:polygon(42% 0,58% 0,100% 100%,0 100%);
+  opacity:.75;
+}
+.datanestAiCoreBase{
+  position:absolute;
+  z-index:2;
+  left:50%;
+  bottom:3%;
+  width:50%;
+  height:16%;
+  transform:translateX(-50%);
+  border-radius:50%;
+  border:1px solid rgba(88,225,255,.42);
+  background:radial-gradient(ellipse at center,rgba(66,226,255,.23),rgba(126,71,255,.12) 48%,rgba(255,50,229,.07) 62%,transparent 72%);
+  box-shadow:0 0 28px rgba(76,223,255,.16),inset 0 0 16px rgba(255,65,231,.16);
+}
+.datanestAiCoreBase i{
+  position:absolute;
+  inset:16%;
+  border:1px solid rgba(255,81,229,.42);
+  border-radius:50%;
+}
+.datanestAiCoreBase i:nth-child(2){inset:30%;border-color:rgba(91,228,255,.48)}
+.datanestAiCoreBase i:nth-child(3){inset:42%;border-color:rgba(153,103,255,.56)}
+.datanestAiActivity{
+  position:absolute;
+  left:20%;
+  right:20%;
+  bottom:0;
+  height:24px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  gap:4px;
+  opacity:.72;
+}
+.datanestAiActivity span{
+  width:3px;
+  height:7px;
+  border-radius:99px;
+  background:linear-gradient(#5be8ff,#ff50e4);
+  box-shadow:0 0 8px rgba(89,231,255,.25);
+}
+.datanestAiPipelineLabel{
+  position:absolute;
+  left:50%;
+  bottom:25px;
+  transform:translateX(-50%);
+  z-index:5;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  white-space:nowrap;
+  padding:4px 8px;
+  border:1px solid rgba(88,226,255,.15);
+  border-radius:999px;
+  background:rgba(3,7,24,.74);
+  color:#a7c9d8;
+  font-size:7px;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+}
+.datanestAiPipelineDot{
+  width:5px;
+  height:5px;
+  border-radius:50%;
+  background:#65e9bb;
+  box-shadow:0 0 8px rgba(101,233,187,.8);
+}
+.datanestAiCurrentJob{
+  position:relative;
+  overflow:hidden;
+  border-color:rgba(151,91,255,.20);
+  background:
+    radial-gradient(circle at 88% 20%,rgba(70,220,255,.045),transparent 28%),
+    linear-gradient(145deg,rgba(23,10,50,.68),rgba(7,5,22,.84));
+}
+.datanestAiCurrentJob::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:2px;
+  background:linear-gradient(var(--magenta),var(--cyan));
+  opacity:.7;
+}
+.datanestAiJobStrip{
+  scrollbar-width:thin;
+  scrollbar-color:rgba(123,93,255,.44) transparent;
+}
+.datanestAiJobStrip .rndJobChip{
+  min-width:190px;
+  border-color:rgba(94,218,255,.13);
+  background:linear-gradient(145deg,rgba(23,10,47,.67),rgba(6,6,23,.76));
+}
+.datanestAiJobStrip .rndJobChip.active{
+  border-color:rgba(255,70,225,.38);
+  background:linear-gradient(135deg,rgba(255,60,224,.12),rgba(97,94,255,.11),rgba(64,221,255,.08));
+  box-shadow:0 0 22px rgba(138,76,255,.08),inset 0 1px rgba(255,255,255,.04);
+}
+.datanestAiPrimaryGrid{
+  gap:14px;
+  grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr);
+}
+.datanestAiChatPanel,
+.datanestAiMemoryPanel,
+.datanestAiCertificationPanel{
+  position:relative;
+  overflow:hidden;
+  border-color:rgba(102,101,255,.24);
+  background:
+    radial-gradient(circle at 90% 0%,rgba(79,224,255,.045),transparent 28%),
+    linear-gradient(145deg,rgba(21,9,47,.82),rgba(5,7,24,.89));
+  box-shadow:0 20px 56px rgba(0,0,0,.22),inset 0 1px rgba(255,255,255,.035);
+}
+.datanestAiChatPanel::before,
+.datanestAiMemoryPanel::before,
+.datanestAiCertificationPanel::before{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  top:0;
+  height:1px;
+  background:linear-gradient(90deg,rgba(255,59,228,.7),rgba(111,82,255,.62),rgba(74,226,255,.72));
+  opacity:.55;
+}
+.datanestAiChatPanel .panelHead,
+.datanestAiMemoryPanel .panelHead{
+  padding-bottom:10px;
+  border-bottom:1px solid rgba(107,219,255,.08);
+}
+.datanestAiChatPanel .panelHead::before,
+.datanestAiMemoryPanel .panelHead::before{
+  content:"";
+  width:38px;
+  height:38px;
+  flex:0 0 auto;
+  align-self:flex-start;
+  border:1px solid rgba(96,222,255,.18);
+  border-radius:11px;
+  background:linear-gradient(135deg,rgba(255,54,225,.14),rgba(77,219,255,.10));
+  box-shadow:0 0 18px rgba(95,221,255,.06);
+}
+.datanestAiChatPanel .panelHead::after{
+  content:"⌁";
+  position:absolute;
+  left:35px;
+  top:30px;
+  color:#74eaff;
+  font-size:17px;
+  font-weight:900;
+  text-shadow:0 0 12px rgba(101,229,255,.5);
+}
+.datanestAiMemoryPanel .panelHead::after{
+  content:"◫";
+  position:absolute;
+  left:34px;
+  top:30px;
+  color:#75eaff;
+  font-size:17px;
+  font-weight:900;
+  text-shadow:0 0 12px rgba(101,229,255,.5);
+}
+.datanestAiChatPanel .panelHead>div,
+.datanestAiMemoryPanel .panelHead>div{
+  margin-right:auto;
+}
+.datanestAiTranscript .emptyState,
+.datanestAiMemoryPanel .emptyState{
+  min-height:180px;
+  border:1px solid rgba(91,219,255,.13);
+  border-radius:12px;
+  background:linear-gradient(180deg,rgba(5,12,31,.50),rgba(4,4,18,.30));
+}
+.datanestAiComposer textarea{
+  min-height:104px;
+  border-color:rgba(101,103,255,.28);
+  background:linear-gradient(180deg,rgba(4,3,19,.92),rgba(10,5,28,.82));
+}
+.datanestAiComposer .primaryButton{
+  min-width:164px;
+}
+.datanestAiTurn{
+  border-color:rgba(86,218,255,.14);
+  background:linear-gradient(145deg,rgba(18,9,43,.72),rgba(4,8,23,.72));
+}
+.datanestAiTurn.assistant{
+  border-style:solid;
+  border-color:rgba(255,69,227,.20);
+  box-shadow:inset 2px 0 rgba(255,68,226,.35);
+}
+.datanestAiMemoryPanel .manifestCard{
+  border-color:rgba(84,218,255,.14);
+}
+.datanestAiGateRow .secondaryButton.active{
+  border-color:rgba(87,226,255,.30);
+  color:#9cf4ff;
+  background:linear-gradient(90deg,rgba(71,226,255,.10),rgba(145,89,255,.08));
+}
+@media(prefers-reduced-motion:no-preference){
+  .datanestAiHeroGlowOne{animation:datanestAiGlowDriftOne 9s ease-in-out infinite}
+  .datanestAiHeroGlowTwo{animation:datanestAiGlowDriftTwo 11s ease-in-out infinite}
+  .datanestAiOrbitOne{animation:datanestAiOrbitOneSpin 8s linear infinite}
+  .datanestAiOrbitTwo{animation:datanestAiOrbitTwoSpin 11s linear infinite reverse}
+  .datanestAiOrbitThree{animation:datanestAiOrbitThreeSpin 14s linear infinite}
+  .datanestAiCoreSphere{animation:datanestAiCorePulse 3.2s ease-in-out infinite}
+  .datanestAiCoreBeam{animation:datanestAiBeamPulse 2.4s ease-in-out infinite}
+  .datanestAiCoreBase{animation:datanestAiBasePulse 3.4s ease-in-out infinite}
+  .packetOne{animation:datanestAiPacketFloat 2.8s ease-in-out infinite}
+  .packetTwo{animation:datanestAiPacketFloat 3.3s ease-in-out .4s infinite reverse}
+  .packetThree{animation:datanestAiPacketFloat 3s ease-in-out .8s infinite}
+  .packetFour{animation:datanestAiPacketFloat 3.6s ease-in-out .2s infinite reverse}
+  .datanestAiActivity span:nth-child(1){animation:datanestAiBar 1.25s ease-in-out .05s infinite}
+  .datanestAiActivity span:nth-child(2){animation:datanestAiBar 1.25s ease-in-out .18s infinite}
+  .datanestAiActivity span:nth-child(3){animation:datanestAiBar 1.25s ease-in-out .32s infinite}
+  .datanestAiActivity span:nth-child(4){animation:datanestAiBar 1.25s ease-in-out .44s infinite}
+  .datanestAiActivity span:nth-child(5){animation:datanestAiBar 1.25s ease-in-out .58s infinite}
+  .datanestAiActivity span:nth-child(6){animation:datanestAiBar 1.25s ease-in-out .71s infinite}
+  .datanestAiActivity span:nth-child(7){animation:datanestAiBar 1.25s ease-in-out .83s infinite}
+  .datanestAiActivity span:nth-child(8){animation:datanestAiBar 1.25s ease-in-out .96s infinite}
+  .datanestAiActivity span:nth-child(9){animation:datanestAiBar 1.25s ease-in-out 1.08s infinite}
+  .datanestAiPipelineDot{animation:datanestAiStatusPulse 2s ease-in-out infinite}
+  .datanestAiHeroV2.isWorking .datanestAiCoreSphere{animation-duration:1.6s}
+  .datanestAiHeroV2.isWorking .datanestAiActivity span{animation-duration:.72s}
+}
+@keyframes datanestAiGlowDriftOne{
+  0%,100%{transform:translate3d(0,0,0) scale(1)}
+  50%{transform:translate3d(-18px,12px,0) scale(1.08)}
+}
+@keyframes datanestAiGlowDriftTwo{
+  0%,100%{transform:translate3d(0,0,0) scale(1)}
+  50%{transform:translate3d(16px,-10px,0) scale(1.06)}
+}
+@keyframes datanestAiOrbitOneSpin{
+  from{transform:rotate(18deg) scaleX(1.55) scaleY(.72)}
+  to{transform:rotate(378deg) scaleX(1.55) scaleY(.72)}
+}
+@keyframes datanestAiOrbitTwoSpin{
+  from{transform:rotate(-28deg) scaleX(1.42) scaleY(.62)}
+  to{transform:rotate(332deg) scaleX(1.42) scaleY(.62)}
+}
+@keyframes datanestAiOrbitThreeSpin{
+  from{transform:rotate(62deg) scaleX(1.18) scaleY(.88)}
+  to{transform:rotate(422deg) scaleX(1.18) scaleY(.88)}
+}
+@keyframes datanestAiCorePulse{
+  0%,100%{transform:scale(.98);filter:brightness(.95)}
+  50%{transform:scale(1.04);filter:brightness(1.15)}
+}
+@keyframes datanestAiBeamPulse{
+  0%,100%{opacity:.38;filter:blur(6px)}
+  50%{opacity:.92;filter:blur(4px)}
+}
+@keyframes datanestAiBasePulse{
+  0%,100%{transform:translateX(-50%) scale(.96);opacity:.74}
+  50%{transform:translateX(-50%) scale(1.04);opacity:1}
+}
+@keyframes datanestAiPacketFloat{
+  0%,100%{transform:translate3d(0,0,0);opacity:.55}
+  50%{transform:translate3d(9px,-12px,0);opacity:1}
+}
+@keyframes datanestAiBar{
+  0%,100%{height:6px;opacity:.44}
+  50%{height:22px;opacity:1}
+}
+@keyframes datanestAiStatusPulse{
+  0%,100%{opacity:.65;box-shadow:0 0 6px rgba(101,233,187,.55)}
+  50%{opacity:1;box-shadow:0 0 13px rgba(101,233,187,.95)}
+}
+@media(max-width:1180px){
+  .datanestAiHeroV2{
+    grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);
+    padding:26px;
+  }
+  .datanestAiFloatCard{width:min(176px,40%);padding:9px 10px}
+  .datanestAiFloatCard small:nth-of-type(2){display:none}
+  .datanestAiCoreStage{width:min(250px,57%)}
+}
+@media(max-width:900px){
+  .datanestAiHeroV2{
+    grid-template-columns:1fr;
+    min-height:0;
+  }
+  .datanestAiHeroVisual{min-height:360px}
+  .datanestAiHeroV2 h2{font-size:clamp(42px,9vw,66px)}
+  .datanestAiPrimaryGrid{grid-template-columns:1fr}
+}
+@media(max-width:620px){
+  .datanestAiHeroV2{padding:20px;border-radius:18px}
+  .datanestAiCapabilityRail{display:grid;grid-template-columns:1fr 1fr}
+  .datanestAiCapabilityRail span{min-width:0}
+  .datanestAiHeroVisual{min-height:330px;margin-inline:-8px}
+  .datanestAiFloatCard{width:42%;grid-template-columns:25px 1fr;padding:8px}
+  .datanestAiFloatIcon{width:24px;height:24px;font-size:8px}
+  .datanestAiFloatCard b{font-size:8px}
+  .datanestAiFloatCard small{font-size:7px}
+  .datanestAiCoreStage{width:58%}
+  .datanestAiHeroActions{align-items:stretch}
+  .datanestAiHeroActions .primaryButton,
+  .datanestAiHeroActions .secondaryButton{flex:1 1 100%;justify-content:center}
+  .datanestAiHeroRefresh{width:100%;text-align:center}
+  .datanestAiPrimaryGrid{gap:12px}
+}
+@media(max-width:430px){
+  .datanestAiHeroV2 h2{font-size:42px}
+  .datanestAiHeroV2 h3{font-size:18px}
+  .datanestAiCapabilityRail{grid-template-columns:1fr}
+  .datanestAiHeroVisual{min-height:300px}
+  .datanestAiFloatCard{width:44%}
+  .datanestAiContextCard{top:2%}
+  .datanestAiExternalCard{top:4%}
+  .datanestAiToolsCard{bottom:4%}
+  .datanestAiMemoryCard{bottom:4%}
+  .datanestAiPipelineLabel{bottom:20px}
+}
+@media(prefers-reduced-motion:reduce){
+  .datanestAiHeroGlow,
+  .datanestAiOrbit,
+  .datanestAiCoreSphere,
+  .datanestAiCoreBeam,
+  .datanestAiCoreBase,
+  .datanestAiPacket,
+  .datanestAiActivity span,
+  .datanestAiPipelineDot{animation:none!important}
+}
