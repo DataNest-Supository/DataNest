@@ -696,7 +696,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 }
 .authBrandLockup{display:grid;gap:14px;margin-bottom:20px}
 .authBrandImage{
-  display:block;width:100%;aspect-ratio:3/2;object-fit:cover;object-position:center;
+  display:block;width:min(100%,300px);aspect-ratio:3/2;object-fit:cover;object-position:center;margin:0 auto;
   border:1px solid hsl(295 90% 60% / .30);border-radius:18px;
   box-shadow:0 18px 50px hsl(295 90% 60% / .13)
 }
