@@ -1,13 +1,55 @@
 const stopWords=new Set([
-  "the","a","an","and","or","to","of","for","in","on","with","is","be","as"
+  "the","a","an","and","or","to","of","for","in","on","with","is","be","as",
+  "this","that","these","those","it","its","from","by","at","into","than","then",
+  "must","should","could","would","can","may","before","after","please","keep"
 ]);
 
+const tokenAliases:Record<string,string>={
+  automatic:"auto",
+  automatically:"auto",
+  automated:"auto",
+  requires:"require",
+  required:"require",
+  requiring:"require",
+  permissions:"permission",
+  identifiers:"id",
+  identifier:"id",
+  ids:"id"
+};
+
+const negationWords=new Set([
+  "no","not","never","avoid","without","disable","disabled","disallow","forbid",
+  "forbidden","prohibit","prohibited","dont","don't","cannot","cant","can't"
+]);
+
+export type LearningEvidence={
+  id:string;
+  content:string;
+  sessionId?:string|null;
+  jobId?:string|null;
+  sourceType?:string|null;
+  sourceUserId?:string|null;
+  metadata?:Record<string,unknown>|null;
+};
+
+function canonicalToken(token:string):string{
+  return tokenAliases[token]||token;
+}
+
 export function normalizeTrendTokens(value:string):string[] {
+  const scrubbed=value.toLowerCase()
+    .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi," ")
+    .replace(/\b[0-9a-f]{16,}\b/gi," ")
+    .replace(/\b\d{6,}\b/g," ")
+    .replace(/[^a-z0-9' ]+/g," ");
+
   return [...new Set(
-    value.toLowerCase()
-      .replace(/[^a-z0-9 ]+/g," ")
+    scrubbed
       .split(/\s+/)
-      .filter(token=>token.length>2&&!stopWords.has(token))
+      .map(token=>token.replace(/^'+|'+$/g,""))
+      .filter(token=>token.length>2)
+      .map(canonicalToken)
+      .filter(token=>!stopWords.has(token))
   )].sort();
 }
 
@@ -23,31 +65,111 @@ export function trendKeyForTokens(tokens:string[]):string {
   return [...new Set(tokens)].sort().join("|").slice(0,512);
 }
 
+export function isSyntheticLearningEvidence(event:LearningEvidence):boolean {
+  const text=event.content.trim();
+  const metadata=event.metadata||{};
+  if(
+    metadata.test_fixture ||
+    metadata.synthetic===true ||
+    metadata.synthetic_fixture===true
+  )return true;
+
+  return (
+    /^stress-\d{10,}-[a-f0-9]{6,}-message-\d+$/i.test(text) ||
+    /^backend-acceptance-[0-9a-f-]{16,}(?:-|$)/i.test(text)
+  );
+}
+
+export function isUsefulLearningEvidence(event:LearningEvidence):boolean {
+  if(isSyntheticLearningEvidence(event))return false;
+  const text=event.content.trim();
+  if(text.length<12||text.length>6000)return false;
+  return normalizeTrendTokens(text).length>=3;
+}
+
+function evidenceIdentity(event:LearningEvidence):string{
+  return [
+    event.jobId||"",
+    event.sessionId||"",
+    event.sourceUserId||"",
+    event.sourceType||""
+  ].join("|");
+}
+
+function negationPolarity(value:string):boolean{
+  const tokens=value.toLowerCase()
+    .replace(/[^a-z0-9' ]+/g," ")
+    .split(/\s+/)
+    .filter(Boolean);
+  if(/\bdo\s+not\b/i.test(value))return true;
+  return tokens.some(token=>negationWords.has(token));
+}
+
+function representativeEvidence(events:LearningEvidence[]):LearningEvidence{
+  const scored=events.map(event=>{
+    const tokens=normalizeTrendTokens(event.content);
+    const peers=events.filter(peer=>peer.id!==event.id);
+    const mean=peers.length
+      ?peers.reduce((sum,peer)=>sum+evidenceSimilarity(tokens,normalizeTrendTokens(peer.content)),0)/peers.length
+      :1;
+    return {event,mean,length:event.content.trim().length};
+  });
+  scored.sort((a,b)=>b.mean-a.mean||a.length-b.length||a.event.id.localeCompare(b.event.id));
+  return scored[0].event;
+}
+
+function sharedTrendTokens(events:LearningEvidence[]):string[]{
+  const counts=new Map<string,number>();
+  for(const event of events){
+    for(const token of normalizeTrendTokens(event.content)){
+      counts.set(token,(counts.get(token)||0)+1);
+    }
+  }
+  const threshold=Math.max(2,Math.ceil(events.length*0.6));
+  return [...counts.entries()]
+    .filter(([,count])=>count>=threshold)
+    .map(([token])=>token)
+    .sort();
+}
+
+function candidateConfidence(events:LearningEvidence[],representative:LearningEvidence,hasConflict:boolean):number{
+  const baseTokens=normalizeTrendTokens(representative.content);
+  const meanSimilarity=events.reduce(
+    (sum,event)=>sum+evidenceSimilarity(baseTokens,normalizeTrendTokens(event.content)),
+    0
+  )/Math.max(1,events.length);
+  const evidenceFactor=Math.min(1,events.length/5);
+  const independence=Math.min(1,new Set(events.map(evidenceIdentity)).size/3);
+  const raw=(meanSimilarity*0.55)+(evidenceFactor*0.25)+(independence*0.20);
+  const adjusted=hasConflict?raw*0.45:raw;
+  return Math.max(0,Math.min(1,Number(adjusted.toFixed(4))));
+}
+
 export function classifyLearningRisk(value:string):{
   category:string;
   riskClass:"low"|"normal"|"high";
 } {
   const text=value.toLowerCase();
-  if(/auth|authorization|rls|permission|role/.test(text)){
+  if(/\b(auth|authentication|authorization|rls|permission|permissions|role|roles)\b/.test(text)){
     return {category:"authorization",riskClass:"high"};
   }
-  if(/security|secret|credential|encryption/.test(text)){
+  if(/\b(security|secret|secrets|credential|credentials|encryption)\b/.test(text)){
     return {category:"security",riskClass:"high"};
   }
-  if(/architecture|schema|migration/.test(text)){
+  if(/\b(architecture|schema|migration|migrations)\b/.test(text)){
     return {category:"architecture",riskClass:"high"};
   }
-  if(/delete|destroy|drop|purge/.test(text)){
+  if(/\b(delete|destroy|drop|purge)\b/.test(text)){
     return {category:"destructive",riskClass:"high"};
   }
-  if(/policy|governance|production/.test(text)){
+  if(/\b(policy|policies|governance|production)\b/.test(text)){
     return {category:"governance",riskClass:"high"};
   }
   return {category:"workflow",riskClass:"low"};
 }
 
 export function candidateFromRepeatedEvidence(
-  events:Array<{id:string;content:string}>
+  events:LearningEvidence[]
 ):{
   normalizedKnowledge:string;
   category:string;
@@ -55,25 +177,44 @@ export function candidateFromRepeatedEvidence(
   lifecycleState:"INTAKE";
   evidenceIds:string[];
   trendKey:string;
+  confidence:number;
+  hasConflict:boolean;
+  independentEvidenceCount:number;
 }|null {
   if(events.length<2)return null;
   const anchor=events[0];
+  if(!isUsefulLearningEvidence(anchor))return null;
+
   const anchorTokens=normalizeTrendTokens(anchor.content);
-  const similar=events.filter(event=>
+  const eligible=events.filter(isUsefulLearningEvidence);
+  const similar=eligible.filter(event=>
     evidenceSimilarity(anchorTokens,normalizeTrendTokens(event.content))>=0.5
   );
   if(similar.length<2)return null;
+
+  const representative=representativeEvidence(similar);
+  const shared=sharedTrendTokens(similar);
+  const trendTokens=shared.length>=2?shared:normalizeTrendTokens(representative.content);
+  if(trendTokens.length<2)return null;
+
+  const polarities=new Set(similar.map(event=>negationPolarity(event.content)));
+  const hasConflict=polarities.size>1;
   const risk=classifyLearningRisk(similar.map(item=>item.content).join(" "));
+  const normalizedKnowledge=representative.content.trim().replace(/\s+/g," ");
+  const independentEvidenceCount=new Set(similar.map(evidenceIdentity)).size;
+
   return {
-    normalizedKnowledge:anchor.content.trim(),
+    normalizedKnowledge,
     category:risk.category,
     riskClass:risk.riskClass,
     lifecycleState:"INTAKE",
     evidenceIds:similar.map(item=>item.id),
-    trendKey:trendKeyForTokens(anchorTokens)
+    trendKey:trendKeyForTokens(trendTokens),
+    confidence:candidateConfidence(similar,representative,hasConflict),
+    hasConflict,
+    independentEvidenceCount
   };
 }
-
 
 export function bestCandidateByEvidenceOverlap(
   links:Array<{candidateId:string;eventId:string}>,
@@ -91,7 +232,6 @@ export function bestCandidateByEvidenceOverlap(
     .sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
   return ranked[0]?.[0]||null;
 }
-
 
 export function stableCandidateIdFromHash(sha256Digest:string):string {
   const digest=sha256Digest.toLowerCase();
