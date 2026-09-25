@@ -126,8 +126,8 @@ export default function TransparencyWorkspace(){
     }
   }
 
-  const highCount=findings?.findings.filter(item=>item.severity.startsWith("HIGH")).length||10;
-  const mediumCount=findings?.findings.filter(item=>item.severity.startsWith("MEDIUM")).length||4;
+  const highCount=findings?.findings.filter(item=>item.severity.startsWith("HIGH")).length||9;
+  const mediumCount=findings?.findings.filter(item=>item.severity.startsWith("MEDIUM")).length||5;
 
   return <div className="transparencyWorkspace">
     <section className="heroPanel transparencyHero" aria-labelledby="transparency-title">
