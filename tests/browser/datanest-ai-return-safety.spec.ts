@@ -128,9 +128,9 @@ test("provider launch preloads traced work without user email and sidebar resizi
   const popupReady=page.waitForEvent("popup");
   await page.getByRole("button",{name:/^Open companion \+/}).click();
   const popup=await popupReady;
-  await popup.waitForURL(url=>url.hostname==="chatgpt.com"&&Boolean(url.searchParams.get("prompt")));
+  await popup.waitForURL(url=>url.hostname==="chatgpt.com"&&Boolean(url.searchParams.get("q")));
   const providerUrl=new URL(popup.url());
-  const prompt=providerUrl.searchParams.get("prompt")||"";
+  const prompt=providerUrl.searchParams.get("q")||"";
   expect(prompt).toContain("RESONANCE DATANEST — LIVE EXTERNAL AI HANDOFF");
   expect(prompt).toContain("[DATANEST TRACKING HEADER]");
   expect(prompt).toContain("Trace Key: DN-");
@@ -138,6 +138,11 @@ test("provider launch preloads traced work without user email and sidebar resizi
   expect(providerUrl.hash).toBe("");
   await popup.close();
   await page.bringToFront();
+
+  await expect.poll(async()=>{
+    const box=await page.locator("aside.externalAiDock").boundingBox();
+    return box?Math.round(1600-(box.x+box.width)):Number.POSITIVE_INFINITY;
+  }).toBeLessThanOrEqual(2);
 
   const handoff=page.locator("details.externalAiHandoff textarea");
   await expect(handoff).toHaveValue(/Trace Key: DN-/);

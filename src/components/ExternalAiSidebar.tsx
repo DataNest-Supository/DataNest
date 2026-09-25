@@ -101,6 +101,8 @@ export default function ExternalAiSidebar({
   const clipboardContextRef=useRef("");
   const clipboardConsentRef=useRef(false);
   const pendingAutoReturnSession=useRef("");
+  const companionWindowRef=useRef<Window|null>(null);
+  const companionClosePollRef=useRef<number|null>(null);
   const clipboardContextKey=JSON.stringify([projectId,currentUserEmail,selectedJobId,provider,sessionId]);
 
   const setAutoCaptureEnabled=useCallback((enabled:boolean)=>{
@@ -247,6 +249,15 @@ export default function ExternalAiSidebar({
     lastClipboardCapture.current="";
     setEmbedUrl("");
   },[provider]);
+
+  useEffect(()=>()=>{
+    if(companionClosePollRef.current!==null){
+      window.clearInterval(companionClosePollRef.current);
+      companionClosePollRef.current=null;
+    }
+    companionWindowRef.current=null;
+    if(onCompanionReserve)onCompanionReserve(0);
+  },[onCompanionReserve]);
 
   useEffect(()=>{
     const handle=(event:Event)=>{
@@ -440,9 +451,53 @@ export default function ExternalAiSidebar({
     });
   }
 
-  function companionFeatures(){
+  function providerLaunchUrl(promptText=""){
+    const url=new URL(selectedProvider.url);
+    if(selectedProvider.key==="chatgpt"&&promptText.trim()){
+      // q currently launches ChatGPT with the prompt populated. Keep the full
+      // governed handoff on the clipboard as fallback because provider URL
+      // behavior is outside DataNest's control.
+      url.searchParams.set("q",promptText);
+    }
+    return url.toString();
+  }
+
+  function clearCompanionTracking(){
+    if(companionClosePollRef.current!==null){
+      window.clearInterval(companionClosePollRef.current);
+      companionClosePollRef.current=null;
+    }
+    companionWindowRef.current=null;
+    if(onCompanionReserve)onCompanionReserve(0);
+  }
+
+  function placeCompanionWindow(popup:Window,placement:ReturnType<typeof companionPlacement>){
+    try{popup.resizeTo(placement.width,placement.height);}catch{}
+    try{popup.moveTo(placement.left,placement.top);}catch{}
+    try{popup.focus();}catch{}
+  }
+
+  function trackCompanionWindow(popup:Window,placement:ReturnType<typeof companionPlacement>){
+    if(companionClosePollRef.current!==null){
+      window.clearInterval(companionClosePollRef.current);
+    }
+    companionWindowRef.current=popup;
+    if(onCompanionReserve)onCompanionReserve(placement.reserveRight);
+    companionClosePollRef.current=window.setInterval(()=>{
+      if(popup.closed){
+        clearCompanionTracking();
+      }
+    },500);
+  }
+
+  function openCompanionShell(){
+    const previous=companionWindowRef.current;
+    if(previous&&!previous.closed){
+      try{previous.close();}catch{}
+    }
+
     const placement=companionPlacement();
-    return [
+    const popup=window.open("about:blank","_blank",[
       "popup=yes",
       "resizable=yes",
       "scrollbars=yes",
@@ -450,25 +505,32 @@ export default function ExternalAiSidebar({
       "height="+placement.height,
       "left="+placement.left,
       "top="+placement.top
-    ].join(",");
-  }
+    ].join(","));
 
-  function providerLaunchUrl(promptText=""){
-    const url=new URL(selectedProvider.url);
-    if(selectedProvider.key==="chatgpt"&&promptText.trim()){
-      url.searchParams.set("prompt",promptText);
+    if(!popup){
+      clearCompanionTracking();
+      return null;
     }
-    return url.toString();
+
+    placeCompanionWindow(popup,placement);
+    trackCompanionWindow(popup,placement);
+    try{popup.opener=null;}catch{}
+    return popup;
   }
 
   function openProviderWindow(mode:"companion"|"popout",promptText=handoff||preparedHandoff){
-    const name=mode==="companion"
-      ? "datanest-ai-companion-"+selectedProvider.key
-      : "_blank";
-    const features=mode==="companion"
-      ? "noopener,noreferrer,"+companionFeatures()
-      : "noopener,noreferrer,resizable=yes,scrollbars=yes";
-    return window.open(providerLaunchUrl(promptText),name,features);
+    if(mode==="companion"){
+      const popup=openCompanionShell();
+      if(!popup)return null;
+      popup.location.href=providerLaunchUrl(promptText);
+      return popup;
+    }
+
+    return window.open(
+      providerLaunchUrl(promptText),
+      "_blank",
+      "noopener,noreferrer,resizable=yes,scrollbars=yes"
+    );
   }
 
   async function startSession(mode:"sidebar"|"companion"|"popout"){
@@ -486,25 +548,15 @@ export default function ExternalAiSidebar({
     onError("");
 
     let popup:Window|null=null;
-    if(mode==="companion"||mode==="popout"){
-      const name=mode==="companion"
-        ? "datanest-ai-companion-"+selectedProvider.key
-        : "_blank";
-      const placement=mode==="companion"?companionPlacement():null;
-      if(placement&&onCompanionReserve)onCompanionReserve(placement.reserveRight);
-      const features=mode==="companion"
-        ? [
-            "popup=yes",
-            "resizable=yes",
-            "scrollbars=yes",
-            "width="+placement!.width,
-            "height="+placement!.height,
-            "left="+placement!.left,
-            "top="+placement!.top
-          ].join(",")
-        : "popup=yes,resizable=yes,scrollbars=yes";
-      popup=window.open("about:blank",name,features);
-      if(popup)popup.opener=null;
+    if(mode==="companion"){
+      // Open synchronously while the click still carries a browser user
+      // gesture. Navigate only after DataNest has created the governed trace.
+      popup=openCompanionShell();
+    }else if(mode==="popout"){
+      popup=window.open("about:blank","_blank","popup=yes,resizable=yes,scrollbars=yes");
+      if(popup){
+        try{popup.opener=null;}catch{}
+      }
     }
 
     try{
@@ -556,24 +608,26 @@ export default function ExternalAiSidebar({
         const launchUrl=providerLaunchUrl(trackedHandoff);
         if(popup){
           popup.location.href=launchUrl;
-        }else{
-          openProviderWindow(mode,trackedHandoff);
         }
         onNotice(
-          selectedProvider.key==="chatgpt"&&mode==="companion"
-            ? "ChatGPT opened with the tracked Job Manifest preloaded. "+
-              (autoReturnAccess==="granted"
-                ?"Session auto-return is armed: copy the completed response in ChatGPT, then return to DataNest for review and import."
-                :"For automatic return, enable session auto-return once in DataNest. Manual paste remains available.")
-            : selectedProvider.label+
-              (mode==="companion"
-                ? " opened in DataNest companion mode beside the app using your own account. "
-                : " opened in a separate window using your own account. ")+
-              "The tracked Job Manifest handoff is prepared."
+          !popup
+            ? selectedProvider.label+
+              " session is tracked, but the browser blocked the new window. Use Reopen tracked prompt; the governed handoff is already copied."
+            : selectedProvider.key==="chatgpt"&&mode==="companion"
+              ? "ChatGPT companion opened on the reserved right rail with the tracked Job Manifest requested as a prefill. "+
+                (autoReturnAccess==="granted"
+                  ?"Session auto-return is armed: copy the completed response in ChatGPT, then return to DataNest for review and import."
+                  :"For automatic return, enable session auto-return once in DataNest. Manual paste remains available.")
+              : selectedProvider.label+
+                (mode==="companion"
+                  ? " opened in DataNest companion mode beside the app using your own account. "
+                  : " opened in a separate window using your own account. ")+
+                "The tracked Job Manifest handoff is prepared."
         );
       }
     }catch(error){
       if(popup&&!popup.closed)popup.close();
+      if(mode==="companion")clearCompanionTracking();
       onError(error instanceof Error?error.message:"Unable to start external AI session.");
     }finally{
       setBusy(false);
@@ -800,8 +854,8 @@ export default function ExternalAiSidebar({
         </div>
 
         <p className="externalAiPrivacyNote">
-          Uses your external AI account/credits. ChatGPT companion mode preloads the tracked handoff in the provider URL;
-          your email is still omitted from that handoff. Signed in here as {currentUserEmail}.
+          Uses your external AI account/credits. ChatGPT companion mode requests the tracked handoff as a provider URL prefill
+          and also copies the full handoff as fallback; your email is still omitted. Signed in here as {currentUserEmail}.
           Returned work is staged as UNCERTIFIED evidence and cannot become project-wide memory until governed certification.
         </p>
       </section>

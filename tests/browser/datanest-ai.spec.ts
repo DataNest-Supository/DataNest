@@ -242,7 +242,7 @@ test("AI Companion return becomes uncertified evidence in the selected Job",asyn
   await page.getByRole("button",{name:"Import to DataNest"}).click();
   await expect(page.getByText(/staged as UNCERTIFIED evidence/i)).toBeVisible();
 
-  await page.getByRole("button",{name:"Hide AI Sidebar"}).click();
+  await page.getByRole("button",{name:"Hide AI",exact:true}).click();
   await expect(page.getByText(companionResult,{exact:true})).toBeVisible();
   await expect(page.getByText("UNCERTIFIED",{exact:true}).last()).toBeVisible();
 });
