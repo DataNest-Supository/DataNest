@@ -38,6 +38,34 @@ test("workspace deep links survive reload and follow browser history",async({pag
 });
 
 
+test("mobile TranScheduler avoids horizontal table scrolling",async({page})=>{
+  await signIn(page);
+  await page.setViewportSize({width:390,height:844});
+
+  await page.getByRole("button",{name:"Open menu"}).click();
+  await page.getByRole("button",{name:"TranScheduler",exact:true}).click();
+  await expect(page).toHaveURL(/(?:\?|&)view=scheduler(?:&|$)/);
+
+  const table=page.locator(".schedulerTable");
+  await expect(table).toBeVisible();
+
+  const overflow=await table.evaluate(element=>element.scrollWidth-element.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(1);
+
+  const rows=page.locator(".schedulerRow:not(.headerRow)");
+  if(await rows.count()){
+    const first=rows.first();
+    const metrics=await first.evaluate(element=>({
+      width:element.getBoundingClientRect().width,
+      viewport:window.innerWidth
+    }));
+    expect(metrics.width).toBeLessThanOrEqual(metrics.viewport-28);
+    await expect(first.locator('[data-label="Job"]')).toBeVisible();
+    await expect(first.locator('[data-label="Status"]')).toBeVisible();
+  }
+});
+
+
 test("human input is traced and remains uncertified",async({page})=>{
   await signIn(page);
   await page.getByRole("button",{name:"DataNest AI",exact:true}).click();

@@ -63,3 +63,15 @@ test("mobile navigation exposes menu relationships and closes with Escape", () =
   assert.match(appSource, /aria-label="Project workspaces"/);
   assert.match(appSource, /event\.key==="Escape"/);
 });
+
+
+test("mobile operational tables become labeled cards without forced horizontal widths", () => {
+  assert.match(appSource, /className="jobTableRow"[\s\S]*?data-label="Job"[\s\S]*?data-label="Title"[\s\S]*?data-label="Status"/);
+  assert.match(appSource, /className="schedulerRow" key=\{job\.id\}[\s\S]*?data-label="Job"[\s\S]*?data-label="Controls"/);
+  assert.match(appSource, /className="dataRow" key=\{run\.id\}[\s\S]*?data-label="Run"[\s\S]*?data-label="Started"/);
+  assert.match(
+    cssSource,
+    /@media\(max-width:720px\)\{[\s\S]*?\.jobTable,\.schedulerTable,\.dataTable\{overflow:visible!important\}[\s\S]*?min-width:0!important[\s\S]*?content:attr\(data-label\)/,
+    "mobile operational rows should be self-contained labeled cards rather than horizontal tables"
+  );
+});
