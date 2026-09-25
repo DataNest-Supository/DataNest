@@ -207,8 +207,11 @@ test("ChatGPT companion preloads the tracked handoff while omitting user email",
     path.join(repoRoot, "src/components/ExternalAiSidebar.tsx"),
     "utf8"
   );
-  assert.match(source, /searchParams\.set\("prompt",promptText\)/);
+  assert.match(source, /searchParams\.set\("q",promptText\)/);
   assert.match(source, /providerLaunchUrl\(trackedHandoff\)/);
+  assert.match(source, /openCompanionShell\(\)/);
+  assert.match(source, /popup\.resizeTo\(placement\.width,placement\.height\)/);
+  assert.match(source, /popup\.moveTo\(placement\.left,placement\.top\)/);
   assert.doesNotMatch(source, /"User: "\+currentUserEmail/);
   assert.match(source, /User identity: intentionally omitted from external handoff/);
 });
@@ -222,6 +225,16 @@ test("external AI sidebar exposes keyboard width controls", () => {
   assert.match(source, /aria-label="Widen AI sidebar"/);
 });
 
+
+test("companion popup close clears the reserved DataNest rail", () => {
+  const source = fs.readFileSync(
+    path.join(repoRoot, "src/components/ExternalAiSidebar.tsx"),
+    "utf8"
+  );
+  assert.match(source, /window\.setInterval\(\(\)=>\{/);
+  assert.match(source, /if\(popup\.closed\)\{/);
+  assert.match(source, /clearCompanionTracking\(\)/);
+});
 
 test("DataNest app reserves and clears the companion rail", () => {
   const source = fs.readFileSync(
