@@ -104,10 +104,10 @@ const candidateLinks=await admin.from("ai_candidate_evidence")
   .in("event_id",human.data.map(item=>item.id));
 if(candidateLinks.error)throw candidateLinks.error;
 const candidateIds=[...new Set(candidateLinks.data.map(item=>String(item.candidate_id)))];
-if(candidateIds.length!==1){
+if(candidateIds.length!==0){
   throw new Error(
-    "Repeated stress evidence created "+candidateIds.length+
-    " learning candidates; expected exactly one reusable candidate."
+    "Synthetic stress evidence created "+candidateIds.length+
+    " learning candidates; expected zero under the governed learning-quality policy."
   );
 }
 
@@ -149,5 +149,6 @@ console.log(JSON.stringify({
   humanEvents:human.data.length,
   outputEvents:outputs.data.length,
   learningCandidates:candidateIds.length,
+  syntheticLearningSuppressed:candidateIds.length===0,
   crossJobLeakage:0
 }));
