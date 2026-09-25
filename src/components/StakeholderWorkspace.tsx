@@ -29,6 +29,53 @@ type Contribution = {
   created_at:string;
 };
 
+type ReputationSnapshot = {
+  aggregate_score?:number;
+  trust_score?:number;
+  anomaly_score?:number;
+  rank?:number|null;
+  eligible_for_ranking?:boolean;
+  exclusion_reasons?:string[];
+  certified_contributions?:number;
+  approved_reviews?:number;
+  model_version?:string;
+  dimensions?:Record<string,unknown>;
+  frozen_at?:string;
+};
+
+type IntelligenceWorkspace = {
+  rolling_90:ReputationSnapshot;
+  lifetime:ReputationSnapshot;
+  progression:Record<string,unknown>;
+  active_squad_membership:Record<string,unknown>;
+  squad:Array<{member_code:string;rank:number;aggregate_score:number;trust_score:number}>;
+  anomaly_signals:Array<{
+    id:string;
+    signal_type:string;
+    severity:string;
+    confidence:number;
+    status:string;
+    detected_at:string;
+    evidence:Record<string,unknown>;
+    resolution_notes?:string|null;
+  }>;
+  preferences:{
+    ui_complexity:"simple"|"detailed";
+    ranking_opt_in:boolean;
+    squad_opt_in:boolean;
+  };
+  model:{
+    model_version?:string;
+    weights?:Record<string,number>;
+    minimum_certified_for_rank?:number;
+    minimum_certified_for_squad?:number;
+    trusted_score_threshold?:number;
+    reviewer_score_threshold?:number;
+  };
+  can_manage:boolean;
+  boundaries:Record<string,boolean>;
+};
+
 function fmt(value:unknown){
   const n=Number(value||0);
   return Number.isFinite(n)?new Intl.NumberFormat(undefined,{maximumFractionDigits:2}).format(n):"0";
@@ -36,6 +83,20 @@ function fmt(value:unknown){
 
 function date(value:string){
   return new Intl.DateTimeFormat(undefined,{month:"short",day:"2-digit",year:"numeric"}).format(new Date(value));
+}
+
+function score(value:unknown){
+  const n=Number(value);
+  return Number.isFinite(n)?n.toFixed(1):"—";
+}
+
+function rank(value:unknown){
+  const n=Number(value);
+  return Number.isFinite(n)&&n>0?"#"+n:"—";
+}
+
+function label(value:unknown){
+  return String(value||"").replaceAll("_"," ");
 }
 
 export default function StakeholderWorkspace({
@@ -48,10 +109,12 @@ export default function StakeholderWorkspace({
   canReview:boolean;
 }) {
   const [workspace,setWorkspace]=useState<Workspace|null>(null);
+  const [intelligence,setIntelligence]=useState<IntelligenceWorkspace|null>(null);
   const [contributions,setContributions]=useState<Contribution[]>([]);
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState("");
   const [savingPreference,setSavingPreference]=useState(false);
+  const [refreshingIntelligence,setRefreshingIntelligence]=useState(false);
 
   const load=useCallback(async()=>{
     const supabase=getSupabase();
@@ -59,7 +122,7 @@ export default function StakeholderWorkspace({
     setLoading(true);
     setError("");
 
-    const [workspaceResult,contributionResult]=await Promise.all([
+    const [workspaceResult,contributionResult,intelligenceResult]=await Promise.all([
       supabase.rpc("get_contribution_workspace",{target_project:projectId}),
       supabase
         .from("contribution_ledger")
@@ -67,7 +130,8 @@ export default function StakeholderWorkspace({
         .eq("project_id",projectId)
         .eq("user_id",currentUserId)
         .order("created_at",{ascending:false})
-        .limit(50)
+        .limit(50),
+      supabase.rpc("get_contribution_intelligence_workspace",{target_project:projectId})
     ]);
 
     if(workspaceResult.error){
@@ -82,6 +146,13 @@ export default function StakeholderWorkspace({
       setContributions([]);
     }else{
       setContributions((contributionResult.data||[]) as Contribution[]);
+    }
+
+    if(intelligenceResult.error){
+      setError(current=>current||intelligenceResult.error!.message);
+      setIntelligence(null);
+    }else{
+      setIntelligence((intelligenceResult.data||null) as IntelligenceWorkspace|null);
     }
 
     setLoading(false);
@@ -111,8 +182,47 @@ export default function StakeholderWorkspace({
       .from("datanest_user_preferences")
       .upsert({user_id:currentUserId,ui_complexity:mode,updated_at:new Date().toISOString()},{onConflict:"user_id"});
     if(prefError)setError(prefError.message);
-    else setWorkspace(current=>current?{...current,ui_complexity:mode}:current);
+    else {
+      setWorkspace(current=>current?{...current,ui_complexity:mode}:current);
+      setIntelligence(current=>current?{
+        ...current,
+        preferences:{...current.preferences,ui_complexity:mode}
+      }:current);
+    }
     setSavingPreference(false);
+  }
+
+  async function setIntelligencePreference(field:"ranking_opt_in"|"squad_opt_in",value:boolean){
+    const supabase=getSupabase();
+    if(!supabase)return;
+    setSavingPreference(true);
+    setError("");
+    const {error:prefError}=await supabase
+      .from("datanest_user_preferences")
+      .upsert({
+        user_id:currentUserId,
+        [field]:value,
+        updated_at:new Date().toISOString()
+      },{onConflict:"user_id"});
+    if(prefError)setError(prefError.message);
+    else setIntelligence(current=>current?{
+      ...current,
+      preferences:{...current.preferences,[field]:value}
+    }:current);
+    setSavingPreference(false);
+  }
+
+  async function refreshIntelligence(){
+    const supabase=getSupabase();
+    if(!supabase||!canReview)return;
+    setRefreshingIntelligence(true);
+    setError("");
+    const {error:refreshError}=await supabase.rpc("refresh_contribution_intelligence_v1",{
+      target_project:projectId
+    });
+    if(refreshError)setError(refreshError.message);
+    else await load();
+    setRefreshingIntelligence(false);
   }
 
   if(loading)return <section className="panel"><p className="muted">Loading stakeholder workspace…</p></section>;
@@ -123,6 +233,11 @@ export default function StakeholderWorkspace({
   const stakeholder=workspace.stakeholder||{};
   const profile=workspace.profile||{};
   const counts=workspace.counts||{};
+  const rolling=intelligence?.rolling_90||{};
+  const lifetime=intelligence?.lifetime||{};
+  const progression=intelligence?.progression||{};
+  const squadMembership=intelligence?.active_squad_membership||{};
+  const weights=intelligence?.model?.weights||{};
 
   return <>
     {error&&<div className="notice errorNotice">{error}</div>}
@@ -131,7 +246,7 @@ export default function StakeholderWorkspace({
       <div>
         <p className="eyebrow">STAKEHOLDER CONTRIBUTION</p>
         <h2>Your DataNest contribution workspace</h2>
-        <p>Accepted impact, evidence, Sparks and contribution share are tracked separately from legal ownership and royalty entitlements.</p>
+        <p>Accepted impact, evidence, reputation and Sparks are governed separately from legal ownership, royalties and project authority.</p>
         <div className="heroActions">
           <button
             className={simple?"primaryButton compact":"secondaryButton compact"}
@@ -144,6 +259,11 @@ export default function StakeholderWorkspace({
             onClick={()=>void setComplexity("detailed")}
           >Detailed UI</button>
           <button className="secondaryButton compact" onClick={()=>void load()}>Refresh</button>
+          {canReview&&<button
+            className="secondaryButton compact"
+            disabled={refreshingIntelligence}
+            onClick={()=>void refreshIntelligence()}
+          >{refreshingIntelligence?"Refreshing intelligence…":"Refresh Intelligence"}</button>}
         </div>
       </div>
       <div className="stackDiagram">
@@ -153,15 +273,51 @@ export default function StakeholderWorkspace({
         <span>↓</span>
         <div>Value <b>Scored + Certified</b></div>
         <span>↓</span>
-        <div>Sparks <b>Append-only ledger</b></div>
+        <div>Reputation <b>Human-governed intelligence</b></div>
       </div>
     </section>
 
     <section className="metricGrid">
       <article className="metricCard"><span>Project Sparks</span><strong>{fmt(projectSparks)}</strong><small>Internal project utility</small></article>
-      <article className="metricCard"><span>Platform Sparks</span><strong>{fmt(platformSparks)}</strong><small>RONSAS-wide utility</small></article>
       <article className="metricCard"><span>Contribution share</span><strong>{fmt(stakeholder.contribution_share_percent)}%</strong><small>Not legal ownership</small></article>
-      <article className="metricCard"><span>Accepted points</span><strong>{fmt(stakeholder.accepted_points)}</strong><small>Historical accepted value</small></article>
+      <article className="metricCard"><span>90-day reputation</span><strong>{score(rolling.aggregate_score)}</strong><small>{rolling.eligible_for_ranking?"Eligible for ranking":"Not currently ranked"}</small></article>
+      <article className="metricCard"><span>Project rank</span><strong>{rank(rolling.rank)}</strong><small>Rolling 90-day window</small></article>
+    </section>
+
+    <section className="panel">
+      <div className="panelHead">
+        <div><p className="eyebrow">CONTRIBUTION INTELLIGENCE</p><h3>Impact, trust and progression</h3></div>
+        <span className="countPill">{String(intelligence?.model?.model_version||"Awaiting first snapshot")}</span>
+      </div>
+      <div className="metricGrid">
+        <article className="metricCard"><span>Lifetime reputation</span><strong>{score(lifetime.aggregate_score)}</strong><small>Frozen snapshot history</small></article>
+        <article className="metricCard"><span>Trust score</span><strong>{score(rolling.trust_score)}</strong><small>Only confirmed signals reduce trust</small></article>
+        <article className="metricCard"><span>Anomaly score</span><strong>{score(rolling.anomaly_score)}</strong><small>Open signals are review flags, not penalties</small></article>
+        <article className="metricCard"><span>Certified contributions</span><strong>{Number(rolling.certified_contributions||0)}</strong><small>Rolling 90 days</small></article>
+      </div>
+      <dl className="settingsList">
+        <div><dt>Ranking participation</dt><dd><button className="secondaryButton compact" disabled={savingPreference} onClick={()=>void setIntelligencePreference("ranking_opt_in",!(intelligence?.preferences?.ranking_opt_in??true))}>{intelligence?.preferences?.ranking_opt_in===false?"Opt in":"Opt out"}</button></dd></div>
+        <div><dt>N0nymous Squad consideration</dt><dd><button className="secondaryButton compact" disabled={savingPreference} onClick={()=>void setIntelligencePreference("squad_opt_in",!(intelligence?.preferences?.squad_opt_in??false))}>{intelligence?.preferences?.squad_opt_in?"Leave consideration":"Join consideration"}</button></dd></div>
+        <div><dt>Current lifecycle</dt><dd>{label(profile.lifecycle_stage||"active_stakeholder")}</dd></div>
+        <div><dt>Progression recommendation</dt><dd>{progression.recommended_stage?label(progression.recommended_stage):"No pending recommendation"}</dd></div>
+      </dl>
+      <p className="muted">Reputation weights: impact {fmt(Number(weights.impact||0)*100)}%, quality {fmt(Number(weights.quality||0)*100)}%, collaboration/mentoring {fmt(Number(weights.collaboration_mentoring||0)*100)}%, governance {fmt(Number(weights.governance||0)*100)}%, reusable knowledge {fmt(Number(weights.reusable_knowledge||0)*100)}%. Progression recommendations require human approval and never grant a project role automatically.</p>
+    </section>
+
+    <section className="panel">
+      <div className="panelHead"><div><p className="eyebrow">N0NYMOUS SQUAD</p><h3>Rolling top contributors</h3></div><span className="countPill">{intelligence?.squad?.length||0}/10</span></div>
+      {squadMembership.member_code&&<div className="notice goodNotice">You are currently {String(squadMembership.member_code)} at rank #{String(squadMembership.rank)}.</div>}
+      {intelligence?.squad?.length?<div className="dataTable">
+        <div className="dataRow headerRow"><span>Member</span><span>Rank</span><span>Reputation</span><span>Trust</span><span>Authority</span></div>
+        {intelligence.squad.map(member=><div className="dataRow" key={member.member_code}>
+          <b>{member.member_code}</b>
+          <span>#{member.rank}</span>
+          <span>{score(member.aggregate_score)}</span>
+          <span>{score(member.trust_score)}</span>
+          <span>None granted</span>
+        </div>)}
+      </div>:<div className="emptyState"><div>◇</div><h3>No active Squad snapshot yet</h3><p>An owner/admin can refresh Contribution Intelligence after certified contributions exist.</p></div>}
+      <p className="muted">Squad membership is pseudonymous recognition only. It does not grant admin, reviewer, legal ownership or financial authority.</p>
     </section>
 
     <section className="panel">
@@ -179,15 +335,31 @@ export default function StakeholderWorkspace({
 
     {!simple&&<>
       <section className="panel">
-        <div className="panelHead"><div><p className="eyebrow">PROFILE</p><h3>Stakeholder state</h3></div>{canReview&&<span className="countPill">Reviewer-capable role</span>}</div>
+        <div className="panelHead"><div><p className="eyebrow">PROFILE</p><h3>Stakeholder state</h3></div>{canReview&&<span className="countPill">Owner/admin review controls</span>}</div>
         <dl className="settingsList">
-          <div><dt>Lifecycle</dt><dd>{String(profile.lifecycle_stage||"active_stakeholder").replaceAll("_"," ")}</dd></div>
+          <div><dt>Lifecycle</dt><dd>{label(profile.lifecycle_stage||"active_stakeholder")}</dd></div>
           <div><dt>Status</dt><dd>{String(profile.status||"active")}</dd></div>
           <div><dt>Origin</dt><dd>{String(profile.origin||"invite")}</dd></div>
           <div><dt>Tracked points</dt><dd>{fmt(stakeholder.tracked_points)}</dd></div>
           <div><dt>Pending contributions</dt><dd>{fmt(stakeholder.pending_contributions)}</dd></div>
+          <div><dt>Platform Sparks</dt><dd>{fmt(platformSparks)}</dd></div>
           <div><dt>Locked Sparks</dt><dd>{fmt(lockedSparks)}</dd></div>
+          <div><dt>Approved peer reviews</dt><dd>{Number(lifetime.approved_reviews||0)}</dd></div>
         </dl>
+      </section>
+
+      <section className="panel">
+        <div className="panelHead"><div><p className="eyebrow">ANTI-GAMING REVIEW</p><h3>Your active anomaly signals</h3></div><span className="countPill">{intelligence?.anomaly_signals?.length||0}</span></div>
+        {intelligence?.anomaly_signals?.length?<div className="dataTable">
+          <div className="dataRow headerRow"><span>Type</span><span>Severity</span><span>Status</span><span>Confidence</span><span>Detected</span></div>
+          {intelligence.anomaly_signals.map(item=><div className="dataRow" key={item.id}>
+            <b>{label(item.signal_type)}</b>
+            <span>{item.severity}</span>
+            <span>{item.status}</span>
+            <span>{fmt(Number(item.confidence||0)*100)}%</span>
+            <span>{date(item.detected_at)}</span>
+          </div>)}
+        </div>:<div className="emptyState"><div>✓</div><h3>No active anomaly signals</h3><p>Open signals are review evidence only; they do not reduce reputation until confirmed by an authorized human reviewer.</p></div>}
       </section>
 
       <section className="panel">
@@ -205,9 +377,9 @@ export default function StakeholderWorkspace({
       </section>
 
       <section className="panel">
-        <p className="eyebrow">ECONOMIC BOUNDARY</p>
+        <p className="eyebrow">ECONOMIC + GOVERNANCE BOUNDARY</p>
         <h3>Separate ledgers, separate meanings</h3>
-        <p className="muted">Contribution share is a DataNest calculation. It does not by itself create legal ownership. Sparks are internal utility entries and are separate from contractual royalty entitlements or royalties payable.</p>
+        <p className="muted">Contribution share is a DataNest calculation. It does not by itself create legal ownership. Sparks are internal utility entries and remain separate from contractual royalty entitlements or royalties payable. Reputation, N0nymous Squad membership and lifecycle recognition do not grant project roles or financial authority.</p>
       </section>
     </>}
   </>;
