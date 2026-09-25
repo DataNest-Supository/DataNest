@@ -27,3 +27,15 @@ Projects own knowledge. Jobs own work. Checkpoints preserve continuity. Capabili
 
 ## Security
 No passwords, MFA recovery codes, reusable browser cookies, PATs, service-role keys or database passwords belong in Git.
+
+
+## Think Tanks and reviewed institutional learning
+Think Tanks are project-scoped collaboration spaces. Channels can be project-wide or linked to a Job Manifest.
+
+- Project-wide channels support discussion, decision proposals, action proposals and reviewed learning.
+- Job-linked channels may invoke the existing governed DataNest AI route. Every recorded AI response must map to the caller's authorized `ai_usage_requests` record for that Job and retains its `DN-AI-` trace.
+- Think Tank decisions are proposals until independently confirmed by an owner/admin. A proposer cannot confirm their own decision.
+- Learning candidates are not reusable project memory until independently reviewed by an owner/admin. A proposer cannot approve their own learning.
+- Approved Think Tank learning is stored in `certified_memory` as `think_tank_human_reviewed`. This is reviewed retrieval memory, not automatic model training.
+- Approval also submits a `reusable_knowledge` contribution for the normal contribution pipeline. It remains submitted/unscored/uncertified and cannot mint Sparks until that independent pipeline completes.
+- Think Tank recognition, AI output and memory approval do not grant project roles, legal ownership, royalty rights or financial authority.
