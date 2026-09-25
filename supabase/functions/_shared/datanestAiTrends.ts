@@ -73,3 +73,21 @@ export function candidateFromRepeatedEvidence(
     trendKey:trendKeyForTokens(anchorTokens)
   };
 }
+
+
+export function bestCandidateByEvidenceOverlap(
+  links:Array<{candidateId:string;eventId:string}>,
+  evidenceIds:string[],
+  minimumOverlap=2
+):string|null {
+  const evidence=new Set(evidenceIds);
+  const counts=new Map<string,number>();
+  for(const link of links){
+    if(!evidence.has(link.eventId))continue;
+    counts.set(link.candidateId,(counts.get(link.candidateId)||0)+1);
+  }
+  const ranked=[...counts.entries()]
+    .filter(([,count])=>count>=minimumOverlap)
+    .sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+  return ranked[0]?.[0]||null;
+}
