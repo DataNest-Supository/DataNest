@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { resolveDataNestAiStaging } from "../_shared/datanestAiStaging.ts";
 import {
   buildGovernedPrompt,
   executeChatTurn,
@@ -26,7 +27,6 @@ const allowedOrigins=new Set([
   "http://127.0.0.1:4173",
   "http://localhost:4173"
 ]);
-const dedicatedStagingRef="qchttpcyqlqnhvahprhz";
 const policyVersion="datanest-ai-governed-memory-v1";
 
 type AnyClient=SupabaseClient<any>;
@@ -90,17 +90,12 @@ function requireEnv(name:string):string{
 }
 
 function stagingConfig(supabaseUrl:string,serviceKey:string){
-  const configuredUrl=Deno.env.get("DATANEST_AI_STAGING_URL");
-  const configuredKey=Deno.env.get("DATANEST_AI_STAGING_SERVICE_ROLE_KEY");
-  if(configuredUrl&&configuredKey)return {url:configuredUrl,key:configuredKey};
-
-  if(supabaseUrl.includes(dedicatedStagingRef)){
-    return {url:supabaseUrl,key:serviceKey};
-  }
-
-  throw new Error(
-    "Dedicated DataNest AI staging credentials are required in production."
-  );
+  return resolveDataNestAiStaging({
+    supabaseUrl,
+    serviceKey,
+    configuredUrl:Deno.env.get("DATANEST_AI_STAGING_URL"),
+    configuredKey:Deno.env.get("DATANEST_AI_STAGING_SERVICE_ROLE_KEY")
+  });
 }
 
 async function loadAuthorizedJob(client:AnyClient,jobId:string):Promise<JobContext>{
