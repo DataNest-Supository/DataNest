@@ -166,4 +166,11 @@ begin
   ) then
     raise exception 'Think Tank migration is not registered.';
   end if;
+
+  if not exists(
+    select 1 from supabase_migrations.schema_migrations
+    where name='harden_datanest_think_tanks_indexes'
+  ) then
+    raise exception 'Think Tank hardening migration is not registered.';
+  end if;
 end $$;
