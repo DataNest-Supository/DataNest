@@ -33,7 +33,7 @@ export default function AuthGate() {
   const [startupMessage, setStartupMessage] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
+  const [newPassword, setNewPasswordValue] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -107,7 +107,7 @@ export default function AuthGate() {
     }
   }
 
-  async function setNewPassword(event: FormEvent) {
+  async function submitNewPassword(event: FormEvent) {
     event.preventDefault();
     const supabase = getSupabase();
     if (!supabase || !session) return;
@@ -126,7 +126,7 @@ export default function AuthGate() {
       if (error) throw error;
       window.history.replaceState({}, document.title, window.location.pathname);
       setPassword("");
-      setNewPassword("");
+      setNewPasswordValue("");
       setConfirmPassword("");
       setStartup("signed-in");
       setMessage("Password created. Your DataNest session is ready.");
@@ -229,10 +229,10 @@ export default function AuthGate() {
           <p className="eyebrow">RESONANCE APPDEV</p>
           <h1>Create your DataNest password</h1>
           <p className="lede">Your invitation has been accepted. Set a password to use normal email-and-password sign-in.</p>
-          <form onSubmit={setNewPassword} className="authForm" aria-busy={busy}>
+          <form onSubmit={submitNewPassword} className="authForm" aria-busy={busy}>
             <label>
               New password
-              <input type="password" required minLength={8} autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="At least 8 characters" />
+              <input type="password" required minLength={8} autoComplete="new-password" value={newPassword} onChange={(event) => setNewPasswordValue(event.target.value)} placeholder="At least 8 characters" />
             </label>
             <label>
               Confirm password
