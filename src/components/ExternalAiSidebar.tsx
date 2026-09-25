@@ -64,7 +64,8 @@ export default function ExternalAiSidebar({
   activeDataNestAiSession,
   onClose,
   onNotice,
-  onError
+  onError,
+  onCompanionReserve
 }:{
   projectId:string;
   currentUserEmail:string;
@@ -72,6 +73,7 @@ export default function ExternalAiSidebar({
   onClose:()=>void;
   onNotice:(message:string)=>void;
   onError:(message:string)=>void;
+  onCompanionReserve?:(pixels:number)=>void;
 }){
   const [width,setWidth]=useState(500);
   const [jobs,setJobs]=useState<Job[]>([]);
@@ -407,7 +409,7 @@ export default function ExternalAiSidebar({
     }
   }
 
-  function companionFeatures(){
+  function companionPlacement(){
     const screenInfo=window.screen as Screen & {availLeft?:number;availTop?:number};
     const screenLeft=screenInfo.availLeft||0;
     const screenTop=screenInfo.availTop||0;
@@ -417,7 +419,7 @@ export default function ExternalAiSidebar({
     const browserTop=Number.isFinite(window.screenY)?window.screenY:screenTop;
     const browserWidth=window.outerWidth||screenWidth;
     const browserHeight=window.outerHeight||screenHeight;
-    const placement=calculateCompanionPlacement({
+    return calculateCompanionPlacement({
       screenLeft,
       screenTop,
       screenWidth,
@@ -429,6 +431,10 @@ export default function ExternalAiSidebar({
       dockWidth:width,
       preferredWidth:width
     });
+  }
+
+  function companionFeatures(){
+    const placement=companionPlacement();
     return [
       "popup=yes",
       "resizable=yes",
@@ -440,18 +446,22 @@ export default function ExternalAiSidebar({
     ].join(",");
   }
 
-  function providerLaunchUrl(){
-    return new URL(selectedProvider.url).toString();
+  function providerLaunchUrl(promptText=""){
+    const url=new URL(selectedProvider.url);
+    if(selectedProvider.key==="chatgpt"&&promptText.trim()){
+      url.searchParams.set("prompt",promptText);
+    }
+    return url.toString();
   }
 
-  function openProviderWindow(mode:"companion"|"popout"){
+  function openProviderWindow(mode:"companion"|"popout",promptText=handoff||preparedHandoff){
     const name=mode==="companion"
       ? "datanest-ai-companion-"+selectedProvider.key
       : "_blank";
     const features=mode==="companion"
       ? "noopener,noreferrer,"+companionFeatures()
       : "noopener,noreferrer,resizable=yes,scrollbars=yes";
-    return window.open(providerLaunchUrl(),name,features);
+    return window.open(providerLaunchUrl(promptText),name,features);
   }
 
   async function startSession(mode:"sidebar"|"companion"|"popout"){
@@ -469,8 +479,18 @@ export default function ExternalAiSidebar({
       const name=mode==="companion"
         ? "datanest-ai-companion-"+selectedProvider.key
         : "_blank";
+      const placement=mode==="companion"?companionPlacement():null;
+      if(placement&&onCompanionReserve)onCompanionReserve(placement.reserveRight);
       const features=mode==="companion"
-        ? companionFeatures()
+        ? [
+            "popup=yes",
+            "resizable=yes",
+            "scrollbars=yes",
+            "width="+placement!.width,
+            "height="+placement!.height,
+            "left="+placement!.left,
+            "top="+placement!.top
+          ].join(",")
         : "popup=yes,resizable=yes,scrollbars=yes";
       popup=window.open("about:blank",name,features);
       if(popup)popup.opener=null;
@@ -515,15 +535,15 @@ export default function ExternalAiSidebar({
         );
       }else{
         setEmbedUrl("");
-        const launchUrl=providerLaunchUrl();
+        const launchUrl=providerLaunchUrl(trackedHandoff);
         if(popup){
           popup.location.href=launchUrl;
         }else{
-          openProviderWindow(mode);
+          openProviderWindow(mode,trackedHandoff);
         }
         onNotice(
           selectedProvider.key==="chatgpt"&&mode==="companion"
-            ? "ChatGPT opened without DataNest work content in the URL. The tracked Job Manifest handoff is copied; paste it, review the trace header, then send."
+            ? "ChatGPT opened with the tracked Job Manifest preloaded. Review the DataNest trace header, then send."
             : selectedProvider.label+
               (mode==="companion"
                 ? " opened in DataNest companion mode beside the app using your own account. "
@@ -725,7 +745,7 @@ export default function ExternalAiSidebar({
             <span>Trace</span><code>{traceKey||"created when companion opens"}</code>
           </div>
           <p className="externalAiPromptReady">
-            Job Manifest handoff is prepared. Open the provider, paste the copied handoff, verify the tracking header, then send.
+            Job Manifest handoff is prepared. Open the companion, verify the tracking header, then send.
           </p>
         </div>}
 
@@ -743,7 +763,7 @@ export default function ExternalAiSidebar({
           >{busy
             ?"Opening…"
             :selectedProvider.embed==="blocked"
-              ?"Open companion + copy handoff"
+              ?"Open companion + load handoff"
               :"Open in sidebar"}</button>
           <button
             className="secondaryButton compact"
@@ -757,8 +777,8 @@ export default function ExternalAiSidebar({
         </div>
 
         <p className="externalAiPrivacyNote">
-          Uses your external AI account/credits. Provider windows open without DataNest work content in the URL.
-          The copied handoff omits your email by default. Signed in here as {currentUserEmail}.
+          Uses your external AI account/credits. ChatGPT companion mode preloads the tracked handoff in the provider URL;
+          your email is still omitted from that handoff. Signed in here as {currentUserEmail}.
           Returned work is staged as UNCERTIFIED evidence and cannot become project-wide memory until governed certification.
         </p>
       </section>
@@ -779,11 +799,11 @@ export default function ExternalAiSidebar({
             <span>Session</span><code>{sessionId}</code>
           </div>}
           {selectedProvider.key==="chatgpt"&&<p className="externalAiPromptReady">
-            The tracked handoff is copied to your clipboard. Paste it into ChatGPT, review the tracking header, then send.
+            The tracked handoff is preloaded in ChatGPT and copied to your clipboard as fallback. Review the tracking header, then send.
           </p>}
           <div className="externalAiCompanionActions">
-            <button className="secondaryButton compact" type="button" onClick={()=>openProviderWindow("companion")}>
-              Reopen provider
+            <button className="secondaryButton compact" type="button" onClick={()=>openProviderWindow("companion",handoff)}>
+              Reopen tracked prompt
             </button>
             <button className="textButton" type="button" onClick={()=>void copyHandoff()}>
               Copy handoff again
