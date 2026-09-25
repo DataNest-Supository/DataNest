@@ -1,10 +1,17 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "@supabase/supabase-js";
+
+declare const Deno:{
+  env:{get:(name:string)=>string|undefined};
+  serve:(handler:(request:Request)=>Response|Promise<Response>)=>void;
+};
 
 const allowedOrigins = new Set([
   "https://datanest-supository.github.io",
   "http://localhost:3000",
-  "http://127.0.0.1:3000"
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:4173",
+  "http://localhost:4173"
 ]);
 
 function corsHeaders(req: Request) {
