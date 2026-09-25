@@ -12,6 +12,14 @@ const queueMigration=fs.readFileSync(
   path.join(root,"supabase/staging-migrations/20260925193503_datanest_ai_file_worker_queue_contract.sql"),
   "utf8"
 );
+const analysisQueueMigration=fs.readFileSync(
+  path.join(root,"supabase/staging-migrations/20260925195653_datanest_ai_file_analysis_queue_contract.sql"),
+  "utf8"
+);
+const analysisRuntime=fs.readFileSync(
+  path.join(root,"supabase/functions/_shared/datanestFileAnalysisRuntime.ts"),
+  "utf8"
+);
 
 test("worker is gateway-public but internally service authenticated",()=>{
   assert.match(config,/\[functions\.datanest-ai-file-worker\][\s\S]*verify_jwt\s*=\s*false/);
@@ -38,7 +46,7 @@ test("canonical storage reuses an existing verified blob and removes only the te
 });
 
 test("READY redelivery is a no-op and queue acknowledgement happens only after durable result",()=>{
-  assert.match(worker,/if\(item\.status==="READY"\)return \{itemId,status:"READY",ack:true,idempotent:true\}/);
+  assert.match(worker,/if\(item\.status==="READY"\)\{[\s\S]{0,180}updateSubmissionState\(client,String\(item\.submission_id\)\)[\s\S]{0,120}idempotent:true/);
   const processIndex=worker.indexOf("const result=await processItem(client,itemId);");
   const ackIndex=worker.indexOf('service_ack_datanest_file_item",{target_message:message.msg_id}',processIndex);
   assert.ok(processIndex>=0&&ackIndex>processIndex);
@@ -74,4 +82,34 @@ test("upload finalize wakes the worker in a non-blocking background task",()=>{
   assert.match(upload,/functions\/v1\/datanest-ai-file-worker/);
   assert.match(upload,/"x-datanest-worker-auth":stagingKey/);
   assert.match(upload,/wakeFileWorker\(stagingEnv\.url,stagingEnv\.key\)/);
+});
+
+
+test("terminal file state queues durable batch analysis and the worker drains both queues",()=>{
+  assert.match(worker,/service_enqueue_datanest_file_analysis/);
+  assert.match(worker,/terminal&&String\(submission\.status\)!=="ANALYZING"/);
+  assert.match(worker,/const analysis=await drainFileAnalysis\(client\)/);
+  assert.match(analysisQueueMigration,/pgmq\.send\([\s\S]*'datanest_file_analysis'/);
+  assert.match(analysisQueueMigration,/pgmq\.read\('datanest_file_analysis',visibility_seconds,target_limit\)/);
+  assert.match(analysisQueueMigration,/pgmq\.delete\('datanest_file_analysis',target_message\)/);
+});
+
+test("file analysis uses frozen memory only and stages deterministic evidence/response traces",()=>{
+  assert.match(analysisRuntime,/submission\.certified_memory_snapshot/);
+  assert.match(analysisRuntime,/submission\.certified_memory_ids/);
+  assert.doesNotMatch(analysisRuntime,/get_certified_memory_context/);
+  assert.doesNotMatch(analysisRuntime,/from\("certified_memory"\)/);
+  assert.match(analysisRuntime,/source_type:"file_upload"/);
+  assert.match(analysisRuntime,/source_type:"document_evidence"/);
+  assert.match(analysisRuntime,/independence_key:"file-sha256:"\+group\.fileHash/);
+  assert.match(analysisRuntime,/responseTrace=String\(submission\.trace_id\)\+"-RESPONSE"/);
+  assert.match(analysisRuntime,/response_event_id:response\.id/);
+});
+
+test("all-failed batches skip the provider while partial failures remain response warnings",()=>{
+  const providerGate=analysisRuntime.indexOf("if(readyItems.length&&selected.length)");
+  const providerCall=analysisRuntime.indexOf("callOpenAiCompatibleProvider",providerGate);
+  assert.ok(providerGate>=0&&providerCall>providerGate);
+  assert.match(analysisRuntime,/appendFileWarnings\(providerAnswer,failedFiles\)/);
+  assert.match(analysisRuntime,/failedFiles\.length\?"RESPONDED_WITH_WARNINGS":"RESPONDED"/);
 });
