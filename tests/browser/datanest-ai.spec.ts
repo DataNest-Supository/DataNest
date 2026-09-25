@@ -114,3 +114,16 @@ test("Transparency publishes the accessible audit library",async({page})=>{
   await expect(page.getByLabel("Complete accessible transcription of the External Full-System Audit Brief")).toContainText("END OF EXTERNAL AUDIT BRIEF");
   await expect(page.getByRole("button",{name:"Download as accessible text",exact:true})).toBeVisible();
 });
+
+
+test("public Transparency index is accessible without sign in",async({page})=>{
+  const appPath=(process.env.DATANEST_APP_PATH||"/").replace(/\/?$/,"/");
+  await page.goto(appPath+"transparency/index.html");
+
+  await expect(page.getByRole("heading",{name:"Transparency and Audit Library",exact:true})).toBeVisible();
+  await expect(page.getByText(/Awaiting completed external audit/i)).toBeVisible();
+  await expect(page.getByRole("link",{name:"Audit document registry (JSON)",exact:true})).toBeVisible();
+
+  await page.getByRole("link",{name:"Transcript part 1",exact:true}).click();
+  await expect(page.locator("body")).toContainText("External Full-System Audit Brief");
+});
