@@ -140,8 +140,16 @@ export default function DataNestAiWorkspace({
 
   useEffect(()=>{
     const refreshStaged=(event:Event)=>{
-      const detail=(event as CustomEvent<{jobId?:string}>).detail;
-      if(detail?.jobId===selectedJobId)void refreshContext();
+      const detail=(event as CustomEvent<{jobId?:string;sessionId?:string}>).detail;
+      if(detail?.jobId!==selectedJobId)return;
+
+      const stagedSessionId=String(detail.sessionId||"");
+      if(stagedSessionId&&stagedSessionId!==sessionId){
+        setSessionId(stagedSessionId);
+        return;
+      }
+
+      void refreshContext();
     };
     window.addEventListener("datanest:external-ai-staged",refreshStaged);
     return()=>window.removeEventListener("datanest:external-ai-staged",refreshStaged);

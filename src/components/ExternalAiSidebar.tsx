@@ -531,8 +531,9 @@ export default function ExternalAiSidebar({
         (selectedJob?jobCode(selectedJob):"the Job Manifest")+
         (payload.idempotent?" using the existing trace.":".")
       );
+      const stagedSessionId=String(payload.sessionId||"");
       window.dispatchEvent(new CustomEvent("datanest:external-ai-staged",{
-        detail:{jobId:selectedJobId,eventId,traceId:stagedTraceId}
+        detail:{jobId:selectedJobId,eventId,traceId:stagedTraceId,sessionId:stagedSessionId}
       }));
     }catch(error){
       onError(error instanceof Error?error.message:"Unable to import external AI response.");
