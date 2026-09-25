@@ -36,6 +36,33 @@ test("quick switch searches workspaces and navigates with Ctrl+K",async({page})=
 });
 
 
+test("quick switch traps focus and restores the opening control",async({page})=>{
+  await signIn(page);
+
+  const trigger=page.getByRole("button",{name:/Quick switch/});
+  await trigger.focus();
+  await trigger.click();
+
+  const dialog=page.getByRole("dialog",{name:"Quick switch DataNest workspace"});
+  await expect(dialog).toBeVisible();
+
+  const close=dialog.getByRole("button",{name:"Close quick switch"});
+  const options=dialog.getByRole("option");
+  const lastOption=options.last();
+
+  await lastOption.focus();
+  await page.keyboard.press("Tab");
+  await expect(close).toBeFocused();
+
+  await page.keyboard.press("Shift+Tab");
+  await expect(lastOption).toBeFocused();
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(trigger).toBeFocused();
+});
+
+
 test("workspace deep links survive reload and follow browser history",async({page})=>{
   await signIn(page);
 

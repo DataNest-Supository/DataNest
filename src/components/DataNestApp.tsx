@@ -129,6 +129,7 @@ export default function DataNestApp({session}:{session:Session}) {
   const [commandOpen,setCommandOpen]=useState(false);
   const [commandQuery,setCommandQuery]=useState("");
   const commandInputRef=useRef<HTMLInputElement|null>(null);
+  const commandReturnFocusRef=useRef<HTMLElement|null>(null);
   const [aiSidebarOpen,setAiSidebarOpen]=useState(false);
   const [activeDataNestAiSession,setActiveDataNestAiSession]=useState<ActiveDataNestAiSession|null>(null);
   const [project,setProject]=useState<Project|null>(null);
@@ -397,11 +398,11 @@ export default function DataNestApp({session}:{session:Session}) {
       const isQuickSwitch=(event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==="k";
       if(isQuickSwitch){
         event.preventDefault();
-        setCommandQuery("");
-        setCommandOpen(current=>!current);
+        if(commandOpen)closeCommandPalette();
+        else openCommandPalette();
         return;
       }
-      if(event.key==="Escape"&&commandOpen)setCommandOpen(false);
+      if(event.key==="Escape"&&commandOpen)closeCommandPalette();
     };
     window.addEventListener("keydown",handleCommandShortcut);
     return()=>window.removeEventListener("keydown",handleCommandShortcut);
@@ -436,15 +437,41 @@ export default function DataNestApp({session}:{session:Session}) {
   },[project,checkControlPlane]);
 
   function openCommandPalette(){
+    commandReturnFocusRef.current=document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setCommandQuery("");
     setCommandOpen(true);
     setMobileOpen(false);
   }
 
-  function chooseCommandView(nextView:ViewKey){
-    setView(nextView);
+  function closeCommandPalette(){
     setCommandOpen(false);
     setCommandQuery("");
+    window.setTimeout(()=>{
+      commandReturnFocusRef.current?.focus();
+      commandReturnFocusRef.current=null;
+    },0);
+  }
+
+  function trapCommandFocus(event:import("react").KeyboardEvent<HTMLElement>){
+    if(event.key!=="Tab")return;
+    const focusable=Array.from(event.currentTarget.querySelectorAll<HTMLElement>(
+      'button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])'
+    )).filter(element=>!element.hasAttribute("hidden"));
+    if(!focusable.length)return;
+    const first=focusable[0];
+    const last=focusable[focusable.length-1];
+    if(event.shiftKey&&document.activeElement===first){
+      event.preventDefault();
+      last.focus();
+    }else if(!event.shiftKey&&document.activeElement===last){
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  function chooseCommandView(nextView:ViewKey){
+    setView(nextView);
+    closeCommandPalette();
     setMobileOpen(false);
   }
 
@@ -566,17 +593,18 @@ export default function DataNestApp({session}:{session:Session}) {
     </aside>
     {mobileOpen&&<button className="scrim" onClick={()=>setMobileOpen(false)} aria-label="Close navigation"/>}
 
-    {commandOpen&&<div className="commandPaletteBackdrop" onMouseDown={()=>setCommandOpen(false)}>
+    {commandOpen&&<div className="commandPaletteBackdrop" onMouseDown={closeCommandPalette}>
       <section
         className="commandPalette"
         role="dialog"
         aria-modal="true"
         aria-label="Quick switch DataNest workspace"
         onMouseDown={event=>event.stopPropagation()}
+        onKeyDown={trapCommandFocus}
       >
         <div className="commandPaletteHeader">
           <div><p className="eyebrow">QUICK SWITCH</p><h2>Go to a DataNest workspace</h2></div>
-          <button className="iconButton" type="button" onClick={()=>setCommandOpen(false)} aria-label="Close quick switch">×</button>
+          <button className="iconButton" type="button" onClick={closeCommandPalette} aria-label="Close quick switch">×</button>
         </div>
         <label className="commandSearch">
           <span className="srOnly">Search DataNest workspaces</span>
