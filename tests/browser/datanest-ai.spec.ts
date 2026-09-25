@@ -101,29 +101,37 @@ test("Governance exposes governed project membership and non-voter pending state
 });
 
 
-test("Transparency publishes the accessible audit library",async({page})=>{
+test("Transparency publishes the external audit return and pending validation state",async({page})=>{
   await signIn(page);
   await page.getByRole("button",{name:"Transparency",exact:true}).click();
 
   await expect(page.getByRole("heading",{name:"Audit library + public accountability record",exact:true})).toBeVisible();
-  await expect(page.getByText(/External Full-System Audit Brief/).first()).toBeVisible();
-  await expect(page.getByText(/awaiting completed audit/i)).toBeVisible();
-  await expect(page.getByText(/No audit result is implied by publication of the methodology/i)).toBeVisible();
+  await expect(page.getByText(/EXTERNAL AUDIT RETURN · 25 SEP 2026/)).toBeVisible();
+  await expect(page.getByText(/not a full production certification/i).first()).toBeVisible();
+  await expect(page.getByText(/14 reported · 0 DataNest-validated\/closed/i)).toBeVisible();
+  await expect(page.getByText("AUD-001",{exact:true})).toBeVisible();
+  await expect(page.getByText("AUD-014",{exact:true})).toBeVisible();
+  await expect(page.getByText("PENDING",{exact:true}).first()).toBeVisible();
 
-  await page.getByRole("button",{name:"Load complete transcription",exact:true}).click();
-  await expect(page.getByLabel("Complete accessible transcription of the External Full-System Audit Brief")).toContainText("END OF EXTERNAL AUDIT BRIEF");
-  await expect(page.getByRole("button",{name:"Download as accessible text",exact:true})).toBeVisible();
+  await page.getByRole("button",{name:"Open full audit return",exact:true}).click();
+  await expect(page.getByLabel("Complete external audit return source artifact")).toContainText("Final assessment:");
+  await expect(page.getByLabel("Complete external audit return source artifact")).toContainText("AUD-014");
+  await expect(page.getByRole("button",{name:"Download exact Markdown",exact:true})).toBeVisible();
 });
 
 
-test("public Transparency index is accessible without sign in",async({page})=>{
+test("public Transparency index publishes the audit return without sign in",async({page})=>{
   const appPath=(process.env.DATANEST_APP_PATH||"/").replace(/\/?$/,"/");
   await page.goto(appPath+"transparency/index.html");
 
   await expect(page.getByRole("heading",{name:"Transparency and Audit Library",exact:true})).toBeVisible();
-  await expect(page.getByText(/Awaiting completed external audit/i)).toBeVisible();
-  await expect(page.getByRole("link",{name:"Audit document registry (JSON)",exact:true})).toBeVisible();
+  await expect(page.getByText("EXTERNAL AUDIT RETURN PUBLISHED",{exact:true})).toBeVisible();
+  await expect(page.getByText(/14 findings/)).toBeVisible();
+  await expect(page.getByText(/not a full production certification/i)).toBeVisible();
+  await expect(page.getByRole("link",{name:"Structured findings (JSON)",exact:true})).toBeVisible();
+  await expect(page.getByRole("link",{name:"Reported remediation backlog (JSON)",exact:true})).toBeVisible();
 
-  await page.getByRole("link",{name:"Transcript part 1",exact:true}).click();
-  await expect(page.locator("body")).toContainText("External Full-System Audit Brief");
+  await page.getByRole("link",{name:"Exact uploaded audit return (Markdown)",exact:true}).click();
+  await expect(page.locator("body")).toContainText("RESONANCE DATANEST / RONSAS - EXTERNAL AUDIT RETURN");
+  await expect(page.locator("body")).toContainText("AUD-014");
 });
