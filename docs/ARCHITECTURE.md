@@ -53,3 +53,18 @@ Sparks are an internal DataNest utility layer backed by the append-only Spark le
 - Cash purchase, cash redemption, peer-to-peer transfer, external transfer, secondary markets and platform spending are disabled by database policy constraints in v1.
 - Spending does not change contribution history, reputation, legal ownership, royalty entitlement or project authority.
 - Platform Spark accounts remain separate and visible but are not spendable in this release.
+
+
+## Sovereign Governance Protocol
+Sovereign Governance is a project-governance domain, not a source of legal ownership, contractual rights, royalty entitlements, financial authority or project roles.
+
+- DataNest does not seed or silently adopt human mission, vision or protocol text. Protocol versions begin as owner/admin-authored drafts.
+- A protocol draft requires a formal `protocol_change` proposal before it can be ratified.
+- Formal voting is one active `project_members` member, one vote. Sparks, reputation, contribution share and capital do not weight votes.
+- Proposal acceptance uses the latest vote event per active member, simple majority, quorum, and at least one supporting vote from someone other than the proposer.
+- An accepted protocol-change decision does not itself alter the protocol. Owner/admin ratification is a separate execution step tied to the accepted proposal.
+- Ratifying a newer protocol version supersedes the prior ratified version without deleting its history.
+- Governance proposals and decisions carry database-enforced false flags for contractual, ownership, financial-authority and role-authority effects.
+- Project-access stakeholders may file disputes against protocols, proposals or decisions. A filer cannot resolve their own dispute.
+- Dispute resolutions are append-only correction/clarification records; they do not rewrite the challenged source record.
+- All formal governance events emit `DN-GOV-` traces and project audit events.
