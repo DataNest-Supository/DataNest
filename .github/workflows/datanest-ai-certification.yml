@@ -53,7 +53,8 @@ jobs:
         run: |
           psql -v ON_ERROR_STOP=1 -f tests/sql/datanest_ai_staging_acceptance.sql
           psql -v ON_ERROR_STOP=1 -f tests/sql/datanest_ai_production_acceptance.sql
-          psql -v ON_ERROR_STOP=1 -f tests/sql/datanest_contribution_intelligence_acceptance.sql\n          psql -v ON_ERROR_STOP=1 -f tests/sql/datanest_think_tanks_acceptance.sql
+          psql -v ON_ERROR_STOP=1 -f tests/sql/datanest_contribution_intelligence_acceptance.sql
+          psql -v ON_ERROR_STOP=1 -f tests/sql/datanest_think_tanks_acceptance.sql
 
       - name: Seed governed E2E fixtures
         run: npm run seed:e2e:datanest-ai
