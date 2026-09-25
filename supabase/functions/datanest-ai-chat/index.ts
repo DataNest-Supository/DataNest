@@ -16,6 +16,10 @@ import {
   stableCandidateIdFromHash
 } from "../_shared/datanestAiTrends.ts";
 import { chronologicalFromNewestFirst } from "../_shared/datanestAiContinuity.ts";
+import {
+  automatedLearningGateResults,
+  candidateValidationSeal
+} from "../_shared/datanestAiValidation.ts";
 
 declare const Deno:{
   env:{get:(name:string)=>string|undefined};
@@ -30,6 +34,9 @@ const allowedOrigins=new Set([
   "http://localhost:4173"
 ]);
 const policyVersion="datanest-ai-governed-memory-v2";
+const mutableLearningStates=new Set([
+  "INTAKE","NEEDS_EVIDENCE","AUDITED","VERIFIED","VALIDATED"
+]);
 
 type AnyClient=SupabaseClient<any>;
 
@@ -301,7 +308,7 @@ async function updateTrendCandidate(input:{
       .eq("project_id",input.projectId)
       .maybeSingle();
     if(error)throw error;
-    existing=data&&["INTAKE","NEEDS_EVIDENCE"].includes(String(data.lifecycle_state))
+    existing=data&&mutableLearningStates.has(String(data.lifecycle_state))
       ?data as MutableCandidate
       :null;
   }
@@ -360,7 +367,7 @@ async function updateTrendCandidate(input:{
   }
 
   if(existing?.id){
-    if(!["INTAKE","NEEDS_EVIDENCE"].includes(String(existing.lifecycle_state))){
+    if(!mutableLearningStates.has(String(existing.lifecycle_state))){
       return {
         candidateId,
         trendKey:candidate.trendKey,
@@ -378,6 +385,7 @@ async function updateTrendCandidate(input:{
         has_conflict:candidate.hasConflict,
         confidence:candidate.confidence,
         policy_version:policyVersion,
+        lifecycle_state:"INTAKE",
         updated_at:new Date().toISOString()
       })
       .eq("id",candidateId);
@@ -396,6 +404,76 @@ async function updateTrendCandidate(input:{
     .from("ai_candidate_evidence")
     .upsert(candidateEvidence,{onConflict:"candidate_id,event_id"});
   if(candidateEvidenceError)throw candidateEvidenceError;
+
+  const {data:linkedEvidence,error:linkedEvidenceError}=await input.staging
+    .from("ai_candidate_evidence")
+    .select("event_id")
+    .eq("candidate_id",candidateId);
+  if(linkedEvidenceError)throw linkedEvidenceError;
+  const activeEvidence=new Set(candidate.evidenceIds);
+  const staleEvidence=(linkedEvidence||[])
+    .map(item=>String(item.event_id))
+    .filter(eventId=>!activeEvidence.has(eventId));
+  if(staleEvidence.length){
+    const {error:staleEvidenceError}=await input.staging
+      .from("ai_candidate_evidence")
+      .delete()
+      .eq("candidate_id",candidateId)
+      .in("event_id",staleEvidence);
+    if(staleEvidenceError)throw staleEvidenceError;
+  }
+
+  const evidenceHash=await sha256Text([...candidate.evidenceIds].sort().join("\n"));
+  const automatedGates=automatedLearningGateResults({
+    normalizedKnowledge:candidate.normalizedKnowledge,
+    riskClass:candidate.riskClass,
+    evidenceCount:candidate.evidenceIds.length,
+    independentEvidenceCount:candidate.independentEvidenceCount,
+    confidence:candidate.confidence,
+    hasConflict:candidate.hasConflict,
+    contentHash,
+    policyVersion,
+    evidenceHash
+  });
+
+  if(automatedGates.length){
+    const seal=candidateValidationSeal({
+      contentHash,
+      policyVersion,
+      evidenceHash,
+      evidenceCount:candidate.evidenceIds.length,
+      riskClass:candidate.riskClass,
+      hasConflict:candidate.hasConflict
+    });
+    const {error:validationError}=await input.staging
+      .from("ai_validation_runs")
+      .insert(automatedGates.map(run=>({
+        candidate_id:candidateId,
+        gate:run.gate,
+        suite_version:policyVersion,
+        passed:run.passed,
+        results:{
+          ...run.checks,
+          ...seal,
+          automation_version:"datanest-ai-learning-validation-v2"
+        },
+        actor_type:"automation",
+        actor_user_id:null
+      })));
+    if(validationError)throw validationError;
+
+    const nextState=automatedGates.every(run=>run.passed)
+      ?"VALIDATED"
+      :"NEEDS_EVIDENCE";
+    const {error:validationStateError}=await input.staging
+      .from("ai_learning_candidates")
+      .update({
+        lifecycle_state:nextState,
+        updated_at:new Date().toISOString()
+      })
+      .eq("id",candidateId);
+    if(validationStateError)throw validationStateError;
+  }
 
   return {
     candidateId,
