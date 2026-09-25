@@ -313,3 +313,54 @@ export function formatSourceLocator(locator:SourceLocator){
       return "DOCX "+(locator.heading?locator.heading+" · ":"")+locator.kind+" "+locator.block;
   }
 }
+
+
+export function printableTextRatio(value:string){
+  if(!value.length)return 0;
+  let printable=0;
+  for(const char of value){
+    if(!/\p{Cc}/u.test(char)||char==="\n"||char==="\t")printable++;
+  }
+  return printable/value.length;
+}
+
+export function pdfPageAssessment(page:number,text:string){
+  if(!Number.isInteger(page)||page<1)throw new Error("PDF page numbers are one-based.");
+  const normalized=text.replace(/\s+/g," ").trim();
+  const textChars=normalized.replace(/\s/g,"").length;
+  return {
+    page,
+    text:normalized,
+    needsOcr:textChars<40||printableTextRatio(normalized)<0.6,
+    locator:{type:"pdf_page",page} as const
+  };
+}
+
+export function assertDocxArchiveBudget(input:{
+  entryCount:number;
+  expandedBytes:number;
+  hasDocumentXml:boolean;
+}){
+  if(input.entryCount>10_000)throw new Error("DOCX exceeds the 10,000 entry limit.");
+  if(input.expandedBytes>100*1024*1024)throw new Error("DOCX expanded content exceeds the 100 MiB limit.");
+  if(!input.hasDocumentXml)throw new Error("DOCX is missing word/document.xml.");
+  return input;
+}
+
+export function docxBlockChunk(input:{
+  block:number;
+  kind:string;
+  heading?:string|null;
+  text:string;
+}):ExtractedChunk{
+  if(!Number.isInteger(input.block)||input.block<1)throw new Error("DOCX block numbers are one-based.");
+  return {
+    text:input.text,
+    locator:{
+      type:"docx_block",
+      block:input.block,
+      kind:input.kind,
+      heading:input.heading||null
+    }
+  };
+}
