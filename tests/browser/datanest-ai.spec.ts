@@ -83,7 +83,7 @@ test("Sovereign Governance exposes project-scoped governance boundaries",async({
 
   await expect(page.getByText("RESONANCE SOVEREIGN GOVERNANCE",{exact:true})).toBeVisible();
   await expect(page.getByText("Transparent project governance with immutable decision history",{exact:true})).toBeVisible();
-  await expect(page.getByText(/No human-ratified protocol/)).toBeVisible();
+  await expect(page.getByRole("heading",{name:"No human-ratified protocol",exact:true})).toBeVisible();
   await expect(page.getByText(/has not invented mission, vision or governance text on your behalf/i)).toBeVisible();
   await expect(page.getByText(/do not amend signed agreements, create legal ownership, create royalty entitlements, grant project roles or create financial authority/i)).toBeVisible();
 });
