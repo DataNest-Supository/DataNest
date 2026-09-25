@@ -47,3 +47,17 @@ test("gateway never serializes service credentials",()=>{
   assert.doesNotMatch(source,/json\(\{[^}]*serviceKey/);
   assert.doesNotMatch(source,/json\(\{[^}]*stagingEnv\.key/);
 });
+
+
+test("submission creation freezes certified memory but status never serializes it",()=>{
+  assert.match(source,/certifiedMemorySnapshot=memoryItems\.map/);
+  assert.match(source,/certified_memory_snapshot:certifiedMemorySnapshot/);
+  assert.match(source,/certified_memory_ids:certifiedMemoryIds/);
+  const loadSubmission=source.slice(
+    source.indexOf("async function loadSubmission"),
+    source.indexOf("async function loadItemWithSubmission")
+  );
+  assert.doesNotMatch(loadSubmission,/select\("\*"\)/);
+  assert.doesNotMatch(loadSubmission,/certified_memory_snapshot/);
+  assert.doesNotMatch(loadSubmission,/certified_memory_ids/);
+});
