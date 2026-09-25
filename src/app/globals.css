@@ -915,3 +915,279 @@ input:focus,textarea:focus,select:focus{
 @media(prefers-reduced-motion:reduce){
   .panel,.metricCard,.capabilityCard,.checkpointCard,.workspaceCard,.toolCard,.manifestCard{transition:none}
 }
+
+
+/* Resonance DataNest — realistic futuristic material system */
+:root{
+  --surface-glass:rgba(16,10,36,.72);
+  --surface-glass-strong:rgba(13,8,30,.90);
+  --surface-edge:rgba(255,255,255,.055);
+  --shadow-deep:0 24px 80px rgba(0,0,0,.34);
+  --shadow-float:0 16px 48px rgba(0,0,0,.24);
+}
+
+body{position:relative;overflow-x:hidden}
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-2;
+  pointer-events:none;
+  background:
+    linear-gradient(rgba(66,231,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,54,216,.018) 1px,transparent 1px);
+  background-size:42px 42px;
+  mask-image:linear-gradient(to bottom,rgba(0,0,0,.72),transparent 86%);
+}
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 50% -10%,transparent 20%,rgba(2,1,8,.10) 60%,rgba(2,1,8,.42) 100%),
+    linear-gradient(180deg,rgba(255,255,255,.012),transparent 10%,transparent 88%,rgba(0,0,0,.12));
+}
+
+.appFrame{position:relative;isolation:isolate}
+.mainPane{position:relative;z-index:1}
+.contentPane{position:relative}
+
+.sidebar{
+  background:
+    linear-gradient(180deg,rgba(20,8,45,.88),rgba(7,4,20,.96)),
+    rgba(7,4,20,.92);
+  border-right:1px solid rgba(110,218,255,.16);
+  box-shadow:18px 0 60px rgba(0,0,0,.22),inset -1px 0 0 rgba(255,255,255,.025);
+}
+.sidebar::after{
+  content:"";
+  position:absolute;
+  top:0;
+  right:-1px;
+  width:1px;
+  height:100%;
+  background:linear-gradient(180deg,transparent,rgba(66,231,255,.28) 22%,rgba(255,54,216,.20) 68%,transparent);
+  opacity:.75;
+  pointer-events:none;
+}
+.sidebarTop{position:relative}
+.sidebarTop::after{
+  content:"";
+  position:absolute;
+  left:8px;
+  right:8px;
+  bottom:6px;
+  height:1px;
+  background:linear-gradient(90deg,rgba(255,54,216,.28),rgba(66,231,255,.16),transparent);
+}
+
+.topbar{
+  background:linear-gradient(90deg,rgba(9,6,24,.86),rgba(21,8,43,.76),rgba(7,6,21,.88));
+  border-bottom:1px solid rgba(123,219,255,.13);
+  box-shadow:0 12px 36px rgba(0,0,0,.20),inset 0 -1px 0 rgba(255,255,255,.02);
+}
+.topbar::after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:-1px;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,54,216,.26) 20%,rgba(66,231,255,.28) 55%,transparent 88%);
+  opacity:.65;
+  pointer-events:none;
+}
+.topbarTitle{position:relative;padding-left:13px}
+.topbarTitle::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:3px;
+  bottom:3px;
+  width:2px;
+  border-radius:999px;
+  background:linear-gradient(var(--magenta),var(--cyan));
+  box-shadow:0 0 12px rgba(66,231,255,.20);
+}
+
+.heroPanel,.schedulerHero,.rndHero,.aiIHero{
+  position:relative;
+  overflow:hidden;
+  backdrop-filter:blur(22px) saturate(1.08);
+  -webkit-backdrop-filter:blur(22px) saturate(1.08);
+  box-shadow:var(--shadow-deep),inset 0 1px 0 rgba(255,255,255,.045),inset 0 -1px 0 rgba(255,255,255,.015);
+}
+.heroPanel::before,.schedulerHero::before,.rndHero::before,.aiIHero::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(115deg,rgba(255,255,255,.055),transparent 22%,transparent 72%,rgba(66,231,255,.025)),
+    radial-gradient(circle at 78% 0%,rgba(255,255,255,.05),transparent 26%);
+  mix-blend-mode:screen;
+}
+.heroPanel>*,
+.schedulerHero>*,
+.rndHero>*,
+.aiIHero>*{position:relative;z-index:1}
+
+.metricCard,.panel,.capabilityCard,.checkpointCard,.workspaceCard,.toolCard,.manifestCard,
+.connectionCard,.rndSuggestion,.rndInputList article,.rndCollaborators article,.inviteForm{
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.028),rgba(255,255,255,.008) 42%,rgba(66,231,255,.012)),
+    linear-gradient(180deg,var(--surface-glass),rgba(8,5,23,.84));
+  border-color:rgba(133,210,241,.14);
+  box-shadow:var(--shadow-float),inset 0 1px 0 var(--surface-edge),inset 0 -1px 0 rgba(0,0,0,.16);
+  backdrop-filter:blur(18px) saturate(1.06);
+  -webkit-backdrop-filter:blur(18px) saturate(1.06);
+}
+.metricCard,.workspaceCard,.toolCard,.manifestCard,.connectionCard,.rndSuggestion{
+  transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease;
+}
+.metricCard:hover,.workspaceCard:hover,.toolCard:hover,.manifestCard:hover,.connectionCard:hover,.rndSuggestion:hover{
+  transform:translateY(-2px);
+  border-color:rgba(103,225,255,.27);
+  box-shadow:0 20px 54px rgba(0,0,0,.30),0 0 26px rgba(66,231,255,.035),inset 0 1px 0 rgba(255,255,255,.07);
+}
+
+.metricCard{position:relative;overflow:hidden}
+.metricCard::after{
+  content:"";
+  position:absolute;
+  inset:0 auto 0 0;
+  width:2px;
+  background:linear-gradient(180deg,var(--magenta),var(--cyan));
+  opacity:.62;
+}
+.metricCard strong{
+  font-variant-numeric:tabular-nums;
+  text-shadow:0 0 18px rgba(66,231,255,.08);
+}
+.metricCard span{letter-spacing:.04em;text-transform:uppercase}
+
+.projectPill,.systemStatus,.mobileSystemStatus,.countPill,.shortcutHint{
+  background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.012));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+}
+.systemStatus{
+  border-color:rgba(143,214,241,.15);
+}
+.statusDot.online,.liveDot{
+  box-shadow:0 0 0 4px rgba(114,230,174,.06),0 0 14px rgba(114,230,174,.36);
+}
+
+.navGroup button{
+  position:relative;
+  border:1px solid transparent;
+}
+.navGroup button:hover{
+  border-color:rgba(113,220,255,.10);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}
+.navGroup button.active{
+  border-color:rgba(104,222,255,.13);
+  box-shadow:inset 2px 0 0 var(--magenta),inset 0 1px 0 rgba(255,255,255,.03),0 10px 28px rgba(0,0,0,.11);
+}
+
+.primaryButton,.secondaryButton,.rowActions button,.filterBar button,.pageControls button{
+  position:relative;
+  overflow:hidden;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+}
+.primaryButton::after,.secondaryButton::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(115deg,rgba(255,255,255,.22),transparent 28%,transparent 72%);
+  opacity:.20;
+}
+.primaryButton:active,.secondaryButton:active,.rowActions button:active,.filterBar button:active,.pageControls button:active{
+  transform:translateY(1px);
+}
+
+input,textarea,select{
+  background:linear-gradient(180deg,rgba(3,2,12,.82),rgba(11,6,28,.70));
+  border-color:rgba(125,209,240,.14);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.018),inset 0 10px 24px rgba(0,0,0,.08);
+}
+input:hover,textarea:hover,select:hover{border-color:rgba(125,209,240,.22)}
+input:focus,textarea:focus,select:focus{
+  border-color:rgba(66,231,255,.48);
+  box-shadow:0 0 0 3px rgba(66,231,255,.06),0 0 20px rgba(255,54,216,.045),inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+.commandPalette{
+  border-color:rgba(92,222,255,.28);
+  background:
+    radial-gradient(circle at 85% 0%,rgba(66,231,255,.08),transparent 28%),
+    radial-gradient(circle at 0% 100%,rgba(255,54,216,.08),transparent 34%),
+    linear-gradient(180deg,rgba(16,8,38,.98),rgba(6,4,19,.985));
+  box-shadow:0 40px 120px rgba(0,0,0,.62),0 0 54px rgba(139,92,246,.08),inset 0 1px 0 rgba(255,255,255,.05);
+}
+.commandResult:hover,.commandResult:focus-visible,.commandResult.active{
+  background:linear-gradient(90deg,rgba(255,54,216,.08),rgba(66,231,255,.055));
+  border-color:rgba(99,222,255,.18);
+}
+
+.workspaceOptionsMenu{
+  background:
+    radial-gradient(circle at 100% 0%,rgba(66,231,255,.07),transparent 34%),
+    linear-gradient(180deg,rgba(18,9,42,.98),rgba(7,4,21,.985));
+  border-color:rgba(102,222,255,.20);
+  box-shadow:0 24px 70px rgba(0,0,0,.44),inset 0 1px 0 rgba(255,255,255,.04);
+}
+
+.externalAiDock{
+  background:
+    radial-gradient(circle at 0 0,rgba(255,54,216,.08),transparent 26%),
+    linear-gradient(180deg,rgba(13,7,32,.985),rgba(5,4,17,.99));
+  border-left-color:rgba(98,222,255,.16);
+  box-shadow:-18px 0 58px rgba(0,0,0,.22),inset 1px 0 0 rgba(255,255,255,.025);
+}
+.aiSidebarToggle.active{
+  border-color:rgba(66,231,255,.34);
+  background:linear-gradient(135deg,rgba(255,54,216,.12),rgba(66,231,255,.10));
+  box-shadow:0 0 20px rgba(66,231,255,.05);
+}
+
+.badge{
+  background-image:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,.005));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+}
+code,pre,kbd{
+  font-variant-numeric:tabular-nums;
+  text-rendering:geometricPrecision;
+}
+code,pre{
+  border:1px solid rgba(121,210,240,.08);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.018);
+}
+
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:rgba(255,255,255,.015)}
+::-webkit-scrollbar-thumb{
+  border:3px solid transparent;
+  border-radius:999px;
+  background:linear-gradient(var(--violet),var(--cyan)) padding-box;
+}
+::-webkit-scrollbar-thumb:hover{
+  background:linear-gradient(var(--magenta),var(--cyan)) padding-box;
+}
+
+@media(prefers-reduced-motion:no-preference){
+  .liveDot,.statusDot.online{animation:resonanceStatusPulse 2.8s ease-in-out infinite}
+  .loadingBar span{box-shadow:0 0 14px rgba(66,231,255,.28)}
+}
+@keyframes resonanceStatusPulse{
+  0%,100%{filter:brightness(.92);opacity:.88}
+  50%{filter:brightness(1.18);opacity:1}
+}
+
+@media(max-width:900px){
+  body::before{background-size:34px 34px;opacity:.65}
+  .metricCard:hover,.workspaceCard:hover,.toolCard:hover,.manifestCard:hover,.connectionCard:hover,.rndSuggestion:hover{transform:none}
+}
