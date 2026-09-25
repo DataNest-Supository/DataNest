@@ -282,7 +282,8 @@ async function updateTrendCandidate(input:{
   );
 
   const contentHash=await sha256Text(candidate.normalizedKnowledge);
-  let overlapCandidate:null|{id:string;lifecycle_state:string;evidence_count:number}=null;
+  type MutableCandidate={id:string;lifecycle_state:string;evidence_count:number};
+  let overlapCandidate:MutableCandidate|null=null;
   if(overlapCandidateId){
     const {data,error}=await input.staging
       .from("ai_learning_candidates")
@@ -292,7 +293,7 @@ async function updateTrendCandidate(input:{
       .maybeSingle();
     if(error)throw error;
     overlapCandidate=data&&String(data.lifecycle_state)==="INTAKE"
-      ?data as typeof overlapCandidate
+      ?data as MutableCandidate
       :null;
   }
 
