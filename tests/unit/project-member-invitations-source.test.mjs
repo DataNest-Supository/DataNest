@@ -32,9 +32,12 @@ test("project membership is exposed inside Governance",()=>{
 
 test("project invitations require authenticated acceptance before project access",()=>{
   assert.match(app,/accept_pending_project_member_invites_v1/);
+  const loadCoreStart=app.indexOf("const loadCore=useCallback");
+  const loadCoreEnd=app.indexOf("const loadJobsPage",loadCoreStart);
+  const loadCore=app.slice(loadCoreStart,loadCoreEnd);
   assert.ok(
-    app.indexOf("accept_pending_project_member_invites_v1")
-      < app.indexOf('.from("projects")'),
+    loadCore.indexOf("accept_pending_project_member_invites_v1")
+      < loadCore.indexOf('.from("projects")'),
     "project invite acceptance must run before project visibility is evaluated"
   );
   assert.match(migration,/pm\.status\s*=\s*'active'/);
