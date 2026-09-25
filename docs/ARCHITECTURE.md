@@ -68,3 +68,17 @@ Sovereign Governance is a project-governance domain, not a source of legal owner
 - Project-access stakeholders may file disputes against protocols, proposals or decisions. A filer cannot resolve their own dispute.
 - Dispute resolutions are append-only correction/clarification records; they do not rewrite the challenged source record.
 - All formal governance events emit `DN-GOV-` traces and project audit events.
+
+
+## Project-member invitations and formal voter activation
+Project-member invitations are a separate governance boundary from Job collaboration.
+
+- Only active project owners/admins can initiate project-member invitations.
+- The owner may invite `admin`, `operator` or `viewer`; an admin may invite only `operator` or `viewer`.
+- The owner role is not inviteable through this flow, and self-invite is prohibited.
+- Invitation delivery uses a JWT-protected Edge Function and service-role-only registration gateway.
+- New accounts receive a Supabase Auth invitation; existing accounts receive a magic-link sign-in.
+- Registration creates a `project_members` row with status `invited`. General project access and formal governance voting require `status='active'`, so a sent invitation cannot create an independent vote.
+- After the invited person authenticates with the matching account/email, DataNest automatically accepts valid pending invitations and activates the membership.
+- Invitations expire after seven days and may be revoked before acceptance. Revoked/expired invitations are not formal voters.
+- The invitation audit trail remains in `project_member_invitations` and emits project events for sent, accepted and revoked states.
