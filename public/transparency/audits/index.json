@@ -64,8 +64,8 @@
       },
       "findings": {
         "total": 14,
-        "high_or_verification_priority": 10,
-        "medium": 4,
+        "high_or_verification_priority": 9,
+        "medium": 5,
         "validation_state": "pending_datanest_validation",
         "source": "external-full-system-audit-return-2026-09-25/findings.json"
       },
