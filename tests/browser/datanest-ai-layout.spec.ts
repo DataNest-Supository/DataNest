@@ -65,7 +65,9 @@ test("DataNest AI keeps the Hero above a centered live command console", async (
 
   await expect(page.getByRole("heading",{name:"DataNest AI",exact:true}).first()).toBeVisible();
   await expect(page.getByRole("heading",{name:"Development command channel",exact:true})).toBeVisible();
-  await expect(page.getByText("AI CORE LINKED",{exact:true})).toBeVisible();\n  await expect(page.getByText("Hosted CI · Cloud browser",{exact:true})).toBeVisible();\n  await expect(page.getByText(/Remote desktop/i)).toHaveCount(0);
+  await expect(page.getByText("AI CORE LINKED",{exact:true})).toBeVisible();
+  await expect(page.getByText("Hosted CI · Cloud browser",{exact:true})).toBeVisible();
+  await expect(page.getByText(/Remote desktop/i)).toHaveCount(0);
   await expect(page.getByText("Current Job Context",{exact:true})).toBeVisible();
   await expect(page.getByText("AI Hero Layout Fixture",{exact:true}).first()).toBeVisible();
 
