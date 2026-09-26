@@ -1,6 +1,62 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { getSupabase } from "@/lib/supabase";
+
+
+type CatalogProduct = {
+  id:string;
+  slug:string;
+  name:string;
+  full_name:string|null;
+  category:string|null;
+  lifecycle_status:string|null;
+  mission:string|null;
+  operating_model:string|null;
+  primary_runtime:string|null;
+  commercial_mode:string|null;
+  billing_enabled:boolean;
+  as_of_date:string|null;
+  metadata:Record<string,unknown>;
+};
+
+type CatalogRecord = {
+  id:string;
+  product_id:string;
+  record_type:string;
+  code:string|null;
+  name:string|null;
+  status:string|null;
+  sort_order:number;
+  payload:Record<string,unknown>;
+};
+
+const catalogRecordLabels:Record<string,string> = {
+  application:"Applications",
+  component:"Architecture components",
+  source_authority:"Source authorities",
+  environment:"Environments",
+  integration:"Integrations",
+  governance_control:"Governance controls",
+  risk:"Risks & issues",
+  roadmap_item:"Roadmap",
+  decision:"Decisions",
+  evidence:"Evidence",
+  datanest_branch:"DataNest branches"
+};
+
+const catalogRecordOrder = [
+  "application","component","source_authority","environment","integration",
+  "governance_control","risk","roadmap_item","decision","evidence","datanest_branch"
+];
+
+function payloadText(payload:Record<string,unknown>,...keys:string[]) {
+  for (const key of keys) {
+    const value=payload[key];
+    if (typeof value==="string" && value.trim()) return value;
+  }
+  return "";
+}
 
 type LegalTask = {
   key:string;
@@ -56,10 +112,126 @@ const legalTasks:LegalTask[] = [
   }
 ];
 
-export default function ProductsWorkspace(){
+export default function ProductsWorkspace({projectId}:{projectId:string}){
   const [selectedTask,setSelectedTask]=useState<LegalTask>(legalTasks[0]);
+  const [catalogProducts,setCatalogProducts]=useState<CatalogProduct[]>([]);
+  const [catalogRecords,setCatalogRecords]=useState<CatalogRecord[]>([]);
+  const [catalogLoading,setCatalogLoading]=useState(true);
+  const [catalogError,setCatalogError]=useState("");
+
+  useEffect(()=>{
+    let active=true;
+    const supabase=getSupabase();
+    if(!supabase){setCatalogError("Product catalog is unavailable because the DataNest data connection is not configured.");setCatalogLoading(false);return;}
+
+    setCatalogLoading(true);
+    setCatalogError("");
+    void Promise.all([
+      supabase.from("products").select("id,slug,name,full_name,category,lifecycle_status,mission,operating_model,primary_runtime,commercial_mode,billing_enabled,as_of_date,metadata").eq("project_id",projectId).order("name"),
+      supabase.from("product_records").select("id,product_id,record_type,code,name,status,sort_order,payload").eq("project_id",projectId).order("sort_order",{ascending:true})
+    ]).then(([productResult,recordResult])=>{
+      if(!active)return;
+      const error=productResult.error||recordResult.error;
+      if(error){setCatalogError(error.message);setCatalogProducts([]);setCatalogRecords([]);}
+      else{
+        setCatalogProducts((productResult.data||[]) as CatalogProduct[]);
+        setCatalogRecords((recordResult.data||[]) as CatalogRecord[]);
+      }
+    }).finally(()=>{if(active)setCatalogLoading(false);});
+
+    return()=>{active=false;};
+  },[projectId]);
+
+  const recordsByProduct=useMemo(()=>{
+    const map=new Map<string,CatalogRecord[]>();
+    for(const record of catalogRecords){
+      const list=map.get(record.product_id)||[];
+      list.push(record);
+      map.set(record.product_id,list);
+    }
+    return map;
+  },[catalogRecords]);
 
   return <div className="productsWorkspace">
+    <section className="catalogStage" aria-labelledby="governed-catalog-title">
+      <div className="catalogStageHead">
+        <div>
+          <p className="eyebrow">GOVERNED PRODUCT CATALOG</p>
+          <h2 id="governed-catalog-title">Products that carry their architecture, evidence and decisions with them.</h2>
+          <p>DataNest now treats each governed product as one traceable entity, with its applications, controls, risks, roadmap, evidence and promotion branches attached to the same product identity.</p>
+        </div>
+        <span className="catalogLiveBadge">{catalogLoading?"SYNCING":catalogProducts.length+" PRODUCT"+(catalogProducts.length===1?"":"S")}</span>
+      </div>
+
+      {catalogError&&<div className="catalogError" role="alert">{catalogError}</div>}
+      {catalogLoading&&<div className="catalogLoading" role="status">Loading governed product records…</div>}
+      {!catalogLoading&&!catalogError&&!catalogProducts.length&&<div className="catalogEmpty">No governed products have been imported for this project yet.</div>}
+
+      <div className="catalogGrid">
+        {catalogProducts.map((product,index)=>{
+          const records=recordsByProduct.get(product.id)||[];
+          const count=(type:string)=>records.filter(record=>record.record_type===type).length;
+          const branches=records.filter(record=>record.record_type==="datanest_branch");
+          return <article className="catalogProduct" key={product.id}>
+            <div className="catalogProductTop">
+              <div className="catalogIdentity">
+                <span className="catalogOrdinal">{String(index+1).padStart(2,"0")}</span>
+                <div>
+                  <p className="productKicker">{product.category||"RESONANCE PRODUCT"}</p>
+                  <h3>{product.name}</h3>
+                  <p className="catalogFullName">{product.full_name}</p>
+                </div>
+              </div>
+              <div className="catalogFlags">
+                <span className="productStatus">{(product.lifecycle_status||"ACTIVE").toUpperCase()}</span>
+                {!product.billing_enabled&&<span className="catalogInvariant">FREE PROMOTION · BILLING OFF</span>}
+              </div>
+            </div>
+
+            <p className="catalogMission">{product.mission}</p>
+            <div className="catalogFacts">
+              <div><small>Runtime</small><b>{product.primary_runtime||"Governed runtime"}</b></div>
+              <div><small>Applications</small><b>{count("application")}</b></div>
+              <div><small>Components</small><b>{count("component")}</b></div>
+              <div><small>Controls</small><b>{count("governance_control")}</b></div>
+              <div><small>Open risks</small><b>{count("risk")}</b></div>
+              <div><small>Roadmap</small><b>{count("roadmap_item")}</b></div>
+            </div>
+
+            {branches.length>0&&<div className="catalogBranchFlow" aria-label="DataNest product branch flow">
+              {["intake","staging","audit","main"].map((name,branchIndex)=>{
+                const branch=branches.find(item=>item.name===name);
+                if(!branch)return null;
+                return <div className="catalogBranchStep" key={branch.id}>
+                  <span>{branchIndex+1}</span><b>{name}</b><small>{payloadText(branch.payload,"purpose","description")}</small>
+                </div>;
+              })}
+            </div>}
+
+            <details className="catalogDetails">
+              <summary>Explore {records.length} governed records</summary>
+              <div className="catalogRecordGroups">
+                {catalogRecordOrder.map(type=>{
+                  const items=records.filter(record=>record.record_type===type);
+                  if(!items.length)return null;
+                  return <section className="catalogRecordGroup" key={type}>
+                    <div className="catalogRecordGroupHead"><h4>{catalogRecordLabels[type]||type}</h4><span>{items.length}</span></div>
+                    <div className="catalogRecordList">
+                      {items.map(record=><article className="catalogRecord" key={record.id}>
+                        <div><small>{record.code||record.record_type.replaceAll("_"," ")}</small><b>{record.name||record.code||"Governed record"}</b></div>
+                        {record.status&&<span>{record.status}</span>}
+                        <p>{payloadText(record.payload,"description","rule","target_outcome","decision","summary","purpose","mitigation","location")}</p>
+                      </article>)}
+                    </div>
+                  </section>;
+                })}
+              </div>
+            </details>
+            <div className="catalogFooter"><span>As of {product.as_of_date||"current snapshot"}</span><span>{records.length} linked records</span></div>
+          </article>;
+        })}
+      </div>
+    </section>
     <section className="productsHero" aria-labelledby="products-title">
       <div className="productsHeroCopy">
         <p className="eyebrow">RESONANCE PRODUCTS</p>
