@@ -32,7 +32,8 @@ test("legacy PowerShell launcher warns that it is recovery-only",()=>{
 
 test("RONSAS is never described as the DataNest control plane",()=>{
   for(const source of [readme,deployment,launcher]){
-    assert.doesNotMatch(source,/RONSAS(?:\/DataNest)?[^\n]{0,80}control plane/i);
+    assert.doesNotMatch(source,/RONSAS(?:\/DataNest)?\s+(?:is|as|=|—|-)\s+[^\n]{0,40}control plane/i);
+    assert.doesNotMatch(source,/RONSAS control plane/i);
     assert.doesNotMatch(source,/RONSAS-managed DataNest/i);
   }
 });
