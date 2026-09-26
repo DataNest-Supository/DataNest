@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 
 export type DataNestAiEvent = {
@@ -77,6 +77,13 @@ export default function DataNestAiChatPanel({
   const [returnedTurn,setReturnedTurn]=useState<DataNestAiEvent|null>(null);
   const requestIdRef=useRef("");
   const composerRef=useRef<HTMLTextAreaElement|null>(null);
+  const transcriptRef=useRef<HTMLDivElement|null>(null);
+
+  useEffect(()=>{
+    const transcript=transcriptRef.current;
+    if(!transcript)return;
+    transcript.scrollTo({top:transcript.scrollHeight,behavior:"smooth"});
+  },[events.length,returnedTurn,busy]);
 
   function loadQuickCommand(prompt:string){
     setDraft(prompt);
@@ -186,15 +193,21 @@ export default function DataNestAiChatPanel({
       </div>
     </div>
 
-    <div className="datanestAiTranscript" aria-live="polite">
+    <div className="datanestAiTranscript" aria-live="polite" ref={transcriptRef}>
       {visibleEvents.map(item=>{
         const assistant=item.source_type==="datanest_ai";
         const companion=item.source_type==="ai_companion";
-        return <article className={"datanestAiTurn "+(assistant?"assistant":"evidence")} key={item.id}>
+        const roleClass=assistant?"assistant":companion?"companion":"human";
+        const roleGlyph=assistant?"AI":companion?"EXT":"YOU";
+        const roleLabel=assistant?"DataNest AI":companion?"AI Companion":"Human development input";
+        return <article className={"datanestAiTurn "+roleClass} key={item.id}>
           <div className="rowBetween">
-            <div>
-              <b>{assistant?"DataNest AI":companion?"AI Companion":"Human development input"}</b>
-              <small>{jobCode+" · "+formatDate(item.created_at)}</small>
+            <div className="datanestAiTurnIdentity">
+              <span className="datanestAiTurnGlyph" aria-hidden="true">{roleGlyph}</span>
+              <div>
+                <b>{roleLabel}</b>
+                <small>{jobCode+" · "+formatDate(item.created_at)}</small>
+              </div>
             </div>
             <span className="badge warn">UNCERTIFIED</span>
           </div>
@@ -205,7 +218,15 @@ export default function DataNestAiChatPanel({
           </div>
         </article>;
       })}
-      {!events.length&&<div className="emptyState datanestAiConsoleEmpty">
+      {busy&&<div className="datanestAiReasoningTurn" role="status" aria-live="polite">
+        <div className="datanestAiReasoningCore" aria-hidden="true">AI</div>
+        <div className="datanestAiReasoningCopy">
+          <b>DataNest AI is reasoning</b>
+          <span>Binding the command to {jobCode}, evaluating governed context, and preparing a traceable response.</span>
+          <div className="datanestAiReasoningPulse" aria-hidden="true"><i/><i/><i/><i/><i/></div>
+        </div>
+      </div>}
+      {!events.length&&!busy&&<div className="emptyState datanestAiConsoleEmpty">
         <div className="datanestAiConsoleEmptyCore" aria-hidden="true">AI</div>
         <h3>DataNest AI is ready</h3>
         <p>Issue a development command below. DataNest will bind it to this Job and trace the interaction before inference.</p>
