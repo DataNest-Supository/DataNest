@@ -118,5 +118,42 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
   expect(legalRequest?.jobId).toBe(jobId);
 
   await page.setViewportSize({width:390,height:844});
+  const overflowOffenders=await page.evaluate(() => {
+    const viewportWidth=innerWidth;
+    const isClipped=(element:Element)=>{
+      let parent=element.parentElement;
+      while(parent&&parent!==document.body){
+        const overflowX=getComputedStyle(parent).overflowX;
+        if(overflowX==="hidden"||overflowX==="auto"||overflowX==="scroll"||overflowX==="clip")return true;
+        parent=parent.parentElement;
+      }
+      return false;
+    };
+    return Array.from(document.querySelectorAll<HTMLElement>("body *"))
+      .map(element=>{
+        const rect=element.getBoundingClientRect();
+        return {
+          tag:element.tagName.toLowerCase(),
+          className:element.className,
+          text:(element.textContent||"").trim().replace(/\s+/g," ").slice(0,120),
+          left:Math.round(rect.left),
+          right:Math.round(rect.right),
+          width:Math.round(rect.width)
+        };
+      })
+      .filter(item=>item.right>viewportWidth+1||item.left< -1)
+      .filter(item=>{
+        const selector=item.className
+          ? "."+String(item.className).trim().split(/\s+/).filter(Boolean).join(".")
+          : item.tag;
+        const element=document.querySelector(selector);
+        return element ? !isClipped(element) : true;
+      })
+      .slice(0,12);
+  });
+  expect(
+    overflowOffenders,
+    "Mobile Products overflow offenders: "+JSON.stringify(overflowOffenders)
+  ).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
