@@ -273,8 +273,8 @@ export default function DataNestAiWorkspace({
           <span className="datanestAiFloatIcon" aria-hidden="true">&gt;_</span>
           <div>
             <b>Development Tools</b>
-            <small>Remote desktop · Cloud browser</small>
-            <small>CMD scripts · Codex functions</small>
+            <small>Hosted CI · Cloud browser</small>
+            <small>GitHub Actions · Playwright traces</small>
           </div>
         </article>
 
