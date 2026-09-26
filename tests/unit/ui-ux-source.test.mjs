@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const appSource = fs.readFileSync(path.join(repoRoot, "src/components/DataNestApp.tsx"), "utf8");
 const homeSource = fs.readFileSync(path.join(repoRoot, "src/components/ResonanceHome.tsx"), "utf8");
+const journeySource = fs.readFileSync(path.join(repoRoot, "src/components/PurposeJourney.tsx"), "utf8");
 const cssSource = fs.readFileSync(path.join(repoRoot, "src/app/globals.css"), "utf8");
 
 test("mobile navigation keeps refresh and release controls reachable", () => {
@@ -90,7 +91,7 @@ test("quick switch command palette is keyboard accessible and searchable", () =>
 
 test("quick switch preserves canonical workspace navigation", () => {
   assert.match(appSource, /onClick=\{\(\)=>chooseCommandView\(item\.key\)\}/);
-  assert.match(appSource, /function chooseCommandView\(nextView:ViewKey\)[\s\S]*?setView\(nextView\)[\s\S]*?closeCommandPalette\(\)/);
+  assert.match(appSource, /function chooseCommandView\(nextView:ViewKey\)[\s\S]*?setView\(nextView\)[\s\S]*?closeCommandPalette\(nextView===view\)/);
 });
 
 
@@ -108,7 +109,7 @@ test("mobile scheduler uses a compact status select while desktop keeps filter c
 
 test("quick switch traps modal focus and restores focus to its opener", () => {
   assert.match(appSource, /commandReturnFocusRef/);
-  assert.match(appSource, /function closeCommandPalette\(\)/);
+  assert.match(appSource, /function closeCommandPalette\(restoreFocus=true\)/);
   assert.match(appSource, /function trapCommandFocus\(/);
   assert.match(appSource, /onKeyDown=\{trapCommandFocus\}/);
   assert.match(appSource, /commandReturnFocusRef\.current\?\.focus\(\)/);
@@ -154,7 +155,7 @@ test("workflow continuity maps specialist workspaces without breaking direct nav
   assert.match(appSource, /audit:"transparency"/);
   assert.match(appSource, /aria-label="Workspace progression"/);
   assert.match(appSource, /Continue · \{nextViewItem\.label\} →/);
-  assert.match(appSource, /key=\{view\} className="viewStage"/);
+  assert.match(appSource, /key=\{view\} className="viewStage workspaceArrival"/);
 });
 
 test("page header exposes current lifecycle phase and preserves quick switching", () => {
@@ -165,15 +166,18 @@ test("page header exposes current lifecycle phase and preserves quick switching"
 
 test("AI & I home communicates the five-stage operating loop", () => {
   for (const label of ["Discover","Govern","Build","Execute","Verify"]) {
-    assert.match(homeSource, new RegExp("<b>"+label+"<\\/b>"));
+    assert.match(journeySource, new RegExp('label: "'+label+'"'));
   }
+  assert.match(journeySource, /onNavigate\(item\.key\)/);
+  assert.match(homeSource, /<PurposeJourney onNavigate=\{onNavigate\}\/>/);
   assert.match(homeSource, /onNavigate\("ai"\)/);
   assert.match(homeSource, />Enter DataNest AI</);
 });
 
-test("workflow transitions respect reduced-motion preferences", () => {
-  assert.match(cssSource, /\.viewStage\{[\s\S]*?animation:datanestViewEnter/);
+test("workflow transitions respect reduced-motion preferences and pause state", () => {
+  assert.match(cssSource, /html:not\(\[data-motion-paused="true"\]\) \.workspaceArrival\{animation:workspaceArrive/);
   assert.match(cssSource, /@media\(prefers-reduced-motion:reduce\)\{[\s\S]*?\.viewStage\{animation:none!important\}/);
+  assert.match(cssSource, /html\[data-motion-paused="true"\] \.workspaceArrival[\s\S]*?animation:none!important/);
 });
 
 

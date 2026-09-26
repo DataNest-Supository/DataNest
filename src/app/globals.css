@@ -4196,10 +4196,7 @@ code,pre{
 
 
 /* UX workflow architecture v2 */
-.viewStage{
-  animation:datanestViewEnter .28s cubic-bezier(.2,.72,.2,1) both;
-  transform-origin:50% 0
-}
+.viewStage{transform-origin:50% 0}
 @keyframes datanestViewEnter{
   from{opacity:0;transform:translateY(8px) scale(.997)}
   to{opacity:1;transform:translateY(0) scale(1)}
@@ -4293,3 +4290,18 @@ code,pre{
 .workflowContinuationMeta .eyebrow{margin:0}
 .workflowMode{display:inline-flex;align-items:center;min-height:18px;padding:2px 7px;border:1px solid rgba(255,255,255,.09);border-radius:999px;font-size:7px;font-weight:900;letter-spacing:.12em;color:#8e9aaf;background:rgba(255,255,255,.035)}
 .workflowMode.adaptive{color:#82e9ff;border-color:rgba(66,231,255,.24);background:rgba(66,231,255,.07)}
+
+/* Purposeful workspace motion: brief arrivals, visible location, no navigation delay. */
+.workspaceArrival{min-width:0}
+.workspaceWayfinding{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px;color:#b4c6d7;font-size:12px;line-height:1.5}
+.workspaceWayfinding button{min-height:44px;padding:8px 12px;border:1px solid rgba(109,213,247,.22);border-radius:10px;background:rgba(109,213,247,.04);color:#caedf6;font:inherit;cursor:pointer}
+.workspaceWayfinding button:hover{background:rgba(109,213,247,.12);border-color:#8ddcea}
+.workspaceWayfinding button:focus-visible,#workspace-title:focus-visible{outline:2px solid #a6e6ed;outline-offset:4px}
+#workspace-title{scroll-margin-top:24px}
+@media(prefers-reduced-motion:no-preference){
+  html:not([data-motion-paused="true"]) .workspaceArrival{animation:workspaceArrive 220ms ease-out both}
+  html:not([data-motion-paused="true"]) .commandPalette{animation:workspaceArrive 160ms ease-out both}
+  @keyframes workspaceArrive{from{opacity:.45;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+}
+html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"] .commandPalette{animation:none!important}
+
