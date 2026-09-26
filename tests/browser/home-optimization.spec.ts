@@ -421,6 +421,7 @@ test("specialist phase rail preserves lifecycle orientation", async ({ page }) =
 });
 
 
+// Integration gate: value-network capability nodes must remain subordinate to the DataNest AI core.
 test("AI & I keeps DataNest AI at the core while governed products stay product nodes", async ({ page }) => {
   const projectId = "00000000-0000-4000-8000-000000000010";
   const userId = "00000000-0000-4000-8000-000000000001";
