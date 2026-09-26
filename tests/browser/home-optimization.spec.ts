@@ -155,3 +155,39 @@ test("dashboard follows workspace width when the AI rail is resized", async ({ p
   expect(narrow.hero.right).toBeLessThanOrEqual(narrow.content.right + 1);
   expect(narrow.scrollWidth).toBeLessThanOrEqual(narrow.viewportWidth);
 });
+
+
+test("AI & I hero animates a coordinated intent-to-amplification loop", async ({ page }) => {
+  await page.goto(appPath);
+  await expect(page.getByLabel("Email")).toBeVisible();
+
+  const visual = page.getByLabel("AI and human collaboration visualization");
+  await expect(visual).toBeVisible();
+  await expect(visual.locator(".intentFlowPacket")).toHaveCount(2);
+  await expect(visual.locator(".amplifyFlowPacket")).toHaveCount(1);
+  await expect(visual.locator(".feedbackFlowPacket")).toHaveCount(1);
+  await expect(visual.locator(".resonanceRipple")).toHaveCount(1);
+
+  const motion = await visual.evaluate(element => {
+    const style = (selector:string) => {
+      const node = element.querySelector(selector);
+      if (!(node instanceof HTMLElement)) throw new Error("Missing "+selector);
+      return getComputedStyle(node);
+    };
+    return {
+      outerDuration: style(".orbitOuter").animationDuration,
+      middleDuration: style(".orbitMiddle").animationDuration,
+      intentAnimation: style(".intentFlowPacket").animationName,
+      amplificationAnimation: style(".amplifyFlowPacket").animationName,
+      feedbackAnimation: style(".feedbackFlowPacket").animationName,
+      rippleAnimation: style(".resonanceRipple").animationName
+    };
+  });
+
+  expect(motion.outerDuration).toBe("28s");
+  expect(motion.middleDuration).toBe("34s");
+  expect(motion.intentAnimation).toContain("intentToCore");
+  expect(motion.amplificationAnimation).toContain("coreToAi");
+  expect(motion.feedbackAnimation).toContain("aiFeedback");
+  expect(motion.rippleAnimation).toContain("resonanceRipple");
+});
