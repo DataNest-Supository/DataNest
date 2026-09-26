@@ -34,7 +34,7 @@ test("Products presents the governed catalog and opens the Legal Eagle concept p
   await page.goto(appPath+"?view=products");
 
   await expect(page.getByRole("heading", {name:"Products that carry their architecture, evidence and decisions with them."})).toBeVisible();
-  await expect(page.getByText("Product Concept Incubator")).toBeVisible();
+  await expect(page.getByText("Product Concept Incubator", {exact:true})).toBeVisible();
   await expect(page.getByRole("heading", {name:"Assistance with a human at the centre."})).toBeHidden();
 
   await page.locator("details.conceptIncubator > summary").click();
