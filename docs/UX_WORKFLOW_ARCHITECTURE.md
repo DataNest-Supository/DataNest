@@ -112,4 +112,4 @@ Phase mapping:
 - Execute: UNIFI Planner, TranScheduler, Runs
 - Verify: Checkpoints, Audit, Transparency
 
-The rail becomes horizontally scrollable on narrow screens so it does not force page-level horizontal overflow.
+The rail may scroll on compact tablet widths, but at phone width it collapses into a five-column phase grid with AI Core on its own row so every control remains physically inside the viewport.
