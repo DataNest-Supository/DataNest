@@ -1,5 +1,13 @@
-export default function CollaborationVisual() {
-  return <div className="aiICoreStage" aria-label="AI and human collaboration visualization">
+type Props = {
+  running?: boolean;
+};
+
+export default function CollaborationVisual({running=false}:Props) {
+  return <div
+        className="aiICoreStage"
+        aria-label="AI and human collaboration visualization"
+        data-activity={running?"running":"idle"}
+      >
         <div className="coreOrbit orbitOuter" aria-hidden="true"/>
         <div className="coreOrbit orbitMiddle" aria-hidden="true"/>
         <div className="signalArc arcOne" aria-hidden="true"/>
@@ -9,7 +17,10 @@ export default function CollaborationVisual() {
           <strong>Intent</strong>
           <span>Human direction</span>
         </div>
-        <div className="coreBridge" aria-hidden="true"><i/><i/><i/><i/></div>
+        <div className="coreBridge" aria-hidden="true">
+          <i className="workSignalPacket"/>
+          <i className="interactionSignalPacket"/>
+        </div>
         <div className="coreNode aiCore">
           <small>AI</small>
           <strong>Amplify</strong>
