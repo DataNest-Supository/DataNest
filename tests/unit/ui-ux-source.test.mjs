@@ -8,6 +8,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../
 const appSource = fs.readFileSync(path.join(repoRoot, "src/components/DataNestApp.tsx"), "utf8");
 const homeSource = fs.readFileSync(path.join(repoRoot, "src/components/ResonanceHome.tsx"), "utf8");
 const journeySource = fs.readFileSync(path.join(repoRoot, "src/components/PurposeJourney.tsx"), "utf8");
+const workflowPhasesSource = fs.readFileSync(path.join(repoRoot, "src/lib/workflowPhases.ts"), "utf8");
 const cssSource = fs.readFileSync(path.join(repoRoot, "src/app/globals.css"), "utf8");
 
 test("mobile navigation keeps refresh and release controls reachable", () => {
@@ -224,4 +225,21 @@ test("operational empty states route users to prerequisite workspaces", () => {
   assert.match(appSource, /No audit events yet[\s\S]*?Open Checkpoints/);
   assert.match(appSource, /function EmptyState\(\{title,text,actionLabel,onAction\}/);
   assert.match(cssSource, /\.emptyState \.emptyStateAction\{/);
+});
+
+
+test("specialist workspaces retain persistent lifecycle orientation", () => {
+  assert.match(appSource, /workflowPhaseForView\(view\)/);
+  assert.match(appSource, /aria-label="DataNest lifecycle phases"/);
+  assert.match(appSource, /workflowPhases\.map/);
+  assert.match(appSource, /aria-current=\{active\?"step":undefined\}/);
+  assert.match(appSource, /Go to "\+phase\.label\+" phase"/);
+  assert.match(appSource, />AI CORE</);
+  assert.match(appSource, />cross-phase</);
+  assert.match(workflowPhasesSource, /\["stakeholder","sparks","thinktank"\]/);
+  assert.match(workflowPhasesSource, /\["products","productlab"\]/);
+  assert.match(workflowPhasesSource, /\["unifi","scheduler","runs"\]/);
+  assert.match(workflowPhasesSource, /\["checkpoints","audit","transparency"\]/);
+  assert.match(cssSource, /\.workflowPhaseRail\{/);
+  assert.match(cssSource, /@media\(max-width:860px\)[\s\S]*?\.workflowPhaseRail\{overflow-x:auto/);
 });

@@ -372,3 +372,50 @@ test("empty operational workspaces offer direct recovery paths", async ({ page }
   await page.getByRole("button", {name:"Open Checkpoints"}).click();
   await expect(page).toHaveURL(/\?view=checkpoints/);
 });
+
+
+test("specialist phase rail preserves lifecycle orientation", async ({ page }) => {
+  const projectId = "00000000-0000-4000-8000-000000000010";
+  const userId = "00000000-0000-4000-8000-000000000001";
+
+  await page.route("**/runtime-config.js", route => route.fulfill({
+    contentType: "application/javascript",
+    body: "window.__DATANEST_CONFIG__={supabaseUrl:'https://fixture.supabase.co',supabasePublishableKey:'fixture-key',authoritative:true}"
+  }));
+  await page.addInitScript(({userId}) => {
+    const encode = (data: unknown) => btoa(JSON.stringify(data)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+    localStorage.setItem("sb-fixture-auth-token", JSON.stringify({
+      access_token: `${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:userId,exp:4102444800,role:"authenticated"})}.fixture`,
+      refresh_token: "fixture", token_type:"bearer", expires_at:4102444800,
+      user:{id:userId,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid"}
+    }));
+  }, {userId});
+
+  await page.route("https://fixture.supabase.co/**", route => {
+    const path = new URL(route.request().url()).pathname;
+    let body: unknown = [];
+    if (path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE",created_at:"2026-09-26T00:00:00Z"};
+    if (path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"viewer",status:"active"};
+    if (path.endsWith("/get_project_dashboard_summary")) body = {total_jobs:1,active_jobs:0,running_jobs:0,blocked_jobs:0,available_capabilities:0,registered_capabilities:0};
+    return route.fulfill({contentType:"application/json",body:JSON.stringify(body)});
+  });
+
+  await page.goto(appPath+"?view=governance");
+  const rail = page.getByRole("navigation", {name:"DataNest lifecycle phases"});
+  await expect(rail).toBeVisible();
+  await expect(page.getByRole("button", {name:"Govern phase · current"})).toHaveAttribute("aria-current","step");
+
+  await page.getByRole("button", {name:"Go to Execute phase"}).click();
+  await expect(page).toHaveURL(/\?view=unifi/);
+  await expect(page.locator(".topbar h1")).toHaveText("UNIFI Planner");
+  await expect(page.getByRole("button", {name:"Execute phase · current"})).toHaveAttribute("aria-current","step");
+
+  await page.getByRole("button", {name:/AI CORE/}).click();
+  await expect(page).toHaveURL(/\?view=ai/);
+  await expect(page.locator(".topbar h1")).toHaveText("DataNest AI");
+  await expect(page.getByRole("button", {name:/AI CORE/})).toHaveAttribute("aria-current","page");
+
+  await page.setViewportSize({width:390,height:844});
+  await expect(rail).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});

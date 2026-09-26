@@ -2,28 +2,20 @@
 
 import { useRef, useState, type KeyboardEvent } from "react";
 import styles from "./PurposeJourney.module.css";
+import { workflowPhases, type WorkflowDestination } from "@/lib/workflowPhases";
 
-const steps = [
-  { key: "thinktank", label: "Discover", verb: "Make room for perspectives.", description: "Bring your intent to Think Tanks. Compare ideas, gather evidence, and invite human review before deciding what to carry forward.", outcome: "Ideas with evidence you can inspect.", action: "Explore Think Tanks", glyph: "◈" },
-  { key: "governance", label: "Govern", verb: "Choose with shared understanding.", description: "Read the protocol, consider proposals, and trace decisions. Your project role determines which actions are available.", outcome: "A decision with its reasoning and review history.", action: "Review governance", glyph: "◆" },
-  { key: "products", label: "Build", verb: "Turn direction into a shared product.", description: "Explore Resonance products, their architecture, and the evidence behind them. Use Product Lab to inspect a surface before release.", outcome: "A product direction connected to its controls and evidence.", action: "Explore products", glyph: "◉" },
-  { key: "unifi", label: "Execute", verb: "Give the next step a shape.", description: "Use UNIFI Planner to define work and acceptance criteria, then follow its progress in TranScheduler.", outcome: "A plan with a clear definition of done.", action: "Open UNIFI Planner", glyph: "◇" },
-  { key: "transparency", label: "Verify", verb: "Understand the evidence behind progress.", description: "Review published audits, methods, and findings in Transparency. Follow the evidence and its stated limits before drawing a conclusion.", outcome: "An informed view of what has and has not been verified.", action: "Review transparency", glyph: "◎" }
-] as const;
 
-type Destination = typeof steps[number]["key"];
-
-export default function PurposeJourney({ onNavigate }: { onNavigate: (view: Destination) => void }) {
+export default function PurposeJourney({ onNavigate }: { onNavigate: (view: WorkflowDestination) => void }) {
   const [selected, setSelected] = useState(0);
   const tabs = useRef<Array<HTMLButtonElement | null>>([]);
-  const step = steps[selected];
+  const step = workflowPhases[selected];
 
   function move(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     let next = index;
-    if (event.key === "ArrowRight") next = (index + 1) % steps.length;
-    else if (event.key === "ArrowLeft") next = (index + steps.length - 1) % steps.length;
+    if (event.key === "ArrowRight") next = (index + 1) % workflowPhases.length;
+    else if (event.key === "ArrowLeft") next = (index + workflowPhases.length - 1) % workflowPhases.length;
     else if (event.key === "Home") next = 0;
-    else if (event.key === "End") next = steps.length - 1;
+    else if (event.key === "End") next = workflowPhases.length - 1;
     else return;
     event.preventDefault();
     setSelected(next);
@@ -37,31 +29,31 @@ export default function PurposeJourney({ onNavigate }: { onNavigate: (view: Dest
       <p>Explore the path at your own pace. Start wherever you need.</p>
     </div>
     <div className={styles.tabs} role="tablist" aria-label="From discovery to verification">
-      {steps.map((item, index) => <button
-        key={item.key}
+      {workflowPhases.map((item, index) => <button
+        key={item.destination}
         ref={element => { tabs.current[index] = element; }}
-        id={"purpose-tab-" + item.key}
+        id={"purpose-tab-" + item.destination}
         type="button"
         role="tab"
         aria-selected={selected === index}
-        aria-controls={"purpose-panel-" + item.key}
+        aria-controls={"purpose-panel-" + item.destination}
         tabIndex={selected === index ? 0 : -1}
         onClick={() => setSelected(index)}
         onKeyDown={event => move(event, index)}
       ><span className={styles.number} aria-hidden="true">0{index + 1}</span><b>{item.label}</b><span className={styles.glyph} aria-hidden="true">{item.glyph}</span></button>)}
     </div>
-    {steps.map((item, index) => <div
-      key={item.key}
-      id={"purpose-panel-" + item.key}
+    {workflowPhases.map((item, index) => <div
+      key={item.destination}
+      id={"purpose-panel-" + item.destination}
       role="tabpanel"
-      aria-labelledby={"purpose-tab-" + item.key}
+      aria-labelledby={"purpose-tab-" + item.destination}
       hidden={selected !== index}
       className={styles.panel}
       tabIndex={0}
     >
       <div className={styles.copy}><h4>{item.verb}</h4><p>{item.description}</p><small><span aria-hidden="true">↳ </span>{item.outcome}</small></div>
-      <button className={styles.open} type="button" onClick={() => onNavigate(item.key)}>{item.action}<span aria-hidden="true"> →</span></button>
+      <button className={styles.open} type="button" onClick={() => onNavigate(item.destination)}>{item.action}<span aria-hidden="true"> →</span></button>
     </div>)}
-    <div className={styles.footer}><span>Human direction · AI collaboration · Traceable decisions</span><span aria-hidden="true">{selected + 1} / {steps.length} · {step.label}</span></div>
+    <div className={styles.footer}><span>Human direction · AI collaboration · Traceable decisions</span><span aria-hidden="true">{selected + 1} / {workflowPhases.length} · {step.label}</span></div>
   </section>;
 }

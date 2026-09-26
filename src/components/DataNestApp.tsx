@@ -5,6 +5,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useRef, useState, type CSSP
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
 import { DATANEST_LOGO_SRC } from "@/lib/brand";
+import { workflowPhaseForView, workflowPhases } from "@/lib/workflowPhases";
 import JobInviteForm from "@/components/JobInviteForm";
 import ResonanceHome from "@/components/ResonanceHome";
 import MotionControl from "@/components/MotionControl";
@@ -685,6 +686,7 @@ export default function DataNestApp({session}:{session:Session}) {
   const currentLabel=currentNavItem?.label||"Overview";
   const currentDescription=viewDescriptions[view];
   const currentGroup=currentNavItem?.group||"Core";
+  const currentPhase=workflowPhaseForView(view);
   const workflowRecommendation=resolveWorkflowRecommendation(view,summary,runCount,checkpointCount);
   const nextViewKey=workflowRecommendation.key;
   const previousViewKey=workflowPrevious[view]||null;
@@ -856,6 +858,22 @@ export default function DataNestApp({session}:{session:Session}) {
         {view!=="overview"&&<nav className="workspaceWayfinding" aria-label="Workspace location">
           <button type="button" onClick={()=>setView("overview")}>← AI &amp; I home</button>
           <span aria-hidden="true">/</span><span aria-current="page">{currentLabel}</span>
+        </nav>}
+        {view!=="overview"&&view!=="settings"&&<nav className="workflowPhaseRail" aria-label="DataNest lifecycle phases">
+          <div className="workflowPhaseSteps">
+            {workflowPhases.map((phase,index)=>{
+              const active=phase.id===currentPhase;
+              return <button
+                key={phase.id}
+                type="button"
+                className={active?"active":""}
+                aria-current={active?"step":undefined}
+                aria-label={active?phase.label+" phase · current": "Go to "+phase.label+" phase"}
+                onClick={()=>setView((active?view:phase.destination) as ViewKey)}
+              ><span>{"0"+(index+1)}</span><b>{phase.label}</b></button>;
+            })}
+          </div>
+          <button className={"workflowPhaseAi "+(view==="ai"?"active":"")} type="button" aria-current={view==="ai"?"page":undefined} onClick={()=>setView("ai")}><span aria-hidden="true">✦</span><b>AI CORE</b><small>cross-phase</small></button>
         </nav>}
         <div aria-live="polite">
           {notice&&<div className="notice goodNotice">{notice}</div>}

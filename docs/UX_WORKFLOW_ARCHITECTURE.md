@@ -95,3 +95,21 @@ Operational empty states are treated as workflow junctions rather than blank scr
 - Audit links back to Checkpoints when no immutable events are present.
 
 These controls do not create or mutate operational records. They only move the user to the prerequisite workspace that can produce the missing state or evidence.
+
+
+## Persistent phase orientation
+
+The five lifecycle phases use one shared definition across the AI & I PurposeJourney and specialist workspace shell:
+
+`Discover → Govern → Build → Execute → Verify`
+
+Specialist workspaces show a compact lifecycle phase rail below the workspace breadcrumb. The active phase is highlighted without implying that earlier phases are completed, and users can jump directly to another phase's representative workspace. DataNest AI remains separate from the linear sequence as a cross-phase intelligence core.
+
+Phase mapping:
+- Discover: Stakeholder, Sparks, Think Tanks
+- Govern: Governance
+- Build: Products, Product Lab
+- Execute: UNIFI Planner, TranScheduler, Runs
+- Verify: Checkpoints, Audit, Transparency
+
+The rail becomes horizontally scrollable on narrow screens so it does not force page-level horizontal overflow.
