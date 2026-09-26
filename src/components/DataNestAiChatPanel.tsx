@@ -109,6 +109,14 @@ export default function DataNestAiChatPanel({
     setDraft(value);
   }
 
+  function clearDraft(){
+    if(busy)return;
+    draftByJobRef.current[jobId]="";
+    requestIdByJobRef.current[jobId]="";
+    setDraft("");
+    window.setTimeout(()=>composerRef.current?.focus(),0);
+  }
+
   function focusComposer(){
     const composer=composerRef.current;
     if(!composer)return;
@@ -283,6 +291,30 @@ export default function DataNestAiChatPanel({
     </div>
 
     <form className="datanestAiComposer" onSubmit={send}>
+      <div
+        id="datanest-ai-command-context"
+        className="datanestAiComposerContext"
+        aria-label={"DataNest AI command context locked to "+jobCode}
+      >
+        <span className="datanestAiContextLock">
+          <i aria-hidden="true"/>
+          CONTEXT LOCKED
+        </span>
+        <b>{jobCode}</b>
+        <small>{sessionId?"SESSION "+sessionId.slice(0,8):"SESSION ESTABLISHING"}</small>
+        {draft.trim()&&<span className="datanestAiDraftLock">
+          UNSENT DRAFT LOCKED TO {jobCode}
+        </span>}
+        {draft.trim()&&<button
+          type="button"
+          className="datanestAiClearDraft"
+          onClick={clearDraft}
+          disabled={busy}
+        >
+          Clear draft
+        </button>}
+      </div>
+
       <label>
         <span className="datanestAiComposerLabel">
           <b>Command DataNest AI</b>
@@ -291,6 +323,7 @@ export default function DataNestAiChatPanel({
         <textarea
           ref={composerRef}
           rows={4}
+          aria-describedby="datanest-ai-command-context"
           value={draft}
           onChange={event=>updateDraft(event.target.value)}
           onKeyDown={event=>{
