@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 const appPath = process.env.DATANEST_APP_PATH || "/";
 
 test("Products runs Legal Eagle through the governed DataNest AI route", async ({ page }) => {
+  await page.context().grantPermissions(["clipboard-read","clipboard-write"]);
   const projectId = "00000000-0000-4000-8000-000000000010";
   const userId = "00000000-0000-4000-8000-000000000001";
   const jobId = "00000000-0000-4000-8000-000000000020";
@@ -81,6 +82,12 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
   await expect(page.getByLabel("Search governed product records")).toHaveValue("runner");
   await expect(page.locator("details.catalogDetails")).toHaveAttribute("open","");
   await expect(page.getByText("Runner capacity",{exact:true})).toBeVisible();
+  await expect(page).toHaveURL(/product=ronsas/);
+  await expect(page).toHaveURL(/recordType=risk/);
+  await expect(page).toHaveURL(/q=runner/);
+
+  await page.getByRole("button",{name:"Copy view link",exact:true}).click();
+  await expect(page.getByRole("status").filter({hasText:"View link copied."})).toBeVisible();
   await expect(page).toHaveURL(/product=ronsas/);
   await expect(page).toHaveURL(/recordType=risk/);
   await expect(page).toHaveURL(/q=runner/);
