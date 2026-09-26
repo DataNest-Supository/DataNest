@@ -67,12 +67,24 @@ test("TranScheduler groups jobs under the project and renders the priority gradi
   await expect(projectGroup.getByText("3 jobs",{exact:true})).toBeVisible();
   await expect(projectGroup.getByText("2 active",{exact:true})).toBeVisible();
   await expect(projectGroup.getByText("Peak P100",{exact:true})).toBeVisible();
+  await expect(projectGroup.locator(".schedulerPriorityBands span")).toHaveCount(4);
+  await expect(projectGroup.locator(".schedulerPriorityBands span")).toContainText([
+    "1Maintenance","1Standard","0High","1Critical"
+  ]);
+
+  const ganttTitles=page.locator(".ganttJobTitle small");
+  await expect(ganttTitles).toHaveText(["Critical release gate","Active implementation","Maintenance smoke check"]);
 
   const ganttPriorities=page.locator(".ganttPriorityMeta .priorityScaleMarker");
   await expect(ganttPriorities).toHaveCount(3);
   await expect(ganttPriorities.nth(0)).toHaveAttribute("style",/left:\s*100%/);
   await expect(ganttPriorities.nth(1)).toHaveAttribute("style",/left:\s*50%/);
   await expect(ganttPriorities.nth(2)).toHaveAttribute("style",/left:\s*5%/);
+
+  await page.getByLabel("Sort project jobs").selectOption("recent");
+  await expect(ganttTitles).toHaveText(["Active implementation","Critical release gate","Maintenance smoke check"]);
+  await page.getByLabel("Sort project jobs").selectOption("priority");
+  await expect(ganttTitles).toHaveText(["Critical release gate","Active implementation","Maintenance smoke check"]);
 
   await page.getByRole("button",{name:"Queue",exact:true}).click();
   await expect(page.locator(".schedulerProjectGroup .schedulerTable")).toBeVisible();
