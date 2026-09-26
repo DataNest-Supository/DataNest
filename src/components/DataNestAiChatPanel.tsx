@@ -13,6 +13,7 @@ export type DataNestAiEvent = {
 };
 
 type Props = {
+  draftScope:string;
   jobId:string;
   jobCode:string;
   sessionId:string;
@@ -29,22 +30,23 @@ function formatDate(value:string){
   }).format(new Date(value));
 }
 
-function sessionDraftKey(jobId:string){
-  return "datanest-ai:session-draft:"+jobId;
+function sessionDraftKey(draftScope:string,jobId:string){
+  return "datanest-ai:session-draft:"+draftScope+":"+jobId;
 }
 
-function readSessionDraft(jobId:string){
+function readSessionDraft(draftScope:string,jobId:string){
   try{
-    return window.sessionStorage.getItem(sessionDraftKey(jobId))||"";
+    return window.sessionStorage.getItem(sessionDraftKey(draftScope,jobId))||"";
   }catch{
     return "";
   }
 }
 
-function writeSessionDraft(jobId:string,value:string){
+function writeSessionDraft(draftScope:string,jobId:string,value:string){
   try{
-    if(value)window.sessionStorage.setItem(sessionDraftKey(jobId),value);
-    else window.sessionStorage.removeItem(sessionDraftKey(jobId));
+    const key=sessionDraftKey(draftScope,jobId);
+    if(value)window.sessionStorage.setItem(key,value);
+    else window.sessionStorage.removeItem(key);
   }catch{
     // Session storage can be unavailable in restricted browser contexts.
   }
@@ -84,6 +86,7 @@ const quickCommands=[
 ] as const;
 
 export default function DataNestAiChatPanel({
+  draftScope,
   jobId,
   jobCode,
   sessionId,
@@ -98,19 +101,20 @@ export default function DataNestAiChatPanel({
   const [returnedTurn,setReturnedTurn]=useState<DataNestAiEvent|null>(null);
   const requestIdByJobRef=useRef<Record<string,string>>({});
   const draftByJobRef=useRef<Record<string,string>>({});
-  const activeJobIdRef=useRef(jobId);
+  const draftIdentity=draftScope+":"+jobId;
+  const activeDraftIdentityRef=useRef(draftIdentity);
   const composerRef=useRef<HTMLTextAreaElement|null>(null);
   const transcriptRef=useRef<HTMLDivElement|null>(null);
-  const busy=busyJobs.has(jobId);
+  const busy=busyJobs.has(draftIdentity);
 
   useEffect(()=>{
-    activeJobIdRef.current=jobId;
+    activeDraftIdentityRef.current=draftIdentity;
     setReturnedTurn(null);
-    const memoryDraft=draftByJobRef.current[jobId];
-    const nextDraft=memoryDraft===undefined?readSessionDraft(jobId):memoryDraft;
-    draftByJobRef.current[jobId]=nextDraft;
+    const memoryDraft=draftByJobRef.current[draftIdentity];
+    const nextDraft=memoryDraft===undefined?readSessionDraft(draftScope,jobId):memoryDraft;
+    draftByJobRef.current[draftIdentity]=nextDraft;
     setDraft(nextDraft);
-  },[jobId]);
+  },[draftIdentity,draftScope,jobId]);
 
   useEffect(()=>{
     const transcript=transcriptRef.current;
@@ -118,27 +122,27 @@ export default function DataNestAiChatPanel({
     transcript.scrollTo({top:transcript.scrollHeight,behavior:"smooth"});
   },[events.length,returnedTurn,busy]);
 
-  function setJobBusy(targetJobId:string,value:boolean){
+  function setJobBusy(targetDraftIdentity:string,value:boolean){
     setBusyJobs(current=>{
       const next=new Set(current);
-      if(value)next.add(targetJobId);
-      else next.delete(targetJobId);
+      if(value)next.add(targetDraftIdentity);
+      else next.delete(targetDraftIdentity);
       return next;
     });
   }
 
   function updateDraft(value:string){
-    draftByJobRef.current[jobId]=value;
-    requestIdByJobRef.current[jobId]="";
-    writeSessionDraft(jobId,value);
+    draftByJobRef.current[draftIdentity]=value;
+    requestIdByJobRef.current[draftIdentity]="";
+    writeSessionDraft(draftScope,jobId,value);
     setDraft(value);
   }
 
   function clearDraft(){
     if(busy)return;
-    draftByJobRef.current[jobId]="";
-    requestIdByJobRef.current[jobId]="";
-    writeSessionDraft(jobId,"");
+    draftByJobRef.current[draftIdentity]="";
+    requestIdByJobRef.current[draftIdentity]="";
+    writeSessionDraft(draftScope,jobId,"");
     setDraft("");
     window.setTimeout(()=>composerRef.current?.focus(),0);
   }
@@ -163,12 +167,14 @@ export default function DataNestAiChatPanel({
     const supabase=getSupabase();
     if(!supabase)return;
 
+    const requestDraftScope=draftScope;
     const requestJobId=jobId;
     const requestJobCode=jobCode;
     const requestSessionId=sessionId;
-    const requestId=requestIdByJobRef.current[requestJobId]||crypto.randomUUID();
-    requestIdByJobRef.current[requestJobId]=requestId;
-    setJobBusy(requestJobId,true);
+    const requestDraftIdentity=draftIdentity;
+    const requestId=requestIdByJobRef.current[requestDraftIdentity]||crypto.randomUUID();
+    requestIdByJobRef.current[requestDraftIdentity]=requestId;
+    setJobBusy(requestDraftIdentity,true);
     setError("");
 
     try{
@@ -184,10 +190,10 @@ export default function DataNestAiChatPanel({
       if(error)throw error;
       const payload=(data||{}) as Record<string,unknown>;
 
-      requestIdByJobRef.current[requestJobId]="";
-      draftByJobRef.current[requestJobId]="";
-      writeSessionDraft(requestJobId,"");
-      if(activeJobIdRef.current!==requestJobId)return;
+      requestIdByJobRef.current[requestDraftIdentity]="";
+      draftByJobRef.current[requestDraftIdentity]="";
+      writeSessionDraft(requestDraftScope,requestJobId,"");
+      if(activeDraftIdentityRef.current!==requestDraftIdentity)return;
 
       const nextSession=String(payload.sessionId||requestSessionId||"");
       if(nextSession)onSessionChange(nextSession);
@@ -214,13 +220,13 @@ export default function DataNestAiChatPanel({
           :"DataNest AI responded and recorded this turn as traceable UNCERTIFIED evidence for "+requestJobCode+"."
       );
       await onContextRefresh(nextSession);
-      if(activeJobIdRef.current===requestJobId)setReturnedTurn(null);
+      if(activeDraftIdentityRef.current===requestDraftIdentity)setReturnedTurn(null);
     }catch(sendError){
-      if(activeJobIdRef.current===requestJobId){
+      if(activeDraftIdentityRef.current===requestDraftIdentity){
         setError(sendError instanceof Error?sendError.message:"Unable to send DataNest AI input.");
       }
     }finally{
-      setJobBusy(requestJobId,false);
+      setJobBusy(requestDraftIdentity,false);
     }
   }
 
