@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import CollaborationVisual from "./CollaborationVisual";
 import PurposeJourney from "./PurposeJourney";
+import { RONSAS_LABEL } from "@/lib/ronsas";
 
 type HomeDestination = "ai" | "unifi" | "scheduler" | "governance" | "thinktank" | "sparks" | "products" | "transparency";
 type ProjectLike = { id:string; name:string; description:string|null };
@@ -78,6 +79,7 @@ export default function ResonanceHome({
 
       <div className="aiIHeroCopy">
         <div className="aiIEyebrow"><span className="signalDot"/> RESONANCE DATANEST · AI &amp; I</div>
+        <div className="ronsasHeroIdentity">{RONSAS_LABEL}</div>
         <h2 id="ai-i-title">Human intent.<br/><span>AI amplification.</span></h2>
         <p>{project.description||"A governed workspace where human direction and DataNest AI meet in one traceable operating system."}</p>
         <div className="aiIHeroActions">
