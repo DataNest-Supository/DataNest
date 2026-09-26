@@ -100,6 +100,8 @@ export function companionReserveForActualWindow(
 ):number{
   if(desired.reserveRight<=0)return 0;
 
+  // Browsers may adjust requested popup geometry for window chrome and display scaling.
+  // Accept small geometry drift, but reject tab/full-window fallbacks before reserving DataNest space.
   const edgeTolerance=48;
   const sizeTolerance=72;
   const desiredRight=desired.left+desired.width;
