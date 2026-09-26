@@ -32,3 +32,9 @@ test("product hero animation is responsive and respects reduced motion",()=>{
   assert.match(css,/@container datanest-main \(max-width:620px\)/);
   assert.match(css,/@media\(prefers-reduced-motion:reduce\)[\s\S]*\.portfolioRingOuter/);
 });
+
+test("value network has one subordinate styling authority",()=>{
+  const valueNetworkBlocks=[...css.matchAll(/\.valueNetwork\{([^}]*)\}/g)];
+  assert.equal(valueNetworkBlocks.length,1);
+  assert.match(valueNetworkBlocks[0][1],/z-index:2/);
+});
