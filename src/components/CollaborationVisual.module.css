@@ -197,8 +197,163 @@
   .portfolioProductCard small{display:none}
   .portfolioCore{width:144px;min-height:144px}
 }
+
+/* Shared DataNest capability network. Governed products remain the outer product nodes. */
+.valueNetwork{
+  --network-x:125px;
+  --network-y:118px;
+  position:absolute;
+  inset:0;
+  z-index:2;
+  pointer-events:none;
+}
+.intelligenceHalo{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:238px;
+  height:238px;
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+  background:conic-gradient(from 30deg,transparent 0 18%,rgba(100,231,255,.24) 25%,transparent 32% 55%,rgba(182,145,255,.22) 63%,transparent 72%);
+  -webkit-mask:radial-gradient(circle,transparent 0 71%,#000 72% 74%,transparent 75%);
+  mask:radial-gradient(circle,transparent 0 71%,#000 72% 74%,transparent 75%);
+  opacity:.8;
+  animation:valueHaloSweep 13s linear infinite;
+}
+.valueNode{
+  position:absolute;
+  width:112px;
+  min-height:50px;
+  padding:8px 10px;
+  display:grid;
+  align-content:center;
+  gap:1px;
+  border:1px solid rgba(105,220,255,.2);
+  border-radius:12px;
+  background:linear-gradient(145deg,rgba(11,27,49,.9),rgba(10,8,32,.93));
+  box-shadow:0 12px 30px rgba(0,0,0,.2),0 0 24px rgba(90,220,255,.035);
+  backdrop-filter:blur(10px);
+  animation:valueNodePulse 6.8s ease-in-out infinite;
+}
+.valueNode small{
+  color:#78e9ff;
+  font-size:6px;
+  font-weight:950;
+  letter-spacing:.14em;
+}
+.valueNode b{
+  color:#f6fbff;
+  font-size:9px;
+  line-height:1.15;
+}
+.valueNode span{
+  color:#858fa8;
+  font-size:6px;
+  line-height:1.25;
+}
+.aiValueNode{
+  left:calc(50% - var(--network-x));
+  top:calc(50% - var(--network-y));
+  transform:translate(-50%,-50%);
+  animation-delay:0s;
+}
+.memoryValueNode{
+  left:calc(50% + var(--network-x));
+  top:calc(50% - var(--network-y));
+  transform:translate(-50%,-50%);
+  animation-delay:-1.7s;
+}
+.collaborationValueNode{
+  left:calc(50% + var(--network-x));
+  top:calc(50% + var(--network-y));
+  transform:translate(-50%,-50%);
+  animation-delay:-3.4s;
+}
+.ronsasValueNode{
+  left:calc(50% - var(--network-x));
+  top:calc(50% + var(--network-y));
+  transform:translate(-50%,-50%);
+  animation-delay:-5.1s;
+}
+.ronsasValueNode small{color:#d39cff}
+.memoryValueNode small{color:#a9a0ff}
+.collaborationValueNode small{color:#77efc7}
+.valueSignal{
+  position:absolute;
+  left:calc(50% - 3px);
+  top:calc(50% - 3px);
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  opacity:0;
+  background:#83ecff;
+  box-shadow:0 0 10px #83ecff,0 0 22px rgba(131,236,255,.7);
+  will-change:transform,opacity;
+}
+.aiSignal{animation:valueSignalAI 6.8s ease-in-out infinite}
+.memorySignal{
+  background:#aaa2ff;
+  box-shadow:0 0 10px #aaa2ff,0 0 22px rgba(170,162,255,.66);
+  animation:valueSignalMemory 6.8s 1.15s ease-in-out infinite;
+}
+.collaborationSignal{
+  background:#78ecc7;
+  box-shadow:0 0 10px #78ecc7,0 0 22px rgba(120,236,199,.62);
+  animation:valueSignalCollaboration 6.8s 2.3s ease-in-out infinite;
+}
+.ronsasSignal{
+  background:#e292ff;
+  box-shadow:0 0 10px #e292ff,0 0 25px rgba(226,146,255,.68);
+  animation:valueSignalRonsas 6.8s 3.45s ease-in-out infinite;
+}
+@keyframes valueHaloSweep{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes valueNodePulse{
+  0%,70%,100%{border-color:rgba(105,220,255,.18);filter:brightness(.96)}
+  78%,88%{border-color:rgba(134,229,255,.42);filter:brightness(1.12)}
+}
+@keyframes valueSignalAI{
+  0%,6%,32%,100%{opacity:0;transform:translate3d(0,0,0) scale(.75)}
+  10%{opacity:1}
+  25%{opacity:1;transform:translate3d(calc(var(--network-x) * -1),calc(var(--network-y) * -1),0) scale(1.1)}
+  31%{opacity:0;transform:translate3d(calc(var(--network-x) * -1),calc(var(--network-y) * -1),0) scale(.8)}
+}
+@keyframes valueSignalMemory{
+  0%,6%,32%,100%{opacity:0;transform:translate3d(0,0,0) scale(.75)}
+  10%{opacity:1}
+  25%{opacity:1;transform:translate3d(var(--network-x),calc(var(--network-y) * -1),0) scale(1.1)}
+  31%{opacity:0;transform:translate3d(var(--network-x),calc(var(--network-y) * -1),0) scale(.8)}
+}
+@keyframes valueSignalCollaboration{
+  0%,6%,32%,100%{opacity:0;transform:translate3d(0,0,0) scale(.75)}
+  10%{opacity:1}
+  25%{opacity:1;transform:translate3d(var(--network-x),var(--network-y),0) scale(1.1)}
+  31%{opacity:0;transform:translate3d(var(--network-x),var(--network-y),0) scale(.8)}
+}
+@keyframes valueSignalRonsas{
+  0%,6%,32%,100%{opacity:0;transform:translate3d(0,0,0) scale(.75)}
+  10%{opacity:1}
+  25%{opacity:1;transform:translate3d(calc(var(--network-x) * -1),var(--network-y),0) scale(1.1)}
+  31%{opacity:0;transform:translate3d(calc(var(--network-x) * -1),var(--network-y),0) scale(.8)}
+}
+@container datanest-main (max-width:620px){
+  .valueNetwork{--network-x:102px;--network-y:96px}
+  .valueNode{width:96px;min-height:44px;padding:7px 8px}
+  .valueNode b{font-size:8px}
+  .valueNode span{display:none}
+  .intelligenceHalo{width:190px;height:190px}
+}
+@media(max-width:470px){
+  .valueNetwork{--network-x:86px;--network-y:82px}
+  .valueNode{width:82px;min-height:40px;padding:6px 7px}
+  .valueNode b{font-size:7px}
+  .valueNode small{font-size:5px}
+  .intelligenceHalo{width:170px;height:170px}
+}
+
 @media(prefers-reduced-motion:reduce){
-  .portfolioRingOuter,.portfolioRingInner,.portfolioSignalSweep,.portfolioSignalDot,.portfolioProductCard,.portfolioCore,.portfolioCore::before{
+  .portfolioRingOuter,.portfolioRingInner,.portfolioSignalSweep,.portfolioSignalDot,.portfolioProductCard,.portfolioCore,.portfolioCore::before,
+  .intelligenceHalo,.valueNode,.valueSignal{
     animation:none!important;
   }
 }
