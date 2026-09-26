@@ -29,6 +29,27 @@ function formatDate(value:string){
   }).format(new Date(value));
 }
 
+function sessionDraftKey(jobId:string){
+  return "datanest-ai:session-draft:"+jobId;
+}
+
+function readSessionDraft(jobId:string){
+  try{
+    return window.sessionStorage.getItem(sessionDraftKey(jobId))||"";
+  }catch{
+    return "";
+  }
+}
+
+function writeSessionDraft(jobId:string,value:string){
+  try{
+    if(value)window.sessionStorage.setItem(sessionDraftKey(jobId),value);
+    else window.sessionStorage.removeItem(sessionDraftKey(jobId));
+  }catch{
+    // Session storage can be unavailable in restricted browser contexts.
+  }
+}
+
 const quickCommands=[
   {
     label:"Continue",
@@ -85,7 +106,10 @@ export default function DataNestAiChatPanel({
   useEffect(()=>{
     activeJobIdRef.current=jobId;
     setReturnedTurn(null);
-    setDraft(draftByJobRef.current[jobId]||"");
+    const memoryDraft=draftByJobRef.current[jobId];
+    const nextDraft=memoryDraft===undefined?readSessionDraft(jobId):memoryDraft;
+    draftByJobRef.current[jobId]=nextDraft;
+    setDraft(nextDraft);
   },[jobId]);
 
   useEffect(()=>{
@@ -106,6 +130,7 @@ export default function DataNestAiChatPanel({
   function updateDraft(value:string){
     draftByJobRef.current[jobId]=value;
     requestIdByJobRef.current[jobId]="";
+    writeSessionDraft(jobId,value);
     setDraft(value);
   }
 
@@ -113,6 +138,7 @@ export default function DataNestAiChatPanel({
     if(busy)return;
     draftByJobRef.current[jobId]="";
     requestIdByJobRef.current[jobId]="";
+    writeSessionDraft(jobId,"");
     setDraft("");
     window.setTimeout(()=>composerRef.current?.focus(),0);
   }
@@ -160,6 +186,7 @@ export default function DataNestAiChatPanel({
 
       requestIdByJobRef.current[requestJobId]="";
       draftByJobRef.current[requestJobId]="";
+      writeSessionDraft(requestJobId,"");
       if(activeJobIdRef.current!==requestJobId)return;
 
       const nextSession=String(payload.sessionId||requestSessionId||"");
@@ -303,7 +330,7 @@ export default function DataNestAiChatPanel({
         <b>{jobCode}</b>
         <small>{sessionId?"SESSION "+sessionId.slice(0,8):"SESSION ESTABLISHING"}</small>
         {draft.trim()&&<span className="datanestAiDraftLock">
-          UNSENT DRAFT LOCKED TO {jobCode}
+          SESSION-ONLY DRAFT · LOCKED TO {jobCode}
         </span>}
         {draft.trim()&&<button
           type="button"
