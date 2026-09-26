@@ -80,3 +80,14 @@ test("project invite Edge Function requires JWT and service-role mediation",()=>
   assert.match(edge,/resetPasswordForEmail/);
   assert.doesNotMatch(edge,/signInWithOtp/);
 });
+
+
+test("project invite action reports sending, success and failure inline",()=>{
+  assert.match(panel,/type InviteState="idle"\|"sending"\|"sent"\|"failed"/);
+  assert.match(panel,/Sending invite…/);
+  assert.match(panel,/Invite sent/);
+  assert.match(panel,/Invite failed · Retry/);
+  assert.match(panel,/aria-live="polite"/);
+  assert.match(panel,/delivery==="recovery"/);
+  assert.doesNotMatch(panel,/delivery==="magic-link"/);
+});
