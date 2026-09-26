@@ -335,7 +335,7 @@ export default function DataNestAiWorkspace({
     </section>}
 
     {loading&&!context?<div className="loadingBar"><span/></div>:selectedJob&&context&&<>
-      <section className="datanestAiPrimaryGrid">
+      <section className="datanestAiChatStage" aria-label="DataNest AI Chat">
         <DataNestAiChatPanel
           jobId={selectedJob.id}
           jobCode={jobCode(selectedJob)}
@@ -346,16 +346,23 @@ export default function DataNestAiWorkspace({
           setNotice={setNotice}
           setError={setError}
         />
-        <div aria-label="Certified Memory"><DataNestAiMemoryPanel items={context.certifiedMemory||[]}/></div>
       </section>
 
-      <div aria-label="Learning & Certification"><DataNestAiCertificationPanel
-        projectId={projectId}
-        role={role}
-        onChanged={refreshContext}
-        setNotice={setNotice}
-        setError={setError}
-      /></div>
+      <section className="datanestAiSupportGrid">
+        <div aria-label="Certified Memory">
+          <DataNestAiMemoryPanel items={context.certifiedMemory||[]}/>
+        </div>
+      </section>
+
+      <div aria-label="Learning & Certification">
+        <DataNestAiCertificationPanel
+          projectId={projectId}
+          role={role}
+          onChanged={refreshContext}
+          setNotice={setNotice}
+          setError={setError}
+        />
+      </div>
     </>}
     <footer className="datanestAiFootnote">
       <small>
