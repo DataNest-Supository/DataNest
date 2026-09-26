@@ -29,6 +29,39 @@ function formatDate(value:string){
   }).format(new Date(value));
 }
 
+const quickCommands=[
+  {
+    label:"Continue",
+    glyph:"→",
+    prompt:"Continue this Job from the current governed context. Identify the next highest-value implementation step, state the acceptance check, and proceed."
+  },
+  {
+    label:"Analyze",
+    glyph:"◎",
+    prompt:"Analyze the current Job context. Surface the important dependencies, risks, unresolved decisions, and the most useful next actions."
+  },
+  {
+    label:"Build",
+    glyph:"+",
+    prompt:"Build the next implementation step for this Job using the current governed context. State what you will change, apply the change, and verify it."
+  },
+  {
+    label:"Debug",
+    glyph:"◇",
+    prompt:"Debug the current Job state. Identify likely failure points, verify assumptions, and propose or apply the smallest safe fix."
+  },
+  {
+    label:"Plan",
+    glyph:"≡",
+    prompt:"Create a concrete execution plan for this Job with ordered steps, dependencies, acceptance checks, and a clear next action."
+  },
+  {
+    label:"Compare",
+    glyph:"⇄",
+    prompt:"Compare the strongest available approaches for this Job. Explain the meaningful trade-offs and recommend a practical implementation path based on the current context."
+  }
+] as const;
+
 export default function DataNestAiChatPanel({
   jobId,
   jobCode,
@@ -43,6 +76,13 @@ export default function DataNestAiChatPanel({
   const [busy,setBusy]=useState(false);
   const [returnedTurn,setReturnedTurn]=useState<DataNestAiEvent|null>(null);
   const requestIdRef=useRef("");
+  const composerRef=useRef<HTMLTextAreaElement|null>(null);
+
+  function loadQuickCommand(prompt:string){
+    setDraft(prompt);
+    requestIdRef.current="";
+    window.setTimeout(()=>composerRef.current?.focus(),0);
+  }
 
   async function send(event:FormEvent){
     event.preventDefault();
@@ -127,6 +167,25 @@ export default function DataNestAiChatPanel({
       <p>Human and AI Companion inputs can influence this Job immediately. Project-wide memory remains governed and requires certification.</p>
     </div>
 
+    <div className="datanestAiQuickCommands" aria-label="Quick DataNest AI commands">
+      <div className="datanestAiQuickCommandsLabel">
+        <span>QUICK COMMANDS</span>
+        <small>Select a command, then edit or send it.</small>
+      </div>
+      <div className="datanestAiQuickCommandRail">
+        {quickCommands.map(command=><button
+          key={command.label}
+          type="button"
+          className="datanestAiQuickCommand"
+          onClick={()=>loadQuickCommand(command.prompt)}
+          disabled={busy}
+        >
+          <span aria-hidden="true">{command.glyph}</span>
+          {command.label}
+        </button>)}
+      </div>
+    </div>
+
     <div className="datanestAiTranscript" aria-live="polite">
       {visibleEvents.map(item=>{
         const assistant=item.source_type==="datanest_ai";
@@ -160,14 +219,21 @@ export default function DataNestAiChatPanel({
           <small>{jobCode}</small>
         </span>
         <textarea
+          ref={composerRef}
           rows={4}
           value={draft}
           onChange={event=>setDraft(event.target.value)}
+          onKeyDown={event=>{
+            if((event.ctrlKey||event.metaKey)&&event.key==="Enter"&&!busy&&draft.trim()){
+              event.preventDefault();
+              event.currentTarget.form?.requestSubmit();
+            }
+          }}
           placeholder="Ask DataNest AI to analyze, build, compare, debug, plan, or continue this Job Manifest…"
         />
       </label>
       <div className="rowBetween datanestAiComposerFooter">
-        <small className="muted">Trace-first intake · active Job/session only until certified</small>
+        <small className="muted">Trace-first intake · active Job/session only until certified · Ctrl/⌘ + Enter to send</small>
         <button className="primaryButton datanestAiCommandButton" disabled={busy||!draft.trim()}>
           {busy?"DataNest AI reasoning…":"Send command"}
           <span aria-hidden="true">→</span>
