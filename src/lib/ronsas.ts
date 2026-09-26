@@ -1,3 +1,7 @@
+export const RONSAS_ACRONYM="RONSAS";
+export const RONSAS_NAME="Resonance Open Nova Sovereign Application Suite";
+export const RONSAS_LABEL=RONSAS_ACRONYM+" · "+RONSAS_NAME;
+
 import { getSupabase } from "@/lib/supabase";
 
 export type RonsasStatus = {
