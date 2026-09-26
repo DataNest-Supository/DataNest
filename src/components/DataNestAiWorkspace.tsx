@@ -296,18 +296,6 @@ export default function DataNestAiWorkspace({
       </div>
     </section>
 
-    <section className="datanestAiJobStrip" aria-label="DataNest AI Job Manifests">
-      {jobs.map(job=><button
-        key={job.id}
-        className={"rndJobChip "+(job.id===selectedJobId?"active":"")}
-        onClick={()=>{selectedJobIdRef.current=job.id;setSelectedJobId(job.id)}}
-      >
-        <span>{jobCode(job)}</span>
-        <b>{job.title}</b>
-        <small>{job.status+" · P"+job.priority}</small>
-      </button>)}
-    </section>
-
     {selectedJob&&<section className="panel datanestAiCurrentJob">
       <div className="rowBetween">
         <div>
@@ -334,6 +322,18 @@ export default function DataNestAiWorkspace({
       </div>
     </section>}
 
+    <section className="datanestAiJobStrip" aria-label="Switch DataNest AI Job Context">
+      {jobs.map(job=><button
+        key={job.id}
+        className={"rndJobChip "+(job.id===selectedJobId?"active":"")}
+        onClick={()=>{selectedJobIdRef.current=job.id;setSelectedJobId(job.id)}}
+      >
+        <span>{jobCode(job)}</span>
+        <b>{job.title}</b>
+        <small>{job.status+" · P"+job.priority}</small>
+      </button>)}
+    </section>
+
     {loading&&!context?<div className="loadingBar"><span/></div>:selectedJob&&context&&<>
       <section className="datanestAiChatStage" aria-label="DataNest AI Chat">
         <DataNestAiChatPanel
@@ -354,7 +354,7 @@ export default function DataNestAiWorkspace({
         </div>
       </section>
 
-      <div aria-label="Learning & Certification">
+      <div className="datanestAiCertificationStage" aria-label="Learning & Certification">
         <DataNestAiCertificationPanel
           projectId={projectId}
           role={role}
