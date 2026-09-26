@@ -126,7 +126,7 @@ export default function ResonancePortfolioPulse({products,records,loading}:Props
     <div className="resonancePortfolioGrid">
       {rows.map(({product,linked,tone,evidence,risks,branches,latestText})=>{
         const open=expanded===product.id;
-        const activeRisks=risks.filter(item=>!("closed resolved accepted".includes((item.status||"").toLowerCase()));
+        const activeRisks=risks.filter(item=>!("closed resolved accepted".includes((item.status||"").toLowerCase())));
         return <article className={"resonancePortfolioCard "+tone} key={product.id}>
           <div className="resonancePortfolioCardHead">
             <div>
