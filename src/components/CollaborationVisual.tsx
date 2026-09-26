@@ -19,7 +19,7 @@ type ProductApplication = {
   sort_order:number;
 };
 
-const MAX_ORBIT_ITEMS=9;
+const MAX_ORBIT_PRODUCTS=9;
 
 function orbitPosition(index:number,total:number){
   const angle=((Math.PI*2*index)/Math.max(1,total))-(Math.PI/2);
@@ -94,19 +94,29 @@ export default function CollaborationVisual({
     return()=>{active=false;};
   },[projectId]);
 
-  const primary=products[0]||null;
-  const orbitItems=useMemo(
-    ()=>applications
-      .filter(item=>item.name&&(!primary||item.product_id===primary.id))
-      .slice(0,MAX_ORBIT_ITEMS),
-    [applications,primary]
+  const applicationCounts=useMemo(()=>{
+    const counts=new Map<string,number>();
+    for(const application of applications){
+      counts.set(application.product_id,(counts.get(application.product_id)||0)+1);
+    }
+    return counts;
+  },[applications]);
+
+  const orbitProducts=useMemo(
+    ()=>products.slice(0,MAX_ORBIT_PRODUCTS),
+    [products]
   );
 
   const ariaLabel=loading
-    ?"Synchronizing the governed Resonance product catalog."
-    :primary
-      ?primary.name+" governed product portfolio with "+orbitItems.length+" applications: "+orbitItems.map(item=>item.name).join(", ")
-      :"No governed Resonance products are currently loaded.";
+    ?"DataNest AI core synchronizing the governed Resonance product catalog."
+    :error
+      ?"DataNest AI core. Governed product catalog is temporarily unavailable."
+      :orbitProducts.length
+        ?"DataNest AI core with governed products: "+orbitProducts.map(product=>{
+          const count=applicationCounts.get(product.id)||0;
+          return product.name+", "+count+" application"+(count===1?"":"s");
+        }).join("; ")
+        :"DataNest AI core. No governed Resonance products are currently loaded.";
 
   if(!projectId){
     return <div className="aiICoreStage" aria-label="AI and human collaboration visualization">
@@ -131,6 +141,28 @@ export default function CollaborationVisual({
   }
 
   return <div className={"aiICoreStage "+styles.productsHeroVisual} aria-label={ariaLabel}>
+    <div className={styles.valueNetwork} aria-label="Resonance DataNest value network">
+      <span className={styles.valueSignal+" "+styles.aiSignal} data-signal="ai" aria-hidden="true"/>
+      <span className={styles.valueSignal+" "+styles.memorySignal} data-signal="memory" aria-hidden="true"/>
+      <span className={styles.valueSignal+" "+styles.collaborationSignal} data-signal="collaboration" aria-hidden="true"/>
+      <span className={styles.valueSignal+" "+styles.ronsasSignal} data-signal="ronsas" aria-hidden="true"/>
+
+      <div className={styles.valueNode+" "+styles.aiValueNode}>
+        <small>AI</small><b>Governed AI</b><span>Intent → intelligence</span>
+      </div>
+      <div className={styles.valueNode+" "+styles.memoryValueNode}>
+        <small>MEMORY</small><b>Certified Memory</b><span>Validated learning</span>
+      </div>
+      <div className={styles.valueNode+" "+styles.collaborationValueNode}>
+        <small>TRACE</small><b>Traceable Collaboration</b><span>Human + AI provenance</span>
+      </div>
+      <div className={styles.valueNode+" "+styles.ronsasValueNode}>
+        <small>RONSAS</small><b>Sovereign App Suite</b><span>Governed product ecosystem</span>
+      </div>
+
+      <span className={styles.intelligenceHalo} aria-hidden="true"/>
+    </div>
+
     <div className={styles.portfolioOrbitShell} aria-hidden="true">
       <span className={styles.portfolioOrbitRing+" "+styles.portfolioRingOuter}/>
       <span className={styles.portfolioOrbitRing+" "+styles.portfolioRingInner}/>
@@ -140,24 +172,25 @@ export default function CollaborationVisual({
       <span className={styles.portfolioSignalDot+" "+styles.dotThree}/>
     </div>
 
-    {orbitItems.map((item,index)=>{
-      const position=orbitPosition(index,orbitItems.length);
+    {orbitProducts.map((product,index)=>{
+      const position=orbitPosition(index,orbitProducts.length);
       const slotStyle={left:position.left+"%",top:position.top+"%"} as CSSProperties;
-      return <div className={styles.portfolioProductSlot} style={slotStyle} key={item.id} aria-hidden="true">
+      const applicationCount=applicationCounts.get(product.id)||0;
+      return <div className={styles.portfolioProductSlot} style={slotStyle} key={product.id} aria-hidden="true">
         <div className={styles.portfolioProductCard} style={{animationDelay:(index*-0.42)+"s"}}>
           <span>{String(index+1).padStart(2,"0")}</span>
-          <b>{item.name}</b>
-          <small>{item.status||"governed"}</small>
+          <b>{product.name}</b>
+          <small>{applicationCount} application{applicationCount===1?"":"s"}</small>
         </div>
       </div>;
     })}
 
     <div className={styles.portfolioCore+" "+(loading?styles.loading:"")}>
-      <small>{loading?"SYNCING PRODUCTS":"GOVERNED PRODUCT"}</small>
-      <strong>{primary?.name||(loading?"DataNest":"Products")}</strong>
-      <span>{primary?.full_name||(error?"Catalog temporarily unavailable":"Resonance product catalog")}</span>
+      <small>DATANEST CORE</small>
+      <strong>DataNest AI</strong>
+      <span>Shared intelligence</span>
       <button type="button" onClick={onOpenProducts}>
-        <span>{loading?"View Products":"Open Products"}</span><b aria-hidden="true">↗</b>
+        <span>Open Products</span><b aria-hidden="true">↗</b>
       </button>
     </div>
 
@@ -166,8 +199,8 @@ export default function CollaborationVisual({
         ?"Live catalog sync"
         :error
           ?"Catalog sync unavailable"
-          :primary
-            ?orbitItems.length+" live applications · "+(primary.lifecycle_status||"governed")
+          :orbitProducts.length
+            ?orbitProducts.length+" governed product"+(orbitProducts.length===1?"":"s")+" · "+applications.length+" linked applications"
             :"No governed products imported yet"}
     </span>
   </div>;

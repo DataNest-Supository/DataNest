@@ -243,4 +243,7 @@ test("specialist workspaces retain persistent lifecycle orientation", () => {
   assert.match(workflowPhasesSource, /\["checkpoints","audit","transparency"\]/);
   assert.match(cssSource, /\.workflowPhaseRail\{/);
   assert.match(cssSource, /@media\(max-width:860px\)[\s\S]*?\.workflowPhaseRail\{overflow-x:auto/);
+  assert.match(cssSource, /@media\(max-width:520px\)[\s\S]*?\.workflowPhaseRail\{margin-top:-2px;overflow:visible;flex-direction:column/);
+  assert.match(cssSource, /\.workflowPhaseSteps button>span\{display:none\}/);
 });
+

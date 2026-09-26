@@ -64,6 +64,9 @@ test("Products reads the governed product catalog from Supabase",()=>{
   assert.match(products,/from\("product_records"\)/);
   assert.match(products,/GOVERNED PRODUCT CATALOG/);
   assert.match(products,/FREE PROMOTION · BILLING OFF/);
+  assert.match(products,/PARENT PLATFORM/);
+  assert.match(products,/RESONANCE DATANEST/);
+  assert.match(products,/EXECUTION AUTHORITY/);
   assert.match(products,/\["intake","staging","audit","main"\]/);
   assert.match(products,/className="catalogNavigator"/);
   assert.match(products,/selectedProductId/);
@@ -99,6 +102,12 @@ test("RONSAS import snapshot remains complete and preserves commercial governanc
   assert.equal(product.slug,"ronsas");
   assert.equal(product.billing_enabled,false);
   assert.equal(product.commercial_mode,"free promotion / no billing until pricing is established");
+  assert.equal(product.parent_platform,"Resonance DataNest");
+  assert.equal(product.product_role,"governed_product");
+  assert.equal(product.execution_authority,"DataNest");
+  assert.equal(product.promotion_authority,"DataNest");
+  assert.equal(product.hosting_model,"replaceable_delivery_infrastructure");
+  assert.equal(product.primary_runtime,"Windows local environment");
 
   const children=rows.filter(row=>row.record_type!=="product");
   assert.equal(children.length,71);

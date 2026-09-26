@@ -60,8 +60,8 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
       id:"24f2fa75-18b8-5b45-b624-b5dab381de9e",slug:"ronsas",name:"RONSAS",full_name:"Resonance Open Nova Application Suite",
       category:"sovereign application suite",lifecycle_status:"active development and integration",
       mission:"Unify the Resonance application estate under governed local-first operations.",operating_model:"governed",
-      primary_runtime:"Windows local-first",commercial_mode:"free promotion / no billing until pricing is established",
-      billing_enabled:false,as_of_date:"2026-09-26",metadata:{}
+      primary_runtime:"Windows local environment",commercial_mode:"free promotion / no billing until pricing is established",
+      billing_enabled:false,as_of_date:"2026-09-26",metadata:{parent_platform:"Resonance DataNest",product_role:"governed_product",execution_authority:"DataNest",promotion_authority:"DataNest",hosting_model:"replaceable_delivery_infrastructure"}
     }];
     if (path.endsWith("/product_records")) body = [
       {id:"00000000-0000-4000-8000-000000000301",product_id:"24f2fa75-18b8-5b45-b624-b5dab381de9e",record_type:"application",code:"APP-01",name:"RONSAS Hub",status:"active",sort_order:1,payload:{description:"Primary application hub"}},
@@ -77,7 +77,13 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
   await page.goto(appPath+"?view=products&product=ronsas&recordType=risk&q=runner");
 
   await expect(page.getByRole("heading", {name:"Products that carry their architecture, evidence and decisions with them."})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"Live ecosystem state, derived from governed DataNest records."})).toBeVisible();
   await expect(page.getByRole("region",{name:"Products that carry their architecture, evidence and decisions with them."}).getByRole("heading",{name:"RONSAS",exact:true})).toBeVisible();
+  await expect(page.locator(".catalogProduct").getByText("RESONANCE DATANEST",{exact:true})).toBeVisible();
+  await expect(page.locator(".catalogProduct").getByText("DataNest",{exact:true})).toBeVisible();
+  await expect(page.getByText("DATANEST MANAGED",{exact:true})).toBeVisible();
+  await expect(page.getByText("Windows local environment",{exact:true})).toBeVisible();
+  await expect(page.getByText("FREE PROMOTION · BILLING OFF",{exact:true})).toBeVisible();
   await expect(page.getByLabel("Filter governed record type")).toHaveValue("risk");
   await expect(page.getByLabel("Search governed product records")).toHaveValue("runner");
   await expect(page.locator("details.catalogDetails")).toHaveAttribute("open","");

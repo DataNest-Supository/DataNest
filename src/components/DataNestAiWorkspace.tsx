@@ -48,7 +48,7 @@ function jobCode(job:Job){
 
 function formatDate(value:string){
   return new Intl.DateTimeFormat(undefined,{
-    month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit"
+    month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"UTC",timeZoneName:"short"
   }).format(new Date(value));
 }
 
@@ -67,7 +67,12 @@ export default function DataNestAiWorkspace({
   const [selectedJobId,setSelectedJobId]=useState("");
   const [sessionId,setSessionId]=useState("");
   const [context,setContext]=useState<ContextResponse|null>(null);
-  const [loading,setLoading]=useState(true);
+  const [jobsLoading,setJobsLoading]=useState(true);
+  const [contextLoading,setContextLoading]=useState(false);
+  const [jobsError,setJobsError]=useState("");
+  const [contextError,setContextError]=useState("");
+  const contextRequestRef=useRef(0);
+  const loading=jobsLoading||contextLoading;
   const selectedJobIdRef=useRef("");
   const sessionByJobRef=useRef<Record<string,string>>({});
 
@@ -81,25 +86,41 @@ export default function DataNestAiWorkspace({
   );
 
   const loadJobs=useCallback(async()=>{
-    const supabase=getSupabase();
-    if(!supabase)return;
-    const {data,error}=await supabase
-      .from("jobs")
-      .select(jobColumns)
-      .eq("project_id",projectId)
-      .order("updated_at",{ascending:false})
-      .limit(50);
-    if(error){setError(error.message);return;}
-    const next=(data||[]) as Job[];
-    setJobs(next);
-    setSelectedJobId(current=>{
+    setJobsLoading(true);
+    setJobsError("");
+    try{
+      const supabase=getSupabase();
+      if(!supabase)throw new Error("DataNest connection is unavailable. Reload the workspace and retry.");
+      const {data,error}=await supabase
+        .from("jobs")
+        .select(jobColumns)
+        .eq("project_id",projectId)
+        .order("updated_at",{ascending:false})
+        .limit(50);
+      if(error)throw error;
+      const next=(data||[]) as Job[];
+      setJobs(next);
+      const current=selectedJobIdRef.current;
       const nextId=current&&next.some(job=>job.id===current)
         ?current
         :next[0]?.id||"";
+      if(nextId!==current){
+        contextRequestRef.current++;
+        setContext(null);
+        setContextError("");
+        setContextLoading(Boolean(nextId));
+        setSessionId("");
+      }
       selectedJobIdRef.current=nextId;
+      setSelectedJobId(nextId);
       return nextId;
-    });
-  },[projectId,setError]);
+    }catch(error){
+      const message=error instanceof Error?error.message:"Unable to load Job Manifests. Please retry.";
+      setJobsError(message);
+    }finally{
+      setJobsLoading(false);
+    }
+  },[projectId]);
 
   const refreshContext=useCallback(async(sessionOverride?:string)=>{
     if(!selectedJobId)return;
@@ -108,22 +129,30 @@ export default function DataNestAiWorkspace({
     const requestedSessionId=typeof sessionOverride==="string"
       ?sessionOverride||null
       :sessionByJobRef.current[requestedSessionKey]||null;
-    const supabase=getSupabase();
-    if(!supabase)return;
-    setLoading(true);
-    const {data,error}=await supabase.functions.invoke("datanest-ai-chat",{
-      body:{action:"context",jobId:requestedJobId,sessionId:requestedSessionId}
-    });
-    if(selectedJobIdRef.current!==requestedJobId)return;
-    setLoading(false);
-    if(error){setError(error.message);return;}
-    const payload=data as ContextResponse;
-    if(payload.job?.id!==requestedJobId)return;
-    setContext(payload);
-    const nextSessionId=String(payload.sessionId||"");
-    sessionByJobRef.current[requestedSessionKey]=nextSessionId;
-    setSessionId(nextSessionId);
-  },[selectedJobId,sessionKey,setError]);
+    const request=++contextRequestRef.current;
+    const isCurrent=()=>request===contextRequestRef.current&&selectedJobIdRef.current===requestedJobId;
+    setContextLoading(true);
+    setContextError("");
+    try{
+      const supabase=getSupabase();
+      if(!supabase)throw new Error("DataNest connection is unavailable. Reload the workspace and retry.");
+      const {data,error}=await supabase.functions.invoke("datanest-ai-chat",{
+        body:{action:"context",jobId:requestedJobId,sessionId:requestedSessionId}
+      });
+      if(!isCurrent())return;
+      if(error)throw error;
+      const payload=data as ContextResponse;
+      if(payload?.job?.id!==requestedJobId)throw new Error("The returned context does not match this Job. Retry to reload the correct context.");
+      setContext(payload);
+      const nextSessionId=String(payload.sessionId||"");
+      sessionByJobRef.current[requestedSessionKey]=nextSessionId;
+      setSessionId(nextSessionId);
+    }catch(error){
+      if(isCurrent())setContextError(error instanceof Error?error.message:"Unable to load Job context. Please retry.");
+    }finally{
+      if(isCurrent())setContextLoading(false);
+    }
+  },[selectedJobId,sessionKey]);
 
   useEffect(()=>{void loadJobs()},[loadJobs]);
 
@@ -158,6 +187,7 @@ export default function DataNestAiWorkspace({
       if(stagedSessionId&&stagedSessionId!==sessionId){
         sessionByJobRef.current[sessionKey(selectedJobId)]=stagedSessionId;
         setSessionId(stagedSessionId);
+        void refreshContext(stagedSessionId);
         return;
       }
 
@@ -168,19 +198,42 @@ export default function DataNestAiWorkspace({
   },[selectedJobId,sessionId,sessionKey,refreshContext]);
 
   async function refreshAll(){
-    await loadJobs();
-    await refreshContext();
+    const nextId=await loadJobs();
+    if(nextId&&nextId===selectedJobId)await refreshContext();
   }
 
-  if(!jobs.length&&!loading){
-    return <section className="panel">
+  function selectJob(nextId:string){
+    if(nextId===selectedJobIdRef.current)return;
+    contextRequestRef.current++;
+    selectedJobIdRef.current=nextId;
+    setContext(null);
+    setContextError("");
+    setContextLoading(true);
+    setSessionId(sessionByJobRef.current[sessionKey(nextId)]||"");
+    setSelectedJobId(nextId);
+  }
+
+  if(!jobs.length){
+    return <section className="panel" aria-busy={jobsLoading}>
       <p className="eyebrow">DATANEST AI</p>
-      <h2>No accessible Job Manifests</h2>
-      <p className="muted">Create a Job Manifest in UNIFI Planner or ask an operator to invite you to a Job.</p>
+      <h2>{jobsLoading?"Loading Job Manifests…":jobsError?"Unable to load Job Manifests":"No accessible Job Manifests"}</h2>
+      {jobsError&&<p role="alert">{jobsError}</p>}
+      {!jobsLoading&&<>
+        {!jobsError&&<p className="muted">Create a Job Manifest in UNIFI Planner or ask an operator to invite you to a Job.</p>}
+        <div className="rowActions">
+          {!jobsError&&canOperate&&<a className="primaryButton" href="?view=unifi">Open UNIFI Planner</a>}
+          <button className="secondaryButton" onClick={()=>void loadJobs()}>Retry loading jobs</button>
+        </div>
+      </>}
     </section>;
   }
 
+  const contextReady=Boolean(context?.job.id===selectedJobId&&!contextError&&!jobsError&&!loading);
+  const contextStatus=loading?"SYNCING":contextError||jobsError?"NEEDS ATTENTION":contextReady?"CONTEXT READY":"STANDBY";
+
   return <div className="datanestAiWorkspace">
+    {jobsError&&<section className="panel" role="alert"><p>{jobsError}</p><button className="secondaryButton" disabled={jobsLoading} onClick={()=>void loadJobs()}>Retry loading jobs</button></section>}
+    {contextError&&<section className="panel" role="alert"><h3>Job context needs attention</h3><p>{contextError}</p><p className="muted">Your draft is preserved. Retry context loading before sending another command.</p><button className="secondaryButton" disabled={loading} onClick={()=>void refreshContext()}>Retry AI context</button></section>}
     <section className={"datanestAiHero datanestAiHeroV2 "+(loading?"isWorking":"isReady")} aria-label="DataNest AI development command center">
       <div className="datanestAiHeroGrid" aria-hidden="true"/>
       <div className="datanestAiHeroGlow datanestAiHeroGlowOne" aria-hidden="true"/>
@@ -199,9 +252,9 @@ export default function DataNestAiWorkspace({
 
         <div className="datanestAiHeroStatus" aria-label="DataNest AI system status">
           <div>
-            <span className={"datanestAiStatusPulse "+(loading?"syncing":"online")} aria-hidden="true"/>
-            <small>System</small>
-            <b>{loading?"SYNCING":"ONLINE"}</b>
+            <span className={"datanestAiStatusPulse "+(loading?"syncing":contextReady?"online":"")} aria-hidden="true"/>
+            <small>Context</small>
+            <b role="status">{contextStatus}</b>
           </div>
           <div>
             <small>Certified memory</small>
@@ -224,18 +277,20 @@ export default function DataNestAiWorkspace({
           <button
             className="primaryButton datanestAiHeroPrimary"
             type="button"
+            disabled={!selectedJob}
             onClick={()=>{
               const chat=document.getElementById("datanest-ai-chat");
               const input=chat?.querySelector<HTMLTextAreaElement>(".datanestAiComposer textarea")||null;
-              chat?.scrollIntoView({behavior:"smooth",block:"start"});
-              window.setTimeout(()=>input?.focus(),350);
+              const reduceMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches||document.documentElement.dataset.motionPaused==="true";
+              chat?.scrollIntoView({behavior:reduceMotion?"instant":"smooth",block:"start"});
+              input?.focus({preventScroll:true});
             }}
           >Start development chat <span aria-hidden="true">→</span></button>
           <button className="secondaryButton datanestAiHeroSecondary" type="button" onClick={openScheduler}>
             Open TranScheduler
           </button>
-          <button className="textButton datanestAiHeroRefresh" type="button" onClick={()=>void refreshAll()}>
-            Refresh AI context
+          <button className="textButton datanestAiHeroRefresh" type="button" disabled={loading} onClick={()=>void refreshAll()}>
+            {loading?"Refreshing AI context…":"Refresh AI context"}
           </button>
         </div>
       </div>
@@ -244,7 +299,7 @@ export default function DataNestAiWorkspace({
         <div className="datanestAiHudHeader" aria-hidden="true">
           <span>RESONANCE / DATANEST</span>
           <b>AI CORE</b>
-          <small>{loading?"SYNC":"LIVE"}</small>
+          <small>{contextStatus}</small>
         </div>
         <article className="datanestAiFloatCard datanestAiContextCard">
           <span className="datanestAiFloatIcon" aria-hidden="true">▰</span>
@@ -273,7 +328,9 @@ export default function DataNestAiWorkspace({
           <span className="datanestAiPacket packetThree"/>
           <span className="datanestAiPacket packetFour"/>
           <div className="datanestAiCoreSphere">
-            <span className="datanestAiCoreGlyph">AI</span>\n            <b>DATANEST</b>\n            <small>{loading?"Synchronising":"Intelligence online"}</small>
+            <span className="datanestAiCoreGlyph">AI</span>
+            <b>DATANEST</b>
+            <small>{contextStatus}</small>
           </div>
           <div className="datanestAiCoreBeam"/>
           <div className="datanestAiCoreBase">
@@ -304,18 +361,26 @@ export default function DataNestAiWorkspace({
         </div>
         <div className="datanestAiPipelineLabel">
           <span className="datanestAiPipelineDot"/>
-          {loading?"AI context pipeline synchronising":"Governed AI pipeline ready"}
+          {loading?"AI context pipeline synchronising":contextReady?"Governed Job context ready":"Job context needs attention"}
         </div>
       </div>
     </section>
 
     {selectedJob&&<>
+      <section className="panel" aria-label="Choose active Job">
+        <label htmlFor="datanest-ai-active-job">Active Job context</label>
+        <select id="datanest-ai-active-job" value={selectedJobId} onChange={event=>selectJob(event.target.value)}>
+          {jobs.map(job=><option key={job.id} value={job.id}>{jobCode(job)+" · "+job.title}</option>)}
+        </select>
+        <small className="muted">Choose the Job before composing a command. Drafts stay with their Job.</small>
+      </section>
       <section id="datanest-ai-chat" className="datanestAiChatStage" aria-label="DataNest AI Chat">
         <DataNestAiChatPanel
           draftScope={projectId+":"+currentUserId}
           jobId={selectedJob.id}
           jobCode={jobCode(selectedJob)}
           sessionId={sessionId}
+          contextReady={contextReady}
           events={context?.events||[]}
           onSessionChange={nextSessionId=>{
             sessionByJobRef.current[sessionKey(selectedJob.id)]=nextSessionId;
@@ -354,7 +419,7 @@ export default function DataNestAiWorkspace({
               compact
               onSent={message=>setNotice(message)}
             />
-            <button className="secondaryButton compact" onClick={()=>void refreshContext()}>Refresh context</button>
+            <button className="secondaryButton compact" disabled={loading} onClick={()=>void refreshContext()}>Refresh context</button>
           </div>
         </section>
 
@@ -362,7 +427,8 @@ export default function DataNestAiWorkspace({
           {jobs.map(job=><button
             key={job.id}
             className={"rndJobChip "+(job.id===selectedJobId?"active":"")}
-            onClick={()=>{selectedJobIdRef.current=job.id;setSelectedJobId(job.id)}}
+            aria-pressed={job.id===selectedJobId}
+            onClick={()=>selectJob(job.id)}
           >
             <span>{jobCode(job)}</span>
             <b>{job.title}</b>
