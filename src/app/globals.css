@@ -4058,3 +4058,91 @@ code,pre{
 .catalogCopyLinkButton:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .catalogShareNotice{justify-self:end;padding:8px 11px;border:1px solid rgba(112,228,174,.2);border-radius:11px;background:rgba(112,228,174,.06);color:#c9f7dc;font-size:9px}
 @container datanest-main (max-width:700px){.catalogStageBadges,.catalogShareControl{justify-content:flex-start}.catalogShareNotice{justify-self:start}}
+
+/* 2026-09-26 DataNest AI command context lock */
+.datanestAiComposerContext{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:7px;
+  padding:9px 10px;
+  border:1px solid rgba(91,226,255,.12);
+  border-radius:11px;
+  background:rgba(5,14,30,.54);
+}
+
+.datanestAiContextLock,
+.datanestAiDraftLock{
+  display:inline-flex;
+  align-items:center;
+  min-height:25px;
+  padding:5px 8px;
+  border-radius:999px;
+  font:900 8px/1 ui-monospace,SFMono-Regular,Consolas,monospace;
+  letter-spacing:.07em;
+  text-transform:uppercase;
+}
+
+.datanestAiContextLock{
+  border:1px solid rgba(92,235,186,.19);
+  color:#9af2c7;
+  background:rgba(70,209,153,.055);
+}
+
+.datanestAiContextLock i{
+  width:6px;
+  height:6px;
+  margin-right:6px;
+  border-radius:50%;
+  background:#73edb8;
+  box-shadow:0 0 10px rgba(115,237,184,.65);
+}
+
+.datanestAiComposerContext>b{
+  color:#e9fbff;
+  font:900 8px/1 ui-monospace,SFMono-Regular,Consolas,monospace;
+  letter-spacing:.06em;
+}
+
+.datanestAiComposerContext>small{
+  color:#728da3;
+  font:750 8px/1 ui-monospace,SFMono-Regular,Consolas,monospace;
+  letter-spacing:.05em;
+}
+
+.datanestAiDraftLock{
+  margin-left:auto;
+  border:1px solid rgba(255,197,102,.18);
+  color:#f7d99b;
+  background:rgba(242,199,120,.055);
+}
+
+.datanestAiClearDraft{
+  min-height:27px;
+  padding:5px 8px;
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:8px;
+  background:rgba(255,255,255,.025);
+  color:#91a8ba;
+  font-size:8px;
+  font-weight:850;
+  cursor:pointer;
+}
+
+.datanestAiClearDraft:hover:not(:disabled),
+.datanestAiClearDraft:focus-visible{
+  border-color:rgba(242,199,120,.28);
+  color:#f5dfad;
+  background:rgba(242,199,120,.055);
+}
+
+@container datanest-main (max-width:620px){
+  .datanestAiComposerContext{
+    align-items:flex-start;
+  }
+
+  .datanestAiDraftLock{
+    width:100%;
+    margin-left:0;
+  }
+}
