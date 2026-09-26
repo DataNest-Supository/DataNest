@@ -85,7 +85,7 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
 
   await expect(page.getByText(message,{exact:true})).toBeVisible();
   await expect(page.getByText(/I can organize this as a matter timeline/)).toBeVisible();
-  await expect(page.getByText(/excluded from automatic project-wide learning/i)).toBeVisible();
+  await expect(page.getByRole("status").filter({hasText:/excluded from automatic project-wide learning/i})).toBeVisible();
 
   expect(legalRequest?.productMode).toBe("legal_eagle");
   expect(legalRequest?.jurisdiction).toBe("South Africa · Gauteng");
