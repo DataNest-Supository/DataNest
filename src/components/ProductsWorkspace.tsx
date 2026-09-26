@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
+import ResonancePortfolioPulse from "@/components/ResonancePortfolioPulse";
 
 
 type CatalogProduct = {
@@ -39,6 +40,7 @@ const catalogRecordLabels:Record<string,string> = {
   integration:"Integrations",
   governance_control:"Governance controls",
   risk:"Risks & issues",
+  source_branch:"Source branches",
   roadmap_item:"Roadmap",
   decision:"Decisions",
   evidence:"Evidence",
@@ -47,7 +49,7 @@ const catalogRecordLabels:Record<string,string> = {
 
 const catalogRecordOrder = [
   "application","component","source_authority","environment","integration",
-  "governance_control","risk","roadmap_item","decision","evidence","datanest_branch"
+  "governance_control","risk","source_branch","roadmap_item","decision","evidence","datanest_branch"
 ];
 
 function payloadText(payload:Record<string,unknown>,...keys:string[]) {
@@ -439,6 +441,7 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
   },[catalogRecords]);
 
   return <div className="productsWorkspace">
+    <ResonancePortfolioPulse products={catalogProducts} records={catalogRecords} loading={catalogLoading}/>
     <section className="catalogStage" aria-labelledby="governed-catalog-title">
       <div className="catalogStageHead">
         <div>
