@@ -79,3 +79,78 @@ test("dashboard labels its sample and groups UTC days independently of local tim
   await page.setViewportSize({width:390,height:844});
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+
+test("dashboard follows workspace width when the AI rail is resized", async ({ page }) => {
+  const projectId = "00000000-0000-4000-8000-000000000010";
+  const userId = "00000000-0000-4000-8000-000000000001";
+
+  await page.setViewportSize({ width: 1800, height: 1000 });
+  await page.route("**/runtime-config.js", route => route.fulfill({
+    contentType: "application/javascript",
+    body: "window.__DATANEST_CONFIG__={supabaseUrl:'https://fixture.supabase.co',supabasePublishableKey:'fixture-key',authoritative:true}"
+  }));
+  await page.addInitScript(({userId}) => {
+    const encode = (data: unknown) => btoa(JSON.stringify(data)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+    localStorage.setItem("sb-fixture-auth-token", JSON.stringify({
+      access_token: `${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:userId,exp:4102444800,role:"authenticated"})}.fixture`,
+      refresh_token: "fixture", token_type:"bearer", expires_at:4102444800,
+      user:{id:userId,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid"}
+    }));
+    localStorage.setItem("datanest.aiSidebar.open", "true");
+  }, {userId});
+  await page.route("https://fixture.supabase.co/**", route => {
+    const path = new URL(route.request().url()).pathname;
+    let body: unknown = [];
+    if (path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE"};
+    if (path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"viewer",status:"active"};
+    if (path.endsWith("/get_project_dashboard_summary")) body = {total_jobs:20,active_jobs:5,running_jobs:1,blocked_jobs:2};
+    if (path.endsWith("/jobs")) body = [
+      {id:"1",job_number:1,title:"Fixture job",description:null,priority:50,status:"RUNNING",required_capabilities:[],acceptance:{},created_at:"2026-09-26T00:15:00Z",updated_at:"2026-09-26T00:15:00Z"},
+      {id:"2",job_number:2,title:"Fixture complete",description:null,priority:40,status:"COMPLETED",required_capabilities:[],acceptance:{},created_at:"2026-09-25T23:45:00Z",updated_at:"2026-09-25T23:45:00Z"}
+    ];
+    return route.fulfill({contentType:"application/json",body:JSON.stringify(body)});
+  });
+
+  await page.goto(appPath);
+  await expect(page.getByRole("button", {name:"Hide AI"})).toBeVisible();
+  await expect(page.locator(".externalAiDock")).toBeVisible();
+  await expect(page.locator(".resonanceHome .aiIHero")).toBeVisible();
+
+  const readLayout = () => page.evaluate(() => {
+    const rect = (selector:string) => {
+      const element = document.querySelector(selector);
+      if (!(element instanceof HTMLElement)) throw new Error("Missing "+selector);
+      const box = element.getBoundingClientRect();
+      return {x:box.x,y:box.y,width:box.width,height:box.height,right:box.right,bottom:box.bottom};
+    };
+    return {
+      main: rect(".mainPane"),
+      content: rect(".contentPane"),
+      hero: rect(".resonanceHome .aiIHero"),
+      copy: rect(".resonanceHome .aiIHeroCopy"),
+      core: rect(".resonanceHome .aiICoreStage"),
+      dock: rect(".externalAiDock"),
+      scrollWidth: document.documentElement.scrollWidth,
+      viewportWidth: innerWidth
+    };
+  });
+
+  const wide = await readLayout();
+  expect(wide.main.width).toBeGreaterThan(980);
+  expect(wide.core.x).toBeLessThan(wide.copy.x);
+  expect(wide.hero.x).toBeGreaterThanOrEqual(wide.content.x - 1);
+  expect(wide.hero.right).toBeLessThanOrEqual(wide.content.right + 1);
+  expect(wide.scrollWidth).toBeLessThanOrEqual(wide.viewportWidth);
+
+  const widen = page.getByRole("button", {name:"Widen AI sidebar"});
+  for (let index = 0; index < 7; index += 1) await widen.click();
+
+  const narrow = await readLayout();
+  expect(narrow.dock.width).toBeGreaterThanOrEqual(759);
+  expect(narrow.main.width).toBeLessThanOrEqual(980);
+  expect(narrow.core.y).toBeGreaterThanOrEqual(narrow.copy.bottom - 2);
+  expect(narrow.hero.x).toBeGreaterThanOrEqual(narrow.content.x - 1);
+  expect(narrow.hero.right).toBeLessThanOrEqual(narrow.content.right + 1);
+  expect(narrow.scrollWidth).toBeLessThanOrEqual(narrow.viewportWidth);
+});
