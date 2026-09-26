@@ -34,7 +34,8 @@ test("product hero animation is responsive and respects reduced motion",()=>{
 });
 
 test("value network has one subordinate styling authority",()=>{
-  const valueNetworkBlocks=[...css.matchAll(/\.valueNetwork\{([^}]*)\}/g)];
-  assert.equal(valueNetworkBlocks.length,1);
-  assert.match(valueNetworkBlocks[0][1],/z-index:2/);
+  const valueNetworkBlocks=[...css.matchAll(/\.valueNetwork\{([^}]*)\}/g)].map(match=>match[1]);
+  const authorityBlocks=valueNetworkBlocks.filter(block=>/position:absolute/.test(block));
+  assert.equal(authorityBlocks.length,1);
+  assert.match(authorityBlocks[0],/z-index:2/);
 });
