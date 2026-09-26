@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
+import { DATANEST_LOGO_SRC } from "@/lib/brand";
 
 const DataNestApp = dynamic(() => import("@/components/DataNestApp"), {
   ssr: false,
@@ -25,6 +26,20 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
       window.setTimeout(() => reject(new Error("Authentication service did not respond in time.")), timeoutMs);
     })
   ]);
+}
+
+function AuthBrand() {
+  return (
+    <div className="authBrand" aria-label="Resonance DataNest">
+      <div className="authLogo" aria-hidden="true">
+        <img src={DATANEST_LOGO_SRC} alt="" />
+      </div>
+      <div className="authBrandCopy">
+        <p className="eyebrow">RESONANCE</p>
+        <strong>DataNest</strong>
+      </div>
+    </div>
+  );
 }
 
 export default function AuthGate() {
@@ -171,8 +186,7 @@ export default function AuthGate() {
     return (
       <main className="authShell" role="status" aria-live="polite" aria-busy="true">
         <section className="authCard">
-          <div className="brandMark">RD</div>
-          <p className="eyebrow">RESONANCE APPDEV</p>
+          <AuthBrand />
           <h1>Resonance DataNest</h1>
           <div className="bootRow">
             <div className="bootPulse" aria-hidden="true" />
@@ -190,8 +204,7 @@ export default function AuthGate() {
     return (
       <main className="authShell">
         <section className="authCard" role="alert">
-          <div className="brandMark">RD</div>
-          <p className="eyebrow">RESONANCE APPDEV</p>
+          <AuthBrand />
           <h1>Resonance DataNest</h1>
           <p className="lede">{startupMessage}</p>
           <div className="setupBox">
@@ -208,8 +221,7 @@ export default function AuthGate() {
     return (
       <main className="authShell">
         <section className="authCard" role="alert">
-          <div className="brandMark">RD</div>
-          <p className="eyebrow">RESONANCE APPDEV</p>
+          <AuthBrand />
           <h1>Connection problem</h1>
           <p className="lede">{startupMessage || "DataNest could not reach the authentication service."}</p>
           <button className="primaryButton" type="button" onClick={() => void initialize()}>
@@ -225,8 +237,7 @@ export default function AuthGate() {
     return (
       <main className="authShell">
         <section className="authCard">
-          <div className="brandMark">RD</div>
-          <p className="eyebrow">RESONANCE APPDEV</p>
+          <AuthBrand />
           <h1>Create your DataNest password</h1>
           <p className="lede">Your invitation has been accepted. Set a password to use normal email-and-password sign-in.</p>
           <form onSubmit={submitNewPassword} className="authForm" aria-busy={busy}>
@@ -253,9 +264,8 @@ export default function AuthGate() {
   return (
     <main className="authShell">
       <section className="authCard">
-        <div className="brandMark">RD</div>
-        <p className="eyebrow">RESONANCE APPDEV</p>
-        <h1>Resonance DataNest</h1>
+        <AuthBrand />
+        <h1>Sign in to DataNest</h1>
         <p className="lede">Plan projects, collaborate with DataNest AI, and review traceable work in one workspace.</p>
 
         <form onSubmit={signIn} className="authForm" aria-busy={busy}>
