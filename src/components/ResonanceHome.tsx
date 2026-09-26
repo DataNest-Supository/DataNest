@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import CollaborationVisual from "./CollaborationVisual";
+import { RONSAS_FULL_NAME } from "@/lib/ronsas";
 
 type HomeDestination = "ai" | "unifi" | "scheduler" | "governance" | "thinktank" | "sparks" | "products";
 type ProjectLike = { id:string; name:string; description:string|null };
@@ -79,6 +80,7 @@ export default function ResonanceHome({
         <div className="aiIEyebrow"><span className="signalDot"/> RESONANCE DATANEST · AI &amp; I</div>
         <h2 id="ai-i-title">Human intent.<br/><span>AI amplification.</span></h2>
         <p>{project.description||"A governed workspace where human direction and DataNest AI meet in one traceable operating system."}</p>
+        <div className="aiIRonsasIdentity">RONSAS · {RONSAS_FULL_NAME}</div>
         <div className="aiIHeroActions">
           <button className="aiIPrimary" type="button" onClick={()=>onNavigate("ai")}>
             <span>Enter DataNest AI</span><b aria-hidden="true">↗</b>
@@ -94,7 +96,7 @@ export default function ResonanceHome({
         </div>
       </div>
 
-      <CollaborationVisual projectId={project.id} onOpenProducts={()=>onNavigate("products")}/>
+      <CollaborationVisual projectId={project.id} running={counts.running>0} onOpenProducts={()=>onNavigate("products")}/>
     </section>
 
     <section className="aiIStatsGrid" aria-label="DataNest project metrics">
