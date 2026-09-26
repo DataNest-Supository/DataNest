@@ -1,0 +1,97 @@
+.workspace{
+  width:100%;
+  max-width:100%;
+  min-width:0;
+}
+
+.workspace > *,
+.workspace :global(.catalogStage),
+.workspace :global(.catalogGrid),
+.workspace :global(.catalogProduct),
+.workspace :global(.catalogProductTop),
+.workspace :global(.catalogIdentity),
+.workspace :global(.catalogIdentity > div),
+.workspace :global(.catalogDetails),
+.workspace :global(.catalogRecordToolbar),
+.workspace :global(.catalogRecordGroups),
+.workspace :global(.catalogRecordGroup),
+.workspace :global(.catalogRecordList),
+.workspace :global(.conceptIncubator),
+.workspace :global(.conceptIncubatorBody),
+.workspace :global(.productsHero),
+.workspace :global(.productIndex),
+.workspace :global(.resonanceAssistanceCard),
+.workspace :global(.resonanceAssistanceCopy),
+.workspace :global(.assistanceRail),
+.workspace :global(.legalEagleStage),
+.workspace :global(.legalEagleGrid),
+.workspace :global(.legalEagleMain),
+.workspace :global(.legalWorkspacePanel),
+.workspace :global(.legalWorkspaceControls),
+.workspace :global(.legalTaskBrief),
+.workspace :global(.legalChatTranscript),
+.workspace :global(.legalChatTurn),
+.workspace :global(.legalComposer){
+  min-width:0;
+  max-width:100%;
+}
+
+.workspace :global(.catalogNavigator){
+  width:100%;
+  max-width:100%;
+}
+
+.workspace :global(.catalogIdentity h3),
+.workspace :global(.catalogFullName),
+.workspace :global(.catalogMission),
+.workspace :global(.catalogRecord b),
+.workspace :global(.catalogRecord p),
+.workspace :global(.conceptIncubator small),
+.workspace :global(.legalTaskBrief),
+.workspace :global(.legalChatTurn p),
+.workspace :global(.legalComposerFooter small){
+  overflow-wrap:anywhere;
+}
+
+.workspace :global(.legalChatTurnHead){
+  min-width:0;
+}
+
+.workspace :global(.legalChatTurnHead span){
+  min-width:0;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+
+@container datanest-main (max-width:700px){
+  .workspace :global(.catalogLiveBadge),
+  .workspace :global(.catalogInvariant),
+  .workspace :global(.catalogLinkBadge),
+  .workspace :global(.productStatus),
+  .workspace :global(.prototypeBadge),
+  .workspace :global(.legalTaskHeader > span){
+    max-width:100%;
+    white-space:normal;
+    overflow-wrap:anywhere;
+  }
+
+  .workspace :global(.legalChatTurnHead){
+    display:grid;
+    gap:4px;
+    justify-items:start;
+  }
+
+  .workspace :global(.legalChatTurnHead span){
+    text-align:left;
+  }
+
+  .workspace :global(.catalogRecord){
+    grid-template-columns:minmax(0,1fr);
+  }
+
+  .workspace :global(.catalogRecord > span){
+    max-width:100%;
+    text-align:left;
+    overflow-wrap:anywhere;
+  }
+}

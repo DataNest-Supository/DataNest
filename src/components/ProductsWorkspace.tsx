@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
+import styles from "./ProductsWorkspace.module.css";
 
 
 type CatalogProduct = {
@@ -405,7 +406,7 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
     return map;
   },[catalogRecords]);
 
-  return <div className="productsWorkspace">
+  return <div className={"productsWorkspace "+styles.workspace}>
     <section className="catalogStage" aria-labelledby="governed-catalog-title">
       <div className="catalogStageHead">
         <div>
