@@ -156,6 +156,8 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
   const [catalogLoading,setCatalogLoading]=useState(true);
   const [catalogError,setCatalogError]=useState("");
   const [selectedProductId,setSelectedProductId]=useState("");
+  const [recordQuery,setRecordQuery]=useState("");
+  const [recordTypeFilter,setRecordTypeFilter]=useState("all");
 
   const [jobs,setJobs]=useState<Job[]>([]);
   const [selectedJobId,setSelectedJobId]=useState("");
@@ -346,6 +348,11 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
     return()=>{active=false;};
   },[projectId]);
 
+  useEffect(()=>{
+    setRecordQuery("");
+    setRecordTypeFilter("all");
+  },[selectedProductId]);
+
   const recordsByProduct=useMemo(()=>{
     const map=new Map<string,CatalogRecord[]>();
     for(const record of catalogRecords){
@@ -393,6 +400,19 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
           const records=recordsByProduct.get(product.id)||[];
           const count=(type:string)=>records.filter(record=>record.record_type===type).length;
           const branches=records.filter(record=>record.record_type==="datanest_branch");
+          const query=recordQuery.trim().toLowerCase();
+          const visibleRecords=records.filter(record=>{
+            if(recordTypeFilter!=="all"&&record.record_type!==recordTypeFilter)return false;
+            if(!query)return true;
+            const haystack=[
+              record.code||"",
+              record.name||"",
+              record.status||"",
+              record.record_type,
+              JSON.stringify(record.payload||{})
+            ].join(" ").toLowerCase();
+            return haystack.includes(query);
+          });
           return <article className="catalogProduct" key={product.id}>
             <div className="catalogProductTop">
               <div className="catalogIdentity">
@@ -431,9 +451,37 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
 
             <details className="catalogDetails">
               <summary>Explore {records.length} governed records</summary>
+              <div className="catalogRecordToolbar">
+                <label>
+                  <span>Search governed records</span>
+                  <input
+                    aria-label="Search governed product records"
+                    value={recordQuery}
+                    onChange={event=>setRecordQuery(event.target.value)}
+                    placeholder="Search apps, controls, risks, evidence…"
+                  />
+                </label>
+                <label>
+                  <span>Record type</span>
+                  <select
+                    aria-label="Filter governed record type"
+                    value={recordTypeFilter}
+                    onChange={event=>setRecordTypeFilter(event.target.value)}
+                  >
+                    <option value="all">All record types</option>
+                    {catalogRecordOrder
+                      .filter(type=>records.some(record=>record.record_type===type))
+                      .map(type=><option value={type} key={type}>{catalogRecordLabels[type]||type}</option>)}
+                  </select>
+                </label>
+                <div className="catalogRecordResultCount" aria-live="polite">
+                  <b>{visibleRecords.length}</b>
+                  <span>{visibleRecords.length===1?"record":"records"} shown</span>
+                </div>
+              </div>
               <div className="catalogRecordGroups">
                 {catalogRecordOrder.map(type=>{
-                  const items=records.filter(record=>record.record_type===type);
+                  const items=visibleRecords.filter(record=>record.record_type===type);
                   if(!items.length)return null;
                   return <section className="catalogRecordGroup" key={type}>
                     <div className="catalogRecordGroupHead"><h4>{catalogRecordLabels[type]||type}</h4><span>{items.length}</span></div>
@@ -446,6 +494,10 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
                     </div>
                   </section>;
                 })}
+                {!visibleRecords.length&&<div className="catalogNoResults">
+                  <b>No governed records match this view.</b>
+                  <span>Clear the search or choose another record type.</span>
+                </div>}
               </div>
             </details>
             <div className="catalogFooter"><span>As of {product.as_of_date||"current snapshot"}</span><span>{records.length} linked records</span></div>
@@ -455,7 +507,7 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
     </section>
     <details className="conceptIncubator">
       <summary>
-        <span><b>Product Concept Incubator</b><small>Explore governed previews that are not yet imported as live catalog products.</small></span>
+        <span><b>Product Concept Incubator</b><small>Explore governed specialist experiences that are live or incubating but not yet promoted as standalone catalog products.</small></span>
         <span>Resonance Assistance · Legal Eagle</span>
       </summary>
       <div className="conceptIncubatorBody">
