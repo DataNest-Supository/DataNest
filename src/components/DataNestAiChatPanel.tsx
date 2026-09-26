@@ -105,18 +105,27 @@ export default function DataNestAiChatPanel({
     ?[...events,returnedTurn]
     :events;
 
-  return <section className="panel datanestAiChatPanel">
-    <div className="panelHead">
-      <div>
-        <p className="eyebrow">DATANEST AI CHAT</p>
-        <h3>Development input</h3>
+  return <section className="panel datanestAiChatPanel datanestAiCommandConsole">
+    <div className="datanestAiConsoleHead">
+      <div className="datanestAiConsoleIdentity">
+        <div className="datanestAiConsoleGlyph" aria-hidden="true">AI</div>
+        <div>
+          <p className="eyebrow">DATANEST AI // LIVE CONSOLE</p>
+          <h3>Development command channel</h3>
+          <small>Governed reasoning with active Job context and traceable session evidence.</small>
+        </div>
       </div>
-      <span className="badge warn">UNCERTIFIED SESSION</span>
+      <div className="datanestAiConsoleStatus" aria-label="DataNest AI console status">
+        <span className="datanestAiConsoleLive"><i aria-hidden="true"/>AI CORE LINKED</span>
+        <span>{jobCode}</span>
+        <span>{sessionId?"SESSION "+sessionId.slice(0,8):"SESSION ESTABLISHING"}</span>
+      </div>
     </div>
 
-    <p className="muted">
-      Human and AI Companion inputs can help this Job immediately. They do not become project-wide memory until certification.
-    </p>
+    <div className="datanestAiConsoleGuardrail">
+      <span aria-hidden="true">◇</span>
+      <p>Human and AI Companion inputs can influence this Job immediately. Project-wide memory remains governed and requires certification.</p>
+    </div>
 
     <div className="datanestAiTranscript" aria-live="polite">
       {visibleEvents.map(item=>{
@@ -137,27 +146,31 @@ export default function DataNestAiChatPanel({
           </div>
         </article>;
       })}
-      {!events.length&&<div className="emptyState">
-        <div>◇</div>
-        <h3>No staged conversation yet</h3>
-        <p>Enter development input below. DataNest will trace it before AI inference.</p>
+      {!events.length&&<div className="emptyState datanestAiConsoleEmpty">
+        <div className="datanestAiConsoleEmptyCore" aria-hidden="true">AI</div>
+        <h3>DataNest AI is ready</h3>
+        <p>Issue a development command below. DataNest will bind it to this Job and trace the interaction before inference.</p>
       </div>}
     </div>
 
     <form className="datanestAiComposer" onSubmit={send}>
       <label>
-        Human development input
+        <span className="datanestAiComposerLabel">
+          <b>Command DataNest AI</b>
+          <small>{jobCode}</small>
+        </span>
         <textarea
           rows={4}
           value={draft}
           onChange={event=>setDraft(event.target.value)}
-          placeholder="Enter development input for this Job Manifest…"
+          placeholder="Ask DataNest AI to analyze, build, compare, debug, plan, or continue this Job Manifest…"
         />
       </label>
-      <div className="rowBetween">
-        <small className="muted">Trace-first intake · current Job/session only until certified</small>
-        <button className="primaryButton" disabled={busy||!draft.trim()}>
-          {busy?"Recording & reasoning…":"Send to DataNest AI"}
+      <div className="rowBetween datanestAiComposerFooter">
+        <small className="muted">Trace-first intake · active Job/session only until certified</small>
+        <button className="primaryButton datanestAiCommandButton" disabled={busy||!draft.trim()}>
+          {busy?"DataNest AI reasoning…":"Send command"}
+          <span aria-hidden="true">→</span>
         </button>
       </div>
     </form>
