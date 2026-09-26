@@ -160,6 +160,8 @@ test("mobile TranScheduler avoids horizontal table scrolling",async({page})=>{
   await page.getByText("Tools",{exact:true}).click();
   await page.getByRole("button",{name:"TranScheduler",exact:true}).click();
   await expect(page).toHaveURL(/(?:\?|&)view=scheduler(?:&|$)/);
+  await page.getByRole("button",{name:"Queue",exact:true}).click();
+  await expect(page.getByRole("button",{name:"Queue",exact:true})).toHaveAttribute("aria-pressed","true");
 
   const table=page.locator(".schedulerTable");
   await expect(table).toBeVisible();
