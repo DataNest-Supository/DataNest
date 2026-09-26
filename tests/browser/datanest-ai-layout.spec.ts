@@ -51,6 +51,11 @@ test("DataNest AI keeps the Hero above a centered live command console", async (
       events:[],
       certifiedMemory:[]
     };
+    else if(path.endsWith("/datanest-ai-certification")) body={
+      role:"owner",
+      candidates:[],
+      validationRuns:[]
+    };
     else if(path.includes("/accept_pending_project_member_invites_v1")||path.includes("/accept_pending_job_invites")) body=null;
 
     return route.fulfill({contentType:"application/json",body:JSON.stringify(body)});
