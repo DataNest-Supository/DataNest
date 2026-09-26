@@ -81,9 +81,11 @@ export default function ProjectMembersPanel({
       const delivery=String(payload.delivery||"invite");
       setEmail("");
       setNotice(
-        delivery==="magic-link"
-          ?"Existing account invited by magic link. Voting remains disabled until that person signs in and accepts."
-          :"Project invitation sent. Voting remains disabled until that person authenticates and accepts."
+        delivery==="recovery"
+          ?"Existing confirmed account sent a secure recovery link. Voting remains disabled until that person signs in and accepts."
+          :delivery==="reinvite"
+            ?"Project invitation resent to the unconfirmed account. Voting remains disabled until that person authenticates and accepts."
+            :"Project invitation sent. Voting remains disabled until that person authenticates and accepts."
       );
       await load();
     }catch(inviteError){
