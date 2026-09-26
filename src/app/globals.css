@@ -2769,3 +2769,289 @@ code,pre{
     height:16px;
   }
 }
+
+
+/* 2026-09-26 DataNest AI command console */
+.datanestAiCommandConsole{
+  padding:0;
+  border-radius:24px;
+  border-color:rgba(93,224,255,.28);
+  background:
+    radial-gradient(circle at 10% 0%,rgba(79,225,255,.08),transparent 27%),
+    radial-gradient(circle at 92% 6%,rgba(255,70,226,.08),transparent 29%),
+    linear-gradient(145deg,rgba(9,12,34,.96),rgba(12,6,31,.97));
+  box-shadow:
+    0 28px 80px rgba(0,0,0,.28),
+    0 0 54px rgba(82,220,255,.06),
+    inset 0 1px rgba(255,255,255,.045);
+}
+
+.datanestAiCommandConsole::before{
+  height:2px;
+  opacity:.8;
+  background:linear-gradient(90deg,transparent 0%,#56e7ff 18%,#8f7bff 54%,#ff59dd 82%,transparent 100%);
+}
+
+.datanestAiConsoleHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:22px;
+  padding:22px 24px 18px;
+  border-bottom:1px solid rgba(94,225,255,.09);
+  background:linear-gradient(180deg,rgba(255,255,255,.018),transparent);
+}
+
+.datanestAiConsoleIdentity{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  min-width:0;
+}
+
+.datanestAiConsoleGlyph{
+  width:52px;
+  height:52px;
+  display:grid;
+  place-items:center;
+  flex:0 0 auto;
+  border:1px solid rgba(102,231,255,.32);
+  border-radius:16px;
+  background:
+    radial-gradient(circle at 35% 28%,rgba(255,255,255,.24),transparent 16%),
+    linear-gradient(145deg,rgba(71,224,255,.16),rgba(113,79,255,.16),rgba(255,62,223,.12));
+  color:#f5feff;
+  font-size:18px;
+  font-weight:950;
+  letter-spacing:-.07em;
+  text-shadow:0 0 10px #4de8ff,0 0 20px rgba(255,75,225,.38);
+  box-shadow:0 0 28px rgba(83,226,255,.09),inset 0 0 20px rgba(112,82,255,.12);
+}
+
+.datanestAiConsoleIdentity h3{
+  margin:3px 0 4px;
+  font-size:clamp(22px,2.4cqi,32px);
+  letter-spacing:-.04em;
+}
+
+.datanestAiConsoleIdentity small{
+  display:block;
+  max-width:60ch;
+  color:#8da4b8;
+  font-size:9px;
+  line-height:1.5;
+}
+
+.datanestAiConsoleStatus{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  gap:6px;
+  max-width:360px;
+}
+
+.datanestAiConsoleStatus>span{
+  display:inline-flex;
+  align-items:center;
+  min-height:28px;
+  padding:6px 9px;
+  border:1px solid rgba(95,223,255,.13);
+  border-radius:999px;
+  background:rgba(7,15,33,.62);
+  color:#91abc0;
+  font:800 8px/1 ui-monospace,SFMono-Regular,Consolas,monospace;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+}
+
+.datanestAiConsoleLive{
+  color:#90f4c8!important;
+  border-color:rgba(103,239,184,.2)!important;
+  background:rgba(75,208,153,.06)!important;
+}
+
+.datanestAiConsoleLive i{
+  width:6px;
+  height:6px;
+  margin-right:6px;
+  border-radius:50%;
+  background:#6cf0ba;
+  box-shadow:0 0 10px rgba(108,240,186,.8);
+}
+
+.datanestAiConsoleGuardrail{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  margin:16px 24px 0;
+  padding:10px 12px;
+  border:1px solid rgba(126,103,255,.12);
+  border-radius:12px;
+  background:rgba(115,84,255,.045);
+}
+
+.datanestAiConsoleGuardrail>span{
+  color:#72e9ff;
+  font-size:12px;
+  line-height:1.45;
+}
+
+.datanestAiConsoleGuardrail p{
+  margin:0;
+  color:#98a6b9;
+  font-size:10px;
+  line-height:1.55;
+}
+
+.datanestAiCommandConsole .datanestAiTranscript{
+  max-height:640px;
+  margin:14px 24px 0;
+  padding:2px 4px 2px 0;
+}
+
+.datanestAiCommandConsole .datanestAiTurn{
+  padding:16px 17px;
+  border-radius:15px;
+}
+
+.datanestAiCommandConsole .datanestAiTurn.assistant{
+  border-color:rgba(77,227,255,.19);
+  background:
+    radial-gradient(circle at 0% 0%,rgba(73,225,255,.055),transparent 26%),
+    linear-gradient(145deg,rgba(8,23,42,.76),rgba(13,7,36,.78));
+  box-shadow:inset 2px 0 rgba(79,226,255,.42);
+}
+
+.datanestAiConsoleEmpty{
+  min-height:220px!important;
+  display:grid;
+  place-items:center;
+  align-content:center;
+  text-align:center;
+  padding:28px;
+}
+
+.datanestAiConsoleEmptyCore{
+  width:62px;
+  height:62px;
+  display:grid;
+  place-items:center;
+  margin-bottom:6px;
+  border:1px solid rgba(102,230,255,.26);
+  border-radius:50%;
+  color:#f3fdff;
+  background:radial-gradient(circle,rgba(81,229,255,.17),rgba(117,80,255,.12) 54%,rgba(8,10,30,.9) 72%);
+  box-shadow:0 0 34px rgba(79,227,255,.12),inset 0 0 22px rgba(150,91,255,.13);
+  font-weight:950;
+  letter-spacing:-.08em;
+  text-shadow:0 0 12px rgba(78,230,255,.8);
+}
+
+.datanestAiCommandConsole .datanestAiComposer{
+  gap:12px;
+  margin:16px 24px 24px;
+  padding:16px;
+  border:1px solid rgba(95,223,255,.14);
+  border-radius:16px;
+  background:
+    radial-gradient(circle at 90% 100%,rgba(255,74,221,.045),transparent 28%),
+    rgba(3,8,24,.62);
+  box-shadow:inset 0 1px rgba(255,255,255,.025);
+}
+
+.datanestAiComposerLabel{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.datanestAiComposerLabel b{
+  color:#eefcff;
+  font-size:12px;
+}
+
+.datanestAiComposerLabel small{
+  color:#7192a8;
+  font:750 8px/1 ui-monospace,SFMono-Regular,Consolas,monospace;
+  letter-spacing:.06em;
+}
+
+.datanestAiCommandConsole .datanestAiComposer textarea{
+  min-height:128px;
+  padding:16px 17px;
+  border-color:rgba(89,222,255,.2);
+  border-radius:13px;
+  background:
+    linear-gradient(180deg,rgba(4,10,28,.94),rgba(8,5,24,.92));
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.012);
+  font-size:13px;
+  line-height:1.65;
+}
+
+.datanestAiCommandConsole .datanestAiComposer textarea:focus{
+  border-color:rgba(91,230,255,.46);
+  box-shadow:0 0 0 3px rgba(73,220,255,.07),0 0 28px rgba(80,224,255,.05);
+}
+
+.datanestAiComposerFooter{
+  gap:16px;
+}
+
+.datanestAiCommandButton{
+  min-width:160px!important;
+  min-height:44px;
+  justify-content:center;
+  gap:16px;
+  border-radius:11px;
+}
+
+.datanestAiCommandButton span{
+  font-size:15px;
+}
+
+@media(prefers-reduced-motion:no-preference){
+  .datanestAiConsoleLive i{animation:datanestAiStatusPulse 2s ease-in-out infinite}
+}
+
+@container datanest-main (max-width:700px){
+  .datanestAiConsoleHead{
+    display:grid;
+    padding:18px;
+  }
+
+  .datanestAiConsoleStatus{
+    justify-content:flex-start;
+    max-width:none;
+  }
+
+  .datanestAiConsoleGuardrail,
+  .datanestAiCommandConsole .datanestAiTranscript{
+    margin-left:18px;
+    margin-right:18px;
+  }
+
+  .datanestAiCommandConsole .datanestAiComposer{
+    margin:14px 18px 18px;
+  }
+}
+
+@container datanest-main (max-width:480px){
+  .datanestAiConsoleIdentity{
+    align-items:flex-start;
+  }
+
+  .datanestAiConsoleGlyph{
+    width:44px;
+    height:44px;
+    border-radius:13px;
+  }
+
+  .datanestAiComposerFooter{
+    display:grid;
+  }
+
+  .datanestAiCommandButton{
+    width:100%;
+  }
+}
