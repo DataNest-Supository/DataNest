@@ -26,6 +26,8 @@ type Invitation={
   revoked_at:string|null;
 };
 
+type InviteState="idle"|"sending"|"sent"|"failed";
+
 type Workspace={
   members:Member[];
   invitations:Invitation[];
@@ -42,6 +44,20 @@ function date(value:string|null){
 }
 function label(value:string){return value.replaceAll("_"," ");}
 
+async function inviteErrorMessage(error:unknown){
+  const fallback=error instanceof Error?error.message:"Unable to send project-member invitation.";
+  if(!error||typeof error!=="object"||!("context" in error))return fallback;
+  const context=(error as {context?:Response}).context;
+  if(!context||typeof context.clone!=="function")return fallback;
+  try{
+    const payload=await context.clone().json() as {error?:unknown};
+    if(payload?.error)return String(payload.error);
+  }catch{
+    // Fall back to the client error when the Edge response has no JSON body.
+  }
+  return fallback;
+}
+
 export default function ProjectMembersPanel({
   projectId,setNotice,setError
 }:{
@@ -54,6 +70,8 @@ export default function ProjectMembersPanel({
   const [busy,setBusy]=useState(false);
   const [email,setEmail]=useState("");
   const [role,setRole]=useState<"admin"|"operator"|"viewer">("viewer");
+  const [inviteState,setInviteState]=useState<InviteState>("idle");
+  const [inviteFeedback,setInviteFeedback]=useState("");
 
   const load=useCallback(async()=>{
     const supabase=getSupabase();if(!supabase)return;
@@ -71,23 +89,31 @@ export default function ProjectMembersPanel({
     const supabase=getSupabase();
     if(!supabase||!workspace?.can_invite||!email.trim())return;
 
-    setBusy(true);setError("");
+    const targetEmail=email.trim().toLowerCase();
+    setBusy(true);
+    setInviteState("sending");
+    setInviteFeedback("Sending invitation to "+targetEmail+"…");
+    setError("");
     try{
       const {data,error}=await supabase.functions.invoke("send-project-member-invite",{
-        body:{projectId,email:email.trim().toLowerCase(),role}
+        body:{projectId,email:targetEmail,role}
       });
       if(error)throw error;
       const payload=(data||{}) as Record<string,unknown>;
       const delivery=String(payload.delivery||"invite");
+      const feedback=delivery==="recovery"
+        ?"Invite sent to "+targetEmail+". The existing account will receive a secure account link and must sign in to accept project access."
+        :"Invite sent to "+targetEmail+". The recipient must authenticate and accept before project access or voting becomes active.";
       setEmail("");
-      setNotice(
-        delivery==="magic-link"
-          ?"Existing account invited by magic link. Voting remains disabled until that person signs in and accepts."
-          :"Project invitation sent. Voting remains disabled until that person authenticates and accepts."
-      );
+      setInviteState("sent");
+      setInviteFeedback(feedback);
+      setNotice(feedback);
       await load();
     }catch(inviteError){
-      setError(inviteError instanceof Error?inviteError.message:"Unable to send project-member invitation.");
+      const feedback=await inviteErrorMessage(inviteError);
+      setInviteState("failed");
+      setInviteFeedback("Invite failed. "+feedback);
+      setError(feedback);
     }finally{
       setBusy(false);
     }
@@ -127,12 +153,18 @@ export default function ProjectMembersPanel({
           type="email"
           required
           value={email}
-          onChange={event=>setEmail(event.target.value)}
+          onChange={event=>{
+            setEmail(event.target.value);
+            if(inviteState!=="idle"){setInviteState("idle");setInviteFeedback("");}
+          }}
           placeholder="reviewer@example.com"
         />
       </label>
       <label>Project role
-        <select value={role} onChange={event=>setRole(event.target.value as "admin"|"operator"|"viewer")}>
+        <select value={role} onChange={event=>{
+          setRole(event.target.value as "admin"|"operator"|"viewer");
+          if(inviteState!=="idle"){setInviteState("idle");setInviteFeedback("");}
+        }}>
           <option value="viewer">Viewer · formal vote + read access</option>
           <option value="operator">Operator · formal vote + operational access</option>
           {workspace.can_invite_admin&&<option value="admin">Admin · formal vote + administration</option>}
@@ -141,9 +173,26 @@ export default function ProjectMembersPanel({
       <div>
         <p className="muted">For independent protocol review, <b>Viewer</b> is sufficient unless the person also needs operational or administrative authority.</p>
       </div>
-      <button className="primaryButton" disabled={busy||!email.trim()}>
-        {busy?"Sending…":"Send project invite"}
-      </button>
+      <div className="inviteActionCell">
+        <button
+          className={"primaryButton inviteSubmitButton "+inviteState}
+          disabled={busy||!email.trim()}
+          aria-describedby="project-invite-feedback"
+        >
+          <span className="inviteButtonContent">
+            <span className="inviteButtonIcon" aria-hidden="true">
+              {inviteState==="sent"?"✓":inviteState==="failed"?"!":inviteState==="sending"?"":"↗"}
+            </span>
+            <span>{inviteState==="sending"?"Sending invite…":inviteState==="sent"?"Invite sent":inviteState==="failed"?"Invite failed · Retry":"Send project invite"}</span>
+          </span>
+        </button>
+        <div
+          id="project-invite-feedback"
+          className={"inviteFeedback "+inviteState}
+          role={inviteState==="failed"?"alert":"status"}
+          aria-live="polite"
+        >{inviteFeedback}</div>
+      </div>
     </form>}
 
     <div className="dataTable">
