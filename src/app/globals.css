@@ -3865,3 +3865,57 @@ code,pre{
 .catalogRecordResultCount{min-width:92px;min-height:40px;display:grid;align-content:center;justify-items:end;gap:1px;padding:5px 2px}.catalogRecordResultCount b{font-size:18px;line-height:1;color:#d8f7ff}.catalogRecordResultCount span{color:var(--muted);font-size:8px}
 .catalogNoResults{grid-column:1/-1;display:grid;gap:4px;padding:16px;border:1px dashed rgba(255,255,255,.1);border-radius:12px;color:var(--muted);text-align:center}.catalogNoResults b{color:#c7cbd7;font-size:11px}.catalogNoResults span{font-size:9px}
 @container datanest-main (max-width:700px){.catalogRecordToolbar{grid-template-columns:1fr}.catalogRecordResultCount{justify-items:start;min-width:0}}
+
+/* 2026-09-26 DataNest AI command access */
+.datanestAiConsoleCommandJump{
+  min-height:28px;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 9px;
+  border:1px solid rgba(92,230,255,.28);
+  border-radius:999px;
+  background:linear-gradient(145deg,rgba(61,221,255,.10),rgba(111,79,255,.10));
+  color:#baf6ff;
+  font:900 8px/1 ui-monospace,SFMono-Regular,Consolas,monospace;
+  letter-spacing:.08em;
+  cursor:pointer;
+  box-shadow:0 0 18px rgba(80,226,255,.05);
+  transition:border-color .16s ease,background .16s ease,color .16s ease,transform .16s ease;
+}
+
+.datanestAiConsoleCommandJump:hover,
+.datanestAiConsoleCommandJump:focus-visible{
+  color:#f5feff;
+  border-color:rgba(95,234,255,.54);
+  background:linear-gradient(145deg,rgba(67,226,255,.18),rgba(133,86,255,.16));
+  transform:translateY(-1px);
+}
+
+.datanestAiConsoleCommandJump span{
+  color:#79ebff;
+  font-size:10px;
+}
+
+@container datanest-main (min-width:701px){
+  .datanestAiCommandConsole .datanestAiComposer{
+    position:sticky;
+    bottom:12px;
+    z-index:8;
+    border-color:rgba(93,228,255,.22);
+    background:
+      radial-gradient(circle at 90% 100%,rgba(255,74,221,.055),transparent 28%),
+      linear-gradient(180deg,rgba(6,12,31,.96),rgba(5,7,24,.97));
+    box-shadow:
+      0 -20px 40px rgba(5,7,24,.58),
+      0 16px 42px rgba(0,0,0,.22),
+      inset 0 1px rgba(255,255,255,.035);
+    backdrop-filter:blur(16px);
+  }
+}
+
+@container datanest-main (max-width:700px){
+  .datanestAiConsoleCommandJump{
+    min-height:30px;
+  }
+}
