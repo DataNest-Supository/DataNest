@@ -915,8 +915,25 @@ function formatGanttTick(value:number,span:number) {
 function Scheduler({projectName,projectSlug,jobs,capabilities,onStatus,canOperate,page,total,onPage}:{projectName:string;projectSlug:string;jobs:Job[];capabilities:Capability[];onStatus:(j:Job,s:string)=>Promise<void>;canOperate:boolean;page:number;total:number;onPage:(p:number)=>void}) {
   const [filter,setFilter]=useState("ALL");
   const [viewMode,setViewMode]=useState<"queue"|"gantt">("gantt");
+  const [sortMode,setSortMode]=useState<"priority"|"deadline"|"recent">("priority");
   const filterOptions=["ALL","PLANNED","READY","QUEUED","RUNNING","MANUAL_ACTION","BLOCKED","COMPLETED"];
   const visible=filter==="ALL"?jobs:jobs.filter(item=>item.status===filter);
+  const orderedVisible=[...visible].sort((left,right)=>{
+    if(sortMode==="deadline"){
+      const leftDeadline=ganttTime(left.deadline);
+      const rightDeadline=ganttTime(right.deadline);
+      if(leftDeadline!==null||rightDeadline!==null){
+        if(leftDeadline===null)return 1;
+        if(rightDeadline===null)return -1;
+        if(leftDeadline!==rightDeadline)return leftDeadline-rightDeadline;
+      }
+      return right.priority-left.priority||left.job_number-right.job_number;
+    }
+    if(sortMode==="recent"){
+      return (ganttTime(right.updated_at)??0)-(ganttTime(left.updated_at)??0)||right.priority-left.priority;
+    }
+    return right.priority-left.priority||left.job_number-right.job_number;
+  });
   const activeCount=visible.filter(item=>!finalStates.has(item.status)).length;
   const deadlineCount=visible.filter(item=>Boolean(item.deadline)).length;
 
@@ -932,9 +949,18 @@ function Scheduler({projectName,projectSlug,jobs,capabilities,onStatus,canOperat
     </section>
     <section className="panel">
       <div className="schedulerContextBar">
-        <div className="schedulerViewSwitch" role="group" aria-label="TranScheduler view">
-          <button type="button" className={viewMode==="queue"?"active":""} aria-pressed={viewMode==="queue"} onClick={()=>setViewMode("queue")}>Queue</button>
-          <button type="button" className={viewMode==="gantt"?"active":""} aria-pressed={viewMode==="gantt"} onClick={()=>setViewMode("gantt")}>Gantt chart</button>
+        <div className="schedulerContextControls">
+          <div className="schedulerViewSwitch" role="group" aria-label="TranScheduler view">
+            <button type="button" className={viewMode==="queue"?"active":""} aria-pressed={viewMode==="queue"} onClick={()=>setViewMode("queue")}>Queue</button>
+            <button type="button" className={viewMode==="gantt"?"active":""} aria-pressed={viewMode==="gantt"} onClick={()=>setViewMode("gantt")}>Gantt chart</button>
+          </div>
+          <label className="schedulerSortControl">Sort
+            <select aria-label="Sort project jobs" value={sortMode} onChange={event=>setSortMode(event.target.value as "priority"|"deadline"|"recent")}>
+              <option value="priority">Priority scale</option>
+              <option value="deadline">Nearest deadline</option>
+              <option value="recent">Recently updated</option>
+            </select>
+          </label>
         </div>
         <div className="schedulerContextStats" aria-label="Current scheduler context">
           <span>{projectName}</span>
@@ -952,9 +978,9 @@ function Scheduler({projectName,projectSlug,jobs,capabilities,onStatus,canOperat
       <div className="filterBar schedulerFilterDesktop">{filterOptions.map(item=><button key={item} className={filter===item?"active":""} onClick={()=>setFilter(item)}>{item.replace("_"," ")}</button>)}</div>
 
       {viewMode==="queue"?<div className="schedulerProjectGroup">
-        <ProjectGroupHeader projectName={projectName} projectSlug={projectSlug} jobs={visible}/>
+        <ProjectGroupHeader projectName={projectName} projectSlug={projectSlug} jobs={orderedVisible}/>
         <div className="schedulerTable"><div className="schedulerRow headerRow"><span>Job</span><span>Priority</span><span>Capability</span><span>Status</span><span>Controls</span></div>
-        {visible.map(job=><div className="schedulerRow" key={job.id}>
+        {orderedVisible.map(job=><div className="schedulerRow" key={job.id}>
           <div data-label="Job"><b>{jobCode(job)}</b><small>{job.title}</small></div>
           <span data-label="Priority" className="schedulerPriorityCell"><b>{"P"+job.priority}</b><PriorityScale value={job.priority}/></span>
           <span data-label="Capability">{job.required_capabilities?.join(", ")||"chat"}</span>
@@ -967,15 +993,23 @@ function Scheduler({projectName,projectSlug,jobs,capabilities,onStatus,canOperat
             </> : <span className="muted">Read only</span>}
           </div>
         </div>)}
-      </div></div>:<SchedulerGantt projectName={projectName} projectSlug={projectSlug} jobs={visible} onStatus={onStatus} canOperate={canOperate}/>}
+      </div></div>:<SchedulerGantt projectName={projectName} projectSlug={projectSlug} jobs={orderedVisible} onStatus={onStatus} canOperate={canOperate}/>}
       <Pagination page={page} total={total} onPage={onPage}/>
     </section>
   </>;
 }
 
+function priorityBand(value:number) {
+  if(value>=80)return "Critical";
+  if(value>=60)return "High";
+  if(value>=30)return "Standard";
+  return "Maintenance";
+}
+
 function PriorityScale({value}:{value:number}) {
   const safe=Math.max(0,Math.min(100,value));
-  return <span className="priorityScaleMeter" aria-label={"Priority "+safe+" of 100"} title={"Priority P"+safe}>
+  const band=priorityBand(safe);
+  return <span className="priorityScaleMeter" aria-label={"Priority "+safe+" of 100 · "+band} title={"Priority P"+safe+" · "+band}>
     <span className="priorityScaleGradient" aria-hidden="true"/>
     <i className="priorityScaleMarker" style={{left:String(safe)+"%"}} aria-hidden="true"/>
   </span>;
@@ -985,6 +1019,12 @@ function ProjectGroupHeader({projectName,projectSlug,jobs}:{projectName:string;p
   const active=jobs.filter(job=>!finalStates.has(job.status)).length;
   const completed=jobs.filter(job=>job.status==="COMPLETED").length;
   const highest=jobs.length?Math.max(...jobs.map(job=>job.priority)):0;
+  const bands=[
+    {label:"Maintenance",count:jobs.filter(job=>job.priority<30).length},
+    {label:"Standard",count:jobs.filter(job=>job.priority>=30&&job.priority<60).length},
+    {label:"High",count:jobs.filter(job=>job.priority>=60&&job.priority<80).length},
+    {label:"Critical",count:jobs.filter(job=>job.priority>=80).length}
+  ];
   return <div className="schedulerProjectGroupHead">
     <div className="schedulerProjectGroupTitle">
       <span className="schedulerProjectGroupGlyph" aria-hidden="true">◆</span>
@@ -993,8 +1033,13 @@ function ProjectGroupHeader({projectName,projectSlug,jobs}:{projectName:string;p
     <div className="schedulerProjectGroupSummary">
       <span>{jobs.length+" jobs"}</span><span>{active+" active"}</span><span>{completed+" complete"}</span><span>{"Peak P"+highest}</span>
     </div>
-    <div className="schedulerPriorityLegend" aria-label="Job priority scale">
-      <span>Maintenance</span><i aria-hidden="true"/><span>Critical</span>
+    <div className="schedulerPriorityStack">
+      <div className="schedulerPriorityLegend" aria-label="Job priority scale">
+        <span>Maintenance</span><i aria-hidden="true"/><span>Critical</span>
+      </div>
+      <div className="schedulerPriorityBands" aria-label="Priority distribution">
+        {bands.map(item=><span key={item.label}><b>{item.count}</b>{item.label}</span>)}
+      </div>
     </div>
   </div>;
 }
