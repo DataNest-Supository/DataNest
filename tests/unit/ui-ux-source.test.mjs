@@ -165,12 +165,13 @@ test("page header exposes current lifecycle phase and preserves quick switching"
   assert.match(appSource, /Ctrl\/Cmd \+ K to toggle/);
 });
 
-test("AI & I home communicates the five-stage operating loop", () => {
+test("AI & I home communicates the five-stage operating loop from shared phase data", () => {
   for (const label of ["Discover","Govern","Build","Execute","Verify"]) {
-    assert.match(journeySource, new RegExp('label: "'+label+'"'));
+    assert.match(workflowPhasesSource, new RegExp('label:"'+label+'"'));
   }
-  assert.match(journeySource, /onNavigate\(item\.key\)/);
-  assert.match(homeSource, /<PurposeJourney onNavigate=\{onNavigate\}\/>/);
+  assert.match(journeySource, /workflowPhases/);
+  assert.match(journeySource, /onNavigate\(item\.destination\)/);
+  assert.match(homeSource, /<PurposeJourney onNavigate=\{onNavigate\}\/\>/);
   assert.match(homeSource, /onNavigate\("ai"\)/);
   assert.match(homeSource, />Enter DataNest AI</);
 });
