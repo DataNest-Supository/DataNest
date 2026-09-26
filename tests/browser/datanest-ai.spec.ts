@@ -297,6 +297,68 @@ test("Governance exposes governed project membership and non-voter pending state
 });
 
 
+test("project invite action confirms successful delivery inline without sending a real email",async({page})=>{
+  await signIn(page);
+  await openWorkspace(page,"Governance");
+  await page.getByText("Project members and invitations",{exact:true}).click();
+
+  await page.route("**/functions/v1/send-project-member-invite",async route=>{
+    await new Promise(resolve=>setTimeout(resolve,180));
+    await route.fulfill({
+      status:200,
+      contentType:"application/json",
+      body:JSON.stringify({
+        ok:true,
+        delivery:"invite",
+        invitation:{id:"browser-fixture-invite"},
+        formalVotingEligible:false,
+        acceptanceRequired:true
+      })
+    });
+  });
+
+  const email="browser-invite-success@example.invalid";
+  await page.getByLabel("Invite email").fill(email);
+  const send=page.getByRole("button",{name:"Send project invite"});
+  await send.click();
+
+  await expect(page.getByRole("button",{name:"Sending invite…"})).toBeVisible();
+  await expect(page.getByRole("button",{name:"Invite sent"})).toBeVisible();
+  await expect(page.locator("#project-invite-feedback")).toContainText("Invite sent to "+email);
+  await expect(page.locator("#project-invite-feedback")).toContainText(/Voting remains disabled until that person authenticates and accepts project access/i);
+  await expect(page.getByLabel("Invite email")).toHaveValue("");
+});
+
+test("project invite action exposes delivery failure inline and preserves retry input",async({page})=>{
+  await signIn(page);
+  await openWorkspace(page,"Governance");
+  await page.getByText("Project members and invitations",{exact:true}).click();
+
+  await page.route("**/functions/v1/send-project-member-invite",async route=>{
+    await route.fulfill({
+      status:409,
+      contentType:"application/json",
+      body:JSON.stringify({error:"This user is already an active project member."})
+    });
+  });
+
+  const email="browser-invite-failure@example.invalid";
+  const emailInput=page.getByLabel("Invite email");
+  await emailInput.fill(email);
+  await page.getByRole("button",{name:"Send project invite"}).click();
+
+  const retry=page.getByRole("button",{name:"Invite failed · Retry"});
+  await expect(retry).toBeVisible();
+  await expect(retry).toBeEnabled();
+  await expect(page.locator("#project-invite-feedback")).toHaveText("Invite failed. This user is already an active project member.");
+  await expect(emailInput).toHaveValue(email);
+
+  await emailInput.fill("browser-invite-retry@example.invalid");
+  await expect(page.getByRole("button",{name:"Send project invite"})).toBeVisible();
+  await expect(page.locator("#project-invite-feedback")).toBeHidden();
+});
+
+
 test("Transparency publishes the external audit return and pending validation state",async({page})=>{
   await signIn(page);
   await openWorkspace(page,"Transparency");
