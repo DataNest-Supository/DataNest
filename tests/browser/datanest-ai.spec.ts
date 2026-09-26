@@ -211,8 +211,8 @@ test("human input is traced and remains uncertified",async({page})=>{
   await page.getByText("DataNest AI E2E Job",{exact:true}).first().click();
 
   const message="Keep DataNest AI trace IDs visible on every governed turn.";
-  await page.getByPlaceholder(/Enter development input/i).fill(message);
-  await page.getByRole("button",{name:"Send to DataNest AI"}).click();
+  await page.getByPlaceholder(/Ask DataNest AI to analyze/i).fill(message);
+  await page.getByRole("button",{name:"Send command"}).click();
 
   await expect(page.getByText(message,{exact:true})).toBeVisible();
   await expect(page.getByText("UNCERTIFIED",{exact:true}).last()).toBeVisible();
