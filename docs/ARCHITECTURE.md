@@ -77,7 +77,7 @@ Project-member invitations are a separate governance boundary from Job collabora
 - The owner may invite `admin`, `operator` or `viewer`; an admin may invite only `operator` or `viewer`.
 - The owner role is not inviteable through this flow, and self-invite is prohibited.
 - Invitation delivery uses a JWT-protected Edge Function and service-role-only registration gateway.
-- New accounts receive a Supabase Auth invitation; existing accounts receive a magic-link sign-in.
+- New and still-unconfirmed invitation accounts receive a Supabase Auth invitation; confirmed existing accounts receive a secure password-recovery link so they can establish credentials before signing in.
 - Registration creates a `project_members` row with status `invited`. General project access and formal governance voting require `status='active'`, so a sent invitation cannot create an independent vote.
 - After the invited person authenticates with the matching account/email, DataNest automatically accepts valid pending invitations and activates the membership.
 - Invitations expire after seven days and may be revoked before acceptance. Revoked/expired invitations are not formal voters.
