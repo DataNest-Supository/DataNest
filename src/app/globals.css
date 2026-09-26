@@ -3320,6 +3320,206 @@ code,pre{
   .schedulerViewSwitch{width:max-content}
 }
 
+/* 2026-09-26 TranScheduler project grouping and priority scale */
+.schedulerProjectIdentity{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:7px;
+  margin:2px 0 10px;
+}
+.schedulerProjectIdentity>span{
+  color:#7189a0;
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.14em;
+}
+.schedulerProjectIdentity>b{
+  color:#f3fbff;
+  font-size:13px;
+  letter-spacing:-.015em;
+}
+.schedulerProjectIdentity>small{
+  padding:4px 7px;
+  border:1px solid rgba(107,225,255,.14);
+  border-radius:999px;
+  color:#7ca3b8;
+  background:rgba(72,211,255,.04);
+  font-size:8px;
+}
+.schedulerProjectGroup{
+  overflow:hidden;
+  border:1px solid rgba(104,219,255,.10);
+  border-radius:15px;
+  background:linear-gradient(180deg,rgba(8,12,28,.54),rgba(8,6,23,.34));
+}
+.schedulerProjectGroup .schedulerTable{padding:0 14px 4px}
+.schedulerProjectGroupHead{
+  position:relative;
+  display:grid;
+  grid-template-columns:minmax(220px,1.25fr) minmax(260px,1fr) minmax(260px,.95fr);
+  gap:14px;
+  align-items:center;
+  min-height:64px;
+  padding:10px 14px;
+  border-bottom:1px solid rgba(255,255,255,.065);
+  background:
+    radial-gradient(circle at 8% 50%,rgba(79,222,255,.08),transparent 26%),
+    linear-gradient(90deg,rgba(18,25,52,.78),rgba(17,11,40,.72));
+}
+.schedulerProjectGroupHead::before{
+  content:"";
+  position:absolute;
+  left:0;right:0;bottom:0;
+  height:2px;
+  background:linear-gradient(90deg,rgba(90,171,255,.42),rgba(84,229,255,.76) 34%,rgba(151,103,255,.84) 67%,rgba(255,86,211,.84));
+  opacity:.72;
+}
+.schedulerProjectGroupTitle{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+.schedulerProjectGroupGlyph{
+  width:31px;
+  height:31px;
+  display:grid;
+  place-items:center;
+  flex:0 0 auto;
+  border:1px solid rgba(99,226,255,.20);
+  border-radius:10px;
+  color:#77e7fb;
+  background:linear-gradient(145deg,rgba(74,220,255,.09),rgba(132,86,255,.11));
+  font-size:11px;
+}
+.schedulerProjectGroupTitle>div{
+  display:grid;
+  gap:2px;
+  min-width:0;
+}
+.schedulerProjectGroupTitle small{
+  color:#6f879c;
+  font-size:7px;
+  font-weight:900;
+  letter-spacing:.14em;
+}
+.schedulerProjectGroupTitle b{
+  overflow:hidden;
+  color:#eefaff;
+  font-size:12px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.schedulerProjectGroupTitle>div>span{
+  overflow:hidden;
+  color:#708ba0;
+  font-size:8px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.schedulerProjectGroupSummary{
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:6px;
+}
+.schedulerProjectGroupSummary span{
+  padding:5px 7px;
+  border:1px solid rgba(255,255,255,.055);
+  border-radius:999px;
+  color:#8097aa;
+  background:rgba(255,255,255,.022);
+  font-size:8px;
+  font-weight:800;
+}
+.schedulerPriorityLegend{
+  display:grid;
+  grid-template-columns:auto minmax(90px,1fr) auto;
+  gap:7px;
+  align-items:center;
+  color:#72899e;
+  font-size:7px;
+  font-weight:850;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+.schedulerPriorityLegend i,
+.priorityScaleGradient{
+  background:linear-gradient(90deg,#58718f 0%,#4aaee0 34%,#7a70ed 66%,#e55ac8 100%);
+}
+.schedulerPriorityLegend i{
+  height:5px;
+  border-radius:999px;
+  box-shadow:0 0 12px rgba(120,120,235,.13);
+}
+.schedulerPriorityCell{
+  display:grid;
+  grid-template-columns:auto minmax(52px,82px);
+  gap:8px;
+  align-items:center;
+}
+.schedulerPriorityCell>b{
+  color:#a9c4d7;
+  font-size:10px;
+}
+.priorityScaleMeter{
+  position:relative;
+  display:block;
+  width:100%;
+  min-width:54px;
+  height:8px;
+  overflow:visible;
+}
+.priorityScaleGradient{
+  position:absolute;
+  left:0;right:0;top:2px;
+  height:4px;
+  border-radius:999px;
+  opacity:.68;
+}
+.priorityScaleMarker{
+  position:absolute;
+  top:0;
+  width:2px;
+  height:8px;
+  transform:translateX(-1px);
+  border-radius:2px;
+  background:#f7fbff;
+  box-shadow:0 0 7px rgba(151,224,255,.7);
+}
+.ganttViewport .schedulerProjectGroupHead{
+  grid-template-columns:minmax(240px,300px) minmax(290px,.9fr) minmax(320px,1.1fr);
+  min-width:980px;
+}
+.ganttPriorityMeta{
+  display:grid!important;
+  grid-template-columns:auto minmax(55px,80px);
+  gap:6px;
+  align-items:center;
+  min-width:92px;
+}
+.ganttPriorityMeta>b{
+  color:#9db8cb;
+  font-size:8px;
+}
+@container datanest-main (max-width:900px){
+  .schedulerProjectGroupHead{
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+  .schedulerProjectGroupSummary{justify-content:flex-start}
+  .schedulerPriorityLegend{max-width:420px}
+  .ganttViewport .schedulerProjectGroupHead{
+    grid-template-columns:300px 330px 350px;
+  }
+}
+@container datanest-main (max-width:620px){
+  .schedulerProjectIdentity{align-items:flex-start}
+  .schedulerProjectGroup .schedulerTable{padding-inline:10px}
+  .schedulerProjectGroupHead{padding:10px 12px}
+}
+
 /* 2026-09-26 DataNest AI quick command rail */
 .datanestAiQuickCommands{
   display:grid;
