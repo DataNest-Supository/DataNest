@@ -177,13 +177,29 @@ export default function DataNestAiWorkspace({
       <div className="datanestAiHeroCopy">
         <div className="datanestAiHeroBadge">
           <span className="datanestAiSignalMark" aria-hidden="true">✦</span>
-          AI-POWERED DEVELOPMENT
+          DATANEST AI // INTELLIGENCE CORE
         </div>
         <h2><span>DataNest</span> AI</h2>
-        <h3>Your intelligent development partner with <strong>project-wide memory.</strong></h3>
+        <h3>The governed intelligence core for <strong>everything DataNest knows.</strong></h3>
         <p>
           {selectedJob?.description||"Bring human intent, AI Companion evidence and certified project memory into one governed development workspace."}
         </p>
+
+        <div className="datanestAiHeroStatus" aria-label="DataNest AI system status">
+          <div>
+            <span className={"datanestAiStatusPulse "+(loading?"syncing":"online")} aria-hidden="true"/>
+            <small>System</small>
+            <b>{loading?"SYNCING":"ONLINE"}</b>
+          </div>
+          <div>
+            <small>Certified memory</small>
+            <b>{context?.certifiedMemory?.length||0} ITEMS</b>
+          </div>
+          <div>
+            <small>Active context</small>
+            <b>{selectedJob?jobCode(selectedJob):"STANDBY"}</b>
+          </div>
+        </div>
 
         <div className="datanestAiCapabilityRail" aria-label="DataNest AI capabilities">
           <span><i aria-hidden="true">▰</i>Project context</span>
@@ -211,7 +227,12 @@ export default function DataNestAiWorkspace({
         </div>
       </div>
 
-      <div className="datanestAiHeroVisual" aria-label="Animated DataNest AI governed context pipeline">
+      <div className="datanestAiHeroVisual" aria-label="DataNest AI intelligence core with governed project context">
+        <div className="datanestAiHudHeader" aria-hidden="true">
+          <span>RESONANCE / DATANEST</span>
+          <b>AI CORE</b>
+          <small>{loading?"SYNC":"LIVE"}</small>
+        </div>
         <article className="datanestAiFloatCard datanestAiContextCard">
           <span className="datanestAiFloatIcon" aria-hidden="true">▰</span>
           <div>
@@ -239,9 +260,7 @@ export default function DataNestAiWorkspace({
           <span className="datanestAiPacket packetThree"/>
           <span className="datanestAiPacket packetFour"/>
           <div className="datanestAiCoreSphere">
-            <span className="datanestAiCoreGlyph">⌬</span>
-            <b>DataNest AI</b>
-            <small>{loading?"Synchronising":"Governed & ready"}</small>
+            <span className="datanestAiCoreGlyph">AI</span>\n            <b>DATANEST</b>\n            <small>{loading?"Synchronising":"Intelligence online"}</small>
           </div>
           <div className="datanestAiCoreBeam"/>
           <div className="datanestAiCoreBase">
