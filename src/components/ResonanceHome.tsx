@@ -3,8 +3,8 @@
 import { useMemo } from "react";
 import CollaborationVisual from "./CollaborationVisual";
 
-type HomeDestination = "ai" | "unifi" | "scheduler" | "governance" | "thinktank" | "sparks";
-type ProjectLike = { name:string; description:string|null };
+type HomeDestination = "ai" | "unifi" | "scheduler" | "governance" | "thinktank" | "sparks" | "products";
+type ProjectLike = { id:string; name:string; description:string|null };
 type JobLike = { id:string; status:string; created_at:string };
 type SummaryLike = { total:number; active:number; running:number; blocked:number; available:number; registered:number };
 
@@ -94,7 +94,7 @@ export default function ResonanceHome({
         </div>
       </div>
 
-      <CollaborationVisual/>
+      <CollaborationVisual projectId={project.id} onOpenProducts={()=>onNavigate("products")}/>
     </section>
 
     <section className="aiIStatsGrid" aria-label="DataNest project metrics">
