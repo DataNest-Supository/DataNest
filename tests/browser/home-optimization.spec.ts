@@ -155,3 +155,48 @@ test("dashboard follows workspace width when the AI rail is resized", async ({ p
   expect(narrow.hero.right).toBeLessThanOrEqual(narrow.content.right + 1);
   expect(narrow.scrollWidth).toBeLessThanOrEqual(narrow.viewportWidth);
 });
+
+
+test("AI & I hero keeps ambient motion restrained and signals real activity", async ({ page }) => {
+  const projectId = "00000000-0000-4000-8000-000000000010";
+  const userId = "00000000-0000-4000-8000-000000000001";
+
+  await page.route("**/runtime-config.js", route => route.fulfill({
+    contentType: "application/javascript",
+    body: "window.__DATANEST_CONFIG__={supabaseUrl:'https://fixture.supabase.co',supabasePublishableKey:'fixture-key',authoritative:true}"
+  }));
+  await page.addInitScript(({userId}) => {
+    const encode = (data: unknown) => btoa(JSON.stringify(data)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+    localStorage.setItem("sb-fixture-auth-token", JSON.stringify({
+      access_token: `${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:userId,exp:4102444800,role:"authenticated"})}.fixture`,
+      refresh_token: "fixture", token_type:"bearer", expires_at:4102444800,
+      user:{id:userId,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid"}
+    }));
+    localStorage.setItem("datanest.aiSidebar.open", "false");
+  }, {userId});
+  await page.route("https://fixture.supabase.co/**", route => {
+    const path = new URL(route.request().url()).pathname;
+    let body: unknown = [];
+    if (path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE"};
+    if (path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"viewer",status:"active"};
+    if (path.endsWith("/tool_registry")||path.endsWith("/capabilities")) body=[];
+    if (path.endsWith("/get_project_dashboard_summary")) body = {total_jobs:20,active_jobs:5,running_jobs:1,blocked_jobs:0};
+    if (path.endsWith("/jobs")) body = [
+      {id:"1",job_number:1,title:"Fixture job",description:null,priority:50,status:"RUNNING",required_capabilities:[],acceptance:{},created_at:"2026-09-26T00:15:00Z",updated_at:"2026-09-26T00:15:00Z"}
+    ];
+    if(path.includes("/accept_pending_project_member_invites_v1")||path.includes("/accept_pending_job_invites")) body=null;
+    return route.fulfill({contentType:"application/json",body:JSON.stringify(body)});
+  });
+
+  await page.goto(appPath);
+  const visual = page.getByLabel("AI and human collaboration visualization");
+  await expect(visual).toBeVisible();
+  await expect(visual).toHaveAttribute("data-activity", "running");
+
+  expect(await visual.locator(".orbitOuter").evaluate(el => getComputedStyle(el).animationDuration)).toBe("30s");
+  expect(await visual.locator(".orbitMiddle").evaluate(el => getComputedStyle(el).animationName)).toBe("none");
+  expect(await visual.locator(".workSignalPacket").evaluate(el => getComputedStyle(el).animationName)).toContain("heroWorkSignal");
+
+  await page.getByRole("button", {name:"Enter DataNest AI"}).hover();
+  expect(await visual.locator(".interactionSignalPacket").evaluate(el => getComputedStyle(el).animationName)).toContain("heroIntentToAi");
+});
