@@ -57,13 +57,17 @@
   z-index:3;
 }
 .portfolioProductCard{
-  width:clamp(104px,10vw,138px);
-  min-height:68px;
+  width:clamp(112px,10vw,142px);
+  min-height:82px;
   padding:10px 11px;
   transform:translate(-50%,-50%);
   display:grid;
   align-content:center;
-  gap:2px;
+  gap:3px;
+  appearance:none;
+  text-align:left;
+  font:inherit;
+  cursor:pointer;
   border:1px solid rgba(86,231,255,.20);
   border-radius:13px;
   background:
@@ -73,24 +77,73 @@
   backdrop-filter:blur(12px);
   animation:portfolioCardFloat 4.8s ease-in-out infinite;
 }
-.portfolioProductCard span{
+.portfolioProductCard:hover,
+.portfolioProductCard:focus-visible{
+  border-color:rgba(86,231,255,.52);
+  background:
+    radial-gradient(circle at 18% 12%,rgba(86,231,255,.14),transparent 36%),
+    linear-gradient(145deg,rgba(27,15,58,.96),rgba(7,10,30,.98));
+  box-shadow:0 18px 42px rgba(0,0,0,.32),0 0 30px rgba(86,231,255,.08);
+}
+.portfolioProductTopline{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:6px;
+}
+.portfolioProductIndex{
   color:#6ceaff;
   font-size:7px;
+  font-style:normal;
   font-weight:950;
   letter-spacing:.13em;
+}
+.portfolioProductDomain{
+  overflow:hidden;
+  max-width:76px;
+  color:#b9a7ff;
+  font-size:6px;
+  font-style:normal;
+  font-weight:900;
+  letter-spacing:.09em;
+  text-overflow:ellipsis;
+  text-transform:uppercase;
+  white-space:nowrap;
 }
 .portfolioProductCard b{
   color:#f8f6ff;
   font-size:10px;
-  line-height:1.18;
+  line-height:1.16;
 }
-.portfolioProductCard small{
+.portfolioProductDescription{
+  display:-webkit-box;
   overflow:hidden;
   color:#8d88a8;
-  font-size:7px;
+  font-size:6.5px;
   line-height:1.25;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+}
+.portfolioProductState{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  overflow:hidden;
+  color:#7d91a8;
+  font-size:6px;
+  font-weight:850;
+  letter-spacing:.04em;
   text-overflow:ellipsis;
+  text-transform:uppercase;
   white-space:nowrap;
+}
+.portfolioProductState>i{
+  width:5px;
+  height:5px;
+  flex:0 0 auto;
+  border-radius:50%;
+  background:#72e6ae;
+  box-shadow:0 0 8px rgba(114,230,174,.55);
 }
 .portfolioCore{
   position:relative;
@@ -142,6 +195,14 @@
   font-size:7px;
   line-height:1.35;
 }
+.portfolioCoreMeta{
+  margin-top:6px;
+  color:#74deef!important;
+  font-size:6px!important;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
 .portfolioCore button{
   min-height:29px;
   margin-top:10px;
@@ -185,7 +246,7 @@
 }
 @container datanest-main (max-width:620px){
   .productsHeroVisual{min-height:340px!important}
-  .portfolioProductCard{width:116px;min-height:64px;padding:9px}
+  .portfolioProductCard{width:116px;min-height:74px;padding:9px}
   .portfolioCore{width:154px;min-height:154px}
   .portfolioCore strong{font-size:18px}
 }
@@ -193,7 +254,9 @@
   .productsHeroVisual{min-height:310px!important}
   .portfolioProductCard{width:108px}
   .portfolioProductCard b{font-size:9px}
-  .portfolioProductCard small{display:none}
+  .portfolioProductDescription{display:none}
+  .portfolioProductCard{min-height:64px}
+  .portfolioProductDomain{max-width:62px}
   .portfolioCore{width:144px;min-height:144px}
 }
 @media(prefers-reduced-motion:reduce){

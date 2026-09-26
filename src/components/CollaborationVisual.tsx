@@ -6,6 +6,7 @@ import styles from "./CollaborationVisual.module.css";
 
 type GovernedProduct = {
   id:string;
+  slug:string;
   name:string;
   full_name:string|null;
   lifecycle_status:string|null;
@@ -17,6 +18,13 @@ type ProductApplication = {
   name:string|null;
   status:string|null;
   sort_order:number;
+  payload:Record<string,unknown>;
+};
+
+export type ProductHeroTarget = {
+  product?:string;
+  recordType?:"application";
+  q?:string;
 };
 
 const MAX_ORBIT_ITEMS=9;
@@ -29,12 +37,21 @@ function orbitPosition(index:number,total:number){
   };
 }
 
+function payloadText(payload:Record<string,unknown>|undefined,key:string){
+  const value=payload?.[key];
+  return typeof value==="string"&&value.trim()?value.trim():"";
+}
+
+function domainLabel(item:ProductApplication){
+  return payloadText(item.payload,"domain")||"application";
+}
+
 export default function CollaborationVisual({
   projectId,
   onOpenProducts
 }:{
   projectId?:string;
-  onOpenProducts?:()=>void;
+  onOpenProducts?:(target?:ProductHeroTarget)=>void;
 }) {
   const [products,setProducts]=useState<GovernedProduct[]>([]);
   const [applications,setApplications]=useState<ProductApplication[]>([]);
@@ -62,12 +79,12 @@ export default function CollaborationVisual({
     void Promise.all([
       supabase
         .from("products")
-        .select("id,name,full_name,lifecycle_status")
+        .select("id,slug,name,full_name,lifecycle_status")
         .eq("project_id",projectId)
         .order("name"),
       supabase
         .from("product_records")
-        .select("id,product_id,name,status,sort_order")
+        .select("id,product_id,name,status,sort_order,payload")
         .eq("project_id",projectId)
         .eq("record_type","application")
         .order("sort_order",{ascending:true})
@@ -100,6 +117,10 @@ export default function CollaborationVisual({
       .filter(item=>item.name&&(!primary||item.product_id===primary.id))
       .slice(0,MAX_ORBIT_ITEMS),
     [applications,primary]
+  );
+  const domainCount=useMemo(
+    ()=>new Set(orbitItems.map(domainLabel)).size,
+    [orbitItems]
   );
 
   const ariaLabel=loading
@@ -143,12 +164,32 @@ export default function CollaborationVisual({
     {orbitItems.map((item,index)=>{
       const position=orbitPosition(index,orbitItems.length);
       const slotStyle={left:position.left+"%",top:position.top+"%"} as CSSProperties;
-      return <div className={styles.portfolioProductSlot} style={slotStyle} key={item.id} aria-hidden="true">
-        <div className={styles.portfolioProductCard} style={{animationDelay:(index*-0.42)+"s"}}>
-          <span>{String(index+1).padStart(2,"0")}</span>
+      const domain=domainLabel(item);
+      const description=payloadText(item.payload,"description");
+      return <div className={styles.portfolioProductSlot} style={slotStyle} key={item.id}>
+        <button
+          type="button"
+          className={styles.portfolioProductCard}
+          style={{animationDelay:(index*-0.42)+"s"}}
+          onClick={()=>onOpenProducts?.({
+            product:primary?.slug,
+            recordType:"application",
+            q:item.name||undefined
+          })}
+          aria-label={"Open "+item.name+" in Products"}
+          title={description||undefined}
+        >
+          <span className={styles.portfolioProductTopline}>
+            <i className={styles.portfolioProductIndex}>{String(index+1).padStart(2,"0")}</i>
+            <em className={styles.portfolioProductDomain}>{domain}</em>
+          </span>
           <b>{item.name}</b>
-          <small>{item.status||"governed"}</small>
-        </div>
+          <small className={styles.portfolioProductDescription}>{description||"Governed Resonance application"}</small>
+          <span className={styles.portfolioProductState}>
+            <i aria-hidden="true"/>
+            {item.status||"governed"}
+          </span>
+        </button>
       </div>;
     })}
 
@@ -156,7 +197,8 @@ export default function CollaborationVisual({
       <small>{loading?"SYNCING PRODUCTS":"GOVERNED PRODUCT"}</small>
       <strong>{primary?.name||(loading?"DataNest":"Products")}</strong>
       <span>{primary?.full_name||(error?"Catalog temporarily unavailable":"Resonance product catalog")}</span>
-      <button type="button" onClick={onOpenProducts}>
+      {!loading&&primary&&<span className={styles.portfolioCoreMeta}>{orbitItems.length} apps · {domainCount} domains</span>}
+      <button type="button" onClick={()=>onOpenProducts?.()}>
         <span>{loading?"View Products":"Open Products"}</span><b aria-hidden="true">↗</b>
       </button>
     </div>

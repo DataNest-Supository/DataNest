@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import CollaborationVisual from "./CollaborationVisual";
+import CollaborationVisual, { type ProductHeroTarget } from "./CollaborationVisual";
 
 type HomeDestination = "ai" | "unifi" | "scheduler" | "governance" | "thinktank" | "sparks" | "products";
 type ProjectLike = { id:string; name:string; description:string|null };
@@ -94,7 +94,20 @@ export default function ResonanceHome({
         </div>
       </div>
 
-      <CollaborationVisual projectId={project.id} onOpenProducts={()=>onNavigate("products")}/>
+      <CollaborationVisual
+        projectId={project.id}
+        onOpenProducts={(target?:ProductHeroTarget)=>{
+          const url=new URL(window.location.href);
+          if(target?.product)url.searchParams.set("product",target.product);
+          else url.searchParams.delete("product");
+          if(target?.recordType)url.searchParams.set("recordType",target.recordType);
+          else url.searchParams.delete("recordType");
+          if(target?.q)url.searchParams.set("q",target.q);
+          else url.searchParams.delete("q");
+          window.history.replaceState(window.history.state,"",url.toString());
+          onNavigate("products");
+        }}
+      />
     </section>
 
     <section className="aiIStatsGrid" aria-label="DataNest project metrics">
