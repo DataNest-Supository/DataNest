@@ -419,3 +419,85 @@ test("specialist phase rail preserves lifecycle orientation", async ({ page }) =
   await expect(rail).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+
+// Integration gate: value-network capability nodes must remain subordinate to the DataNest AI core.
+test("AI & I keeps DataNest AI at the core while governed products stay product nodes", async ({ page }) => {
+  const projectId = "00000000-0000-4000-8000-000000000010";
+  const userId = "00000000-0000-4000-8000-000000000001";
+  const ronsasId = "24f2fa75-18b8-5b45-b624-b5dab381de9e";
+  const aurumId = "00000000-0000-4000-8000-000000000777";
+
+  await page.route("**/runtime-config.js", route => route.fulfill({
+    contentType: "application/javascript",
+    body: "window.__DATANEST_CONFIG__={supabaseUrl:'https://fixture.supabase.co',supabasePublishableKey:'fixture-key',authoritative:true}"
+  }));
+  await page.addInitScript(({userId}) => {
+    const encode = (data: unknown) => btoa(JSON.stringify(data)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+    localStorage.setItem("sb-fixture-auth-token", JSON.stringify({
+      access_token: `${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:userId,exp:4102444800,role:"authenticated"})}.fixture`,
+      refresh_token:"fixture",token_type:"bearer",expires_at:4102444800,
+      user:{id:userId,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid"}
+    }));
+  }, {userId});
+
+  const products = [
+    {id:ronsasId,slug:"ronsas",name:"RONSAS",full_name:"Resonance Open Nova Application Suite",category:"sovereign application suite",lifecycle_status:"active development and integration",mission:"Governed suite",operating_model:"DataNest managed",primary_runtime:"Windows local environment",commercial_mode:"free promotion / no billing until pricing is established",billing_enabled:false,as_of_date:"2026-09-26",metadata:{execution_authority:"DataNest"}},
+    {id:aurumId,slug:"aurum",name:"Aurum Naturals",full_name:"Resonance Aurum Naturals",category:"governed product",lifecycle_status:"active",mission:"Governed product",operating_model:"DataNest managed",primary_runtime:"managed",commercial_mode:"free promotion / no billing until pricing is established",billing_enabled:false,as_of_date:"2026-09-26",metadata:{execution_authority:"DataNest"}}
+  ];
+  const applications = Array.from({length:9},(_,index)=>({
+    id:"00000000-0000-4000-8000-"+String(400+index).padStart(12,"0"),
+    product_id:ronsasId,
+    record_type:"application",
+    code:"APP-"+String(index+1).padStart(2,"0"),
+    name:"RONSAS App "+String(index+1),
+    status:"active",
+    sort_order:index+1,
+    payload:{}
+  }));
+
+  await page.route("https://fixture.supabase.co/**", route => {
+    const path = new URL(route.request().url()).pathname;
+    let body: unknown = [];
+    if(path.endsWith("/projects")) body={id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE",created_at:"2026-09-26T00:00:00Z"};
+    if(path.endsWith("/project_members")) body={project_id:projectId,user_id:userId,role:"viewer",status:"active"};
+    if(path.endsWith("/get_project_dashboard_summary")) body={total_jobs:0,active_jobs:0,running_jobs:0,blocked_jobs:0,available_capabilities:0,registered_capabilities:0};
+    if(path.endsWith("/jobs")) body=[];
+    if(path.endsWith("/products")) body=products;
+    if(path.endsWith("/product_records")) body=applications;
+    return route.fulfill({contentType:"application/json",body:JSON.stringify(body)});
+  });
+
+  await page.setViewportSize({width:1440,height:900});
+  await page.goto(appPath);
+
+  const visual=page.locator(".resonanceHome .aiICoreStage");
+  await expect(visual.getByText("DataNest AI",{exact:true})).toBeVisible();
+  await expect(visual.locator("b").filter({hasText:/^RONSAS$/})).toBeVisible();
+  await expect(visual.getByText("Aurum Naturals",{exact:true})).toBeVisible();
+  await expect(visual.getByText("9 applications",{exact:true})).toBeVisible();
+  await expect(visual.getByText("0 applications",{exact:true})).toBeVisible();
+  await expect(visual.getByText("GOVERNED PRODUCT",{exact:true})).toHaveCount(0);
+  await expect(visual).toHaveAttribute("aria-label",/DataNest AI core.*RONSAS, 9 applications.*Aurum Naturals, 0 applications/);
+
+  const network=visual.getByLabel("Resonance DataNest value network");
+  await expect(network).toBeVisible();
+  for(const label of ["Governed AI","Certified Memory","Traceable Collaboration","Sovereign App Suite"]){
+    await expect(network.getByText(label,{exact:true})).toBeVisible();
+  }
+  expect(await network.locator("[data-signal='ai']").evaluate(el=>getComputedStyle(el).animationName)).not.toBe("none");
+  expect(await network.locator("[data-signal='memory']").evaluate(el=>getComputedStyle(el).animationName)).not.toBe("none");
+  expect(await network.locator("[data-signal='ronsas']").evaluate(el=>getComputedStyle(el).animationName)).not.toBe("none");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+
+  await page.setViewportSize({width:390,height:844});
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await network.evaluate(el=>getComputedStyle(el).getPropertyValue("--network-x").trim())).toBe("86px");
+  expect(await network.evaluate(el=>getComputedStyle(el).getPropertyValue("--network-y").trim())).toBe("82px");
+
+  await page.emulateMedia({reducedMotion:"reduce"});
+  expect(await network.locator("[data-signal='ai']").evaluate(el=>getComputedStyle(el).animationName)).toBe("none");
+
+  await visual.getByRole("button",{name:"Open Products"}).click();
+  await expect(page).toHaveURL(/view=products/);
+});
