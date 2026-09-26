@@ -147,7 +147,7 @@ export default function DataNestAiWorkspace({
   useEffect(()=>{
     if(!selectedJobId)return;
     void refreshContext();
-  },[selectedJobId,sessionId,sessionKey,refreshContext]);
+  },[selectedJobId,refreshContext]);
 
   useEffect(()=>{
     const refreshStaged=(event:Event)=>{
@@ -165,7 +165,7 @@ export default function DataNestAiWorkspace({
     };
     window.addEventListener("datanest:external-ai-staged",refreshStaged);
     return()=>window.removeEventListener("datanest:external-ai-staged",refreshStaged);
-  },[selectedJobId,refreshContext]);
+  },[selectedJobId,sessionId,sessionKey,refreshContext]);
 
   async function refreshAll(){
     await loadJobs();
