@@ -73,6 +73,11 @@ test("DataNest AI keeps the Hero above a centered live command console", async (
     await expect(page.getByRole("button",{name:label,exact:true})).toBeVisible();
   }
 
+  const composer=page.getByPlaceholder(/Ask DataNest AI to analyze/i);
+  await page.getByRole("button",{name:"Jump to DataNest AI command composer",exact:true}).click();
+  await expect(composer).toBeFocused();
+  expect(await page.locator(".datanestAiComposer").evaluate(element=>getComputedStyle(element).position)).toBe("sticky");
+
   const layout=await page.evaluate(()=>{
     const rect=(selector:string)=>{
       const element=document.querySelector(selector);
@@ -98,6 +103,7 @@ test("DataNest AI keeps the Hero above a centered live command console", async (
 
   await page.setViewportSize({width:390,height:844});
   await expect(page.locator(".datanestAiCommandConsole")).toBeVisible();
+  expect(await page.locator(".datanestAiComposer").evaluate(element=>getComputedStyle(element).position)).toBe("static");
 
   const mobile=await page.evaluate(()=>{
     const consoleElement=document.querySelector(".datanestAiCommandConsole");
