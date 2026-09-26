@@ -2532,3 +2532,40 @@ code,pre{
 @media(prefers-reduced-motion:reduce){
   .datanestAiHeroVisual::before,.datanestAiStatusPulse{animation:none!important}
 }
+
+
+/* Legal Eagle live assistant */
+.legalWorkspacePanel{border:1px solid rgba(255,255,255,.09);background:rgba(4,4,9,.24);border-radius:22px;padding:22px;display:grid;gap:16px}
+.legalWorkspaceControls{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.72fr);gap:12px}
+.legalWorkspaceControls label,.legalComposer label{display:grid;gap:7px;font-size:11px;font-weight:800;letter-spacing:.02em}
+.legalWorkspaceControls select,.legalWorkspaceControls input,.legalComposer textarea{width:100%;border:1px solid rgba(255,255,255,.1);background:rgba(7,7,13,.7);color:var(--text);border-radius:14px;padding:12px 13px;font:inherit;outline:none}
+.legalWorkspaceControls select:focus,.legalWorkspaceControls input:focus,.legalComposer textarea:focus{border-color:rgba(210,177,91,.45);box-shadow:0 0 0 3px rgba(210,177,91,.07)}
+.legalTaskBrief{border:1px solid rgba(221,185,94,.14);background:rgba(221,185,94,.045);border-radius:16px;padding:15px}
+.legalTaskBrief>b{display:block;margin-bottom:5px}
+.legalTaskBrief p{margin:0;color:var(--muted);line-height:1.55}
+.legalTaskBrief ul{margin:10px 0 0;padding-left:18px;color:var(--muted);display:grid;gap:5px;font-size:12px;line-height:1.48}
+.legalChatTranscript{display:grid;gap:10px;max-height:540px;overflow:auto;padding-right:3px}
+.legalChatEmpty{display:grid;grid-template-columns:54px 1fr;gap:13px;align-items:center;border:1px dashed rgba(255,255,255,.11);border-radius:16px;padding:16px;color:var(--muted)}
+.legalChatEmpty b{display:block;color:var(--text);margin-bottom:3px}.legalChatEmpty p{margin:0;font-size:12px;line-height:1.5}
+.legalChatTurn{border-radius:16px;padding:15px 16px;border:1px solid rgba(255,255,255,.08)}
+.legalChatTurn.user{margin-left:10%;background:rgba(116,86,193,.11);border-color:rgba(161,132,235,.16)}
+.legalChatTurn.assistant{margin-right:4%;background:rgba(201,158,56,.07);border-color:rgba(226,190,95,.17)}
+.legalChatTurnHead{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:7px}
+.legalChatTurnHead b{font-size:10px;letter-spacing:.12em}
+.legalChatTurnHead span,.legalChatTurn small{color:var(--muted);font-size:9px}
+.legalChatTurn p{margin:0;white-space:pre-wrap;line-height:1.62}
+.legalChatTurn small{display:block;margin-top:8px}
+.legalComposer{display:grid;gap:10px}
+.legalComposer textarea{resize:vertical;min-height:150px;line-height:1.5}
+.legalComposerFooter{display:flex;justify-content:space-between;gap:14px;align-items:flex-end}
+.legalComposerFooter>div{display:grid;gap:4px}.legalComposerFooter small{color:var(--muted);line-height:1.45}
+.legalNewSession{justify-self:start;padding:0;font-size:11px}
+.legalAssistantNotice{border-radius:14px;padding:11px 13px;font-size:11px;line-height:1.5}
+.legalAssistantNotice.good{border:1px solid rgba(80,208,151,.18);background:rgba(80,208,151,.06)}
+.legalAssistantNotice.bad{border:1px solid rgba(247,107,132,.2);background:rgba(247,107,132,.07);color:#ffc2cd}
+@container datanest-main (max-width:760px){
+  .legalWorkspaceControls{grid-template-columns:1fr}
+  .legalComposerFooter{display:grid;align-items:stretch}
+  .legalComposerFooter .primaryButton{width:100%}
+  .legalChatTurn.user,.legalChatTurn.assistant{margin-left:0;margin-right:0}
+}
