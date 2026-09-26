@@ -28,6 +28,7 @@ test("DataNest AI keeps the Hero above a centered live command console", async (
     status:"READY",
     updated_at:"2026-09-26T00:10:00Z"
   };
+  const contextRequests:Array<{action?:string;jobId?:string;sessionId?:string|null}>=[];
 
   await page.setViewportSize({width:1440,height:1000});
   await page.route("**/runtime-config.js", route => route.fulfill({
@@ -58,7 +59,8 @@ test("DataNest AI keeps the Hero above a centered live command console", async (
     else if(path.endsWith("/get_project_dashboard_summary")) body={total_jobs:2,active_jobs:2,running_jobs:1,blocked_jobs:0,available_capabilities:0,registered_capabilities:0};
     else if(path.endsWith("/jobs")) body=[job,secondJob];
     else if(path.endsWith("/datanest-ai-chat")){
-      const requestBody=route.request().postDataJSON() as {jobId?:string}|null;
+      const requestBody=route.request().postDataJSON() as {action?:string;jobId?:string;sessionId?:string|null}|null;
+      if(requestBody?.action==="context")contextRequests.push({...requestBody});
       const activeJob=requestBody?.jobId===secondJob.id?secondJob:job;
       body={
         sessionId:activeJob.id===secondJob.id?"fixture-session-002":"fixture-session-001",
@@ -128,16 +130,26 @@ test("DataNest AI keeps the Hero above a centered live command console", async (
   await expect(page.getByRole("heading",{name:"JOB-00099 · AI Hero Layout Fixture",exact:true})).toBeVisible();
   await expect(composer).toHaveValue("First Job draft must stay with JOB-00099.");
 
+  contextRequests.length=0;
   await page.locator(".datanestAiJobStrip .rndJobChip").filter({hasText:"Second AI Job Fixture"}).click();
   await expect(page.getByRole("heading",{name:"JOB-00100 · Second AI Job Fixture",exact:true})).toBeVisible();
   await expect(composer).toHaveValue("");
+  await expect.poll(()=>contextRequests.filter(item=>item.jobId===secondJob.id).length).toBeGreaterThan(0);
+  const secondJobContextRequests=contextRequests.filter(item=>item.jobId===secondJob.id);
+  expect(secondJobContextRequests[0]?.sessionId??null).toBeNull();
+  expect(secondJobContextRequests.some(item=>item.sessionId==="fixture-session-001")).toBe(false);
 
   await composer.fill("Second Job draft must stay with JOB-00100.");
   await expect(page.getByText("SESSION-ONLY DRAFT · LOCKED TO JOB-00100",{exact:true})).toBeVisible();
   await expect(page.getByLabel("DataNest AI command context locked to JOB-00100")).toBeVisible();
+  contextRequests.length=0;
   await page.locator(".datanestAiJobStrip .rndJobChip").filter({hasText:"AI Hero Layout Fixture"}).click();
   await expect(page.getByRole("heading",{name:"JOB-00099 · AI Hero Layout Fixture",exact:true})).toBeVisible();
   await expect(composer).toHaveValue("First Job draft must stay with JOB-00099.");
+  await expect.poll(()=>contextRequests.filter(item=>item.jobId===job.id).length).toBeGreaterThan(0);
+  const firstJobReturnRequests=contextRequests.filter(item=>item.jobId===job.id);
+  expect(firstJobReturnRequests[0]?.sessionId).toBe("fixture-session-001");
+  expect(firstJobReturnRequests.some(item=>item.sessionId==="fixture-session-002")).toBe(false);
 
   await page.locator(".datanestAiJobStrip .rndJobChip").filter({hasText:"Second AI Job Fixture"}).click();
   await expect(composer).toHaveValue("Second Job draft must stay with JOB-00100.");
