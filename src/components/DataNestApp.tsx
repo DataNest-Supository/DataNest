@@ -745,7 +745,7 @@ export default function DataNestApp({session}:{session:Session}) {
         {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError} onActiveSessionChange={setActiveDataNestAiSession}/>}
         {!loadingCore&&project&&view==="productlab"&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate}/>}
         {!loadingCore&&project&&view==="unifi"&&<UnifiPlanner project={project} jobs={jobs} capabilities={capabilities} reload={async()=>{await loadJobsPage(jobPage);await loadSummary(project.id);await loadRecentJobs(project.id);}} setNotice={setNotice} setError={setError} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage}/>}
-        {!loadingCore&&view==="scheduler"&&<Scheduler jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage}/>}
+        {!loadingCore&&view==="scheduler"&&<Scheduler projectName={project?.name||"Resonance DataNest"} projectSlug={project?.slug||"resonance-datanest"} jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage}/>}
         {!loadingCore&&view==="runs"&&<Runs runs={runs} jobLookup={jobLookup} page={runPage} total={runCount} onPage={setRunPage}/>}
         {!loadingCore&&view==="checkpoints"&&<Checkpoints checkpoints={checkpoints} jobLookup={jobLookup} page={checkpointPage} total={checkpointCount} onPage={setCheckpointPage}/>}
         {!loadingCore&&view==="audit"&&<Audit events={events} jobLookup={jobLookup} page={eventPage} total={eventCount} onPage={setEventPage}/>}
@@ -912,7 +912,7 @@ function formatGanttTick(value:number,span:number) {
   return new Intl.DateTimeFormat(undefined,options).format(new Date(value));
 }
 
-function Scheduler({jobs,capabilities,onStatus,canOperate,page,total,onPage}:{jobs:Job[];capabilities:Capability[];onStatus:(j:Job,s:string)=>Promise<void>;canOperate:boolean;page:number;total:number;onPage:(p:number)=>void}) {
+function Scheduler({projectName,projectSlug,jobs,capabilities,onStatus,canOperate,page,total,onPage}:{projectName:string;projectSlug:string;jobs:Job[];capabilities:Capability[];onStatus:(j:Job,s:string)=>Promise<void>;canOperate:boolean;page:number;total:number;onPage:(p:number)=>void}) {
   const [filter,setFilter]=useState("ALL");
   const [viewMode,setViewMode]=useState<"queue"|"gantt">("gantt");
   const filterOptions=["ALL","PLANNED","READY","QUEUED","RUNNING","MANUAL_ACTION","BLOCKED","COMPLETED"];
@@ -924,8 +924,9 @@ function Scheduler({jobs,capabilities,onStatus,canOperate,page,total,onPage}:{jo
     <section className="schedulerHero">
       <div>
         <p className="eyebrow">TRANSCHEDULER · GANTT CHART VIEWER</p>
+        <div className="schedulerProjectIdentity"><span>PROJECT</span><b>{projectName}</b><small>{projectSlug}</small></div>
         <h2>Capability-aware project scheduler</h2>
-        <p>Switch between the operational queue and a Universal Time Gantt timeline. Each bar begins at manifest creation; deadline-bound work extends to its target, completed work ends at its last update, and open work without a deadline extends to now.</p>
+        <p>Switch between the operational queue and a Universal Time Gantt timeline. Jobs stay grouped under their project identity, with a priority-scale gradient from maintenance to critical for faster visual planning.</p>
       </div>
       <div className="schedulerPulse"><span>{capabilities.filter(item=>item.state==="AVAILABLE").length}</span><small>available resources</small></div>
     </section>
@@ -936,6 +937,7 @@ function Scheduler({jobs,capabilities,onStatus,canOperate,page,total,onPage}:{jo
           <button type="button" className={viewMode==="gantt"?"active":""} aria-pressed={viewMode==="gantt"} onClick={()=>setViewMode("gantt")}>Gantt chart</button>
         </div>
         <div className="schedulerContextStats" aria-label="Current scheduler context">
+          <span>{projectName}</span>
           <span>{total+" project jobs"}</span>
           <span>{visible.length+" shown"}</span>
           <span>{activeCount+" active"}</span>
@@ -949,10 +951,12 @@ function Scheduler({jobs,capabilities,onStatus,canOperate,page,total,onPage}:{jo
       </label>
       <div className="filterBar schedulerFilterDesktop">{filterOptions.map(item=><button key={item} className={filter===item?"active":""} onClick={()=>setFilter(item)}>{item.replace("_"," ")}</button>)}</div>
 
-      {viewMode==="queue"?<div className="schedulerTable"><div className="schedulerRow headerRow"><span>Job</span><span>Priority</span><span>Capability</span><span>Status</span><span>Controls</span></div>
+      {viewMode==="queue"?<div className="schedulerProjectGroup">
+        <ProjectGroupHeader projectName={projectName} projectSlug={projectSlug} jobs={visible}/>
+        <div className="schedulerTable"><div className="schedulerRow headerRow"><span>Job</span><span>Priority</span><span>Capability</span><span>Status</span><span>Controls</span></div>
         {visible.map(job=><div className="schedulerRow" key={job.id}>
           <div data-label="Job"><b>{jobCode(job)}</b><small>{job.title}</small></div>
-          <span data-label="Priority">{"P"+job.priority}</span>
+          <span data-label="Priority" className="schedulerPriorityCell"><b>{"P"+job.priority}</b><PriorityScale value={job.priority}/></span>
           <span data-label="Capability">{job.required_capabilities?.join(", ")||"chat"}</span>
           <span data-label="Status"><Badge value={job.status}/></span>
           <div className="rowActions" data-label="Controls">
@@ -963,13 +967,39 @@ function Scheduler({jobs,capabilities,onStatus,canOperate,page,total,onPage}:{jo
             </> : <span className="muted">Read only</span>}
           </div>
         </div>)}
-      </div>:<SchedulerGantt jobs={visible} onStatus={onStatus} canOperate={canOperate}/>}
+      </div></div>:<SchedulerGantt projectName={projectName} projectSlug={projectSlug} jobs={visible} onStatus={onStatus} canOperate={canOperate}/>}
       <Pagination page={page} total={total} onPage={onPage}/>
     </section>
   </>;
 }
 
-function SchedulerGantt({jobs,onStatus,canOperate}:{jobs:Job[];onStatus:(j:Job,s:string)=>Promise<void>;canOperate:boolean}) {
+function PriorityScale({value}:{value:number}) {
+  const safe=Math.max(0,Math.min(100,value));
+  return <span className="priorityScaleMeter" aria-label={"Priority "+safe+" of 100"} title={"Priority P"+safe}>
+    <span className="priorityScaleGradient" aria-hidden="true"/>
+    <i className="priorityScaleMarker" style={{left:String(safe)+"%"}} aria-hidden="true"/>
+  </span>;
+}
+
+function ProjectGroupHeader({projectName,projectSlug,jobs}:{projectName:string;projectSlug:string;jobs:Job[]}) {
+  const active=jobs.filter(job=>!finalStates.has(job.status)).length;
+  const completed=jobs.filter(job=>job.status==="COMPLETED").length;
+  const highest=jobs.length?Math.max(...jobs.map(job=>job.priority)):0;
+  return <div className="schedulerProjectGroupHead">
+    <div className="schedulerProjectGroupTitle">
+      <span className="schedulerProjectGroupGlyph" aria-hidden="true">◆</span>
+      <div><small>PROJECT</small><b>{projectName}</b><span>{projectSlug}</span></div>
+    </div>
+    <div className="schedulerProjectGroupSummary">
+      <span>{jobs.length+" jobs"}</span><span>{active+" active"}</span><span>{completed+" complete"}</span><span>{"Peak P"+highest}</span>
+    </div>
+    <div className="schedulerPriorityLegend" aria-label="Job priority scale">
+      <span>Maintenance</span><i aria-hidden="true"/><span>Critical</span>
+    </div>
+  </div>;
+}
+
+function SchedulerGantt({projectName,projectSlug,jobs,onStatus,canOperate}:{projectName:string;projectSlug:string;jobs:Job[];onStatus:(j:Job,s:string)=>Promise<void>;canOperate:boolean}) {
   if(!jobs.length)return <div className="ganttEmpty"><EmptyState title="No jobs in this Gantt view" text="Change the status filter or add work in UNIFI."/></div>;
 
   const now=Date.now();
@@ -994,7 +1024,7 @@ function SchedulerGantt({jobs,onStatus,canOperate}:{jobs:Job[];onStatus:(j:Job,s
 
   return <div className="ganttViewer">
     <div className="ganttViewerHead">
-      <div><p className="eyebrow">PROJECT TIMELINE</p><h3>Lifecycle and deadline context</h3><p>This viewer uses recorded job timestamps only. A solid bar has a stored deadline; a dashed bar shows the observed lifecycle window, with active undated work extending to the current UTC time.</p></div>
+      <div><p className="eyebrow">PROJECT TIMELINE</p><h3>{projectName}</h3><p>Lifecycle and deadline context for this project. The priority gradient runs from maintenance to critical, while timeline bars continue to use recorded job timestamps only.</p></div>
       <div className="ganttLegend" aria-label="Gantt chart legend">
         <span><i className="deadline"/>Deadline target</span>
         <span><i className="lifecycle"/>Lifecycle window</span>
@@ -1003,8 +1033,9 @@ function SchedulerGantt({jobs,onStatus,canOperate}:{jobs:Job[];onStatus:(j:Job,s
     </div>
     <div className="ganttViewport">
       <div className="ganttCanvas">
+        <ProjectGroupHeader projectName={projectName} projectSlug={projectSlug} jobs={jobs}/>
         <div className="ganttAxisRow">
-          <div className="ganttAxisLabel"><b>Project work</b><small>Universal Time · current queue page</small></div>
+          <div className="ganttAxisLabel"><b>{projectName}</b><small>Universal Time · current queue page</small></div>
           <div className="ganttTimeline ganttTimelineAxis">
             {ticks.map((tick,index)=>{
               const position=(index/(tickCount-1))*100;
@@ -1034,7 +1065,7 @@ function SchedulerGantt({jobs,onStatus,canOperate}:{jobs:Job[];onStatus:(j:Job,s
                 <Badge value={job.status}/>
               </div>
               <div className="ganttMeta">
-                <span>{"P"+job.priority}</span>
+                <span className="ganttPriorityMeta"><b>{"P"+job.priority}</b><PriorityScale value={job.priority}/></span>
                 <span>{job.required_capabilities?.join(", ")||"chat"}</span>
                 <span>{endText}</span>
               </div>
