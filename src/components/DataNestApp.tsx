@@ -587,8 +587,8 @@ export default function DataNestApp({session}:{session:Session}) {
   >
     <aside id="datanest-navigation" aria-label="DataNest navigation" className={"sidebar "+(mobileOpen?"open":"")}>
       <div className="sidebarTop">
-        <div className="logo" aria-label="The Resonance App Dev"><img src={DATANEST_LOGO_SRC} alt="The Resonance App Dev"/></div>
-        <div><p className="eyebrow">RESONANCE</p><b>DataNest</b></div>
+        <div className="logo" aria-label="Resonance AppDev"><img src={DATANEST_LOGO_SRC} alt="Resonance AppDev"/></div>
+        <div><p className="eyebrow">RESONANCE APPDEV</p><b>DataNest</b></div>
         <button className="closeMenu" onClick={()=>setMobileOpen(false)} aria-label="Close menu" aria-controls="datanest-navigation">×</button>
       </div>
       <div className="projectPill"><span className="liveDot"/><div><small>PROJECT</small><strong>{project?.name||"Resonance DataNest"}</strong></div></div>
