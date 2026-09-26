@@ -874,10 +874,10 @@ export default function DataNestApp({session}:{session:Session}) {
         {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError} onActiveSessionChange={setActiveDataNestAiSession}/>}
         {!loadingCore&&project&&view==="productlab"&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate}/>}
         {!loadingCore&&project&&view==="unifi"&&<UnifiPlanner project={project} jobs={jobs} capabilities={capabilities} reload={async()=>{await loadJobsPage(jobPage);await loadSummary(project.id);await loadRecentJobs(project.id);}} setNotice={setNotice} setError={setError} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage}/>}
-        {!loadingCore&&view==="scheduler"&&<Scheduler projectName={project?.name||"Resonance DataNest"} projectSlug={project?.slug||"resonance-datanest"} jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage}/>}
-        {!loadingCore&&view==="runs"&&<Runs runs={runs} jobLookup={jobLookup} page={runPage} total={runCount} onPage={setRunPage}/>}
-        {!loadingCore&&view==="checkpoints"&&<Checkpoints checkpoints={checkpoints} jobLookup={jobLookup} page={checkpointPage} total={checkpointCount} onPage={setCheckpointPage}/>}
-        {!loadingCore&&view==="audit"&&<Audit events={events} jobLookup={jobLookup} page={eventPage} total={eventCount} onPage={setEventPage}/>}
+        {!loadingCore&&view==="scheduler"&&<Scheduler projectName={project?.name||"Resonance DataNest"} projectSlug={project?.slug||"resonance-datanest"} jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} onNavigate={setView}/>}
+        {!loadingCore&&view==="runs"&&<Runs runs={runs} jobLookup={jobLookup} page={runPage} total={runCount} onPage={setRunPage} onNavigate={setView}/>}
+        {!loadingCore&&view==="checkpoints"&&<Checkpoints checkpoints={checkpoints} jobLookup={jobLookup} page={checkpointPage} total={checkpointCount} onPage={setCheckpointPage} onNavigate={setView}/>}
+        {!loadingCore&&view==="audit"&&<Audit events={events} jobLookup={jobLookup} page={eventPage} total={eventCount} onPage={setEventPage} onNavigate={setView}/>}
         {!loadingCore&&view==="transparency"&&<TransparencyWorkspace/>}
         {!loadingCore&&view==="settings"&&<Settings project={project} tools={tools} policies={policies} membership={membership} currentUserId={session.user.id} canManageAi={canManageAi}/>}
         </div>
@@ -1053,7 +1053,7 @@ function formatGanttTick(value:number,span:number) {
   return new Intl.DateTimeFormat(undefined,options).format(new Date(value));
 }
 
-function Scheduler({projectName,projectSlug,jobs,capabilities,onStatus,canOperate,page,total,onPage}:{projectName:string;projectSlug:string;jobs:Job[];capabilities:Capability[];onStatus:(j:Job,s:string)=>Promise<void>;canOperate:boolean;page:number;total:number;onPage:(p:number)=>void}) {
+function Scheduler({projectName,projectSlug,jobs,capabilities,onStatus,canOperate,page,total,onPage,onNavigate}:{projectName:string;projectSlug:string;jobs:Job[];capabilities:Capability[];onStatus:(j:Job,s:string)=>Promise<void>;canOperate:boolean;page:number;total:number;onPage:(p:number)=>void;onNavigate:(v:ViewKey)=>void}) {
   const [filter,setFilter]=useState("ALL");
   const [viewMode,setViewMode]=useState<"queue"|"gantt">("gantt");
   const [sortMode,setSortMode]=useState<"priority"|"deadline"|"recent">("priority");
@@ -1118,7 +1118,12 @@ function Scheduler({projectName,projectSlug,jobs,capabilities,onStatus,canOperat
       </label>
       <div className="filterBar schedulerFilterDesktop">{filterOptions.map(item=><button key={item} className={filter===item?"active":""} onClick={()=>setFilter(item)}>{item.replace("_"," ")}</button>)}</div>
 
-      {viewMode==="queue"?<div className="schedulerProjectGroup">
+      {!orderedVisible.length?<div className="schedulerEmptyState"><EmptyState
+        title={total===0?"No project jobs yet":"No jobs match this filter"}
+        text={total===0?"Create a complete Job Manifest in UNIFI before scheduling execution.":"Clear the current status filter to return to the project queue."}
+        actionLabel={total===0?"Open UNIFI Planner":"Show all jobs"}
+        onAction={()=>{if(total===0)onNavigate("unifi");else setFilter("ALL");}}
+      /></div>:viewMode==="queue"?<div className="schedulerProjectGroup">
         <ProjectGroupHeader projectName={projectName} projectSlug={projectSlug} jobs={orderedVisible}/>
         <div className="schedulerTable"><div className="schedulerRow headerRow"><span>Job</span><span>Priority</span><span>Capability</span><span>Status</span><span>Controls</span></div>
         {orderedVisible.map(job=><div className="schedulerRow" key={job.id}>
@@ -1280,7 +1285,7 @@ function SchedulerGantt({projectName,projectSlug,jobs,onStatus,canOperate}:{proj
   </div>;
 }
 
-function Runs({runs,jobLookup,page,total,onPage}:{runs:Run[];jobLookup:Map<string,Job>;page:number;total:number;onPage:(p:number)=>void}) {
+function Runs({runs,jobLookup,page,total,onPage,onNavigate}:{runs:Run[];jobLookup:Map<string,Job>;page:number;total:number;onPage:(p:number)=>void;onNavigate:(v:ViewKey)=>void}) {
   return <section className="panel"><div className="panelHead"><div><p className="eyebrow">EXECUTION HISTORY</p><h2>Runs</h2></div><span className="countPill">{total}</span></div>
     {runs.length?<div className="dataTable"><div className="dataRow headerRow"><span>Run</span><span>Job</span><span>Connector</span><span>Status</span><span>Started</span></div>
       {runs.map(run=>{const job=jobLookup.get(run.job_id);return <div className="dataRow" key={run.id}>
@@ -1290,19 +1295,19 @@ function Runs({runs,jobLookup,page,total,onPage}:{runs:Run[];jobLookup:Map<strin
         <span data-label="Status"><Badge value={run.status}/></span>
         <span data-label="Started">{formatDate(run.started_at)}</span>
       </div>;})}
-    </div>:<EmptyState title="No execution runs yet" text="Runs will appear when TranScheduler dispatches jobs."/>}
+    </div>:<EmptyState title="No execution runs yet" text="Runs appear after TranScheduler dispatches governed Jobs." actionLabel="Open TranScheduler" onAction={()=>onNavigate("scheduler")}/>}
     <Pagination page={page} total={total} onPage={onPage}/>
   </section>;
 }
 
-function Checkpoints({checkpoints,jobLookup,page,total,onPage}:{checkpoints:Checkpoint[];jobLookup:Map<string,Job>;page:number;total:number;onPage:(p:number)=>void}) {
-  return <><section className="checkpointGrid">{checkpoints.map(checkpoint=>{const job=jobLookup.get(checkpoint.job_id);return <article className="checkpointCard" key={checkpoint.id}><div className="rowBetween"><div><p className="eyebrow">CHECKPOINT</p><h3>{job?jobCode(job):checkpoint.job_id.slice(0,8)}</h3></div><small>{formatDate(checkpoint.created_at)}</small></div><h4>{job?.title||"Project continuation"}</h4><div className="checkpointColumns"><div><b>Completed</b>{checkpoint.completed?.map(item=><span key={item}>{"✓ "+item}</span>)}</div><div><b>Remaining</b>{checkpoint.remaining?.map(item=><span key={item}>{"→ "+item}</span>)}</div></div>{checkpoint.resume_instruction&&<div className="resumeBox"><b>Resume</b>{checkpoint.resume_instruction}</div>}</article>;})}</section><Pagination page={page} total={total} onPage={onPage}/></>;
+function Checkpoints({checkpoints,jobLookup,page,total,onPage,onNavigate}:{checkpoints:Checkpoint[];jobLookup:Map<string,Job>;page:number;total:number;onPage:(p:number)=>void;onNavigate:(v:ViewKey)=>void}) {
+  return <>{checkpoints.length?<section className="checkpointGrid">{checkpoints.map(checkpoint=>{const job=jobLookup.get(checkpoint.job_id);return <article className="checkpointCard" key={checkpoint.id}><div className="rowBetween"><div><p className="eyebrow">CHECKPOINT</p><h3>{job?jobCode(job):checkpoint.job_id.slice(0,8)}</h3></div><small>{formatDate(checkpoint.created_at)}</small></div><h4>{job?.title||"Project continuation"}</h4><div className="checkpointColumns"><div><b>Completed</b>{checkpoint.completed?.map(item=><span key={item}>{"✓ "+item}</span>)}</div><div><b>Remaining</b>{checkpoint.remaining?.map(item=><span key={item}>{"→ "+item}</span>)}</div></div>{checkpoint.resume_instruction&&<div className="resumeBox"><b>Resume</b>{checkpoint.resume_instruction}</div>}</article>;})}</section>:<EmptyState title="No checkpoints yet" text="Durable continuation points appear after executable work records resumable state." actionLabel="Open Runs" onAction={()=>onNavigate("runs")}/>}<Pagination page={page} total={total} onPage={onPage}/></>;
 }
 
-function Audit({events,jobLookup,page,total,onPage}:{events:AuditEvent[];jobLookup:Map<string,Job>;page:number;total:number;onPage:(p:number)=>void}) {
-  return <section className="panel"><div className="panelHead"><div><p className="eyebrow">IMMUTABLE HISTORY</p><h2>Audit trail</h2></div><span className="countPill">{total}</span></div><div className="timeline">
+function Audit({events,jobLookup,page,total,onPage,onNavigate}:{events:AuditEvent[];jobLookup:Map<string,Job>;page:number;total:number;onPage:(p:number)=>void;onNavigate:(v:ViewKey)=>void}) {
+  return <section className="panel"><div className="panelHead"><div><p className="eyebrow">IMMUTABLE HISTORY</p><h2>Audit trail</h2></div><span className="countPill">{total}</span></div>{events.length?<div className="timeline">
     {events.map(event=><div className="timelineItem" key={event.id}><div className="timelineDot"/><div><div className="rowBetween"><b>{event.event_type.replaceAll("_"," ")}</b><small>{formatDate(event.created_at)}</small></div><p>{(event.job_id&&jobLookup.get(event.job_id)?jobCode(jobLookup.get(event.job_id)!)+" · ":"")+event.actor}</p><code>{JSON.stringify(event.payload)}</code></div></div>)}
-  </div><Pagination page={page} total={total} onPage={onPage}/></section>;
+  </div>:<EmptyState title="No audit events yet" text="Governed project actions will appear here as immutable operational evidence." actionLabel="Open Checkpoints" onAction={()=>onNavigate("checkpoints")}/>}<Pagination page={page} total={total} onPage={onPage}/></section>;
 }
 
 function Settings({
@@ -1342,4 +1347,4 @@ function Pagination({page,total,onPage}:{page:number;total:number;onPage:(p:numb
 }
 
 function Badge({value}:{value:string}) { return <span className={"badge "+tone(value)}>{value.replaceAll("_"," ")}</span>; }
-function EmptyState({title,text}:{title:string;text:string}) { return <div className="emptyState"><div>◇</div><h3>{title}</h3><p>{text}</p></div>; }
+function EmptyState({title,text,actionLabel,onAction}:{title:string;text:string;actionLabel?:string;onAction?:()=>void}) { return <div className="emptyState"><div>◇</div><h3>{title}</h3><p>{text}</p>{actionLabel&&onAction&&<button className="secondaryButton compact emptyStateAction" type="button" onClick={onAction}>{actionLabel}</button>}</div>; }

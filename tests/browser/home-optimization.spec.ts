@@ -324,3 +324,51 @@ test("workspace arrivals honor paused and reduced motion without hiding content"
   expect(await page.locator(".workspaceArrival").evaluate(el=>getComputedStyle(el).animationName)).toBe("none");
   expect(await page.locator(".workspaceArrival").evaluate(el=>getComputedStyle(el).opacity)).toBe("1");
 });
+
+
+test("empty operational workspaces offer direct recovery paths", async ({ page }) => {
+  const projectId = "00000000-0000-4000-8000-000000000010";
+  const userId = "00000000-0000-4000-8000-000000000001";
+
+  await page.route("**/runtime-config.js", route => route.fulfill({
+    contentType: "application/javascript",
+    body: "window.__DATANEST_CONFIG__={supabaseUrl:'https://fixture.supabase.co',supabasePublishableKey:'fixture-key',authoritative:true}"
+  }));
+  await page.addInitScript(({userId}) => {
+    const encode = (data: unknown) => btoa(JSON.stringify(data)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+    localStorage.setItem("sb-fixture-auth-token", JSON.stringify({
+      access_token: `${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:userId,exp:4102444800,role:"authenticated"})}.fixture`,
+      refresh_token: "fixture", token_type:"bearer", expires_at:4102444800,
+      user:{id:userId,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid"}
+    }));
+  }, {userId});
+
+  await page.route("https://fixture.supabase.co/**", route => {
+    const path = new URL(route.request().url()).pathname;
+    let body: unknown = [];
+    if (path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE",created_at:"2026-09-26T00:00:00Z"};
+    if (path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"viewer",status:"active"};
+    if (path.endsWith("/get_project_dashboard_summary")) body = {total_jobs:0,active_jobs:0,running_jobs:0,blocked_jobs:0,available_capabilities:0,registered_capabilities:0};
+    return route.fulfill({contentType:"application/json",body:JSON.stringify(body)});
+  });
+
+  await page.goto(appPath+"?view=scheduler");
+  await expect(page.getByRole("heading", {name:"No project jobs yet"})).toBeVisible();
+  await page.getByRole("button", {name:"Open UNIFI Planner"}).click();
+  await expect(page).toHaveURL(/\?view=unifi/);
+
+  await page.goto(appPath+"?view=runs");
+  await expect(page.getByRole("heading", {name:"No execution runs yet"})).toBeVisible();
+  await page.getByRole("button", {name:"Open TranScheduler"}).click();
+  await expect(page).toHaveURL(/\?view=scheduler/);
+
+  await page.goto(appPath+"?view=checkpoints");
+  await expect(page.getByRole("heading", {name:"No checkpoints yet"})).toBeVisible();
+  await page.getByRole("button", {name:"Open Runs"}).click();
+  await expect(page).toHaveURL(/\?view=runs/);
+
+  await page.goto(appPath+"?view=audit");
+  await expect(page.getByRole("heading", {name:"No audit events yet"})).toBeVisible();
+  await page.getByRole("button", {name:"Open Checkpoints"}).click();
+  await expect(page).toHaveURL(/\?view=checkpoints/);
+});

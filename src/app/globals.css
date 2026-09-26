@@ -4305,3 +4305,9 @@ code,pre{
 }
 html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"] .commandPalette{animation:none!important}
 
+
+
+/* Actionable operational empty states */
+.emptyState .emptyStateAction{margin-top:14px}
+.schedulerEmptyState{padding:12px 0}
+.schedulerEmptyState .emptyState{min-height:220px}

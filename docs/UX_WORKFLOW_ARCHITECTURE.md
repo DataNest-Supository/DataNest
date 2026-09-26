@@ -83,3 +83,15 @@ The deterministic lifecycle remains the fallback, but the shell can override the
 - Missing run or checkpoint evidence can route users back to the workspace that must produce it.
 
 Adaptive recommendations are labeled `STATE-AWARE`; ordinary sequence guidance is labeled `LIFECYCLE`. The rule set is intentionally narrow so recommendations remain explainable and do not replace human judgment.
+
+
+## Actionable empty states
+
+Operational empty states are treated as workflow junctions rather than blank screens.
+
+- An empty TranScheduler links directly to UNIFI; an empty filter can reset to all Jobs.
+- Runs links back to TranScheduler when nothing has been dispatched.
+- Checkpoints links back to Runs when no resumable evidence exists.
+- Audit links back to Checkpoints when no immutable events are present.
+
+These controls do not create or mutate operational records. They only move the user to the prerequisite workspace that can produce the missing state or evidence.

@@ -213,3 +213,15 @@ test("workflow guidance adapts to live execution state while keeping lifecycle f
   assert.match(appSource, /LIFECYCLE/);
   assert.match(cssSource, /\.workflowMode\.adaptive\{/);
 });
+
+
+test("operational empty states route users to prerequisite workspaces", () => {
+  assert.match(appSource, /No project jobs yet/);
+  assert.match(appSource, /Open UNIFI Planner/);
+  assert.match(appSource, /Show all jobs/);
+  assert.match(appSource, /No execution runs yet[\s\S]*?Open TranScheduler/);
+  assert.match(appSource, /No checkpoints yet[\s\S]*?Open Runs/);
+  assert.match(appSource, /No audit events yet[\s\S]*?Open Checkpoints/);
+  assert.match(appSource, /function EmptyState\(\{title,text,actionLabel,onAction\}/);
+  assert.match(cssSource, /\.emptyState \.emptyStateAction\{/);
+});
