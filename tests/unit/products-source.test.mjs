@@ -38,7 +38,7 @@ test("Legal Eagle calls the governed AI gateway with matter and jurisdiction sco
 
 test("Legal Eagle keeps legal decisions and representation with humans",()=>{
   assert.match(products,/does not create an attorney-client relationship/);
-  assert.match(products,/not be relied on as a substitute for advice from a qualified lawyer/);
+  assert.match(products,/not be relied on as a substitute for advice from a\s+qualified lawyer/);
   assert.match(products,/No fabricated authority/);
   assert.match(products,/No autonomous deadlines/);
   assert.match(products,/No representation/);
