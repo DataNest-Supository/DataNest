@@ -113,7 +113,6 @@
     0 0 0 14px rgba(86,231,255,.025),
     0 0 52px rgba(86,231,255,.14),
     0 0 82px rgba(255,67,218,.08);
-  animation:portfolioCoreBreath 4s ease-in-out infinite;
 }
 .portfolioCore::before{
   content:"";
@@ -122,6 +121,7 @@
   z-index:-1;
   border-radius:50%;
   border:1px solid rgba(255,67,218,.14);
+  animation:portfolioCoreBreath 4s ease-in-out infinite;
 }
 .portfolioCore small{
   color:#71eaff;
@@ -198,7 +198,7 @@
   .portfolioCore{width:144px;min-height:144px}
 }
 @media(prefers-reduced-motion:reduce){
-  .portfolioRingOuter,.portfolioRingInner,.portfolioSignalSweep,.portfolioSignalDot,.portfolioProductCard,.portfolioCore{
+  .portfolioRingOuter,.portfolioRingInner,.portfolioSignalSweep,.portfolioSignalDot,.portfolioProductCard,.portfolioCore,.portfolioCore::before{
     animation:none!important;
   }
 }
