@@ -71,7 +71,7 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
 
   await expect(page.getByRole("heading", {name:"Assistance with a human at the centre."})).toBeVisible();
   await expect(page.getByRole("heading", {name:"Resonance Assistance"}).first()).toBeVisible();
-  await expect(page.getByRole("heading", {name:"Legal Eagle"})).toBeVisible();
+  await expect(page.getByRole("heading", {name:"Legal Eagle", exact:true})).toBeVisible();
   await expect(page.getByText("Designed to assist—not represent.")).toBeVisible();
   await expect(page.getByText("INFORMATION · PREPARATION · HUMAN REVIEW")).toBeVisible();
 
