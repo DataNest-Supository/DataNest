@@ -2570,3 +2570,109 @@ code,pre{
     width:100%;
   }
 }
+
+
+/* 2026-09-26 DataNest AI vertical command flow */
+.datanestAiWorkspace{
+  gap:14px;
+}
+
+.datanestAiCurrentJob,
+.datanestAiJobStrip,
+.datanestAiChatStage,
+.datanestAiSupportGrid,
+.datanestAiCertificationStage{
+  width:min(100%,980px);
+  justify-self:center;
+}
+
+.datanestAiCurrentJob{
+  padding:22px 24px;
+  border-radius:18px;
+  box-shadow:0 18px 54px rgba(0,0,0,.18),inset 0 1px rgba(255,255,255,.03);
+}
+
+.datanestAiCurrentJob .rowBetween{
+  align-items:center;
+}
+
+.datanestAiCurrentJob h2{
+  margin-top:3px;
+  font-size:clamp(22px,2.2cqi,32px);
+  letter-spacing:-.035em;
+}
+
+.datanestAiCurrentJob .muted{
+  max-width:76ch;
+}
+
+.datanestAiJobStrip{
+  gap:8px;
+  padding:0 2px 4px;
+  margin-top:-2px;
+}
+
+.datanestAiJobStrip .rndJobChip{
+  min-width:180px;
+  padding:10px 12px;
+  opacity:.74;
+  transition:opacity .18s ease,border-color .18s ease,background .18s ease,transform .18s ease;
+}
+
+.datanestAiJobStrip .rndJobChip:hover,
+.datanestAiJobStrip .rndJobChip.active{
+  opacity:1;
+}
+
+.datanestAiJobStrip .rndJobChip.active{
+  transform:translateY(-1px);
+}
+
+.datanestAiChatStage{
+  margin-top:2px;
+}
+
+.datanestAiSupportGrid{
+  margin-top:0;
+}
+
+.datanestAiCertificationStage{
+  display:grid;
+  justify-items:center;
+}
+
+.datanestAiCertificationStage > *{
+  width:100%;
+}
+
+.datanestAiFootnote{
+  width:min(100%,980px);
+  justify-self:center;
+  text-align:center;
+  padding-top:2px;
+}
+
+@container datanest-main (max-width:1100px){
+  .datanestAiCurrentJob,
+  .datanestAiJobStrip,
+  .datanestAiChatStage,
+  .datanestAiSupportGrid,
+  .datanestAiCertificationStage,
+  .datanestAiFootnote{
+    width:100%;
+  }
+}
+
+@container datanest-main (max-width:620px){
+  .datanestAiCurrentJob{
+    padding:18px;
+  }
+
+  .datanestAiCurrentJob .rowBetween{
+    align-items:flex-start;
+  }
+
+  .datanestAiJobStrip .rndJobChip{
+    min-width:165px;
+  }
+}
