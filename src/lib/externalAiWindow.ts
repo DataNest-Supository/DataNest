@@ -85,3 +85,29 @@ export function calculateCompanionPlacement(input:CompanionPlacementInput):Compa
     reserveRight:Math.round(reserveRight)
   };
 }
+
+
+export type ActualCompanionWindow = {
+  left:number;
+  top:number;
+  width:number;
+  height:number;
+};
+
+export function companionReserveForActualWindow(
+  desired:CompanionPlacement,
+  actual:ActualCompanionWindow
+):number{
+  if(desired.reserveRight<=0)return 0;
+
+  const edgeTolerance=48;
+  const sizeTolerance=72;
+  const desiredRight=desired.left+desired.width;
+  const actualRight=actual.left+actual.width;
+  const isDocked=
+    Math.abs(actualRight-desiredRight)<=edgeTolerance&&
+    Math.abs(actual.left-desired.left)<=edgeTolerance&&
+    Math.abs(actual.width-desired.width)<=sizeTolerance;
+
+  return isDocked?desired.reserveRight:0;
+}
