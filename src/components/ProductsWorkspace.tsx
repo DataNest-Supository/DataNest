@@ -118,6 +118,7 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
   const [catalogRecords,setCatalogRecords]=useState<CatalogRecord[]>([]);
   const [catalogLoading,setCatalogLoading]=useState(true);
   const [catalogError,setCatalogError]=useState("");
+  const [selectedProductId,setSelectedProductId]=useState("");
 
   useEffect(()=>{
     let active=true;
@@ -134,8 +135,10 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
       const error=productResult.error||recordResult.error;
       if(error){setCatalogError(error.message);setCatalogProducts([]);setCatalogRecords([]);}
       else{
-        setCatalogProducts((productResult.data||[]) as CatalogProduct[]);
+        const nextProducts=(productResult.data||[]) as CatalogProduct[];
+        setCatalogProducts(nextProducts);
         setCatalogRecords((recordResult.data||[]) as CatalogRecord[]);
+        setSelectedProductId(current=>nextProducts.some(product=>product.id===current)?current:(nextProducts[0]?.id||""));
       }
     }).finally(()=>{if(active)setCatalogLoading(false);});
 
@@ -167,8 +170,25 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
       {catalogLoading&&<div className="catalogLoading" role="status">Loading governed product records…</div>}
       {!catalogLoading&&!catalogError&&!catalogProducts.length&&<div className="catalogEmpty">No governed products have been imported for this project yet.</div>}
 
-      <div className="catalogGrid">
+      {catalogProducts.length>0&&<nav className="catalogNavigator" aria-label="Governed products">
         {catalogProducts.map((product,index)=>{
+          const linked=(recordsByProduct.get(product.id)||[]).length;
+          return <button
+            key={product.id}
+            type="button"
+            className={selectedProductId===product.id?"active":""}
+            aria-pressed={selectedProductId===product.id}
+            onClick={()=>setSelectedProductId(product.id)}
+          >
+            <span>{String(index+1).padStart(2,"0")}</span>
+            <b>{product.name}</b>
+            <small>{linked} linked records</small>
+          </button>;
+        })}
+      </nav>}
+
+      <div className="catalogGrid">
+        {catalogProducts.filter(product=>!selectedProductId||product.id===selectedProductId).map((product,index)=>{
           const records=recordsByProduct.get(product.id)||[];
           const count=(type:string)=>records.filter(record=>record.record_type===type).length;
           const branches=records.filter(record=>record.record_type==="datanest_branch");
@@ -232,9 +252,15 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
         })}
       </div>
     </section>
+    <details className="conceptIncubator">
+      <summary>
+        <span><b>Product Concept Incubator</b><small>Explore governed previews that are not yet imported as live catalog products.</small></span>
+        <span>Resonance Assistance · Legal Eagle</span>
+      </summary>
+      <div className="conceptIncubatorBody">
     <section className="productsHero" aria-labelledby="products-title">
       <div className="productsHeroCopy">
-        <p className="eyebrow">RESONANCE PRODUCTS</p>
+        <p className="eyebrow">PRODUCT CONCEPT INCUBATOR</p>
         <h2 id="products-title">Assistance with a human at the centre.</h2>
         <p>
           Resonance products turn governed AI capabilities into focused experiences with
@@ -256,10 +282,10 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
     <section className="productIndex" aria-labelledby="product-index-title">
       <div className="productIndexHead">
         <div>
-          <p className="eyebrow">PRODUCT 01</p>
+          <p className="eyebrow">CONCEPT 01</p>
           <h3 id="product-index-title">Resonance Assistance</h3>
         </div>
-        <span className="productStatus">FOUNDATION PRODUCT</span>
+        <span className="productStatus">PRODUCT CONCEPT</span>
       </div>
 
       <div className="resonanceAssistanceCard">
@@ -388,5 +414,7 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
       <div><small>NEXT</small><b>Specialist framework</b><span>Shared identity, safety and escalation patterns</span></div>
       <div><small>LATER</small><b>Assistance marketplace</b><span>Governed specialist experiences under Resonance Assistance</span></div>
     </section>
+      </div>
+    </details>
   </div>;
 }
