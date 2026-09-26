@@ -60,7 +60,7 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
       id:"24f2fa75-18b8-5b45-b624-b5dab381de9e",slug:"ronsas",name:"RONSAS",full_name:"Resonance Open Nova Application Suite",
       category:"sovereign application suite",lifecycle_status:"active development and integration",
       mission:"Unify the Resonance application estate under governed local-first operations.",operating_model:"governed",
-      primary_runtime:"Windows local-first",commercial_mode:"free promotion / no billing until pricing is established",
+      primary_runtime:"Windows local environment",commercial_mode:"free promotion / no billing until pricing is established",
       billing_enabled:false,as_of_date:"2026-09-26",metadata:{parent_platform:"Resonance DataNest",product_role:"governed_product",execution_authority:"DataNest",promotion_authority:"DataNest",hosting_model:"replaceable_delivery_infrastructure"}
     }];
     if (path.endsWith("/product_records")) body = [
