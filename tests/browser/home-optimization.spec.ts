@@ -372,3 +372,69 @@ test("empty operational workspaces offer direct recovery paths", async ({ page }
   await page.getByRole("button", {name:"Open Checkpoints"}).click();
   await expect(page).toHaveURL(/\?view=checkpoints/);
 });
+
+
+test("AI & I hero presents RONSAS as the sovereign suite and animates DataNest value signals", async ({ page }) => {
+  const projectId = "00000000-0000-4000-8000-000000000010";
+  const userId = "00000000-0000-4000-8000-000000000001";
+  const productId = "24f2fa75-18b8-5b45-b624-b5dab381de9e";
+
+  await page.route("**/runtime-config.js", route => route.fulfill({
+    contentType: "application/javascript",
+    body: "window.__DATANEST_CONFIG__={supabaseUrl:'https://fixture.supabase.co',supabasePublishableKey:'fixture-key',authoritative:true}"
+  }));
+  await page.addInitScript(({userId}) => {
+    const encode = (data: unknown) => btoa(JSON.stringify(data)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+    localStorage.setItem("sb-fixture-auth-token", JSON.stringify({
+      access_token: `${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:userId,exp:4102444800,role:"authenticated"})}.fixture`,
+      refresh_token: "fixture", token_type:"bearer", expires_at:4102444800,
+      user:{id:userId,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid"}
+    }));
+  }, {userId});
+
+  await page.route("https://fixture.supabase.co/**", route => {
+    const path = new URL(route.request().url()).pathname;
+    let body: unknown = [];
+    if (path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE"};
+    if (path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"viewer",status:"active"};
+    if (path.endsWith("/get_project_dashboard_summary")) body = {total_jobs:12,active_jobs:4,running_jobs:2,blocked_jobs:0};
+    if (path.endsWith("/jobs")) body = [{id:"1",status:"RUNNING",created_at:"2026-09-26T00:15:00Z"}];
+    if (path.endsWith("/products")) body = [{
+      id:productId,name:"RONSAS",full_name:"Resonance Open Nova Application Suite",lifecycle_status:"active"
+    }];
+    if (path.endsWith("/product_records")) body = [
+      {id:"app-1",product_id:productId,name:"RONSAS Hub",status:"active",sort_order:1},
+      {id:"app-2",product_id:productId,name:"Sync Vision",status:"active",sort_order:2},
+      {id:"app-3",product_id:productId,name:"Creative Studio",status:"active",sort_order:3}
+    ];
+    return route.fulfill({contentType:"application/json",body:JSON.stringify(body)});
+  });
+
+  await page.goto(appPath);
+
+  const ecosystem = page.locator('[data-hero-ecosystem="ronsas"]');
+  await expect(ecosystem).toBeVisible();
+  await expect(page.getByText("RONSAS",{exact:true})).toBeVisible();
+  await expect(page.getByText("Resonance Open Nova Sovereign Application Suite",{exact:true})).toBeVisible();
+  await expect(page.getByText("DataNest AI",{exact:true})).toBeVisible();
+
+  for (const label of ["Governed AI","Certified Memory","Traceable Collaboration","Sovereign App Suite"]) {
+    await expect(page.getByText(label,{exact:true})).toBeVisible();
+  }
+
+  const motion = await ecosystem.evaluate(element => {
+    const style = (selector:string) => {
+      const node = element.querySelector(selector);
+      if (!(node instanceof HTMLElement)) throw new Error("Missing "+selector);
+      return getComputedStyle(node);
+    };
+    return {
+      ai: style('[data-hero-signal="ai-core"]').animationName,
+      memory: style('[data-value="certified-memory"]').animationName,
+      sweep: style('[data-hero-signal="ecosystem-sweep"]').animationName
+    };
+  });
+  expect(motion.ai).toContain("portfolioAiPulse");
+  expect(motion.memory).toContain("portfolioValuePulse");
+  expect(motion.sweep).toContain("portfolioSweep");
+});
