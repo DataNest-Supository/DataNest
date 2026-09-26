@@ -4058,3 +4058,28 @@ code,pre{
 .catalogCopyLinkButton:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .catalogShareNotice{justify-self:end;padding:8px 11px;border:1px solid rgba(112,228,174,.2);border-radius:11px;background:rgba(112,228,174,.06);color:#c9f7dc;font-size:9px}
 @container datanest-main (max-width:700px){.catalogStageBadges,.catalogShareControl{justify-content:flex-start}.catalogShareNotice{justify-self:start}}
+
+
+.aiIRonsasIdentity{
+  width:fit-content;
+  max-width:100%;
+  margin-top:15px;
+  padding:7px 10px;
+  border:1px solid rgba(151,134,255,.24);
+  border-radius:999px;
+  color:#bbb7d7;
+  background:linear-gradient(90deg,rgba(94,222,255,.07),rgba(163,119,255,.08),rgba(255,77,218,.06));
+  box-shadow:inset 0 1px rgba(255,255,255,.025),0 0 24px rgba(112,91,255,.04);
+  font-size:8px;
+  font-weight:850;
+  line-height:1.35;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+@media(max-width:470px){
+  .aiIRonsasIdentity{
+    border-radius:12px;
+    font-size:7px;
+    letter-spacing:.055em;
+  }
+}
