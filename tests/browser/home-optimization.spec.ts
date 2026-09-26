@@ -419,3 +419,56 @@ test("specialist phase rail preserves lifecycle orientation", async ({ page }) =
   await expect(rail).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+
+test("Hero presents RONSAS and animated DataNest value network", async ({ page }) => {
+  const projectId="00000000-0000-4000-8000-000000000010";
+  const userId="00000000-0000-4000-8000-000000000001";
+
+  await page.route("**/runtime-config.js", route => route.fulfill({
+    contentType:"application/javascript",
+    body:"window.__DATANEST_CONFIG__={supabaseUrl:'https://fixture.supabase.co',supabasePublishableKey:'fixture-key',authoritative:true}"
+  }));
+  await page.addInitScript(({userId})=>{
+    const encode=(data:unknown)=>btoa(JSON.stringify(data)).replaceAll("+","-").replaceAll("/","_").replaceAll("=","");
+    localStorage.setItem("sb-fixture-auth-token",JSON.stringify({
+      access_token:`${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:userId,exp:4102444800,role:"authenticated"})}.fixture`,
+      refresh_token:"fixture",token_type:"bearer",expires_at:4102444800,
+      user:{id:userId,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid"}
+    }));
+  },{userId});
+  await page.route("https://fixture.supabase.co/**", route=>{
+    const path=new URL(route.request().url()).pathname;
+    let body:unknown=[];
+    if(path.endsWith("/projects"))body={id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE"};
+    if(path.endsWith("/project_members"))body={project_id:projectId,user_id:userId,role:"viewer",status:"active"};
+    if(path.endsWith("/get_project_dashboard_summary"))body={total_jobs:20,active_jobs:5,running_jobs:1,blocked_jobs:0};
+    if(path.endsWith("/jobs"))body=[{id:"1",status:"RUNNING",created_at:"2026-09-26T00:15:00Z"}];
+    if(path.endsWith("/products"))body=[{id:"p1",name:"Resonance Suite",full_name:"Resonance governed portfolio",lifecycle_status:"ACTIVE"}];
+    if(path.endsWith("/product_records"))body=[
+      {id:"a1",product_id:"p1",name:"Creative Studio",status:"ACTIVE",sort_order:1},
+      {id:"a2",product_id:"p1",name:"Sync Vision",status:"ACTIVE",sort_order:2}
+    ];
+    return route.fulfill({contentType:"application/json",body:JSON.stringify(body)});
+  });
+
+  await page.goto(appPath);
+  const hero=page.locator(".resonanceHome .aiIHero");
+  await expect(hero).toContainText("RONSAS · Resonance Open Nova Sovereign Application Suite");
+
+  const network=hero.getByLabel("Resonance DataNest value network");
+  await expect(network).toBeVisible();
+  for(const label of ["Governed AI","Certified Memory","Traceable Collaboration","Sovereign App Suite"]){
+    await expect(network.getByText(label,{exact:true})).toBeVisible();
+  }
+
+  expect(await network.locator("[data-signal='ai']").evaluate(el=>getComputedStyle(el).animationName)).not.toBe("none");
+  expect(await network.locator("[data-signal='memory']").evaluate(el=>getComputedStyle(el).animationName)).not.toBe("none");
+  expect(await network.locator("[data-signal='ronsas']").evaluate(el=>getComputedStyle(el).animationName)).not.toBe("none");
+
+  await page.setViewportSize({width:390,height:844});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+
+  await page.emulateMedia({reducedMotion:"reduce"});
+  expect(await network.locator("[data-signal='ai']").evaluate(el=>getComputedStyle(el).animationName)).toBe("none");
+});
