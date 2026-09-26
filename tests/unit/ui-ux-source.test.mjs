@@ -195,3 +195,17 @@ test("Product Lab empty state gives operators a direct recovery action", () => {
   assert.match(productLabSource, /id="product-surface-admin"/);
   assert.match(productLabSource, /scrollIntoView\(\{behavior:"smooth",block:"start"\}\)/);
 });
+
+
+test("workflow guidance adapts to live execution state while keeping lifecycle fallback", () => {
+  assert.match(appSource, /function resolveWorkflowRecommendation\(/);
+  assert.match(appSource, /view==="overview"[\s\S]*?summary\.blocked>0[\s\S]*?key:"scheduler"/);
+  assert.match(appSource, /view==="overview"[\s\S]*?summary\.running>0[\s\S]*?key:"runs"/);
+  assert.match(appSource, /view==="ai"[\s\S]*?summary\.total===0[\s\S]*?key:"unifi"/);
+  assert.match(appSource, /view==="scheduler"[\s\S]*?summary\.running>0[\s\S]*?key:"runs"/);
+  assert.match(appSource, /view==="scheduler"[\s\S]*?summary\.blocked>0[\s\S]*?key:"unifi"/);
+  assert.match(appSource, /return \{key:fallback,reason:defaultReason,adaptive:false\}/);
+  assert.match(appSource, /STATE-AWARE/);
+  assert.match(appSource, /LIFECYCLE/);
+  assert.match(cssSource, /\.workflowMode\.adaptive\{/);
+});

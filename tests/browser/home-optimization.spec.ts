@@ -200,3 +200,38 @@ test("workflow shell guides execution forward and preserves browser history", as
   await expect(page).toHaveURL(/\?view=unifi/);
   await expect(page.locator(".topbar h1")).toHaveText("UNIFI Planner");
 });
+
+
+test("dashboard recommends operational attention from live project state", async ({ page }) => {
+  const projectId = "00000000-0000-4000-8000-000000000010";
+  const userId = "00000000-0000-4000-8000-000000000001";
+
+  await page.route("**/runtime-config.js", route => route.fulfill({
+    contentType: "application/javascript",
+    body: "window.__DATANEST_CONFIG__={supabaseUrl:'https://fixture.supabase.co',supabasePublishableKey:'fixture-key',authoritative:true}"
+  }));
+  await page.addInitScript(({userId}) => {
+    const encode = (data: unknown) => btoa(JSON.stringify(data)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+    localStorage.setItem("sb-fixture-auth-token", JSON.stringify({
+      access_token: `${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:userId,exp:4102444800,role:"authenticated"})}.fixture`,
+      refresh_token: "fixture", token_type:"bearer", expires_at:4102444800,
+      user:{id:userId,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid"}
+    }));
+  }, {userId});
+
+  await page.route("https://fixture.supabase.co/**", route => {
+    const path = new URL(route.request().url()).pathname;
+    let body: unknown = [];
+    if (path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE",created_at:"2026-09-26T00:00:00Z"};
+    if (path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"viewer",status:"active"};
+    if (path.endsWith("/get_project_dashboard_summary")) body = {total_jobs:7,active_jobs:3,running_jobs:0,blocked_jobs:2,available_capabilities:2,registered_capabilities:3};
+    return route.fulfill({contentType:"application/json",body:JSON.stringify(body)});
+  });
+
+  await page.goto(appPath);
+  await expect(page.getByText("STATE-AWARE")).toBeVisible();
+  await expect(page.getByText(/Suggested next: TranScheduler · 2 blocked Jobs need scheduling attention/)).toBeVisible();
+  await page.getByRole("button", {name:"Continue · TranScheduler →"}).click();
+  await expect(page).toHaveURL(/\?view=scheduler/);
+  await expect(page.locator(".topbar h1")).toHaveText("TranScheduler");
+});

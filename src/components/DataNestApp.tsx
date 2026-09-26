@@ -101,6 +101,49 @@ const workflowNext:Partial<Record<ViewKey,ViewKey>> = {
   transparency:"overview"
 };
 
+type WorkflowRecommendation = { key:ViewKey|null; reason:string; adaptive:boolean };
+
+function resolveWorkflowRecommendation(
+  view:ViewKey,
+  summary:Summary,
+  runCount:number,
+  checkpointCount:number
+):WorkflowRecommendation{
+  const fallback=workflowNext[view]||null;
+  const defaultReason=fallback ? viewDescriptions[fallback] : viewDescriptions[view];
+
+  if(view==="overview"){
+    if(summary.blocked>0)return {key:"scheduler",reason:`${summary.blocked} blocked ${summary.blocked===1?"Job needs":"Jobs need"} scheduling attention.`,adaptive:true};
+    if(summary.running>0)return {key:"runs",reason:`${summary.running} running ${summary.running===1?"Job is":"Jobs are"} ready for execution monitoring.`,adaptive:true};
+    if(summary.total===0)return {key:"ai",reason:"No Jobs exist yet; shape the next governed outcome with DataNest AI.",adaptive:true};
+  }
+
+  if(view==="ai"){
+    if(summary.blocked>0)return {key:"scheduler",reason:"Blocked work is waiting for scheduling or capability attention.",adaptive:true};
+    if(summary.running>0)return {key:"runs",reason:"Active execution is underway; inspect live and completed run outcomes.",adaptive:true};
+    if(summary.total===0)return {key:"unifi",reason:"Turn the clarified intent into a complete Job Manifest.",adaptive:true};
+  }
+
+  if(view==="unifi"&&summary.blocked>0){
+    return {key:"scheduler",reason:"Blocked Jobs need scheduling and capability review before execution can continue.",adaptive:true};
+  }
+
+  if(view==="scheduler"){
+    if(summary.running>0)return {key:"runs",reason:"Execution is active; move forward to run-level outcomes and connector evidence.",adaptive:true};
+    if(summary.blocked>0)return {key:"unifi",reason:"No Job is running and blocked work may need manifest or capability adjustments.",adaptive:true};
+  }
+
+  if(view==="runs"&&runCount===0&&summary.active>0){
+    return {key:"scheduler",reason:"There is active work but no run history yet; confirm scheduling state first.",adaptive:true};
+  }
+
+  if(view==="checkpoints"&&checkpointCount===0&&summary.running>0){
+    return {key:"runs",reason:"No durable checkpoint is available yet; monitor the active run before resuming from evidence.",adaptive:true};
+  }
+
+  return {key:fallback,reason:defaultReason,adaptive:false};
+}
+
 const workflowPrevious:Partial<Record<ViewKey,ViewKey>> = {
   ai:"overview",
   sparks:"stakeholder",
@@ -625,7 +668,8 @@ export default function DataNestApp({session}:{session:Session}) {
   const currentLabel=currentNavItem?.label||"Overview";
   const currentDescription=viewDescriptions[view];
   const currentGroup=currentNavItem?.group||"Core";
-  const nextViewKey=workflowNext[view]||null;
+  const workflowRecommendation=resolveWorkflowRecommendation(view,summary,runCount,checkpointCount);
+  const nextViewKey=workflowRecommendation.key;
   const previousViewKey=workflowPrevious[view]||null;
   const nextViewItem=nextViewKey ? nav.find(item=>item.key===nextViewKey)||null : null;
   const previousViewItem=previousViewKey ? nav.find(item=>item.key===previousViewKey)||null : null;
@@ -822,9 +866,9 @@ export default function DataNestApp({session}:{session:Session}) {
         </div>
         {!loadingCore&&project&&(previousViewItem||nextViewItem)&&<nav className="workflowContinuation" aria-label="Workspace progression">
           <div className="workflowContinuationCopy">
-            <p className="eyebrow">WORKFLOW CONTINUITY</p>
+            <div className="workflowContinuationMeta"><p className="eyebrow">WORKFLOW CONTINUITY</p><span className={"workflowMode "+(workflowRecommendation.adaptive?"adaptive":"lifecycle")}>{workflowRecommendation.adaptive?"STATE-AWARE":"LIFECYCLE"}</span></div>
             <strong>{currentGroup} · {currentLabel}</strong>
-            <small>{nextViewItem ? "Suggested next: "+nextViewItem.label+" · "+viewDescriptions[nextViewItem.key] : currentDescription}</small>
+            <small>{nextViewItem ? "Suggested next: "+nextViewItem.label+" · "+workflowRecommendation.reason : currentDescription}</small>
           </div>
           <div className="workflowContinuationActions">
             {previousViewItem&&<button className="secondaryButton compact" type="button" onClick={()=>setView(previousViewItem.key)}>← {previousViewItem.label}</button>}

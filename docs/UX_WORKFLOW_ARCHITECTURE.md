@@ -70,3 +70,16 @@ The hero action continues to prioritize DataNest AI.
 4. Continuity — each page provides a clear suggested next move without forcing a linear flow.
 5. Preserve power-user speed — Ctrl/Cmd + K and direct URL routing remain intact.
 6. Respect accessibility — semantic navigation, focus-visible states, and reduced-motion behavior are retained.
+
+
+## State-aware continuation
+
+The deterministic lifecycle remains the fallback, but the shell can override the next-step recommendation when already-loaded project state provides a stronger operational signal.
+
+- Blocked Jobs route attention toward TranScheduler.
+- Running Jobs route attention toward Runs.
+- An empty project routes intent through DataNest AI and then UNIFI planning.
+- A scheduler with blocked work and no running Jobs can route back to UNIFI for manifest or capability adjustment.
+- Missing run or checkpoint evidence can route users back to the workspace that must produce it.
+
+Adaptive recommendations are labeled `STATE-AWARE`; ordinary sequence guidance is labeled `LIFECYCLE`. The rule set is intentionally narrow so recommendations remain explainable and do not replace human judgment.

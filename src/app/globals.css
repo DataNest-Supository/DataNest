@@ -4286,3 +4286,10 @@ code,pre{
 .productLab .emptyState .primaryButton{margin-top:14px}
 #product-surface-admin{scroll-margin-top:110px}
 @media(max-width:800px){.workspaceTaskGuide{grid-template-columns:1fr}}
+
+
+/* State-aware workflow guidance */
+.workflowContinuationMeta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.workflowContinuationMeta .eyebrow{margin:0}
+.workflowMode{display:inline-flex;align-items:center;min-height:18px;padding:2px 7px;border:1px solid rgba(255,255,255,.09);border-radius:999px;font-size:7px;font-weight:900;letter-spacing:.12em;color:#8e9aaf;background:rgba(255,255,255,.035)}
+.workflowMode.adaptive{color:#82e9ff;border-color:rgba(66,231,255,.24);background:rgba(66,231,255,.07)}
