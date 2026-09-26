@@ -4049,3 +4049,12 @@ code,pre{
 
 .catalogDetails[open]>summary{color:#d6f7ff}
 .catalogDetails[open]{scroll-margin-top:18px}
+
+
+/* Shareable governed product views */
+.catalogShareControl{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.catalogCopyLinkButton{min-height:34px;border:1px solid rgba(103,226,255,.22);border-radius:999px;padding:7px 11px;background:rgba(103,226,255,.055);color:#d1f8ff;font:inherit;font-size:9px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+.catalogCopyLinkButton:hover{border-color:rgba(103,226,255,.4);background:rgba(103,226,255,.1)}
+.catalogCopyLinkButton:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.catalogShareNotice{justify-self:end;padding:8px 11px;border:1px solid rgba(112,228,174,.2);border-radius:11px;background:rgba(112,228,174,.06);color:#c9f7dc;font-size:9px}
+@container datanest-main (max-width:700px){.catalogStageBadges,.catalogShareControl{justify-content:flex-start}.catalogShareNotice{justify-self:start}}
