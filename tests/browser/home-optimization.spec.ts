@@ -41,6 +41,8 @@ test("entry respects system reduced motion", async ({ page }) => {
   await page.goto(appPath);
   await expect(page.getByLabel("Email")).toBeVisible();
   expect(await page.locator(".orbitOuter").evaluate(el => getComputedStyle(el).animationName)).toBe("none");
+  expect(await page.locator(".resonanceRipple").evaluate(el => getComputedStyle(el).animationName)).toBe("none");
+  expect(await page.locator(".intentFlowPacket").first().evaluate(el => getComputedStyle(el).animationName)).toBe("none");
 });
 
 test("dashboard labels its sample and groups UTC days independently of local timezone", async ({ page }) => {
