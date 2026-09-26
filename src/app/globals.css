@@ -1965,3 +1965,20 @@ code,pre{
 @media(prefers-reduced-motion:reduce){
   .motionControl{transition:none}
 }
+
+
+/* Project invitation action feedback */
+.inviteActionCell{display:grid;gap:8px;align-content:end}
+.inviteSubmitButton{min-height:46px;position:relative;overflow:hidden;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease}
+.inviteButtonContent{display:inline-flex;align-items:center;justify-content:center;gap:9px}
+.inviteButtonIcon{width:18px;height:18px;display:inline-grid;place-items:center;flex:0 0 auto;font-size:13px;font-weight:950}
+.inviteSubmitButton.sending .inviteButtonIcon{width:14px;height:14px;border:2px solid rgba(8,2,17,.28);border-top-color:#080211;border-radius:50%;animation:spin .8s linear infinite}
+.inviteSubmitButton.sent{color:#04150d;border-color:rgba(114,230,174,.5);background:linear-gradient(135deg,#a9f5cf,#6ee7b7);box-shadow:0 10px 28px rgba(114,230,174,.13)}
+.inviteSubmitButton.failed{color:#fff;border-color:rgba(255,134,171,.42);background:linear-gradient(135deg,rgba(183,45,92,.95),rgba(129,35,77,.95));box-shadow:0 10px 28px rgba(255,134,171,.12)}
+.inviteFeedback{min-height:0;padding:0 2px;color:var(--muted);font-size:10px;line-height:1.45}
+.inviteFeedback:empty{display:none}
+.inviteFeedback.sending{color:#9edff3}
+.inviteFeedback.sent{color:#aef0c7}
+.inviteFeedback.failed{color:#ffb6c9}
+@media(max-width:650px){.inviteActionCell{width:100%}.inviteSubmitButton{width:100%}}
+@media(prefers-reduced-motion:reduce){.inviteSubmitButton.sending .inviteButtonIcon{animation:none}}
