@@ -141,6 +141,28 @@ export default function CollaborationVisual({
   }
 
   return <div className={"aiICoreStage "+styles.productsHeroVisual} aria-label={ariaLabel}>
+    <div className={styles.valueNetwork} aria-label="Resonance DataNest value network">
+      <span className={styles.valueSignal+" "+styles.aiSignal} data-signal="ai" aria-hidden="true"/>
+      <span className={styles.valueSignal+" "+styles.memorySignal} data-signal="memory" aria-hidden="true"/>
+      <span className={styles.valueSignal+" "+styles.collaborationSignal} data-signal="collaboration" aria-hidden="true"/>
+      <span className={styles.valueSignal+" "+styles.ronsasSignal} data-signal="ronsas" aria-hidden="true"/>
+
+      <div className={styles.valueNode+" "+styles.aiValueNode}>
+        <small>AI</small><b>Governed AI</b><span>Intent → intelligence</span>
+      </div>
+      <div className={styles.valueNode+" "+styles.memoryValueNode}>
+        <small>MEMORY</small><b>Certified Memory</b><span>Validated learning</span>
+      </div>
+      <div className={styles.valueNode+" "+styles.collaborationValueNode}>
+        <small>TRACE</small><b>Traceable Collaboration</b><span>Human + AI provenance</span>
+      </div>
+      <div className={styles.valueNode+" "+styles.ronsasValueNode}>
+        <small>RONSAS</small><b>Sovereign App Suite</b><span>Governed product ecosystem</span>
+      </div>
+
+      <span className={styles.intelligenceHalo} aria-hidden="true"/>
+    </div>
+
     <div className={styles.portfolioOrbitShell} aria-hidden="true">
       <span className={styles.portfolioOrbitRing+" "+styles.portfolioRingOuter}/>
       <span className={styles.portfolioOrbitRing+" "+styles.portfolioRingInner}/>
