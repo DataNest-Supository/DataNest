@@ -55,6 +55,17 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
     }
 
     if (path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE",created_at:"2026-09-26T00:00:00Z"};
+    if (path.endsWith("/products")) body = [{
+      id:"24f2fa75-18b8-5b45-b624-b5dab381de9e",slug:"ronsas",name:"RONSAS",full_name:"Resonance Open Nova Application Suite",
+      category:"sovereign application suite",lifecycle_status:"active development and integration",
+      mission:"Unify the Resonance application estate under governed local-first operations.",operating_model:"governed",
+      primary_runtime:"Windows local-first",commercial_mode:"free promotion / no billing until pricing is established",
+      billing_enabled:false,as_of_date:"2026-09-26",metadata:{}
+    }];
+    if (path.endsWith("/product_records")) body = [
+      {id:"00000000-0000-4000-8000-000000000301",product_id:"24f2fa75-18b8-5b45-b624-b5dab381de9e",record_type:"application",code:"APP-01",name:"RONSAS Hub",status:"active",sort_order:1,payload:{description:"Primary application hub"}},
+      {id:"00000000-0000-4000-8000-000000000302",product_id:"24f2fa75-18b8-5b45-b624-b5dab381de9e",record_type:"risk",code:"RSK-01",name:"Runner capacity",status:"open",sort_order:2,payload:{description:"Runner capacity requires governed monitoring."}}
+    ];
     if (path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"viewer",status:"active"};
     if (path.endsWith("/get_project_dashboard_summary")) body = {total_jobs:1,active_jobs:1,running_jobs:0,blocked_jobs:0,available_capabilities:0,registered_capabilities:0};
     if (path.endsWith("/jobs")) body = [{id:jobId,job_number:7,title:"Legal matter",status:"READY",updated_at:"2026-09-26T06:00:00Z"}];
@@ -62,7 +73,21 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
     return route.fulfill({contentType:"application/json",body:JSON.stringify(body)});
   });
 
-  await page.goto(appPath+"?view=products");
+  await page.goto(appPath+"?view=products&product=ronsas&recordType=risk&q=runner");
+
+  await expect(page.getByRole("heading", {name:"Products that carry their architecture, evidence and decisions with them."})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"RONSAS",exact:true})).toBeVisible();
+  await expect(page.getByLabel("Filter governed record type")).toHaveValue("risk");
+  await expect(page.getByLabel("Search governed product records")).toHaveValue("runner");
+  await page.locator("details.catalogDetails > summary").click();
+  await expect(page.getByText("Runner capacity",{exact:true})).toBeVisible();
+  await expect(page).toHaveURL(/product=ronsas/);
+  await expect(page).toHaveURL(/recordType=risk/);
+  await expect(page).toHaveURL(/q=runner/);
+
+  await page.getByLabel("Search governed product records").fill("");
+  await page.getByLabel("Filter governed record type").selectOption("all");
+  await expect(page).toHaveURL(/product=ronsas/);
 
   await expect(page.getByRole("heading", {name:"Products that carry their architecture, evidence and decisions with them."})).toBeVisible();
   await expect(page.getByText("Product Concept Incubator", {exact:true})).toBeVisible();
