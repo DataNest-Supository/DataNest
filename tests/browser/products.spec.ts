@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 const appPath = process.env.DATANEST_APP_PATH || "/";
 
-test("Products presents Resonance Assistance and the Legal Eagle guided preview", async ({ page }) => {
+test("Products presents the governed catalog and opens the Legal Eagle concept preview on demand", async ({ page }) => {
   const projectId = "00000000-0000-4000-8000-000000000010";
   const userId = "00000000-0000-4000-8000-000000000001";
 
@@ -32,6 +32,12 @@ test("Products presents Resonance Assistance and the Legal Eagle guided preview"
   });
 
   await page.goto(appPath+"?view=products");
+
+  await expect(page.getByRole("heading", {name:"Products that carry their architecture, evidence and decisions with them."})).toBeVisible();
+  await expect(page.getByText("Product Concept Incubator")).toBeVisible();
+  await expect(page.getByRole("heading", {name:"Assistance with a human at the centre."})).toBeHidden();
+
+  await page.locator("details.conceptIncubator > summary").click();
 
   await expect(page.getByRole("heading", {name:"Assistance with a human at the centre."})).toBeVisible();
   await expect(page.getByRole("heading", {name:"Resonance Assistance"}).first()).toBeVisible();
