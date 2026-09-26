@@ -69,6 +69,11 @@ export default function DataNestAiWorkspace({
   const [context,setContext]=useState<ContextResponse|null>(null);
   const [loading,setLoading]=useState(true);
   const selectedJobIdRef=useRef("");
+  const sessionByJobRef=useRef<Record<string,string>>({});
+
+  const sessionKey=useCallback((jobId:string)=>
+    projectId+":"+currentUserId+":"+jobId
+  ,[projectId,currentUserId]);
 
   const selectedJob=useMemo(
     ()=>jobs.find(job=>job.id===selectedJobId)||null,
@@ -99,11 +104,15 @@ export default function DataNestAiWorkspace({
   const refreshContext=useCallback(async(sessionOverride?:string)=>{
     if(!selectedJobId)return;
     const requestedJobId=selectedJobId;
+    const requestedSessionKey=sessionKey(requestedJobId);
+    const requestedSessionId=typeof sessionOverride==="string"
+      ?sessionOverride||null
+      :sessionByJobRef.current[requestedSessionKey]||null;
     const supabase=getSupabase();
     if(!supabase)return;
     setLoading(true);
     const {data,error}=await supabase.functions.invoke("datanest-ai-chat",{
-      body:{action:"context",jobId:requestedJobId,sessionId:sessionOverride||sessionId||null}
+      body:{action:"context",jobId:requestedJobId,sessionId:requestedSessionId}
     });
     if(selectedJobIdRef.current!==requestedJobId)return;
     setLoading(false);
@@ -111,8 +120,10 @@ export default function DataNestAiWorkspace({
     const payload=data as ContextResponse;
     if(payload.job?.id!==requestedJobId)return;
     setContext(payload);
-    if(payload.sessionId)setSessionId(payload.sessionId);
-  },[selectedJobId,sessionId,setError]);
+    const nextSessionId=String(payload.sessionId||"");
+    sessionByJobRef.current[requestedSessionKey]=nextSessionId;
+    setSessionId(nextSessionId);
+  },[selectedJobId,sessionKey,setError]);
 
   useEffect(()=>{void loadJobs()},[loadJobs]);
 
@@ -126,12 +137,12 @@ export default function DataNestAiWorkspace({
 
   useEffect(()=>{
     if(!selectedJobId)return;
-    setSessionId("");
+    setSessionId(sessionByJobRef.current[sessionKey(selectedJobId)]||"");
     setContext(null);
     window.dispatchEvent(new CustomEvent("datanest:job-selected",{
       detail:{jobId:selectedJobId}
     }));
-  },[selectedJobId]);
+  },[selectedJobId,sessionKey]);
 
   useEffect(()=>{
     if(!selectedJobId)return;
@@ -145,6 +156,7 @@ export default function DataNestAiWorkspace({
 
       const stagedSessionId=String(detail.sessionId||"");
       if(stagedSessionId&&stagedSessionId!==sessionId){
+        sessionByJobRef.current[sessionKey(selectedJobId)]=stagedSessionId;
         setSessionId(stagedSessionId);
         return;
       }
@@ -153,7 +165,7 @@ export default function DataNestAiWorkspace({
     };
     window.addEventListener("datanest:external-ai-staged",refreshStaged);
     return()=>window.removeEventListener("datanest:external-ai-staged",refreshStaged);
-  },[selectedJobId,refreshContext]);
+  },[selectedJobId,sessionId,sessionKey,refreshContext]);
 
   async function refreshAll(){
     await loadJobs();
@@ -305,7 +317,10 @@ export default function DataNestAiWorkspace({
           jobCode={jobCode(selectedJob)}
           sessionId={sessionId}
           events={context?.events||[]}
-          onSessionChange={setSessionId}
+          onSessionChange={nextSessionId=>{
+            sessionByJobRef.current[sessionKey(selectedJob.id)]=nextSessionId;
+            if(selectedJobIdRef.current===selectedJob.id)setSessionId(nextSessionId);
+          }}
           onContextRefresh={refreshContext}
           setNotice={setNotice}
           setError={setError}
