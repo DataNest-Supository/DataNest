@@ -368,11 +368,10 @@ export default function DataNestAiWorkspace({
 
     {selectedJob&&<>
       <section className="panel" aria-label="Choose active Job">
-        <label>Active Job context
-          <select value={selectedJobId} onChange={event=>selectJob(event.target.value)}>
-            {jobs.map(job=><option key={job.id} value={job.id}>{jobCode(job)+" · "+job.title}</option>)}
-          </select>
-        </label>
+        <label htmlFor="datanest-ai-active-job">Active Job context</label>
+        <select id="datanest-ai-active-job" value={selectedJobId} onChange={event=>selectJob(event.target.value)}>
+          {jobs.map(job=><option key={job.id} value={job.id}>{jobCode(job)+" · "+job.title}</option>)}
+        </select>
         <small className="muted">Choose the Job before composing a command. Drafts stay with their Job.</small>
       </section>
       <section id="datanest-ai-chat" className="datanestAiChatStage" aria-label="DataNest AI Chat">
