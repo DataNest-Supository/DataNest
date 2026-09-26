@@ -1,5 +1,7 @@
 $ErrorActionPreference = "Stop"
 
+Write-Warning "Legacy local/recovery launcher only. Canonical production is DataNest-managed."
+
 if (-not $env:SUPABASE_URL) {
   $env:SUPABASE_URL = "https://sgqdmfgjbprsoqsmgigi.supabase.co"
 }
