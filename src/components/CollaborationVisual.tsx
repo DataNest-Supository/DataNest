@@ -9,13 +9,19 @@ export default function CollaborationVisual() {
           <strong>Intent</strong>
           <span>Human direction</span>
         </div>
-        <div className="coreBridge" aria-hidden="true"><i/><i/><i/><i/></div>
+        <div className="coreBridge" aria-hidden="true">
+          <i className="intentFlowPacket packetA"/>
+          <i className="intentFlowPacket packetB"/>
+          <i className="amplifyFlowPacket"/>
+          <i className="feedbackFlowPacket"/>
+        </div>
         <div className="coreNode aiCore">
           <small>AI</small>
           <strong>Amplify</strong>
           <span>Governed intelligence</span>
         </div>
         <div className="coreCenter" aria-hidden="true"><span>R</span></div>
+        <div className="resonanceRipple" aria-hidden="true"/>
         <span className="coreCaption">Traceable collaboration loop</span>
       </div>;
 }
