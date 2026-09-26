@@ -478,10 +478,22 @@ test("AI & I keeps DataNest AI at the core while governed products stay product 
   await expect(visual.getByText("0 applications",{exact:true})).toBeVisible();
   await expect(visual.getByText("GOVERNED PRODUCT",{exact:true})).toHaveCount(0);
   await expect(visual).toHaveAttribute("aria-label",/DataNest AI core.*RONSAS, 9 applications.*Aurum Naturals, 0 applications/);
+
+  const network=visual.getByLabel("Resonance DataNest value network");
+  await expect(network).toBeVisible();
+  for(const label of ["Governed AI","Certified Memory","Traceable Collaboration","Sovereign App Suite"]){
+    await expect(network.getByText(label,{exact:true})).toBeVisible();
+  }
+  expect(await network.locator("[data-signal='ai']").evaluate(el=>getComputedStyle(el).animationName)).not.toBe("none");
+  expect(await network.locator("[data-signal='memory']").evaluate(el=>getComputedStyle(el).animationName)).not.toBe("none");
+  expect(await network.locator("[data-signal='ronsas']").evaluate(el=>getComputedStyle(el).animationName)).not.toBe("none");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 
   await page.setViewportSize({width:390,height:844});
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+
+  await page.emulateMedia({reducedMotion:"reduce"});
+  expect(await network.locator("[data-signal='ai']").evaluate(el=>getComputedStyle(el).animationName)).toBe("none");
 
   await visual.getByRole("button",{name:"Open Products"}).click();
   await expect(page).toHaveURL(/view=products/);
