@@ -184,7 +184,7 @@
   50%{transform:scale(1.02);box-shadow:0 0 0 19px rgba(86,231,255,.03),0 0 66px rgba(86,231,255,.18),0 0 96px rgba(255,67,218,.10)}
 }
 @container datanest-main (max-width:620px){
-  .productsHeroVisual{min-height:340px!important}
+  .productsHeroVisual{min-height:340px!important;max-width:100%;min-width:0;overflow:hidden}
   .portfolioProductCard{width:116px;min-height:64px;padding:9px}
   .portfolioCore{width:154px;min-height:154px}
   .portfolioCore strong{font-size:18px}
