@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
 const app=fs.readFileSync(path.join(root,"src/components/DataNestApp.tsx"),"utf8");
 const products=fs.readFileSync(path.join(root,"src/components/ProductsWorkspace.tsx"),"utf8");
+const gateway=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-chat/index.ts"),"utf8");
 const productMigration=fs.readFileSync(path.join(root,"supabase/migrations/20260926061000_governed_product_catalog.sql"),"utf8");
 const ronsasSnapshot=fs.readFileSync(path.join(root,"data/imports/ronsas-product-20260926.jsonl"),"utf8");
 
@@ -16,23 +17,43 @@ test("Products is a first-class DataNest workspace",()=>{
   assert.match(app,/Explore Resonance Assistance and specialist product experiences/);
 });
 
-test("Resonance Assistance is clearly separated as concept 01 and Legal Eagle is its first specialist",()=>{
+test("Resonance Assistance stays concept 01 while Legal Eagle is its first live specialist",()=>{
   assert.match(products,/CONCEPT 01/);
   assert.match(products,/Product Concept Incubator/);
   assert.doesNotMatch(products,/PRODUCT 01/);
   assert.match(products,/Resonance Assistance/);
-  assert.match(products,/FIRST SPECIALIST/);
+  assert.match(products,/FIRST SPECIALIST · LIVE/);
   assert.match(products,/Legal Eagle/);
-  assert.match(products,/Legal information \+ preparation/);
+  assert.match(products,/GOVERNED ASSISTANT/);
+});
+
+test("Legal Eagle calls the governed AI gateway with matter and jurisdiction scope",()=>{
+  assert.match(products,/functions\.invoke\("datanest-ai-chat"/);
+  assert.match(products,/productMode:"legal_eagle"/);
+  assert.match(products,/jurisdiction:cleanJurisdiction/);
+  assert.match(products,/legalTask:selectedTask\.key/);
+  assert.match(products,/jobId:selectedJob\.id/);
+  assert.match(products,/datanest\.legalEagle\.session/);
 });
 
 test("Legal Eagle keeps legal decisions and representation with humans",()=>{
   assert.match(products,/does not create an attorney-client relationship/);
   assert.match(products,/not be relied on as a substitute for advice from a qualified lawyer/);
+  assert.match(products,/No fabricated authority/);
   assert.match(products,/No autonomous deadlines/);
   assert.match(products,/No representation/);
   assert.match(products,/Human escalation/);
-  assert.match(products,/NO LEGAL CONCLUSION GENERATED/);
+});
+
+test("Legal Eagle backend requires jurisdiction and blocks automatic learning",()=>{
+  assert.match(gateway,/productMode==="legal_eagle"/);
+  assert.match(gateway,/Legal Eagle requires a jurisdiction before substantive assistance/);
+  assert.match(gateway,/do not create an attorney-client relationship or legal privilege/);
+  assert.match(gateway,/Do not fabricate statutes, cases, citations, court rules, filing requirements or deadlines/);
+  assert.match(gateway,/learning_eligible:!legalMode/);
+  assert.match(gateway,/filter\(item=>item\.metadata\.learning_eligible!==false\)/);
+  assert.match(gateway,/if\(legalMode\)\{\s*trendAnalysis=\{status:"not_applicable"\};\s*return;/);
+  assert.match(gateway,/learningEligible:!legalMode/);
 });
 
 
