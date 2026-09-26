@@ -201,3 +201,183 @@
     animation:none!important;
   }
 }
+
+
+/* DataNest AI value network: staged intelligence signals around the governed product core. */
+.aiValueNetwork{
+  position:absolute;
+  inset:0;
+  z-index:4;
+  pointer-events:none;
+}
+.networkPulse{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:228px;
+  height:228px;
+  border:1px solid rgba(112,231,255,.16);
+  border-radius:50%;
+  transform:translate(-50%,-50%) scale(.92);
+  box-shadow:0 0 34px rgba(112,231,255,.05),inset 0 0 34px rgba(153,130,255,.035);
+  animation:networkIntelligencePulse 6.8s ease-in-out infinite;
+}
+.valueBeam{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:146px;
+  height:1px;
+  transform-origin:0 50%;
+  background:linear-gradient(90deg,rgba(116,232,255,.42),rgba(155,132,255,.16),transparent);
+  opacity:.18;
+  animation:valueBeamPulse 7.2s ease-in-out infinite;
+}
+.beam1{transform:rotate(214deg)}
+.beam2{transform:rotate(326deg)}
+.beam3{transform:rotate(146deg)}
+.beam4{transform:rotate(34deg)}
+.valueNode{
+  position:absolute;
+  z-index:4;
+  width:116px;
+  min-height:42px;
+  padding:7px 9px 8px;
+  display:grid;
+  grid-template-columns:auto 1fr;
+  align-items:center;
+  column-gap:7px;
+  border:1px solid rgba(105,226,255,.18);
+  border-radius:11px;
+  background:
+    radial-gradient(circle at 15% 20%,rgba(91,224,255,.10),transparent 42%),
+    linear-gradient(145deg,rgba(10,27,47,.82),rgba(9,7,29,.88));
+  box-shadow:0 10px 26px rgba(0,0,0,.18),0 0 20px rgba(86,231,255,.025);
+  backdrop-filter:blur(10px);
+  animation:valueNodeSignal 7.2s ease-in-out infinite;
+}
+.valueNode>span{
+  grid-row:1 / 3;
+  align-self:center;
+  color:#68e8ff;
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.1em;
+}
+.valueNode b{
+  color:#eefbff;
+  font-size:8px;
+  line-height:1.12;
+}
+.valueNode small{
+  color:#7f93ad;
+  font-size:6px;
+  line-height:1.18;
+}
+.valueNode1{left:9%;top:25%}
+.valueNode2{right:9%;top:25%}
+.valueNode3{left:9%;bottom:25%}
+.valueNode4{
+  right:9%;
+  bottom:25%;
+  border-color:rgba(255,89,220,.22);
+  background:
+    radial-gradient(circle at 85% 20%,rgba(255,76,218,.10),transparent 44%),
+    linear-gradient(145deg,rgba(19,16,49,.86),rgba(9,7,29,.9));
+}
+.valueNode4>span{color:#ff86e7}
+.workSignal,
+.intentSignal{
+  position:absolute;
+  z-index:7;
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  opacity:0;
+  background:#8ef0ff;
+  box-shadow:0 0 9px #7ce9ff,0 0 24px rgba(124,233,255,.7);
+  will-change:transform,opacity;
+}
+.workSignal{
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+}
+.productsHeroVisual[data-running="true"] .workSignal{
+  animation:aiWorkSignal 5.4s ease-in-out infinite;
+}
+.intentSignal{
+  left:8%;
+  top:52%;
+  transform:translate(-50%,-50%);
+  background:#d3c4ff;
+  box-shadow:0 0 9px #b8a5ff,0 0 24px rgba(184,165,255,.7);
+}
+:global(.aiIHero):has(:global(.aiIPrimary):is(:hover,:focus-visible,:active)) .intentSignal{
+  animation:aiIntentSignal .95s ease-out 1 both;
+}
+.productsHeroVisual:has(.portfolioCore button:is(:hover,:focus-visible)) .portfolioSignalSweep{
+  animation-duration:3.1s;
+  filter:brightness(1.25);
+}
+.productsHeroVisual:has(.portfolioCore button:is(:hover,:focus-visible)) .valueNode4{
+  border-color:rgba(255,100,226,.54);
+  box-shadow:0 10px 26px rgba(0,0,0,.18),0 0 28px rgba(255,92,222,.13);
+}
+
+@keyframes networkIntelligencePulse{
+  0%,100%{opacity:.34;transform:translate(-50%,-50%) scale(.91)}
+  38%{opacity:.78;transform:translate(-50%,-50%) scale(1)}
+  62%{opacity:.46;transform:translate(-50%,-50%) scale(.96)}
+}
+@keyframes valueBeamPulse{
+  0%,72%,100%{opacity:.12;filter:brightness(.88)}
+  10%,28%{opacity:.58;filter:brightness(1.3)}
+  42%{opacity:.2;filter:brightness(1)}
+}
+@keyframes valueNodeSignal{
+  0%,72%,100%{filter:brightness(.96);box-shadow:0 10px 26px rgba(0,0,0,.18),0 0 20px rgba(86,231,255,.025)}
+  12%,28%{filter:brightness(1.12);box-shadow:0 10px 26px rgba(0,0,0,.18),0 0 28px rgba(86,231,255,.10)}
+  40%{filter:brightness(1)}
+}
+@keyframes aiWorkSignal{
+  0%,62%,100%{opacity:0;transform:translate(-50%,-50%) translate3d(0,0,0) scale(.72)}
+  68%{opacity:1}
+  84%{opacity:1;transform:translate(-50%,-50%) translate3d(126px,-72px,0) scale(1.14)}
+  92%{opacity:0;transform:translate(-50%,-50%) translate3d(150px,-86px,0) scale(.8)}
+}
+@keyframes aiIntentSignal{
+  0%{left:8%;opacity:0;transform:translate(-50%,-50%) scale(.7)}
+  14%{opacity:1}
+  50%{left:50%;opacity:1;transform:translate(-50%,-50%) scale(1.32);box-shadow:0 0 12px #b8a5ff,0 0 34px rgba(126,232,255,.82)}
+  88%{left:90%;opacity:1;transform:translate(-50%,-50%) scale(1)}
+  100%{left:92%;opacity:0;transform:translate(-50%,-50%) scale(.7)}
+}
+
+@container datanest-main (max-width:620px){
+  .valueNode{width:100px;min-height:36px;padding:6px 7px}
+  .valueNode b{font-size:7px}
+  .valueNode small{display:none}
+  .valueNode1,.valueNode3{left:3%}
+  .valueNode2,.valueNode4{right:3%}
+  .networkPulse{width:204px;height:204px}
+  .valueBeam{width:126px}
+}
+@media(max-width:470px){
+  .valueNode{width:88px;min-height:32px;border-radius:9px}
+  .valueNode>span{font-size:6px}
+  .valueNode b{font-size:6.5px}
+  .valueNode1,.valueNode2{top:22%}
+  .valueNode3,.valueNode4{bottom:22%}
+  .networkPulse{width:184px;height:184px}
+  .valueBeam{width:112px}
+}
+@media(prefers-reduced-motion:reduce){
+  .networkPulse,
+  .valueBeam,
+  .valueNode,
+  .workSignal,
+  .intentSignal{
+    animation:none!important;
+  }
+}
