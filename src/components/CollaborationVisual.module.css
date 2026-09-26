@@ -80,6 +80,7 @@
   letter-spacing:.13em;
 }
 .portfolioProductCard b{
+  overflow-wrap:anywhere;
   color:#f8f6ff;
   font-size:10px;
   line-height:1.18;
@@ -90,7 +91,7 @@
   font-size:7px;
   line-height:1.25;
   text-overflow:ellipsis;
-  white-space:nowrap;
+  white-space:normal;
 }
 .portfolioCore{
   position:relative;
