@@ -489,7 +489,7 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
           const records=recordsByProduct.get(product.id)||[];
           const count=(type:string)=>records.filter(record=>record.record_type===type).length;
           const branches=records.filter(record=>record.record_type==="datanest_branch");
-          const parentPlatform=metadataText(product.metadata,"parent_platform","Resonance DataNest");
+          const parentPlatform=metadataText(product.metadata,"parent_platform","RESONANCE DATANEST");
           const executionAuthority=metadataText(product.metadata,"execution_authority","DataNest");
           const query=recordQuery.trim().toLowerCase();
           const visibleRecords=records.filter(record=>{
