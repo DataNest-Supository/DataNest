@@ -58,6 +58,11 @@ function payloadText(payload:Record<string,unknown>,...keys:string[]) {
   return "";
 }
 
+function metadataText(metadata:Record<string,unknown>,key:string,fallback:string) {
+  const value=metadata[key];
+  return typeof value==="string"&&value.trim()?value:fallback;
+}
+
 type LegalTask = {
   key:string;
   label:string;
@@ -484,6 +489,8 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
           const records=recordsByProduct.get(product.id)||[];
           const count=(type:string)=>records.filter(record=>record.record_type===type).length;
           const branches=records.filter(record=>record.record_type==="datanest_branch");
+          const parentPlatform=metadataText(product.metadata,"parent_platform","Resonance DataNest");
+          const executionAuthority=metadataText(product.metadata,"execution_authority","DataNest");
           const query=recordQuery.trim().toLowerCase();
           const visibleRecords=records.filter(record=>{
             if(recordTypeFilter!=="all"&&record.record_type!==recordTypeFilter)return false;
@@ -509,12 +516,15 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
               </div>
               <div className="catalogFlags">
                 <span className="productStatus">{(product.lifecycle_status||"ACTIVE").toUpperCase()}</span>
+                {executionAuthority==="DataNest"&&<span className="catalogInvariant">DATANEST MANAGED</span>}
                 {!product.billing_enabled&&<span className="catalogInvariant">FREE PROMOTION · BILLING OFF</span>}
               </div>
             </div>
 
             <p className="catalogMission">{product.mission}</p>
             <div className="catalogFacts">
+              <div><small>PARENT PLATFORM</small><b>{parentPlatform.toUpperCase()}</b></div>
+              <div><small>EXECUTION AUTHORITY</small><b>{executionAuthority}</b></div>
               <div><small>Runtime</small><b>{product.primary_runtime||"Governed runtime"}</b></div>
               <div><small>Applications</small><b>{count("application")}</b></div>
               <div><small>Components</small><b>{count("component")}</b></div>
