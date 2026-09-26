@@ -160,6 +160,7 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
   const [recordTypeFilter,setRecordTypeFilter]=useState("all");
   const [catalogUrlReady,setCatalogUrlReady]=useState(false);
   const [catalogDetailsOpen,setCatalogDetailsOpen]=useState(false);
+  const [catalogShareNotice,setCatalogShareNotice]=useState("");
 
   const [jobs,setJobs]=useState<Job[]>([]);
   const [selectedJobId,setSelectedJobId]=useState("");
@@ -398,6 +399,30 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
     window.history.replaceState(window.history.state,"",url.toString());
   },[catalogUrlReady,catalogProducts,selectedProductId,recordQuery,recordTypeFilter]);
 
+  async function copyCatalogViewLink(){
+    const href=window.location.href;
+    try{
+      if(navigator.clipboard?.writeText){
+        await navigator.clipboard.writeText(href);
+      }else{
+        const textarea=document.createElement("textarea");
+        textarea.value=href;
+        textarea.setAttribute("readonly","");
+        textarea.style.position="fixed";
+        textarea.style.opacity="0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        const copied=document.execCommand("copy");
+        textarea.remove();
+        if(!copied)throw new Error("copy command unavailable");
+      }
+      setCatalogShareNotice("View link copied.");
+    }catch{
+      setCatalogShareNotice("Copy unavailable. Use your browser address bar.");
+    }
+    window.setTimeout(()=>setCatalogShareNotice(""),3000);
+  }
+
   const recordsByProduct=useMemo(()=>{
     const map=new Map<string,CatalogRecord[]>();
     for(const record of catalogRecords){
@@ -418,10 +443,16 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
         </div>
         <div className="catalogStageBadges">
           <span className="catalogLiveBadge">{catalogLoading?"SYNCING":catalogProducts.length+" PRODUCT"+(catalogProducts.length===1?"":"S")}</span>
-          <span className="catalogLinkBadge">SHAREABLE VIEW · URL SYNCED</span>
+          <div className="catalogShareControl">
+            <span className="catalogLinkBadge">SHAREABLE VIEW · URL SYNCED</span>
+            <button type="button" className="catalogCopyLinkButton" onClick={()=>void copyCatalogViewLink()}>
+              Copy view link
+            </button>
+          </div>
         </div>
       </div>
 
+      {catalogShareNotice&&<div className="catalogShareNotice" role="status" aria-live="polite">{catalogShareNotice}</div>}
       {catalogError&&<div className="catalogError" role="alert">{catalogError}</div>}
       {catalogLoading&&<div className="catalogLoading" role="status">Loading governed product records…</div>}
       {!catalogLoading&&!catalogError&&!catalogProducts.length&&<div className="catalogEmpty">No governed products have been imported for this project yet.</div>}
