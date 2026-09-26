@@ -144,6 +144,8 @@ Deno.serve(async (req: Request) => {
     return json(req, { error: "You cannot invite yourself as an independent project member." }, 400);
   }
 
+  let existingAuthUser: { email_confirmed_at?: string | null } | null = null;
+
   if (existingUserId) {
     const { data: existingMembership } = await service
       .from("project_members")
@@ -155,13 +157,40 @@ Deno.serve(async (req: Request) => {
     if (existingMembership?.status === "active") {
       return json(req, { error: "This user is already an active project member." }, 409);
     }
+
+    const { data: existingAuthResult, error: existingAuthError } =
+      await service.auth.admin.getUserById(String(existingUserId));
+
+    if (existingAuthError || !existingAuthResult.user) {
+      return json(req, { error: "Unable to inspect the existing invite account." }, 500);
+    }
+
+    existingAuthUser = existingAuthResult.user;
   }
 
   const redirectTo = "https://datanest-supository.github.io/DataNest/";
+  const inviteOptions = {
+    redirectTo,
+    data: {
+      datanest_invite_kind: "project-member",
+      datanest_project_id: project.id,
+      datanest_project_role: role
+    }
+  };
   let invitedUserId: string | null = existingUserId ? String(existingUserId) : null;
-  let delivery: "invite" | "recovery" = "invite";
+  let delivery: "invite" | "reinvite" | "recovery" = "invite";
 
-  if (invitedUserId) {
+  if (invitedUserId && !existingAuthUser?.email_confirmed_at) {
+    delivery = "reinvite";
+    const { data: inviteData, error: inviteError } =
+      await service.auth.admin.inviteUserByEmail(email, inviteOptions);
+
+    if (inviteError || !inviteData.user) {
+      return json(req, { error: inviteError?.message || "Unable to resend project invitation." }, 400);
+    }
+
+    invitedUserId = inviteData.user.id;
+  } else if (invitedUserId) {
     delivery = "recovery";
     const { error: recoveryError } = await emailClient.auth.resetPasswordForEmail(email, {
       redirectTo
@@ -171,17 +200,8 @@ Deno.serve(async (req: Request) => {
       return json(req, { error: recoveryError.message }, 400);
     }
   } else {
-    const { data: inviteData, error: inviteError } = await service.auth.admin.inviteUserByEmail(
-      email,
-      {
-        redirectTo,
-        data: {
-          datanest_invite_kind: "project-member",
-          datanest_project_id: project.id,
-          datanest_project_role: role
-        }
-      }
-    );
+    const { data: inviteData, error: inviteError } =
+      await service.auth.admin.inviteUserByEmail(email, inviteOptions);
 
     if (inviteError || !inviteData.user) {
       return json(req, { error: inviteError?.message || "Unable to send project invitation." }, 400);
@@ -208,6 +228,7 @@ Deno.serve(async (req: Request) => {
   return json(req, {
     ok: true,
     delivery,
+    recipient: email,
     project: {
       id: project.id,
       slug: project.slug,
