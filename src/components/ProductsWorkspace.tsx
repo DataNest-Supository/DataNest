@@ -161,7 +161,6 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
   const [catalogUrlReady,setCatalogUrlReady]=useState(false);
   const [catalogDetailsOpen,setCatalogDetailsOpen]=useState(false);
   const [catalogShareNotice,setCatalogShareNotice]=useState("");
-  const [catalogShareNotice,setCatalogShareNotice]=useState("");
 
   const [jobs,setJobs]=useState<Job[]>([]);
   const [selectedJobId,setSelectedJobId]=useState("");
@@ -424,17 +423,6 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
     window.setTimeout(()=>setCatalogShareNotice(""),3000);
   }
 
-  async function copyCatalogViewLink(){
-    try{
-      if(!navigator.clipboard?.writeText)throw new Error("Clipboard unavailable");
-      await navigator.clipboard.writeText(window.location.href);
-      setCatalogShareNotice("View link copied.");
-    }catch{
-      setCatalogShareNotice("Copy unavailable. Use your browser address bar.");
-    }
-    window.setTimeout(()=>setCatalogShareNotice(""),3000);
-  }
-
   const recordsByProduct=useMemo(()=>{
     const map=new Map<string,CatalogRecord[]>();
     for(const record of catalogRecords){
@@ -464,7 +452,6 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
         </div>
       </div>
 
-      {catalogShareNotice&&<div className="catalogShareNotice" role="status" aria-live="polite">{catalogShareNotice}</div>}
       {catalogShareNotice&&<div className="catalogShareNotice" role="status" aria-live="polite">{catalogShareNotice}</div>}
       {catalogError&&<div className="catalogError" role="alert">{catalogError}</div>}
       {catalogLoading&&<div className="catalogLoading" role="status">Loading governed product records…</div>}
