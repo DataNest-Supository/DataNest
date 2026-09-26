@@ -1982,3 +1982,156 @@ code,pre{
 .inviteFeedback.failed{color:#ffb6c9}
 @media(max-width:650px){.inviteActionCell{width:100%}.inviteSubmitButton{width:100%}}
 @media(prefers-reduced-motion:reduce){.inviteSubmitButton.sending .inviteButtonIcon{animation:none}}
+
+
+/* 2026-09-26 workspace-width alignment pass */
+.mainPane{
+  container-type:inline-size;
+  container-name:datanest-main;
+}
+
+.resonanceHome{
+  width:100%;
+  max-width:1380px;
+  margin-inline:auto;
+  gap:18px;
+}
+
+.resonanceHome .aiIHero{
+  min-height:540px;
+  grid-template-columns:minmax(320px,.8fr) minmax(420px,1.2fr);
+  gap:clamp(28px,3.2cqi,48px);
+  padding:clamp(30px,3.7cqi,54px);
+  align-items:center;
+}
+
+.resonanceHome .aiICoreStage{
+  grid-column:1;
+  grid-row:1;
+  width:100%;
+  max-width:520px;
+  min-height:400px;
+  justify-self:center;
+  align-self:center;
+  margin:0;
+}
+
+.resonanceHome .aiIHeroCopy{
+  grid-column:2;
+  grid-row:1;
+  width:100%;
+  max-width:690px;
+  justify-self:start;
+  align-self:center;
+}
+
+.resonanceHome .aiIHero h2{
+  font-size:clamp(50px,6.2cqi,86px);
+}
+
+.resonanceHome .aiIHeroCopy>p{
+  max-width:60ch;
+}
+
+.resonanceHome .aiIHeroActions,
+.resonanceHome .aiIMicroStats{
+  align-items:center;
+}
+
+.resonanceHome .aiIStatsGrid{
+  align-items:stretch;
+}
+
+.resonanceHome .aiIStatsGrid article{
+  height:100%;
+  align-items:center;
+}
+
+.resonanceHome .aiIDataGrid{
+  grid-template-columns:minmax(0,1.3fr) minmax(320px,.7fr);
+  align-items:stretch;
+}
+
+.resonanceHome .aiIGraphCard{
+  height:100%;
+}
+
+@container datanest-main (max-width:980px){
+  .appFrame .resonanceHome .aiIHero,
+  .appFrame.aiDockOpen .resonanceHome .aiIHero{
+    min-height:0;
+    grid-template-columns:1fr;
+    gap:18px;
+    padding:clamp(26px,4.5cqi,42px);
+  }
+
+  .appFrame .resonanceHome .aiIHeroCopy,
+  .appFrame.aiDockOpen .resonanceHome .aiIHeroCopy{
+    grid-column:1;
+    grid-row:1;
+    max-width:760px;
+    justify-self:start;
+  }
+
+  .appFrame .resonanceHome .aiICoreStage,
+  .appFrame.aiDockOpen .resonanceHome .aiICoreStage{
+    position:relative;
+    grid-column:1;
+    grid-row:2;
+    right:auto;
+    bottom:auto;
+    width:min(100%,640px);
+    max-width:640px;
+    min-height:330px;
+    margin:0 auto;
+    opacity:1;
+    transform:none;
+    pointer-events:auto;
+  }
+
+  .appFrame .resonanceHome .aiIHero h2,
+  .appFrame.aiDockOpen .resonanceHome .aiIHero h2{
+    font-size:clamp(48px,8.2cqi,74px);
+  }
+
+  .resonanceHome .aiIStatsGrid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .resonanceHome .aiIDataGrid{
+    grid-template-columns:1fr;
+  }
+}
+
+@container datanest-main (max-width:620px){
+  .appFrame .resonanceHome .aiIHero,
+  .appFrame.aiDockOpen .resonanceHome .aiIHero{
+    padding:24px 18px;
+    gap:12px;
+  }
+
+  .appFrame .resonanceHome .aiIHero h2,
+  .appFrame.aiDockOpen .resonanceHome .aiIHero h2{
+    font-size:clamp(42px,13cqi,60px);
+  }
+
+  .appFrame .resonanceHome .aiICoreStage,
+  .appFrame.aiDockOpen .resonanceHome .aiICoreStage{
+    min-height:280px;
+    transform:scale(.86);
+    transform-origin:center center;
+    margin:-18px auto;
+  }
+
+  .resonanceHome .aiIStatsGrid{
+    grid-template-columns:1fr;
+  }
+
+  .resonanceHome .aiIStatsGrid article{
+    min-height:104px;
+  }
+
+  .resonanceHome .aiICardHead{
+    align-items:flex-start;
+  }
+}
