@@ -300,6 +300,7 @@ export default function DataNestAiWorkspace({
     {selectedJob&&<>
       <section id="datanest-ai-chat" className="datanestAiChatStage" aria-label="DataNest AI Chat">
         <DataNestAiChatPanel
+          draftScope={projectId+":"+currentUserId}
           jobId={selectedJob.id}
           jobCode={jobCode(selectedJob)}
           sessionId={sessionId}
