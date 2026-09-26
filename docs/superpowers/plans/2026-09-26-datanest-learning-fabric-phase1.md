@@ -16,7 +16,7 @@
 - GitHub remains source/release authority.
 - Uncertified evidence must not influence unrelated Jobs.
 - Cross-environment writes are server-side only; never expose service-role credentials to browser code.
-- Learning-eligible application evidence must be Job-scoped in Phase 1; Job-less application events remain auditable but are excluded from staging learning with an explicit reason.
+- Learning-eligible application evidence must be Job-scoped in Phase 1; Job-less gateway events remain auditable but are excluded from staging learning with an explicit reason. Product Lab test recording requires a selected Job in the Phase 1 pilot.
 - Legal Eagle remains `learning_eligible=false` by default and is outside the Product Lab pilot.
 - High-risk architecture/security/authorization/governance/destructive/production-policy/financial categories remain Owner-gated.
 - Promotion is idempotent; duplicate promotion cannot create duplicate active production memory.
@@ -27,7 +27,7 @@
 ## Review Focus
 
 - Duplicate Product Lab retries with the same `clientRequestId` must return the original canonical event instead of creating duplicate production or staging evidence; pinned in Task 4 tests.
-- A Product Lab test recorded without a Job must remain an operational record but must not become staged learning evidence; pinned in Task 7 tests.
+- A direct gateway event without a Job must remain auditable but must not become staged learning evidence; pinned in Task 4 tests. Product Lab itself requires a selected Job in the Phase 1 pilot.
 - A staging outage after the production event ledger write must leave the event visibly `failed`/retriable rather than falsely claiming learning was staged; pinned in Task 4 tests.
 - A certified candidate whose production promotion fails must remain certified and visibly promotion-failed/retriable; pinned in Task 5 tests.
 - Context retrieval with no application/entity matches must still return authorized active certified memory in deterministic fallback order rather than an empty context; pinned in Task 6 SQL/unit tests.
@@ -395,7 +395,7 @@ Cover:
 - result mapping is `pass -> succeeded`, `fail -> failed`, `blocked -> unknown` with raw result retained in `quality.test_result`;
 - event metadata includes surface ID, test-case ID/version, build commit, release ID, environment, evidence URL, and notes;
 - same run `request_id` is reused as canonical event `clientRequestId`;
-- a test run without selected Job can still be recorded only if deliberately marked non-learning; it must not stage evidence;
+- without a selected Job, Product Lab disables/blocks Pass, Fail, and Blocked recording and creates neither a test run nor a learning event;
 - gateway failure does not erase the product test run and the UI displays that DataNest learning linkage failed;
 - successful gateway response displays the `DN-EVT-` trace and learning state.
 
@@ -412,7 +412,7 @@ The helper only invokes the JWT-protected Edge Function and normalizes returned 
 
 - [ ] **Step 4: Update Product Lab**
 
-Add a Job selector scoped to the current Project, persist the selected Job for the active Product Lab session, write `job_id` on test runs, then emit the canonical event after the run is recorded.
+Add a Job selector scoped to the current Project, persist the selected Job for the active Product Lab session, require a selected Job before Pass/Fail/Blocked can be recorded, write `job_id` on test runs, then emit the canonical event after the run is recorded.
 
 Keep the existing production-test confirmation.
 
