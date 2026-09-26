@@ -18,7 +18,7 @@ type Checkpoint = { id:string; job_id:string; completed:string[]; remaining:stri
 type AuditEvent = { id:number; job_id:string|null; event_type:string; actor:string; payload:Record<string,unknown>; created_at:string };
 type Policy = { id:string; policy_key:string; value:Record<string,unknown> };
 type ProjectMember = { project_id:string; user_id:string; role:"owner"|"admin"|"operator"|"viewer"; status:string };
-type ViewKey = "overview"|"stakeholder"|"sparks"|"governance"|"thinktank"|"ai"|"productlab"|"unifi"|"scheduler"|"runs"|"checkpoints"|"audit"|"transparency"|"settings";
+type ViewKey = "overview"|"stakeholder"|"sparks"|"governance"|"products"|"thinktank"|"ai"|"productlab"|"unifi"|"scheduler"|"runs"|"checkpoints"|"audit"|"transparency"|"settings";
 type HealthState = { state:"checking"|"online"|"degraded"|"offline"; checkedAt:string|null; message:string };
 type Summary = { total:number; active:number; running:number; blocked:number; available:number; registered:number };
 type ActiveDataNestAiSession = { jobId:string; sessionId:string|null };
@@ -32,6 +32,7 @@ const nav:Array<{key:ViewKey;label:string;group:string;glyph:string}> = [
   {key:"stakeholder",label:"Stakeholder",group:"Project",glyph:"✦"},
   {key:"sparks",label:"Sparks",group:"Project",glyph:"✧"},
   {key:"governance",label:"Governance",group:"Project",glyph:"◆"},
+  {key:"products",label:"Products",group:"Products",glyph:"◉"},
   {key:"thinktank",label:"Think Tanks",group:"Research",glyph:"◈"},
   {key:"ai",label:"DataNest AI",group:"Research",glyph:"⌬"},
   {key:"productlab",label:"Product Lab",group:"Research",glyph:"▣"},
@@ -51,6 +52,7 @@ const viewDescriptions:Record<ViewKey,string> = {
   stakeholder:"Capture stakeholder input and review contribution context.",
   sparks:"Develop raw ideas into traceable project inputs.",
   governance:"Review sovereign governance controls and decisions.",
+  products:"Explore Resonance products and specialist assistance experiences.",
   thinktank:"Coordinate structured research and collaborative thinking.",
   ai:"Work with governed DataNest AI memory and project context.",
   productlab:"Test and review product surfaces before release.",
@@ -91,6 +93,11 @@ const DataNestAiWorkspace = dynamic(() => import("@/components/DataNestAiWorkspa
 const AiOperationsDashboard = dynamic(() => import("@/components/AiOperationsDashboard"), {
   ssr: false,
   loading: () => <section className="panel"><p className="muted">Loading AI administration…</p></section>
+});
+
+const ProductsWorkspace = dynamic(() => import("@/components/ProductsWorkspace"), {
+  ssr: false,
+  loading: () => <section className="panel"><p className="muted">Loading Resonance products…</p></section>
 });
 
 const ProductLab = dynamic(() => import("@/components/ProductLab"), {
@@ -733,6 +740,7 @@ export default function DataNestApp({session}:{session:Session}) {
         {!loadingCore&&project&&view==="stakeholder"&&<StakeholderWorkspace projectId={project.id} currentUserId={session.user.id} canReview={canManageAi}/>}
         {!loadingCore&&project&&view==="sparks"&&<SparksWorkspace projectId={project.id} currentUserId={session.user.id} canOperate={canOperate} canManage={canManageAi} setNotice={setNotice} setError={setError}/>}
         {!loadingCore&&project&&view==="governance"&&<GovernanceWorkspace projectId={project.id} currentUserId={session.user.id} canManage={canManageAi} setNotice={setNotice} setError={setError}/>}
+        {!loadingCore&&project&&view==="products"&&<ProductsWorkspace/>}
         {!loadingCore&&project&&view==="thinktank"&&<ThinkTankWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} canReview={canManageAi} setNotice={setNotice} setError={setError}/>}
         {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError} onActiveSessionChange={setActiveDataNestAiSession}/>}
         {!loadingCore&&project&&view==="productlab"&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate}/>}
@@ -760,6 +768,7 @@ export default function DataNestApp({session}:{session:Session}) {
 
 function Overview({project,tools,jobs,counts,setView,canOperate}:{project:Project;tools:Tool[];jobs:Job[];counts:Summary;setView:(v:ViewKey)=>void;canOperate:boolean}) {
   const workspaces:Array<{key:ViewKey;label:string;description:string;glyph:string}> = [
+    {key:"products",label:"Products",description:"Explore Resonance Assistance and specialist product experiences.",glyph:"◉"},
     {key:"ai",label:"DataNest AI",description:"Governed project memory and AI collaboration.",glyph:"⌬"},
     {key:"unifi",label:"UNIFI Planner",description:"Prepare complete, traceable Job Manifests.",glyph:"◇"},
     {key:"scheduler",label:"TranScheduler",description:"Route work through capability-aware scheduling.",glyph:"⌁"},
