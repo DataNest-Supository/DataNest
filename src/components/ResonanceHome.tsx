@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import CollaborationVisual from "./CollaborationVisual";
+import PurposeJourney from "./PurposeJourney";
 
 type HomeDestination = "ai" | "unifi" | "scheduler" | "governance" | "thinktank" | "sparks" | "products" | "transparency";
 type ProjectLike = { id:string; name:string; description:string|null };
@@ -97,6 +98,8 @@ export default function ResonanceHome({
       <CollaborationVisual projectId={project.id} onOpenProducts={()=>onNavigate("products")}/>
     </section>
 
+    <PurposeJourney onNavigate={onNavigate}/>
+
     <section className="aiIStatsGrid" aria-label="DataNest project metrics">
       <article>
         <span className="metricSignal cyan"/>
@@ -154,23 +157,5 @@ export default function ResonanceHome({
       </article>
     </section>
 
-    <section className="aiIFlow">
-      <div className="aiIFlowIntro">
-        <p className="eyebrow">RESONANCE LOOP</p>
-        <h3>Move from thought to governed action.</h3>
-        <p>Keep the home surface focused. The deeper workspaces stay one move away.</p>
-      </div>
-      <div className="aiIFlowRail">
-        <button type="button" onClick={()=>onNavigate("sparks")}><span>01</span><b>Discover</b><small>Capture intent</small></button>
-        <i aria-hidden="true"/>
-        <button type="button" onClick={()=>onNavigate("governance")}><span>02</span><b>Govern</b><small>Apply controls</small></button>
-        <i aria-hidden="true"/>
-        <button type="button" onClick={()=>onNavigate("products")}><span>03</span><b>Build</b><small>Shape the product</small></button>
-        <i aria-hidden="true"/>
-        <button type="button" onClick={()=>onNavigate("scheduler")}><span>04</span><b>Execute</b><small>Route governed work</small></button>
-        <i aria-hidden="true"/>
-        <button type="button" onClick={()=>onNavigate("transparency")}><span>05</span><b>Verify</b><small>Review evidence</small></button>
-      </div>
-    </section>
   </div>;
 }

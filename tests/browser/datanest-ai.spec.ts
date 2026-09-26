@@ -86,18 +86,18 @@ test("quick switch moves keyboard selection with ArrowDown before Enter",async({
   const search=dialog.getByLabel("Search DataNest workspaces");
   await expect(search).toBeFocused();
 
-  await search.fill("Research");
+  await search.fill("Execute");
   const options=dialog.getByRole("option");
   await expect(options).toHaveCount(3);
-  await expect(dialog.getByRole("option",{name:/Think Tanks/})).toHaveAttribute("aria-selected","true");
+  await expect(dialog.getByRole("option",{name:/UNIFI Planner/})).toHaveAttribute("aria-selected","true");
 
   await page.keyboard.press("ArrowDown");
-  await expect(dialog.getByRole("option",{name:/DataNest AI/})).toHaveAttribute("aria-selected","true");
+  await expect(dialog.getByRole("option",{name:/TranScheduler/})).toHaveAttribute("aria-selected","true");
 
   await page.keyboard.press("Enter");
   await expect(dialog).toBeHidden();
-  await expect(page).toHaveURL(/(?:\\?|&)view=ai(?:&|$)/);
-  await expect(page.getByRole("heading",{name:"DataNest AI",exact:true}).first()).toBeVisible();
+  await expect(page).toHaveURL(/(?:\\?|&)view=scheduler(?:&|$)/);
+  await expect(page.getByRole("heading",{name:"TranScheduler",exact:true}).first()).toBeVisible();
 });
 
 
@@ -157,7 +157,7 @@ test("mobile TranScheduler avoids horizontal table scrolling",async({page})=>{
   await page.setViewportSize({width:390,height:844});
 
   await page.getByRole("button",{name:"Open menu"}).click();
-  await page.getByText("Tools",{exact:true}).click();
+  await page.getByRole("navigation",{name:"Project workspaces"}).getByText("Execute",{exact:true}).click();
   await page.getByRole("button",{name:"TranScheduler",exact:true}).click();
   await expect(page).toHaveURL(/(?:\?|&)view=scheduler(?:&|$)/);
   await page.getByRole("button",{name:"Queue",exact:true}).click();
@@ -187,7 +187,7 @@ test("mobile TranScheduler status filter uses a compact select",async({page})=>{
   await page.setViewportSize({width:390,height:844});
 
   await page.getByRole("button",{name:"Open menu"}).click();
-  await page.getByText("Tools",{exact:true}).click();
+  await page.getByRole("navigation",{name:"Project workspaces"}).getByText("Execute",{exact:true}).click();
   await page.getByRole("button",{name:"TranScheduler",exact:true}).click();
   await page.getByRole("button",{name:"Queue",exact:true}).click();
 
@@ -264,6 +264,7 @@ test("Think Tanks expose project-scoped collaboration and reviewed-memory bounda
 
 test("Sparks workspace exposes internal utility boundaries",async({page})=>{
   await signIn(page);
+  await page.getByRole("navigation",{name:"Project workspaces"}).getByText("Discover",{exact:true}).click();
   await page.getByRole("button",{name:"Sparks",exact:true}).click();
 
   await expect(page.getByText("SPARKS · INTERNAL UTILITY",{exact:true})).toBeVisible();

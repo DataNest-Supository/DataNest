@@ -229,6 +229,8 @@ function pageRange(page:number) {
 export default function DataNestApp({session}:{session:Session}) {
   const [view,setView]=useState<ViewKey>("overview");
   const [viewReady,setViewReady]=useState(false);
+  const workspaceTitleRef=useRef<HTMLHeadingElement|null>(null);
+  const previousViewRef=useRef<ViewKey>("overview");
   const [mobileOpen,setMobileOpen]=useState(false);
   const [commandOpen,setCommandOpen]=useState(false);
   const [commandQuery,setCommandQuery]=useState("");
@@ -492,6 +494,16 @@ export default function DataNestApp({session}:{session:Session}) {
     window.scrollTo({top:0,left:0,behavior:"auto"});
   },[view,viewReady]);
   useEffect(()=>{
+    if(!viewReady)return;
+    if(previousViewRef.current===view)return;
+    previousViewRef.current=view;
+    const frame=window.requestAnimationFrame(()=>{
+      workspaceTitleRef.current?.focus({preventScroll:true});
+      window.scrollTo({top:0,left:0,behavior:"instant"});
+    });
+    return()=>window.cancelAnimationFrame(frame);
+  },[view,viewReady]);
+  useEffect(()=>{
     if(!mobileOpen)return;
     const closeOnEscape=(event:KeyboardEvent)=>{
       if(event.key==="Escape")setMobileOpen(false);
@@ -550,12 +562,12 @@ export default function DataNestApp({session}:{session:Session}) {
     setMobileOpen(false);
   }
 
-  function closeCommandPalette(){
+  function closeCommandPalette(restoreFocus=true){
     setCommandOpen(false);
     setCommandQuery("");
     setCommandActiveIndex(-1);
     window.setTimeout(()=>{
-      commandReturnFocusRef.current?.focus();
+      if(restoreFocus)commandReturnFocusRef.current?.focus();
       commandReturnFocusRef.current=null;
     },0);
   }
@@ -600,7 +612,7 @@ export default function DataNestApp({session}:{session:Session}) {
 
   function chooseCommandView(nextView:ViewKey){
     setView(nextView);
-    closeCommandPalette();
+    closeCommandPalette(nextView===view);
     setMobileOpen(false);
   }
 
@@ -686,6 +698,7 @@ export default function DataNestApp({session}:{session:Session}) {
     className={"appFrame "+(aiSidebarOpen?"aiDockOpen ":"")+(companionReserve>0?"companionRailReserved":"")}
     style={companionReserve>0?({"--companion-reserve":companionReserve+"px"} as CSSProperties):undefined}
   >
+    <a className="skipLink" href="#workspace-title" onClick={event=>{event.preventDefault();workspaceTitleRef.current?.focus();}}>Skip to workspace</a>
     <aside id="datanest-navigation" aria-label="DataNest navigation" className={"sidebar "+(mobileOpen?"open":"")}>
       <div className="sidebarTop">
         <div className="logo" aria-label="Resonance AppDev"><img src={DATANEST_LOGO_SRC} alt="Resonance AppDev"/></div>
@@ -732,7 +745,7 @@ export default function DataNestApp({session}:{session:Session}) {
     </aside>
     {mobileOpen&&<button className="scrim" onClick={()=>setMobileOpen(false)} aria-label="Close navigation"/>}
 
-    {commandOpen&&<div className="commandPaletteBackdrop" onMouseDown={closeCommandPalette}>
+    {commandOpen&&<div className="commandPaletteBackdrop" onMouseDown={()=>closeCommandPalette()}>
       <section
         className="commandPalette"
         role="dialog"
@@ -743,7 +756,7 @@ export default function DataNestApp({session}:{session:Session}) {
       >
         <div className="commandPaletteHeader">
           <div><p className="eyebrow">QUICK SWITCH</p><h2>Go to a DataNest workspace</h2></div>
-          <button className="iconButton" type="button" onClick={closeCommandPalette} aria-label="Close quick switch">×</button>
+          <button className="iconButton" type="button" onClick={()=>closeCommandPalette()} aria-label="Close quick switch">×</button>
         </div>
         <label className="commandSearch">
           <span className="srOnly">Search DataNest workspaces</span>
@@ -786,7 +799,7 @@ export default function DataNestApp({session}:{session:Session}) {
         <button className="menuButton" onClick={()=>setMobileOpen(true)} aria-label="Open menu" aria-controls="datanest-navigation" aria-expanded={mobileOpen}>☰</button>
         <div className="topbarTitle">
           <p className="eyebrow">RESONANCE DATANEST · {currentGroup.toUpperCase()}</p>
-          <h1>{currentLabel}</h1>
+          <h1 id="workspace-title" ref={workspaceTitleRef} tabIndex={-1}>{currentLabel}</h1>
           <p className="topbarContext">{currentDescription}</p>
         </div>
         <div className="topActions">
@@ -835,6 +848,10 @@ export default function DataNestApp({session}:{session:Session}) {
       </header>
 
       <div className="contentPane">
+        {view!=="overview"&&<nav className="workspaceWayfinding" aria-label="Workspace location">
+          <button type="button" onClick={()=>setView("overview")}>← AI &amp; I home</button>
+          <span aria-hidden="true">/</span><span aria-current="page">{currentLabel}</span>
+        </nav>}
         <div aria-live="polite">
           {notice&&<div className="notice goodNotice">{notice}</div>}
           {error&&<div className="notice errorNotice" role="alert">{error}</div>}
@@ -847,7 +864,7 @@ export default function DataNestApp({session}:{session:Session}) {
           <div><span>EVIDENCE</span><p>{workspaceTaskGuides[view]?.evidence}</p></div>
         </section>}
 
-        <div key={view} className="viewStage">
+        <div key={view} className="viewStage workspaceArrival">
         {!loadingCore&&project&&view==="overview"&&<ResonanceHome project={project} jobs={recentJobs} counts={summary} canOperate={canOperate} onNavigate={setView}/>}
         {!loadingCore&&project&&view==="stakeholder"&&<StakeholderWorkspace projectId={project.id} currentUserId={session.user.id} canReview={canManageAi}/>}
         {!loadingCore&&project&&view==="sparks"&&<SparksWorkspace projectId={project.id} currentUserId={session.user.id} canOperate={canOperate} canManage={canManageAi} setNotice={setNotice} setError={setError}/>}

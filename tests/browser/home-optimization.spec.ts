@@ -235,3 +235,92 @@ test("dashboard recommends operational attention from live project state", async
   await expect(page).toHaveURL(/\?view=scheduler/);
   await expect(page.locator(".topbar h1")).toHaveText("TranScheduler");
 });
+
+async function openJourneyFixture(page: import('@playwright/test').Page) {
+  const projectId = "00000000-0000-4000-8000-000000000010";
+  const userId = "00000000-0000-4000-8000-000000000001";
+  await page.route("**/runtime-config.js", route => route.fulfill({contentType:"application/javascript",body:"window.__DATANEST_CONFIG__={supabaseUrl:'https://fixture.supabase.co',supabasePublishableKey:'fixture-key',authoritative:true}"}));
+  await page.addInitScript(({userId}) => {
+    const encode = (data: unknown) => btoa(JSON.stringify(data)).replaceAll("+","-").replaceAll("/","_").replaceAll("=","");
+    localStorage.setItem("sb-fixture-auth-token", JSON.stringify({access_token:`${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:userId,exp:4102444800,role:"authenticated"})}.fixture`,refresh_token:"fixture",token_type:"bearer",expires_at:4102444800,user:{id:userId,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid"}}));
+  }, {userId});
+  await page.route("https://fixture.supabase.co/**", route => {
+    const path = new URL(route.request().url()).pathname;
+    let body: unknown = [];
+    if(path.endsWith("/projects")) body={id:projectId,slug:"resonance-datanest",name:"Journey fixture",description:null,status:"ACTIVE"};
+    if(path.endsWith("/project_members")) body={project_id:projectId,user_id:userId,role:"viewer",status:"active"};
+    if(path.endsWith("/get_project_dashboard_summary")) body={total_jobs:0,active_jobs:0,running_jobs:0,blocked_jobs:0};
+    return route.fulfill({contentType:"application/json",body:JSON.stringify(body)});
+  });
+  await page.goto(appPath);
+  await expect(page.getByRole("heading",{name:"Find your next meaningful step."})).toBeVisible();
+}
+
+test("purpose guide previews each stage and opens the correct workspace without mutations", async ({page}) => {
+  await openJourneyFixture(page);
+  const mutations: string[]=[];
+  page.on("request", request => {
+    if(request.method()==="POST" && /\/rpc\/(create_|cast_|ratify_|close_|update_)/.test(request.url())) mutations.push(request.url());
+  });
+  for(const [label, action, view, title] of [
+    ["Discover","Explore Think Tanks","thinktank","Think Tanks"],
+    ["Govern","Review governance","governance","Governance"],
+    ["Build","Explore products","products","Products"],
+    ["Execute","Open UNIFI Planner","unifi","UNIFI Planner"],
+    ["Verify","Review transparency","transparency","Transparency"]
+  ]) {
+    await page.getByRole("tab",{name:label,exact:true}).click();
+    await expect(page.getByRole("tabpanel")).toHaveCount(1);
+    await expect(page).not.toHaveURL(/view=/);
+    await page.getByRole("button",{name:action,exact:true}).click();
+    await expect(page).toHaveURL(new RegExp("view="+view));
+    await expect(page.getByRole("heading",{name:title,level:1,exact:true})).toBeFocused();
+    await page.getByRole("button",{name:"← AI & I home"}).click();
+    await expect(page.getByRole("heading",{name:"AI & I",level:1,exact:true})).toBeFocused();
+  }
+  expect(mutations).toEqual([]);
+});
+
+test("purpose guide supports keyboard, compact layouts, and browser history", async ({page}) => {
+  await openJourneyFixture(page);
+  await page.getByRole("tab",{name:"Discover",exact:true}).focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByRole("tab",{name:"Govern",exact:true})).toBeFocused();
+  await expect(page.getByRole("tab",{name:"Govern",exact:true})).toHaveAttribute("aria-selected","true");
+  await page.keyboard.press("End");
+  await expect(page.getByRole("tab",{name:"Verify",exact:true})).toBeFocused();
+  await page.keyboard.press("Home");
+  await expect(page.getByRole("tab",{name:"Discover",exact:true})).toBeFocused();
+  for(const width of [320,390,768,1440]) {
+    await page.setViewportSize({width,height:900});
+    await expect(page.getByRole("button",{name:"Explore Think Tanks",exact:true})).toBeVisible();
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  }
+  await page.getByRole("button",{name:"Explore Think Tanks",exact:true}).click();
+  await page.goBack();
+  await expect(page.getByRole("heading",{name:"AI & I",level:1,exact:true})).toBeFocused();
+  await page.goForward();
+  await expect(page.getByRole("heading",{name:"Think Tanks",level:1,exact:true})).toBeFocused();
+  await page.getByRole("button",{name:/Quick switch/}).click();
+  await page.getByRole("searchbox",{name:"Search DataNest workspaces"}).fill("governance");
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading",{name:"Governance",level:1,exact:true})).toBeFocused();
+  await page.getByRole("button",{name:/Quick switch/}).click();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button",{name:/Quick switch/})).toBeFocused();
+});
+
+test("workspace arrivals honor paused and reduced motion without hiding content", async ({page}) => {
+  await page.emulateMedia({reducedMotion:"reduce"});
+  await openJourneyFixture(page);
+  expect(await page.locator(".workspaceArrival").evaluate(el=>getComputedStyle(el).animationName)).toBe("none");
+  await page.emulateMedia({reducedMotion:"no-preference"});
+  await page.locator(".workspaceOptions > summary").click();
+  await page.getByRole("button",{name:"Pause animations"}).click();
+  await page.locator(".workspaceOptions > summary").click();
+  await page.getByRole("tab",{name:"Execute",exact:true}).click();
+  await expect(page.getByRole("heading",{name:"Give the next step a shape."})).toBeVisible();
+  await page.getByRole("button",{name:"Open UNIFI Planner",exact:true}).click();
+  expect(await page.locator(".workspaceArrival").evaluate(el=>getComputedStyle(el).animationName)).toBe("none");
+  expect(await page.locator(".workspaceArrival").evaluate(el=>getComputedStyle(el).opacity)).toBe("1");
+});
