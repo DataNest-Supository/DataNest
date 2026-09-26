@@ -28,20 +28,20 @@ const finalStates = new Set(["COMPLETED","FAILED","CANCELLED"]);
 const jobColumns = "id,job_number,title,description,priority,status,required_capabilities,acceptance,created_at,updated_at,deadline";
 
 const nav:Array<{key:ViewKey;label:string;group:string;glyph:string}> = [
-  {key:"overview",label:"AI & I",group:"Project",glyph:"◎"},
-  {key:"stakeholder",label:"Stakeholder",group:"Project",glyph:"✦"},
-  {key:"sparks",label:"Sparks",group:"Project",glyph:"✧"},
-  {key:"governance",label:"Governance",group:"Project",glyph:"◆"},
-  {key:"products",label:"Products",group:"Products",glyph:"◉"},
-  {key:"thinktank",label:"Think Tanks",group:"Research",glyph:"◈"},
-  {key:"ai",label:"DataNest AI",group:"Research",glyph:"⌬"},
-  {key:"productlab",label:"Product Lab",group:"Research",glyph:"▣"},
-  {key:"unifi",label:"UNIFI Planner",group:"Tools",glyph:"◇"},
-  {key:"scheduler",label:"TranScheduler",group:"Tools",glyph:"⌁"},
-  {key:"runs",label:"Runs",group:"Operations",glyph:"▶"},
-  {key:"checkpoints",label:"Checkpoints",group:"Continuity",glyph:"◆"},
-  {key:"audit",label:"Audit",group:"Continuity",glyph:"≡"},
-  {key:"transparency",label:"Transparency",group:"Continuity",glyph:"◎"},
+  {key:"overview",label:"AI & I",group:"Core",glyph:"◎"},
+  {key:"ai",label:"DataNest AI",group:"Core",glyph:"✦"},
+  {key:"stakeholder",label:"Stakeholder",group:"Discover",glyph:"◌"},
+  {key:"sparks",label:"Sparks",group:"Discover",glyph:"✧"},
+  {key:"thinktank",label:"Think Tanks",group:"Discover",glyph:"◈"},
+  {key:"governance",label:"Governance",group:"Govern & Build",glyph:"◆"},
+  {key:"products",label:"Products",group:"Govern & Build",glyph:"◉"},
+  {key:"productlab",label:"Product Lab",group:"Govern & Build",glyph:"▣"},
+  {key:"unifi",label:"UNIFI Planner",group:"Execute",glyph:"◇"},
+  {key:"scheduler",label:"TranScheduler",group:"Execute",glyph:"⌁"},
+  {key:"runs",label:"Runs",group:"Execute",glyph:"▶"},
+  {key:"checkpoints",label:"Checkpoints",group:"Verify",glyph:"↺"},
+  {key:"audit",label:"Audit",group:"Verify",glyph:"≡"},
+  {key:"transparency",label:"Transparency",group:"Verify",glyph:"◎"},
   {key:"settings",label:"Settings",group:"System",glyph:"⚙"}
 ];
 
@@ -63,6 +63,38 @@ const viewDescriptions:Record<ViewKey,string> = {
   audit:"Inspect immutable operational events and traceability.",
   transparency:"Review published audit methodology, evidence, and findings.",
   settings:"Manage project, tool, AI administration, and scheduler policy."
+};
+
+const workflowNext:Partial<Record<ViewKey,ViewKey>> = {
+  overview:"ai",
+  ai:"unifi",
+  stakeholder:"sparks",
+  sparks:"thinktank",
+  thinktank:"governance",
+  governance:"products",
+  products:"productlab",
+  productlab:"unifi",
+  unifi:"scheduler",
+  scheduler:"runs",
+  runs:"checkpoints",
+  checkpoints:"audit",
+  audit:"transparency",
+  transparency:"overview"
+};
+
+const workflowPrevious:Partial<Record<ViewKey,ViewKey>> = {
+  ai:"overview",
+  sparks:"stakeholder",
+  thinktank:"sparks",
+  governance:"thinktank",
+  products:"governance",
+  productlab:"products",
+  unifi:"productlab",
+  scheduler:"unifi",
+  runs:"scheduler",
+  checkpoints:"runs",
+  audit:"checkpoints",
+  transparency:"audit"
 };
 
 const StakeholderWorkspace = dynamic(() => import("@/components/StakeholderWorkspace"), {
@@ -570,8 +602,14 @@ export default function DataNestApp({session}:{session:Session}) {
   }
 
   const jobLookup=useMemo(()=>new Map([...recentJobs,...jobs].map(job=>[job.id,job])),[recentJobs,jobs]);
-  const currentLabel=nav.find(item=>item.key===view)?.label||"Overview";
+  const currentNavItem=nav.find(item=>item.key===view);
+  const currentLabel=currentNavItem?.label||"Overview";
   const currentDescription=viewDescriptions[view];
+  const currentGroup=currentNavItem?.group||"Core";
+  const nextViewKey=workflowNext[view]||null;
+  const previousViewKey=workflowPrevious[view]||null;
+  const nextViewItem=nextViewKey ? nav.find(item=>item.key===nextViewKey)||null : null;
+  const previousViewItem=previousViewKey ? nav.find(item=>item.key===previousViewKey)||null : null;
   const groups=Array.from(new Set(nav.map(item=>item.group)));
   const healthLabel=health.state==="checking"
     ? "Checking control plane"
@@ -593,11 +631,11 @@ export default function DataNestApp({session}:{session:Session}) {
       </div>
       <div className="projectPill"><span className="liveDot"/><div><small>PROJECT</small><strong>{project?.name||"Resonance DataNest"}</strong></div></div>
       <nav className="navStack" aria-label="Project workspaces">
-        {groups.map(group=><details className="navGroup navDisclosure" key={group+String(nav.some(item=>item.group===group&&item.key===view))} open={group==="Project"||nav.some(item=>item.group===group&&item.key===view)}>
+        {groups.map(group=><details className="navGroup navDisclosure" key={group+String(nav.some(item=>item.group===group&&item.key===view))} open={group==="Core"||nav.some(item=>item.group===group&&item.key===view)}>
           <summary>{group}</summary>
           {nav.filter(item=>item.group===group).map(item=><button
             key={item.key}
-            className={view===item.key?"active":""}
+            className={(view===item.key?"active ":"")+(item.key==="ai"?"aiHeroNav":"")}
             aria-label={item.label}
             aria-current={view===item.key?"page":undefined}
             onClick={()=>{setView(item.key);setMobileOpen(false);}}
@@ -683,7 +721,11 @@ export default function DataNestApp({session}:{session:Session}) {
     <main className="mainPane">
       <header className="topbar">
         <button className="menuButton" onClick={()=>setMobileOpen(true)} aria-label="Open menu" aria-controls="datanest-navigation" aria-expanded={mobileOpen}>☰</button>
-        <div className="topbarTitle"><p className="eyebrow">RESONANCE DATANEST</p><h1>{currentLabel}</h1><p className="topbarContext">{currentDescription}</p></div>
+        <div className="topbarTitle">
+          <p className="eyebrow">RESONANCE DATANEST · {currentGroup.toUpperCase()}</p>
+          <h1>{currentLabel}</h1>
+          <p className="topbarContext">{currentDescription}</p>
+        </div>
         <div className="topActions">
           <button
             className="secondaryButton compact quickSwitchButton"
@@ -736,6 +778,7 @@ export default function DataNestApp({session}:{session:Session}) {
         </div>
         {(loadingCore||loadingView)&&<div className="loadingBar" aria-label="Loading DataNest data"><span/></div>}
 
+        <div key={view} className="viewStage">
         {!loadingCore&&project&&view==="overview"&&<ResonanceHome project={project} jobs={recentJobs} counts={summary} canOperate={canOperate} onNavigate={setView}/>}
         {!loadingCore&&project&&view==="stakeholder"&&<StakeholderWorkspace projectId={project.id} currentUserId={session.user.id} canReview={canManageAi}/>}
         {!loadingCore&&project&&view==="sparks"&&<SparksWorkspace projectId={project.id} currentUserId={session.user.id} canOperate={canOperate} canManage={canManageAi} setNotice={setNotice} setError={setError}/>}
@@ -750,7 +793,19 @@ export default function DataNestApp({session}:{session:Session}) {
         {!loadingCore&&view==="checkpoints"&&<Checkpoints checkpoints={checkpoints} jobLookup={jobLookup} page={checkpointPage} total={checkpointCount} onPage={setCheckpointPage}/>}
         {!loadingCore&&view==="audit"&&<Audit events={events} jobLookup={jobLookup} page={eventPage} total={eventCount} onPage={setEventPage}/>}
         {!loadingCore&&view==="transparency"&&<TransparencyWorkspace/>}
-        {!loadingCore&&view==="settings"&&<Settings project={project} tools={tools} policies={policies} membership={membership} currentUserId={session.user.id} canManageAi={canManageAi}/>} 
+        {!loadingCore&&view==="settings"&&<Settings project={project} tools={tools} policies={policies} membership={membership} currentUserId={session.user.id} canManageAi={canManageAi}/>}
+        </div>
+        {!loadingCore&&project&&(previousViewItem||nextViewItem)&&<nav className="workflowContinuation" aria-label="Workspace progression">
+          <div className="workflowContinuationCopy">
+            <p className="eyebrow">WORKFLOW CONTINUITY</p>
+            <strong>{currentGroup} · {currentLabel}</strong>
+            <small>{nextViewItem ? "Suggested next: "+nextViewItem.label+" · "+viewDescriptions[nextViewItem.key] : currentDescription}</small>
+          </div>
+          <div className="workflowContinuationActions">
+            {previousViewItem&&<button className="secondaryButton compact" type="button" onClick={()=>setView(previousViewItem.key)}>← {previousViewItem.label}</button>}
+            {nextViewItem&&<button className="primaryButton compact" type="button" onClick={()=>setView(nextViewItem.key)}>Continue · {nextViewItem.label} →</button>}
+          </div>
+        </nav>}
       </div>
     </main>
 

@@ -4193,3 +4193,86 @@ code,pre{
     transition-duration:.001ms!important;
   }
 }
+
+
+/* UX workflow architecture v2 */
+.viewStage{
+  animation:datanestViewEnter .28s cubic-bezier(.2,.72,.2,1) both;
+  transform-origin:50% 0
+}
+@keyframes datanestViewEnter{
+  from{opacity:0;transform:translateY(8px) scale(.997)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+.navGroup button.aiHeroNav{
+  position:relative;
+  border-color:rgba(66,231,255,.14);
+  background:linear-gradient(100deg,rgba(255,54,216,.08),rgba(139,92,246,.08) 48%,rgba(66,231,255,.07));
+  color:#eafaff;
+  font-weight:800
+}
+.navGroup button.aiHeroNav::after{
+  content:"CORE";
+  margin-left:auto;
+  padding:3px 6px;
+  border:1px solid rgba(66,231,255,.20);
+  border-radius:999px;
+  color:#9ceaff;
+  background:rgba(66,231,255,.055);
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.12em
+}
+.navGroup button.aiHeroNav:hover,
+.navGroup button.aiHeroNav.active{
+  border-color:rgba(66,231,255,.28);
+  box-shadow:inset 3px 0 0 var(--cyan),0 0 24px rgba(66,231,255,.08),0 12px 30px rgba(0,0,0,.12)
+}
+.workflowContinuation{
+  margin-top:18px;
+  padding:16px 18px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  border:1px solid rgba(66,231,255,.14);
+  border-radius:16px;
+  background:linear-gradient(120deg,rgba(255,54,216,.035),rgba(139,92,246,.035) 46%,rgba(66,231,255,.045));
+  box-shadow:inset 0 1px rgba(255,255,255,.025)
+}
+.workflowContinuationCopy{min-width:0}
+.workflowContinuationCopy strong{display:block;font-size:13px}
+.workflowContinuationCopy small{
+  display:block;
+  margin-top:5px;
+  max-width:72ch;
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.5
+}
+.workflowContinuationActions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex:0 0 auto}
+.aiIFlowRail{grid-template-columns:1fr 24px 1fr 24px 1fr 24px 1fr 24px 1fr}
+@media(max-width:900px){
+  .workflowContinuation{align-items:flex-start;flex-direction:column}
+  .workflowContinuationActions{width:100%;justify-content:flex-start;flex-wrap:wrap}
+}
+@media(max-width:700px){
+  .aiIFlowRail{
+    display:flex;
+    gap:10px;
+    overflow-x:auto;
+    scroll-snap-type:x proximity;
+    padding:2px 2px 8px
+  }
+  .aiIFlowRail>i{display:none!important}
+  .aiIFlowRail button{
+    flex:0 0 min(72vw,190px);
+    min-width:0;
+    margin-top:0!important;
+    grid-column:auto!important;
+    scroll-snap-align:start
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .viewStage{animation:none!important}
+}

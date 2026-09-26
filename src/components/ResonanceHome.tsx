@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import CollaborationVisual from "./CollaborationVisual";
 
-type HomeDestination = "ai" | "unifi" | "scheduler" | "governance" | "thinktank" | "sparks" | "products";
+type HomeDestination = "ai" | "unifi" | "scheduler" | "governance" | "thinktank" | "sparks" | "products" | "transparency";
 type ProjectLike = { id:string; name:string; description:string|null };
 type JobLike = { id:string; status:string; created_at:string };
 type SummaryLike = { total:number; active:number; running:number; blocked:number; available:number; registered:number };
@@ -161,13 +161,15 @@ export default function ResonanceHome({
         <p>Keep the home surface focused. The deeper workspaces stay one move away.</p>
       </div>
       <div className="aiIFlowRail">
-        <button type="button" onClick={()=>onNavigate("sparks")}><span>01</span><b>Spark</b><small>Capture intent</small></button>
+        <button type="button" onClick={()=>onNavigate("sparks")}><span>01</span><b>Discover</b><small>Capture intent</small></button>
         <i aria-hidden="true"/>
-        <button type="button" onClick={()=>onNavigate("thinktank")}><span>02</span><b>Think</b><small>Expand with AI</small></button>
+        <button type="button" onClick={()=>onNavigate("governance")}><span>02</span><b>Govern</b><small>Apply controls</small></button>
         <i aria-hidden="true"/>
-        <button type="button" onClick={()=>onNavigate("governance")}><span>03</span><b>Govern</b><small>Apply controls</small></button>
+        <button type="button" onClick={()=>onNavigate("products")}><span>03</span><b>Build</b><small>Shape the product</small></button>
         <i aria-hidden="true"/>
-        <button type="button" onClick={()=>onNavigate("scheduler")}><span>04</span><b>Execute</b><small>Route work</small></button>
+        <button type="button" onClick={()=>onNavigate("scheduler")}><span>04</span><b>Execute</b><small>Route governed work</small></button>
+        <i aria-hidden="true"/>
+        <button type="button" onClick={()=>onNavigate("transparency")}><span>05</span><b>Verify</b><small>Review evidence</small></button>
       </div>
     </section>
   </div>;
