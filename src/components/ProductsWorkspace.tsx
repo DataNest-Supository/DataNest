@@ -50,6 +50,14 @@ const catalogRecordOrder = [
   "governance_control","risk","roadmap_item","decision","evidence","datanest_branch"
 ];
 
+const RONSAS_FULL_NAME="Resonance Open Nova Sovereign Application Suite";
+
+function governedProductFullName(product:CatalogProduct){
+  return product.slug==="ronsas"||product.name.trim().toUpperCase()==="RONSAS"
+    ?RONSAS_FULL_NAME
+    :product.full_name;
+}
+
 function payloadText(payload:Record<string,unknown>,...keys:string[]) {
   for (const key of keys) {
     const value=payload[key];
@@ -504,7 +512,7 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
                 <div>
                   <p className="productKicker">{product.category||"RESONANCE PRODUCT"}</p>
                   <h3>{product.name}</h3>
-                  <p className="catalogFullName">{product.full_name}</p>
+                  <p className="catalogFullName">{governedProductFullName(product)}</p>
                 </div>
               </div>
               <div className="catalogFlags">
