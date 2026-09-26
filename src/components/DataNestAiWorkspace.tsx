@@ -213,8 +213,9 @@ export default function DataNestAiWorkspace({
             className="primaryButton datanestAiHeroPrimary"
             type="button"
             onClick={()=>{
-              const input=document.querySelector<HTMLTextAreaElement>(".datanestAiComposer textarea");
-              input?.scrollIntoView({behavior:"smooth",block:"center"});
+              const chat=document.getElementById("datanest-ai-chat");
+              const input=chat?.querySelector<HTMLTextAreaElement>(".datanestAiComposer textarea")||null;
+              chat?.scrollIntoView({behavior:"smooth",block:"start"});
               window.setTimeout(()=>input?.focus(),350);
             }}
           >Start development chat <span aria-hidden="true">→</span></button>
@@ -296,18 +297,22 @@ export default function DataNestAiWorkspace({
       </div>
     </section>
 
-    {loading&&!context?<div className="loadingBar"><span/></div>:selectedJob&&context&&<>
-      <section className="datanestAiChatStage" aria-label="DataNest AI Chat">
+    {selectedJob&&<>
+      <section id="datanest-ai-chat" className="datanestAiChatStage" aria-label="DataNest AI Chat">
         <DataNestAiChatPanel
           jobId={selectedJob.id}
           jobCode={jobCode(selectedJob)}
           sessionId={sessionId}
-          events={context.events||[]}
+          events={context?.events||[]}
           onSessionChange={setSessionId}
           onContextRefresh={refreshContext}
           setNotice={setNotice}
           setError={setError}
         />
+        {loading&&!context&&<div className="datanestAiContextSync" role="status">
+          <span className="datanestAiPipelineDot" aria-hidden="true"/>
+          Synchronising governed Job context…
+        </div>}
       </section>
 
       <section className="datanestAiContextRail" aria-label="Active DataNest AI context">
@@ -350,21 +355,23 @@ export default function DataNestAiWorkspace({
         </section>
       </section>
 
-      <section className="datanestAiSupportGrid">
-        <div aria-label="Certified Memory">
-          <DataNestAiMemoryPanel items={context.certifiedMemory||[]}/>
-        </div>
-      </section>
+      {context&&<>
+        <section className="datanestAiSupportGrid">
+          <div aria-label="Certified Memory">
+            <DataNestAiMemoryPanel items={context.certifiedMemory||[]}/>
+          </div>
+        </section>
 
-      <div className="datanestAiCertificationStage" aria-label="Learning & Certification">
-        <DataNestAiCertificationPanel
-          projectId={projectId}
-          role={role}
-          onChanged={refreshContext}
-          setNotice={setNotice}
-          setError={setError}
-        />
-      </div>
+        <div className="datanestAiCertificationStage" aria-label="Learning & Certification">
+          <DataNestAiCertificationPanel
+            projectId={projectId}
+            role={role}
+            onChanged={refreshContext}
+            setNotice={setNotice}
+            setError={setError}
+          />
+        </div>
+      </>}
     </>}
     <footer className="datanestAiFootnote">
       <small>
