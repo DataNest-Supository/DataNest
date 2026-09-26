@@ -16,6 +16,12 @@ Consolidate the strongest functional and visual work from the Resonance Hub/RONS
 
 The public site could not be fetched through the current web gateway during this review, so production source is treated as the authoritative implementation record rather than inferring from a failed HTTP fetch.
 
+## Public surface review finding
+
+A recent searchable public snapshot of `reson8.life` still describes once-off application packs and optional monthly ecosystem passes. The newer reviewed production source lineage presents a free-promotion/no-new-billing state. Because direct live HTML fetch was unavailable through the review gateway, this is recorded as `RH-WEB-DRIFT` with status `needs_verification` rather than treated as a confirmed production defect.
+
+Required follow-up: verify the currently served production HTML and deployment head, then reconcile public metadata/crawl state with the authoritative commercial policy.
+
 ## Consolidation decisions
 
 | Source | Valuable content | DataNest treatment |
