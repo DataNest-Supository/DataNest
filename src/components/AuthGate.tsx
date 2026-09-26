@@ -1,6 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import CollaborationVisual from "./CollaborationVisual";
+import MotionControl from "./MotionControl";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
@@ -251,17 +253,36 @@ export default function AuthGate() {
   }
 
   return (
-    <main className="authShell">
-      <section className="authCard">
+    <main className="authShell authLanding">
+      <a className="skipLink" href="#sign-in-email">Skip to sign in</a>
+      <header className="landingHeader">
+        <a className="landingBrand" href="#"><span className="landingMonogram" aria-hidden="true">R</span><span>RESONANCE <b>DataNest</b></span></a>
+        <MotionControl/>
+      </header>
+      <div className="landingLayout">
+      <section className="landingStory" aria-labelledby="landing-title">
+        <p className="aiIEyebrow">AI &amp; I · A SHARED WORKSPACE</p>
+        <h2 id="landing-title">Your intent.<br/><span>Amplified.</span></h2>
+        <p className="landingLede">Bring human direction and AI intelligence together. Turn ideas into governed work, with a clear path from first spark to execution.</p>
+        <CollaborationVisual/>
+        <ol className="landingSteps" aria-label="The Resonance workflow">
+          <li><span>01</span><b>Spark</b><small>Capture intent</small></li>
+          <li><span>02</span><b>Think</b><small>Explore with AI</small></li>
+          <li><span>03</span><b>Govern</b><small>Review decisions</small></li>
+          <li><span>04</span><b>Execute</b><small>Track the work</small></li>
+        </ol>
+      </section>
+      <section className="authCard landingSignIn" aria-labelledby="sign-in-title">
         <div className="brandMark">RD</div>
         <p className="eyebrow">RESONANCE APPDEV</p>
-        <h1>Resonance DataNest</h1>
-        <p className="lede">Plan projects, collaborate with DataNest AI, and review traceable work in one workspace.</p>
+        <h1 id="sign-in-title">Resonance DataNest</h1>
+        <p className="lede">Welcome to your workspace. Sign in to continue.</p>
 
         <form onSubmit={signIn} className="authForm" aria-busy={busy}>
           <label>
             Email
             <input
+              id="sign-in-email"
               type="email"
               required
               autoComplete="email"
@@ -294,6 +315,8 @@ export default function AuthGate() {
         </div>
         <p className="securityNote">Sign in with your authorized account. Need access? Ask your project administrator for an invitation.</p>
       </section>
+      </div>
+      <footer className="landingFooter"><span>Human direction. Governed intelligence.</span><span>Project access by invitation</span></footer>
     </main>
   );
 }

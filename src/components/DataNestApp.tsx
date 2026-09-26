@@ -6,6 +6,7 @@ import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
 import JobInviteForm from "@/components/JobInviteForm";
 import ResonanceHome from "@/components/ResonanceHome";
+import MotionControl from "@/components/MotionControl";
 
 type Project = { id:string; slug:string; name:string; description:string|null; status:string; created_at:string };
 type Tool = { id:string; tool_key:string; name:string; role:string; enabled:boolean; config:Record<string,unknown> };
@@ -107,7 +108,7 @@ const ExternalAiSidebar = dynamic(() => import("@/components/ExternalAiSidebar")
 
 function formatDate(value:string|null) {
   if (!value) return "—";
-  return new Intl.DateTimeFormat(undefined,{month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(value));
+  return new Intl.DateTimeFormat(undefined,{month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"UTC",timeZoneName:"short"}).format(new Date(value));
 }
 function jobCode(job:Job) { return "JOB-" + String(job.job_number).padStart(5,"0"); }
 function tone(value:string) {
@@ -702,6 +703,7 @@ export default function DataNestApp({session}:{session:Session}) {
           }}>
             <summary className="secondaryButton compact">Options</summary>
             <div className="workspaceOptionsMenu">
+              <MotionControl/>
           <button
             className="secondaryButton compact releaseAction"
             type="button"

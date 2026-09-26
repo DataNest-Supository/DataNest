@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
+import CollaborationVisual from "./CollaborationVisual";
 
 type HomeDestination = "ai" | "unifi" | "scheduler" | "governance" | "thinktank" | "sparks";
 type ProjectLike = { name:string; description:string|null };
 type JobLike = { id:string; status:string; created_at:string };
 type SummaryLike = { total:number; active:number; running:number; blocked:number; available:number; registered:number };
 
-const dayFormatter = new Intl.DateTimeFormat(undefined,{weekday:"short"});
+const dayFormatter = new Intl.DateTimeFormat(undefined,{weekday:"short",timeZone:"UTC"});
 
 function statusTone(status:string) {
   const value=status.toUpperCase();
@@ -32,17 +33,17 @@ export default function ResonanceHome({
 }) {
   const pulse=useMemo(()=>{
     const today=new Date();
-    today.setHours(0,0,0,0);
+    today.setUTCHours(0,0,0,0);
     return Array.from({length:7},(_,offset)=>{
       const date=new Date(today);
-      date.setDate(today.getDate()-(6-offset));
+      date.setUTCDate(today.getUTCDate()-(6-offset));
       const next=new Date(date);
-      next.setDate(date.getDate()+1);
+      next.setUTCDate(date.getUTCDate()+1);
       const value=jobs.filter(job=>{
         const created=new Date(job.created_at);
         return created>=date&&created<next;
       }).length;
-      return {label:dayFormatter.format(date),value};
+      return {label:dayFormatter.format(date),date:date.toISOString().slice(0,10),value};
     });
   },[jobs]);
 
@@ -59,7 +60,6 @@ export default function ResonanceHome({
     jobs.forEach(job=>tally.set(job.status,(tally.get(job.status)||0)+1));
     return Array.from(tally.entries())
       .sort((a,b)=>b[1]-a[1])
-      .slice(0,5)
       .map(([status,value])=>({status,value,tone:statusTone(status)}));
   },[jobs]);
   const maxState=Math.max(1,...states.map(item=>item.value));
@@ -94,25 +94,7 @@ export default function ResonanceHome({
         </div>
       </div>
 
-      <div className="aiICoreStage" aria-label="AI and human collaboration visualization">
-        <div className="coreOrbit orbitOuter" aria-hidden="true"/>
-        <div className="coreOrbit orbitMiddle" aria-hidden="true"/>
-        <div className="signalArc arcOne" aria-hidden="true"/>
-        <div className="signalArc arcTwo" aria-hidden="true"/>
-        <div className="coreNode humanCore">
-          <small>I</small>
-          <strong>Intent</strong>
-          <span>Human direction</span>
-        </div>
-        <div className="coreBridge" aria-hidden="true"><i/><i/><i/><i/></div>
-        <div className="coreNode aiCore">
-          <small>AI</small>
-          <strong>Amplify</strong>
-          <span>Governed intelligence</span>
-        </div>
-        <div className="coreCenter" aria-hidden="true"><span>R</span></div>
-        <span className="coreCaption">Traceable collaboration loop</span>
-      </div>
+      <CollaborationVisual/>
     </section>
 
     <section className="aiIStatsGrid" aria-label="DataNest project metrics">
@@ -138,9 +120,9 @@ export default function ResonanceHome({
       <article className="aiIGraphCard pulseCard">
         <div className="aiICardHead">
           <div><p className="eyebrow">WORK PULSE</p><h3>Recent creation signal</h3></div>
-          <span className="aiILiveBadge"><i/> LIVE DATA</span>
+          <span className="aiILiveBadge">LOADED SNAPSHOT · UTC</span>
         </div>
-        <div className="pulsePlot" role="img" aria-label={"Recent jobs created over seven days: "+pulse.map(item=>item.label+" "+item.value).join(", ")}>
+        <div className="pulsePlot" role="img" aria-label={"Loaded jobs created over seven UTC days: "+pulse.map(item=>item.date+" "+item.value).join(", ")}>
           <svg viewBox="0 0 100 62" preserveAspectRatio="none" aria-hidden="true">
             <defs>
               <linearGradient id="pulseFill" x1="0" y1="0" x2="0" y2="1">
@@ -148,13 +130,14 @@ export default function ResonanceHome({
                 <stop offset="100%" stopColor="currentColor" stopOpacity="0"/>
               </linearGradient>
             </defs>
+            {[14,35,56].map(y=><line key={y} x1="8" x2="92" y1={y} y2={y} className="pulseGridLine"/>)}
             <path className="pulseArea" d={"M "+points[0].x+" 58 L "+points.map(point=>point.x+" "+point.y).join(" L ")+" L "+points[points.length-1].x+" 58 Z"}/>
             <polyline className="pulseLine" points={polyline}/>
             {points.map(point=><circle key={point.x} className="pulsePoint" cx={point.x} cy={point.y} r="1.4"/>)}
           </svg>
-          <div className="pulseAxis">{pulse.map(item=><span key={item.label}>{item.label}</span>)}</div>
+          <div className="pulseAxis">{pulse.map(item=><span key={item.date}><b>{item.value}</b>{item.label}</span>)}</div>
         </div>
-        <p className="aiIGraphNote">Based on the recent jobs currently loaded in this project view.</p>
+        <p className="aiIGraphNote">{jobs.length} latest loaded jobs; this is a sample, not the full project history. Day boundaries use Universal Time (UTC).</p>
       </article>
 
       <article className="aiIGraphCard stateCard">
@@ -166,7 +149,7 @@ export default function ResonanceHome({
           {states.length?states.map(item=><div className="stateBarRow" key={item.status}>
             <div className="stateBarMeta"><span>{item.status.replaceAll("_"," ")}</span><b>{item.value}</b></div>
             <div className="stateBarTrack"><span className={item.tone} style={{width:Math.max(7,(item.value/maxState)*100)+"%"}}/></div>
-          </div>):<div className="aiIEmptyGraph">No recent job states yet.</div>}
+          </div>):<div className="aiIEmptyGraph">No work loaded yet. Create your first governed job to start the timeline.</div>}
         </div>
       </article>
     </section>
