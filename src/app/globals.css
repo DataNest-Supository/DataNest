@@ -3055,3 +3055,94 @@ code,pre{
     width:100%;
   }
 }
+
+
+/* 2026-09-26 DataNest AI quick command rail */
+.datanestAiQuickCommands{
+  display:grid;
+  gap:9px;
+  margin:14px 24px 0;
+}
+
+.datanestAiQuickCommandsLabel{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+}
+
+.datanestAiQuickCommandsLabel>span{
+  color:#7feaff;
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.14em;
+}
+
+.datanestAiQuickCommandsLabel small{
+  color:#70879c;
+  font-size:8px;
+}
+
+.datanestAiQuickCommandRail{
+  display:flex;
+  gap:7px;
+  overflow-x:auto;
+  padding:1px 1px 4px;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(100,225,255,.22) transparent;
+}
+
+.datanestAiQuickCommand{
+  min-height:34px;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  flex:0 0 auto;
+  padding:7px 11px;
+  border:1px solid rgba(91,224,255,.15);
+  border-radius:999px;
+  background:
+    linear-gradient(145deg,rgba(8,20,40,.76),rgba(16,8,39,.72));
+  color:#b9cfe0;
+  font:750 9px/1 ui-sans-serif,system-ui,sans-serif;
+  cursor:pointer;
+  transition:border-color .16s ease,color .16s ease,background .16s ease,transform .16s ease;
+}
+
+.datanestAiQuickCommand>span{
+  color:#74eaff;
+  font-size:10px;
+  text-shadow:0 0 8px rgba(89,229,255,.38);
+}
+
+.datanestAiQuickCommand:hover:not(:disabled),
+.datanestAiQuickCommand:focus-visible{
+  color:#f0fcff;
+  border-color:rgba(95,232,255,.4);
+  background:
+    linear-gradient(145deg,rgba(16,40,66,.84),rgba(34,13,63,.82));
+  transform:translateY(-1px);
+}
+
+.datanestAiQuickCommand:disabled{
+  opacity:.45;
+  cursor:default;
+}
+
+@container datanest-main (max-width:700px){
+  .datanestAiQuickCommands{
+    margin-left:18px;
+    margin-right:18px;
+  }
+
+  .datanestAiQuickCommandsLabel{
+    align-items:flex-start;
+  }
+}
+
+@container datanest-main (max-width:480px){
+  .datanestAiQuickCommandsLabel{
+    display:grid;
+    gap:3px;
+  }
+}
