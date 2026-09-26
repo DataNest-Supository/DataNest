@@ -492,6 +492,8 @@ test("AI & I keeps DataNest AI at the core while governed products stay product 
 
   await page.setViewportSize({width:390,height:844});
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await network.evaluate(el=>getComputedStyle(el).getPropertyValue("--network-x").trim())).toBe("86px");
+  expect(await network.evaluate(el=>getComputedStyle(el).getPropertyValue("--network-y").trim())).toBe("82px");
 
   await page.emulateMedia({reducedMotion:"reduce"});
   expect(await network.locator("[data-signal='ai']").evaluate(el=>getComputedStyle(el).animationName)).toBe("none");
