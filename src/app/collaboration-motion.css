@@ -1,0 +1,137 @@
+/* Purposeful AI & I hero motion.
+   Keep ambient movement restrained; signal work and user intent instead of decorating continuously. */
+
+.aiIHero .ambientOrb,
+.aiIHero .signalDot{
+  animation:none;
+}
+
+.aiICoreStage{
+  --hero-signal-distance:170px;
+}
+
+.aiICoreStage .orbitOuter{
+  animation:orbitSpin 30s linear infinite;
+}
+
+.aiICoreStage .orbitMiddle,
+.aiICoreStage .signalArc{
+  animation:none;
+}
+
+.aiICoreStage .signalArc{
+  opacity:.42;
+}
+
+.aiICoreStage .coreCenter{
+  animation:heroCoreReveal .7s ease-out both;
+}
+
+.aiICoreStage .humanCore{
+  animation:heroNodeReveal .65s .2s ease-out both;
+}
+
+.aiICoreStage .aiCore{
+  animation:heroNodeReveal .65s .32s ease-out both;
+}
+
+.aiICoreStage .coreBridge{
+  animation:heroBridgeReveal .65s .1s ease-out both;
+}
+
+.coreBridge .workSignalPacket,
+.coreBridge .interactionSignalPacket{
+  left:0;
+  opacity:0;
+  animation:none;
+  will-change:transform,opacity;
+}
+
+.aiICoreStage[data-activity="running"] .workSignalPacket{
+  animation:heroWorkSignal 5.2s ease-in-out infinite;
+}
+
+.aiIHero:has(.aiIPrimary:is(:hover,:focus-visible,:active)) .interactionSignalPacket{
+  animation:heroIntentToAi .9s ease-out 1 both;
+}
+
+.aiIHero:has(.aiIPrimary:is(:hover,:focus-visible,:active)) .humanCore{
+  border-color:rgba(126,230,255,.46);
+  box-shadow:0 20px 55px rgba(0,0,0,.25),0 0 24px rgba(126,230,255,.12);
+}
+
+.aiIHero:has(.aiIPrimary:is(:hover,:focus-visible,:active)) .coreCenter{
+  animation:heroCoreResponse .9s ease-out 1 both;
+}
+
+.aiIHero:has(.aiIPrimary:is(:hover,:focus-visible,:active)) .aiCore{
+  border-color:rgba(180,161,255,.44);
+  box-shadow:0 20px 55px rgba(0,0,0,.25),0 0 26px rgba(166,145,255,.13);
+}
+
+.humanCore,
+.aiCore{
+  transition:border-color .2s ease,box-shadow .2s ease,filter .2s ease;
+}
+
+@keyframes heroCoreReveal{
+  from{opacity:0;transform:scale(.86);filter:brightness(.82)}
+  to{opacity:1;transform:scale(1);filter:brightness(1)}
+}
+
+@keyframes heroNodeReveal{
+  from{opacity:0;filter:brightness(.82)}
+  to{opacity:1;filter:brightness(1)}
+}
+
+@keyframes heroBridgeReveal{
+  from{opacity:0;transform:translate(-50%,-50%) scaleX(.72)}
+  to{opacity:1;transform:translate(-50%,-50%) scaleX(1)}
+}
+
+@keyframes heroWorkSignal{
+  0%,68%,100%{opacity:0;transform:translateX(0) scale(.8)}
+  73%{opacity:.9}
+  88%{opacity:1;transform:translateX(var(--hero-signal-distance)) scale(1)}
+  94%{opacity:0;transform:translateX(var(--hero-signal-distance)) scale(.8)}
+}
+
+@keyframes heroIntentToAi{
+  0%{opacity:0;transform:translateX(0) scale(.82)}
+  10%{opacity:1}
+  48%{opacity:1;transform:translateX(calc(var(--hero-signal-distance) / 2)) scale(1.15)}
+  88%{opacity:1;transform:translateX(var(--hero-signal-distance)) scale(1)}
+  100%{opacity:0;transform:translateX(var(--hero-signal-distance)) scale(.82)}
+}
+
+@keyframes heroCoreResponse{
+  0%,100%{
+    filter:brightness(1);
+    box-shadow:0 0 0 14px rgba(109,213,247,.03),0 0 50px rgba(83,203,244,.18);
+  }
+  48%{
+    filter:brightness(1.18);
+    box-shadow:0 0 0 20px rgba(109,213,247,.05),0 0 68px rgba(83,203,244,.30);
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .aiIHero .ambientOrb,
+  .aiIHero .signalDot,
+  .aiICoreStage .orbitOuter,
+  .aiICoreStage .orbitMiddle,
+  .aiICoreStage .signalArc,
+  .aiICoreStage .coreCenter,
+  .aiICoreStage .humanCore,
+  .aiICoreStage .aiCore,
+  .aiICoreStage .coreBridge,
+  .coreBridge .workSignalPacket,
+  .coreBridge .interactionSignalPacket{
+    animation:none!important;
+  }
+
+  .humanCore,
+  .aiCore{
+    transition:none;
+  }
+}
