@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 
 export type DataNestAiEvent = {
@@ -13,6 +13,7 @@ export type DataNestAiEvent = {
 };
 
 type Props = {
+  draftScope:string;
   jobId:string;
   jobCode:string;
   sessionId:string;
@@ -29,7 +30,63 @@ function formatDate(value:string){
   }).format(new Date(value));
 }
 
+function sessionDraftKey(draftScope:string,jobId:string){
+  return "datanest-ai:session-draft:"+draftScope+":"+jobId;
+}
+
+function readSessionDraft(draftScope:string,jobId:string){
+  try{
+    return window.sessionStorage.getItem(sessionDraftKey(draftScope,jobId))||"";
+  }catch{
+    return "";
+  }
+}
+
+function writeSessionDraft(draftScope:string,jobId:string,value:string){
+  try{
+    const key=sessionDraftKey(draftScope,jobId);
+    if(value)window.sessionStorage.setItem(key,value);
+    else window.sessionStorage.removeItem(key);
+  }catch{
+    // Session storage can be unavailable in restricted browser contexts.
+  }
+}
+
+const quickCommands=[
+  {
+    label:"Continue",
+    glyph:"→",
+    prompt:"Continue this Job from the current governed context. Identify the next highest-value implementation step, state the acceptance check, and proceed."
+  },
+  {
+    label:"Analyze",
+    glyph:"◎",
+    prompt:"Analyze the current Job context. Surface the important dependencies, risks, unresolved decisions, and the most useful next actions."
+  },
+  {
+    label:"Build",
+    glyph:"+",
+    prompt:"Build the next implementation step for this Job using the current governed context. State what you will change, apply the change, and verify it."
+  },
+  {
+    label:"Debug",
+    glyph:"◇",
+    prompt:"Debug the current Job state. Identify likely failure points, verify assumptions, and propose or apply the smallest safe fix."
+  },
+  {
+    label:"Plan",
+    glyph:"≡",
+    prompt:"Create a concrete execution plan for this Job with ordered steps, dependencies, acceptance checks, and a clear next action."
+  },
+  {
+    label:"Compare",
+    glyph:"⇄",
+    prompt:"Compare the strongest available approaches for this Job. Explain the meaningful trade-offs and recommend a practical implementation path based on the current context."
+  }
+] as const;
+
 export default function DataNestAiChatPanel({
+  draftScope,
   jobId,
   jobCode,
   sessionId,
@@ -40,34 +97,105 @@ export default function DataNestAiChatPanel({
   setError
 }:Props){
   const [draft,setDraft]=useState("");
-  const [busy,setBusy]=useState(false);
+  const [busyJobs,setBusyJobs]=useState<Set<string>>(()=>new Set());
   const [returnedTurn,setReturnedTurn]=useState<DataNestAiEvent|null>(null);
-  const requestIdRef=useRef("");
+  const requestIdByJobRef=useRef<Record<string,string>>({});
+  const draftByJobRef=useRef<Record<string,string>>({});
+  const draftIdentity=draftScope+":"+jobId;
+  const activeDraftIdentityRef=useRef(draftIdentity);
+  const composerRef=useRef<HTMLTextAreaElement|null>(null);
+  const transcriptRef=useRef<HTMLDivElement|null>(null);
+  const busy=busyJobs.has(draftIdentity);
+
+  useEffect(()=>{
+    activeDraftIdentityRef.current=draftIdentity;
+    setReturnedTurn(null);
+    const memoryDraft=draftByJobRef.current[draftIdentity];
+    const nextDraft=memoryDraft===undefined?readSessionDraft(draftScope,jobId):memoryDraft;
+    draftByJobRef.current[draftIdentity]=nextDraft;
+    setDraft(nextDraft);
+  },[draftIdentity,draftScope,jobId]);
+
+  useEffect(()=>{
+    const transcript=transcriptRef.current;
+    if(!transcript)return;
+    transcript.scrollTo({top:transcript.scrollHeight,behavior:"smooth"});
+  },[events.length,returnedTurn,busy]);
+
+  function setJobBusy(targetDraftIdentity:string,value:boolean){
+    setBusyJobs(current=>{
+      const next=new Set(current);
+      if(value)next.add(targetDraftIdentity);
+      else next.delete(targetDraftIdentity);
+      return next;
+    });
+  }
+
+  function updateDraft(value:string){
+    draftByJobRef.current[draftIdentity]=value;
+    requestIdByJobRef.current[draftIdentity]="";
+    writeSessionDraft(draftScope,jobId,value);
+    setDraft(value);
+  }
+
+  function clearDraft(){
+    if(busy)return;
+    draftByJobRef.current[draftIdentity]="";
+    requestIdByJobRef.current[draftIdentity]="";
+    writeSessionDraft(draftScope,jobId,"");
+    setDraft("");
+    window.setTimeout(()=>composerRef.current?.focus(),0);
+  }
+
+  function focusComposer(){
+    const composer=composerRef.current;
+    if(!composer)return;
+    const reducedMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    composer.scrollIntoView({behavior:reducedMotion?"auto":"smooth",block:"center"});
+    window.setTimeout(()=>composer.focus(),reducedMotion?0:220);
+  }
+
+  function loadQuickCommand(prompt:string){
+    updateDraft(prompt);
+    window.setTimeout(focusComposer,0);
+  }
 
   async function send(event:FormEvent){
     event.preventDefault();
-    if(!draft.trim()||busy)return;
+    const message=draft.trim();
+    if(!message||busy)return;
     const supabase=getSupabase();
     if(!supabase)return;
 
-    const requestId=requestIdRef.current||crypto.randomUUID();
-    requestIdRef.current=requestId;
-    setBusy(true);
+    const requestDraftScope=draftScope;
+    const requestJobId=jobId;
+    const requestJobCode=jobCode;
+    const requestSessionId=sessionId;
+    const requestDraftIdentity=draftIdentity;
+    const requestId=requestIdByJobRef.current[requestDraftIdentity]||crypto.randomUUID();
+    requestIdByJobRef.current[requestDraftIdentity]=requestId;
+    setJobBusy(requestDraftIdentity,true);
     setError("");
 
     try{
       const {data,error}=await supabase.functions.invoke("datanest-ai-chat",{
         body:{
           action:"chat",
-          jobId,
-          sessionId:sessionId||null,
+          jobId:requestJobId,
+          sessionId:requestSessionId||null,
           clientRequestId:requestId,
-          message:draft.trim()
+          message
         }
       });
       if(error)throw error;
       const payload=(data||{}) as Record<string,unknown>;
-      const nextSession=String(payload.sessionId||sessionId||"");
+
+      requestIdByJobRef.current[requestDraftIdentity]="";
+      draftByJobRef.current[requestDraftIdentity]="";
+      writeSessionDraft(requestDraftScope,requestJobId,"");
+      if(activeDraftIdentityRef.current!==requestDraftIdentity)return;
+
+      const nextSession=String(payload.sessionId||requestSessionId||"");
       if(nextSession)onSessionChange(nextSession);
 
       const assistant=String(payload.assistant||"").trim();
@@ -84,20 +212,21 @@ export default function DataNestAiChatPanel({
       }
 
       setDraft("");
-      requestIdRef.current="";
       const trend=(payload.trendAnalysis||{}) as Record<string,unknown>;
       const candidateId=String(trend.candidateId||"");
       setNotice(
         candidateId
           ?"DataNest AI responded and recorded this turn as UNCERTIFIED evidence. A repeated pattern was staged for governed learning review."
-          :"DataNest AI responded and recorded this turn as traceable UNCERTIFIED evidence for "+jobCode+"."
+          :"DataNest AI responded and recorded this turn as traceable UNCERTIFIED evidence for "+requestJobCode+"."
       );
       await onContextRefresh(nextSession);
-      setReturnedTurn(null);
+      if(activeDraftIdentityRef.current===requestDraftIdentity)setReturnedTurn(null);
     }catch(sendError){
-      setError(sendError instanceof Error?sendError.message:"Unable to send DataNest AI input.");
+      if(activeDraftIdentityRef.current===requestDraftIdentity){
+        setError(sendError instanceof Error?sendError.message:"Unable to send DataNest AI input.");
+      }
     }finally{
-      setBusy(false);
+      setJobBusy(requestDraftIdentity,false);
     }
   }
 
@@ -105,28 +234,70 @@ export default function DataNestAiChatPanel({
     ?[...events,returnedTurn]
     :events;
 
-  return <section className="panel datanestAiChatPanel">
-    <div className="panelHead">
-      <div>
-        <p className="eyebrow">DATANEST AI CHAT</p>
-        <h3>Development input</h3>
+  return <section className="panel datanestAiChatPanel datanestAiCommandConsole">
+    <div className="datanestAiConsoleHead">
+      <div className="datanestAiConsoleIdentity">
+        <div className="datanestAiConsoleGlyph" aria-hidden="true">AI</div>
+        <div>
+          <p className="eyebrow">DATANEST AI // LIVE CONSOLE</p>
+          <h3>Development command channel</h3>
+          <small>Governed reasoning with active Job context and traceable session evidence.</small>
+        </div>
       </div>
-      <span className="badge warn">UNCERTIFIED SESSION</span>
+      <div className="datanestAiConsoleStatus" aria-label="DataNest AI console status">
+        <span className="datanestAiConsoleLive"><i aria-hidden="true"/>AI CORE LINKED</span>
+        <span>{jobCode}</span>
+        <span>{sessionId?"SESSION "+sessionId.slice(0,8):"SESSION ESTABLISHING"}</span>
+        <button
+          type="button"
+          className="datanestAiConsoleCommandJump"
+          aria-label="Jump to DataNest AI command composer"
+          onClick={focusComposer}
+        >
+          COMMAND <span aria-hidden="true">↓</span>
+        </button>
+      </div>
     </div>
 
-    <p className="muted">
-      Human and AI Companion inputs can help this Job immediately. They do not become project-wide memory until certification.
-    </p>
+    <div className="datanestAiConsoleGuardrail">
+      <span aria-hidden="true">◇</span>
+      <p>Human and AI Companion inputs can influence this Job immediately. Project-wide memory remains governed and requires certification.</p>
+    </div>
 
-    <div className="datanestAiTranscript" aria-live="polite">
+    <div className="datanestAiQuickCommands" aria-label="Quick DataNest AI commands">
+      <div className="datanestAiQuickCommandsLabel">
+        <span>QUICK COMMANDS</span>
+        <small>Select a command, then edit or send it.</small>
+      </div>
+      <div className="datanestAiQuickCommandRail">
+        {quickCommands.map(command=><button
+          key={command.label}
+          type="button"
+          className="datanestAiQuickCommand"
+          onClick={()=>loadQuickCommand(command.prompt)}
+          disabled={busy}
+        >
+          <span aria-hidden="true">{command.glyph}</span>
+          {command.label}
+        </button>)}
+      </div>
+    </div>
+
+    <div className="datanestAiTranscript" aria-live="polite" ref={transcriptRef}>
       {visibleEvents.map(item=>{
         const assistant=item.source_type==="datanest_ai";
         const companion=item.source_type==="ai_companion";
-        return <article className={"datanestAiTurn "+(assistant?"assistant":"evidence")} key={item.id}>
+        const roleClass=assistant?"assistant":companion?"companion":"human";
+        const roleGlyph=assistant?"AI":companion?"EXT":"YOU";
+        const roleLabel=assistant?"DataNest AI":companion?"AI Companion":"Human development input";
+        return <article className={"datanestAiTurn "+roleClass} key={item.id}>
           <div className="rowBetween">
-            <div>
-              <b>{assistant?"DataNest AI":companion?"AI Companion":"Human development input"}</b>
-              <small>{jobCode+" · "+formatDate(item.created_at)}</small>
+            <div className="datanestAiTurnIdentity">
+              <span className="datanestAiTurnGlyph" aria-hidden="true">{roleGlyph}</span>
+              <div>
+                <b>{roleLabel}</b>
+                <small>{jobCode+" · "+formatDate(item.created_at)}</small>
+              </div>
             </div>
             <span className="badge warn">UNCERTIFIED</span>
           </div>
@@ -137,27 +308,71 @@ export default function DataNestAiChatPanel({
           </div>
         </article>;
       })}
-      {!events.length&&<div className="emptyState">
-        <div>◇</div>
-        <h3>No staged conversation yet</h3>
-        <p>Enter development input below. DataNest will trace it before AI inference.</p>
+      {busy&&<div className="datanestAiReasoningTurn" role="status" aria-live="polite">
+        <div className="datanestAiReasoningCore" aria-hidden="true">AI</div>
+        <div className="datanestAiReasoningCopy">
+          <b>DataNest AI is reasoning</b>
+          <span>Binding the command to {jobCode}, evaluating governed context, and preparing a traceable response.</span>
+          <div className="datanestAiReasoningPulse" aria-hidden="true"><i/><i/><i/><i/><i/></div>
+        </div>
+      </div>}
+      {!events.length&&!busy&&<div className="emptyState datanestAiConsoleEmpty">
+        <div className="datanestAiConsoleEmptyCore" aria-hidden="true">AI</div>
+        <h3>DataNest AI is ready</h3>
+        <p>Issue a development command below. DataNest will bind it to this Job and trace the interaction before inference.</p>
       </div>}
     </div>
 
     <form className="datanestAiComposer" onSubmit={send}>
+      <div
+        id="datanest-ai-command-context"
+        className="datanestAiComposerContext"
+        aria-label={"DataNest AI command context locked to "+jobCode}
+      >
+        <span className="datanestAiContextLock">
+          <i aria-hidden="true"/>
+          CONTEXT LOCKED
+        </span>
+        <b>{jobCode}</b>
+        <small>{sessionId?"SESSION "+sessionId.slice(0,8):"SESSION ESTABLISHING"}</small>
+        {draft.trim()&&<span className="datanestAiDraftLock">
+          SESSION-ONLY DRAFT · LOCKED TO {jobCode}
+        </span>}
+        {draft.trim()&&<button
+          type="button"
+          className="datanestAiClearDraft"
+          onClick={clearDraft}
+          disabled={busy}
+        >
+          Clear draft
+        </button>}
+      </div>
+
       <label>
-        Human development input
+        <span className="datanestAiComposerLabel">
+          <b>Command DataNest AI</b>
+          <small>{jobCode}</small>
+        </span>
         <textarea
+          ref={composerRef}
           rows={4}
+          aria-describedby="datanest-ai-command-context"
           value={draft}
-          onChange={event=>setDraft(event.target.value)}
-          placeholder="Enter development input for this Job Manifest…"
+          onChange={event=>updateDraft(event.target.value)}
+          onKeyDown={event=>{
+            if((event.ctrlKey||event.metaKey)&&event.key==="Enter"&&!busy&&draft.trim()){
+              event.preventDefault();
+              event.currentTarget.form?.requestSubmit();
+            }
+          }}
+          placeholder="Ask DataNest AI to analyze, build, compare, debug, plan, or continue this Job Manifest…"
         />
       </label>
-      <div className="rowBetween">
-        <small className="muted">Trace-first intake · current Job/session only until certified</small>
-        <button className="primaryButton" disabled={busy||!draft.trim()}>
-          {busy?"Recording & reasoning…":"Send to DataNest AI"}
+      <div className="rowBetween datanestAiComposerFooter">
+        <small className="muted">Trace-first intake · active Job/session only until certified · Ctrl/⌘ + Enter to send</small>
+        <button className="primaryButton datanestAiCommandButton" disabled={busy||!draft.trim()}>
+          {busy?"DataNest AI reasoning…":"Send command"}
+          <span aria-hidden="true">→</span>
         </button>
       </div>
     </form>

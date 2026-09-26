@@ -86,18 +86,18 @@ test("quick switch moves keyboard selection with ArrowDown before Enter",async({
   const search=dialog.getByLabel("Search DataNest workspaces");
   await expect(search).toBeFocused();
 
-  await search.fill("Research");
+  await search.fill("Execute");
   const options=dialog.getByRole("option");
   await expect(options).toHaveCount(3);
-  await expect(dialog.getByRole("option",{name:/Think Tanks/})).toHaveAttribute("aria-selected","true");
+  await expect(dialog.getByRole("option",{name:/UNIFI Planner/})).toHaveAttribute("aria-selected","true");
 
   await page.keyboard.press("ArrowDown");
-  await expect(dialog.getByRole("option",{name:/DataNest AI/})).toHaveAttribute("aria-selected","true");
+  await expect(dialog.getByRole("option",{name:/TranScheduler/})).toHaveAttribute("aria-selected","true");
 
   await page.keyboard.press("Enter");
   await expect(dialog).toBeHidden();
-  await expect(page).toHaveURL(/(?:\\?|&)view=ai(?:&|$)/);
-  await expect(page.getByRole("heading",{name:"DataNest AI",exact:true}).first()).toBeVisible();
+  await expect(page).toHaveURL(/(?:\\?|&)view=scheduler(?:&|$)/);
+  await expect(page.getByRole("heading",{name:"TranScheduler",exact:true}).first()).toBeVisible();
 });
 
 
@@ -157,9 +157,10 @@ test("mobile TranScheduler avoids horizontal table scrolling",async({page})=>{
   await page.setViewportSize({width:390,height:844});
 
   await page.getByRole("button",{name:"Open menu"}).click();
-  await page.getByText("Tools",{exact:true}).click();
+  await page.getByRole("navigation",{name:"Project workspaces"}).getByText("Execute",{exact:true}).click();
   await page.getByRole("button",{name:"TranScheduler",exact:true}).click();
   await expect(page).toHaveURL(/(?:\?|&)view=scheduler(?:&|$)/);
+  await page.getByRole("button",{name:"Queue",exact:true}).click();
 
   const table=page.locator(".schedulerTable");
   await expect(table).toBeVisible();
@@ -186,8 +187,9 @@ test("mobile TranScheduler status filter uses a compact select",async({page})=>{
   await page.setViewportSize({width:390,height:844});
 
   await page.getByRole("button",{name:"Open menu"}).click();
-  await page.getByText("Tools",{exact:true}).click();
+  await page.getByRole("navigation",{name:"Project workspaces"}).getByText("Execute",{exact:true}).click();
   await page.getByRole("button",{name:"TranScheduler",exact:true}).click();
+  await page.getByRole("button",{name:"Queue",exact:true}).click();
 
   const statusFilter=page.getByLabel("Status filter");
   await expect(statusFilter).toBeVisible();
@@ -211,8 +213,8 @@ test("human input is traced and remains uncertified",async({page})=>{
   await page.getByText("DataNest AI E2E Job",{exact:true}).first().click();
 
   const message="Keep DataNest AI trace IDs visible on every governed turn.";
-  await page.getByPlaceholder(/Enter development input/i).fill(message);
-  await page.getByRole("button",{name:"Send to DataNest AI"}).click();
+  await page.getByPlaceholder(/Ask DataNest AI to analyze/i).fill(message);
+  await page.getByRole("button",{name:"Send command"}).click();
 
   await expect(page.getByText(message,{exact:true})).toBeVisible();
   await expect(page.getByText("UNCERTIFIED",{exact:true}).last()).toBeVisible();
@@ -262,6 +264,7 @@ test("Think Tanks expose project-scoped collaboration and reviewed-memory bounda
 
 test("Sparks workspace exposes internal utility boundaries",async({page})=>{
   await signIn(page);
+  await page.getByRole("navigation",{name:"Project workspaces"}).getByText("Discover",{exact:true}).click();
   await page.getByRole("button",{name:"Sparks",exact:true}).click();
 
   await expect(page.getByText("SPARKS · INTERNAL UTILITY",{exact:true})).toBeVisible();

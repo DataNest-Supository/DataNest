@@ -31,12 +31,13 @@ jobs:
           DATANEST_DB_RELEASE: datanest-project-member-invitations-v1
           DATANEST_BASELINE_RELEASE: reload-latest-v1
           DATANEST_BASELINE_SHA: 592149b0898f6703b28e9fa33e73bd0799cae3fd
-          DATANEST_EDGE_AI: datanest-ai-chat@1
+          DATANEST_EDGE_AI: datanest-ai-chat@2
           DATANEST_EDGE_INTAKE: datanest-ai-intake@1
           DATANEST_EDGE_CERTIFICATION: datanest-ai-certification@1
           DATANEST_EDGE_PROVIDER: manage-ai-provider-v2@1
           DATANEST_EDGE_INVITES: send-job-invite@1
-          DATANEST_EDGE_PROJECT_INVITES: send-project-member-invite@2
+          DATANEST_EDGE_PROJECT_INVITES: send-project-member-invite@3
+          DATANEST_EDGE_RONSAS_STATUS: ronsas-status@1
         run: node scripts/write-release-manifest.mjs public/release-manifest.json
       - run: npm run build
       - name: Build provider-agnostic container

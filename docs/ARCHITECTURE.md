@@ -22,6 +22,32 @@ Hosting is **provider-agnostic**. The built Next.js application can run anywhere
 
 Vercel is an optional managed hosting target. It may be enabled when a Vercel workspace is available, but Resonance DataNest does not depend on Vercel for source control, data, orchestration, scheduling, or local/self-hosted operation.
 
+
+## RONSAS integration boundary
+
+RONSAS is integrated into DataNest as a **remote, authenticated, non-blocking AppDev service boundary** rather than a local runtime dependency.
+
+```
+DataNest browser
+      |
+      | authenticated Supabase JWT
+      v
+Supabase Edge Function: ronsas-status@1
+      |
+      | HTTPS only / AppDev allowlist
+      v
+https://reson8.life/
+```
+
+Rules:
+
+- DataNest must never require `localhost`, `127.0.0.1`, `::1`, machine-local paths, desktop launchers, local control centers, or an operator session to use RONSAS integration.
+- The Edge Function rejects non-HTTPS, loopback, localhost and `.local` RONSAS origins.
+- RONSAS availability does not gate DataNest startup, project access, scheduling, governance, or DataNest AI; failure is surfaced as degraded integration state only.
+- Integration authority is aligned with Resonance AppDev: control source `resonance36912-cell/RONSAS`, Hub source `resonance36912-cell/resonance-hub`, public Hub `https://reson8.life/`.
+- RONSAS local sovereign runtimes remain independent systems and are not transitive prerequisites for the DataNest web product.
+- Future RONSAS control operations must be introduced as separately versioned authenticated contracts; status access does not imply execution authority.
+
 ## Core principles
 Projects own knowledge. Jobs own work. Checkpoints preserve continuity. Capabilities determine routing. Availability determines timing. UNKNOWN capability state is never execution permission.
 
@@ -77,7 +103,7 @@ Project-member invitations are a separate governance boundary from Job collabora
 - The owner may invite `admin`, `operator` or `viewer`; an admin may invite only `operator` or `viewer`.
 - The owner role is not inviteable through this flow, and self-invite is prohibited.
 - Invitation delivery uses a JWT-protected Edge Function and service-role-only registration gateway.
-- New accounts receive a Supabase Auth invitation; existing accounts receive a magic-link sign-in.
+- New and still-unconfirmed invitation accounts receive a Supabase Auth invitation; confirmed existing accounts receive a secure password-recovery link so they can establish credentials before signing in.
 - Registration creates a `project_members` row with status `invited`. General project access and formal governance voting require `status='active'`, so a sent invitation cannot create an independent vote.
 - After the invited person authenticates with the matching account/email, DataNest automatically accepts valid pending invitations and activates the membership.
 - Invitations expire after seven days and may be revoked before acceptance. Revoked/expired invitations are not formal voters.
@@ -107,3 +133,16 @@ A published audit return is retained separately from the audit methodology and f
 - The external auditor explicitly limited the audit to public/read-only and commit-pinned source evidence. It is not a full production certification and has no certification, governance, financial, ownership or role effect.
 - A finding may be marked validated, remediated or closed only when current-release reproduction and governed implementation evidence are attached.
 - Remediation evidence should connect the finding to its Job Manifest, branch/PR, acceptance test, migration/function change where relevant, release, deployment verification and closure rationale.
+\n## Resonance Assistance · Legal Eagle
+Legal Eagle is the first live Resonance Assistance specialist and runs through the authenticated, governed DataNest AI gateway rather than a separate ungoverned model path.
+
+- Every Legal Eagle turn is anchored to an authorized DataNest Job used as the matter workspace.
+- The user must supply the relevant jurisdiction before substantive Legal Eagle assistance is accepted.
+- Legal Eagle may provide legal information, plain-language explanation, issue organization, chronology, research mapping, counsel preparation, and human-review draft structure.
+- Legal Eagle is not a law firm, does not create an attorney-client relationship or legal privilege, cannot represent the user, and cannot contact courts, regulators, opposing parties, or other people on the user's behalf.
+- The governed prompt prohibits fabricated statutes, cases, citations, court rules, filing requirements, and deadlines. Current-law and deadline questions must be identified for primary-source or qualified-professional verification.
+- High-impact matters such as imminent deadlines, arrest or detention, personal safety, housing loss, immigration consequences, and similar risks are explicitly escalated for prompt human verification.
+- Legal Eagle uses the same provider authorization, usage accounting, trace-first intake, and Job/session continuity as DataNest AI.
+- Release contract: `datanest-ai-chat@2` identifies the gateway version that adds the Legal Eagle product mode and learning exclusion.
+- Legal Eagle input/output events are tagged `product_mode=legal_eagle` and `learning_eligible=false`.
+- Legal Eagle sessions are excluded from automatic trend extraction and project-wide learning. A legal matter therefore cannot silently become reusable institutional memory through the automatic learning pipeline.

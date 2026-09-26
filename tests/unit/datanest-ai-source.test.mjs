@@ -84,10 +84,10 @@ test("governed release wiring names the certified DataNest AI runtime", () => {
   }
 
   assert.match(manifest,/datanest-project-member-invitations-v1/);
-  assert.match(manifest,/datanest-ai-chat@1/);
+  assert.match(manifest,/datanest-ai-chat@2/);
   assert.match(manifest,/datanest-ai-intake@1/);
   assert.match(manifest,/datanest-ai-certification@1/);
-  assert.match(manifest,/send-project-member-invite@2/);
+  assert.match(manifest,/send-project-member-invite@3/);
   assert.match(pages,/datanest-project-member-invitations-v1/);
 });
 
@@ -105,6 +105,14 @@ test("certification workspace scopes evidence rows to project candidates", () =>
   assert.match(source,/const candidateIds=.*candidates/);
   assert.match(source,/ai_validation_runs"\)[\s\S]*?\.in\("candidate_id",candidateIds\)/);
   assert.match(source,/ai_certification_decisions"\)[\s\S]*?\.in\("candidate_id",candidateIds\)/);
+});
+
+test("certification panel normalizes malformed workspace payloads before rendering", () => {
+  const panel=fs.readFileSync(path.join(root,"src/components/DataNestAiCertificationPanel.tsx"),"utf8");
+  assert.match(panel,/function normalizeWorkspaceResponse/);
+  assert.match(panel,/Array\.isArray\(record\.candidates\)/);
+  assert.match(panel,/Array\.isArray\(record\.validationRuns\)/);
+  assert.match(panel,/setWorkspace\(normalizeWorkspaceResponse\(data,fallbackRole\)\)/);
 });
 
 test("browser certification console cannot self-pass the stress-test gate", () => {
@@ -241,8 +249,22 @@ test("Overview omits capacity and Operations omits the Capabilities surface", ()
   assert.doesNotMatch(source,/>CAPACITY</);
   assert.doesNotMatch(source,/function Capabilities\(/);
 
-  assert.match(source,/<Scheduler jobs=\{jobs\} capabilities=\{capabilities\}/);
+  assert.match(source,/<Scheduler [^>]*jobs=\{jobs\} capabilities=\{capabilities\}/);
   assert.match(source,/<UnifiPlanner project=\{project\} jobs=\{jobs\} capabilities=\{capabilities\}/);
+});
+
+
+test("TranScheduler groups jobs under the project identity with a priority gradient", () => {
+  const source=fs.readFileSync(path.join(root,"src/components/DataNestApp.tsx"),"utf8");
+  const css=fs.readFileSync(path.join(root,"src/app/globals.css"),"utf8");
+
+  assert.match(source,/projectName=\{project\?\.name\|\|"Resonance DataNest"\}/);
+  assert.match(source,/function ProjectGroupHeader\(/);
+  assert.match(source,/function PriorityScale\(/);
+  assert.match(source,/schedulerProjectGroupHead/);
+  assert.match(css,/schedulerPriorityLegend/);
+  assert.match(css,/priorityScaleGradient/);
+  assert.match(css,/linear-gradient\(90deg,#58718f 0%,#4aaee0 34%,#7a70ed 66%,#e55ac8 100%\)/);
 });
 
 
@@ -264,7 +286,15 @@ test("DataNest AI surfaces the returned assistant turn before refreshing the gov
   );
   assert.match(
     workspace,
-    /sessionId:sessionOverride\|\|sessionId\|\|null/
+    /const requestedSessionKey=sessionKey\(requestedJobId\)/
+  );
+  assert.match(
+    workspace,
+    /typeof sessionOverride==="string"[\s\S]{0,160}sessionByJobRef\.current\[requestedSessionKey\]\|\|null/
+  );
+  assert.match(
+    workspace,
+    /body:\{action:"context",jobId:requestedJobId,sessionId:requestedSessionId\}/
   );
 });
 

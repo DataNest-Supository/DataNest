@@ -69,6 +69,11 @@ export default function DataNestAiWorkspace({
   const [context,setContext]=useState<ContextResponse|null>(null);
   const [loading,setLoading]=useState(true);
   const selectedJobIdRef=useRef("");
+  const sessionByJobRef=useRef<Record<string,string>>({});
+
+  const sessionKey=useCallback((jobId:string)=>
+    projectId+":"+currentUserId+":"+jobId
+  ,[projectId,currentUserId]);
 
   const selectedJob=useMemo(
     ()=>jobs.find(job=>job.id===selectedJobId)||null,
@@ -99,11 +104,15 @@ export default function DataNestAiWorkspace({
   const refreshContext=useCallback(async(sessionOverride?:string)=>{
     if(!selectedJobId)return;
     const requestedJobId=selectedJobId;
+    const requestedSessionKey=sessionKey(requestedJobId);
+    const requestedSessionId=typeof sessionOverride==="string"
+      ?sessionOverride||null
+      :sessionByJobRef.current[requestedSessionKey]||null;
     const supabase=getSupabase();
     if(!supabase)return;
     setLoading(true);
     const {data,error}=await supabase.functions.invoke("datanest-ai-chat",{
-      body:{action:"context",jobId:requestedJobId,sessionId:sessionOverride||sessionId||null}
+      body:{action:"context",jobId:requestedJobId,sessionId:requestedSessionId}
     });
     if(selectedJobIdRef.current!==requestedJobId)return;
     setLoading(false);
@@ -111,8 +120,10 @@ export default function DataNestAiWorkspace({
     const payload=data as ContextResponse;
     if(payload.job?.id!==requestedJobId)return;
     setContext(payload);
-    if(payload.sessionId)setSessionId(payload.sessionId);
-  },[selectedJobId,sessionId,setError]);
+    const nextSessionId=String(payload.sessionId||"");
+    sessionByJobRef.current[requestedSessionKey]=nextSessionId;
+    setSessionId(nextSessionId);
+  },[selectedJobId,sessionKey,setError]);
 
   useEffect(()=>{void loadJobs()},[loadJobs]);
 
@@ -126,12 +137,12 @@ export default function DataNestAiWorkspace({
 
   useEffect(()=>{
     if(!selectedJobId)return;
-    setSessionId("");
+    setSessionId(sessionByJobRef.current[sessionKey(selectedJobId)]||"");
     setContext(null);
     window.dispatchEvent(new CustomEvent("datanest:job-selected",{
       detail:{jobId:selectedJobId}
     }));
-  },[selectedJobId]);
+  },[selectedJobId,sessionKey]);
 
   useEffect(()=>{
     if(!selectedJobId)return;
@@ -145,6 +156,7 @@ export default function DataNestAiWorkspace({
 
       const stagedSessionId=String(detail.sessionId||"");
       if(stagedSessionId&&stagedSessionId!==sessionId){
+        sessionByJobRef.current[sessionKey(selectedJobId)]=stagedSessionId;
         setSessionId(stagedSessionId);
         return;
       }
@@ -153,7 +165,7 @@ export default function DataNestAiWorkspace({
     };
     window.addEventListener("datanest:external-ai-staged",refreshStaged);
     return()=>window.removeEventListener("datanest:external-ai-staged",refreshStaged);
-  },[selectedJobId,refreshContext]);
+  },[selectedJobId,sessionId,sessionKey,refreshContext]);
 
   async function refreshAll(){
     await loadJobs();
@@ -177,13 +189,29 @@ export default function DataNestAiWorkspace({
       <div className="datanestAiHeroCopy">
         <div className="datanestAiHeroBadge">
           <span className="datanestAiSignalMark" aria-hidden="true">✦</span>
-          AI-POWERED DEVELOPMENT
+          DATANEST AI // INTELLIGENCE CORE
         </div>
         <h2><span>DataNest</span> AI</h2>
-        <h3>Your intelligent development partner with <strong>project-wide memory.</strong></h3>
+        <h3>The governed intelligence core for <strong>everything DataNest knows.</strong></h3>
         <p>
           {selectedJob?.description||"Bring human intent, AI Companion evidence and certified project memory into one governed development workspace."}
         </p>
+
+        <div className="datanestAiHeroStatus" aria-label="DataNest AI system status">
+          <div>
+            <span className={"datanestAiStatusPulse "+(loading?"syncing":"online")} aria-hidden="true"/>
+            <small>System</small>
+            <b>{loading?"SYNCING":"ONLINE"}</b>
+          </div>
+          <div>
+            <small>Certified memory</small>
+            <b>{context?.certifiedMemory?.length||0} ITEMS</b>
+          </div>
+          <div>
+            <small>Active context</small>
+            <b>{selectedJob?jobCode(selectedJob):"STANDBY"}</b>
+          </div>
+        </div>
 
         <div className="datanestAiCapabilityRail" aria-label="DataNest AI capabilities">
           <span><i aria-hidden="true">▰</i>Project context</span>
@@ -197,8 +225,9 @@ export default function DataNestAiWorkspace({
             className="primaryButton datanestAiHeroPrimary"
             type="button"
             onClick={()=>{
-              const input=document.querySelector<HTMLTextAreaElement>(".datanestAiComposer textarea");
-              input?.scrollIntoView({behavior:"smooth",block:"center"});
+              const chat=document.getElementById("datanest-ai-chat");
+              const input=chat?.querySelector<HTMLTextAreaElement>(".datanestAiComposer textarea")||null;
+              chat?.scrollIntoView({behavior:"smooth",block:"start"});
               window.setTimeout(()=>input?.focus(),350);
             }}
           >Start development chat <span aria-hidden="true">→</span></button>
@@ -211,7 +240,12 @@ export default function DataNestAiWorkspace({
         </div>
       </div>
 
-      <div className="datanestAiHeroVisual" aria-label="Animated DataNest AI governed context pipeline">
+      <div className="datanestAiHeroVisual" aria-label="DataNest AI intelligence core with governed project context">
+        <div className="datanestAiHudHeader" aria-hidden="true">
+          <span>RESONANCE / DATANEST</span>
+          <b>AI CORE</b>
+          <small>{loading?"SYNC":"LIVE"}</small>
+        </div>
         <article className="datanestAiFloatCard datanestAiContextCard">
           <span className="datanestAiFloatIcon" aria-hidden="true">▰</span>
           <div>
@@ -239,9 +273,7 @@ export default function DataNestAiWorkspace({
           <span className="datanestAiPacket packetThree"/>
           <span className="datanestAiPacket packetFour"/>
           <div className="datanestAiCoreSphere">
-            <span className="datanestAiCoreGlyph">⌬</span>
-            <b>DataNest AI</b>
-            <small>{loading?"Synchronising":"Governed & ready"}</small>
+            <span className="datanestAiCoreGlyph">AI</span>\n            <b>DATANEST</b>\n            <small>{loading?"Synchronising":"Intelligence online"}</small>
           </div>
           <div className="datanestAiCoreBeam"/>
           <div className="datanestAiCoreBase">
@@ -253,8 +285,8 @@ export default function DataNestAiWorkspace({
           <span className="datanestAiFloatIcon" aria-hidden="true">&gt;_</span>
           <div>
             <b>Development Tools</b>
-            <small>Remote desktop · Cloud browser</small>
-            <small>CMD scripts · Codex functions</small>
+            <small>Hosted CI · Cloud browser</small>
+            <small>GitHub Actions · Playwright traces</small>
           </div>
         </article>
 
@@ -277,66 +309,85 @@ export default function DataNestAiWorkspace({
       </div>
     </section>
 
-    <section className="datanestAiJobStrip" aria-label="DataNest AI Job Manifests">
-      {jobs.map(job=><button
-        key={job.id}
-        className={"rndJobChip "+(job.id===selectedJobId?"active":"")}
-        onClick={()=>{selectedJobIdRef.current=job.id;setSelectedJobId(job.id)}}
-      >
-        <span>{jobCode(job)}</span>
-        <b>{job.title}</b>
-        <small>{job.status+" · P"+job.priority}</small>
-      </button>)}
-    </section>
-
-    {selectedJob&&<section className="panel datanestAiCurrentJob">
-      <div className="rowBetween">
-        <div>
-          <p className="eyebrow">Current Job Context</p>
-          <h2>{jobCode(selectedJob)+" · "+selectedJob.title}</h2>
-        </div>
-        <span className="badge live">{selectedJob.status.replaceAll("_"," ")}</span>
-      </div>
-      <p className="muted">{selectedJob.description||"No description supplied."}</p>
-      <div className="manifestMeta">
-        <span>{"Priority "+selectedJob.priority}</span>
-        <span>{selectedJob.required_capabilities?.join(", ")||"chat"}</span>
-        <span>{"Updated "+formatDate(selectedJob.updated_at)}</span>
-        <span>{sessionId?"Session "+sessionId.slice(0,8):"Session establishing…"}</span>
-      </div>
-      <div className="rowActions">
-        <JobInviteForm
-          jobId={selectedJob.id}
-          canInvite={canOperate}
-          compact
-          onSent={message=>setNotice(message)}
-        />
-        <button className="secondaryButton compact" onClick={()=>void refreshContext()}>Refresh context</button>
-      </div>
-    </section>}
-
-    {loading&&!context?<div className="loadingBar"><span/></div>:selectedJob&&context&&<>
-      <section className="datanestAiPrimaryGrid">
+    {selectedJob&&<>
+      <section id="datanest-ai-chat" className="datanestAiChatStage" aria-label="DataNest AI Chat">
         <DataNestAiChatPanel
+          draftScope={projectId+":"+currentUserId}
           jobId={selectedJob.id}
           jobCode={jobCode(selectedJob)}
           sessionId={sessionId}
-          events={context.events||[]}
-          onSessionChange={setSessionId}
+          events={context?.events||[]}
+          onSessionChange={nextSessionId=>{
+            sessionByJobRef.current[sessionKey(selectedJob.id)]=nextSessionId;
+            if(selectedJobIdRef.current===selectedJob.id)setSessionId(nextSessionId);
+          }}
           onContextRefresh={refreshContext}
           setNotice={setNotice}
           setError={setError}
         />
-        <div aria-label="Certified Memory"><DataNestAiMemoryPanel items={context.certifiedMemory||[]}/></div>
+        {loading&&!context&&<div className="datanestAiContextSync" role="status">
+          <span className="datanestAiPipelineDot" aria-hidden="true"/>
+          Synchronising governed Job context…
+        </div>}
       </section>
 
-      <div aria-label="Learning & Certification"><DataNestAiCertificationPanel
-        projectId={projectId}
-        role={role}
-        onChanged={refreshContext}
-        setNotice={setNotice}
-        setError={setError}
-      /></div>
+      <section className="datanestAiContextRail" aria-label="Active DataNest AI context">
+        <section className="panel datanestAiCurrentJob">
+          <div className="rowBetween">
+            <div>
+              <p className="eyebrow">Current Job Context</p>
+              <h2>{jobCode(selectedJob)+" · "+selectedJob.title}</h2>
+            </div>
+            <span className="badge live">{selectedJob.status.replaceAll("_"," ")}</span>
+          </div>
+          <p className="muted">{selectedJob.description||"No description supplied."}</p>
+          <div className="manifestMeta">
+            <span>{"Priority "+selectedJob.priority}</span>
+            <span>{selectedJob.required_capabilities?.join(", ")||"chat"}</span>
+            <span>{"Updated "+formatDate(selectedJob.updated_at)}</span>
+            <span>{sessionId?"Session "+sessionId.slice(0,8):"Session establishing…"}</span>
+          </div>
+          <div className="rowActions">
+            <JobInviteForm
+              jobId={selectedJob.id}
+              canInvite={canOperate}
+              compact
+              onSent={message=>setNotice(message)}
+            />
+            <button className="secondaryButton compact" onClick={()=>void refreshContext()}>Refresh context</button>
+          </div>
+        </section>
+
+        <section className="datanestAiJobStrip" aria-label="Switch DataNest AI Job Context">
+          {jobs.map(job=><button
+            key={job.id}
+            className={"rndJobChip "+(job.id===selectedJobId?"active":"")}
+            onClick={()=>{selectedJobIdRef.current=job.id;setSelectedJobId(job.id)}}
+          >
+            <span>{jobCode(job)}</span>
+            <b>{job.title}</b>
+            <small>{job.status+" · P"+job.priority}</small>
+          </button>)}
+        </section>
+      </section>
+
+      {context&&<>
+        <section className="datanestAiSupportGrid">
+          <div aria-label="Certified Memory">
+            <DataNestAiMemoryPanel items={context.certifiedMemory||[]}/>
+          </div>
+        </section>
+
+        <div className="datanestAiCertificationStage" aria-label="Learning & Certification">
+          <DataNestAiCertificationPanel
+            projectId={projectId}
+            role={role}
+            onChanged={refreshContext}
+            setNotice={setNotice}
+            setError={setError}
+          />
+        </div>
+      </>}
     </>}
     <footer className="datanestAiFootnote">
       <small>
