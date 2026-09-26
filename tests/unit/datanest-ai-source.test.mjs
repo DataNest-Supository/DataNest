@@ -84,7 +84,7 @@ test("governed release wiring names the certified DataNest AI runtime", () => {
   }
 
   assert.match(manifest,/datanest-project-member-invitations-v1/);
-  assert.match(manifest,/datanest-ai-chat@1/);
+  assert.match(manifest,/datanest-ai-chat@2/);
   assert.match(manifest,/datanest-ai-intake@1/);
   assert.match(manifest,/datanest-ai-certification@1/);
   assert.match(manifest,/send-project-member-invite@3/);
