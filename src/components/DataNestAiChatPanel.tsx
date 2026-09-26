@@ -73,17 +73,41 @@ export default function DataNestAiChatPanel({
   setError
 }:Props){
   const [draft,setDraft]=useState("");
-  const [busy,setBusy]=useState(false);
+  const [busyJobs,setBusyJobs]=useState<Set<string>>(()=>new Set());
   const [returnedTurn,setReturnedTurn]=useState<DataNestAiEvent|null>(null);
-  const requestIdRef=useRef("");
+  const requestIdByJobRef=useRef<Record<string,string>>({});
+  const draftByJobRef=useRef<Record<string,string>>({});
+  const activeJobIdRef=useRef(jobId);
   const composerRef=useRef<HTMLTextAreaElement|null>(null);
   const transcriptRef=useRef<HTMLDivElement|null>(null);
+  const busy=busyJobs.has(jobId);
+
+  useEffect(()=>{
+    activeJobIdRef.current=jobId;
+    setReturnedTurn(null);
+    setDraft(draftByJobRef.current[jobId]||"");
+  },[jobId]);
 
   useEffect(()=>{
     const transcript=transcriptRef.current;
     if(!transcript)return;
     transcript.scrollTo({top:transcript.scrollHeight,behavior:"smooth"});
   },[events.length,returnedTurn,busy]);
+
+  function setJobBusy(targetJobId:string,value:boolean){
+    setBusyJobs(current=>{
+      const next=new Set(current);
+      if(value)next.add(targetJobId);
+      else next.delete(targetJobId);
+      return next;
+    });
+  }
+
+  function updateDraft(value:string){
+    draftByJobRef.current[jobId]=value;
+    requestIdByJobRef.current[jobId]="";
+    setDraft(value);
+  }
 
   function focusComposer(){
     const composer=composerRef.current;
@@ -94,35 +118,43 @@ export default function DataNestAiChatPanel({
   }
 
   function loadQuickCommand(prompt:string){
-    setDraft(prompt);
-    requestIdRef.current="";
+    updateDraft(prompt);
     window.setTimeout(focusComposer,0);
   }
 
   async function send(event:FormEvent){
     event.preventDefault();
-    if(!draft.trim()||busy)return;
+    const message=draft.trim();
+    if(!message||busy)return;
     const supabase=getSupabase();
     if(!supabase)return;
 
-    const requestId=requestIdRef.current||crypto.randomUUID();
-    requestIdRef.current=requestId;
-    setBusy(true);
+    const requestJobId=jobId;
+    const requestJobCode=jobCode;
+    const requestSessionId=sessionId;
+    const requestId=requestIdByJobRef.current[requestJobId]||crypto.randomUUID();
+    requestIdByJobRef.current[requestJobId]=requestId;
+    setJobBusy(requestJobId,true);
     setError("");
 
     try{
       const {data,error}=await supabase.functions.invoke("datanest-ai-chat",{
         body:{
           action:"chat",
-          jobId,
-          sessionId:sessionId||null,
+          jobId:requestJobId,
+          sessionId:requestSessionId||null,
           clientRequestId:requestId,
-          message:draft.trim()
+          message
         }
       });
       if(error)throw error;
       const payload=(data||{}) as Record<string,unknown>;
-      const nextSession=String(payload.sessionId||sessionId||"");
+
+      requestIdByJobRef.current[requestJobId]="";
+      draftByJobRef.current[requestJobId]="";
+      if(activeJobIdRef.current!==requestJobId)return;
+
+      const nextSession=String(payload.sessionId||requestSessionId||"");
       if(nextSession)onSessionChange(nextSession);
 
       const assistant=String(payload.assistant||"").trim();
@@ -139,20 +171,21 @@ export default function DataNestAiChatPanel({
       }
 
       setDraft("");
-      requestIdRef.current="";
       const trend=(payload.trendAnalysis||{}) as Record<string,unknown>;
       const candidateId=String(trend.candidateId||"");
       setNotice(
         candidateId
           ?"DataNest AI responded and recorded this turn as UNCERTIFIED evidence. A repeated pattern was staged for governed learning review."
-          :"DataNest AI responded and recorded this turn as traceable UNCERTIFIED evidence for "+jobCode+"."
+          :"DataNest AI responded and recorded this turn as traceable UNCERTIFIED evidence for "+requestJobCode+"."
       );
       await onContextRefresh(nextSession);
-      setReturnedTurn(null);
+      if(activeJobIdRef.current===requestJobId)setReturnedTurn(null);
     }catch(sendError){
-      setError(sendError instanceof Error?sendError.message:"Unable to send DataNest AI input.");
+      if(activeJobIdRef.current===requestJobId){
+        setError(sendError instanceof Error?sendError.message:"Unable to send DataNest AI input.");
+      }
     }finally{
-      setBusy(false);
+      setJobBusy(requestJobId,false);
     }
   }
 
@@ -259,7 +292,7 @@ export default function DataNestAiChatPanel({
           ref={composerRef}
           rows={4}
           value={draft}
-          onChange={event=>setDraft(event.target.value)}
+          onChange={event=>updateDraft(event.target.value)}
           onKeyDown={event=>{
             if((event.ctrlKey||event.metaKey)&&event.key==="Enter"&&!busy&&draft.trim()){
               event.preventDefault();
