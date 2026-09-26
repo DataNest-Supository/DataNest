@@ -4407,3 +4407,22 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
   .workflowPhaseSteps button{min-height:40px;padding:7px 8px}
   .workflowPhaseAi{flex-basis:104px}
 }
+
+.ronsasHeroIdentity{
+  width:max-content;
+  max-width:100%;
+  margin:-7px 0 15px;
+  padding:5px 9px;
+  border:1px solid rgba(173,145,255,.2);
+  border-radius:999px;
+  color:#bdb1ff;
+  background:linear-gradient(90deg,rgba(94,220,255,.055),rgba(179,122,255,.075));
+  font-size:8px;
+  font-weight:850;
+  letter-spacing:.09em;
+  line-height:1.35;
+  text-transform:uppercase;
+}
+@media(max-width:520px){
+  .ronsasHeroIdentity{width:auto;border-radius:10px;font-size:7px;letter-spacing:.055em}
+}
