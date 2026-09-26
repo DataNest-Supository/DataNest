@@ -175,3 +175,23 @@ test("workflow transitions respect reduced-motion preferences", () => {
   assert.match(cssSource, /\.viewStage\{[\s\S]*?animation:datanestViewEnter/);
   assert.match(cssSource, /@media\(prefers-reduced-motion:reduce\)\{[\s\S]*?\.viewStage\{animation:none!important\}/);
 });
+
+
+test("workspace task contracts explain start, completion and evidence", () => {
+  assert.match(appSource, /const workspaceTaskGuides:Partial<Record<ViewKey,WorkspaceTaskGuide>>/);
+  assert.match(appSource, /START HERE/);
+  assert.match(appSource, /COMPLETE WHEN/);
+  assert.match(appSource, /EVIDENCE/);
+  assert.match(appSource, /aria-label=\{currentLabel\+" task guide"\}/);
+  for (const view of ["ai","stakeholder","sparks","thinktank","governance","products","productlab","unifi","scheduler","runs","checkpoints","audit","transparency","settings"]) {
+    assert.match(appSource, new RegExp(view+':\\{'));
+  }
+  assert.match(cssSource, /\.workspaceTaskGuide\{/);
+});
+
+test("Product Lab empty state gives operators a direct recovery action", () => {
+  const productLabSource = fs.readFileSync(path.join(repoRoot, "src/components/ProductLab.tsx"), "utf8");
+  assert.match(productLabSource, /Register product surface/);
+  assert.match(productLabSource, /id="product-surface-admin"/);
+  assert.match(productLabSource, /scrollIntoView\(\{behavior:"smooth",block:"start"\}\)/);
+});

@@ -65,6 +65,25 @@ const viewDescriptions:Record<ViewKey,string> = {
   settings:"Manage project, tool, AI administration, and scheduler policy."
 };
 
+type WorkspaceTaskGuide = { start:string; complete:string; evidence:string };
+
+const workspaceTaskGuides:Partial<Record<ViewKey,WorkspaceTaskGuide>> = {
+  ai:{start:"Select the Job Manifest that owns the work, then continue in the development chat.",complete:"The Job has an actionable AI output or durable memory worth certifying.",evidence:"Job-scoped session, event trail and certified memory."},
+  stakeholder:{start:"Review stakeholder state and recent contribution events before changing preferences or review decisions.",complete:"Contribution context and participation preferences reflect the stakeholder's current intent.",evidence:"Profile state, contribution events and review signals."},
+  sparks:{start:"Capture or inspect the idea or approved utility exchange that should become project input.",complete:"The contribution or service is recorded with enough context to move into structured thinking.",evidence:"Traceable contribution, ledger and service records."},
+  thinktank:{start:"Choose a Think Tank, open a thread, then discuss, ask or propose a governed decision.",complete:"The discussion has produced a decision, action item or reviewed learning candidate.",evidence:"Messages, decisions, actions and institutional-memory candidates."},
+  governance:{start:"Begin with a protocol draft or formal proposal; ratify only after the required support and vote.",complete:"The decision is recorded, ratified where applicable, or moved into a visible dispute path.",evidence:"Proposal, votes, decision register, protocol version and dispute history."},
+  products:{start:"Choose the governed product and inspect its architecture, controls, evidence and risks before promotion.",complete:"The product state or promotion branch is supported by current evidence.",evidence:"Product architecture, linked controls, evidence and promotion history."},
+  productlab:{start:"Select or register an immutable product surface before creating and running test cases.",complete:"Validation results are tied to the exact test-case version and product build.",evidence:"Versioned test runs, build identity and optional evidence links."},
+  unifi:{start:"Describe the outcome, acceptance conditions and required capabilities in one complete Job Manifest.",complete:"The Job is ready for governed scheduling without hidden execution assumptions.",evidence:"Job Manifest, acceptance criteria, capabilities, priority and deadline."},
+  scheduler:{start:"Review queue state and capability constraints, then move the right Job into execution.",complete:"The Job is running, intentionally queued, or visibly blocked with a reason.",evidence:"Job status, capability match and scheduling state."},
+  runs:{start:"Open the run that belongs to the Job you are investigating and read its outcome before retrying work.",complete:"The connector outcome, timing and failure category are understood.",evidence:"Run number, connector, timestamps, status and error category."},
+  checkpoints:{start:"Locate the most recent durable checkpoint for the Job before resuming work.",complete:"Completed work, remaining work and the resume instruction are unambiguous.",evidence:"Checkpoint snapshot with completed, remaining and resume fields."},
+  audit:{start:"Read the event trail around the Job, decision or operation you need to explain.",complete:"You can reconstruct who did what, when, and with which payload.",evidence:"Immutable event type, actor, payload and timestamp."},
+  transparency:{start:"Review the published audit library and findings before drawing conclusions about system state.",complete:"The finding, supporting evidence and reported backlog are traceable to published artifacts.",evidence:"Commit-pinned audit documents, findings and backlog records."},
+  settings:{start:"Change only the policy, tool or administrative control required for the current operating need.",complete:"Configuration matches the intended governance and access model.",evidence:"Persisted policies, tool state and administrative configuration."}
+};
+
 const workflowNext:Partial<Record<ViewKey,ViewKey>> = {
   overview:"ai",
   ai:"unifi",
@@ -777,6 +796,12 @@ export default function DataNestApp({session}:{session:Session}) {
           {error&&<div className="notice errorNotice" role="alert">{error}</div>}
         </div>
         {(loadingCore||loadingView)&&<div className="loadingBar" aria-label="Loading DataNest data"><span/></div>}
+
+        {!loadingCore&&workspaceTaskGuides[view]&&<section className="workspaceTaskGuide" aria-label={currentLabel+" task guide"}>
+          <div><span>START HERE</span><p>{workspaceTaskGuides[view]?.start}</p></div>
+          <div><span>COMPLETE WHEN</span><p>{workspaceTaskGuides[view]?.complete}</p></div>
+          <div><span>EVIDENCE</span><p>{workspaceTaskGuides[view]?.evidence}</p></div>
+        </section>}
 
         <div key={view} className="viewStage">
         {!loadingCore&&project&&view==="overview"&&<ResonanceHome project={project} jobs={recentJobs} counts={summary} canOperate={canOperate} onNavigate={setView}/>}

@@ -4276,3 +4276,13 @@ code,pre{
 @media(prefers-reduced-motion:reduce){
   .viewStage{animation:none!important}
 }
+
+
+/* Workspace task contracts */
+.workspaceTaskGuide{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;margin:0 0 16px;overflow:hidden;border:1px solid rgba(66,231,255,.13);border-radius:14px;background:rgba(255,255,255,.035)}
+.workspaceTaskGuide>div{min-width:0;padding:13px 15px;background:linear-gradient(135deg,rgba(18,10,39,.78),rgba(8,12,28,.84))}
+.workspaceTaskGuide span{display:block;margin-bottom:5px;color:#8bdff5;font-size:8px;font-weight:900;letter-spacing:.14em}
+.workspaceTaskGuide p{margin:0;color:#a9b6c8;font-size:10px;line-height:1.55}
+.productLab .emptyState .primaryButton{margin-top:14px}
+#product-surface-admin{scroll-margin-top:110px}
+@media(max-width:800px){.workspaceTaskGuide{grid-template-columns:1fr}}
