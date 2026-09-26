@@ -82,7 +82,7 @@ jobs:
           SUPABASE_PUBLISHABLE_KEY: ${{ env.DATANEST_AI_STAGING_PUBLISHABLE_KEY }}
           DATANEST_RELEASE_SHA: ${{ github.sha }}
           DATANEST_DB_RELEASE: datanest-project-member-invitations-v1
-          DATANEST_EDGE_AI: datanest-ai-chat@1
+          DATANEST_EDGE_AI: datanest-ai-chat@2
           DATANEST_EDGE_INTAKE: datanest-ai-intake@1
           DATANEST_EDGE_CERTIFICATION: datanest-ai-certification@1
           DATANEST_EDGE_PROVIDER: manage-ai-provider-v2@1
