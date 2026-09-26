@@ -22,6 +22,32 @@ Hosting is **provider-agnostic**. The built Next.js application can run anywhere
 
 Vercel is an optional managed hosting target. It may be enabled when a Vercel workspace is available, but Resonance DataNest does not depend on Vercel for source control, data, orchestration, scheduling, or local/self-hosted operation.
 
+
+## RONSAS integration boundary
+
+RONSAS is integrated into DataNest as a **remote, authenticated, non-blocking AppDev service boundary** rather than a local runtime dependency.
+
+```
+DataNest browser
+      |
+      | authenticated Supabase JWT
+      v
+Supabase Edge Function: ronsas-status@1
+      |
+      | HTTPS only / AppDev allowlist
+      v
+https://reson8.life/
+```
+
+Rules:
+
+- DataNest must never require `localhost`, `127.0.0.1`, `::1`, machine-local paths, desktop launchers, local control centers, or an operator session to use RONSAS integration.
+- The Edge Function rejects non-HTTPS, loopback, localhost and `.local` RONSAS origins.
+- RONSAS availability does not gate DataNest startup, project access, scheduling, governance, or DataNest AI; failure is surfaced as degraded integration state only.
+- Integration authority is aligned with Resonance AppDev: control source `resonance36912-cell/RONSAS`, Hub source `resonance36912-cell/resonance-hub`, public Hub `https://reson8.life/`.
+- RONSAS local sovereign runtimes remain independent systems and are not transitive prerequisites for the DataNest web product.
+- Future RONSAS control operations must be introduced as separately versioned authenticated contracts; status access does not imply execution authority.
+
 ## Core principles
 Projects own knowledge. Jobs own work. Checkpoints preserve continuity. Capabilities determine routing. Availability determines timing. UNKNOWN capability state is never execution permission.
 

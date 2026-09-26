@@ -1,6 +1,6 @@
 # Resonance DataNest Deployment
 
-Resonance DataNest is provider-agnostic. GitHub and Supabase are the required authorities; the web runtime can be hosted anywhere that can run Node.js 22 or the supplied container image.
+Resonance DataNest is provider-agnostic. GitHub and Supabase are the required authorities; the web runtime can be hosted anywhere that can run Node.js 22 or the supplied container image. Production use does not require a local workstation or local RONSAS runtime.
 
 ## Required runtime variables
 
@@ -13,7 +13,13 @@ Only the Supabase publishable key belongs in the browser-facing runtime configur
 
 The server injects these public values into the browser at request time. This means a single built image can move between environments without rebuilding merely to change the Supabase public configuration.
 
-## Windows / Node.js
+## Production cloud requirement
+
+The RONSAS integration is served by the JWT-protected Supabase Edge Function `ronsas-status@1` and probes the approved AppDev public Hub over HTTPS. DataNest does not call loopback or machine-local RONSAS services. A RONSAS outage degrades only the integration panel and does not stop DataNest.
+
+Local Node/Docker instructions below are optional development/self-hosting paths, not production prerequisites.
+
+## Optional local Windows / Node.js
 
 ```powershell
 $env:SUPABASE_PUBLISHABLE_KEY="<publishable key>"
@@ -22,7 +28,7 @@ $env:SUPABASE_PUBLISHABLE_KEY="<publishable key>"
 
 Open `http://localhost:3000`.
 
-## Docker Compose
+## Optional local Docker Compose
 
 Create a local untracked `.env` file:
 

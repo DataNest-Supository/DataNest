@@ -29,6 +29,17 @@ Standalone/Docker deployments continue to expose the server health endpoint at `
 
 GitHub and Supabase are the required authorities. Hosting remains replaceable infrastructure.
 
+
+## RONSAS cloud integration
+
+DataNest integrates with **RONSAS (Resonance Open Nova Sovereign Application Suite)** through the authenticated Supabase Edge Function contract `ronsas-status@1`.
+
+- No local workstation, loopback service, desktop launcher, or Ealiophin interaction is required by DataNest.
+- The integration is cloud-only and rejects localhost, loopback, and `.local` origins.
+- RONSAS health is non-blocking: DataNest remains usable when the public RONSAS Hub is unavailable.
+- Resonance AppDev authority is explicit: `resonance36912-cell/RONSAS` is the control-source authority and `resonance36912-cell/resonance-hub` is the public Hub source.
+- The canonical public Hub probe is `https://reson8.life/`.
+
 ## Web UI
 
 The UI includes authenticated access, an overview dashboard, UNIFI Job Manifest planning, TranScheduler queue controls, capability registry, run history, checkpoints, audit history, a Transparency audit library, scheduler settings, responsive navigation, and deployment health checks.
