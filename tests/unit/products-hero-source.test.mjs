@@ -9,15 +9,21 @@ const home=fs.readFileSync(path.join(root,"src/components/ResonanceHome.tsx"),"u
 const visual=fs.readFileSync(path.join(root,"src/components/CollaborationVisual.tsx"),"utf8");
 const css=fs.readFileSync(path.join(root,"src/components/CollaborationVisual.module.css"),"utf8");
 
-test("AI & I hero renders governed Resonance products from the live catalog",()=>{
+test("AI & I hero keeps DataNest AI at the core and renders governed products as product nodes",()=>{
   assert.match(home,/CollaborationVisual projectId={project\.id}/);
   assert.match(home,/onOpenProducts={\(\)=>onNavigate\("products"\)}/);
   assert.match(visual,/from\("products"\)/);
   assert.match(visual,/from\("product_records"\)/);
   assert.match(visual,/\.eq\("record_type","application"\)/);
-  assert.match(visual,/MAX_ORBIT_ITEMS=9/);
-  assert.match(visual,/GOVERNED PRODUCT/);
+  assert.match(visual,/MAX_ORBIT_PRODUCTS=9/);
+  assert.match(visual,/const orbitProducts=useMemo/);
+  assert.match(visual,/applicationCounts/);
+  assert.match(visual,/DATANEST CORE/);
+  assert.match(visual,/DataNest AI/);
+  assert.match(visual,/Shared intelligence/);
   assert.match(visual,/Open Products/);
+  assert.doesNotMatch(visual,/primary\?\.name/);
+  assert.doesNotMatch(visual,/GOVERNED PRODUCT/);
 });
 
 test("product hero animation is responsive and respects reduced motion",()=>{
