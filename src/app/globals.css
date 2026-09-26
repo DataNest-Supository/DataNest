@@ -2532,3 +2532,41 @@ code,pre{
 @media(prefers-reduced-motion:reduce){
   .datanestAiHeroVisual::before,.datanestAiStatusPulse{animation:none!important}
 }
+
+
+/* 2026-09-26 Center DataNest AI chat below hero */
+.datanestAiChatStage{
+  display:grid;
+  justify-items:center;
+  width:100%;
+}
+
+.datanestAiChatStage > *{
+  width:min(100%,980px);
+}
+
+.datanestAiSupportGrid{
+  display:grid;
+  justify-items:center;
+  width:100%;
+  gap:16px;
+}
+
+.datanestAiSupportGrid > *{
+  width:min(100%,980px);
+}
+
+.datanestAiChatPanel{
+  width:100%;
+}
+
+.datanestAiMemoryPanel{
+  width:100%;
+}
+
+@container datanest-main (max-width:1100px){
+  .datanestAiChatStage > *,
+  .datanestAiSupportGrid > *{
+    width:100%;
+  }
+}
