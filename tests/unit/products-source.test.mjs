@@ -14,7 +14,8 @@ const ronsasSnapshot=fs.readFileSync(path.join(root,"data/imports/ronsas-product
 test("Products is a first-class DataNest workspace",()=>{
   assert.match(app,/key:"products",label:"Products"/);
   assert.match(app,/view==="products"&&<ProductsWorkspace projectId={project.id}\/>/);
-  assert.match(app,/Explore Resonance Assistance and specialist product experiences/);
+  assert.match(app,/Inspect governed products, linked architecture, controls, evidence and specialist experiences/);
+  assert.match(app,/Inspect governed Resonance products, their architecture, controls, evidence, risks and promotion branches/);
 });
 
 test("Resonance Assistance stays concept 01 while Legal Eagle is its first live specialist",()=>{
@@ -25,6 +26,7 @@ test("Resonance Assistance stays concept 01 while Legal Eagle is its first live 
   assert.match(products,/FIRST SPECIALIST · LIVE/);
   assert.match(products,/Legal Eagle/);
   assert.match(products,/GOVERNED ASSISTANT/);
+  assert.match(products,/live or incubating but not yet promoted as standalone catalog products/);
 });
 
 test("Legal Eagle calls the governed AI gateway with matter and jurisdiction scope",()=>{
@@ -65,6 +67,10 @@ test("Products reads the governed product catalog from Supabase",()=>{
   assert.match(products,/\["intake","staging","audit","main"\]/);
   assert.match(products,/className="catalogNavigator"/);
   assert.match(products,/selectedProductId/);
+  assert.match(products,/Search governed product records/);
+  assert.match(products,/Filter governed record type/);
+  assert.match(products,/visibleRecords/);
+  assert.match(products,/No governed records match this view/);
 });
 
 test("governed product catalog schema is versioned with project-scoped RLS",()=>{
