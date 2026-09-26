@@ -52,7 +52,7 @@ const viewDescriptions:Record<ViewKey,string> = {
   stakeholder:"Capture stakeholder input and review contribution context.",
   sparks:"Develop raw ideas into traceable project inputs.",
   governance:"Review sovereign governance controls and decisions.",
-  products:"Explore Resonance products and specialist assistance experiences.",
+  products:"Inspect governed Resonance products, their architecture, controls, evidence, risks and promotion branches.",
   thinktank:"Coordinate structured research and collaborative thinking.",
   ai:"Work with governed DataNest AI memory and project context.",
   productlab:"Test and review product surfaces before release.",
@@ -768,7 +768,7 @@ export default function DataNestApp({session}:{session:Session}) {
 
 function Overview({project,tools,jobs,counts,setView,canOperate}:{project:Project;tools:Tool[];jobs:Job[];counts:Summary;setView:(v:ViewKey)=>void;canOperate:boolean}) {
   const workspaces:Array<{key:ViewKey;label:string;description:string;glyph:string}> = [
-    {key:"products",label:"Products",description:"Explore Resonance Assistance and specialist product experiences.",glyph:"◉"},
+    {key:"products",label:"Products",description:"Inspect governed products, linked architecture, controls, evidence and specialist experiences.",glyph:"◉"},
     {key:"ai",label:"DataNest AI",description:"Governed project memory and AI collaboration.",glyph:"⌬"},
     {key:"unifi",label:"UNIFI Planner",description:"Prepare complete, traceable Job Manifests.",glyph:"◇"},
     {key:"scheduler",label:"TranScheduler",description:"Route work through capability-aware scheduling.",glyph:"⌁"},
