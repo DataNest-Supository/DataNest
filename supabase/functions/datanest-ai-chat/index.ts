@@ -246,7 +246,7 @@ async function updateTrendCandidate(input:{
     metadata:typeof item.metadata==="object"&&item.metadata!==null
       ?item.metadata as Record<string,unknown>
       :{}
-  }));
+  })).filter(item=>item.metadata.learning_eligible!==false);
   const current=evidence.find(item=>item.id===input.inputEventId);
   if(!current)return {candidateId:null,trendKey:null,evidenceCount:0};
 
@@ -482,8 +482,22 @@ async function updateTrendCandidate(input:{
   };
 }
 
-function embeddedResponse(job:JobContext,message:string){
+function embeddedResponse(
+  job:JobContext,
+  message:string,
+  productMode:string,
+  jurisdiction:string
+){
   const code="JOB-"+String(job.job_number||0).padStart(5,"0");
+  if(productMode==="legal_eagle"){
+    return [
+      `Legal Eagle recorded this legal-assistance request for ${code} · ${job.title}.`,
+      `Jurisdiction supplied: ${jurisdiction}.`,
+      "A governed external AI provider is not currently available for substantive reasoning, so Legal Eagle has not generated a legal analysis.",
+      "You can still use this matter workspace to organize facts and questions. Verify legal rights, deadlines, procedures and strategy with a qualified lawyer in the relevant jurisdiction.",
+      `Current request: “${message.slice(0,500)}”`
+    ].join("\n\n");
+  }
   return [
     `DataNest AI recorded this request as uncertified evidence for ${code} · ${job.title}.`,
     "It is available to this Job/session immediately but will not become project-wide memory until the governed certification pipeline passes.",
@@ -559,6 +573,17 @@ Deno.serve(async(request:Request)=>{
     const action=String(body.action||"chat");
     const jobId=String(body.jobId||"");
     if(!jobId)return json({error:"jobId is required."},400,origin);
+
+    const productMode=String(body.productMode||"").trim();
+    if(productMode&&productMode!=="legal_eagle"){
+      return json({error:"Unsupported DataNest AI product mode."},400,origin);
+    }
+    const legalMode=productMode==="legal_eagle";
+    const jurisdiction=legalMode?String(body.jurisdiction||"").trim().slice(0,160):"";
+    const legalTask=legalMode?String(body.legalTask||"general").trim().slice(0,80):"";
+    if(legalMode&&!jurisdiction){
+      return json({error:"Legal Eagle requires a jurisdiction before substantive assistance."},400,origin);
+    }
 
     const job=await loadAuthorizedJob(userClient,jobId);
 
@@ -658,7 +683,11 @@ Deno.serve(async(request:Request)=>{
             content_hash:fingerprint,
             metadata:{
               request_id:requestId,
-              trust_state:"uncertified"
+              trust_state:"uncertified",
+              product_mode:legalMode?"legal_eagle":"datanest_ai",
+              jurisdiction:legalMode?jurisdiction:null,
+              legal_task:legalMode?legalTask:null,
+              learning_eligible:!legalMode
             }
           })
           .select("id,trace_id,session_id")
@@ -694,13 +723,30 @@ Deno.serve(async(request:Request)=>{
         ]);
         certifiedMemoryIds=certifiedMemory.map(item=>String(item.id||"")).filter(Boolean);
         provisionalIds=events.map(item=>item.id);
+        const governanceRules=[
+          "DATANEST AI GOVERNANCE",
+          "Certified memory is reusable project knowledge.",
+          "Uncertified current-session evidence is provisional and must not be generalized to other Jobs.",
+          "Never claim certification that is not present in the supplied certified-memory context."
+        ];
+        if(legalMode){
+          governanceRules.push(
+            "LEGAL EAGLE · RESONANCE ASSISTANCE",
+            "You are Legal Eagle, a legal-information and matter-preparation assistant. You are not a lawyer or law firm and do not create an attorney-client relationship or legal privilege.",
+            `Relevant jurisdiction supplied by the user: ${jurisdiction}.`,
+            `Requested legal workflow: ${legalTask||"general"}.`,
+            "Help with plain-language explanation, issue spotting, chronology, document organization, research planning, question preparation and draft structure. Do not claim to represent the user.",
+            "Separate user-supplied facts, assumptions, disputed claims and missing information. Do not turn allegations into established facts.",
+            "Do not fabricate statutes, cases, citations, court rules, filing requirements or deadlines. When current primary-source verification is unavailable, say what official source or qualified professional should verify the point.",
+            "Treat deadlines, limitation periods, court dates, criminal exposure, immigration status, family safety, housing loss and similar high-impact matters as requiring prompt verification by qualified local counsel or the appropriate authority.",
+            "Never promise an outcome or present a legal strategy as guaranteed. Present options, uncertainties and questions for a qualified lawyer.",
+            "Templates and draft wording must be described as drafts for human review, not filed-ready or lawyer-approved documents.",
+            "Do not infer consent to contact courts, regulators, opposing parties or other people. Legal Eagle cannot act as the user's representative.",
+            "Keep this legal conversation scoped to the current Job/session. It is not eligible for automatic project-wide learning."
+          );
+        }
         const governedPrompt=buildGovernedPrompt({
-          governance:[
-            "DATANEST AI GOVERNANCE",
-            "Certified memory is reusable project knowledge.",
-            "Uncertified current-session evidence is provisional and must not be generalized to other Jobs.",
-            "Never claim certification that is not present in the supplied certified-memory context."
-          ].join("\n"),
+          governance:governanceRules.join("\n"),
           certifiedMemory:certifiedMemory.map(item=>String(item.normalized_knowledge||"")),
           job,
           uncertifiedEvidence:events.map(item=>item.content),
@@ -780,7 +826,7 @@ Deno.serve(async(request:Request)=>{
         }
 
         return {
-          content:embeddedResponse(job,message),
+          content:embeddedResponse(job,message,productMode,jurisdiction),
           providerMode:"embedded",
           providerLabel:null,
           inputTokens:0,
@@ -805,7 +851,11 @@ Deno.serve(async(request:Request)=>{
             metadata:{
               trust_state:"uncertified",
               request_status:requestStatus,
-              policy_version:policyVersion
+              policy_version:policyVersion,
+              product_mode:legalMode?"legal_eagle":"datanest_ai",
+              jurisdiction:legalMode?jurisdiction:null,
+              legal_task:legalMode?legalTask:null,
+              learning_eligible:!legalMode
             }
           })
           .select("id,trace_id")
@@ -831,6 +881,10 @@ Deno.serve(async(request:Request)=>{
           });
         if(error)throw error;
 
+        if(legalMode){
+          trendAnalysis={status:"not_applicable"};
+          return;
+        }
         try{
           const trend=await updateTrendCandidate({
             staging:stagingClient,
@@ -854,7 +908,10 @@ Deno.serve(async(request:Request)=>{
       trustState:"UNCERTIFIED",
       certifiedMemoryIds,
       requestStatus,
-      trendAnalysis
+      trendAnalysis,
+      productMode:legalMode?"legal_eagle":null,
+      jurisdiction:legalMode?jurisdiction:null,
+      learningEligible:!legalMode
     },200,origin);
   }catch(error){
     const message=error instanceof Error?error.message:"Unable to process DataNest AI request.";

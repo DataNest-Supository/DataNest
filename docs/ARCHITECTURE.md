@@ -107,3 +107,16 @@ A published audit return is retained separately from the audit methodology and f
 - The external auditor explicitly limited the audit to public/read-only and commit-pinned source evidence. It is not a full production certification and has no certification, governance, financial, ownership or role effect.
 - A finding may be marked validated, remediated or closed only when current-release reproduction and governed implementation evidence are attached.
 - Remediation evidence should connect the finding to its Job Manifest, branch/PR, acceptance test, migration/function change where relevant, release, deployment verification and closure rationale.
+\n## Resonance Assistance · Legal Eagle
+Legal Eagle is the first live Resonance Assistance specialist and runs through the authenticated, governed DataNest AI gateway rather than a separate ungoverned model path.
+
+- Every Legal Eagle turn is anchored to an authorized DataNest Job used as the matter workspace.
+- The user must supply the relevant jurisdiction before substantive Legal Eagle assistance is accepted.
+- Legal Eagle may provide legal information, plain-language explanation, issue organization, chronology, research mapping, counsel preparation, and human-review draft structure.
+- Legal Eagle is not a law firm, does not create an attorney-client relationship or legal privilege, cannot represent the user, and cannot contact courts, regulators, opposing parties, or other people on the user's behalf.
+- The governed prompt prohibits fabricated statutes, cases, citations, court rules, filing requirements, and deadlines. Current-law and deadline questions must be identified for primary-source or qualified-professional verification.
+- High-impact matters such as imminent deadlines, arrest or detention, personal safety, housing loss, immigration consequences, and similar risks are explicitly escalated for prompt human verification.
+- Legal Eagle uses the same provider authorization, usage accounting, trace-first intake, and Job/session continuity as DataNest AI.
+- Release contract: `datanest-ai-chat@2` identifies the gateway version that adds the Legal Eagle product mode and learning exclusion.
+- Legal Eagle input/output events are tagged `product_mode=legal_eagle` and `learning_eligible=false`.
+- Legal Eagle sessions are excluded from automatic trend extraction and project-wide learning. A legal matter therefore cannot silently become reusable institutional memory through the automatic learning pipeline.
