@@ -16,8 +16,10 @@ test("Products is a first-class DataNest workspace",()=>{
   assert.match(app,/Explore Resonance Assistance and specialist product experiences/);
 });
 
-test("Resonance Assistance is product 01 and Legal Eagle is its first specialist",()=>{
-  assert.match(products,/PRODUCT 01/);
+test("Resonance Assistance is clearly separated as concept 01 and Legal Eagle is its first specialist",()=>{
+  assert.match(products,/CONCEPT 01/);
+  assert.match(products,/Product Concept Incubator/);
+  assert.doesNotMatch(products,/PRODUCT 01/);
   assert.match(products,/Resonance Assistance/);
   assert.match(products,/FIRST SPECIALIST/);
   assert.match(products,/Legal Eagle/);
@@ -40,6 +42,8 @@ test("Products reads the governed product catalog from Supabase",()=>{
   assert.match(products,/GOVERNED PRODUCT CATALOG/);
   assert.match(products,/FREE PROMOTION · BILLING OFF/);
   assert.match(products,/\["intake","staging","audit","main"\]/);
+  assert.match(products,/className="catalogNavigator"/);
+  assert.match(products,/selectedProductId/);
 });
 
 test("governed product catalog schema is versioned with project-scoped RLS",()=>{
