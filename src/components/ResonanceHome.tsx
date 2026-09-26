@@ -94,7 +94,7 @@ export default function ResonanceHome({
         </div>
       </div>
 
-      <CollaborationVisual/>
+      <CollaborationVisual running={counts.running>0}/>
     </section>
 
     <section className="aiIStatsGrid" aria-label="DataNest project metrics">
