@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const appSource = fs.readFileSync(path.join(repoRoot, "src/components/DataNestApp.tsx"), "utf8");
+const homeSource = fs.readFileSync(path.join(repoRoot, "src/components/ResonanceHome.tsx"), "utf8");
 const cssSource = fs.readFileSync(path.join(repoRoot, "src/app/globals.css"), "utf8");
 
 test("mobile navigation keeps refresh and release controls reachable", () => {
@@ -133,4 +134,44 @@ test("quick switch supports arrow-key result selection before Enter", () => {
   assert.match(appSource, /event\.key==="ArrowUp"/);
   assert.match(appSource, /commandItems\[commandActiveIndex\]/);
   assert.match(appSource, /aria-selected=\{commandActiveIndex===index\}/);
+});
+
+
+test("workspace architecture follows the visible DataNest operating lifecycle", () => {
+  for (const group of ["Core","Discover","Govern & Build","Execute","Verify","System"]) {
+    assert.match(appSource, new RegExp('group:"'+group.replace("&","\\&")+'"'));
+  }
+  assert.match(appSource, /key:"ai",label:"DataNest AI",group:"Core"/);
+  assert.match(appSource, /open=\{group==="Core"\|\|nav\.some/);
+  assert.match(appSource, /item\.key==="ai"\?"aiHeroNav"/);
+});
+
+test("workflow continuity maps specialist workspaces without breaking direct navigation", () => {
+  assert.match(appSource, /const workflowNext:Partial<Record<ViewKey,ViewKey>>/);
+  assert.match(appSource, /overview:"ai"/);
+  assert.match(appSource, /unifi:"scheduler"/);
+  assert.match(appSource, /runs:"checkpoints"/);
+  assert.match(appSource, /audit:"transparency"/);
+  assert.match(appSource, /aria-label="Workspace progression"/);
+  assert.match(appSource, /Continue · \{nextViewItem\.label\} →/);
+  assert.match(appSource, /key=\{view\} className="viewStage"/);
+});
+
+test("page header exposes current lifecycle phase and preserves quick switching", () => {
+  assert.match(appSource, /currentGroup=currentNavItem\?\.group\|\|"Core"/);
+  assert.match(appSource, /RESONANCE DATANEST · \{currentGroup\.toUpperCase\(\)\}/);
+  assert.match(appSource, /Ctrl\/Cmd \+ K to toggle/);
+});
+
+test("AI & I home communicates the five-stage operating loop", () => {
+  for (const label of ["Discover","Govern","Build","Execute","Verify"]) {
+    assert.match(homeSource, new RegExp("<b>"+label+"<\\/b>"));
+  }
+  assert.match(homeSource, /onNavigate\("ai"\)/);
+  assert.match(homeSource, />Enter DataNest AI</);
+});
+
+test("workflow transitions respect reduced-motion preferences", () => {
+  assert.match(cssSource, /\.viewStage\{[\s\S]*?animation:datanestViewEnter/);
+  assert.match(cssSource, /@media\(prefers-reduced-motion:reduce\)\{[\s\S]*?\.viewStage\{animation:none!important\}/);
 });
