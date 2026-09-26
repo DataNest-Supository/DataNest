@@ -3074,3 +3074,248 @@ code,pre{
 .conceptIncubator[open]>summary{border-bottom:1px solid rgba(255,255,255,.06)}
 .conceptIncubatorBody{padding:16px}
 @container datanest-main (max-width:700px){.conceptIncubator>summary{align-items:flex-start;display:grid}.conceptIncubator>summary>span:last-child{white-space:normal}.catalogNavigator button{min-width:165px}}
+
+
+/* 2026-09-26 TranScheduler Gantt chart viewer */
+.schedulerContextBar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  margin-bottom:14px;
+}
+.schedulerViewSwitch{
+  display:inline-flex;
+  gap:5px;
+  padding:4px;
+  border:1px solid var(--line);
+  border-radius:11px;
+  background:rgba(0,0,0,.18);
+}
+.schedulerViewSwitch button{
+  min-height:34px;
+  border:1px solid transparent;
+  border-radius:8px;
+  padding:7px 12px;
+  background:transparent;
+  color:#8299ae;
+  cursor:pointer;
+  font-size:10px;
+  font-weight:850;
+  letter-spacing:.03em;
+}
+.schedulerViewSwitch button.active{
+  border-color:rgba(91,225,255,.25);
+  background:linear-gradient(145deg,rgba(65,220,255,.10),rgba(139,92,246,.10));
+  color:#e8fbff;
+  box-shadow:inset 0 1px rgba(255,255,255,.04);
+}
+.schedulerContextStats{
+  display:flex;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+  gap:7px;
+}
+.schedulerContextStats span{
+  display:inline-flex;
+  align-items:center;
+  min-height:29px;
+  padding:6px 9px;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:999px;
+  background:rgba(255,255,255,.025);
+  color:#8098ad;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.03em;
+}
+.ganttViewer{
+  display:grid;
+  gap:12px;
+}
+.ganttViewerHead{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:18px;
+  padding:2px 2px 0;
+}
+.ganttViewerHead h3{
+  margin:3px 0 5px;
+  font-size:18px;
+  letter-spacing:-.025em;
+}
+.ganttViewerHead p{
+  max-width:760px;
+  margin:0;
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.55;
+}
+.ganttLegend{
+  display:flex;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+  gap:9px;
+  color:#7890a5;
+  font-size:8px;
+  font-weight:800;
+  white-space:nowrap;
+}
+.ganttLegend span{display:inline-flex;align-items:center;gap:5px}
+.ganttLegend i{display:inline-block;width:18px;height:5px;border-radius:999px}
+.ganttLegend .deadline{background:linear-gradient(90deg,rgba(86,229,255,.85),rgba(155,100,255,.9))}
+.ganttLegend .lifecycle{border:1px dashed rgba(164,178,211,.6);background:rgba(132,148,183,.18)}
+.ganttLegend .now{width:2px;height:12px;border-radius:0;background:rgba(255,93,220,.9)}
+.ganttViewport{
+  overflow-x:auto;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:15px;
+  background:linear-gradient(180deg,rgba(4,7,20,.34),rgba(7,5,20,.22));
+}
+.ganttCanvas{min-width:980px}
+.ganttAxisRow,
+.ganttRow{
+  display:grid;
+  grid-template-columns:minmax(240px,300px) minmax(680px,1fr);
+}
+.ganttAxisRow{
+  min-height:50px;
+  border-bottom:1px solid rgba(255,255,255,.07);
+  background:rgba(255,255,255,.015);
+}
+.ganttAxisLabel{
+  display:grid;
+  align-content:center;
+  gap:2px;
+  padding:9px 14px;
+  border-right:1px solid rgba(255,255,255,.06);
+}
+.ganttAxisLabel b{font-size:10px;letter-spacing:.035em}
+.ganttAxisLabel small{color:#70899f;font-size:8px}
+.ganttTimeline{
+  position:relative;
+  min-width:0;
+}
+.ganttTimelineAxis{height:50px}
+.ganttTickLabel{
+  position:absolute;
+  top:17px;
+  color:#718ba2;
+  font-size:8px;
+  font-weight:800;
+  white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.ganttRow{
+  min-height:82px;
+  border-bottom:1px solid rgba(255,255,255,.055);
+}
+.ganttRow:last-child{border-bottom:0}
+.ganttJobLabel{
+  display:grid;
+  align-content:center;
+  gap:6px;
+  padding:11px 14px;
+  border-right:1px solid rgba(255,255,255,.06);
+}
+.ganttJobTitle{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:8px;
+}
+.ganttJobTitle>div{min-width:0}
+.ganttJobTitle b,
+.ganttJobTitle small{display:block}
+.ganttJobTitle b{font-size:10px}
+.ganttJobTitle small{
+  overflow:hidden;
+  margin-top:3px;
+  color:#96aabd;
+  font-size:9px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.ganttMeta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  color:#687f94;
+  font-size:8px;
+}
+.ganttMeta span{
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.ganttTrack{height:82px}
+.ganttGridLine{
+  position:absolute;
+  inset-block:0;
+  width:1px;
+  background:rgba(123,153,183,.10);
+  pointer-events:none;
+}
+.ganttNowLine{
+  position:absolute;
+  inset-block:0;
+  z-index:1;
+  width:1px;
+  background:rgba(255,78,219,.48);
+  box-shadow:0 0 10px rgba(255,78,219,.18);
+  pointer-events:none;
+}
+.ganttBar{
+  position:absolute;
+  top:25px;
+  z-index:2;
+  display:flex;
+  align-items:center;
+  min-width:12px;
+  height:30px;
+  overflow:hidden;
+  border:1px solid rgba(151,164,194,.42);
+  border-radius:9px;
+  padding:0 8px;
+  background:linear-gradient(90deg,rgba(93,111,145,.28),rgba(120,91,180,.30));
+  color:#e8edf8;
+  box-shadow:0 7px 22px rgba(0,0,0,.18),inset 0 1px rgba(255,255,255,.05);
+  font-size:8px;
+  font-weight:900;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+.ganttBar.deadlineBound{border-style:solid}
+.ganttBar.lifecycleBound{border-style:dashed}
+.ganttBar.good{border-color:rgba(100,230,170,.45);background:linear-gradient(90deg,rgba(65,185,138,.26),rgba(72,215,186,.18))}
+.ganttBar.live{border-color:rgba(79,224,255,.48);background:linear-gradient(90deg,rgba(48,183,224,.28),rgba(100,92,222,.25))}
+.ganttBar.warn{border-color:rgba(240,191,91,.45);background:linear-gradient(90deg,rgba(192,137,52,.24),rgba(171,93,128,.22))}
+.ganttBar.bad{border-color:rgba(255,121,151,.42);background:linear-gradient(90deg,rgba(192,72,104,.24),rgba(122,64,106,.24))}
+.ganttDeadlineMarker{
+  position:absolute;
+  top:18px;
+  bottom:18px;
+  z-index:3;
+  width:2px;
+  border-radius:3px;
+  background:rgba(83,231,255,.9);
+  box-shadow:0 0 10px rgba(83,231,255,.28);
+  pointer-events:none;
+}
+.ganttRowActions{
+  margin-top:1px;
+  gap:4px;
+}
+.ganttRowActions button{
+  min-height:27px;
+  padding:4px 7px;
+  font-size:8px;
+}
+.ganttEmpty{padding:22px}
+@container datanest-main (max-width:760px){
+  .schedulerContextBar,.ganttViewerHead{display:grid}
+  .schedulerContextStats,.ganttLegend{justify-content:flex-start}
+  .schedulerViewSwitch{width:max-content}
+}
