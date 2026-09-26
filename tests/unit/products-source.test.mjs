@@ -71,6 +71,10 @@ test("Products reads the governed product catalog from Supabase",()=>{
   assert.match(products,/Filter governed record type/);
   assert.match(products,/visibleRecords/);
   assert.match(products,/No governed records match this view/);
+  assert.match(products,/searchParams\.set\("product",nextProduct\)/);
+  assert.match(products,/searchParams\.set\("recordType",recordTypeFilter\)/);
+  assert.match(products,/searchParams\.set\("q",query\)/);
+  assert.match(products,/SHAREABLE VIEW · URL SYNCED/);
 });
 
 test("governed product catalog schema is versioned with project-scoped RLS",()=>{
