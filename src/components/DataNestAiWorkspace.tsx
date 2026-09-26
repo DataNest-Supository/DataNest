@@ -296,44 +296,6 @@ export default function DataNestAiWorkspace({
       </div>
     </section>
 
-    {selectedJob&&<section className="panel datanestAiCurrentJob">
-      <div className="rowBetween">
-        <div>
-          <p className="eyebrow">Current Job Context</p>
-          <h2>{jobCode(selectedJob)+" · "+selectedJob.title}</h2>
-        </div>
-        <span className="badge live">{selectedJob.status.replaceAll("_"," ")}</span>
-      </div>
-      <p className="muted">{selectedJob.description||"No description supplied."}</p>
-      <div className="manifestMeta">
-        <span>{"Priority "+selectedJob.priority}</span>
-        <span>{selectedJob.required_capabilities?.join(", ")||"chat"}</span>
-        <span>{"Updated "+formatDate(selectedJob.updated_at)}</span>
-        <span>{sessionId?"Session "+sessionId.slice(0,8):"Session establishing…"}</span>
-      </div>
-      <div className="rowActions">
-        <JobInviteForm
-          jobId={selectedJob.id}
-          canInvite={canOperate}
-          compact
-          onSent={message=>setNotice(message)}
-        />
-        <button className="secondaryButton compact" onClick={()=>void refreshContext()}>Refresh context</button>
-      </div>
-    </section>}
-
-    <section className="datanestAiJobStrip" aria-label="Switch DataNest AI Job Context">
-      {jobs.map(job=><button
-        key={job.id}
-        className={"rndJobChip "+(job.id===selectedJobId?"active":"")}
-        onClick={()=>{selectedJobIdRef.current=job.id;setSelectedJobId(job.id)}}
-      >
-        <span>{jobCode(job)}</span>
-        <b>{job.title}</b>
-        <small>{job.status+" · P"+job.priority}</small>
-      </button>)}
-    </section>
-
     {loading&&!context?<div className="loadingBar"><span/></div>:selectedJob&&context&&<>
       <section className="datanestAiChatStage" aria-label="DataNest AI Chat">
         <DataNestAiChatPanel
@@ -346,6 +308,46 @@ export default function DataNestAiWorkspace({
           setNotice={setNotice}
           setError={setError}
         />
+      </section>
+
+      <section className="datanestAiContextRail" aria-label="Active DataNest AI context">
+        <section className="panel datanestAiCurrentJob">
+          <div className="rowBetween">
+            <div>
+              <p className="eyebrow">Current Job Context</p>
+              <h2>{jobCode(selectedJob)+" · "+selectedJob.title}</h2>
+            </div>
+            <span className="badge live">{selectedJob.status.replaceAll("_"," ")}</span>
+          </div>
+          <p className="muted">{selectedJob.description||"No description supplied."}</p>
+          <div className="manifestMeta">
+            <span>{"Priority "+selectedJob.priority}</span>
+            <span>{selectedJob.required_capabilities?.join(", ")||"chat"}</span>
+            <span>{"Updated "+formatDate(selectedJob.updated_at)}</span>
+            <span>{sessionId?"Session "+sessionId.slice(0,8):"Session establishing…"}</span>
+          </div>
+          <div className="rowActions">
+            <JobInviteForm
+              jobId={selectedJob.id}
+              canInvite={canOperate}
+              compact
+              onSent={message=>setNotice(message)}
+            />
+            <button className="secondaryButton compact" onClick={()=>void refreshContext()}>Refresh context</button>
+          </div>
+        </section>
+
+        <section className="datanestAiJobStrip" aria-label="Switch DataNest AI Job Context">
+          {jobs.map(job=><button
+            key={job.id}
+            className={"rndJobChip "+(job.id===selectedJobId?"active":"")}
+            onClick={()=>{selectedJobIdRef.current=job.id;setSelectedJobId(job.id)}}
+          >
+            <span>{jobCode(job)}</span>
+            <b>{job.title}</b>
+            <small>{job.status+" · P"+job.priority}</small>
+          </button>)}
+        </section>
       </section>
 
       <section className="datanestAiSupportGrid">
