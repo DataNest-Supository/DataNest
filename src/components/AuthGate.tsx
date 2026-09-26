@@ -6,6 +6,7 @@ import MotionControl from "./MotionControl";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
+import { DATANEST_LOGO_SRC } from "@/lib/brand";
 
 const DataNestApp = dynamic(() => import("@/components/DataNestApp"), {
   ssr: false,
@@ -27,6 +28,15 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
       window.setTimeout(() => reject(new Error("Authentication service did not respond in time.")), timeoutMs);
     })
   ]);
+}
+
+function AuthBrand() {
+  return (
+    <div className="authBrand" aria-label="Resonance DataNest brand">
+      <span className="authLogo" aria-hidden="true"><img src={DATANEST_LOGO_SRC} alt="" /></span>
+      <span className="authBrandCopy"><small>RESONANCE</small><strong>DataNest</strong></span>
+    </div>
+  );
 }
 
 export default function AuthGate() {
@@ -173,8 +183,7 @@ export default function AuthGate() {
     return (
       <main className="authShell" role="status" aria-live="polite" aria-busy="true">
         <section className="authCard">
-          <div className="brandMark">RD</div>
-          <p className="eyebrow">RESONANCE APPDEV</p>
+          <AuthBrand />
           <h1>Resonance DataNest</h1>
           <div className="bootRow">
             <div className="bootPulse" aria-hidden="true" />
@@ -192,8 +201,7 @@ export default function AuthGate() {
     return (
       <main className="authShell">
         <section className="authCard" role="alert">
-          <div className="brandMark">RD</div>
-          <p className="eyebrow">RESONANCE APPDEV</p>
+          <AuthBrand />
           <h1>Resonance DataNest</h1>
           <p className="lede">{startupMessage}</p>
           <div className="setupBox">
@@ -210,8 +218,7 @@ export default function AuthGate() {
     return (
       <main className="authShell">
         <section className="authCard" role="alert">
-          <div className="brandMark">RD</div>
-          <p className="eyebrow">RESONANCE APPDEV</p>
+          <AuthBrand />
           <h1>Connection problem</h1>
           <p className="lede">{startupMessage || "DataNest could not reach the authentication service."}</p>
           <button className="primaryButton" type="button" onClick={() => void initialize()}>
@@ -227,8 +234,7 @@ export default function AuthGate() {
     return (
       <main className="authShell">
         <section className="authCard">
-          <div className="brandMark">RD</div>
-          <p className="eyebrow">RESONANCE APPDEV</p>
+          <AuthBrand />
           <h1>Create your DataNest password</h1>
           <p className="lede">Your invitation has been accepted. Set a password to use normal email-and-password sign-in.</p>
           <form onSubmit={submitNewPassword} className="authForm" aria-busy={busy}>
@@ -256,7 +262,7 @@ export default function AuthGate() {
     <main className="authShell authLanding">
       <a className="skipLink" href="#sign-in-email">Skip to sign in</a>
       <header className="landingHeader">
-        <a className="landingBrand" href="#"><span className="landingMonogram" aria-hidden="true">R</span><span>RESONANCE <b>DataNest</b></span></a>
+        <a className="landingBrand" href="#" aria-label="Resonance DataNest home"><span className="landingLogo" aria-hidden="true"><img src={DATANEST_LOGO_SRC} alt="" /></span><span className="landingBrandText"><small>RESONANCE</small><b>DataNest</b></span></a>
         <MotionControl/>
       </header>
       <div className="landingLayout">
@@ -273,8 +279,7 @@ export default function AuthGate() {
         </ol>
       </section>
       <section className="authCard landingSignIn" aria-labelledby="sign-in-title">
-        <div className="brandMark">RD</div>
-        <p className="eyebrow">RESONANCE APPDEV</p>
+        <AuthBrand />
         <h1 id="sign-in-title">Resonance DataNest</h1>
         <p className="lede">Welcome to your workspace. Sign in to continue.</p>
 
