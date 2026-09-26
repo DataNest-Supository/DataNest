@@ -107,6 +107,14 @@ test("certification workspace scopes evidence rows to project candidates", () =>
   assert.match(source,/ai_certification_decisions"\)[\s\S]*?\.in\("candidate_id",candidateIds\)/);
 });
 
+test("certification panel normalizes malformed workspace payloads before rendering", () => {
+  const panel=fs.readFileSync(path.join(root,"src/components/DataNestAiCertificationPanel.tsx"),"utf8");
+  assert.match(panel,/function normalizeWorkspaceResponse/);
+  assert.match(panel,/Array\.isArray\(record\.candidates\)/);
+  assert.match(panel,/Array\.isArray\(record\.validationRuns\)/);
+  assert.match(panel,/setWorkspace\(normalizeWorkspaceResponse\(data,fallbackRole\)\)/);
+});
+
 test("browser certification console cannot self-pass the stress-test gate", () => {
   const panel=fs.readFileSync(path.join(root,"src/components/DataNestAiCertificationPanel.tsx"),"utf8");
   const gateway=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-certification/index.ts"),"utf8");
