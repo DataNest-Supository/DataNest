@@ -77,7 +77,7 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
   await page.goto(appPath+"?view=products&product=ronsas&recordType=risk&q=runner");
 
   await expect(page.getByRole("heading", {name:"Products that carry their architecture, evidence and decisions with them."})).toBeVisible();
-  await expect(page.getByRole("heading",{name:"RONSAS",exact:true})).toBeVisible();
+  await expect(page.getByRole("region",{name:"Products that carry their architecture, evidence and decisions with them."}).getByRole("heading",{name:"RONSAS",exact:true})).toBeVisible();
   await expect(page.getByLabel("Filter governed record type")).toHaveValue("risk");
   await expect(page.getByLabel("Search governed product records")).toHaveValue("runner");
   await expect(page.locator("details.catalogDetails")).toHaveAttribute("open","");
