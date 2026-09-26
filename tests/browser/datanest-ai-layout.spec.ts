@@ -5,6 +5,7 @@ const appPath = process.env.DATANEST_APP_PATH || "/";
 test("DataNest AI keeps the Hero above a centered live command console", async ({ page }) => {
   const projectId = "00000000-0000-4000-8000-000000000010";
   const userId = "00000000-0000-4000-8000-000000000001";
+  const otherUserId = "00000000-0000-4000-8000-000000000002";
   const job = {
     id:"00000000-0000-4000-8000-000000000099",
     job_number:99,
@@ -36,12 +37,13 @@ test("DataNest AI keeps the Hero above a centered live command console", async (
 
   await page.addInitScript(({userId}) => {
     const encode = (data:unknown) => btoa(JSON.stringify(data)).replaceAll("+","-").replaceAll("/","_").replaceAll("=","");
+    const activeUserId=localStorage.getItem("fixture-user-override")||userId;
     localStorage.setItem("sb-fixture-auth-token",JSON.stringify({
-      access_token:`${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:userId,exp:4102444800,role:"authenticated"})}.fixture`,
+      access_token:`${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:activeUserId,exp:4102444800,role:"authenticated"})}.fixture`,
       refresh_token:"fixture",
       token_type:"bearer",
       expires_at:4102444800,
-      user:{id:userId,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid"}
+      user:{id:activeUserId,aud:"authenticated",role:"authenticated",email:activeUserId===userId?"fixture@example.invalid":"second@example.invalid"}
     }));
   },{userId});
 
@@ -102,6 +104,29 @@ test("DataNest AI keeps the Hero above a centered live command console", async (
   await expect(page.getByRole("heading",{name:"JOB-00099 · AI Hero Layout Fixture",exact:true})).toBeVisible();
   await expect(composer).toHaveValue("First Job draft must stay with JOB-00099.");
   await expect(page.getByText("SESSION-ONLY DRAFT · LOCKED TO JOB-00099",{exact:true})).toBeVisible();
+
+  expect(await page.evaluate(({projectId,userId,jobId})=>
+    sessionStorage.getItem("datanest-ai:session-draft:"+projectId+":"+userId+":"+jobId),
+    {projectId,userId,jobId:job.id}
+  )).toBe("First Job draft must stay with JOB-00099.");
+  expect(await page.evaluate(({jobId})=>
+    sessionStorage.getItem("datanest-ai:session-draft:"+jobId),
+    {jobId:job.id}
+  )).toBeNull();
+
+  await page.evaluate(otherUserId=>localStorage.setItem("fixture-user-override",otherUserId),otherUserId);
+  await page.reload();
+  await expect(page.getByRole("heading",{name:"JOB-00099 · AI Hero Layout Fixture",exact:true})).toBeVisible();
+  await expect(composer).toHaveValue("");
+  await expect(page.getByText("SESSION-ONLY DRAFT · LOCKED TO JOB-00099",{exact:true})).toBeHidden();
+
+  await composer.fill("Second user draft must remain isolated.");
+  await expect(page.getByText("SESSION-ONLY DRAFT · LOCKED TO JOB-00099",{exact:true})).toBeVisible();
+
+  await page.evaluate(()=>localStorage.removeItem("fixture-user-override"));
+  await page.reload();
+  await expect(page.getByRole("heading",{name:"JOB-00099 · AI Hero Layout Fixture",exact:true})).toBeVisible();
+  await expect(composer).toHaveValue("First Job draft must stay with JOB-00099.");
 
   await page.locator(".datanestAiJobStrip .rndJobChip").filter({hasText:"Second AI Job Fixture"}).click();
   await expect(page.getByRole("heading",{name:"JOB-00100 · Second AI Job Fixture",exact:true})).toBeVisible();
