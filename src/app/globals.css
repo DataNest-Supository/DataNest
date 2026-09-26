@@ -4146,3 +4146,50 @@ code,pre{
     margin-left:0;
   }
 }
+
+
+/* Resonance Sovereign Spectrum 2026 — AppDev / DataNest binding
+   Canonical source: resonance36912-cell/RONSAS/docs/design/RESONANCE_SOVEREIGN_SPECTRUM_2026.md */
+:root{
+  --rs-bg-0:#05030d;
+  --rs-bg-1:#090619;
+  --rs-surface:rgba(18,10,39,.92);
+  --rs-surface-soft:rgba(24,12,52,.78);
+  --rs-control:rgba(10,6,25,.72);
+  --rs-line:rgba(103,226,255,.14);
+  --rs-line-strong:rgba(255,54,216,.28);
+  --rs-text:#f8f7ff;
+  --rs-muted:#aaa7c7;
+  --rs-cyan:#42e7ff;
+  --rs-magenta:#ff36d8;
+  --rs-violet:#8b5cf6;
+  --rs-success:#72e6ae;
+  --rs-warning:#f4c66f;
+  --rs-danger:#ff86ab;
+  --rs-product-accent:var(--rs-cyan);
+  --rs-product-accent-2:var(--rs-violet);
+
+  --bg:var(--rs-bg-0);
+  --bg-deep:#03020a;
+  --panel:var(--rs-surface);
+  --panel-soft:var(--rs-surface-soft);
+  --line:var(--rs-line);
+  --line-strong:var(--rs-line-strong);
+  --text:var(--rs-text);
+  --muted:var(--rs-muted);
+  --cyan:var(--rs-cyan);
+  --magenta:var(--rs-magenta);
+  --violet:var(--rs-violet);
+  --green:var(--rs-success);
+  --amber:var(--rs-warning);
+  --red:var(--rs-danger);
+}
+:focus-visible{outline:2px solid var(--rs-product-accent);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    scroll-behavior:auto!important;
+    animation-duration:.001ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.001ms!important;
+  }
+}
