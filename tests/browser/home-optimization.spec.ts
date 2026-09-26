@@ -155,3 +155,68 @@ test("dashboard follows workspace width when the AI rail is resized", async ({ p
   expect(narrow.hero.right).toBeLessThanOrEqual(narrow.content.right + 1);
   expect(narrow.scrollWidth).toBeLessThanOrEqual(narrow.viewportWidth);
 });
+
+
+test("AI & I Hero presents RONSAS and animated DataNest value signals", async ({ page }) => {
+  const projectId = "00000000-0000-4000-8000-000000000010";
+  const userId = "00000000-0000-4000-8000-000000000001";
+
+  await page.route("**/runtime-config.js", route => route.fulfill({
+    contentType: "application/javascript",
+    body: "window.__DATANEST_CONFIG__={supabaseUrl:'https://fixture.supabase.co',supabasePublishableKey:'fixture-key',authoritative:true}"
+  }));
+  await page.addInitScript(({userId}) => {
+    const encode = (data: unknown) => btoa(JSON.stringify(data)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+    localStorage.setItem("sb-fixture-auth-token", JSON.stringify({
+      access_token: `${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:userId,exp:4102444800,role:"authenticated"})}.fixture`,
+      refresh_token: "fixture", token_type:"bearer", expires_at:4102444800,
+      user:{id:userId,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid"}
+    }));
+  }, {userId});
+
+  await page.route("https://fixture.supabase.co/**", route => {
+    const path = new URL(route.request().url()).pathname;
+    let body: unknown = [];
+    if (path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE"};
+    if (path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"viewer",status:"active"};
+    if (path.endsWith("/get_project_dashboard_summary")) body = {total_jobs:4,active_jobs:2,running_jobs:1,blocked_jobs:0};
+    if (path.endsWith("/jobs")) body = [
+      {id:"1",job_number:1,title:"AI workflow",status:"RUNNING",created_at:"2026-09-26T00:15:00Z",updated_at:"2026-09-26T00:15:00Z"}
+    ];
+    if (path.endsWith("/products")) body = [{
+      id:"24f2fa75-18b8-5b45-b624-b5dab381de9e",slug:"ronsas",name:"RONSAS",
+      full_name:"Resonance Open Nova Application Suite",lifecycle_status:"active development and integration"
+    }];
+    if (path.endsWith("/product_records")) body = [
+      {id:"301",product_id:"24f2fa75-18b8-5b45-b624-b5dab381de9e",name:"RONSAS Hub",status:"active",sort_order:1},
+      {id:"302",product_id:"24f2fa75-18b8-5b45-b624-b5dab381de9e",name:"Creative Studio",status:"active",sort_order:2}
+    ];
+    return route.fulfill({contentType:"application/json",body:JSON.stringify(body)});
+  });
+
+  await page.goto(appPath);
+
+  await expect(page.getByText("RONSAS · Resonance Open Nova Sovereign Application Suite",{exact:true})).toBeVisible();
+  const visual=page.locator(".resonanceHome .aiICoreStage");
+  await expect(visual).toHaveAttribute("data-running","true");
+  await expect(visual.locator("[data-value-proposition]")).toHaveCount(4);
+  await expect(visual.getByText("Governed AI",{exact:true})).toBeVisible();
+  await expect(visual.getByText("Certified Memory",{exact:true})).toBeVisible();
+  await expect(visual.getByText("Traceable Collaboration",{exact:true})).toBeVisible();
+  await expect(visual.getByText("Sovereign App Suite",{exact:true})).toBeVisible();
+
+  const workSignal=visual.locator("[data-ai-signal='work']");
+  await expect(workSignal).toHaveCount(1);
+  expect(await workSignal.evaluate(el => getComputedStyle(el).animationName)).not.toBe("none");
+
+  await page.getByRole("button",{name:"Enter DataNest AI"}).hover();
+  const intentSignal=visual.locator("[data-ai-signal='intent']");
+  await expect(intentSignal).toHaveCount(1);
+  expect(await intentSignal.evaluate(el => getComputedStyle(el).animationName)).not.toBe("none");
+
+  await page.emulateMedia({reducedMotion:"reduce"});
+  expect(await workSignal.evaluate(el => getComputedStyle(el).animationName)).toBe("none");
+
+  await page.setViewportSize({width:390,height:844});
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
