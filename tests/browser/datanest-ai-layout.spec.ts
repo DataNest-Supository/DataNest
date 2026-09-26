@@ -95,11 +95,15 @@ test("DataNest AI keeps the Hero above a centered live command console", async (
   expect(await page.locator(".datanestAiComposer").evaluate(element=>getComputedStyle(element).position)).toBe("sticky");
 
   await composer.fill("First Job draft must stay with JOB-00099.");
+  await expect(page.getByText("UNSENT DRAFT LOCKED TO JOB-00099",{exact:true})).toBeVisible();
+  await expect(page.getByLabel("DataNest AI command context locked to JOB-00099")).toBeVisible();
   await page.locator(".datanestAiJobStrip .rndJobChip").filter({hasText:"Second AI Job Fixture"}).click();
   await expect(page.getByRole("heading",{name:"JOB-00100 · Second AI Job Fixture",exact:true})).toBeVisible();
   await expect(composer).toHaveValue("");
 
   await composer.fill("Second Job draft must stay with JOB-00100.");
+  await expect(page.getByText("UNSENT DRAFT LOCKED TO JOB-00100",{exact:true})).toBeVisible();
+  await expect(page.getByLabel("DataNest AI command context locked to JOB-00100")).toBeVisible();
   await page.locator(".datanestAiJobStrip .rndJobChip").filter({hasText:"AI Hero Layout Fixture"}).click();
   await expect(page.getByRole("heading",{name:"JOB-00099 · AI Hero Layout Fixture",exact:true})).toBeVisible();
   await expect(composer).toHaveValue("First Job draft must stay with JOB-00099.");
@@ -108,6 +112,9 @@ test("DataNest AI keeps the Hero above a centered live command console", async (
   await expect(composer).toHaveValue("Second Job draft must stay with JOB-00100.");
   await page.locator(".datanestAiJobStrip .rndJobChip").filter({hasText:"AI Hero Layout Fixture"}).click();
   await expect(composer).toHaveValue("First Job draft must stay with JOB-00099.");
+  await page.getByRole("button",{name:"Clear draft",exact:true}).click();
+  await expect(composer).toHaveValue("");
+  await expect(page.getByText("UNSENT DRAFT LOCKED TO JOB-00099",{exact:true})).toBeHidden();
 
   const layout=await page.evaluate(()=>{
     const rect=(selector:string)=>{
