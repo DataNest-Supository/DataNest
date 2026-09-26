@@ -64,7 +64,7 @@ test("TranScheduler groups jobs under the project and renders the priority gradi
   await expect(page.getByText("Maintenance",{exact:true})).toBeVisible();
   await expect(page.getByText("Critical",{exact:true})).toBeVisible();
   await expect(page.getByText("3 jobs",{exact:true})).toBeVisible();
-  await expect(page.getByText("2 active",{exact:true})).toBeVisible();
+  await expect(page.locator(".schedulerProjectGroupHead").getByText("2 active",{exact:true})).toBeVisible();
   await expect(page.getByText("Peak P100",{exact:true})).toBeVisible();
 
   const ganttPriorities=page.locator(".ganttPriorityMeta .priorityScaleMarker");
