@@ -1,0 +1,184 @@
+/* Coordinated AI & I intelligence-transfer motion.
+   Decorative only: the collaboration graphic remains aria-labelled as one visual. */
+
+.aiICoreStage{
+  --collaboration-cycle:6s;
+}
+
+.resonanceRipple{
+  position:absolute;
+  left:50%;
+  top:50%;
+  z-index:1;
+  width:86px;
+  height:86px;
+  border:1px solid rgba(126,230,255,.28);
+  border-radius:50%;
+  transform:translate(-50%,-50%) scale(.78);
+  opacity:0;
+  pointer-events:none;
+  box-shadow:0 0 22px rgba(126,230,255,.08);
+}
+
+.coreBridge .intentFlowPacket,
+.coreBridge .amplifyFlowPacket,
+.coreBridge .feedbackFlowPacket{
+  top:-2px;
+  width:5px;
+  height:5px;
+  border-radius:50%;
+}
+
+.coreBridge .intentFlowPacket{
+  background:#9feaff;
+  box-shadow:0 0 10px #77dbff,0 0 18px rgba(119,219,255,.55);
+}
+
+.coreBridge .amplifyFlowPacket{
+  background:#c0a8ff;
+  box-shadow:0 0 10px #9f87ff,0 0 19px rgba(177,143,255,.52);
+}
+
+.coreBridge .feedbackFlowPacket{
+  width:4px;
+  height:4px;
+  background:#e4d9ff;
+  box-shadow:0 0 8px rgba(212,195,255,.62);
+}
+
+@media(prefers-reduced-motion:no-preference){
+  .orbitOuter{
+    animation:orbitSpin 28s linear infinite;
+  }
+
+  .orbitMiddle{
+    animation:orbitSpin 34s linear infinite reverse;
+  }
+
+  .signalArc{
+    animation:arcGlow 6s ease-in-out infinite;
+  }
+
+  .coreBridge .intentFlowPacket{
+    animation:intentToCore var(--collaboration-cycle) linear infinite;
+  }
+
+  .coreBridge .intentFlowPacket.packetB{
+    animation-delay:.42s;
+  }
+
+  .coreBridge .amplifyFlowPacket{
+    animation:coreToAi var(--collaboration-cycle) linear infinite;
+  }
+
+  .coreBridge .feedbackFlowPacket{
+    animation:aiFeedback var(--collaboration-cycle) linear infinite;
+  }
+
+  .humanCore{
+    animation:intentNodePulse var(--collaboration-cycle) ease-in-out infinite;
+  }
+
+  .coreCenter{
+    animation:resonanceCoreCycle var(--collaboration-cycle) ease-in-out infinite;
+  }
+
+  .resonanceRipple{
+    animation:resonanceRipple var(--collaboration-cycle) ease-out infinite;
+  }
+
+  .aiCore{
+    animation:aiAmplifyPulse var(--collaboration-cycle) ease-in-out infinite;
+  }
+}
+
+@keyframes intentToCore{
+  0%,6%{left:0;opacity:0}
+  11%{opacity:1}
+  33%{left:50%;opacity:1}
+  38%,100%{left:50%;opacity:0}
+}
+
+@keyframes coreToAi{
+  0%,36%{left:50%;opacity:0}
+  41%{opacity:1}
+  63%{left:100%;opacity:1}
+  68%,100%{left:100%;opacity:0}
+}
+
+@keyframes aiFeedback{
+  0%,69%{left:100%;opacity:0}
+  74%{opacity:.62}
+  88%{left:50%;opacity:.46}
+  94%,100%{left:50%;opacity:0}
+}
+
+@keyframes intentNodePulse{
+  0%,100%{
+    border-color:rgba(154,188,220,.19);
+    box-shadow:0 20px 55px rgba(0,0,0,.25);
+    filter:brightness(1);
+  }
+  8%,24%{
+    border-color:rgba(126,230,255,.48);
+    box-shadow:0 20px 55px rgba(0,0,0,.25),0 0 28px rgba(126,230,255,.13);
+    filter:brightness(1.09);
+  }
+  36%{
+    border-color:rgba(154,188,220,.19);
+    box-shadow:0 20px 55px rgba(0,0,0,.25);
+    filter:brightness(1);
+  }
+}
+
+@keyframes resonanceCoreCycle{
+  0%,26%,100%{
+    box-shadow:0 0 0 14px rgba(109,213,247,.03),0 0 50px rgba(83,203,244,.18);
+    filter:brightness(1);
+  }
+  36%,48%{
+    box-shadow:0 0 0 21px rgba(109,213,247,.055),0 0 72px rgba(83,203,244,.34);
+    filter:brightness(1.2);
+  }
+  62%{
+    box-shadow:0 0 0 15px rgba(109,213,247,.035),0 0 52px rgba(83,203,244,.2);
+    filter:brightness(1.04);
+  }
+}
+
+@keyframes resonanceRipple{
+  0%,29%{transform:translate(-50%,-50%) scale(.78);opacity:0}
+  35%{opacity:.48}
+  53%{transform:translate(-50%,-50%) scale(1.8);opacity:0}
+  100%{transform:translate(-50%,-50%) scale(1.8);opacity:0}
+}
+
+@keyframes aiAmplifyPulse{
+  0%,50%,100%{
+    border-color:rgba(154,188,220,.19);
+    box-shadow:0 20px 55px rgba(0,0,0,.25);
+    filter:brightness(1);
+  }
+  58%,72%{
+    border-color:rgba(180,161,255,.5);
+    box-shadow:0 20px 55px rgba(0,0,0,.25),0 0 30px rgba(166,145,255,.15);
+    filter:brightness(1.12);
+  }
+  84%{
+    border-color:rgba(154,188,220,.22);
+    box-shadow:0 20px 55px rgba(0,0,0,.25);
+    filter:brightness(1.02);
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .humanCore,
+  .aiCore,
+  .coreCenter,
+  .resonanceRipple,
+  .coreBridge .intentFlowPacket,
+  .coreBridge .amplifyFlowPacket,
+  .coreBridge .feedbackFlowPacket{
+    animation:none!important;
+  }
+}
