@@ -159,6 +159,7 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
   const [recordQuery,setRecordQuery]=useState("");
   const [recordTypeFilter,setRecordTypeFilter]=useState("all");
   const [catalogUrlReady,setCatalogUrlReady]=useState(false);
+  const [catalogDetailsOpen,setCatalogDetailsOpen]=useState(false);
 
   const [jobs,setJobs]=useState<Job[]>([]);
   const [selectedJobId,setSelectedJobId]=useState("");
@@ -362,8 +363,10 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
 
       setSelectedProductId(current=>matchedProduct?.id
         ||(catalogProducts.some(product=>product.id===current)?current:catalogProducts[0]?.id||""));
-      setRecordTypeFilter(requestedType&&catalogRecordOrder.includes(requestedType) ? requestedType : "all");
+      const nextType=requestedType&&catalogRecordOrder.includes(requestedType) ? requestedType : "all";
+      setRecordTypeFilter(nextType);
       setRecordQuery(requestedQuery);
+      setCatalogDetailsOpen(Boolean(requestedQuery)||nextType!=="all");
       setCatalogUrlReady(true);
     };
 
@@ -435,6 +438,7 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
               setSelectedProductId(product.id);
               setRecordQuery("");
               setRecordTypeFilter("all");
+              setCatalogDetailsOpen(false);
             }}
           >
             <span>{String(index+1).padStart(2,"0")}</span>
@@ -498,7 +502,11 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
               })}
             </div>}
 
-            <details className="catalogDetails">
+            <details
+              className="catalogDetails"
+              open={catalogDetailsOpen}
+              onToggle={event=>setCatalogDetailsOpen(event.currentTarget.open)}
+            >
               <summary>Explore {records.length} governed records</summary>
               <div className="catalogRecordToolbar">
                 <label>
