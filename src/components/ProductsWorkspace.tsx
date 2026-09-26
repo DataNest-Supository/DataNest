@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
+import { governedProductFullName } from "@/lib/ronsas";
 
 
 type CatalogProduct = {
@@ -504,7 +505,7 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
                 <div>
                   <p className="productKicker">{product.category||"RESONANCE PRODUCT"}</p>
                   <h3>{product.name}</h3>
-                  <p className="catalogFullName">{product.full_name}</p>
+                  <p className="catalogFullName">{governedProductFullName(product)}</p>
                 </div>
               </div>
               <div className="catalogFlags">
