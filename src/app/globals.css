@@ -2137,6 +2137,19 @@ code,pre{
 }
 
 
+/* 2026-09-26 Products grid min-content containment */
+.productsWorkspace{
+  width:100%;
+  min-width:0;
+}
+.productsWorkspace>*,
+.catalogStage,
+.conceptIncubator,
+.catalogStageHead>*{
+  min-width:0;
+  max-width:100%;
+}
+
 /* Resonance Products */
 .productsWorkspace{display:grid;gap:18px;max-width:1380px;margin:0 auto}
 .productsHero,.productIndex,.legalEagleStage,.productRoadmapStrip{border:1px solid var(--line);border-radius:28px;background:linear-gradient(155deg,rgba(255,255,255,.055),rgba(255,255,255,.018));box-shadow:0 24px 70px rgba(0,0,0,.18)}
