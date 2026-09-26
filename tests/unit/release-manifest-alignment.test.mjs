@@ -14,15 +14,15 @@ const pagesWorkflow=readFileSync(
 test("project invite Edge Function v2 is the enforced release version",()=>{
   assert.match(
     manifestScript,
-    /projectInvitations:process\.env\.DATANEST_EDGE_PROJECT_INVITES \|\| "send-project-member-invite@2"/
+    /projectInvitations:process\.env\.DATANEST_EDGE_PROJECT_INVITES \|\| "send-project-member-invite@3"/
   );
   assert.match(
     pagesWorkflow,
-    /DATANEST_EDGE_PROJECT_INVITES: send-project-member-invite@2/
+    /DATANEST_EDGE_PROJECT_INVITES: send-project-member-invite@3/
   );
   assert.match(
     pagesWorkflow,
-    /projectInvitations.*send-project-member-invite@2/
+    /projectInvitations.*send-project-member-invite@3/
   );
   assert.doesNotMatch(manifestScript,/send-project-member-invite@1/);
   assert.doesNotMatch(pagesWorkflow,/send-project-member-invite@1/);
