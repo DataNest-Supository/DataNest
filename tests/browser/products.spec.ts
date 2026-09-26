@@ -6,7 +6,7 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
   const projectId = "00000000-0000-4000-8000-000000000010";
   const userId = "00000000-0000-4000-8000-000000000001";
   const jobId = "00000000-0000-4000-8000-000000000020";
-  let legalRequest:Record<string,unknown>|null=null;
+  let legalRequest:Record<string,unknown>={};
 
   await page.route("**/runtime-config.js", route => route.fulfill({
     contentType: "application/javascript",
@@ -87,7 +87,6 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
   await expect(page.getByText(/I can organize this as a matter timeline/)).toBeVisible();
   await expect(page.getByText(/excluded from automatic project-wide learning/i)).toBeVisible();
 
-  expect(legalRequest).not.toBeNull();
   expect(legalRequest?.productMode).toBe("legal_eagle");
   expect(legalRequest?.jurisdiction).toBe("South Africa · Gauteng");
   expect(legalRequest?.legalTask).toBe("timeline");
