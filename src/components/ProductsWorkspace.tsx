@@ -158,6 +158,7 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
   const [selectedProductId,setSelectedProductId]=useState("");
   const [recordQuery,setRecordQuery]=useState("");
   const [recordTypeFilter,setRecordTypeFilter]=useState("all");
+  const [catalogUrlReady,setCatalogUrlReady]=useState(false);
 
   const [jobs,setJobs]=useState<Job[]>([]);
   const [selectedJobId,setSelectedJobId]=useState("");
@@ -349,9 +350,50 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
   },[projectId]);
 
   useEffect(()=>{
-    setRecordQuery("");
-    setRecordTypeFilter("all");
-  },[selectedProductId]);
+    if(!catalogProducts.length)return;
+    const syncCatalogViewFromUrl=()=>{
+      const url=new URL(window.location.href);
+      const requestedProduct=url.searchParams.get("product");
+      const requestedType=url.searchParams.get("recordType");
+      const requestedQuery=url.searchParams.get("q")||"";
+      const matchedProduct=requestedProduct
+        ?catalogProducts.find(product=>product.slug===requestedProduct||product.id===requestedProduct)
+        :null;
+
+      setSelectedProductId(current=>matchedProduct?.id
+        ||(catalogProducts.some(product=>product.id===current)?current:catalogProducts[0]?.id||""));
+      setRecordTypeFilter(requestedType&&catalogRecordOrder.includes(requestedType) ? requestedType : "all");
+      setRecordQuery(requestedQuery);
+      setCatalogUrlReady(true);
+    };
+
+    syncCatalogViewFromUrl();
+    window.addEventListener("popstate",syncCatalogViewFromUrl);
+    return()=>window.removeEventListener("popstate",syncCatalogViewFromUrl);
+  },[catalogProducts]);
+
+  useEffect(()=>{
+    if(!catalogUrlReady||!selectedProductId)return;
+    const selectedProduct=catalogProducts.find(product=>product.id===selectedProductId);
+    if(!selectedProduct)return;
+    const url=new URL(window.location.href);
+    const query=recordQuery.trim();
+    const nextProduct=selectedProduct.slug||selectedProduct.id;
+    const currentProduct=url.searchParams.get("product");
+    const currentType=url.searchParams.get("recordType");
+    const currentQuery=url.searchParams.get("q");
+
+    if(currentProduct===nextProduct
+      &&currentType===(recordTypeFilter==="all"?null:recordTypeFilter)
+      &&currentQuery===(query||null))return;
+
+    url.searchParams.set("product",nextProduct);
+    if(recordTypeFilter==="all")url.searchParams.delete("recordType");
+    else url.searchParams.set("recordType",recordTypeFilter);
+    if(query)url.searchParams.set("q",query);
+    else url.searchParams.delete("q");
+    window.history.replaceState(window.history.state,"",url.toString());
+  },[catalogUrlReady,catalogProducts,selectedProductId,recordQuery,recordTypeFilter]);
 
   const recordsByProduct=useMemo(()=>{
     const map=new Map<string,CatalogRecord[]>();
@@ -371,7 +413,10 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
           <h2 id="governed-catalog-title">Products that carry their architecture, evidence and decisions with them.</h2>
           <p>DataNest now treats each governed product as one traceable entity, with its applications, controls, risks, roadmap, evidence and promotion branches attached to the same product identity.</p>
         </div>
-        <span className="catalogLiveBadge">{catalogLoading?"SYNCING":catalogProducts.length+" PRODUCT"+(catalogProducts.length===1?"":"S")}</span>
+        <div className="catalogStageBadges">
+          <span className="catalogLiveBadge">{catalogLoading?"SYNCING":catalogProducts.length+" PRODUCT"+(catalogProducts.length===1?"":"S")}</span>
+          <span className="catalogLinkBadge">SHAREABLE VIEW · URL SYNCED</span>
+        </div>
       </div>
 
       {catalogError&&<div className="catalogError" role="alert">{catalogError}</div>}
@@ -386,7 +431,11 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
             type="button"
             className={selectedProductId===product.id?"active":""}
             aria-pressed={selectedProductId===product.id}
-            onClick={()=>setSelectedProductId(product.id)}
+            onClick={()=>{
+              setSelectedProductId(product.id);
+              setRecordQuery("");
+              setRecordTypeFilter("all");
+            }}
           >
             <span>{String(index+1).padStart(2,"0")}</span>
             <b>{product.name}</b>
