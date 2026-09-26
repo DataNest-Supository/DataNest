@@ -85,10 +85,18 @@ export default function DataNestAiChatPanel({
     transcript.scrollTo({top:transcript.scrollHeight,behavior:"smooth"});
   },[events.length,returnedTurn,busy]);
 
+  function focusComposer(){
+    const composer=composerRef.current;
+    if(!composer)return;
+    const reducedMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    composer.scrollIntoView({behavior:reducedMotion?"auto":"smooth",block:"center"});
+    window.setTimeout(()=>composer.focus(),reducedMotion?0:220);
+  }
+
   function loadQuickCommand(prompt:string){
     setDraft(prompt);
     requestIdRef.current="";
-    window.setTimeout(()=>composerRef.current?.focus(),0);
+    window.setTimeout(focusComposer,0);
   }
 
   async function send(event:FormEvent){
@@ -166,6 +174,14 @@ export default function DataNestAiChatPanel({
         <span className="datanestAiConsoleLive"><i aria-hidden="true"/>AI CORE LINKED</span>
         <span>{jobCode}</span>
         <span>{sessionId?"SESSION "+sessionId.slice(0,8):"SESSION ESTABLISHING"}</span>
+        <button
+          type="button"
+          className="datanestAiConsoleCommandJump"
+          aria-label="Jump to DataNest AI command composer"
+          onClick={focusComposer}
+        >
+          COMMAND <span aria-hidden="true">↓</span>
+        </button>
       </div>
     </div>
 
