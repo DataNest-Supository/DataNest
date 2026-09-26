@@ -3587,3 +3587,37 @@ code,pre{
     animation:none!important;
   }
 }
+
+
+/* 2026-09-26 DataNest AI context sync shell */
+#datanest-ai-chat{
+  scroll-margin-top:18px;
+}
+
+.datanestAiContextSync{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  width:min(100%,980px);
+  margin-top:-2px;
+  padding:8px 12px;
+  border:1px solid rgba(91,228,255,.12);
+  border-radius:999px;
+  background:rgba(7,15,34,.54);
+  color:#8fa9bb;
+  font:800 8px/1 ui-monospace,SFMono-Regular,Consolas,monospace;
+  letter-spacing:.07em;
+  text-transform:uppercase;
+}
+
+@container datanest-main (max-width:620px){
+  #datanest-ai-chat{
+    scroll-margin-top:10px;
+  }
+
+  .datanestAiContextSync{
+    border-radius:12px;
+    justify-content:flex-start;
+  }
+}
