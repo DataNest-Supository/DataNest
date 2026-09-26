@@ -473,7 +473,7 @@ test("AI & I keeps DataNest AI at the core while governed products stay product 
 
   const visual=page.locator(".resonanceHome .aiICoreStage");
   await expect(visual.getByText("DataNest AI",{exact:true})).toBeVisible();
-  await expect(visual.getByText("RONSAS",{exact:true})).toBeVisible();
+  await expect(visual.locator("b").filter({hasText:/^RONSAS$/})).toBeVisible();
   await expect(visual.getByText("Aurum Naturals",{exact:true})).toBeVisible();
   await expect(visual.getByText("9 applications",{exact:true})).toBeVisible();
   await expect(visual.getByText("0 applications",{exact:true})).toBeVisible();
