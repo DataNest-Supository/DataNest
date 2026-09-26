@@ -16,7 +16,8 @@ const manifest={
     certification:process.env.DATANEST_EDGE_CERTIFICATION || "datanest-ai-certification@1",
     providerManager:process.env.DATANEST_EDGE_PROVIDER || "manage-ai-provider-v2@1",
     invitations:process.env.DATANEST_EDGE_INVITES || "send-job-invite@1",
-    projectInvitations:process.env.DATANEST_EDGE_PROJECT_INVITES || "send-project-member-invite@3"
+    projectInvitations:process.env.DATANEST_EDGE_PROJECT_INVITES || "send-project-member-invite@3",
+    ronsasStatus:process.env.DATANEST_EDGE_RONSAS_STATUS || "ronsas-status@1"
   },
   supabaseProject:"sgqdmfgjbprsoqsmgigi",
   generatedAt:new Date().toISOString()

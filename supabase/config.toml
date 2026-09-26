@@ -10,3 +10,6 @@ verify_jwt = true
 
 [functions.send-project-member-invite]
 verify_jwt = true
+
+[functions.ronsas-status]
+verify_jwt = true
