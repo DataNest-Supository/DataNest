@@ -1,5 +1,6 @@
 import "./globals.css";
 import "./entry.css";
+import "./collaboration-motion.css";
 import type { ReactNode } from "react";
 
 export const metadata = {
