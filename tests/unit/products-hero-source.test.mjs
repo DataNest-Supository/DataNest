@@ -38,4 +38,5 @@ test("value network has one subordinate styling authority",()=>{
   const authorityBlocks=valueNetworkBlocks.filter(block=>/position:absolute/.test(block));
   assert.equal(authorityBlocks.length,1);
   assert.match(authorityBlocks[0],/z-index:2/);
+  assert.match(css,/@media\(max-width:470px\)\{[\s\S]*?\.valueNetwork\{--network-x:86px;--network-y:82px\}/);
 });
