@@ -11,7 +11,7 @@ import MotionControl from "@/components/MotionControl";
 
 type Project = { id:string; slug:string; name:string; description:string|null; status:string; created_at:string };
 type Tool = { id:string; tool_key:string; name:string; role:string; enabled:boolean; config:Record<string,unknown> };
-type Job = { id:string; job_number:number; title:string; description:string|null; priority:number; status:string; required_capabilities:string[]; acceptance:Record<string,unknown>; created_at:string; updated_at:string };
+type Job = { id:string; job_number:number; title:string; description:string|null; priority:number; status:string; required_capabilities:string[]; acceptance:Record<string,unknown>; created_at:string; updated_at:string; deadline:string|null };
 type Capability = { id:string; account_key:string; connector_kind:string; capability:string; state:string; observed_at:string|null; next_check_at:string|null; confidence:number|null; concurrency_limit:number; running:number; metadata:Record<string,unknown> };
 type Run = { id:string; job_id:string; run_number:number; connector_kind:string; status:string; started_at:string; completed_at:string|null; error_category:string|null };
 type Checkpoint = { id:string; job_id:string; completed:string[]; remaining:string[]; resume_instruction:string|null; created_at:string };
@@ -25,7 +25,7 @@ type ActiveDataNestAiSession = { jobId:string; sessionId:string|null };
 
 const PAGE_SIZE = 20;
 const finalStates = new Set(["COMPLETED","FAILED","CANCELLED"]);
-const jobColumns = "id,job_number,title,description,priority,status,required_capabilities,acceptance,created_at,updated_at";
+const jobColumns = "id,job_number,title,description,priority,status,required_capabilities,acceptance,created_at,updated_at,deadline";
 
 const nav:Array<{key:ViewKey;label:string;group:string;glyph:string}> = [
   {key:"overview",label:"AI & I",group:"Project",glyph:"◎"},
@@ -57,7 +57,7 @@ const viewDescriptions:Record<ViewKey,string> = {
   ai:"Work with governed DataNest AI memory and project context.",
   productlab:"Test and review product surfaces before release.",
   unifi:"Plan complete, traceable Job Manifests before execution.",
-  scheduler:"Route prepared work through capability-aware scheduling.",
+  scheduler:"Manage project work in queue or Gantt chart context with live capability-aware scheduling.",
   runs:"Review execution history and connector outcomes.",
   checkpoints:"Resume project work from durable continuation points.",
   audit:"Inspect immutable operational events and traceability.",
@@ -896,20 +896,60 @@ function UnifiPlanner({project,jobs,capabilities,reload,setNotice,setError,canOp
   </section>;
 }
 
+function ganttTime(value:string|null|undefined) {
+  if(!value)return null;
+  const parsed=Date.parse(value);
+  return Number.isFinite(parsed)?parsed:null;
+}
+
+function formatGanttTick(value:number,span:number) {
+  const day=24*60*60*1000;
+  const options:Intl.DateTimeFormatOptions=span<=3*day
+    ? {month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false,timeZone:"UTC"}
+    : span<=120*day
+      ? {month:"short",day:"2-digit",timeZone:"UTC"}
+      : {month:"short",year:"numeric",timeZone:"UTC"};
+  return new Intl.DateTimeFormat(undefined,options).format(new Date(value));
+}
+
 function Scheduler({jobs,capabilities,onStatus,canOperate,page,total,onPage}:{jobs:Job[];capabilities:Capability[];onStatus:(j:Job,s:string)=>Promise<void>;canOperate:boolean;page:number;total:number;onPage:(p:number)=>void}) {
   const [filter,setFilter]=useState("ALL");
+  const [viewMode,setViewMode]=useState<"queue"|"gantt">("gantt");
   const filterOptions=["ALL","PLANNED","READY","QUEUED","RUNNING","MANUAL_ACTION","BLOCKED","COMPLETED"];
   const visible=filter==="ALL"?jobs:jobs.filter(item=>item.status===filter);
+  const activeCount=visible.filter(item=>!finalStates.has(item.status)).length;
+  const deadlineCount=visible.filter(item=>Boolean(item.deadline)).length;
+
   return <>
-    <section className="schedulerHero"><div><p className="eyebrow">TRANSCHEDULER</p><h2>Capability-aware execution queue</h2><p>Dependencies, availability, concurrency, policy and human controls determine when work may execute.</p></div><div className="schedulerPulse"><span>{capabilities.filter(item=>item.state==="AVAILABLE").length}</span><small>available resources</small></div></section>
+    <section className="schedulerHero">
+      <div>
+        <p className="eyebrow">TRANSCHEDULER · GANTT CHART VIEWER</p>
+        <h2>Capability-aware project scheduler</h2>
+        <p>Switch between the operational queue and a Universal Time Gantt timeline. Each bar begins at manifest creation; deadline-bound work extends to its target, completed work ends at its last update, and open work without a deadline extends to now.</p>
+      </div>
+      <div className="schedulerPulse"><span>{capabilities.filter(item=>item.state==="AVAILABLE").length}</span><small>available resources</small></div>
+    </section>
     <section className="panel">
+      <div className="schedulerContextBar">
+        <div className="schedulerViewSwitch" role="group" aria-label="TranScheduler view">
+          <button type="button" className={viewMode==="queue"?"active":""} aria-pressed={viewMode==="queue"} onClick={()=>setViewMode("queue")}>Queue</button>
+          <button type="button" className={viewMode==="gantt"?"active":""} aria-pressed={viewMode==="gantt"} onClick={()=>setViewMode("gantt")}>Gantt chart</button>
+        </div>
+        <div className="schedulerContextStats" aria-label="Current scheduler context">
+          <span>{total+" project jobs"}</span>
+          <span>{visible.length+" shown"}</span>
+          <span>{activeCount+" active"}</span>
+          <span>{deadlineCount+" deadlines"}</span>
+        </div>
+      </div>
       <label className="schedulerFilterMobile">Status filter
         <select aria-label="Status filter" value={filter} onChange={event=>setFilter(event.target.value)}>
           {filterOptions.map(item=><option key={item} value={item}>{item.replace("_"," ")}</option>)}
         </select>
       </label>
       <div className="filterBar schedulerFilterDesktop">{filterOptions.map(item=><button key={item} className={filter===item?"active":""} onClick={()=>setFilter(item)}>{item.replace("_"," ")}</button>)}</div>
-      <div className="schedulerTable"><div className="schedulerRow headerRow"><span>Job</span><span>Priority</span><span>Capability</span><span>Status</span><span>Controls</span></div>
+
+      {viewMode==="queue"?<div className="schedulerTable"><div className="schedulerRow headerRow"><span>Job</span><span>Priority</span><span>Capability</span><span>Status</span><span>Controls</span></div>
         {visible.map(job=><div className="schedulerRow" key={job.id}>
           <div data-label="Job"><b>{jobCode(job)}</b><small>{job.title}</small></div>
           <span data-label="Priority">{"P"+job.priority}</span>
@@ -923,10 +963,104 @@ function Scheduler({jobs,capabilities,onStatus,canOperate,page,total,onPage}:{jo
             </> : <span className="muted">Read only</span>}
           </div>
         </div>)}
-      </div>
+      </div>:<SchedulerGantt jobs={visible} onStatus={onStatus} canOperate={canOperate}/>}
       <Pagination page={page} total={total} onPage={onPage}/>
     </section>
   </>;
+}
+
+function SchedulerGantt({jobs,onStatus,canOperate}:{jobs:Job[];onStatus:(j:Job,s:string)=>Promise<void>;canOperate:boolean}) {
+  if(!jobs.length)return <div className="ganttEmpty"><EmptyState title="No jobs in this Gantt view" text="Change the status filter or add work in UNIFI."/></div>;
+
+  const now=Date.now();
+  const minute=60*1000;
+  const starts=jobs.map(job=>ganttTime(job.created_at)??now);
+  const ends=jobs.map((job,index)=>{
+    const deadline=ganttTime(job.deadline);
+    const updated=ganttTime(job.updated_at)??starts[index];
+    const lifecycleEnd=finalStates.has(job.status)?updated:Math.max(updated,now);
+    return Math.max(starts[index]+minute,deadline??lifecycleEnd);
+  });
+  const rawStart=Math.min(...starts);
+  const rawEnd=Math.max(now,...ends);
+  const rawSpan=Math.max(rawEnd-rawStart,6*60*minute);
+  const padding=Math.max(rawSpan*.055,30*minute);
+  const rangeStart=rawStart-padding;
+  const rangeEnd=rawEnd+padding;
+  const span=rangeEnd-rangeStart;
+  const tickCount=6;
+  const ticks=Array.from({length:tickCount},(_,index)=>rangeStart+(span*index)/(tickCount-1));
+  const nowPosition=Math.max(0,Math.min(100,((now-rangeStart)/span)*100));
+
+  return <div className="ganttViewer">
+    <div className="ganttViewerHead">
+      <div><p className="eyebrow">PROJECT TIMELINE</p><h3>Lifecycle and deadline context</h3><p>This viewer uses recorded job timestamps only. A solid bar has a stored deadline; a dashed bar shows the observed lifecycle window, with active undated work extending to the current UTC time.</p></div>
+      <div className="ganttLegend" aria-label="Gantt chart legend">
+        <span><i className="deadline"/>Deadline target</span>
+        <span><i className="lifecycle"/>Lifecycle window</span>
+        <span><i className="now"/>Now</span>
+      </div>
+    </div>
+    <div className="ganttViewport">
+      <div className="ganttCanvas">
+        <div className="ganttAxisRow">
+          <div className="ganttAxisLabel"><b>Project work</b><small>Universal Time · current queue page</small></div>
+          <div className="ganttTimeline ganttTimelineAxis">
+            {ticks.map((tick,index)=>{
+              const position=(index/(tickCount-1))*100;
+              const transform=index===0?"none":index===tickCount-1?"translateX(-100%)":"translateX(-50%)";
+              return <span className="ganttTickLabel" key={tick} style={{left:String(position)+"%",transform}}>{formatGanttTick(tick,span)}</span>;
+            })}
+          </div>
+        </div>
+        {jobs.map((job,index)=>{
+          const start=starts[index];
+          const end=ends[index];
+          const left=Math.max(0,Math.min(100,((start-rangeStart)/span)*100));
+          const right=Math.max(left,Math.min(100,((end-rangeStart)/span)*100));
+          const width=Math.max(1.4,right-left);
+          const deadline=ganttTime(job.deadline);
+          const deadlinePosition=deadline===null?null:Math.max(0,Math.min(100,((deadline-rangeStart)/span)*100));
+          const endText=job.deadline
+            ? "Target "+formatDate(job.deadline)
+            : finalStates.has(job.status)
+              ? "Closed "+formatDate(job.updated_at)
+              : "Active through now · no deadline";
+
+          return <article className="ganttRow" key={job.id}>
+            <div className="ganttJobLabel">
+              <div className="ganttJobTitle">
+                <div><b>{jobCode(job)}</b><small title={job.title}>{job.title}</small></div>
+                <Badge value={job.status}/>
+              </div>
+              <div className="ganttMeta">
+                <span>{"P"+job.priority}</span>
+                <span>{job.required_capabilities?.join(", ")||"chat"}</span>
+                <span>{endText}</span>
+              </div>
+              <div className="rowActions ganttRowActions">
+                {canOperate ? <>
+                  {!finalStates.has(job.status)&&job.status!=="PAUSED"&&<button onClick={()=>void onStatus(job,"PAUSED")}>Pause</button>}
+                  {job.status==="PAUSED"&&<button onClick={()=>void onStatus(job,"READY")}>Resume</button>}
+                  {!finalStates.has(job.status)&&<button onClick={()=>void onStatus(job,"CANCELLED")}>Cancel</button>}
+                </> : <span className="muted">Read only</span>}
+              </div>
+            </div>
+            <div className="ganttTimeline ganttTrack">
+              {ticks.map((tick,tickIndex)=><span className="ganttGridLine" key={tick} style={{left:String((tickIndex/(tickCount-1))*100)+"%"}} aria-hidden="true"/>)}
+              <span className="ganttNowLine" style={{left:String(nowPosition)+"%"}} aria-hidden="true"/>
+              <div
+                className={"ganttBar "+tone(job.status)+(job.deadline?" deadlineBound":" lifecycleBound")}
+                style={{left:String(left)+"%",width:String(width)+"%"}}
+                title={jobCode(job)+" · "+job.title+" · "+endText}
+              ><span>{jobCode(job)}</span></div>
+              {deadlinePosition!==null&&<span className="ganttDeadlineMarker" style={{left:String(deadlinePosition)+"%"}} aria-hidden="true"/>}
+            </div>
+          </article>;
+        })}
+      </div>
+    </div>
+  </div>;
 }
 
 function Runs({runs,jobLookup,page,total,onPage}:{runs:Run[];jobLookup:Map<string,Job>;page:number;total:number;onPage:(p:number)=>void}) {
