@@ -2583,3 +2583,109 @@ code,pre{
 .catalogDetails{margin-top:16px;border-top:1px solid rgba(255,255,255,.07)}.catalogDetails>summary{cursor:pointer;padding:16px 2px 5px;color:#b9eefe;font-size:11px;font-weight:850;letter-spacing:.04em}.catalogRecordGroups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding-top:10px}.catalogRecordGroup{border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:14px;background:rgba(0,0,0,.12)}.catalogRecordGroupHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}.catalogRecordGroupHead h4{margin:0;font-size:13px}.catalogRecordGroupHead span{min-width:24px;height:24px;display:grid;place-items:center;border-radius:999px;background:rgba(119,95,210,.14);color:#c8bbff;font-size:9px;font-weight:900}.catalogRecordList{display:grid;gap:7px}.catalogRecord{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 12px;padding:11px;border-radius:11px;background:rgba(255,255,255,.025)}.catalogRecord div{display:grid;gap:2px}.catalogRecord small{color:#798fa5;font-size:8px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}.catalogRecord b{font-size:11px}.catalogRecord>span{align-self:start;max-width:180px;color:#a8c6d7;font-size:8px;text-align:right}.catalogRecord p{grid-column:1/-1;margin:0;color:var(--muted);font-size:9px;line-height:1.5}.catalogFooter{display:flex;justify-content:space-between;gap:12px;margin-top:14px;color:#6f8599;font-size:9px}
 @container datanest-main (max-width:1000px){.catalogFacts{grid-template-columns:repeat(3,1fr)}.catalogFacts>div:first-child{grid-column:1/-1}.catalogBranchFlow{grid-template-columns:repeat(2,1fr)}}
 @container datanest-main (max-width:700px){.catalogStageHead,.catalogProductTop{display:grid}.catalogFlags{justify-content:flex-start}.catalogFacts{grid-template-columns:repeat(2,1fr)}.catalogBranchFlow,.catalogRecordGroups{grid-template-columns:1fr}.catalogIdentity{display:grid}.catalogOrdinal{width:44px;height:44px}.catalogFooter{display:grid}}
+
+
+/* 2026-09-26 DataNest AI vertical command flow */
+.datanestAiWorkspace{
+  gap:14px;
+}
+
+.datanestAiCurrentJob,
+.datanestAiJobStrip,
+.datanestAiChatStage,
+.datanestAiSupportGrid,
+.datanestAiCertificationStage{
+  width:min(100%,980px);
+  justify-self:center;
+}
+
+.datanestAiCurrentJob{
+  padding:22px 24px;
+  border-radius:18px;
+  box-shadow:0 18px 54px rgba(0,0,0,.18),inset 0 1px rgba(255,255,255,.03);
+}
+
+.datanestAiCurrentJob .rowBetween{
+  align-items:center;
+}
+
+.datanestAiCurrentJob h2{
+  margin-top:3px;
+  font-size:clamp(22px,2.2cqi,32px);
+  letter-spacing:-.035em;
+}
+
+.datanestAiCurrentJob .muted{
+  max-width:76ch;
+}
+
+.datanestAiJobStrip{
+  gap:8px;
+  padding:0 2px 4px;
+  margin-top:-2px;
+}
+
+.datanestAiJobStrip .rndJobChip{
+  min-width:180px;
+  padding:10px 12px;
+  opacity:.74;
+  transition:opacity .18s ease,border-color .18s ease,background .18s ease,transform .18s ease;
+}
+
+.datanestAiJobStrip .rndJobChip:hover,
+.datanestAiJobStrip .rndJobChip.active{
+  opacity:1;
+}
+
+.datanestAiJobStrip .rndJobChip.active{
+  transform:translateY(-1px);
+}
+
+.datanestAiChatStage{
+  margin-top:2px;
+}
+
+.datanestAiSupportGrid{
+  margin-top:0;
+}
+
+.datanestAiCertificationStage{
+  display:grid;
+  justify-items:center;
+}
+
+.datanestAiCertificationStage > *{
+  width:100%;
+}
+
+.datanestAiFootnote{
+  width:min(100%,980px);
+  justify-self:center;
+  text-align:center;
+  padding-top:2px;
+}
+
+@container datanest-main (max-width:1100px){
+  .datanestAiCurrentJob,
+  .datanestAiJobStrip,
+  .datanestAiChatStage,
+  .datanestAiSupportGrid,
+  .datanestAiCertificationStage,
+  .datanestAiFootnote{
+    width:100%;
+  }
+}
+
+@container datanest-main (max-width:620px){
+  .datanestAiCurrentJob{
+    padding:18px;
+  }
+
+  .datanestAiCurrentJob .rowBetween{
+    align-items:flex-start;
+  }
+
+  .datanestAiJobStrip .rndJobChip{
+    min-width:165px;
+  }
+}
