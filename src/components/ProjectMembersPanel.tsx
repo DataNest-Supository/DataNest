@@ -102,8 +102,10 @@ export default function ProjectMembersPanel({
       const payload=(data||{}) as Record<string,unknown>;
       const delivery=String(payload.delivery||"invite");
       const feedback=delivery==="recovery"
-        ?"Invite sent to "+targetEmail+". The existing account will receive a secure account link. Voting remains disabled until that person signs in and accepts project access."
-        :"Invite sent to "+targetEmail+". Voting remains disabled until that person authenticates and accepts project access.";
+        ?"Invite sent to "+targetEmail+". The confirmed account will receive a secure recovery link. Voting remains disabled until that person signs in and accepts project access."
+        :delivery==="reinvite"
+          ?"Invitation resent to "+targetEmail+". The unconfirmed account will receive a fresh project invite. Voting remains disabled until that person authenticates and accepts project access."
+          :"Invite sent to "+targetEmail+". Voting remains disabled until that person authenticates and accepts project access.";
       setEmail("");
       setInviteState("sent");
       setInviteFeedback(feedback);
