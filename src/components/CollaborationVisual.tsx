@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { getSupabase } from "@/lib/supabase";
+import { governedProductFullName } from "@/lib/ronsas";
 import styles from "./CollaborationVisual.module.css";
 
 type GovernedProduct = {
   id:string;
+  slug:string;
   name:string;
   full_name:string|null;
   lifecycle_status:string|null;
@@ -20,6 +22,12 @@ type ProductApplication = {
 };
 
 const MAX_ORBIT_ITEMS=9;
+const valuePropositions=[
+  {key:"governed-ai",label:"Governed AI",detail:"Human-directed intelligence"},
+  {key:"certified-memory",label:"Certified Memory",detail:"Validated project learning"},
+  {key:"traceable-collaboration",label:"Traceable Collaboration",detail:"People + AI with provenance"},
+  {key:"sovereign-app-suite",label:"Sovereign App Suite",detail:"RONSAS local-first ecosystem"}
+] as const;
 
 function orbitPosition(index:number,total:number){
   const angle=((Math.PI*2*index)/Math.max(1,total))-(Math.PI/2);
@@ -31,9 +39,11 @@ function orbitPosition(index:number,total:number){
 
 export default function CollaborationVisual({
   projectId,
+  running=false,
   onOpenProducts
 }:{
   projectId?:string;
+  running?:boolean;
   onOpenProducts?:()=>void;
 }) {
   const [products,setProducts]=useState<GovernedProduct[]>([]);
@@ -62,7 +72,7 @@ export default function CollaborationVisual({
     void Promise.all([
       supabase
         .from("products")
-        .select("id,name,full_name,lifecycle_status")
+        .select("id,slug,name,full_name,lifecycle_status")
         .eq("project_id",projectId)
         .order("name"),
       supabase
@@ -109,7 +119,7 @@ export default function CollaborationVisual({
       :"No governed Resonance products are currently loaded.";
 
   if(!projectId){
-    return <div className="aiICoreStage" aria-label="AI and human collaboration visualization">
+    return <div className="aiICoreStage" aria-label="AI and human collaboration visualization" data-running={running?"true":"false"}>
       <div className="coreOrbit orbitOuter" aria-hidden="true"/>
       <div className="coreOrbit orbitMiddle" aria-hidden="true"/>
       <div className="signalArc arcOne" aria-hidden="true"/>
@@ -130,7 +140,11 @@ export default function CollaborationVisual({
     </div>;
   }
 
-  return <div className={"aiICoreStage "+styles.productsHeroVisual} aria-label={ariaLabel}>
+  return <div
+    className={"aiICoreStage "+styles.productsHeroVisual}
+    aria-label={ariaLabel}
+    data-running={running?"true":"false"}
+  >
     <div className={styles.portfolioOrbitShell} aria-hidden="true">
       <span className={styles.portfolioOrbitRing+" "+styles.portfolioRingOuter}/>
       <span className={styles.portfolioOrbitRing+" "+styles.portfolioRingInner}/>
@@ -138,6 +152,28 @@ export default function CollaborationVisual({
       <span className={styles.portfolioSignalDot+" "+styles.dotOne}/>
       <span className={styles.portfolioSignalDot+" "+styles.dotTwo}/>
       <span className={styles.portfolioSignalDot+" "+styles.dotThree}/>
+    </div>
+
+    <div className={styles.aiValueNetwork} aria-label="DataNest value network">
+      <span className={styles.networkPulse} aria-hidden="true"/>
+      {[0,1,2,3].map(index=><span
+        className={styles.valueBeam+" "+styles["beam"+String(index+1) as keyof typeof styles]}
+        style={{animationDelay:(index*1.35)+"s"}}
+        aria-hidden="true"
+        key={"beam-"+index}
+      />)}
+      <span className={styles.workSignal} data-ai-signal="work" aria-hidden="true"/>
+      <span className={styles.intentSignal} data-ai-signal="intent" aria-hidden="true"/>
+      {valuePropositions.map((item,index)=><div
+        className={styles.valueNode+" "+styles["valueNode"+String(index+1) as keyof typeof styles]}
+        data-value-proposition={item.key}
+        style={{animationDelay:(index*1.35)+"s"}}
+        key={item.key}
+      >
+        <span aria-hidden="true">{String(index+1).padStart(2,"0")}</span>
+        <b>{item.label}</b>
+        <small>{item.detail}</small>
+      </div>)}
     </div>
 
     {orbitItems.map((item,index)=>{
@@ -155,7 +191,7 @@ export default function CollaborationVisual({
     <div className={styles.portfolioCore+" "+(loading?styles.loading:"")}>
       <small>{loading?"SYNCING PRODUCTS":"GOVERNED PRODUCT"}</small>
       <strong>{primary?.name||(loading?"DataNest":"Products")}</strong>
-      <span>{primary?.full_name||(error?"Catalog temporarily unavailable":"Resonance product catalog")}</span>
+      <span>{primary?governedProductFullName(primary):(error?"Catalog temporarily unavailable":"Resonance product catalog")}</span>
       <button type="button" onClick={onOpenProducts}>
         <span>{loading?"View Products":"Open Products"}</span><b aria-hidden="true">↗</b>
       </button>
