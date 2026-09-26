@@ -73,6 +73,10 @@ test("Products reads the governed product catalog from Supabase",()=>{
   assert.match(products,/No governed records match this view/);
   assert.match(products,/catalogDetailsOpen/);
   assert.match(products,/setCatalogDetailsOpen\(Boolean\(requestedQuery\)\|\|nextType!=="all"\)/);
+  assert.match(products,/copyCatalogViewLink/);
+  assert.match(products,/navigator\.clipboard\?\.writeText/);
+  assert.match(products,/Copy view link/);
+  assert.match(products,/View link copied\./);
   assert.match(products,/searchParams\.set\("product",nextProduct\)/);
   assert.match(products,/searchParams\.set\("recordType",recordTypeFilter\)/);
   assert.match(products,/searchParams\.set\("q",query\)/);
