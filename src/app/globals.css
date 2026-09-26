@@ -4033,3 +4033,21 @@ code,pre{
 .catalogStageBadges{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:7px}
 .catalogLinkBadge{display:inline-flex;align-items:center;border:1px solid rgba(159,125,255,.22);border-radius:999px;padding:8px 11px;color:#d7c9ff;background:rgba(145,94,255,.07);font-size:9px;font-weight:900;letter-spacing:.1em;white-space:nowrap}
 @container datanest-main (max-width:700px){.catalogStageBadges{justify-content:flex-start}}
+
+
+/* 2026-09-26 Products mobile grid containment */
+.productsWorkspace,
+.catalogStage,
+.catalogGrid,
+.catalogProduct,
+.conceptIncubator,
+.conceptIncubatorBody{
+  min-width:0;
+  max-width:100%;
+}
+
+.productsWorkspace,
+.catalogStage,
+.conceptIncubator{
+  width:100%;
+}
