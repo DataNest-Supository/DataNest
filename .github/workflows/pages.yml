@@ -40,7 +40,7 @@ jobs:
           DATANEST_DB_RELEASE: datanest-project-member-invitations-v1
           DATANEST_BASELINE_RELEASE: reload-latest-v1
           DATANEST_BASELINE_SHA: 592149b0898f6703b28e9fa33e73bd0799cae3fd
-          DATANEST_EDGE_AI: datanest-ai-chat@1
+          DATANEST_EDGE_AI: datanest-ai-chat@2
           DATANEST_EDGE_INTAKE: datanest-ai-intake@1
           DATANEST_EDGE_CERTIFICATION: datanest-ai-certification@1
           DATANEST_EDGE_PROVIDER: manage-ai-provider-v2@1
@@ -110,7 +110,7 @@ jobs:
           grep -q "\"databaseRelease\":\"datanest-project-member-invitations-v1\"" /tmp/release-manifest.json
           grep -q "\"release\":\"reload-latest-v1\"" /tmp/release-manifest.json
           grep -q "\"frontendCommit\":\"592149b0898f6703b28e9fa33e73bd0799cae3fd\"" /tmp/release-manifest.json
-          grep -q "\"aiChat\":\"datanest-ai-chat@1\"" /tmp/release-manifest.json
+          grep -q "\"aiChat\":\"datanest-ai-chat@2\"" /tmp/release-manifest.json
           grep -q "\"externalIntake\":\"datanest-ai-intake@1\"" /tmp/release-manifest.json
           grep -q "\"certification\":\"datanest-ai-certification@1\"" /tmp/release-manifest.json
           grep -q "\"projectInvitations\":\"send-project-member-invite@3\"" /tmp/release-manifest.json
