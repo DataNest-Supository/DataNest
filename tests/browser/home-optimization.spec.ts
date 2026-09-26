@@ -77,7 +77,39 @@ test("dashboard labels its sample and groups UTC days independently of local tim
   await expect(page.getByText(/2 latest loaded jobs/)).toBeVisible();
   await expect(page.getByRole("button", {name:"Viewer mode"})).toBeDisabled();
   await page.setViewportSize({width:390,height:844});
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  const mobileOverflow=await page.evaluate(() => {
+    const viewportWidth=innerWidth;
+    const clippedByAncestor=(element:HTMLElement)=>{
+      let parent=element.parentElement;
+      while(parent&&parent!==document.body){
+        const overflowX=getComputedStyle(parent).overflowX;
+        if(overflowX==="hidden"||overflowX==="clip"||overflowX==="auto"||overflowX==="scroll")return true;
+        parent=parent.parentElement;
+      }
+      return false;
+    };
+    const offenders=Array.from(document.querySelectorAll<HTMLElement>("body *"))
+      .map(element=>{
+        const rect=element.getBoundingClientRect();
+        return {
+          tag:element.tagName.toLowerCase(),
+          className:String(element.className||""),
+          text:(element.textContent||"").trim().replace(/\s+/g," ").slice(0,90),
+          left:Math.round(rect.left),
+          right:Math.round(rect.right),
+          width:Math.round(rect.width),
+          clipped:clippedByAncestor(element)
+        };
+      })
+      .filter(item=>(item.right>viewportWidth+1||item.left< -1)&&!item.clipped)
+      .sort((a,b)=>Math.max(b.right-viewportWidth,-b.left)-Math.max(a.right-viewportWidth,-a.left))
+      .slice(0,12);
+    return {viewportWidth,scrollWidth:document.documentElement.scrollWidth,offenders};
+  });
+  expect(
+    mobileOverflow.scrollWidth,
+    "Mobile Hero overflow offenders: "+JSON.stringify(mobileOverflow.offenders)
+  ).toBeLessThanOrEqual(mobileOverflow.viewportWidth);
 });
 
 
