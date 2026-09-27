@@ -14,7 +14,7 @@ test("DataNest AI keeps Phase C visibility and reuse metadata independent",()=>{
   const source=fs.readFileSync(aiPath,"utf8");
   assert.match(source,/visibility_class:visibilityClass/);
   assert.match(source,/reuse_state:reuseState/);
-  assert.match(source,/learning_eligible:learningEligible/);
+  assert.match(source,/learning_requested:learningEligible/);
 });
 
 test("external provider routing requires Phase C service evaluation before existing provider authorization",()=>{
@@ -26,7 +26,7 @@ test("external provider routing requires Phase C service evaluation before exist
   assert.ok(authz>phase,"existing provider authorization must remain after Phase C evaluation");
   assert.ok(call>authz,"provider call must occur only after both gates");
   assert.match(source,/target_purpose:"external_provider_processing"/);
-  assert.match(source,/target_operation:"process"/);
+  assert.match(source,/target_requested_operation:"process"/);
   assert.match(source,/target_provider_connection:connection\.id/);
 });
 
@@ -44,7 +44,7 @@ test("project learning is separately evaluated before trend extraction",()=>{
   const trend=source.indexOf("updateTrendCandidate({");
   assert.ok(learning>=0,"project learning evaluator must exist");
   assert.ok(trend>learning,"learning policy evaluation must precede trend extraction");
-  assert.match(source,/target_operation:"reuse"/);
+  assert.match(source,/target_requested_operation:"reuse"/);
   assert.match(source,/target_hard_learning_exclusion:!learningEligible/);
   assert.match(source,/learningPolicy\.outcome/);
 });
@@ -53,7 +53,7 @@ test("Legal Eagle remains a hard non-learning mode",()=>{
   const source=fs.readFileSync(aiPath,"utf8");
   assert.match(source,/const learningEligible=!legalMode/);
   assert.match(source,/product_mode:legalMode\?"legal_eagle":"datanest_ai"/);
-  assert.match(source,/learning_eligible:learningEligible/);
+  assert.match(source,/learning_requested:learningEligible/);\n  assert.match(source,/learning_eligible:finalLearningEligible/);
   assert.match(source,/target_hard_learning_exclusion:!learningEligible/);
 });
 
