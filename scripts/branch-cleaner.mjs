@@ -126,7 +126,7 @@ export function compareMigrationParity(repoFiles = [], liveMigrations = []) {
       .filter((name) => {
         const repoVersion = repoVersionsByName.get(name);
         const liveVersion = liveVersionsByName.get(name);
-        return repoVersion && liveVersion && repoVersion !== liveVersion;
+        return liveVersion && repoVersion !== liveVersion;
       })
       .map((name) => ({
         name,
