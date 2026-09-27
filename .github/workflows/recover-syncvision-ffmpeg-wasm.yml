@@ -1,0 +1,111 @@
+name: Recover SyncVision FFmpeg WASM
+
+on:
+  push:
+    branches:
+      - migrate/ronsas-applications-into-datanest-20260927
+    paths:
+      - ".github/workflows/recover-syncvision-ffmpeg-wasm.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  recover:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: migrate/ronsas-applications-into-datanest-20260927
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+
+      - name: Match exact @ffmpeg/core package
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { createHash } from "node:crypto";
+          import { execFileSync } from "node:child_process";
+          import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+          import { tmpdir } from "node:os";
+          import { join, dirname } from "node:path";
+
+          const expectedJsSha = "3d61450a0dc22df37bcf7fda591b7fd3214a8223";
+          const expectedWasmSha = "8988d43ccefd178a8ab9a1f79f284d01a16dd32f";
+          const expectedWasmSize = 32129114;
+          const output = "apps/ronsas/syncvision/public/ffmpeg-core/ffmpeg-core.wasm";
+
+          function gitBlobSha(buf) {
+            const header = Buffer.from(`blob ${buf.length}\0`);
+            return createHash("sha1").update(header).update(buf).digest("hex");
+          }
+
+          const versionsRaw = execFileSync("npm", ["view", "@ffmpeg/core", "versions", "--json"], { encoding: "utf8" });
+          const versions = JSON.parse(versionsRaw)
+            .filter((v) => /^0\.12\./.test(v))
+            .reverse();
+
+          const work = mkdtempSync(join(tmpdir(), "ffmpeg-core-recovery-"));
+          let recovered = false;
+
+          for (const version of versions) {
+            let packed;
+            try {
+              packed = execFileSync("npm", ["pack", `@ffmpeg/core@${version}`, "--silent"], { cwd: work, encoding: "utf8" }).trim().split(/\r?\n/).pop();
+            } catch (error) {
+              console.log(`skip ${version}: npm pack failed`);
+              continue;
+            }
+            const archive = join(work, packed);
+            const listing = execFileSync("tar", ["-tzf", archive], { encoding: "utf8" }).split(/\r?\n/).filter(Boolean);
+            const jsEntries = listing.filter((p) => /\/ffmpeg-core\.js$/.test(p));
+            for (const jsEntry of jsEntries) {
+              const jsBytes = execFileSync("tar", ["-xOzf", archive, jsEntry]);
+              const jsSha = gitBlobSha(jsBytes);
+              console.log(`@ffmpeg/core@${version} ${jsEntry} js=${jsBytes.length} sha=${jsSha}`);
+              if (jsSha !== expectedJsSha) continue;
+
+              const wasmEntry = jsEntry.replace(/ffmpeg-core\.js$/, "ffmpeg-core.wasm");
+              if (!listing.includes(wasmEntry)) {
+                throw new Error(`Exact JS match at ${version} but matching WASM entry is absent: ${wasmEntry}`);
+              }
+              const wasm = execFileSync("tar", ["-xOzf", archive, wasmEntry], { maxBuffer: 64 * 1024 * 1024 });
+              const wasmSha = gitBlobSha(wasm);
+              console.log(`Exact JS match @ffmpeg/core@${version}; wasm=${wasm.length} sha=${wasmSha}`);
+              if (wasm.length !== expectedWasmSize || wasmSha !== expectedWasmSha) {
+                throw new Error(`Exact JS package matched, but WASM identity differs: size=${wasm.length} sha=${wasmSha}`);
+              }
+              mkdirSync(dirname(output), { recursive: true });
+              writeFileSync(output, wasm);
+              console.log(`RECOVERED exact canonical WASM from @ffmpeg/core@${version}`);
+              recovered = true;
+              break;
+            }
+            if (recovered) break;
+          }
+
+          if (!recovered) {
+            throw new Error("No @ffmpeg/core 0.12.x package matched the canonical JS/WASM Git identities");
+          }
+          NODE
+
+      - name: Verify exact WASM identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(stat -c %s apps/ronsas/syncvision/public/ffmpeg-core/ffmpeg-core.wasm)" = "32129114"
+          test "$(git hash-object apps/ronsas/syncvision/public/ffmpeg-core/ffmpeg-core.wasm)" = "8988d43ccefd178a8ab9a1f79f284d01a16dd32f"
+
+      - name: Commit canonical WASM
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/ronsas/syncvision/public/ffmpeg-core/ffmpeg-core.wasm
+          git commit -m "Restore exact SyncVision FFmpeg WASM"
+          git push origin HEAD:migrate/ronsas-applications-into-datanest-20260927
