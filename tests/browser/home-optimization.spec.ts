@@ -1153,3 +1153,163 @@ test("UNIFI browser-session draft survives workspace navigation and reload", asy
   await expect(page.getByLabel("Tests required")).not.toBeChecked();
   await expect(page.getByText(/Browser-session draft active/)).toBeVisible();
 });
+
+
+test("UNIFI single-flight blocks same-tick duplicate submit and unlocks retry after failure", async ({ page }) => {
+  const projectId = "00000000-0000-4000-8000-000000000010";
+  const userId = "00000000-0000-4000-8000-000000000001";
+  const stamp = "2026-09-27T08:00:00Z";
+  let createCalls = 0;
+
+  await page.route("**/runtime-config.js", route => route.fulfill({
+    contentType:"application/javascript",
+    body:"window.__DATANEST_CONFIG__={supabaseUrl:'https://fixture.supabase.co',supabasePublishableKey:'fixture-key',authoritative:true}"
+  }));
+  await page.addInitScript(({userId}) => {
+    const encode = (data: unknown) => btoa(JSON.stringify(data)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+    localStorage.setItem("sb-fixture-auth-token", JSON.stringify({
+      access_token:`${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:userId,exp:4102444800,role:"authenticated"})}.fixture`,
+      refresh_token:"fixture", token_type:"bearer", expires_at:4102444800,
+      user:{id:userId,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid"}
+    }));
+  }, {userId});
+
+  await page.route("https://fixture.supabase.co/**", async route => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+    let body:unknown = [];
+    const headers:Record<string,string> = {"Content-Type":"application/json"};
+
+    if(path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE",created_at:stamp};
+    if(path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"operator",status:"active"};
+    if(path.endsWith("/get_project_dashboard_summary")) body = {total_jobs:0,active_jobs:0,running_jobs:0,blocked_jobs:0,available_capabilities:0,registered_capabilities:0};
+    if(path.endsWith("/jobs")) headers["Content-Range"]="*/0";
+
+    if(path.endsWith("/create_job_manifest")){
+      createCalls += 1;
+      await new Promise(resolve=>setTimeout(resolve,120));
+      if(createCalls===1){
+        return route.fulfill({
+          status:400,
+          headers,
+          body:JSON.stringify({code:"PGRST999",message:"Temporary fixture failure",details:null,hint:null})
+        });
+      }
+      return route.fulfill({
+        status:200,
+        headers,
+        body:JSON.stringify([{job_number:42,status:"PLANNED"}])
+      });
+    }
+
+    return route.fulfill({status:200,headers,body:JSON.stringify(body)});
+  });
+
+  await page.goto(appPath+"?view=unifi");
+  await expect(page.getByRole("heading",{name:"Job Manifest Planner"})).toBeVisible();
+  await page.getByLabel("Job title").fill("Single-flight manifest");
+
+  const form=page.locator("form.plannerForm");
+  await form.evaluate(node=>{
+    node.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true}));
+    node.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true}));
+  });
+
+  await expect(page.getByRole("alert")).toContainText("Temporary fixture failure");
+  expect(createCalls).toBe(1);
+  await expect(page.getByLabel("Job title")).toHaveValue("Single-flight manifest");
+
+  await form.evaluate(node=>node.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true})));
+  await expect(page.getByText("JOB-00042 created transactionally by UNIFI.",{exact:true})).toBeVisible();
+  expect(createCalls).toBe(2);
+});
+
+
+test("Spark reservation retry reuses the same session request key after an ambiguous failure", async ({ page }) => {
+  const projectId = "00000000-0000-4000-8000-000000000010";
+  const userId = "00000000-0000-4000-8000-000000000001";
+  const serviceId = "20000000-0000-4000-8000-000000000001";
+  const stamp = "2026-09-27T08:00:00Z";
+  const requestKeys:string[] = [];
+  let redemptionCalls = 0;
+
+  await page.route("**/runtime-config.js", route => route.fulfill({
+    contentType:"application/javascript",
+    body:"window.__DATANEST_CONFIG__={supabaseUrl:'https://fixture.supabase.co',supabasePublishableKey:'fixture-key',authoritative:true}"
+  }));
+  await page.addInitScript(({userId}) => {
+    const encode = (data: unknown) => btoa(JSON.stringify(data)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+    localStorage.setItem("sb-fixture-auth-token", JSON.stringify({
+      access_token:`${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:userId,exp:4102444800,role:"authenticated"})}.fixture`,
+      refresh_token:"fixture", token_type:"bearer", expires_at:4102444800,
+      user:{id:userId,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid"}
+    }));
+  }, {userId});
+
+  await page.route("https://fixture.supabase.co/**", async route => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+    let body:unknown = [];
+    const headers:Record<string,string> = {"Content-Type":"application/json"};
+
+    if(path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE",created_at:stamp};
+    if(path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"operator",status:"active"};
+    if(path.endsWith("/get_project_dashboard_summary")) body = {total_jobs:0,active_jobs:0,running_jobs:0,blocked_jobs:0,available_capabilities:0,registered_capabilities:0};
+    if(path.endsWith("/jobs")) headers["Content-Range"]="*/0";
+    if(path.endsWith("/get_sparks_workspace_v1")) body = {
+      policy:{policy_version:"fixture-v1"},
+      balances:[
+        {account_id:"project-wallet",account_type:"project",project_id:projectId,balance:500},
+        {account_id:"locked-wallet",account_type:"locked",project_id:projectId,balance:0}
+      ],
+      services:[{
+        id:serviceId,service_key:"fixture-review",service_version:1,name:"Fixture review",description:"Fixture service",
+        spark_price:25,status:"active",fulfillment_mode:"manual",terms:null,terms_version:"v1"
+      }],
+      redemptions:[],
+      ledger:[],
+      metrics:{lifetime_contribution_awards:500,lifetime_service_spend:0},
+      can_operate:true,
+      can_manage_services:false,
+      boundaries:{cash_purchase_enabled:false,cash_redemption_enabled:false,p2p_transfer_enabled:false,external_transfer_enabled:false,secondary_market_enabled:false}
+    };
+
+    if(path.endsWith("/request_spark_redemption_v1")){
+      redemptionCalls += 1;
+      const payload=route.request().postDataJSON() as {target_request_key?:string};
+      requestKeys.push(String(payload.target_request_key||""));
+      await new Promise(resolve=>setTimeout(resolve,80));
+      if(redemptionCalls===1){
+        return route.fulfill({
+          status:400,
+          headers,
+          body:JSON.stringify({code:"PGRST999",message:"Ambiguous fixture failure",details:null,hint:null})
+        });
+      }
+      return route.fulfill({status:200,headers,body:JSON.stringify({status:"held"})});
+    }
+
+    return route.fulfill({status:200,headers,body:JSON.stringify(body)});
+  });
+
+  await page.goto(appPath+"?view=sparks");
+  await expect(page.getByRole("heading",{name:"Earned contribution utility, not money"})).toBeVisible();
+
+  const reserve=page.getByRole("button",{name:/Reserve 25 Sparks/});
+  await reserve.click();
+  await expect(page.getByRole("alert")).toContainText("Retry keeps the same request key");
+  expect(redemptionCalls).toBe(1);
+  expect(requestKeys[0]).toBeTruthy();
+
+  const storedAfterFailure=await page.evaluate(()=>Object.entries(sessionStorage).filter(([key])=>key.startsWith("datanest.requestKey.sparks-redemption:")));
+  expect(storedAfterFailure.length).toBe(1);
+  expect(storedAfterFailure[0][1]).toBe(requestKeys[0]);
+
+  await reserve.click();
+  await expect(page.getByText("Sparks reserved. They remain locked until the service is fulfilled or the request is cancelled.",{exact:true})).toBeVisible();
+  expect(redemptionCalls).toBe(2);
+  expect(requestKeys[1]).toBe(requestKeys[0]);
+
+  const storedAfterSuccess=await page.evaluate(()=>Object.keys(sessionStorage).filter(key=>key.startsWith("datanest.requestKey.sparks-redemption:")));
+  expect(storedAfterSuccess).toEqual([]);
+});
