@@ -333,7 +333,7 @@ Malformed Scheduler `mode`, `filter` and `sort` values fall back to their safe d
 
 The copied link contains presentation state only. Active Job identity, DataNest AI session identity, authority state and other authenticated governed context are never added to the URL.
 
-Workspace-specific presentation parameters are scoped to the workspace that owns them. Operational paging/mode/filter/sort state is cleared when users navigate to another workspace, while Governance alone retains its `section` parameter. Invalid Governance section values canonicalize to Sovereign Governance and are removed from the URL. Copying a view link also strips presentation parameters that do not belong to the active workspace, preventing stale cross-workspace state from leaking into shared links.
+Workspace-specific presentation parameters are scoped to the workspace that owns them. Operational paging/mode/filter/sort state is cleared when users navigate to another workspace, while Governance and Products retain their owned `section` parameter. Governance uses `section` for its sovereign/trust/authority deep links; Products uses it for views such as `section=portfolio`. Invalid Governance section values canonicalize to Sovereign Governance and are removed from the URL. Copying a view link also strips presentation parameters that do not belong to the active workspace, preventing stale cross-workspace state from leaking into shared links.
 
 ## Browser-history restoration
 
