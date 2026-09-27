@@ -13,7 +13,7 @@ test("DataNest AI keeps visibility and reuse metadata independent while initial 
   const source=fs.readFileSync(aiPath,"utf8");
   assert.match(source,/visibility_class:visibilityClass/);
   assert.match(source,/reuse_state:reuseState/);
-  assert.match(source,/learning_requested:learningEligible/);
+  assert.match(source,/requested_learning_eligible:learningEligible/);
   assert.match(source,/learning_eligible:false/);
 });
 
@@ -60,7 +60,7 @@ test("project learning is fail closed regardless of report-only rollout and stam
   assert.match(source,/target_trace_id:String\(inputEvent\.traceId\|\|stagedInputTraceId\)/);
   assert.match(source,/target_hard_learning_exclusion:!learningEligible/);
   assert.match(source,/const finalLearningEligible=learningEligible&&String\(learningPolicy\.outcome\|\|"deny"\)==="allow"/);
-  assert.match(source,/data_policy_decision_id:learningPolicy\.decision_record_id/);
+  assert.match(source,/decision_record_id:learningPolicy\.decision_record_id/);
   assert.match(source,/effective_reuse_state:learningPolicy\.reuse_state/);
   assert.match(source,/policy_version:learningPolicy\.policy_version\|\|policyVersion/);
   assert.match(source,/if\(!finalLearningEligible\)\{[\s\S]{0,120}trendAnalysis=\{status:"not_applicable"\}/);
@@ -90,8 +90,8 @@ test("AI Companion intake uses the same Job-scoped project-learning policy",()=>
   assert.match(source,/target_purpose:"project_learning"/);
   assert.match(source,/target_requested_operation:"reuse"/);
   assert.match(source,/target_trace_id:traceKey/);
-  assert.match(source,/learning_eligible:learningAllowed/);
-  assert.match(source,/data_policy_decision_id:learningPolicy\.decision_record_id/);
+  assert.match(source,/learning_eligible:learningEligible/);
+  assert.match(source,/decision_record_id:learningPolicy\.decision_record_id/);
   assert.match(source,/effective_reuse_state:learningPolicy\.reuse_state/);
   assert.match(source,/policy_version:learningPolicy\.policy_version/);
 });
