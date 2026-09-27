@@ -325,6 +325,9 @@ async function supabaseAudit(config, token) {
 
     if (entry.migrationSourceDir) {
       try {
+        if (p.errors.some((error) => error.key === "migrations")) {
+          throw new Error("Supabase migration history could not be retrieved");
+        }
         const repoFiles = await readdir(entry.migrationSourceDir);
         p.migrationParity = compareMigrationParity(repoFiles, p.migrations);
         if (entry.enforceMigrationParity &&
