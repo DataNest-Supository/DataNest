@@ -3,7 +3,7 @@
 **Date:** 2026-09-27  
 **Repository:** DataNest-Supository/DataNest  
 **Branch:** `design/datanest-phase-c-trust-data-policy-20260927`  
-**Design status:** Draft for user review; no implementation authorization  
+**Design status:** Approved by user on 2026-09-27; implementation plan required before implementation  
 **Parent authority:** `docs/superpowers/specs/2026-09-27-datanest-ecosystem-business-operating-architecture-design.md`  
 **Phase dependency:** Phase A and Phase B source implementation merged to `main`  
 **Scope:** data classification, reuse/learning policy, provider trust, Trust Manifests, policy-driven retention, lineage-aware retention evidence, and compatibility with existing RLS/RBAC and DataNest AI file-access controls
