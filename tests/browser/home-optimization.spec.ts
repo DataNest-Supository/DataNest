@@ -362,12 +362,12 @@ test("empty operational workspaces offer direct recovery paths", async ({ page }
   await page.getByRole("button", {name:"Open TranScheduler"}).click();
   await expect(page).toHaveURL(/\?view=scheduler/);
 
-  await page.goto(appPath+"?view=checkpoints");
+  await page.getByRole("region",{name:"Active work context"}).getByRole("button",{name:"Open active Job checkpoints"}).click();
   await expect(page.getByRole("heading", {name:"No checkpoints yet"})).toBeVisible();
   await page.getByRole("button", {name:"Open Runs"}).click();
   await expect(page).toHaveURL(/\?view=runs/);
 
-  await page.goto(appPath+"?view=audit");
+  await page.getByRole("region",{name:"Active work context"}).getByRole("button",{name:"Trace active Job audit"}).click();
   await expect(page.getByRole("heading", {name:"No audit events yet"})).toBeVisible();
   await page.getByRole("button", {name:"Open Checkpoints"}).click();
   await expect(page).toHaveURL(/\?view=checkpoints/);
@@ -567,7 +567,8 @@ test("active work context survives handoffs and focuses related operational evid
   await expect(context.getByText("Persistent context fixture",{exact:true})).toBeVisible();
   await expect(context.getByText("AI session linked",{exact:true})).toBeVisible();
 
-  await context.getByRole("button",{name:"Open TranScheduler"}).click();
+  await expect(context.getByText("Carry this Job into capability-aware execution planning.",{exact:true})).toBeVisible();
+  await context.getByRole("button",{name:"Schedule active Job"}).click();
   await expect(page).toHaveURL(/\?view=scheduler/);
   await expect(page.locator(".ganttRow")).toHaveCount(2);
   await expect(page.locator(".ganttRow[data-active-context='true']")).toHaveCount(1);
@@ -581,7 +582,7 @@ test("active work context survives handoffs and focuses related operational evid
   await page.setViewportSize({width:390,height:844});
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 
-  await page.getByRole("button",{name:"Continue · Runs →"}).click();
+  await page.getByRole("region",{name:"Active work context"}).getByRole("button",{name:"Review active Job runs"}).click();
   await expect(page).toHaveURL(/\?view=runs/);
   await expect(page.locator(".dataRow:not(.headerRow)")).toHaveCount(2);
   await expect(page.locator(".dataRow[data-active-context='true']")).toHaveCount(1);
@@ -598,6 +599,7 @@ test("active work context survives handoffs and focuses related operational evid
   await expect(page.locator(".timelineItem")).toHaveCount(2);
   await expect(page.locator(".timelineItem[data-active-context='true']")).toHaveCount(1);
   await expect(page.getByText("other-work",{exact:false})).toBeVisible();
+  await expect(page.getByRole("region",{name:"Active work context"}).getByRole("button",{name:"Review transparency evidence"})).toBeVisible();
 
   await page.getByRole("button",{name:"Clear context"}).click();
   await expect(page.getByRole("region",{name:"Active work context"})).toBeHidden();

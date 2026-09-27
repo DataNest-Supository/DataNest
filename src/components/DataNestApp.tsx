@@ -225,6 +225,16 @@ function isActiveWorkContext(value:unknown):value is ActiveDataNestAiSession {
   const item=value as Record<string,unknown>;
   return typeof item.jobId==="string"&&typeof item.jobNumber==="number"&&typeof item.title==="string"&&typeof item.status==="string"&&(typeof item.sessionId==="string"||item.sessionId===null);
 }
+type ActiveContextAction = { key:ViewKey; label:string; detail:string };
+function activeContextActionForView(view:ViewKey):ActiveContextAction {
+  if(view==="productlab")return {key:"unifi",label:"Plan active Job in UNIFI",detail:"Turn validated product work into a complete Job Manifest."};
+  if(view==="unifi")return {key:"scheduler",label:"Schedule active Job",detail:"Carry this Job into capability-aware execution planning."};
+  if(view==="scheduler")return {key:"runs",label:"Review active Job runs",detail:"Inspect execution outcomes for the active Job."};
+  if(view==="runs")return {key:"checkpoints",label:"Open active Job checkpoints",detail:"Continue from execution history into resumable evidence."};
+  if(view==="checkpoints")return {key:"audit",label:"Trace active Job audit",detail:"Follow this Job into immutable operational history."};
+  if(view==="audit")return {key:"transparency",label:"Review transparency evidence",detail:"Move from internal traceability to published evidence context."};
+  return {key:"ai",label:"Return active Job to AI",detail:"Keep the active Job attached to its governed AI collaboration context."};
+}
 function tone(value:string) {
   const v=value.toLowerCase();
   if (["available","completed","active","owner","admin","operator"].includes(v)) return "good";
@@ -729,6 +739,7 @@ export default function DataNestApp({session}:{session:Session}) {
   const currentDescription=viewDescriptions[view];
   const currentGroup=currentNavItem?.group||"Core";
   const currentPhase=workflowPhaseForView(view);
+  const activeContextAction=activeContextActionForView(view);
   const workflowRecommendation=resolveWorkflowRecommendation(view,summary,runCount,checkpointCount);
   const nextViewKey=workflowRecommendation.key;
   const previousViewKey=workflowPrevious[view]||null;
@@ -921,14 +932,15 @@ export default function DataNestApp({session}:{session:Session}) {
           <div className="activeWorkContextIdentity">
             <p className="eyebrow">ACTIVE WORK CONTEXT</p>
             <div><strong>{"JOB-"+String(activeDataNestAiSession.jobNumber).padStart(5,"0")}</strong><span>{activeDataNestAiSession.title}</span></div>
+            <small className="activeWorkContextHint">{activeContextAction.detail}</small>
           </div>
           <div className="activeWorkContextState">
             <span className={"badge "+tone(activeDataNestAiSession.status)}>{activeDataNestAiSession.status.replaceAll("_"," ")}</span>
             <small>{activeDataNestAiSession.sessionId?"AI session linked":"Job context linked"}</small>
           </div>
           <div className="activeWorkContextActions">
-            <button className="secondaryButton compact" type="button" onClick={()=>setView("ai")}>Return to DataNest AI</button>
-            {view!=="scheduler"&&<button className="secondaryButton compact" type="button" onClick={()=>setView("scheduler")}>Open TranScheduler</button>}
+            <button className="primaryButton compact activeWorkContextPrimary" type="button" onClick={()=>setView(activeContextAction.key)}>{activeContextAction.label}</button>
+            {activeContextAction.key!=="ai"&&<button className="secondaryButton compact" type="button" onClick={()=>setView("ai")}>Return to DataNest AI</button>}
             <button className="ghostButton compact activeWorkContextClear" type="button" onClick={clearActiveWorkContext}>Clear context</button>
           </div>
         </section>}

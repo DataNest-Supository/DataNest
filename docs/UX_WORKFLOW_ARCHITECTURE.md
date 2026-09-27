@@ -144,3 +144,20 @@ When the active Job is present on the current page:
 Matching records expose an accessible active-context marker and a restrained visual treatment. Non-matching Jobs, runs, checkpoints, and events remain visible and retain their existing order.
 
 This is deliberately a focus layer, not a data filter. A local browser context must never hide project evidence or change scheduling/audit semantics.
+
+
+## Active-context continuation actions
+
+The Active Work Context strip is actionable, not only descriptive. Its primary action changes with the current workspace while remaining navigation-only:
+
+- Product Lab → Plan active Job in UNIFI
+- UNIFI → Schedule active Job
+- TranScheduler → Review active Job runs
+- Runs → Open active Job checkpoints
+- Checkpoints → Trace active Job audit
+- Audit → Review transparency evidence
+- Other specialist workspaces → Return active Job to DataNest AI
+
+The strip also keeps a secondary Return to DataNest AI action whenever the primary action leads elsewhere.
+
+These actions do not mutate Job state, create execution records, or write governance evidence. They only preserve orientation and reduce navigation search cost around the already-selected Job.

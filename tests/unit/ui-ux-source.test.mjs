@@ -256,7 +256,12 @@ test("active Job context persists across workspace handoffs", () => {
   assert.match(appSource, /isActiveWorkContext\(parsed\)/);
   assert.match(appSource, /aria-label="Active work context"/);
   assert.match(appSource, /Return to DataNest AI/);
-  assert.match(appSource, /Open TranScheduler/);
+  assert.match(appSource, /activeContextActionForView/);
+  assert.match(appSource, /Schedule active Job/);
+  assert.match(appSource, /Review active Job runs/);
+  assert.match(appSource, /Open active Job checkpoints/);
+  assert.match(appSource, /Trace active Job audit/);
+  assert.match(appSource, /Review transparency evidence/);
   assert.match(appSource, /Clear context/);
   assert.match(appSource, /preferredJobId=\{activeDataNestAiSession\?\.jobId\|\|null\}/);
   assert.match(cssSource, /\.activeWorkContext\{/);
@@ -289,4 +294,18 @@ test("active Job context remains visible inside operational evidence views witho
   assert.match(cssSource, /\.checkpointCard\.contextMatch/);
   assert.match(cssSource, /\.timelineItem\.contextMatch/);
   assert.match(cssSource, /\.contextMatchTag\{/);
+});
+
+
+test("active work context exposes safe page-specific continuation actions", () => {
+  assert.match(appSource, /if\(view==="productlab"\)return \{key:"unifi",label:"Plan active Job in UNIFI"/);
+  assert.match(appSource, /if\(view==="unifi"\)return \{key:"scheduler",label:"Schedule active Job"/);
+  assert.match(appSource, /if\(view==="scheduler"\)return \{key:"runs",label:"Review active Job runs"/);
+  assert.match(appSource, /if\(view==="runs"\)return \{key:"checkpoints",label:"Open active Job checkpoints"/);
+  assert.match(appSource, /if\(view==="checkpoints"\)return \{key:"audit",label:"Trace active Job audit"/);
+  assert.match(appSource, /if\(view==="audit"\)return \{key:"transparency",label:"Review transparency evidence"/);
+  assert.match(appSource, /return \{key:"ai",label:"Return active Job to AI"/);
+  assert.match(appSource, /onClick=\{\(\)=>setView\(activeContextAction\.key\)\}/);
+  assert.match(cssSource, /\.activeWorkContextHint\{/);
+  assert.match(cssSource, /\.activeWorkContextPrimary\{/);
 });
