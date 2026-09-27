@@ -116,9 +116,8 @@ export type Ilm1RouteResult={
 };
 
 /**
- * ILM-1 is DataNest's governed orchestration layer over approved memory,
- * policy, resources, providers, tools and agents. It is not a trained
- * foundation model and it does not execute side effects.
+ * ILM-1 is DataNest's governed orchestration layer over approved memory, policy, resources, providers, tools and agents.
+ * ILM-1 is not a trained foundation model and it does not execute side effects.
  */
 export async function resolveIlm1Route(
   deps:ResolveIlm1RouteDeps,
