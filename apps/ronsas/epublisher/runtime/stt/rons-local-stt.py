@@ -6,7 +6,7 @@ from pathlib import Path
 
 MODEL_ID = os.environ.get('RONS_WHISPER_MODEL', r'C:\\Users\\Ashley\\Resonance\\OpenNova\\runtime\\models\\whisper-small')
 PORT = int(os.environ.get('RONS_STT_PORT', '7864'))
-FFMPEG = os.environ.get('RONS_FFMPEG') or shutil.which('ffmpeg')
+FFMPEG = shutil.which('ffmpeg')
 _PIPE = None
 _LOCK = threading.Lock()
 YOUTUBE_MAX_DURATION = int(os.environ.get('RONS_YOUTUBE_STT_MAX_SECONDS', '3600'))
@@ -39,11 +39,11 @@ def get_pipe():
     return _PIPE
 
 
-def transcribe(raw: bytes, suffix: str, mode: str):
+def transcribe(raw: bytes, mode: str):
     if not FFMPEG:
         raise RuntimeError('FFmpeg is not available')
     with tempfile.TemporaryDirectory(prefix='rons-stt-') as td:
-        src = Path(td) / f'input{suffix}'
+        src = Path(td) / 'input.media'
         wav = Path(td) / 'audio.wav'
         src.write_bytes(raw)
         subprocess.run([FFMPEG, '-y', '-i', str(src), '-vn', '-af',
@@ -96,17 +96,26 @@ def transcribe(raw: bytes, suffix: str, mode: str):
             'cached': False,
         }
 
+def _validated_video_id(value):
+    if not isinstance(value, str):
+        return None
+    value = value.strip()
+    if len(value) != 11 or any(not (ch.isalnum() or ch in '_-') for ch in value):
+        return None
+    return value
+
+
 def _youtube_video_id(url_text: str):
     parsed = urlparse(url_text)
     host = parsed.hostname.lower() if parsed.hostname else ''
     if host == 'youtu.be':
-        vid = parsed.path.strip('/').split('/')[0]
-        return vid if vid else None
+        return _validated_video_id(parsed.path.strip('/').split('/')[0])
     if host in ('youtube.com', 'www.youtube.com', 'm.youtube.com'):
         if parsed.path == '/watch':
-            return (parse_qs(parsed.query).get('v') or [None])[0]
+            return _validated_video_id((parse_qs(parsed.query).get('v') or [None])[0])
         if parsed.path.startswith('/shorts/'):
-            return parsed.path.split('/')[2] if len(parsed.path.split('/')) > 2 else None
+            parts = parsed.path.split('/')
+            return _validated_video_id(parts[2] if len(parts) > 2 else None)
     return None
 
 
@@ -114,29 +123,39 @@ def transcribe_youtube_url(url_text: str, mode: str):
     video_id = _youtube_video_id(url_text)
     if not video_id:
         raise ValueError('Only direct public YouTube video URLs are accepted')
+    canonical_url = f'https://www.youtube.com/watch?v={video_id}'
     with tempfile.TemporaryDirectory(prefix='rons-youtube-stt-') as td:
         output = str(Path(td) / '%(id)s.%(ext)s')
-        cmd = [sys.executable, '-m', 'yt_dlp', '--no-playlist', '--js-runtimes', 'node',
-               '--socket-timeout', '15', '--retries', '2', '--fragment-retries', '2',
-               '--max-filesize', '220M', '--match-filter', f'duration <= {YOUTUBE_MAX_DURATION}',
-               '-f', 'bestaudio/best', '-o', output, url_text]
         try:
-            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
-        except subprocess.TimeoutExpired as exc:
-            raise SourceAcquisitionError(504, 'upstream_timeout', 'YouTube audio acquisition timed out', True) from exc
-        if proc.returncode != 0:
-            detail = (proc.stderr or proc.stdout or 'yt-dlp failed').strip().splitlines()[-1][:500]
+            from yt_dlp import YoutubeDL
+            from yt_dlp.utils import match_filter_func
+            options = {
+                'noplaylist': True,
+                'socket_timeout': 15,
+                'retries': 2,
+                'fragment_retries': 2,
+                'max_filesize': 220 * 1024 * 1024,
+                'match_filter': match_filter_func(f'duration <= {YOUTUBE_MAX_DURATION}'),
+                'format': 'bestaudio/best',
+                'outtmpl': output,
+                'quiet': True,
+                'no_warnings': True,
+            }
+            with YoutubeDL(options) as downloader:
+                downloader.download([canonical_url])
+        except Exception as exc:
+            detail = str(exc).strip().splitlines()[-1][:500] or 'yt-dlp failed'
             low = detail.lower()
             if any(x in low for x in ('video unavailable','private video','members-only','sign in to confirm','not available')):
-                raise SourceAcquisitionError(422, 'source_unavailable', detail, False)
-            raise SourceAcquisitionError(502, 'upstream_acquisition_failed', detail, True)
+                raise SourceAcquisitionError(422, 'source_unavailable', detail, False) from exc
+            raise SourceAcquisitionError(502, 'upstream_acquisition_failed', detail, True) from exc
         candidates = [p for p in Path(td).iterdir() if p.is_file() and p.suffix not in ('.part', '.ytdl')]
         if not candidates:
             raise SourceAcquisitionError(502, 'upstream_empty_response', 'YouTube audio acquisition produced no media file', True)
         media = max(candidates, key=lambda p: p.stat().st_size)
         if media.stat().st_size > 220 * 1024 * 1024:
             raise SourceAcquisitionError(422, 'source_too_large', 'Recovered media exceeds the local STT size limit', False)
-        result = transcribe(media.read_bytes(), media.suffix.lower() or '.bin', mode)
+        result = transcribe(media.read_bytes(), mode)
         transcript = (result.get('text') or '').strip()
         result.update({'source_url': url_text, 'video_id': video_id, 'transcript_type': 'speech_to_text',
                        'acquisition': 'yt-dlp-public-audio', 'retrieved_at': datetime.now(timezone.utc).isoformat(),
@@ -158,12 +177,13 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Headers', 'Content-Type,X-Filename,X-Mode')
         self.send_header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
 
-    def _json(self, status, payload, headers=None):
+    def _json(self, status, payload, retry_after=None):
         body = json.dumps(payload).encode('utf-8')
         self.send_response(status)
         self._cors()
         self.send_header('Content-Type', 'application/json; charset=utf-8')
-        for key, value in (headers or {}).items(): self.send_header(key, str(value))
+        if isinstance(retry_after, int) and 0 <= retry_after <= 3600:
+            self.send_header('Retry-After', str(retry_after))
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -201,7 +221,7 @@ class Handler(BaseHTTPRequestHandler):
                 if mode not in ('fast', 'accurate', 'best'):
                     mode = 'accurate'
                 if not _STT_GATE.acquire(blocking=False):
-                    self._json(503, {'error':'stt_service_busy','retryable':True,'max_active':MAX_ACTIVE_STT}, {'Retry-After':'2'}); return
+                    self._json(503, {'error':'stt_service_busy','retryable':True,'max_active':MAX_ACTIVE_STT}, retry_after=2); return
                 try:
                     self._json(200, transcribe_youtube_url(url_text, mode))
                 finally:
@@ -210,15 +230,13 @@ class Handler(BaseHTTPRequestHandler):
             if size <= 0 or size > 220 * 1024 * 1024:
                 raise ValueError('invalid audio payload size')
             raw = self.rfile.read(size)
-            name = self.headers.get('X-Filename', 'audio.wav')
-            suffix = Path(name).suffix.lower() or '.wav'
             mode = self.headers.get('X-Mode', 'best').lower()
             if mode not in ('fast', 'accurate', 'best'):
                 mode = 'best'
             if not _STT_GATE.acquire(blocking=False):
                 self._json(503, {'error':'stt_service_busy','retryable':True,'max_active':MAX_ACTIVE_STT}, {'Retry-After':'2'}); return
             try:
-                self._json(200, transcribe(raw, suffix, mode))
+                self._json(200, transcribe(raw, mode))
             finally:
                 _STT_GATE.release()
         except SourceAcquisitionError as exc:
