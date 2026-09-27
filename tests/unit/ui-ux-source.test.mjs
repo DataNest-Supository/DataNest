@@ -585,7 +585,7 @@ test("Spark reservations reconcile against authoritative request-key state", () 
   assert.match(sparksSource, /Recovered confirmed Spark reservation/);
   assert.match(sparksSource, /Previous Spark reservation was not recorded/);
   assert.match(sparksSource, /Spark reservation outcome is still unconfirmed/);
-  assert.match(sparksSource, /disabled=\\{redemptionEditLocked\\}/);
+  assert.match(sparksSource, /disabled=\{redemptionEditLocked\}/);
 });
 
 test("PostgREST automatic retries are disabled so mutation reconciliation remains explicit", () => {
@@ -603,7 +603,7 @@ test("Product Lab test evidence uses request identity for authoritative reconcil
   assert.match(productLabSource, /Recovered confirmed Product Lab test evidence/);
   assert.match(productLabSource, /Previous Product Lab test result was not recorded/);
   assert.match(productLabSource, /Product Lab test result is still unconfirmed/);
-  assert.match(productLabSource, /disabled=\\{testRunEditLocked\\}/);
+  assert.match(productLabSource, /disabled=\{testRunEditLocked\}/);
 });
 
 test("Product Lab mutation feedback remains visible after workspace navigation", () => {
