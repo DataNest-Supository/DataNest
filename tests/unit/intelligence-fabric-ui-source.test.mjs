@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
 const libPath=path.join(root,"src/lib/intelligenceFabric.ts");
 const panelPath=path.join(root,"src/components/IntelligenceFabricPanel.tsx");
-const appPath=path.join(root,"src/components/DataNestApp.tsx");
+const workspacePath=path.join(root,"src/components/DataNestAiWorkspace.tsx");
 
 test("shared Intelligence Fabric UI contract exists",()=>{
   assert.equal(fs.existsSync(libPath),true);
@@ -34,7 +34,7 @@ test("ILM-1 boundary is explicit and no credential fields are rendered",()=>{
 });
 
 test("DataNest AI keeps Certified Memory and adds Intelligence Fabric",()=>{
-  const source=fs.readFileSync(appPath,"utf8");
+  const source=fs.readFileSync(workspacePath,"utf8");
   assert.match(source,/DataNestAiMemoryPanel/);
   assert.match(source,/IntelligenceFabricPanel/);
   assert.match(source,/>Intelligence Fabric<\/button>|Intelligence Fabric/);
