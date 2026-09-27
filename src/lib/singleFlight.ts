@@ -17,6 +17,16 @@ export function useSingleFlight(){
     return()=>{mountedRef.current=false;};
   },[]);
 
+  useEffect(()=>{
+    if(activeAction===null)return;
+    const protectInFlightRequest=(event:BeforeUnloadEvent)=>{
+      event.preventDefault();
+      event.returnValue="";
+    };
+    window.addEventListener("beforeunload",protectInFlightRequest);
+    return()=>window.removeEventListener("beforeunload",protectInFlightRequest);
+  },[activeAction]);
+
   const run=useCallback(async<T>(key:string,action:()=>Promise<T>):Promise<SingleFlightResult<T>>=>{
     if(activeRef.current!==null)return {started:false};
     activeRef.current=key;
