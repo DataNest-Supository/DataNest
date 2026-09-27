@@ -13,6 +13,7 @@ import MotionControl from "@/components/MotionControl";
 import ExecutionAuthorityPanel from "@/components/ExecutionAuthorityPanel";
 import ResourceFabricPanel from "@/components/ResourceFabricPanel";
 import type { ExecutionAuthorityRole } from "@/lib/executionAuthority";
+import { useSessionDraftState } from "@/lib/sessionDraft";
 
 type Project = { id:string; slug:string; name:string; description:string|null; status:string; created_at:string };
 type Tool = { id:string; tool_key:string; name:string; role:string; enabled:boolean; config:Record<string,unknown> };
@@ -1406,7 +1407,7 @@ export default function DataNestApp({session}:{session:Session}) {
         {!loadingCore&&project&&view==="thinktank"&&<ThinkTankWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} canReview={canManageAi} setNotice={setNotice} setError={setError}/>}
         {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace key={project.id+":"+session.user.id} projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError} preferredJobId={activeDataNestAiSession?.jobId||null} onActiveSessionChange={updateActiveWorkContext}/>}
         {!loadingCore&&project&&view==="productlab"&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate}/>}
-        {!loadingCore&&project&&view==="unifi"&&<UnifiPlanner project={project} jobs={jobs} capabilities={capabilities} reload={async()=>{await loadJobsPage(jobPage);await loadSummary(project.id);await loadRecentJobs(project.id);}} setNotice={setNotice} setError={setError} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} activeJobId={activeDataNestAiSession?.jobId||null}/>}
+        {!loadingCore&&project&&view==="unifi"&&<UnifiPlanner project={project} currentUserId={session.user.id} jobs={jobs} capabilities={capabilities} reload={async()=>{await loadJobsPage(jobPage);await loadSummary(project.id);await loadRecentJobs(project.id);}} setNotice={setNotice} setError={setError} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} activeJobId={activeDataNestAiSession?.jobId||null}/>}
         {!loadingCore&&view==="scheduler"&&project&&<Scheduler projectId={project.id} projectName={project?.name||"Resonance DataNest"} projectSlug={project?.slug||"resonance-datanest"} currentUserId={session.user.id} role={membership?.role||"viewer"} jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null} setNotice={setNotice} setError={setError} filter={schedulerFilter} viewMode={schedulerViewMode} sortMode={schedulerSortMode} onFilter={setSchedulerFilter} onViewMode={setSchedulerViewMode} onSortMode={setSchedulerSortMode}/>} 
         {!loadingCore&&view==="runs"&&<Runs runs={runs} jobLookup={jobLookup} page={runPage} total={runCount} onPage={setRunPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
         {!loadingCore&&view==="checkpoints"&&<Checkpoints checkpoints={checkpoints} jobLookup={jobLookup} page={checkpointPage} total={checkpointCount} onPage={setCheckpointPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
@@ -1505,14 +1506,16 @@ function Metric({label,value,note}:{label:string;value:number;note:string}) {
   return <article className="metricCard"><span>{label}</span><strong>{value}</strong><small>{note}</small></article>;
 }
 
-function UnifiPlanner({project,jobs,capabilities,reload,setNotice,setError,canOperate,page,total,onPage,activeJobId}:{project:Project;jobs:Job[];capabilities:Capability[];reload:()=>Promise<void>;setNotice:(v:string)=>void;setError:(v:string)=>void;canOperate:boolean;page:number;total:number;onPage:(p:number)=>void;activeJobId:string|null}) {
-  const [title,setTitle]=useState("");
-  const [description,setDescription]=useState("");
-  const [priority,setPriority]=useState(50);
-  const [capability,setCapability]=useState("chat");
-  const [tests,setTests]=useState(true);
-  const [artifact,setArtifact]=useState(true);
+function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,setError,canOperate,page,total,onPage,activeJobId}:{project:Project;currentUserId:string;jobs:Job[];capabilities:Capability[];reload:()=>Promise<void>;setNotice:(v:string)=>void;setError:(v:string)=>void;canOperate:boolean;page:number;total:number;onPage:(p:number)=>void;activeJobId:string|null}) {
+  const draftPrefix="unifi:"+project.id+":"+currentUserId+":";
+  const [title,setTitle,titleDraft]=useSessionDraftState(draftPrefix+"title","");
+  const [description,setDescription,descriptionDraft]=useSessionDraftState(draftPrefix+"description","");
+  const [priority,setPriority,priorityDraft]=useSessionDraftState(draftPrefix+"priority",50);
+  const [capability,setCapability,capabilityDraft]=useSessionDraftState(draftPrefix+"capability","chat");
+  const [tests,setTests,testsDraft]=useSessionDraftState(draftPrefix+"tests",true);
+  const [artifact,setArtifact,artifactDraft]=useSessionDraftState(draftPrefix+"artifact",true);
   const [saving,setSaving]=useState(false);
+  const hasSessionDraft=[titleDraft,descriptionDraft,priorityDraft,capabilityDraft,testsDraft,artifactDraft].some(item=>item.hasStoredDraft);
   const known=Array.from(new Set(["chat",...capabilities.map(item=>item.capability)]));
 
   async function createJob(event:FormEvent) {
@@ -1538,7 +1541,7 @@ function UnifiPlanner({project,jobs,capabilities,reload,setNotice,setError,canOp
       if(error) throw error;
       const row=Array.isArray(data)?data[0]:data;
       const number=(row as Record<string,unknown>|null)?.job_number;
-      setTitle("");setDescription("");setPriority(50);setCapability("chat");
+      setTitle("");setDescription("");setPriority(50);setCapability("chat");setTests(true);setArtifact(true);
       setNotice("JOB-"+String(number||"?").padStart(5,"0")+" created transactionally by UNIFI.");
       await reload();
     } catch(createError) {
@@ -1551,6 +1554,7 @@ function UnifiPlanner({project,jobs,capabilities,reload,setNotice,setError,canOp
   const prepared=jobs.filter(item=>["PLANNED","READY","QUEUED"].includes(item.status));
   return <section className="splitView">
     <div className="panel stickyPanel"><p className="eyebrow">UNIFI</p><h2>Job Manifest Planner</h2><p className="muted">Prepare work completely before consuming scarce execution capacity.</p>
+      {hasSessionDraft&&<p className="muted" role="status">Draft restored · saved only in this browser session until the Job Manifest is created.</p>}
       {!canOperate&&<div className="notice errorNotice">Viewer access is read-only. Ask a DataNest owner or admin for operator access to create jobs.</div>}
       <form className="plannerForm" onSubmit={createJob} aria-busy={saving}>
         <label>Job title<input value={title} onChange={event=>setTitle(event.target.value)} required placeholder="e.g. Validate production deployment"/></label>
