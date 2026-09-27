@@ -5,7 +5,8 @@ import { getSupabase } from "@/lib/supabase";
 import ResonancePortfolioPulse from "@/components/ResonancePortfolioPulse";
 import { FREE_PROMOTION_LABEL, RONSAS_FULL_NAME } from "@/lib/ecosystemAuthority";
 import PortfolioRegistryPanel from "@/components/PortfolioRegistryPanel";
-import { type PortfolioRegistryRow, type PortfolioRole } from "@/lib/portfolioRegistry";\nimport { getRonsasAppLaunch } from "@/lib/ronsasApps";
+import { type PortfolioRegistryRow, type PortfolioRole } from "@/lib/portfolioRegistry";
+import { getRonsasAppLaunch } from "@/lib/ronsasApps";
 
 
 type CatalogProduct = {
