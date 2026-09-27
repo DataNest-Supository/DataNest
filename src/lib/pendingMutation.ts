@@ -7,7 +7,7 @@ export const PENDING_MUTATION_STALE_MS=60*60*1000;
 
 export type PendingMutationVerification="unverified"|"unconfirmed"|"confirmed_absent";
 export type PendingMutationAge="recent"|"aging"|"stale";
-export type PendingMutationClearReason="confirmed"|"confirmed_absent_new_intent";
+export type PendingMutationClearReason="confirmed"|"confirmed_absent_new_intent"|"durable_resolved";
 
 export type PendingMutationIntent<T extends Record<string,unknown>=Record<string,unknown>>={
   kind:string;
