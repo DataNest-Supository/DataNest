@@ -291,7 +291,7 @@ export default function ExecutionAuthorityPanel({
     </section>
 
     <section className="panel">
-      <div className="panelHead"><div><p className="eyebrow">CIRCUIT BREAKERS</p><h3>Autonomous execution stop controls</h3></div><span className="countPill">Owner / admin</span></div>
+      <div className="panelHead"><div><p className="eyebrow">EMERGENCY CONTROL</p><h3>Circuit breakers</h3></div><span className="countPill">Owner / admin</span></div>
       <div className="executionAuthorityCards">
         {breakerCategories.map(category=>{
           const item=breakerMap.get(category);
