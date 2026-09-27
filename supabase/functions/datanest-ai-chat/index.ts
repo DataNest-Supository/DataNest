@@ -717,7 +717,7 @@ Deno.serve(async(request:Request)=>{
               product_mode:legalMode?"legal_eagle":"datanest_ai",
               jurisdiction:legalMode?jurisdiction:null,
               legal_task:legalMode?legalTask:null,
-              learning_eligible:learningEligible,
+              learning_eligible:!legalMode&&learningEligible,
               visibility_class:visibilityClass,
               reuse_state:reuseState,
               purpose:policyPurpose
@@ -804,6 +804,9 @@ Deno.serve(async(request:Request)=>{
               target_subject_type:"ai_event",
               target_purpose:"external_provider_processing",
               target_operation:"process",
+              target_actor_user:user.id,
+              target_trace_id:stagedInputTraceId,
+              target_provider_key:connection.provider.toLowerCase()+":"+connection.endpoint_host.toLowerCase(),
               target_subject_id:null,
               target_subject_reference:stagedInputTraceId,
               target_provider_connection:connection.id,
@@ -813,7 +816,8 @@ Deno.serve(async(request:Request)=>{
           if(phaseCPolicyError)throw phaseCPolicyError;
           const phaseCPolicy=(phaseCPolicyData||{}) as Record<string,unknown>;
 
-          if(String(phaseCPolicy.outcome||"deny")!=="allow"){
+          const phaseCPolicyEnforced=String(phaseCPolicy.enforcement_mode||"enforced")==="enforced";
+          if(phaseCPolicyEnforced&&String(phaseCPolicy.outcome||"deny")!=="allow"){
             requestStatus="denied";
             await finishUsageRequest(serviceClient,{
               requestId:activeRequestId,
@@ -914,7 +918,7 @@ Deno.serve(async(request:Request)=>{
               product_mode:legalMode?"legal_eagle":"datanest_ai",
               jurisdiction:legalMode?jurisdiction:null,
               legal_task:legalMode?legalTask:null,
-              learning_eligible:learningEligible,
+              learning_eligible:!legalMode&&learningEligible,
               visibility_class:visibilityClass,
               reuse_state:reuseState,
               purpose:policyPurpose
@@ -950,6 +954,9 @@ Deno.serve(async(request:Request)=>{
               target_subject_type:"ai_event",
               target_purpose:"project_learning",
               target_operation:"reuse",
+              target_actor_user:user.id,
+              target_trace_id:String(inputEvent.traceId||stagedInputTraceId),
+              target_provider_key:null,
               target_subject_id:null,
               target_subject_reference:String(inputEvent.traceId||stagedInputTraceId),
               target_provider_connection:null,
@@ -958,7 +965,8 @@ Deno.serve(async(request:Request)=>{
           );
           if(learningPolicyError)throw learningPolicyError;
           const learningPolicy=(learningPolicyData||{}) as Record<string,unknown>;
-          if(String(learningPolicy.outcome||"deny")!=="allow"){
+          const learningPolicyEnforced=String(learningPolicy.enforcement_mode||"enforced")==="enforced";
+          if(learningPolicyEnforced&&String(learningPolicy.outcome||"deny")!=="allow"){
             trendAnalysis={status:"not_applicable"};
             return;
           }
