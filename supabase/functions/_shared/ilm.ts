@@ -132,7 +132,7 @@ export async function resolveIlm1Route(
       traceId:input.traceId,
       profileId:input.profile.id,
       purpose:input.purpose,
-      visibilityClass:input.visibilityClass,
+      visibilityClass:effectiveVisibilityClass,
       requestedOperation:input.requestedOperation,
       requestedCapability:input.requestedCapability,
       certifiedMemoryIds:[],
@@ -165,6 +165,9 @@ export async function resolveIlm1Route(
   const certifiedMemoryIds=memory.map(item=>item.id).filter(Boolean);
 
   const policy=await deps.evaluateDataPolicy({...input,certifiedMemoryIds});
+  const effectiveVisibilityClass=String(
+    policy.evidence?.visibility_class||input.visibilityClass
+  );
   if(policy.outcome==="deny"){
     const recorded=await deps.recordRouteDecision({
       projectId:input.projectId,
@@ -173,7 +176,7 @@ export async function resolveIlm1Route(
       traceId:input.traceId,
       profileId:input.profile.id,
       purpose:input.purpose,
-      visibilityClass:input.visibilityClass,
+      visibilityClass:effectiveVisibilityClass,
       requestedOperation:input.requestedOperation,
       requestedCapability:input.requestedCapability,
       certifiedMemoryIds,
@@ -202,7 +205,7 @@ export async function resolveIlm1Route(
     };
   }
 
-  const resources=await deps.resolveResourceCandidates({...input,certifiedMemoryIds,policy});
+  const resources=await deps.resolveResourceCandidates({...input,visibilityClass:effectiveVisibilityClass,certifiedMemoryIds,policy});
   const eligible=resources.eligibleCandidates.filter(candidate=>
     input.profile.allowedResourceKinds.length===0 ||
     input.profile.allowedResourceKinds.includes(candidate.resourceKind)
@@ -217,7 +220,7 @@ export async function resolveIlm1Route(
       traceId:input.traceId,
       profileId:input.profile.id,
       purpose:input.purpose,
-      visibilityClass:input.visibilityClass,
+      visibilityClass:effectiveVisibilityClass,
       requestedOperation:input.requestedOperation,
       requestedCapability:input.requestedCapability,
       certifiedMemoryIds,
@@ -246,10 +249,10 @@ export async function resolveIlm1Route(
     };
   }
 
-  const provider=await deps.resolveProviderConnection({...input,certifiedMemoryIds,policy,resources});
+  const provider=await deps.resolveProviderConnection({...input,visibilityClass:effectiveVisibilityClass,certifiedMemoryIds,policy,resources});
   const candidate=eligible[0]||null;
 
-  if(input.visibilityClass==="local_only"&&provider){
+  if(effectiveVisibilityClass==="local_only"&&provider){
     const recorded=await deps.recordRouteDecision({
       projectId:input.projectId,
       jobId:input.jobId,
@@ -257,7 +260,7 @@ export async function resolveIlm1Route(
       traceId:input.traceId,
       profileId:input.profile.id,
       purpose:input.purpose,
-      visibilityClass:input.visibilityClass,
+      visibilityClass:effectiveVisibilityClass,
       requestedOperation:input.requestedOperation,
       requestedCapability:input.requestedCapability,
       certifiedMemoryIds,
@@ -294,7 +297,7 @@ export async function resolveIlm1Route(
       traceId:input.traceId,
       profileId:input.profile.id,
       purpose:input.purpose,
-      visibilityClass:input.visibilityClass,
+      visibilityClass:effectiveVisibilityClass,
       requestedOperation:input.requestedOperation,
       requestedCapability:input.requestedCapability,
       certifiedMemoryIds,
@@ -335,7 +338,7 @@ export async function resolveIlm1Route(
     traceId:input.traceId,
     profileId:input.profile.id,
     purpose:input.purpose,
-    visibilityClass:input.visibilityClass,
+    visibilityClass:effectiveVisibilityClass,
     requestedOperation:input.requestedOperation,
     requestedCapability:input.requestedCapability,
     certifiedMemoryIds,
