@@ -28,7 +28,8 @@ type SchedulerViewMode = "queue"|"gantt"|"authority"|"resources";
 type SchedulerSortMode = "priority"|"deadline"|"recent";
 const schedulerFilterOptions=["ALL","PLANNED","READY","QUEUED","RUNNING","MANUAL_ACTION","BLOCKED","COMPLETED"] as const;
 type SchedulerFilter = typeof schedulerFilterOptions[number];
-const workspaceUrlStateKeys=["page","mode","filter","sort"] as const;
+const operationalUrlStateKeys=["page","mode","filter","sort"] as const;
+const workspaceScopedUrlStateKeys=[...operationalUrlStateKeys,"section"] as const;
 function urlPageIndex(url:URL){
   const raw=Number(url.searchParams.get("page")||"1");
   return Number.isInteger(raw)&&raw>0?raw-1:0;
@@ -837,7 +838,7 @@ export default function DataNestApp({session}:{session:Session}) {
 
     if(next)url.searchParams.set("view",next);
     else url.searchParams.delete("view");
-    workspaceUrlStateKeys.forEach(key=>url.searchParams.delete(key));
+    workspaceScopedUrlStateKeys.forEach(key=>url.searchParams.delete(key));
 
     window.history.pushState(window.history.state,"",url.toString());
     window.scrollTo({top:0,left:0,behavior:"auto"});
@@ -848,7 +849,8 @@ export default function DataNestApp({session}:{session:Session}) {
     const expectedView=view==="overview"?null:view;
     if(url.searchParams.get("view")!==expectedView)return;
 
-    workspaceUrlStateKeys.forEach(key=>url.searchParams.delete(key));
+    operationalUrlStateKeys.forEach(key=>url.searchParams.delete(key));
+    if(view!=="governance")url.searchParams.delete("section");
     const page=view==="unifi"||view==="scheduler"
       ? jobPage
       : view==="runs"
@@ -1026,6 +1028,13 @@ export default function DataNestApp({session}:{session:Session}) {
     const shareUrl=new URL(window.location.href);
     shareUrl.searchParams.delete("release");
     shareUrl.searchParams.delete("_reload");
+    if(view!=="governance")shareUrl.searchParams.delete("section");
+    if(!["unifi","scheduler","runs","checkpoints","audit"].includes(view))shareUrl.searchParams.delete("page");
+    if(view!=="scheduler"){
+      shareUrl.searchParams.delete("mode");
+      shareUrl.searchParams.delete("filter");
+      shareUrl.searchParams.delete("sort");
+    }
     shareUrl.hash="";
     try{
       await navigator.clipboard.writeText(shareUrl.toString());
