@@ -1088,3 +1088,68 @@ test("browser history restores workspace-local presentation state without stale 
   await expect(page).not.toHaveURL(/filter=/);
   await expect(page).not.toHaveURL(/sort=/);
 });
+
+
+test("UNIFI browser-session draft survives workspace navigation and reload", async ({ page }) => {
+  const projectId = "00000000-0000-4000-8000-000000000010";
+  const userId = "00000000-0000-4000-8000-000000000001";
+  const stamp = "2026-09-27T08:00:00Z";
+
+  await page.route("**/runtime-config.js", route => route.fulfill({
+    contentType:"application/javascript",
+    body:"window.__DATANEST_CONFIG__={supabaseUrl:'https://fixture.supabase.co',supabasePublishableKey:'fixture-key',authoritative:true}"
+  }));
+  await page.addInitScript(({userId}) => {
+    const encode = (data: unknown) => btoa(JSON.stringify(data)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+    localStorage.setItem("sb-fixture-auth-token", JSON.stringify({
+      access_token:`${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:userId,exp:4102444800,role:"authenticated"})}.fixture`,
+      refresh_token:"fixture", token_type:"bearer", expires_at:4102444800,
+      user:{id:userId,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid"}
+    }));
+  }, {userId});
+
+  await page.route("https://fixture.supabase.co/**", route => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+    let body:unknown = [];
+    const headers:Record<string,string> = {"Content-Type":"application/json"};
+
+    if(path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE",created_at:stamp};
+    if(path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"operator",status:"active"};
+    if(path.endsWith("/get_project_dashboard_summary")) body = {total_jobs:0,active_jobs:0,running_jobs:0,blocked_jobs:0,available_capabilities:0,registered_capabilities:0};
+    if(path.endsWith("/jobs")) headers["Content-Range"]="*/0";
+
+    return route.fulfill({status:200,headers,body:JSON.stringify(body)});
+  });
+
+  await page.goto(appPath+"?view=unifi");
+  await expect(page.getByRole("heading",{name:"Job Manifest Planner"})).toBeVisible();
+
+  await page.getByLabel("Job title").fill("Protect unfinished manifest");
+  await page.getByLabel("Objective / context").fill("Preserve this authored draft across navigation and reload.");
+  await page.getByLabel("Priority").selectOption("80");
+  await page.getByLabel("Tests required").uncheck();
+  await expect(page.getByText(/Browser-session draft active/)).toBeVisible();
+
+  const storedKeys = await page.evaluate(() => Object.keys(sessionStorage));
+  expect(storedKeys.some(key=>key.includes("datanest.sessionDraft.unifi:"+projectId+":"+userId+":"))).toBe(true);
+
+  const projectNav=page.getByRole("navigation",{name:"Project workspaces"});
+  await projectNav.getByRole("button",{name:"TranScheduler"}).click();
+  await expect(page.getByRole("heading",{name:"TranScheduler"})).toBeVisible();
+
+  await projectNav.getByRole("button",{name:"UNIFI Planner"}).click();
+  await expect(page.getByRole("heading",{name:"Job Manifest Planner"})).toBeVisible();
+  await expect(page.getByLabel("Job title")).toHaveValue("Protect unfinished manifest");
+  await expect(page.getByLabel("Objective / context")).toHaveValue("Preserve this authored draft across navigation and reload.");
+  await expect(page.getByLabel("Priority")).toHaveValue("80");
+  await expect(page.getByLabel("Tests required")).not.toBeChecked();
+
+  await page.reload();
+  await expect(page.getByRole("heading",{name:"Job Manifest Planner"})).toBeVisible();
+  await expect(page.getByLabel("Job title")).toHaveValue("Protect unfinished manifest");
+  await expect(page.getByLabel("Objective / context")).toHaveValue("Preserve this authored draft across navigation and reload.");
+  await expect(page.getByLabel("Priority")).toHaveValue("80");
+  await expect(page.getByLabel("Tests required")).not.toBeChecked();
+  await expect(page.getByText(/Browser-session draft active/)).toBeVisible();
+});
