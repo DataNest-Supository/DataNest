@@ -79,6 +79,7 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
   await expect(page.getByRole("heading", {name:"Products that carry their architecture, evidence and decisions with them."})).toBeVisible();
   await expect(page.getByRole("heading",{name:"Live ecosystem state, derived from governed DataNest records."})).toBeVisible();
   await expect(page.getByRole("region",{name:"Products that carry their architecture, evidence and decisions with them."}).getByRole("heading",{name:"RONSAS",exact:true})).toBeVisible();
+  await expect(page.getByText("Resonance Open Nova Sovereign Application Suite",{exact:true})).toBeVisible();
   await expect(page.locator(".catalogProduct").getByText("RESONANCE DATANEST",{exact:true})).toBeVisible();
   await expect(page.locator(".catalogProduct").getByText("DataNest",{exact:true})).toBeVisible();
   await expect(page.getByText("DATANEST MANAGED",{exact:true})).toBeVisible();
