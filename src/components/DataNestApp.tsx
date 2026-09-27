@@ -1676,6 +1676,7 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
   async function reconcileUnifiIntent(intent:PendingMutationIntent<UnifiPendingPayload>,announce:boolean){
     const supabase=getSupabase();
     if(!supabase){
+      markPendingMutationVerification(requestScope,"unconfirmed");
       setReconciliationState("pending");
       if(announce)setError("UNIFI submission is awaiting authoritative confirmation. Connectivity is unavailable, so do not create a second request yet.");
       return {state:"pending" as const,value:null,error:new Error("Supabase unavailable")};
