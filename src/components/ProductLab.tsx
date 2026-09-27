@@ -338,7 +338,7 @@ export default function ProductLab({
           }
           return;
         }
-        markPendingMutationDurable(testRunRequestScope);
+        markPendingMutationDurable(testRunRequestScope,{attemptCount:durable.attemptCount,lastAttemptAt:durable.lastAttemptAt});
         const {error:insertError}=await supabase.from("product_test_runs").insert({
           project_id:projectId,
           surface_id:payload.surfaceId,
