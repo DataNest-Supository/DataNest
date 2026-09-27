@@ -3,7 +3,8 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 import { useSingleFlight } from "@/lib/singleFlight";
-import { clearSessionRequestKey, getOrCreateSessionRequestKey } from "@/lib/sessionRequestKey";
+import { clearPendingMutation, getOrCreatePendingMutation, loadPendingMutation, type PendingMutationIntent } from "@/lib/pendingMutation";
+import { reconcileServerMutation, type MutationReconciliationState } from "@/lib/mutationReconciliation";
 
 type Balance={account_id:string;account_type:"project"|"platform"|"locked";project_id:string|null;balance:number};
 type Service={
@@ -18,6 +19,11 @@ type Redemption={
 type LedgerEntry={
   id:string;entry_type:string;amount:number;trace_key:string;policy_version:string;
   account_type:string;metadata:Record<string,unknown>;created_at:string;
+};
+type SparkRedemptionPendingPayload={
+  serviceId:string;
+  quantity:number;
+  note:string|null;
 };
 type Workspace={
   policy:Record<string,unknown>;
@@ -55,6 +61,8 @@ export default function SparksWorkspace({
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
   const {activeAction,run:runSingleFlight}=useSingleFlight();
+  const [redemptionReconciliation,setRedemptionReconciliation]=useState<MutationReconciliationState|"idle"|"checking">("idle");
+  const redemptionRequestScope="sparks-redemption:"+projectId+":"+currentUserId;
   const [serviceKey,setServiceKey]=useState("");
   const [serviceName,setServiceName]=useState("");
   const [serviceDescription,setServiceDescription]=useState("");
@@ -103,10 +111,69 @@ export default function SparksWorkspace({
     [workspace,selectedServiceId]
   );
 
-  function clearCurrentRedemptionRequestKey(){
-    if(!selectedServiceId)return;
-    clearSessionRequestKey("sparks-redemption:"+projectId+":"+currentUserId+":"+selectedServiceId);
+  const redemptionLocked=redemptionReconciliation==="pending"||redemptionReconciliation==="checking";
+
+  function restoreRedemptionIntent(intent:PendingMutationIntent<SparkRedemptionPendingPayload>){
+    setSelectedServiceId(intent.payload.serviceId);
+    setQuantity(String(intent.payload.quantity));
+    setRequestNote(intent.payload.note||"");
   }
+
+  function clearRedemptionIntentForEdit(){
+    if(redemptionLocked)return false;
+    clearPendingMutation(redemptionRequestScope);
+    setRedemptionReconciliation("idle");
+    return true;
+  }
+
+  async function reconcileRedemptionIntent(intent:PendingMutationIntent<SparkRedemptionPendingPayload>,announce:boolean){
+    const supabase=getSupabase();
+    if(!supabase){
+      setRedemptionReconciliation("pending");
+      if(announce)setError("Spark reservation is awaiting authoritative confirmation. Connectivity is unavailable, so do not issue a second request.");
+      return {state:"pending" as const,value:null,error:new Error("Supabase unavailable")};
+    }
+
+    setRedemptionReconciliation("checking");
+    const result=await reconcileServerMutation(async()=>{
+      const {data,error}=await supabase.from("spark_redemptions")
+        .select("id,trace_key,status,service_id,quantity")
+        .eq("request_key",intent.requestKey)
+        .maybeSingle();
+      if(error)throw error;
+      return data ? data as {id:string;trace_key:string;status:string;service_id:string;quantity:number} : null;
+    });
+
+    if(result.state==="confirmed"&&result.value){
+      clearPendingMutation(redemptionRequestScope);
+      setRedemptionReconciliation("confirmed");
+      setQuantity("1");setRequestNote("");
+      setError("");
+      setNotice("Recovered confirmed Spark reservation "+result.value.trace_key+" from authoritative server state.");
+      await load();
+    }else if(result.state==="not_recorded"){
+      setRedemptionReconciliation("not_recorded");
+      restoreRedemptionIntent(intent);
+      if(announce)setNotice("Previous Spark reservation was not recorded. The original request is restored and can be retried safely.");
+    }else{
+      setRedemptionReconciliation("pending");
+      restoreRedemptionIntent(intent);
+      if(announce)setError("Spark reservation outcome is still unconfirmed. Its request identity is preserved; recheck server state before retrying.");
+    }
+    return result;
+  }
+
+  useEffect(()=>{
+    const reconcilePending=()=>{
+      const pending=loadPendingMutation<SparkRedemptionPendingPayload>(redemptionRequestScope);
+      if(!pending||pending.kind!=="spark_redemption")return;
+      restoreRedemptionIntent(pending);
+      void reconcileRedemptionIntent(pending,true);
+    };
+    reconcilePending();
+    window.addEventListener("online",reconcilePending);
+    return()=>window.removeEventListener("online",reconcilePending);
+  },[redemptionRequestScope]);
 
   async function publishService(event:FormEvent){
     event.preventDefault();
@@ -141,27 +208,38 @@ export default function SparksWorkspace({
   async function requestRedemption(event:FormEvent){
     event.preventDefault();
     const supabase=getSupabase();
-    if(!supabase||!selectedService)return;
+    if(!supabase||!selectedService||redemptionLocked)return;
     const qty=Math.max(1,Math.min(100,Number(quantity)||1));
-    const requestScope="sparks-redemption:"+projectId+":"+currentUserId+":"+selectedService.id;
+    const payload:SparkRedemptionPendingPayload={
+      serviceId:selectedService.id,
+      quantity:qty,
+      note:requestNote.trim()||null
+    };
+    const intent=getOrCreatePendingMutation(redemptionRequestScope,"spark_redemption",payload);
 
     await runSingleFlight("request-redemption",async()=>{
       setBusy(true);setError("");setNotice("Reserving Sparks for the selected service…");
-      const requestKey=getOrCreateSessionRequestKey(requestScope);
       try{
         const {error}=await supabase.rpc("request_spark_redemption_v1",{
-          target_service:selectedService.id,
-          target_quantity:qty,
-          target_request_key:requestKey,
-          target_note:requestNote.trim()||null
+          target_service:payload.serviceId,
+          target_quantity:payload.quantity,
+          target_request_key:intent.requestKey,
+          target_note:payload.note
         });
         if(error)throw error;
-        clearSessionRequestKey(requestScope);
+        clearPendingMutation(redemptionRequestScope);
+        setRedemptionReconciliation("confirmed");
         setQuantity("1");setRequestNote("");
         setNotice("Sparks reserved. They remain locked until the service is fulfilled or the request is cancelled.");
         await load();
       }catch(actionError){
-        setError((actionError instanceof Error?actionError.message:"Unable to reserve Sparks.")+" Retry keeps the same request key to avoid a duplicate reservation.");
+        const reconciled=await reconcileRedemptionIntent(intent,false);
+        if(reconciled.state==="confirmed")return;
+        if(reconciled.state==="not_recorded"){
+          setError((actionError instanceof Error?actionError.message:"Unable to reserve Sparks.")+" Server state confirms the reservation was not recorded; retry is safe.");
+          return;
+        }
+        setError("Spark reservation outcome is ambiguous. The request is locked to its original identity until authoritative reconciliation succeeds.");
       }finally{
         setBusy(false);
       }
@@ -214,6 +292,8 @@ export default function SparksWorkspace({
 
   return <div>
     {activeAction&&<p className="muted" role="status">Spark action in progress · duplicate submissions are blocked until the request finishes.</p>}
+    {redemptionReconciliation==="pending"&&<div className="notice errorNotice" role="status"><b>Reservation awaiting confirmation.</b> Do not issue another reservation. <button type="button" className="textButton" onClick={()=>{const pending=loadPendingMutation<SparkRedemptionPendingPayload>(redemptionRequestScope);if(pending)void reconcileRedemptionIntent(pending,true);}}>Recheck server state</button></div>}
+    {redemptionReconciliation==="not_recorded"&&<div className="notice goodNotice" role="status">Server state confirms the previous reservation was not recorded. Retrying reuses the same request identity.</div>}
     <section className="heroPanel">
       <div>
         <p className="eyebrow">SPARKS · INTERNAL UTILITY</p>
@@ -269,17 +349,17 @@ export default function SparksWorkspace({
     <section className="panel">
       <div className="panelHead"><div><p className="eyebrow">REDEEM</p><h3>Approved project services</h3></div><span className="countPill">{workspace.services.length}</span></div>
       {workspace.services.length?<form onSubmit={requestRedemption} className="settingsGrid">
-        <label>Service<select value={selectedServiceId} onChange={e=>{clearCurrentRedemptionRequestKey();setSelectedServiceId(e.target.value);}}>
+        <label>Service<select disabled={redemptionLocked} value={selectedServiceId} onChange={e=>{if(clearRedemptionIntentForEdit())setSelectedServiceId(e.target.value);}}>
           {workspace.services.map(service=><option key={service.id} value={service.id}>{service.name+" · "+fmt(service.spark_price)+" Sparks"}</option>)}
         </select></label>
-        <label>Quantity<input type="number" min="1" max="100" value={quantity} onChange={e=>{clearCurrentRedemptionRequestKey();setQuantity(e.target.value);}}/></label>
-        <label>Request note<input value={requestNote} onChange={e=>{clearCurrentRedemptionRequestKey();setRequestNote(e.target.value);}} placeholder="Optional context for fulfillment"/></label>
+        <label>Quantity<input disabled={redemptionLocked} type="number" min="1" max="100" value={quantity} onChange={e=>{if(clearRedemptionIntentForEdit())setQuantity(e.target.value);}}/></label>
+        <label>Request note<input disabled={redemptionLocked} value={requestNote} onChange={e=>{if(clearRedemptionIntentForEdit())setRequestNote(e.target.value);}} placeholder="Optional context for fulfillment"/></label>
         <div>
           <p className="muted">{selectedService?.description||"Approved internal Resonance service."}</p>
           {selectedService?.terms&&<small>{selectedService.terms}</small>}
         </div>
-        <button className="primaryButton" disabled={busy||!selectedServiceId}>
-          Reserve {fmt((selectedService?.spark_price||0)*(Number(quantity)||1))} Sparks
+        <button className="primaryButton" disabled={busy||redemptionLocked||!selectedServiceId}>
+          {redemptionReconciliation==="checking"?"Checking server state…":"Reserve "+fmt((selectedService?.spark_price||0)*(Number(quantity)||1))+" Sparks"}
         </button>
       </form>:<div className="emptyState"><div>◇</div><h3>No approved Spark services yet</h3><p>An owner/admin can publish project-scoped internal services. No cash checkout is available.</p></div>}
     </section>
