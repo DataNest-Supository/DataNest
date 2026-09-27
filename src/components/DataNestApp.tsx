@@ -947,9 +947,13 @@ export default function DataNestApp({session}:{session:Session}) {
               type="button"
               onClick={()=>{
                 const target=document.getElementById("datanest-ai-active-job");
+                if(!target){
+                  setView("unifi");
+                  return;
+                }
                 const reduceMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches||document.documentElement.dataset.motionPaused==="true";
-                target?.scrollIntoView({behavior:reduceMotion?"auto":"smooth",block:"center"});
-                target?.focus({preventScroll:true});
+                target.scrollIntoView({behavior:reduceMotion?"auto":"smooth",block:"center"});
+                target.focus({preventScroll:true});
               }}
             >Select Job Manifest <span aria-hidden="true">→</span></button>}
           </div>
