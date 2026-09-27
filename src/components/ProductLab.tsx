@@ -4,7 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 import { useSessionDraftState } from "@/lib/sessionDraft";
 import { useSingleFlight } from "@/lib/singleFlight";
-import { clearPendingMutation, getOrCreatePendingMutation, loadPendingMutation, type PendingMutationIntent } from "@/lib/pendingMutation";
+import { clearPendingMutation, getOrCreatePendingMutation, loadPendingMutation, markPendingMutationVerification, type PendingMutationIntent } from "@/lib/pendingMutation";
 import { reconcileServerMutation, type MutationReconciliationState } from "@/lib/mutationReconciliation";
 
 type Surface={
@@ -195,9 +195,9 @@ export default function ProductLab({
 
   function clearTestRunIntentForEdit(){
     if(testRunLocked)return false;
-    clearPendingMutation(testRunRequestScope);
-    setTestRunReconciliation("idle");
-    return true;
+    const cleared=clearPendingMutation(testRunRequestScope,"confirmed_absent_new_intent");
+    if(cleared)setTestRunReconciliation("idle");
+    return cleared||!loadPendingMutation(testRunRequestScope);
   }
 
   async function reconcileTestRunIntent(intent:PendingMutationIntent<ProductTestRunPendingPayload>,announce:boolean){
@@ -221,7 +221,7 @@ export default function ProductLab({
     });
 
     if(result.state==="confirmed"&&result.value){
-      clearPendingMutation(testRunRequestScope);
+      clearPendingMutation(testRunRequestScope,"confirmed");
       setTestRunReconciliation("confirmed");
       setRunNotes(current=>{const next={...current};delete next[intent.payload.testCaseId];return next;});
       setEvidenceUrls(current=>{const next={...current};delete next[intent.payload.testCaseId];return next;});
@@ -229,10 +229,12 @@ export default function ProductLab({
       setNotice("Recovered confirmed Product Lab test evidence from authoritative server state.");
       await load();
     }else if(result.state==="not_recorded"){
+      markPendingMutationVerification(testRunRequestScope,"confirmed_absent");
       setTestRunReconciliation("not_recorded");
       restoreTestRunIntent(intent);
       if(announce)setNotice("Previous Product Lab test result was not recorded. The original evidence is restored and can be retried safely.");
     }else{
+      markPendingMutationVerification(testRunRequestScope,"unconfirmed");
       setTestRunReconciliation("pending");
       restoreTestRunIntent(intent);
       if(announce)setError("Product Lab test result is still unconfirmed. Its request identity is preserved; recheck server state before retrying.");
@@ -299,7 +301,7 @@ export default function ProductLab({
         });
         if(insertError)throw insertError;
 
-        clearPendingMutation(testRunRequestScope);
+        clearPendingMutation(testRunRequestScope,"confirmed");
         setTestRunReconciliation("confirmed");
         setRunNotes(current=>{const next={...current};delete next[testCase.id];return next;});
         setEvidenceUrls(current=>{const next={...current};delete next[testCase.id];return next;});
