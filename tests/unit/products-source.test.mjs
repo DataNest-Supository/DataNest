@@ -141,3 +141,10 @@ test("Governed Products render Portfolio Registry lifecycle when a product is li
   assert.match(products,/current_lifecycle/);
   assert.match(products,/governedProductLifecycle\(product,portfolioItems\)/);
 });
+
+
+test("Portfolio Pulse receives governed products with Portfolio Registry lifecycle applied",()=>{
+  assert.match(products,/catalogProductsForPulse/);
+  assert.match(products,/governedProductLifecycle\(product,portfolioItems\)/);
+  assert.match(products,/ResonancePortfolioPulse products=\{catalogProductsForPulse\}/);
+});
