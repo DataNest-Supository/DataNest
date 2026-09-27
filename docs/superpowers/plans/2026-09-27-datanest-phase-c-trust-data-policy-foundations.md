@@ -18,7 +18,7 @@ Phase C adds a project-scoped trust-policy layer beside the existing DataNest go
 - Existing RLS/RBAC and Job authorization remain the first authority gate.
 - Phase C policy is deny-preserving and cannot create access that other controls denied.
 - `data_policy_bindings` records explicit object/scope policy decisions.
-- `trust_manifests` records versioned project/product trust defaults and evidence state.
+- `trust_manifests` records versioned project/product trust defaults, evidence state, and explicit `report_only|enforced` rollout mode.
 - `provider_trust_profiles` constrains external providers by data class and declared purpose.
 - `retention_policies`, `retention_holds`, `retention_reviews`, and `data_policy_lineage` support non-destructive retention governance.
 - Governed RPCs are the only authenticated mutation path.
@@ -46,20 +46,20 @@ Phase C adds a project-scoped trust-policy layer beside the existing DataNest go
 - All new public multi-tenant tables use project-scoped RLS.
 - All new FK columns are indexed.
 - Significant trust/policy writes emit project audit events.
-- Unknown or contradictory policy fails closed for external routing, publication, project/platform learning, and destructive retention intent.
+- Unknown or contradictory policy always resolves to `deny` or `review_required`; when the applicable Trust Manifest is `enforced` it blocks external routing, publication, project/platform learning, and destructive retention intent.
+- Before enforcement coverage is complete, an external-provider route may run in explicit `report_only` mode: the Phase C decision is recorded but cannot override any denial from existing authorization/budget/allowlist controls.
+- A Trust Manifest cannot enter `enforced` mode until its project default classification, active retention policy, and every currently active AI provider connection in scope have reviewed Phase C coverage.
 - Safe embedded/local fallback may continue when external provider routing is denied.
+- Current AI provider trust keys use the deterministic lower-case form `<provider>:<endpoint_host>`.
 - Source changes are implemented and verified before any production promotion.
 
 ## Review focus
 
-1. **Authorization precedence:** trust policy must never grant access after RLS/RBAC/Job/file authorization denied it.
-2. **Independent dimensions:** visibility/processing and reuse/learning must not collapse into one consent flag.
-3. **Provider fail-closed:** no active matching Provider Trust Profile means no external routing for policy-bound content.
-4. **Legal Eagle hard exclusion:** `learning_eligible=false` must override a broader project manifest.
-5. **Non-destructive retention:** migrations and v1 RPCs may classify/review/hold, but cannot delete or anonymize existing data.
-6. **Lineage uncertainty:** unresolved lineage or active hold blocks future destructive disposition.
-7. **Trust-claim integrity:** target-state capabilities cannot be represented as implemented/verified.
-8. **Compatibility:** Phase B Portfolio Registry, Products, Product Lab, current DataNest AI authorization, existing URLs, Transparency, and billing-off behavior must remain intact.
+1. **Authorization precedence:** a Phase C allow/result must never turn an existing RLS/RBAC/Job/file/provider authorization denial into permission.
+2. **Rollout coverage:** `report_only` must preserve current authorized provider behavior while recording unresolved trust decisions; `enforced` must be impossible until project classification, retention, and every active AI provider route have reviewed coverage.
+3. **Learning exclusion:** Legal Eagle, explicit `learning_eligible=false`, and unresolved new learning policy must stay out of automatic project/platform learning even when a broader manifest exists.
+4. **Retention/lineage safety:** no Phase C migration or RPC may delete/anonymize existing data, and active holds or unresolved lineage must block future destructive disposition.
+5. **Trust-claim integrity:** planned/unknown controls and target-state capabilities must never render as verified trust guarantees; existing Products/Portfolio/RONSAS/billing behavior must remain compatible.
 
 ---
 
@@ -189,6 +189,8 @@ Fields:
 - `policy_version text not null`
 - `effective_from timestamptz null`
 - `review_due_at timestamptz null`
+- `enforcement_mode text not null default 'report_only'`
+- `approved_provider_keys text[] not null default '{}'`
 - `supersedes_manifest_id uuid null references public.trust_manifests(id)`
 - `created_by uuid not null references auth.users(id)`
 - `approved_by uuid null references auth.users(id)`
@@ -200,10 +202,13 @@ Controlled values:
 - status: `draft|active|superseded|rejected`
 - evidence state: `verified|partial|planned|unknown`
 - publication/export policy: `disabled|governed_only`
+- enforcement mode: `report_only|enforced`
 
 A project manifest has `product_id is null`; a product manifest requires a same-project `products` row.
 
 Create one-active-manifest partial unique indexes by project scope and product scope.
+
+`report_only` is the only safe default. `enforced` is a governed activation state and is never inferred from the presence of a manifest.
 
 ### `public.provider_trust_profiles`
 
@@ -255,7 +260,43 @@ Provider categories:
 
 An active provider profile requires non-empty allowed purposes, non-empty allowed visibility classes, a non-`unknown` evidence state, and explicit retention/training-reuse posture text. It must not contain secret material by design or UI.
 
-Create one active profile per project + provider connection/key, with supersession history preserved.
+For current AI routes, `provider_key` is exactly `lower(provider)||':'||lower(endpoint_host)`. A profile with `provider_connection_id` must match that connection's project and deterministic key.
+
+Treat `active|restricted|suspended` as current profile states for uniqueness; only `active|restricted` may ever permit a route, and `suspended` is an explicit current denial. Retired/draft rows are history/non-current.
+
+Create one current profile per project + provider connection/key, with supersession history preserved.
+
+### `public.data_policy_decisions`
+
+Append-only, trace-safe policy evaluation evidence.
+
+Fields:
+
+- `id uuid primary key default gen_random_uuid()`
+- `project_id uuid not null references public.projects(id) on delete cascade`
+- `trace_id text not null`
+- `actor_user_id uuid null references auth.users(id)`
+- `subject_type text not null`
+- `subject_id uuid null`
+- `subject_reference text null`
+- `purpose text not null`
+- `requested_operation text not null`
+- `outcome text not null check (outcome in ('allow','deny','review_required'))`
+- `reason_code text not null`
+- `effective_visibility_class text null`
+- `effective_reuse_state text null`
+- `publication_authorized boolean not null default false`
+- `manifest_id uuid null references public.trust_manifests(id)`
+- `binding_id uuid null references public.data_policy_bindings(id)`
+- `provider_profile_id uuid null references public.provider_trust_profiles(id)`
+- `retention_policy_id uuid null`
+- `enforcement_mode text not null check (enforcement_mode in ('report_only','enforced'))`
+- `policy_version text not null`
+- `created_at timestamptz not null default now()`
+
+The table never stores raw subject content. Browser roles receive read access only through project-scoped RLS; service-role evaluation is the only insertion path.
+
+Index `(project_id,created_at desc)`, `trace_id`, every FK, and subject lookup fields.
 
 ### Read models
 
@@ -271,7 +312,7 @@ Views expose current active state only; history tables remain authoritative.
 
 Assert:
 
-- all three tables exist with the exact controlled values above;
+- all four tables exist with the exact controlled values above;
 - one-active partial unique indexes exist;
 - every FK column has an index;
 - project-scoped RLS is enabled;
@@ -280,6 +321,8 @@ Assert:
 - service role access remains backend-only;
 - read views use `security_invoker=true`;
 - provider profiles contain no credential/secret value column;
+- Trust Manifests default to `report_only` and expose `report_only|enforced` only;
+- decision records are append-only, trace-safe, and contain no raw content column;
 - no existing AI provider connection, certified-memory, Products, Portfolio, or file-access table is deleted or rewritten.
 
 ## Step 2 — Run focused test and verify RED
@@ -340,6 +383,8 @@ Fields:
 - `status_reason text null`
 - `effective_from timestamptz null`
 - `review_due_at timestamptz null`
+- `authority_basis text null`
+- `evidence_reference text null`
 - `supersedes_policy_id uuid null references public.retention_policies(id)`
 - `created_by uuid not null references auth.users(id)`
 - `approved_by uuid null references auth.users(id)`
@@ -360,6 +405,8 @@ Controlled default disposition:
 - `legal_hold`
 
 The last three are policy intent only. No destructive executor exists in Phase C.
+
+If `default_retention_days` is non-null or `default_disposition_intent='delete_when_authorized'`, both `authority_basis` and `evidence_reference` must be non-empty. If no authoritative duration exists, `review_interval_days` must be non-null and the policy remains review-oriented rather than inventing a statutory/contractual duration.
 
 Add nullable `retention_policy_id uuid references public.retention_policies(id)` to `trust_manifests` and index it.
 
@@ -513,27 +560,135 @@ Private helpers are not executable by browser roles.
 
 ## Governed authenticated operations
 
-Create:
+Create these exact public signatures:
 
-- `propose_data_policy_binding_v1`
-- `approve_data_policy_binding_v1`
-- `reject_data_policy_binding_v1`
-- `create_trust_manifest_draft_v1`
-- `activate_trust_manifest_v1`
-- `reject_trust_manifest_v1`
-- `create_provider_trust_profile_v1`
-- `activate_provider_trust_profile_v1`
-- `suspend_provider_trust_profile_v1`
-- `retire_provider_trust_profile_v1`
-- `propose_retention_policy_v1`
-- `approve_retention_policy_v1`
-- `reject_retention_policy_v1`
-- `place_retention_hold_v1`
-- `release_retention_hold_v1`
-- `request_retention_review_v1`
-- `resolve_retention_review_v1`
-- `record_data_policy_lineage_v1`
-- `get_trust_policy_workspace_v1`
+```sql
+propose_data_policy_binding_v1(
+  target_project uuid,
+  target_subject_type text,
+  target_visibility_class text,
+  target_reuse_state text,
+  target_rationale text,
+  target_subject_id uuid default null,
+  target_subject_reference text default null,
+  target_publication_authorized boolean default false,
+  target_evidence_reference text default null
+) returns uuid
+
+approve_data_policy_binding_v1(target_binding uuid) returns uuid
+reject_data_policy_binding_v1(target_binding uuid,target_reason text) returns uuid
+
+create_trust_manifest_draft_v1(
+  target_project uuid,
+  target_scope_type text,
+  target_default_visibility_class text,
+  target_default_reuse_state text,
+  target_policy_version text,
+  target_enforcement_mode text default 'report_only',
+  target_product uuid default null,
+  target_retention_policy uuid default null,
+  target_approved_provider_keys text[] default '{}',
+  target_publication_policy text default 'governed_only',
+  target_export_policy text default 'governed_only',
+  target_certified_memory_policy text default 'existing_governed_pipeline',
+  target_evidence_state text default 'unknown',
+  target_evidence_reference text default null,
+  target_known_limitations text default null,
+  target_review_due_at timestamptz default null
+) returns uuid
+
+activate_trust_manifest_v1(target_manifest uuid) returns uuid
+reject_trust_manifest_v1(target_manifest uuid,target_reason text) returns uuid
+
+create_provider_trust_profile_v1(
+  target_project uuid,
+  target_provider_key text,
+  target_provider_category text,
+  target_policy_version text,
+  target_allowed_visibility_classes text[],
+  target_allowed_purposes text[],
+  target_retention_posture text,
+  target_training_reuse_posture text,
+  target_provider_connection uuid default null,
+  target_prohibited_purposes text[] default '{}',
+  target_allowed_regions text[] default '{}',
+  target_security_evidence_reference text default null,
+  target_contractual_evidence_reference text default null,
+  target_data_locality_guarantees text default null,
+  target_credential_boundary_description text default null,
+  target_evidence_state text default 'unknown',
+  target_known_limitations text default null,
+  target_review_due_at timestamptz default null
+) returns uuid
+
+activate_provider_trust_profile_v1(target_profile uuid) returns uuid
+suspend_provider_trust_profile_v1(target_profile uuid,target_reason text) returns uuid
+retire_provider_trust_profile_v1(target_profile uuid,target_reason text) returns uuid
+
+propose_retention_policy_v1(
+  target_project uuid,
+  target_policy_key text,
+  target_default_disposition_intent text,
+  target_requires_lineage_review boolean,
+  target_applicable_visibility_classes text[] default '{}',
+  target_applicable_reuse_states text[] default '{}',
+  target_applicable_subject_types text[] default '{}',
+  target_default_retention_days integer default null,
+  target_review_interval_days integer default null,
+  target_rules jsonb default '{}'::jsonb,
+  target_minimum_evidence jsonb default '{}'::jsonb,
+  target_authority_basis text default null,
+  target_evidence_reference text default null,
+  target_review_due_at timestamptz default null
+) returns uuid
+
+approve_retention_policy_v1(target_policy uuid) returns uuid
+reject_retention_policy_v1(target_policy uuid,target_reason text) returns uuid
+
+place_retention_hold_v1(
+  target_project uuid,
+  target_subject_type text,
+  target_hold_type text,
+  target_reason text,
+  target_subject_id uuid default null,
+  target_subject_reference text default null,
+  target_evidence_reference text default null
+) returns uuid
+
+release_retention_hold_v1(target_hold uuid,target_reason text) returns uuid
+
+request_retention_review_v1(
+  target_project uuid,
+  target_subject_type text,
+  target_proposed_disposition text,
+  target_rationale text,
+  target_subject_id uuid default null,
+  target_subject_reference text default null,
+  target_retention_policy uuid default null,
+  target_evidence_reference text default null
+) returns uuid
+
+resolve_retention_review_v1(
+  target_review uuid,
+  target_status text,
+  target_reason text,
+  target_evidence_reference text default null
+) returns uuid
+
+record_data_policy_lineage_v1(
+  target_project uuid,
+  target_source_subject_type text,
+  target_derived_subject_type text,
+  target_relation_type text,
+  target_source_subject_id uuid default null,
+  target_source_subject_reference text default null,
+  target_derived_subject_id uuid default null,
+  target_derived_subject_reference text default null,
+  target_evidence_reference text default null
+) returns uuid
+
+get_trust_policy_workspace_v1(target_project uuid) returns jsonb
+```
 
 Role model:
 
@@ -558,38 +713,44 @@ Independent-review rules must reuse existing project-governance conventions wher
 
 ## Service evaluation operation
 
-Create a service-role-only function:
+Create the service-role-only function:
 
-`service_evaluate_data_policy_v1(...)`
-
-Inputs must include:
-
-- target project;
-- subject type;
-- optional subject UUID;
-- optional subject reference;
-- declared purpose;
-- requested operation;
-- optional provider connection/profile context;
-- authoritative hard learning exclusion boolean supplied only by backend service code.
+```sql
+service_evaluate_data_policy_v1(
+  target_project uuid,
+  target_actor_user uuid,
+  target_subject_type text,
+  target_purpose text,
+  target_requested_operation text,
+  target_trace_id text,
+  target_subject_id uuid default null,
+  target_subject_reference text default null,
+  target_provider_connection uuid default null,
+  target_provider_key text default null,
+  target_hard_learning_exclusion boolean default false
+) returns jsonb
+```
 
 Supported purposes must include the approved Phase C purpose list.
+
+The service evaluator validates project/typed-subject consistency, resolves the active manifest/binding/provider/retention state, and inserts exactly one append-only `data_policy_decisions` row per evaluation trace + operation. It never grants user access by itself; callers must already have passed the existing user/Job/file/provider authorization path appropriate to the operation.
 
 Return JSON containing:
 
 - `outcome: allow|deny|review_required`
 - `reason_code`
+- `enforcement_mode: report_only|enforced`
 - effective visibility class;
 - effective reuse state;
 - publication authorization;
 - manifest ID/version if used;
 - binding ID if used;
 - provider profile ID if relevant;
-- retention hold count when relevant;
+- retention policy ID and active hold count when relevant;
 - policy version;
-- trace-safe decision metadata.
+- decision-record ID and trace-safe metadata.
 
-Never return raw subject content.
+Never return or persist raw subject content.
 
 ## Required evaluation rules
 
@@ -600,7 +761,7 @@ Never return raw subject content.
 - `high_sensitivity` requires an explicitly active provider profile allowing the class and purpose;
 - suspended/retired/expired provider profile denies;
 - purpose in `prohibited_purposes` denies;
-- absent provider profile denies external routing;
+- absent provider profile resolves external routing to deny/review-required; it blocks the route only when `enforcement_mode='enforced'` and is recorded in `report_only` mode;
 - `target_hard_learning_exclusion=true` denies project/platform learning regardless of manifest;
 - `project_learning` requires `project_learning_eligible`;
 - `platform_learning` requires `platform_learning_eligible`;
@@ -608,6 +769,9 @@ Never return raw subject content.
 - publication requires explicit governed public visibility and publication authority; `public` alone is not enough;
 - retention future disposition with active hold or unresolved lineage returns deny/review_required;
 - evaluator never deletes or mutates subject data.
+- no active Trust Manifest resolves as `enforcement_mode='report_only'` with `review_required`; this transitional result never overrides an existing authorization denial.
+- activating a Trust Manifest with `enforcement_mode='enforced'` requires: an active project-level policy binding, an active referenced retention policy, non-planned/non-unknown manifest evidence, and reviewed current profiles for every active `ai_provider_connections` row in the project.
+- an enforced manifest may approve zero providers only when there are no active provider connections; otherwise every active connection's deterministic provider key must be listed in `approved_provider_keys` and backed by a current non-expired `active|restricted` profile.
 
 ## Audit events
 
@@ -643,7 +807,9 @@ Assert:
 - active records are superseded, never silently overwritten;
 - evaluation rules above exist;
 - audit events exist;
-- no destructive retention executor exists.
+- no destructive retention executor exists;
+- `report_only`/`enforced` evaluator behavior and the enforced-manifest coverage guard exist;
+- service evaluation writes trace-safe `data_policy_decisions` without raw content.
 
 ## Step 2 — Verify RED
 
@@ -672,6 +838,7 @@ Commit message:
 **Files**
 
 - Modify `supabase/functions/datanest-ai-chat/index.ts`
+- Modify `supabase/functions/datanest-ai-intake/index.ts`
 - Create `tests/unit/datanest-ai-trust-policy-source.test.mjs`
 
 ## External-provider flow
@@ -682,42 +849,39 @@ Preserve the existing order:
 2. `begin_datanest_ai_request` creates/loads the governed usage request;
 3. input is staged with trace identity;
 4. provider connection is resolved;
-5. **Phase C policy evaluation runs before external provider authorization/call**;
+5. Phase C policy evaluation runs and records its decision before an external provider call;
 6. existing `service_authorize_ai_request` still runs and remains authoritative for provider/budget/allowlist state;
-7. only if both Phase C and existing provider authorization allow does the external provider receive the prompt.
+7. when Phase C is `enforced`, both Phase C and existing provider authorization must allow before the provider receives the prompt;
+8. when Phase C is `report_only`, the Phase C result is recorded but the existing provider authorization remains the sole allow/deny gate, so report-only can never convert an existing denial into permission.
 
-Call `service_evaluate_data_policy_v1` using:
+Call `service_evaluate_data_policy_v1` using the authenticated user as `target_actor_user`, the authorized Job as subject type `job` + `subject_id=job.id`, the staged DN-AI trace as `target_trace_id`, purpose `external_provider_processing`, operation `process`, the resolved provider connection UUID, and deterministic provider key `lower(provider)+":"+lower(endpoint_host)`. Hard learning exclusion remains separate and is not treated as an external-processing denial by itself.
 
-- project ID;
-- subject type `ai_event`;
-- staged input trace as `subject_reference`;
-- purpose `external_provider_processing`;
-- operation `process`;
-- resolved provider connection;
-- hard learning exclusion separately available but not treated as an external-processing denial by itself.
-
-If Phase C denies external routing:
+If Phase C is `enforced` and the result is not `allow`:
 
 - do not call the provider;
 - finish the usage request with a traceable policy-denied reason;
 - preserve current safe embedded fallback behavior where the existing chat flow permits it;
 - do not fabricate an external-provider success.
 
+If Phase C is `report_only`, attach/record the decision evidence but continue to the existing `service_authorize_ai_request`; an existing authorization denial still stops the route.
+
 ## Learning flow
 
 Before `updateTrendCandidate(...)`:
 
-- call Phase C evaluation for `project_learning` + `reuse`;
-- pass the staged input trace;
+- call Phase C evaluation for `project_learning` + `reuse` against the authorized Job and staged input trace;
 - pass `target_hard_learning_exclusion = !learningEligible` from authoritative server-side mode logic;
-- run trend/candidate extraction only when outcome is `allow`.
+- write the returned `policy_version`, `effective_reuse_state`, decision ID, and final boolean `learning_eligible` into the staged event metadata before trend/candidate extraction;
+- run trend/candidate extraction only when outcome is `allow`; `report_only` does not weaken the fail-closed learning rule.
+- update the evidence filter so new Phase C-stamped events require `learning_eligible===true`; legacy rows with explicit `learning_eligible===true` remain valid equivalent authorization, while legacy rows with no learning flag are excluded from new automatic learning.
 
 Required behavior:
 
 - Legal Eagle remains `learning_eligible=false`;
 - a broad project manifest cannot override that exclusion;
 - unresolved/missing learning policy means no automatic project-learning extraction;
-- skipping learning does not discard the Job/session response or staged evidence.
+- skipping learning does not discard the Job/session response or staged evidence;
+- `datanest-ai-intake` applies the same `project_learning` evaluation to new AI Companion returns before staging metadata is finalized, so external-return evidence cannot enter trends through an unstamped bypass.
 
 ## Certified memory
 
@@ -742,7 +906,9 @@ Assert:
 - provider call requires both policy and existing authorization;
 - denied policy cannot call `callOpenAiCompatibleProvider`;
 - embedded fallback remains reachable;
-- learning evaluation occurs before `updateTrendCandidate`;
+- learning evaluation occurs before `updateTrendCandidate` and stamps Phase C decision metadata;
+- AI Companion intake uses the same project-learning policy and cannot bypass it;
+- legacy evidence with no explicit learning authorization is excluded from new automatic learning;
 - hard learning exclusion is passed from server-side product-mode state;
 - Legal Eagle still writes `learning_eligible:false`;
 - certified-memory retrieval remains unchanged;
@@ -796,6 +962,20 @@ Commit message:
 - `canApproveTrustPolicy(role)`.
 
 Do not model policy as a single boolean consent flag.
+
+`TrustPolicyPanel` props are exactly:
+
+```ts
+{
+  projectId:string;
+  currentUserId:string;
+  role:TrustPolicyRole;
+  setNotice:(value:string)=>void;
+  setError:(value:string)=>void;
+}
+```
+
+`GovernanceWorkspace` keeps its existing props and adds `role:TrustPolicyRole`.
 
 ## Governance integration
 
@@ -936,7 +1116,7 @@ Test at least:
 3. Operator can propose permitted policy/review work but cannot activate public/platform-learning/provider trust.
 4. Owner/admin can activate reviewed policy through governed RPCs.
 5. Visibility and reuse state are shown independently.
-6. Provider with suspended/expired/missing trust state is visibly not approved for external routing.
+6. Provider with suspended/expired/missing trust state is visibly not approved for external routing; report-only state is visibly unresolved rather than falsely approved.
 7. Legal Eagle or explicit hard learning exclusion remains non-learning even if the project manifest is broader.
 8. Retention review shows holds/lineage blockers and no destructive action.
 9. Planned/unknown Trust Manifest claims remain visibly non-verified.
@@ -1009,6 +1189,8 @@ Migration replay must pass all historical migrations plus:
 
 DataNest AI Certification must remain green.
 
+Also run the existing external-AI return/source tests because Phase C now stamps AI Companion learning policy in `datanest-ai-intake`.
+
 ## Scope review
 
 Before merge:
@@ -1062,7 +1244,7 @@ Before requesting merge approval, verify:
 
 # Plan self-review
 
-**Spec coverage:** Tasks 1-6 cover both policy dimensions, explicit subject bindings, Trust Manifests, Provider Trust Profiles, retention policy/holds/reviews, minimal lineage, governed mutations, fail-closed evaluation, DataNest AI provider/learning enforcement, Governance UX, audit events, and compatibility.
+**Spec coverage:** Tasks 1-6 cover both policy dimensions, explicit subject bindings, Trust Manifests, Provider Trust Profiles, append-only policy decisions, retention policy/holds/reviews, minimal lineage, governed mutations, report-only-to-enforced rollout, fail-closed evaluation, DataNest AI + AI Companion provider/learning enforcement, Governance UX, audit events, and compatibility.
 
 **Authority consistency:** The plan keeps RLS/RBAC and Job/file access above trust policy; service-role evaluation cannot manufacture user access. Provider trust narrows existing provider authorization rather than replacing it. Certified memory remains authoritative for reusable project knowledge.
 
@@ -1070,7 +1252,7 @@ Before requesting merge approval, verify:
 
 **Learning safety:** Legal Eagle and any authoritative `learning_eligible=false` input is a hard denial for learning. `project_learning_eligible` is eligibility only; certification remains a separate existing review path.
 
-**Provider safety:** Missing, suspended, retired, expired, or insufficient Provider Trust Profile denies external routing. This may degrade to the existing safe embedded fallback but cannot fabricate external success.
+**Provider safety:** In `enforced` mode, missing, suspended, retired, expired, or insufficient Provider Trust Profile blocks external routing. In `report_only`, the decision is recorded but cannot override any existing denial; enforced activation is gated on complete current route coverage.
 
 **Trust-claim safety:** Trust Manifests track `verified|partial|planned|unknown`; activation cannot turn planned target-state concepts into verified controls without evidence.
 
