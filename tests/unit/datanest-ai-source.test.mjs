@@ -258,7 +258,7 @@ test("TranScheduler groups jobs under the project identity with a priority gradi
   const source=fs.readFileSync(path.join(root,"src/components/DataNestApp.tsx"),"utf8");
   const css=fs.readFileSync(path.join(root,"src/app/globals.css"),"utf8");
 
-  assert.match(source,/projectName=\{project(?:\?\.)?\.name\|\|"Resonance DataNest"\}/);
+  assert.match(source,/projectName=\{project\?\.name\|\|"Resonance DataNest"\}/);
   assert.match(source,/function ProjectGroupHeader\(/);
   assert.match(source,/function PriorityScale\(/);
   assert.match(source,/schedulerProjectGroupHead/);
