@@ -8,7 +8,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
 const app=fs.readFileSync(path.join(root,"src/components/DataNestApp.tsx"),"utf8");
 const products=fs.readFileSync(path.join(root,"src/components/ProductsWorkspace.tsx"),"utf8");
 const gateway=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-chat/index.ts"),"utf8");
-const productMigration=fs.readFileSync(path.join(root,"supabase/migrations/20260926061000_governed_product_catalog.sql"),"utf8");
+const productMigration=fs.readFileSync(path.join(root,"supabase/migrations/20260926055810_add_governed_product_catalog.sql"),"utf8");
 const ronsasSnapshot=fs.readFileSync(path.join(root,"data/imports/ronsas-product-20260926.jsonl"),"utf8");
 
 test("Products is a first-class DataNest workspace",()=>{
@@ -87,8 +87,8 @@ test("Products reads the governed product catalog from Supabase",()=>{
 });
 
 test("governed product catalog schema is versioned with project-scoped RLS",()=>{
-  assert.match(productMigration,/create table if not exists public\.products/);
-  assert.match(productMigration,/create table if not exists public\.product_records/);
+  assert.match(productMigration,/create table public\.products/);
+  assert.match(productMigration,/create table public\.product_records/);
   assert.match(productMigration,/alter table public\.products enable row level security/);
   assert.match(productMigration,/private\.has_project_role\(project_id/);
   assert.match(productMigration,/private\.is_project_member\(project_id\)/);
