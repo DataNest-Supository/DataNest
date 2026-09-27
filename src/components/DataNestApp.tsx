@@ -15,6 +15,8 @@ import ResourceFabricPanel from "@/components/ResourceFabricPanel";
 import type { ExecutionAuthorityRole } from "@/lib/executionAuthority";
 import { useSessionDraftState } from "@/lib/sessionDraft";
 import { useSingleFlight } from "@/lib/singleFlight";
+import { clearPendingMutation, getOrCreatePendingMutation, loadPendingMutation, type PendingMutationIntent } from "@/lib/pendingMutation";
+import { reconcileServerMutation, type MutationReconciliationState } from "@/lib/mutationReconciliation";
 
 type Project = { id:string; slug:string; name:string; description:string|null; status:string; created_at:string };
 type Tool = { id:string; tool_key:string; name:string; role:string; enabled:boolean; config:Record<string,unknown> };
@@ -1507,8 +1509,18 @@ function Metric({label,value,note}:{label:string;value:number;note:string}) {
   return <article className="metricCard"><span>{label}</span><strong>{value}</strong><small>{note}</small></article>;
 }
 
+type UnifiPendingPayload={
+  title:string;
+  description:string|null;
+  priority:number;
+  capability:string;
+  tests:boolean;
+  artifact:boolean;
+};
+
 function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,setError,canOperate,page,total,onPage,activeJobId}:{project:Project;currentUserId:string;jobs:Job[];capabilities:Capability[];reload:()=>Promise<void>;setNotice:(v:string)=>void;setError:(v:string)=>void;canOperate:boolean;page:number;total:number;onPage:(p:number)=>void;activeJobId:string|null}) {
   const draftPrefix="unifi:"+project.id+":"+currentUserId+":";
+  const requestScope="unifi-job:"+project.id+":"+currentUserId;
   const [title,setTitle,titleDraft]=useSessionDraftState(draftPrefix+"title","");
   const [description,setDescription,descriptionDraft]=useSessionDraftState(draftPrefix+"description","");
   const [priority,setPriority,priorityDraft]=useSessionDraftState(draftPrefix+"priority",50);
@@ -1516,47 +1528,128 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
   const [tests,setTests,testsDraft]=useSessionDraftState(draftPrefix+"tests",true);
   const [artifact,setArtifact,artifactDraft]=useSessionDraftState(draftPrefix+"artifact",true);
   const {activeAction,busy:saving,run:runSingleFlight}=useSingleFlight();
+  const [reconciliationState,setReconciliationState]=useState<MutationReconciliationState|"idle"|"checking">("idle");
   const hasSessionDraft=[titleDraft,descriptionDraft,priorityDraft,capabilityDraft,testsDraft,artifactDraft].some(item=>item.hasStoredDraft);
   const known=Array.from(new Set(["chat",...capabilities.map(item=>item.capability)]));
+  const reconciliationLocked=reconciliationState==="pending"||reconciliationState==="checking";
+
+  function restoreIntentPayload(intent:PendingMutationIntent<UnifiPendingPayload>){
+    setTitle(intent.payload.title);
+    setDescription(intent.payload.description||"");
+    setPriority(intent.payload.priority);
+    setCapability(intent.payload.capability);
+    setTests(intent.payload.tests);
+    setArtifact(intent.payload.artifact);
+  }
+
+  async function reconcileUnifiIntent(intent:PendingMutationIntent<UnifiPendingPayload>,announce:boolean){
+    const supabase=getSupabase();
+    if(!supabase){
+      setReconciliationState("pending");
+      if(announce)setError("UNIFI submission is awaiting authoritative confirmation. Connectivity is unavailable, so do not create a second request yet.");
+      return {state:"pending" as const,value:null,error:new Error("Supabase unavailable")};
+    }
+
+    setReconciliationState("checking");
+    const result=await reconcileServerMutation(async()=>{
+      const {data,error}=await supabase.from("jobs")
+        .select("id,job_number,status")
+        .eq("project_id",project.id)
+        .eq("client_request_id",intent.requestKey)
+        .maybeSingle();
+      if(error)throw error;
+      return data ? data as {id:string;job_number:number;status:string} : null;
+    });
+
+    if(result.state==="confirmed"&&result.value){
+      clearPendingMutation(requestScope);
+      setTitle("");setDescription("");setPriority(50);setCapability("chat");setTests(true);setArtifact(true);
+      setReconciliationState("confirmed");
+      setError("");
+      setNotice("Recovered confirmed JOB-"+String(result.value.job_number).padStart(5,"0")+" from authoritative server state.");
+      await reload();
+    }else if(result.state==="not_recorded"){
+      setReconciliationState("not_recorded");
+      restoreIntentPayload(intent);
+      if(announce)setNotice("Previous UNIFI submission was not recorded. The original manifest is restored and can be retried safely.");
+    }else{
+      setReconciliationState("pending");
+      restoreIntentPayload(intent);
+      if(announce)setError("UNIFI submission outcome is still unconfirmed. Its request identity is preserved; recheck server state before retrying.");
+    }
+    return result;
+  }
+
+  useEffect(()=>{
+    const reconcilePending=()=>{
+      const pending=loadPendingMutation<UnifiPendingPayload>(requestScope);
+      if(!pending||pending.kind!=="unifi_job")return;
+      restoreIntentPayload(pending);
+      void reconcileUnifiIntent(pending,true);
+    };
+    reconcilePending();
+    window.addEventListener("online",reconcilePending);
+    return()=>window.removeEventListener("online",reconcilePending);
+  },[requestScope]);
 
   async function createJob(event:FormEvent) {
     event.preventDefault();
     const supabase=getSupabase();
-    if(!supabase||!title.trim()) return;
+    if(!supabase||!title.trim()||reconciliationLocked) return;
     if(!canOperate){setError("Your DataNest role is read-only.");return;}
+
+    const payload:UnifiPendingPayload={
+      title:title.trim(),
+      description:description.trim()||null,
+      priority,
+      capability,
+      tests,
+      artifact
+    };
+    const intent=getOrCreatePendingMutation(requestScope,"unifi_job",payload);
 
     await runSingleFlight("create-job",async()=>{
       setNotice("Creating Job Manifest…");
       setError("");
       try {
-        const {data,error}=await supabase.rpc("create_job_manifest",{
+        const {data,error}=await supabase.rpc("create_job_manifest_v2",{
           target_project:project.id,
-          job_title:title.trim(),
-          job_description:description.trim()||null,
-          job_priority:priority,
-          required_capability:capability,
-          tests_required:tests,
-          artifact_required:artifact
+          target_request_key:intent.requestKey,
+          job_title:payload.title,
+          job_description:payload.description,
+          job_priority:payload.priority,
+          required_capability:payload.capability,
+          tests_required:payload.tests,
+          artifact_required:payload.artifact
         });
         if(error) throw error;
         const row=Array.isArray(data)?data[0]:data;
-        const number=(row as Record<string,unknown>|null)?.job_number;
+        const number=Number((row as Record<string,unknown>|null)?.job_number||0);
+        clearPendingMutation(requestScope);
+        setReconciliationState("confirmed");
         setTitle("");setDescription("");setPriority(50);setCapability("chat");setTests(true);setArtifact(true);
         setNotice("JOB-"+String(number||"?").padStart(5,"0")+" created transactionally by UNIFI.");
         await reload();
       } catch(createError) {
-        setError(createError instanceof Error ? createError.message : "Unable to create the UNIFI job.");
-        throw createError;
+        const reconciled=await reconcileUnifiIntent(intent,false);
+        if(reconciled.state==="confirmed")return;
+        if(reconciled.state==="not_recorded"){
+          setError((createError instanceof Error ? createError.message : "Unable to create the UNIFI job.")+" Server state confirms the manifest was not recorded; retry is safe.");
+          return;
+        }
+        setError("UNIFI submission outcome is ambiguous. The manifest is locked to its original request identity until authoritative reconciliation succeeds.");
       }
-    }).catch(()=>{});
+    });
   }
 
   const prepared=jobs.filter(item=>["PLANNED","READY","QUEUED"].includes(item.status));
   return <section className="splitView">
     <div className="panel stickyPanel"><p className="eyebrow">UNIFI</p><h2>Job Manifest Planner</h2><p className="muted">Prepare work completely before consuming scarce execution capacity.</p>
       {hasSessionDraft&&<p className="muted" role="status">Browser-session draft active · unfinished inputs are restored after workspace navigation or reload.</p>}
+      {reconciliationState==="pending"&&<div className="notice errorNotice" role="status"><b>Submission awaiting confirmation.</b> Do not create a second manifest. Recheck authoritative server state first. <button type="button" className="textButton" onClick={()=>{const pending=loadPendingMutation<UnifiPendingPayload>(requestScope);if(pending)void reconcileUnifiIntent(pending,true);}}>Recheck server state</button></div>}
+      {reconciliationState==="not_recorded"&&<div className="notice goodNotice" role="status">Server state confirms the previous request was not recorded. Retrying this restored manifest reuses the same request identity.</div>}
       {!canOperate&&<div className="notice errorNotice">Viewer access is read-only. Ask a DataNest owner or admin for operator access to create jobs.</div>}
-      <form className="plannerForm" onSubmit={createJob} aria-busy={saving} data-active-action={activeAction||undefined}>
+      <form className="plannerForm" onSubmit={createJob} aria-busy={saving||reconciliationState==="checking"} data-active-action={activeAction||undefined}>
         <label>Job title<input value={title} onChange={event=>setTitle(event.target.value)} required placeholder="e.g. Validate production deployment"/></label>
         <label>Objective / context<textarea value={description} onChange={event=>setDescription(event.target.value)} rows={6} placeholder="What must be done, constraints, expected output…"/></label>
         <div className="fieldRow">
@@ -1564,7 +1657,7 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
           <label>Required capability<select value={capability} onChange={event=>setCapability(event.target.value)}>{known.map(item=><option key={item}>{item}</option>)}</select></label>
         </div>
         <div className="checkRow"><label><input type="checkbox" checked={tests} onChange={event=>setTests(event.target.checked)}/> Tests required</label><label><input type="checkbox" checked={artifact} onChange={event=>setArtifact(event.target.checked)}/> Artifact required</label></div>
-        <button className="primaryButton" disabled={saving||!canOperate}>{saving?"Creating…":"Create Job Manifest"}</button>
+        <button className="primaryButton" disabled={saving||reconciliationLocked||!canOperate}>{saving?"Creating…":reconciliationState==="checking"?"Checking server state…":"Create Job Manifest"}</button>
       </form>
     </div>
     <div className="panel"><div className="panelHead"><div><p className="eyebrow">PLANNING</p><h3>Prepared jobs</h3></div><span className="countPill">{total+" total"}</span></div><div className="manifestList">
