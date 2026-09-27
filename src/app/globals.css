@@ -4812,6 +4812,12 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
 .executionAuthorityWorkspace .settingsGrid label{min-width:0}
 .executionAuthorityWorkspace input,.executionAuthorityWorkspace select,.executionAuthorityWorkspace textarea{min-width:0;max-width:100%}
 .authorityReasonField{display:grid;gap:6px;margin-top:12px;color:#b7cadb;font-size:10px;font-weight:700}
+.authorityRouteGrid .manifestCard{min-height:130px}
+.authorityConsequenceField{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:10px;border:1px solid rgba(150,180,205,.12);border-radius:9px}
+.authorityConsequenceField legend{padding:0 6px;color:#b7cadb;font-size:10px;font-weight:700}
+.authorityConsequenceField label{display:flex!important;align-items:center;gap:6px;font-size:9px;font-weight:500}
+.authorityConsequenceField input{width:auto!important}
+.schedulerAuthorityState{display:block;margin-top:4px;color:#8fa9ba;font-size:8px;line-height:1.25}
 @container datanest-main (max-width:860px){.executionAuthorityBoundary{grid-template-columns:1fr}.executionAuthorityActionGrid{grid-template-columns:1fr}}
 @media(max-width:520px){.autonomyGrid,.executionAuthorityCards{grid-template-columns:1fr}.executionAuthorityBoundary{grid-template-columns:1fr}}
 

@@ -58,9 +58,14 @@ test("authority documentation keeps target-state concepts honest and Sparks alig
     assert.match(source,/Supository/);
     assert.match(source,/\bILM\b/);
     assert.match(source,/(target-state|not yet live)/i);
-    assert.doesNotMatch(source,/Cloud-Nest[^\n]{0,100}\b(live|implemented)\b/i);
-    assert.doesNotMatch(source,/Supository[^\n]{0,100}\b(live|implemented)\b/i);
-    assert.doesNotMatch(source,/\bILM\b[^\n]{0,100}\b(live|implemented)\b/i);
+    for(const concept of ["Cloud-Nest","Supository"]){
+      const positiveClaim=source.split("\n").find(line=>
+        line.includes(concept)
+        && /\b(live|implemented)\b/i.test(line)
+        && !/(not yet live|target-state|planned|later implementation|outside Phase)/i.test(line)
+      );
+      assert.equal(positiveClaim,undefined,concept+" must not be represented as a live/implemented capability.");
+    }
   }
 
   assert.match(ux,/Sparks — earned contribution utility for approved project services\./);
@@ -69,6 +74,23 @@ test("authority documentation keeps target-state concepts honest and Sparks alig
   assert.match(readme,/https:\/\/datanest-supository\.github\.io\/DataNest\//);
   assert.match(readme,/GitHub Pages.*current public delivery target/i);
   assert.match(readme,/Supabase/i);
+
+  assert.match(architecture,/## Authority and Execution Controls/);
+  assert.match(architecture,/external_ai_provider/);
+  assert.match(architecture,/job_start/);
+  assert.match(architecture,/report-only/i);
+  assert.match(architecture,/exact-action approval/i);
+  assert.match(architecture,/## Resource and Capability Fabric/);\n  assert.match(architecture,/## Intelligence Fabric and ILM-1/);\n  assert.match(architecture,/ILM-1[\s\S]{0,220}not a trained proprietary foundation model/i);\n  assert.match(architecture,/Cloud-Nest[\s\S]{0,220}target-state \/ not yet live/i);
+  assert.match(architecture,/does not add a generic destructive, legal, financial, ownership or constitutional executor/i);
+  assert.match(architecture,/does not invent a currency\/pricing unit/i);
+
+  assert.match(ux,/## Governance and execution authority/);
+  assert.match(ux,/Sovereign Governance/);
+  assert.match(ux,/Trust & Data Policy/);
+  assert.match(ux,/Authority & Execution/);
+  assert.match(ux,/AVAILABLE != authorized/);
+  assert.match(ux,/Capability Lease != capacity reservation/);
+  assert.match(ux,/latest matching enforced decision is `allow`/);
 });
 
 
