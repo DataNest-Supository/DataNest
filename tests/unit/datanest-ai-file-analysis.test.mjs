@@ -1,9 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const analysis=await import("../../supabase/functions/_shared/datanestFileAnalysis.ts");
 const trends=await import("../../supabase/functions/_shared/datanestAiTrends.ts");
 const learning=await import("../../supabase/functions/_shared/datanestAiLearning.ts");
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
+const analysisRuntimeSource=fs.readFileSync(path.join(root,"supabase/functions/_shared/datanestFileAnalysisRuntime.ts"),"utf8");
 
 function chunk(input={}){
   return {
@@ -219,4 +224,13 @@ test("shared learning excludes evidence without governed project-learning eligib
     projectId:"project-1",inputEventId:"event-1",policyVersion:"test-policy"
   });
   assert.equal(runtimeOnly.evidenceCount,0);
+});
+
+
+test("document evidence derives learning eligibility from the frozen submission policy",()=>{
+  assert.doesNotMatch(analysisRuntimeSource,/learning_eligible:true/);
+  assert.match(analysisRuntimeSource,/submission\.learning_policy_outcome/);
+  assert.match(analysisRuntimeSource,/submission\.learning_reuse_state/);
+  assert.match(analysisRuntimeSource,/learning_policy_version/);
+  assert.match(analysisRuntimeSource,/learning_decision_record_id/);
 });
