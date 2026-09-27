@@ -177,10 +177,10 @@ Deno.serve(async(request:Request)=>{
     if(!learningPolicyError&&learningPolicyData){
       learningPolicy=learningPolicyData as Record<string,unknown>;
     }
-    const learningAllowed=String(learningPolicy.outcome||"deny")==="allow";
+    const learningEligible=String(learningPolicy.outcome||"deny")==="allow";
     const policyMetadata=(base:Record<string,unknown>)=>({
       ...base,
-      learning_eligible:learningAllowed,
+      learning_eligible:learningEligible,
       decision_record_id:learningPolicy.decision_record_id,
       effective_reuse_state:learningPolicy.reuse_state,
       policy_version:learningPolicy.policy_version,
