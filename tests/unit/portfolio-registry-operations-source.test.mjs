@@ -157,7 +157,7 @@ test("Portfolio Item creation cannot fabricate governed product identity",()=>{
 test("candidate promotion persists authoritative exact Product Lab evidence",()=>{
   const source=sql();
   if(!source)return;
-  assert.match(source,/authoritative_lab_evidence\s+jsonb/i);
+  assert.match(source,/tr\.build_commit\s*=\s*s\.build_commit/i);\n  assert.match(source,/authoritative_lab_evidence\s+jsonb/i);
   assert.match(source,/jsonb_agg[\s\S]*surface_id[\s\S]*build_commit[\s\S]*release_id[\s\S]*test_run_id/i);
   assert.match(source,/authoritative_product_lab_evidence[\s\S]*authoritative_lab_evidence/i);
 });
