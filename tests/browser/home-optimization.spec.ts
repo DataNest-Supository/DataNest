@@ -475,7 +475,7 @@ test("AI & I keeps DataNest AI at the core while governed products stay product 
   await expect(visual).toHaveAttribute("data-hero-ecosystem","ronsas");
   await expect(visual.getByText("DataNest AI",{exact:true})).toBeVisible();
   await expect(visual.getByText("Resonance Open Nova Sovereign Application Suite",{exact:true})).toBeVisible();
-  await expect(visual.locator("b").filter({hasText:/^RONSAS$/})).toBeVisible();
+  await expect(visual.getByLabel("RONSAS identity").getByText("RONSAS",{exact:true})).toBeVisible();
   await expect(visual.getByText("Aurum Naturals",{exact:true})).toBeVisible();
   await expect(visual.getByText("9 applications",{exact:true})).toBeVisible();
   await expect(visual.getByText("0 applications",{exact:true})).toBeVisible();
