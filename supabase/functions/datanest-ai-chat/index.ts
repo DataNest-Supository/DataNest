@@ -225,7 +225,14 @@ async function loadActiveIlmProfile(input:{
     .order("version",{ascending:false})
     .limit(1)
     .maybeSingle();
-  if(error)throw error;
+  if(error){
+    const code=String((error as {code?:unknown}).code||"");
+    const message=String((error as {message?:unknown}).message||"");
+    if(code==="42P01"||code==="PGRST205"||/ilm_profiles.*schema cache/i.test(message)){
+      return null;
+    }
+    throw error;
+  }
   if(!data)return null;
   return {
     id:String(data.id),
