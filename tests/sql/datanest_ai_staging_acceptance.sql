@@ -48,16 +48,16 @@ begin
   end if;
 end $$;
 
-do $
+do $datanest$
 begin
   if has_table_privilege('authenticated','public.ai_intake_events','INSERT')
      or has_table_privilege('anon','public.ai_intake_events','SELECT') then
     raise exception 'browser roles must not have direct staging-table privileges';
   end if;
-end $;
+end $datanest$;
 
 
-do $
+do $datanest$
 begin
   if not has_table_privilege('service_role','public.ai_intake_events','INSERT') then
     raise exception 'service_role must retain append-only INSERT access to ai_intake_events';
@@ -68,7 +68,7 @@ begin
      or has_table_privilege('service_role','public.ai_intake_events','TRUNCATE') then
     raise exception 'service_role must not mutate or truncate ai_intake_events';
   end if;
-end $;
+end $datanest$;
 
 
 begin;
@@ -103,7 +103,7 @@ returns void
 language plpgsql
 security invoker
 set search_path=public,pg_temp
-as $
+as $datanest$
 begin
   begin
     update public.ai_intake_events
@@ -129,7 +129,7 @@ begin
     when insufficient_privilege then null;
   end;
 end
-$;
+$datanest$;
 
 grant select on pg_temp.datanest_intake_append_only_fixture to service_role;
 grant insert,select on pg_temp.datanest_intake_append_only_inserted to service_role;
