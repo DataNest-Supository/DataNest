@@ -64,6 +64,15 @@ test("activation supersedes prior active history instead of overwriting it",()=>
   assert.match(source,/update public\.retention_policies[\s\S]*status='superseded'/i);
 });
 
+test("provider profile activation retires the prior current profile",()=>{
+  const source=sql(); if(!source)return;
+  const start=source.indexOf("create or replace function public.activate_provider_trust_profile_v1");
+  const end=source.indexOf("create or replace function public.suspend_provider_trust_profile_v1",start);
+  const body=source.slice(start,end);
+  assert.match(body,/update public\.provider_trust_profiles set status='retired'/i);
+  assert.doesNotMatch(body,/set status='restricted'/i);
+});
+
 test("service evaluator is deny preserving for unresolved policy, external routing, learning, publication, and retention",()=>{
   const source=sql(); if(!source)return;
   for(const token of [
