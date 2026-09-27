@@ -14,6 +14,21 @@ The current target-state architecture authority is `docs/superpowers/specs/2026-
 
 These concepts require separately implemented controls and evidence before they are treated as available product capabilities.
 
+
+## Portfolio Registry authority
+
+The Phase B source implementation introduces a project-scoped **Portfolio Registry** alongside the existing governed Product Registry.
+
+- `products` remains the canonical identity authority for governed products.
+- Portfolio Registry records applications, modules, capabilities, external capabilities and Product Candidates without turning them into products automatically.
+- Architectural classification, relationship and lifecycle changes are governed, attributable records. Historical RONSAS application placement is provenance only and does not establish current ownership.
+- Product Lab remains versioned build/test evidence. A `production` Product Lab surface does not promote an item into a governed product.
+- Product Candidate promotion is an owner/admin governed database operation and preserves `billing_enabled=false` with the existing free-promotion commercial policy.
+- Deprecation and retirement preserve history; retirement is blocked by active critical dependants and active linked production surfaces.
+- Cloud-Nest, Supository, ILM and later Resource Fabric work remain target-state concepts outside this Phase B implementation.
+
+This section records source architecture on the Phase B branch. Production availability or certification requires separate release/promotion evidence.
+
 ## Project
 **Resonance DataNest** is the project operating environment.
 

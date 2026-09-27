@@ -13,7 +13,7 @@ const ronsasSnapshot=fs.readFileSync(path.join(root,"data/imports/ronsas-product
 
 test("Products is a first-class DataNest workspace",()=>{
   assert.match(app,/key:"products",label:"Products"/);
-  assert.match(app,/view==="products"&&<ProductsWorkspace projectId={project.id}\/>/);
+  assert.match(app,/view==="products"&&<ProductsWorkspace projectId={project.id} currentUserId={session.user.id} role={membership\?\.role\|\|"viewer"}\/>/);
   assert.match(app,/Inspect governed products, linked architecture, controls, evidence and specialist experiences/);
   assert.match(app,/Inspect governed Resonance products, their architecture, controls, evidence, risks and promotion branches/);
 });
@@ -120,4 +120,31 @@ test("RONSAS import snapshot remains complete and preserves commercial governanc
     children.filter(row=>row.record_type==="datanest_branch").map(row=>row.name).sort(),
     ["audit","intake","main","staging"]
   );
+});
+
+
+test("Products preserves governed catalog semantics while adding Portfolio Registry",()=>{
+  assert.match(products,/Governed Products/);
+  assert.match(products,/Portfolio Registry/);
+  assert.match(products,/PortfolioRegistryPanel/);
+  assert.match(products,/ResonancePortfolioPulse products=\{catalogProductsForPulse\}/);
+  assert.match(products,/searchParams\.get\("product"\)/);
+  assert.match(products,/searchParams\.get\("recordType"\)/);
+  assert.match(products,/searchParams\.get\("q"\)/);
+  assert.match(products,/FREE_PROMOTION_LABEL/);
+});
+
+
+test("Governed Products render Portfolio Registry lifecycle when a product is linked",()=>{
+  assert.match(products,/function governedProductLifecycle/);
+  assert.match(products,/linked_product_id===product\.id/);
+  assert.match(products,/current_lifecycle/);
+  assert.match(products,/governedProductLifecycle\(product,portfolioItems\)/);
+});
+
+
+test("Portfolio Pulse receives governed products with Portfolio Registry lifecycle applied",()=>{
+  assert.match(products,/catalogProductsForPulse/);
+  assert.match(products,/governedProductLifecycle\(product,portfolioItems\)/);
+  assert.match(products,/ResonancePortfolioPulse products=\{catalogProductsForPulse\}/);
 });

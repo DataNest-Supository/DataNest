@@ -4,6 +4,8 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 import ResonancePortfolioPulse from "@/components/ResonancePortfolioPulse";
 import { FREE_PROMOTION_LABEL, RONSAS_FULL_NAME } from "@/lib/ecosystemAuthority";
+import PortfolioRegistryPanel from "@/components/PortfolioRegistryPanel";
+import { type PortfolioRegistryRow, type PortfolioRole } from "@/lib/portfolioRegistry";
 
 
 type CatalogProduct = {
@@ -60,6 +62,11 @@ function governedProductFullName(product:CatalogProduct){
     :product.full_name;
 }
 
+function governedProductLifecycle(product:CatalogProduct,portfolioItems:PortfolioRegistryRow[]){
+  const linked=portfolioItems.find(item=>item.linked_product_id===product.id);
+  return linked?.current_lifecycle||product.lifecycle_status||"active";
+}
+
 function payloadText(payload:Record<string,unknown>,...keys:string[]) {
   for (const key of keys) {
     const value=payload[key];
@@ -107,6 +114,16 @@ type ContextEvent = {
 
 type Props = {
   projectId:string;
+  currentUserId:string;
+  role:PortfolioRole;
+};
+
+type PortfolioRelationshipRow = {
+  id:string;
+  source_item_id:string;
+  target_item_id:string;
+  relationship_type:string;
+  status:string;
 };
 
 const legalTasks:LegalTask[] = [
@@ -164,7 +181,7 @@ function legalSessionKey(jobId:string){
   return "datanest.legalEagle.session."+jobId;
 }
 
-export default function ProductsWorkspace({projectId}:{projectId:string}){
+export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
   const [selectedTask,setSelectedTask]=useState<LegalTask>(legalTasks[0]);
   const [catalogProducts,setCatalogProducts]=useState<CatalogProduct[]>([]);
   const [catalogRecords,setCatalogRecords]=useState<CatalogRecord[]>([]);
@@ -176,6 +193,10 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
   const [catalogUrlReady,setCatalogUrlReady]=useState(false);
   const [catalogDetailsOpen,setCatalogDetailsOpen]=useState(false);
   const [catalogShareNotice,setCatalogShareNotice]=useState("");
+  const [catalogRefreshToken,setCatalogRefreshToken]=useState(0);
+  const [productsSection,setProductsSection]=useState<"products"|"portfolio">("products");
+  const [portfolioItems,setPortfolioItems]=useState<PortfolioRegistryRow[]>([]);
+  const [portfolioRelationships,setPortfolioRelationships]=useState<PortfolioRelationshipRow[]>([]);
 
   const [jobs,setJobs]=useState<Job[]>([]);
   const [selectedJobId,setSelectedJobId]=useState("");
@@ -342,6 +363,55 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
 
 
   useEffect(()=>{
+    const syncSection=()=>{
+      const url=new URL(window.location.href);
+      setProductsSection(url.searchParams.get("section")==="portfolio"?"portfolio":"products");
+    };
+    syncSection();
+    window.addEventListener("popstate",syncSection);
+    return()=>window.removeEventListener("popstate",syncSection);
+  },[]);
+
+  useEffect(()=>{
+    let active=true;
+    const supabase=getSupabase();
+    if(!supabase)return;
+    void Promise.all([
+      supabase.from("portfolio_registry_view").select("*").eq("project_id",projectId).order("name"),
+      supabase.from("portfolio_relationships").select("id,source_item_id,target_item_id,relationship_type,status").eq("project_id",projectId).eq("status","active")
+    ]).then(([itemResult,relationshipResult])=>{
+      if(!active)return;
+      if(itemResult.error||relationshipResult.error){
+        setPortfolioItems([]);
+        setPortfolioRelationships([]);
+        return;
+      }
+      setPortfolioItems((itemResult.data||[]) as PortfolioRegistryRow[]);
+      setPortfolioRelationships((relationshipResult.data||[]) as PortfolioRelationshipRow[]);
+    });
+    return()=>{active=false;};
+  },[projectId]);
+
+  function setProductsMode(next:"products"|"portfolio"){
+    setProductsSection(next);
+    const url=new URL(window.location.href);
+    if(next==="portfolio")url.searchParams.set("section","portfolio");
+    else{
+      url.searchParams.delete("section");
+      url.searchParams.delete("item");
+    }
+    window.history.replaceState(window.history.state,"",url.toString());
+  }
+
+  function historicalParentProductId(item:PortfolioRegistryRow){
+    const historical=item.metadata?.historical_catalog;
+    if(!historical||typeof historical!=="object")return "";
+    const value=(historical as Record<string,unknown>).parent_product_id;
+    return typeof value==="string"?value:"";
+  }
+
+
+  useEffect(()=>{
     let active=true;
     const supabase=getSupabase();
     if(!supabase){setCatalogError("Product catalog is unavailable because the DataNest data connection is not configured.");setCatalogLoading(false);return;}
@@ -364,7 +434,7 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
     }).finally(()=>{if(active)setCatalogLoading(false);});
 
     return()=>{active=false;};
-  },[projectId]);
+  },[projectId,catalogRefreshToken]);
 
   useEffect(()=>{
     if(!catalogProducts.length)return;
@@ -438,6 +508,13 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
     window.setTimeout(()=>setCatalogShareNotice(""),3000);
   }
 
+  const catalogProductsForPulse=useMemo(()=>catalogProducts.map(product=>{
+    const lifecycle=governedProductLifecycle(product,portfolioItems);
+    return lifecycle===product.lifecycle_status
+      ?product
+      :{...product,lifecycle_status:lifecycle};
+  }),[catalogProducts,portfolioItems]);
+
   const recordsByProduct=useMemo(()=>{
     const map=new Map<string,CatalogRecord[]>();
     for(const record of catalogRecords){
@@ -449,7 +526,20 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
   },[catalogRecords]);
 
   return <div className="productsWorkspace">
-    <ResonancePortfolioPulse products={catalogProducts} records={catalogRecords} loading={catalogLoading}/>
+    <nav className="productsModeTabs" aria-label="Products workspace mode">
+      <button type="button" className={productsSection==="products"?"active":""} aria-pressed={productsSection==="products"} onClick={()=>setProductsMode("products")}>Governed Products</button>
+      <button type="button" className={productsSection==="portfolio"?"active":""} aria-pressed={productsSection==="portfolio"} onClick={()=>setProductsMode("portfolio")}>Portfolio Registry</button>
+    </nav>
+    {productsSection==="portfolio"
+      ?<PortfolioRegistryPanel
+        projectId={projectId}
+        currentUserId={currentUserId}
+        role={role}
+        historicalRonsasProductId={catalogProducts.find(product=>product.slug==="ronsas")?.id||null}
+        onGovernedProductsChanged={()=>setCatalogRefreshToken(value=>value+1)}
+      />
+      :<>
+    <ResonancePortfolioPulse products={catalogProductsForPulse} records={catalogRecords} loading={catalogLoading}/>
     <section className="catalogStage" aria-labelledby="governed-catalog-title">
       <div className="catalogStageHead">
         <div>
@@ -526,7 +616,7 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
                 </div>
               </div>
               <div className="catalogFlags">
-                <span className="productStatus">{(product.lifecycle_status||"ACTIVE").toUpperCase()}</span>
+                <span className="productStatus">{governedProductLifecycle(product,portfolioItems).toUpperCase()}</span>
                 {executionAuthority==="DataNest"&&<span className="catalogInvariant">DATANEST MANAGED</span>}
                 {!product.billing_enabled&&<span className="catalogInvariant">{FREE_PROMOTION_LABEL}</span>}
               </div>
@@ -543,6 +633,25 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
               <div><small>Open risks</small><b>{count("risk")}</b></div>
               <div><small>Roadmap</small><b>{count("roadmap_item")}</b></div>
             </div>
+
+            {product.slug==="ronsas"&&(()=>{
+              const ronsasItem=portfolioItems.find(item=>item.linked_product_id===product.id||item.slug==="ronsas")||null;
+              const hasRelationship=(item:PortfolioRegistryRow,types:string[])=>Boolean(ronsasItem&&portfolioRelationships.some(rel=>rel.source_item_id===ronsasItem.id&&rel.target_item_id===item.id&&types.includes(rel.relationship_type)));
+              const owned=portfolioItems.filter(item=>item.active_classification==="product_owned"&&item.target_product_id===product.id);
+              const shared=portfolioItems.filter(item=>item.active_classification==="shared_datanest_capability"&&hasRelationship(item,["uses","depends_on"]));
+              const external=portfolioItems.filter(item=>item.active_classification==="registered_external_capability"&&hasRelationship(item,["uses","integrates_with"]));
+              const pending=portfolioItems.filter(item=>item.review_state==="pending_review"&&item.active_classification===null&&historicalParentProductId(item)===product.id);
+              const names=(items:PortfolioRegistryRow[])=>items.length?items.map(item=>item.name).join(", "):"None recorded";
+              return <section className="ronsasComposition" aria-label="RONSAS Composition">
+                <div className="catalogRecordGroupHead"><h4>RONSAS Composition</h4><span>{owned.length+shared.length+external.length+pending.length}</span></div>
+                <div className="ronsasCompositionGrid">
+                  <div><small>Owned</small><p>{names(owned)}</p></div>
+                  <div><small>Shared</small><p>{names(shared)}</p></div>
+                  <div><small>External</small><p>{names(external)}</p></div>
+                  <div><small>Pending Review</small><p>{names(pending)}</p></div>
+                </div>
+              </section>;
+            })()}
 
             {branches.length>0&&<div className="catalogBranchFlow" aria-label="DataNest product branch flow">
               {["intake","staging","audit","main"].map((name,branchIndex)=>{
@@ -849,5 +958,6 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
     </section>
       </div>
     </details>
+      </>}
   </div>;
 }
