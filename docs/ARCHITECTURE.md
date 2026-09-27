@@ -29,6 +29,22 @@ The Phase B source implementation introduces a project-scoped **Portfolio Regist
 
 This section records source architecture on the Phase B branch. Production availability or certification requires separate release/promotion evidence.
 
+
+## Trust and Data Policy authority
+
+The Phase C source implementation adds a project-scoped **Trust & Data Policy** layer without replacing existing authorization.
+
+- Visibility / processing classification and reuse / learning state are separate governed dimensions.
+- RLS, RBAC, project membership, Job collaboration, and explicit Job-file authorization remain prior authority gates. A favorable trust-policy decision cannot manufacture access.
+- **Provider Trust Profiles** constrain external provider processing by approved visibility class, declared purpose, evidence state, and review status. They contain policy/evidence metadata only; provider credentials remain in the existing server-side provider connection boundary.
+- **Trust Manifests** are versioned summaries of implemented controls and known limitations. They are not access grants, and planned/unknown controls are not represented as verified guarantees.
+- Retention is policy-driven. Phase C v1 can define policy, place holds, record lineage, and review future disposition, but it does not delete, purge, anonymize, or otherwise destructively mutate existing content.
+- Existing DataNest AI certified memory remains the reusable project-memory authority. Project-learning eligibility is not certification, and project certification does not automatically create platform learning authority.
+- Legal Eagle and any other authoritative `learning_eligible=false` mode remain hard learning exclusions even when a broader project default exists.
+- Cloud-Nest, Supository, ILM, Resource Fabric, Authority Envelopes, Capability Leases, Outcome Ledger and later architecture-programme concepts remain target-state work outside Phase C.
+
+This section records source architecture only. Production availability, provider-policy rollout, retention enforcement, or public trust claims require their own verified promotion evidence.
+
 ## Project
 **Resonance DataNest** is the project operating environment.
 
