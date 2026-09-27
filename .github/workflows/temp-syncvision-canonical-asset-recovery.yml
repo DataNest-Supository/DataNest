@@ -21,7 +21,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          base="https://resonance-syncvision.ashleyuys.chatgpt.site"
           tmp="${RUNNER_TEMP}/syncvision-assets"
           mkdir -p "$tmp"
 
@@ -32,47 +31,69 @@ jobs:
             local actual_size actual_blob
             actual_size="$(wc -c < "$file" | tr -d ' ')"
             actual_blob="$(git hash-object "$file")"
-            test "$actual_size" = "$expected_size" || {
-              echo "size mismatch for $file: expected $expected_size got $actual_size" >&2
-              return 1
-            }
-            test "$actual_blob" = "$expected_blob" || {
-              echo "blob mismatch for $file: expected $expected_blob got $actual_blob" >&2
-              return 1
-            }
+            test "$actual_size" = "$expected_size" &&
+              test "$actual_blob" = "$expected_blob"
           }
 
-          fetch() {
-            curl --fail --location --retry 3 --retry-delay 2 \
-              --connect-timeout 20 --max-time 240 "$1" -o "$2"
+          recover_matching() {
+            local output="$1"
+            local expected_size="$2"
+            local expected_blob="$3"
+            shift 3
+            local url
+            for url in "$@"; do
+              echo "Trying $url"
+              rm -f "$output"
+              if curl --fail --location --retry 2 --retry-delay 1 \
+                --connect-timeout 20 --max-time 300 "$url" -o "$output"; then
+                if verify "$output" "$expected_size" "$expected_blob"; then
+                  echo "Verified canonical asset from $url"
+                  return 0
+                fi
+                echo "Candidate did not match canonical size/blob: $url"
+              fi
+            done
+            echo "No canonical candidate recovered for $output" >&2
+            return 1
           }
 
-          fetch "$base/og-v2.png" "$tmp/og-v2.png"
-          verify "$tmp/og-v2.png" 1746155 168eacf216ea00e37667ec583f04697f7d64bf24
+          roots=(
+            "https://resonance-syncvision.ashleyuys.chatgpt.site"
+            "https://syncvision.life"
+            "https://www.syncvision.life"
+            "https://resonancesyncvision.lovable.app"
+            "https://sync.reson8.life"
+            "https://www.reson8.life/apps/sync-vision"
+            "https://www.resonanceonline.life/apps/sync_vision"
+          )
 
-          fetch "$base/og-v3.png" "$tmp/og-v3.png"
-          verify "$tmp/og-v3.png" 1620052 3c8e3f5283049b4fc805abfa84365ef30cc2d4f9
-
-          logo_ok=0
-          for url in \
-            "$base/assets/resonance-app-dev-logo-DrTt_beP.png" \
-            "$base/resonance-app-dev-logo.png"
-          do
-            if fetch "$url" "$tmp/logo-candidate.png" 2>/dev/null && \
-               verify "$tmp/logo-candidate.png" 1833523 7fe2a0ca3b270c0f09321b29c7f0fc83d3766778
-            then
-              cp "$tmp/logo-candidate.png" "$tmp/resonance-app-dev-logo.png"
-              logo_ok=1
-              break
-            fi
+          og2_urls=()
+          og3_urls=()
+          logo_urls=()
+          wasm_urls=()
+          for root in "${roots[@]}"; do
+            og2_urls+=("$root/og-v2.png")
+            og3_urls+=("$root/og-v3.png")
+            logo_urls+=(
+              "$root/assets/resonance-app-dev-logo-DrTt_beP.png"
+              "$root/resonance-app-dev-logo.png"
+              "$root/src/assets/resonance-app-dev-logo.png"
+            )
+            wasm_urls+=("$root/ffmpeg-core/ffmpeg-core.wasm")
           done
-          test "$logo_ok" = "1" || {
-            echo "canonical Resonance AppDev logo could not be recovered from the public deployment" >&2
-            exit 1
-          }
 
-          fetch "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.wasm" "$tmp/ffmpeg-core.wasm"
-          verify "$tmp/ffmpeg-core.wasm" 32129114 8988d43ccefd178a8ab9a1f79f284d01a16dd32f
+          recover_matching "$tmp/og-v2.png" 1746155 \
+            168eacf216ea00e37667ec583f04697f7d64bf24 "${og2_urls[@]}"
+          recover_matching "$tmp/og-v3.png" 1620052 \
+            3c8e3f5283049b4fc805abfa84365ef30cc2d4f9 "${og3_urls[@]}"
+          recover_matching "$tmp/resonance-app-dev-logo.png" 1833523 \
+            7fe2a0ca3b270c0f09321b29c7f0fc83d3766778 "${logo_urls[@]}"
+
+          recover_matching "$tmp/ffmpeg-core.wasm" 32129114 \
+            8988d43ccefd178a8ab9a1f79f284d01a16dd32f \
+            "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.wasm" \
+            "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.wasm" \
+            "${wasm_urls[@]}"
 
           install -D "$tmp/ffmpeg-core.wasm" \
             apps/ronsas/syncvision/public/ffmpeg-core/ffmpeg-core.wasm
