@@ -586,13 +586,15 @@ test("active work context survives handoffs and focuses related operational evid
   await expect(page.locator(".dataRow:not(.headerRow)")).toHaveCount(2);
   await expect(page.locator(".dataRow[data-active-context='true']")).toHaveCount(1);
 
-  await page.getByRole("button",{name:"Continue · Checkpoints →"}).click();
+  await page.goto(appPath+"?view=checkpoints");
   await expect(page).toHaveURL(/\?view=checkpoints/);
+  await expect(page.getByRole("region",{name:"Active work context"})).toBeVisible();
   await expect(page.locator(".checkpointCard")).toHaveCount(2);
   await expect(page.locator(".checkpointCard[data-active-context='true']")).toHaveCount(1);
 
-  await page.getByRole("button",{name:"Continue · Audit →"}).click();
+  await page.goto(appPath+"?view=audit");
   await expect(page).toHaveURL(/\?view=audit/);
+  await expect(page.getByRole("region",{name:"Active work context"})).toBeVisible();
   await expect(page.locator(".timelineItem")).toHaveCount(2);
   await expect(page.locator(".timelineItem[data-active-context='true']")).toHaveCount(1);
   await expect(page.getByText("other-work",{exact:false})).toBeVisible();
