@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 import ProjectMembersPanel from "@/components/ProjectMembersPanel";
 import TrustPolicyPanel from "@/components/TrustPolicyPanel";
+import ExecutionAuthorityPanel from "@/components/ExecutionAuthorityPanel";
 import type { TrustPolicyRole } from "@/lib/trustPolicy";
 
 type Protocol={
@@ -64,13 +65,19 @@ export default function GovernanceWorkspace({
   const [workspace,setWorkspace]=useState<Workspace|null>(null);
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
-  const [section,setSection]=useState<"sovereign"|"trust">(()=>{
+  const [section,setSection]=useState<"sovereign"|"trust"|"authority">(()=>{
     if(typeof window==="undefined")return "sovereign";
-    return new URL(window.location.href).searchParams.get("section")==="trust"?"trust":"sovereign";
+    const requested=new URL(window.location.href).searchParams.get("section");
+    if(requested==="trust")return "trust";
+    if(requested==="authority")return "authority";
+    return "sovereign";
   });
 
   useEffect(()=>{
-    const sync=()=>setSection(new URL(window.location.href).searchParams.get("section")==="trust"?"trust":"sovereign");
+    const sync=()=>{
+      const requested=new URL(window.location.href).searchParams.get("section");
+      setSection(requested==="trust"?"trust":requested==="authority"?"authority":"sovereign");
+    };
     window.addEventListener("popstate",sync);
     return ()=>window.removeEventListener("popstate",sync);
   },[]);
@@ -99,7 +106,7 @@ export default function GovernanceWorkspace({
   const [replacementProposalId,setReplacementProposalId]=useState("");
 
   const load=useCallback(async()=>{
-    if(section==="trust"){setLoading(false);return;}
+    if(section!=="sovereign"){setLoading(false);return;}
     const supabase=getSupabase();if(!supabase)return;
     setLoading(true);
     const {data,error}=await supabase.rpc("get_governance_workspace_v1",{target_project:projectId});
@@ -258,9 +265,10 @@ export default function GovernanceWorkspace({
     setBusy(false);
   }
 
-  function selectSection(next:"sovereign"|"trust"){
+  function selectSection(next:"sovereign"|"trust"|"authority"){
     const url=new URL(window.location.href);
     if(next==="trust")url.searchParams.set("section","trust");
+    else if(next==="authority")url.searchParams.set("section","authority");
     else url.searchParams.delete("section");
     window.history.pushState(window.history.state,"",url.toString());
     setSection(next);
@@ -269,9 +277,11 @@ export default function GovernanceWorkspace({
   const governanceModeTabs=<div className="governanceModeTabs" role="tablist" aria-label="Governance sections">
     <button type="button" role="tab" aria-selected={section==="sovereign"} className={section==="sovereign"?"active":""} onClick={()=>selectSection("sovereign")}>Sovereign Governance</button>
     <button type="button" role="tab" aria-selected={section==="trust"} className={section==="trust"?"active":""} onClick={()=>selectSection("trust")}>Trust & Data Policy</button>
+    <button type="button" role="tab" aria-selected={section==="authority"} className={section==="authority"?"active":""} onClick={()=>selectSection("authority")}>Authority & Execution</button>
   </div>;
 
   if(section==="trust")return <div>{governanceModeTabs}<TrustPolicyPanel projectId={projectId} currentUserId={currentUserId} role={role} setNotice={setNotice} setError={setError}/></div>;
+  if(section==="authority")return <div>{governanceModeTabs}<ExecutionAuthorityPanel projectId={projectId} currentUserId={currentUserId} role={role} setNotice={setNotice} setError={setError}/></div>;
   if(loading)return <section className="panel"><p className="muted">Loading Sovereign Governance…</p></section>;
   if(!workspace)return <section className="panel"><p className="muted">Governance workspace is unavailable.</p></section>;
 

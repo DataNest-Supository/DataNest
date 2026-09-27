@@ -50,6 +50,11 @@ test("TranScheduler groups jobs under the project and renders the priority gradi
       state:"AVAILABLE",observed_at:"2026-09-26T11:55:00Z",next_check_at:null,confidence:1,concurrency_limit:1,running:0,metadata:{}
     }];
     else if(path.endsWith("/get_project_dashboard_summary")) body={total_jobs:3,active_jobs:2,running_jobs:1,blocked_jobs:0,available_capabilities:1,registered_capabilities:1};
+    else if(path.endsWith("/get_job_execution_authority_summary_v1")) body={
+      "00000000-0000-4000-8000-000000000101":{route_mode:"enforced",envelope_id:null,envelope_status:null,lease_states:{repository:"missing"},breaker_state:"enabled",decision_outcome:"deny",decision_reason_code:"envelope_missing",readiness:"blocked"},
+      "00000000-0000-4000-8000-000000000102":{route_mode:"enforced",envelope_id:"00000000-0000-4000-8000-000000000301",envelope_status:"active",lease_states:{repository:"active",database:"active"},breaker_state:"enabled",decision_outcome:"allow",decision_reason_code:"authority_allow",readiness:"authorized"},
+      "00000000-0000-4000-8000-000000000103":{route_mode:"report_only",envelope_id:null,envelope_status:null,lease_states:{},breaker_state:"enabled",decision_outcome:null,decision_reason_code:null,readiness:"report_only"}
+    };
     else if(path.endsWith("/jobs")) body=jobs;
     else if(path.includes("/accept_pending_project_member_invites_v1")||path.includes("/accept_pending_job_invites")) body=null;
     return route.fulfill({contentType:"application/json",body:JSON.stringify(body)});
@@ -89,6 +94,9 @@ test("TranScheduler groups jobs under the project and renders the priority gradi
   await page.getByRole("button",{name:"Queue",exact:true}).click();
   await expect(page.locator(".schedulerProjectGroup .schedulerTable")).toBeVisible();
   await expect(page.locator(".schedulerPriorityCell .priorityScaleMarker")).toHaveCount(3);
+  await expect(page.getByText("Blocked by policy",{exact:true})).toBeVisible();
+  await expect(page.getByText("Authorized",{exact:true})).toBeVisible();
+  await expect(page.getByText("Report only",{exact:true})).toBeVisible();
 
   await page.getByRole("button",{name:"Gantt chart",exact:true}).click();
   await page.setViewportSize({width:390,height:844});
