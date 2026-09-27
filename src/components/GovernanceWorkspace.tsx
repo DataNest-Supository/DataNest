@@ -301,7 +301,7 @@ export default function GovernanceWorkspace({
 
   return <div>
     {governanceModeTabs}
-    {hasSessionDraft&&<p className="muted" role="status">Governance draft restored · saved only in this browser session until its form is submitted.</p>}
+    {hasSessionDraft&&<p className="muted" role="status">Browser-session draft active · unfinished Governance inputs are restored after workspace navigation or reload.</p>}
     <section className="heroPanel">
       <div>
         <p className="eyebrow">RESONANCE SOVEREIGN GOVERNANCE</p>
