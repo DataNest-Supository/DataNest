@@ -203,6 +203,7 @@ export default function ProductLab({
   async function reconcileTestRunIntent(intent:PendingMutationIntent<ProductTestRunPendingPayload>,announce:boolean){
     const supabase=getSupabase();
     if(!supabase){
+      markPendingMutationVerification(testRunRequestScope,"unconfirmed");
       setTestRunReconciliation("pending");
       if(announce)setError("Product Lab test evidence is awaiting authoritative confirmation. Connectivity is unavailable, so do not record a second result yet.");
       return {state:"pending" as const,value:null,error:new Error("Supabase unavailable")};
