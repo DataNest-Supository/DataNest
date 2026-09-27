@@ -286,7 +286,15 @@ test("DataNest AI surfaces the returned assistant turn before refreshing the gov
   );
   assert.match(
     workspace,
-    /sessionId:sessionOverride\|\|sessionId\|\|null/
+    /const requestedSessionKey=sessionKey\(requestedJobId\)/
+  );
+  assert.match(
+    workspace,
+    /typeof sessionOverride==="string"[\s\S]{0,160}sessionByJobRef\.current\[requestedSessionKey\]\|\|null/
+  );
+  assert.match(
+    workspace,
+    /body:\{action:"context",jobId:requestedJobId,sessionId:requestedSessionId\}/
   );
 });
 

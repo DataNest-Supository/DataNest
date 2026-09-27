@@ -86,18 +86,18 @@ test("quick switch moves keyboard selection with ArrowDown before Enter",async({
   const search=dialog.getByLabel("Search DataNest workspaces");
   await expect(search).toBeFocused();
 
-  await search.fill("Research");
+  await search.fill("Execute");
   const options=dialog.getByRole("option");
   await expect(options).toHaveCount(3);
-  await expect(dialog.getByRole("option",{name:/Think Tanks/})).toHaveAttribute("aria-selected","true");
+  await expect(dialog.getByRole("option",{name:/UNIFI Planner/})).toHaveAttribute("aria-selected","true");
 
   await page.keyboard.press("ArrowDown");
-  await expect(dialog.getByRole("option",{name:/DataNest AI/})).toHaveAttribute("aria-selected","true");
+  await expect(dialog.getByRole("option",{name:/TranScheduler/})).toHaveAttribute("aria-selected","true");
 
   await page.keyboard.press("Enter");
   await expect(dialog).toBeHidden();
-  await expect(page).toHaveURL(/(?:\\?|&)view=ai(?:&|$)/);
-  await expect(page.getByRole("heading",{name:"DataNest AI",exact:true}).first()).toBeVisible();
+  await expect(page).toHaveURL(/(?:\\?|&)view=scheduler(?:&|$)/);
+  await expect(page.getByRole("heading",{name:"TranScheduler",exact:true}).first()).toBeVisible();
 });
 
 
@@ -157,7 +157,7 @@ test("mobile TranScheduler avoids horizontal table scrolling",async({page})=>{
   await page.setViewportSize({width:390,height:844});
 
   await page.getByRole("button",{name:"Open menu"}).click();
-  await page.getByText("Tools",{exact:true}).click();
+  await page.getByRole("navigation",{name:"Project workspaces"}).getByText("Execute",{exact:true}).click();
   await page.getByRole("button",{name:"TranScheduler",exact:true}).click();
   await expect(page).toHaveURL(/(?:\?|&)view=scheduler(?:&|$)/);
   await page.getByRole("button",{name:"Queue",exact:true}).click();
@@ -187,7 +187,7 @@ test("mobile TranScheduler status filter uses a compact select",async({page})=>{
   await page.setViewportSize({width:390,height:844});
 
   await page.getByRole("button",{name:"Open menu"}).click();
-  await page.getByText("Tools",{exact:true}).click();
+  await page.getByRole("navigation",{name:"Project workspaces"}).getByText("Execute",{exact:true}).click();
   await page.getByRole("button",{name:"TranScheduler",exact:true}).click();
   await page.getByRole("button",{name:"Queue",exact:true}).click();
 
@@ -264,6 +264,7 @@ test("Think Tanks expose project-scoped collaboration and reviewed-memory bounda
 
 test("Sparks workspace exposes internal utility boundaries",async({page})=>{
   await signIn(page);
+  await page.getByRole("navigation",{name:"Project workspaces"}).getByText("Discover",{exact:true}).click();
   await page.getByRole("button",{name:"Sparks",exact:true}).click();
 
   await expect(page.getByText("SPARKS · INTERNAL UTILITY",{exact:true})).toBeVisible();
@@ -296,6 +297,68 @@ test("Governance exposes governed project membership and non-voter pending state
   await expect(page.getByText(/Sending an invitation never creates an independent vote by itself/i)).toBeVisible();
   await expect(page.getByText(/1 ACTIVE VOTER/)).toBeVisible();
   await expect(page.getByText(/acceptance requires the matching authenticated account/i)).toBeVisible();
+});
+
+
+test("project invite action confirms successful delivery inline without sending a real email",async({page})=>{
+  await signIn(page);
+  await openWorkspace(page,"Governance");
+  await page.getByText("Project members and invitations",{exact:true}).click();
+
+  await page.route("**/functions/v1/send-project-member-invite",async route=>{
+    await new Promise(resolve=>setTimeout(resolve,180));
+    await route.fulfill({
+      status:200,
+      contentType:"application/json",
+      body:JSON.stringify({
+        ok:true,
+        delivery:"invite",
+        invitation:{id:"browser-fixture-invite"},
+        formalVotingEligible:false,
+        acceptanceRequired:true
+      })
+    });
+  });
+
+  const email="browser-invite-success@example.invalid";
+  await page.getByLabel("Invite email").fill(email);
+  const send=page.getByRole("button",{name:"Send project invite"});
+  await send.click();
+
+  await expect(page.getByRole("button",{name:"Sending invite…"})).toBeVisible();
+  await expect(page.getByRole("button",{name:"Invite sent"})).toBeVisible();
+  await expect(page.locator("#project-invite-feedback")).toContainText("Invite sent to "+email);
+  await expect(page.locator("#project-invite-feedback")).toContainText(/Voting remains disabled until that person authenticates and accepts project access/i);
+  await expect(page.getByLabel("Invite email")).toHaveValue("");
+});
+
+test("project invite action exposes delivery failure inline and preserves retry input",async({page})=>{
+  await signIn(page);
+  await openWorkspace(page,"Governance");
+  await page.getByText("Project members and invitations",{exact:true}).click();
+
+  await page.route("**/functions/v1/send-project-member-invite",async route=>{
+    await route.fulfill({
+      status:409,
+      contentType:"application/json",
+      body:JSON.stringify({error:"This user is already an active project member."})
+    });
+  });
+
+  const email="browser-invite-failure@example.invalid";
+  const emailInput=page.getByLabel("Invite email");
+  await emailInput.fill(email);
+  await page.getByRole("button",{name:"Send project invite"}).click();
+
+  const retry=page.getByRole("button",{name:"Invite failed · Retry"});
+  await expect(retry).toBeVisible();
+  await expect(retry).toBeEnabled();
+  await expect(page.locator("#project-invite-feedback")).toHaveText("Invite failed. This user is already an active project member.");
+  await expect(emailInput).toHaveValue(email);
+
+  await emailInput.fill("browser-invite-retry@example.invalid");
+  await expect(page.getByRole("button",{name:"Send project invite"})).toBeVisible();
+  await expect(page.locator("#project-invite-feedback")).toBeHidden();
 });
 
 

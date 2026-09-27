@@ -13,9 +13,11 @@ export type DataNestAiEvent = {
 };
 
 type Props = {
+  draftScope:string;
   jobId:string;
   jobCode:string;
   sessionId:string;
+  contextReady:boolean;
   events:DataNestAiEvent[];
   onSessionChange:(sessionId:string)=>void;
   onContextRefresh:(sessionOverride?:string)=>Promise<void>;
@@ -25,8 +27,30 @@ type Props = {
 
 function formatDate(value:string){
   return new Intl.DateTimeFormat(undefined,{
-    month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit"
+    month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"UTC",timeZoneName:"short"
   }).format(new Date(value));
+}
+
+function sessionDraftKey(draftScope:string,jobId:string){
+  return "datanest-ai:session-draft:"+draftScope+":"+jobId;
+}
+
+function readSessionDraft(draftScope:string,jobId:string){
+  try{
+    return window.sessionStorage.getItem(sessionDraftKey(draftScope,jobId))||"";
+  }catch{
+    return "";
+  }
+}
+
+function writeSessionDraft(draftScope:string,jobId:string,value:string){
+  try{
+    const key=sessionDraftKey(draftScope,jobId);
+    if(value)window.sessionStorage.setItem(key,value);
+    else window.sessionStorage.removeItem(key);
+  }catch{
+    // Session storage can be unavailable in restricted browser contexts.
+  }
 }
 
 const quickCommands=[
@@ -63,9 +87,11 @@ const quickCommands=[
 ] as const;
 
 export default function DataNestAiChatPanel({
+  draftScope,
   jobId,
   jobCode,
   sessionId,
+  contextReady,
   events,
   onSessionChange,
   onContextRefresh,
@@ -77,44 +103,59 @@ export default function DataNestAiChatPanel({
   const [returnedTurn,setReturnedTurn]=useState<DataNestAiEvent|null>(null);
   const requestIdByJobRef=useRef<Record<string,string>>({});
   const draftByJobRef=useRef<Record<string,string>>({});
-  const activeJobIdRef=useRef(jobId);
+  const draftIdentity=draftScope+":"+jobId;
+  const activeDraftIdentityRef=useRef(draftIdentity);
   const composerRef=useRef<HTMLTextAreaElement|null>(null);
   const transcriptRef=useRef<HTMLDivElement|null>(null);
-  const busy=busyJobs.has(jobId);
+  const busy=busyJobs.has(draftIdentity);
 
   useEffect(()=>{
-    activeJobIdRef.current=jobId;
+    activeDraftIdentityRef.current=draftIdentity;
     setReturnedTurn(null);
-    setDraft(draftByJobRef.current[jobId]||"");
-  },[jobId]);
+    const memoryDraft=draftByJobRef.current[draftIdentity];
+    const nextDraft=memoryDraft===undefined?readSessionDraft(draftScope,jobId):memoryDraft;
+    draftByJobRef.current[draftIdentity]=nextDraft;
+    setDraft(nextDraft);
+  },[draftIdentity,draftScope,jobId]);
 
   useEffect(()=>{
     const transcript=transcriptRef.current;
     if(!transcript)return;
-    transcript.scrollTo({top:transcript.scrollHeight,behavior:"smooth"});
+    const reduceMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches||document.documentElement.dataset.motionPaused==="true";
+    transcript.scrollTo({top:transcript.scrollHeight,behavior:reduceMotion?"instant":"smooth"});
   },[events.length,returnedTurn,busy]);
 
-  function setJobBusy(targetJobId:string,value:boolean){
+  function setJobBusy(targetDraftIdentity:string,value:boolean){
     setBusyJobs(current=>{
       const next=new Set(current);
-      if(value)next.add(targetJobId);
-      else next.delete(targetJobId);
+      if(value)next.add(targetDraftIdentity);
+      else next.delete(targetDraftIdentity);
       return next;
     });
   }
 
   function updateDraft(value:string){
-    draftByJobRef.current[jobId]=value;
-    requestIdByJobRef.current[jobId]="";
+    draftByJobRef.current[draftIdentity]=value;
+    requestIdByJobRef.current[draftIdentity]="";
+    writeSessionDraft(draftScope,jobId,value);
     setDraft(value);
+  }
+
+  function clearDraft(){
+    if(busy)return;
+    draftByJobRef.current[draftIdentity]="";
+    requestIdByJobRef.current[draftIdentity]="";
+    writeSessionDraft(draftScope,jobId,"");
+    setDraft("");
+    window.setTimeout(()=>composerRef.current?.focus(),0);
   }
 
   function focusComposer(){
     const composer=composerRef.current;
     if(!composer)return;
-    const reducedMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    composer.scrollIntoView({behavior:reducedMotion?"auto":"smooth",block:"center"});
-    window.setTimeout(()=>composer.focus(),reducedMotion?0:220);
+    const reducedMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches||document.documentElement.dataset.motionPaused==="true";
+    composer.scrollIntoView({behavior:reducedMotion?"instant":"smooth",block:"center"});
+    composer.focus({preventScroll:true});
   }
 
   function loadQuickCommand(prompt:string){
@@ -125,16 +166,18 @@ export default function DataNestAiChatPanel({
   async function send(event:FormEvent){
     event.preventDefault();
     const message=draft.trim();
-    if(!message||busy)return;
+    if(!message||busy||!contextReady)return;
     const supabase=getSupabase();
     if(!supabase)return;
 
+    const requestDraftScope=draftScope;
     const requestJobId=jobId;
     const requestJobCode=jobCode;
     const requestSessionId=sessionId;
-    const requestId=requestIdByJobRef.current[requestJobId]||crypto.randomUUID();
-    requestIdByJobRef.current[requestJobId]=requestId;
-    setJobBusy(requestJobId,true);
+    const requestDraftIdentity=draftIdentity;
+    const requestId=requestIdByJobRef.current[requestDraftIdentity]||crypto.randomUUID();
+    requestIdByJobRef.current[requestDraftIdentity]=requestId;
+    setJobBusy(requestDraftIdentity,true);
     setError("");
 
     try{
@@ -150,9 +193,10 @@ export default function DataNestAiChatPanel({
       if(error)throw error;
       const payload=(data||{}) as Record<string,unknown>;
 
-      requestIdByJobRef.current[requestJobId]="";
-      draftByJobRef.current[requestJobId]="";
-      if(activeJobIdRef.current!==requestJobId)return;
+      requestIdByJobRef.current[requestDraftIdentity]="";
+      draftByJobRef.current[requestDraftIdentity]="";
+      writeSessionDraft(requestDraftScope,requestJobId,"");
+      if(activeDraftIdentityRef.current!==requestDraftIdentity)return;
 
       const nextSession=String(payload.sessionId||requestSessionId||"");
       if(nextSession)onSessionChange(nextSession);
@@ -179,13 +223,14 @@ export default function DataNestAiChatPanel({
           :"DataNest AI responded and recorded this turn as traceable UNCERTIFIED evidence for "+requestJobCode+"."
       );
       await onContextRefresh(nextSession);
-      if(activeJobIdRef.current===requestJobId)setReturnedTurn(null);
+      // Keep the returned answer until refreshed events contain its trace.
+      // A failed refresh must not make a successful reply disappear.
     }catch(sendError){
-      if(activeJobIdRef.current===requestJobId){
+      if(activeDraftIdentityRef.current===requestDraftIdentity){
         setError(sendError instanceof Error?sendError.message:"Unable to send DataNest AI input.");
       }
     }finally{
-      setJobBusy(requestJobId,false);
+      setJobBusy(requestDraftIdentity,false);
     }
   }
 
@@ -204,7 +249,7 @@ export default function DataNestAiChatPanel({
         </div>
       </div>
       <div className="datanestAiConsoleStatus" aria-label="DataNest AI console status">
-        <span className="datanestAiConsoleLive"><i aria-hidden="true"/>AI CORE LINKED</span>
+        <span className={contextReady?"datanestAiConsoleLive":""}>{contextReady&&<i aria-hidden="true"/>}{contextReady?"AI CORE LINKED":"CONTEXT NOT READY"}</span>
         <span>{jobCode}</span>
         <span>{sessionId?"SESSION "+sessionId.slice(0,8):"SESSION ESTABLISHING"}</span>
         <button
@@ -242,7 +287,7 @@ export default function DataNestAiChatPanel({
       </div>
     </div>
 
-    <div className="datanestAiTranscript" aria-live="polite" ref={transcriptRef}>
+    <div className="datanestAiTranscript" role="log" aria-label="Job conversation" aria-live="polite" ref={transcriptRef}>
       {visibleEvents.map(item=>{
         const assistant=item.source_type==="datanest_ai";
         const companion=item.source_type==="ai_companion";
@@ -275,14 +320,38 @@ export default function DataNestAiChatPanel({
           <div className="datanestAiReasoningPulse" aria-hidden="true"><i/><i/><i/><i/><i/></div>
         </div>
       </div>}
-      {!events.length&&!busy&&<div className="emptyState datanestAiConsoleEmpty">
+      {!visibleEvents.length&&!busy&&<div className="emptyState datanestAiConsoleEmpty">
         <div className="datanestAiConsoleEmptyCore" aria-hidden="true">AI</div>
-        <h3>DataNest AI is ready</h3>
-        <p>Issue a development command below. DataNest will bind it to this Job and trace the interaction before inference.</p>
+        <h3>{contextReady?"DataNest AI is ready":"Waiting for Job context"}</h3>
+        <p>{contextReady?"Issue a development command below. DataNest will bind it to this Job and trace the interaction before inference.":"You can prepare a draft while context loads. Sending becomes available once this Job context is ready."}</p>
       </div>}
     </div>
 
     <form className="datanestAiComposer" onSubmit={send}>
+      <div
+        id="datanest-ai-command-context"
+        className="datanestAiComposerContext"
+        aria-label={"DataNest AI command context locked to "+jobCode}
+      >
+        <span className="datanestAiContextLock">
+          <i aria-hidden="true"/>
+          CONTEXT LOCKED
+        </span>
+        <b>{jobCode}</b>
+        <small>{sessionId?"SESSION "+sessionId.slice(0,8):"SESSION ESTABLISHING"}</small>
+        {draft.trim()&&<span className="datanestAiDraftLock">
+          SESSION-ONLY DRAFT · LOCKED TO {jobCode}
+        </span>}
+        {draft.trim()&&<button
+          type="button"
+          className="datanestAiClearDraft"
+          onClick={clearDraft}
+          disabled={busy}
+        >
+          Clear draft
+        </button>}
+      </div>
+
       <label>
         <span className="datanestAiComposerLabel">
           <b>Command DataNest AI</b>
@@ -291,10 +360,12 @@ export default function DataNestAiChatPanel({
         <textarea
           ref={composerRef}
           rows={4}
+          readOnly={busy}
+          aria-describedby="datanest-ai-command-context datanest-ai-composer-help"
           value={draft}
           onChange={event=>updateDraft(event.target.value)}
           onKeyDown={event=>{
-            if((event.ctrlKey||event.metaKey)&&event.key==="Enter"&&!busy&&draft.trim()){
+            if((event.ctrlKey||event.metaKey)&&event.key==="Enter"&&!event.nativeEvent.isComposing&&!busy&&contextReady&&draft.trim()){
               event.preventDefault();
               event.currentTarget.form?.requestSubmit();
             }
@@ -303,8 +374,8 @@ export default function DataNestAiChatPanel({
         />
       </label>
       <div className="rowBetween datanestAiComposerFooter">
-        <small className="muted">Trace-first intake · active Job/session only until certified · Ctrl/⌘ + Enter to send</small>
-        <button className="primaryButton datanestAiCommandButton" disabled={busy||!draft.trim()}>
+        <small id="datanest-ai-composer-help" className="muted">{busy?"Your submitted draft is read-only while DataNest AI responds.":!contextReady?"Waiting for Job context. Your draft is preserved.":"Trace-first intake · active Job/session only until certified · Ctrl/⌘ + Enter to send"}</small>
+        <button className="primaryButton datanestAiCommandButton" disabled={busy||!contextReady||!draft.trim()}>
           {busy?"DataNest AI reasoning…":"Send command"}
           <span aria-hidden="true">→</span>
         </button>

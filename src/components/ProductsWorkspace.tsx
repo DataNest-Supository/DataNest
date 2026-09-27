@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
+import ResonancePortfolioPulse from "@/components/ResonancePortfolioPulse";
 
 
 type CatalogProduct = {
@@ -39,6 +40,7 @@ const catalogRecordLabels:Record<string,string> = {
   integration:"Integrations",
   governance_control:"Governance controls",
   risk:"Risks & issues",
+  source_branch:"Source branches",
   roadmap_item:"Roadmap",
   decision:"Decisions",
   evidence:"Evidence",
@@ -47,7 +49,7 @@ const catalogRecordLabels:Record<string,string> = {
 
 const catalogRecordOrder = [
   "application","component","source_authority","environment","integration",
-  "governance_control","risk","roadmap_item","decision","evidence","datanest_branch"
+  "governance_control","risk","source_branch","roadmap_item","decision","evidence","datanest_branch"
 ];
 
 function payloadText(payload:Record<string,unknown>,...keys:string[]) {
@@ -56,6 +58,11 @@ function payloadText(payload:Record<string,unknown>,...keys:string[]) {
     if (typeof value==="string" && value.trim()) return value;
   }
   return "";
+}
+
+function metadataText(metadata:Record<string,unknown>,key:string,fallback:string) {
+  const value=metadata[key];
+  return typeof value==="string"&&value.trim()?value:fallback;
 }
 
 type LegalTask = {
@@ -434,6 +441,7 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
   },[catalogRecords]);
 
   return <div className="productsWorkspace">
+    <ResonancePortfolioPulse products={catalogProducts} records={catalogRecords} loading={catalogLoading}/>
     <section className="catalogStage" aria-labelledby="governed-catalog-title">
       <div className="catalogStageHead">
         <div>
@@ -484,6 +492,8 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
           const records=recordsByProduct.get(product.id)||[];
           const count=(type:string)=>records.filter(record=>record.record_type===type).length;
           const branches=records.filter(record=>record.record_type==="datanest_branch");
+          const parentPlatform=metadataText(product.metadata,"parent_platform","RESONANCE DATANEST");
+          const executionAuthority=metadataText(product.metadata,"execution_authority","DataNest");
           const query=recordQuery.trim().toLowerCase();
           const visibleRecords=records.filter(record=>{
             if(recordTypeFilter!=="all"&&record.record_type!==recordTypeFilter)return false;
@@ -509,12 +519,15 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
               </div>
               <div className="catalogFlags">
                 <span className="productStatus">{(product.lifecycle_status||"ACTIVE").toUpperCase()}</span>
+                {executionAuthority==="DataNest"&&<span className="catalogInvariant">DATANEST MANAGED</span>}
                 {!product.billing_enabled&&<span className="catalogInvariant">FREE PROMOTION · BILLING OFF</span>}
               </div>
             </div>
 
             <p className="catalogMission">{product.mission}</p>
             <div className="catalogFacts">
+              <div><small>PARENT PLATFORM</small><b>{parentPlatform.toUpperCase()}</b></div>
+              <div><small>EXECUTION AUTHORITY</small><b>{executionAuthority}</b></div>
               <div><small>Runtime</small><b>{product.primary_runtime||"Governed runtime"}</b></div>
               <div><small>Applications</small><b>{count("application")}</b></div>
               <div><small>Components</small><b>{count("component")}</b></div>

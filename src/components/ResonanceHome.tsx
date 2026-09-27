@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
-import CollaborationVisual, { type ProductHeroTarget } from "./CollaborationVisual";
+import CollaborationVisual from "./CollaborationVisual";
+import PurposeJourney from "./PurposeJourney";
 
-type HomeDestination = "ai" | "unifi" | "scheduler" | "governance" | "thinktank" | "sparks" | "products";
+type HomeDestination = "ai" | "unifi" | "scheduler" | "governance" | "thinktank" | "sparks" | "products" | "transparency";
 type ProjectLike = { id:string; name:string; description:string|null };
 type JobLike = { id:string; status:string; created_at:string };
 type SummaryLike = { total:number; active:number; running:number; blocked:number; available:number; registered:number };
@@ -94,21 +95,10 @@ export default function ResonanceHome({
         </div>
       </div>
 
-      <CollaborationVisual
-        projectId={project.id}
-        onOpenProducts={(target?:ProductHeroTarget)=>{
-          const url=new URL(window.location.href);
-          if(target?.product)url.searchParams.set("product",target.product);
-          else url.searchParams.delete("product");
-          if(target?.recordType)url.searchParams.set("recordType",target.recordType);
-          else url.searchParams.delete("recordType");
-          if(target?.q)url.searchParams.set("q",target.q);
-          else url.searchParams.delete("q");
-          window.history.replaceState(window.history.state,"",url.toString());
-          onNavigate("products");
-        }}
-      />
+      <CollaborationVisual projectId={project.id} onOpenProducts={()=>onNavigate("products")}/>
     </section>
+
+    <PurposeJourney onNavigate={onNavigate}/>
 
     <section className="aiIStatsGrid" aria-label="DataNest project metrics">
       <article>
@@ -167,21 +157,5 @@ export default function ResonanceHome({
       </article>
     </section>
 
-    <section className="aiIFlow">
-      <div className="aiIFlowIntro">
-        <p className="eyebrow">RESONANCE LOOP</p>
-        <h3>Move from thought to governed action.</h3>
-        <p>Keep the home surface focused. The deeper workspaces stay one move away.</p>
-      </div>
-      <div className="aiIFlowRail">
-        <button type="button" onClick={()=>onNavigate("sparks")}><span>01</span><b>Spark</b><small>Capture intent</small></button>
-        <i aria-hidden="true"/>
-        <button type="button" onClick={()=>onNavigate("thinktank")}><span>02</span><b>Think</b><small>Expand with AI</small></button>
-        <i aria-hidden="true"/>
-        <button type="button" onClick={()=>onNavigate("governance")}><span>03</span><b>Govern</b><small>Apply controls</small></button>
-        <i aria-hidden="true"/>
-        <button type="button" onClick={()=>onNavigate("scheduler")}><span>04</span><b>Execute</b><small>Route work</small></button>
-      </div>
-    </section>
   </div>;
 }

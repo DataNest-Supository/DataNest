@@ -130,6 +130,22 @@ test("companion placement preserves the DataNest dock on a maximized desktop", a
   );
 });
 
+test("companion rail is reserved only when the browser honors docked popup geometry", async () => {
+  const { companionReserveForActualWindow } = await import("../../src/lib/externalAiWindow.ts");
+  const desired = { left: 1420, top: 0, width: 500, height: 1000, reserveRight: 508 };
+
+  assert.equal(
+    companionReserveForActualWindow(desired, { left: 1422, top: 0, width: 498, height: 1000 }),
+    508,
+    "a popup that actually docks at the requested right edge should reserve the rail"
+  );
+  assert.equal(
+    companionReserveForActualWindow(desired, { left: 0, top: 0, width: 1920, height: 1000 }),
+    0,
+    "a browser tab or ignored popup placement must not leave a blank reserved rail"
+  );
+});
+
 test("companion placement uses free screen space to the right when available", async () => {
   const { calculateCompanionPlacement } = await import("../../src/lib/externalAiWindow.ts");
   const placement = calculateCompanionPlacement({

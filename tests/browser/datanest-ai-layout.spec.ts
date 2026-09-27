@@ -5,6 +5,7 @@ const appPath = process.env.DATANEST_APP_PATH || "/";
 test("DataNest AI keeps the Hero above a centered live command console", async ({ page }) => {
   const projectId = "00000000-0000-4000-8000-000000000010";
   const userId = "00000000-0000-4000-8000-000000000001";
+  const otherUserId = "00000000-0000-4000-8000-000000000002";
   const job = {
     id:"00000000-0000-4000-8000-000000000099",
     job_number:99,
@@ -27,6 +28,7 @@ test("DataNest AI keeps the Hero above a centered live command console", async (
     status:"READY",
     updated_at:"2026-09-26T00:10:00Z"
   };
+  const contextRequests:Array<{action?:string;jobId?:string;sessionId?:string|null}>=[];
 
   await page.setViewportSize({width:1440,height:1000});
   await page.route("**/runtime-config.js", route => route.fulfill({
@@ -36,12 +38,13 @@ test("DataNest AI keeps the Hero above a centered live command console", async (
 
   await page.addInitScript(({userId}) => {
     const encode = (data:unknown) => btoa(JSON.stringify(data)).replaceAll("+","-").replaceAll("/","_").replaceAll("=","");
+    const activeUserId=localStorage.getItem("fixture-user-override")||userId;
     localStorage.setItem("sb-fixture-auth-token",JSON.stringify({
-      access_token:`${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:userId,exp:4102444800,role:"authenticated"})}.fixture`,
+      access_token:`${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:activeUserId,exp:4102444800,role:"authenticated"})}.fixture`,
       refresh_token:"fixture",
       token_type:"bearer",
       expires_at:4102444800,
-      user:{id:userId,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid"}
+      user:{id:activeUserId,aud:"authenticated",role:"authenticated",email:activeUserId===userId?"fixture@example.invalid":"second@example.invalid"}
     }));
   },{userId});
 
@@ -56,7 +59,8 @@ test("DataNest AI keeps the Hero above a centered live command console", async (
     else if(path.endsWith("/get_project_dashboard_summary")) body={total_jobs:2,active_jobs:2,running_jobs:1,blocked_jobs:0,available_capabilities:0,registered_capabilities:0};
     else if(path.endsWith("/jobs")) body=[job,secondJob];
     else if(path.endsWith("/datanest-ai-chat")){
-      const requestBody=route.request().postDataJSON() as {jobId?:string}|null;
+      const requestBody=route.request().postDataJSON() as {action?:string;jobId?:string;sessionId?:string|null}|null;
+      if(requestBody?.action==="context")contextRequests.push({...requestBody});
       const activeJob=requestBody?.jobId===secondJob.id?secondJob:job;
       body={
         sessionId:activeJob.id===secondJob.id?"fixture-session-002":"fixture-session-001",
@@ -95,19 +99,70 @@ test("DataNest AI keeps the Hero above a centered live command console", async (
   expect(await page.locator(".datanestAiComposer").evaluate(element=>getComputedStyle(element).position)).toBe("sticky");
 
   await composer.fill("First Job draft must stay with JOB-00099.");
+  await expect(page.getByText("SESSION-ONLY DRAFT · LOCKED TO JOB-00099",{exact:true})).toBeVisible();
+  await expect(page.getByLabel("DataNest AI command context locked to JOB-00099")).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole("heading",{name:"JOB-00099 · AI Hero Layout Fixture",exact:true})).toBeVisible();
+  await expect(composer).toHaveValue("First Job draft must stay with JOB-00099.");
+  await expect(page.getByText("SESSION-ONLY DRAFT · LOCKED TO JOB-00099",{exact:true})).toBeVisible();
+
+  expect(await page.evaluate(({projectId,userId,jobId})=>
+    sessionStorage.getItem("datanest-ai:session-draft:"+projectId+":"+userId+":"+jobId),
+    {projectId,userId,jobId:job.id}
+  )).toBe("First Job draft must stay with JOB-00099.");
+  expect(await page.evaluate(({jobId})=>
+    sessionStorage.getItem("datanest-ai:session-draft:"+jobId),
+    {jobId:job.id}
+  )).toBeNull();
+
+  await page.evaluate(otherUserId=>localStorage.setItem("fixture-user-override",otherUserId),otherUserId);
+  await page.reload();
+  await expect(page.getByRole("heading",{name:"JOB-00099 · AI Hero Layout Fixture",exact:true})).toBeVisible();
+  await expect(composer).toHaveValue("");
+  await expect(page.getByText("SESSION-ONLY DRAFT · LOCKED TO JOB-00099",{exact:true})).toBeHidden();
+
+  await composer.fill("Second user draft must remain isolated.");
+  await expect(page.getByText("SESSION-ONLY DRAFT · LOCKED TO JOB-00099",{exact:true})).toBeVisible();
+
+  await page.evaluate(()=>localStorage.removeItem("fixture-user-override"));
+  await page.reload();
+  await expect(page.getByRole("heading",{name:"JOB-00099 · AI Hero Layout Fixture",exact:true})).toBeVisible();
+  await expect(composer).toHaveValue("First Job draft must stay with JOB-00099.");
+
+  contextRequests.length=0;
   await page.locator(".datanestAiJobStrip .rndJobChip").filter({hasText:"Second AI Job Fixture"}).click();
   await expect(page.getByRole("heading",{name:"JOB-00100 · Second AI Job Fixture",exact:true})).toBeVisible();
   await expect(composer).toHaveValue("");
+  await expect.poll(()=>contextRequests.filter(item=>item.jobId===secondJob.id).length).toBeGreaterThan(0);
+  const secondJobContextRequests=contextRequests.filter(item=>item.jobId===secondJob.id);
+  expect(secondJobContextRequests[0]?.sessionId??null).toBeNull();
+  expect(secondJobContextRequests.some(item=>item.sessionId==="fixture-session-001")).toBe(false);
 
   await composer.fill("Second Job draft must stay with JOB-00100.");
+  await expect(page.getByText("SESSION-ONLY DRAFT · LOCKED TO JOB-00100",{exact:true})).toBeVisible();
+  await expect(page.getByLabel("DataNest AI command context locked to JOB-00100")).toBeVisible();
+  contextRequests.length=0;
   await page.locator(".datanestAiJobStrip .rndJobChip").filter({hasText:"AI Hero Layout Fixture"}).click();
   await expect(page.getByRole("heading",{name:"JOB-00099 · AI Hero Layout Fixture",exact:true})).toBeVisible();
   await expect(composer).toHaveValue("First Job draft must stay with JOB-00099.");
+  await expect.poll(()=>contextRequests.filter(item=>item.jobId===job.id).length).toBeGreaterThan(0);
+  const firstJobReturnRequests=contextRequests.filter(item=>item.jobId===job.id);
+  expect(firstJobReturnRequests[0]?.sessionId).toBe("fixture-session-001");
+  expect(firstJobReturnRequests.some(item=>item.sessionId==="fixture-session-002")).toBe(false);
 
   await page.locator(".datanestAiJobStrip .rndJobChip").filter({hasText:"Second AI Job Fixture"}).click();
   await expect(composer).toHaveValue("Second Job draft must stay with JOB-00100.");
   await page.locator(".datanestAiJobStrip .rndJobChip").filter({hasText:"AI Hero Layout Fixture"}).click();
   await expect(composer).toHaveValue("First Job draft must stay with JOB-00099.");
+  await page.getByRole("button",{name:"Clear draft",exact:true}).click();
+  await expect(composer).toHaveValue("");
+  await expect(page.getByText("SESSION-ONLY DRAFT · LOCKED TO JOB-00099",{exact:true})).toBeHidden();
+
+  await page.reload();
+  await expect(page.getByRole("heading",{name:"JOB-00099 · AI Hero Layout Fixture",exact:true})).toBeVisible();
+  await expect(composer).toHaveValue("");
+  await expect(page.getByText("SESSION-ONLY DRAFT · LOCKED TO JOB-00099",{exact:true})).toBeHidden();
 
   const layout=await page.evaluate(()=>{
     const rect=(selector:string)=>{
