@@ -65,6 +65,10 @@ create unique index retention_policies_one_active_key_uidx
   on public.retention_policies(project_id,policy_key)
   where status='active';
 
+alter table public.data_policy_decisions
+  add constraint data_policy_decisions_retention_policy_fkey
+  foreign key (retention_policy_id) references public.retention_policies(id) on delete set null;
+
 alter table public.trust_manifests
   add column if not exists retention_policy_id uuid references public.retention_policies(id) on delete set null;
 
