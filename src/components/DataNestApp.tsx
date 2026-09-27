@@ -938,7 +938,7 @@ export default function DataNestApp({session}:{session:Session}) {
         </div>
         {(loadingCore||loadingView)&&<div className="loadingBar" aria-label="Loading DataNest data"><span/></div>}
 
-        {!loadingCore&&workspaceTaskGuides[view]&&<section className="workspaceTaskGuide" aria-label={currentLabel+" task guide"}>
+        {!loadingCore&&workspaceTaskGuides[view]&&<section className={"workspaceTaskGuide "+(view==="ai"?" aiCommandGuide":"")} aria-label={currentLabel+" task guide"}>
           <div><span>START HERE</span><p>{workspaceTaskGuides[view]?.start}</p></div>
           <div><span>COMPLETE WHEN</span><p>{workspaceTaskGuides[view]?.complete}</p></div>
           <div><span>EVIDENCE</span><p>{workspaceTaskGuides[view]?.evidence}</p></div>
