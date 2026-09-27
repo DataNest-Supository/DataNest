@@ -133,3 +133,11 @@ test("Products preserves governed catalog semantics while adding Portfolio Regis
   assert.match(products,/searchParams\.get\("q"\)/);
   assert.match(products,/FREE_PROMOTION_LABEL/);
 });
+
+
+test("Governed Products render Portfolio Registry lifecycle when a product is linked",()=>{
+  assert.match(products,/function governedProductLifecycle/);
+  assert.match(products,/linked_product_id===product\.id/);
+  assert.match(products,/current_lifecycle/);
+  assert.match(products,/governedProductLifecycle\(product,portfolioItems\)/);
+});
