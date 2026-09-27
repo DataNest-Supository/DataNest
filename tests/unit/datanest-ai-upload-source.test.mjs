@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
 const source=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-upload/index.ts"),"utf8");
 const config=fs.readFileSync(path.join(root,"supabase/config.toml"),"utf8");
+const edgeValidation=fs.readFileSync(path.join(root,".github/workflows/edge-function-validation.yml"),"utf8");
 
 test("DataNest AI upload gateway is JWT protected and uses explicit Job authorization",()=>{
   assert.match(config,/\[functions\.datanest-ai-upload\][\s\S]*verify_jwt\s*=\s*true/);
@@ -72,4 +73,10 @@ test("submission freezes the production project-learning policy for staging anal
   assert.match(source,/learning_reuse_state/);
   assert.match(source,/learning_policy_version/);
   assert.match(source,/learning_decision_record_id/);
+});
+
+
+test("edge validation type-checks the upload gateway and file worker",()=>{
+  assert.match(edgeValidation,/\n\s*- datanest-ai-upload\n/);
+  assert.match(edgeValidation,/\n\s*- datanest-ai-file-worker\n/);
 });
