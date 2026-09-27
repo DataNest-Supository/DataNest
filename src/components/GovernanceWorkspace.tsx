@@ -3,6 +3,8 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 import ProjectMembersPanel from "@/components/ProjectMembersPanel";
+import TrustPolicyPanel from "@/components/TrustPolicyPanel";
+import type { TrustPolicyRole } from "@/lib/trustPolicy";
 
 type Protocol={
   id:string;project_id:string;protocol_key:string;version:number;title:string;mission:string|null;vision:string|null;
@@ -50,10 +52,11 @@ function label(value:string){return value.replaceAll("_"," ");}
 function boolText(value:unknown){return value===true?"Yes":"No";}
 
 export default function GovernanceWorkspace({
-  projectId,currentUserId,canManage,setNotice,setError
+  projectId,currentUserId,role,canManage,setNotice,setError
 }:{
   projectId:string;
   currentUserId:string;
+  role:TrustPolicyRole;
   canManage:boolean;
   setNotice:(value:string)=>void;
   setError:(value:string)=>void;
@@ -61,6 +64,16 @@ export default function GovernanceWorkspace({
   const [workspace,setWorkspace]=useState<Workspace|null>(null);
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
+  const [section,setSection]=useState<"sovereign"|"trust">(()=>{
+    if(typeof window==="undefined")return "sovereign";
+    return new URL(window.location.href).searchParams.get("section")==="trust"?"trust":"sovereign";
+  });
+
+  useEffect(()=>{
+    const sync=()=>setSection(new URL(window.location.href).searchParams.get("section")==="trust"?"trust":"sovereign");
+    window.addEventListener("popstate",sync);
+    return ()=>window.removeEventListener("popstate",sync);
+  },[]);
 
   const [protocolTitle,setProtocolTitle]=useState("");
   const [protocolMission,setProtocolMission]=useState("");
@@ -86,6 +99,7 @@ export default function GovernanceWorkspace({
   const [replacementProposalId,setReplacementProposalId]=useState("");
 
   const load=useCallback(async()=>{
+    if(section==="trust"){setLoading(false);return;}
     const supabase=getSupabase();if(!supabase)return;
     setLoading(true);
     const {data,error}=await supabase.rpc("get_governance_workspace_v1",{target_project:projectId});
@@ -100,7 +114,7 @@ export default function GovernanceWorkspace({
       setDisputeTargetId(current=>current&&targets.some(item=>item.id===current)?current:targets[0]?.id||"");
     }
     setLoading(false);
-  },[projectId,setError,disputeTargetType]);
+  },[projectId,setError,disputeTargetType,section]);
 
   useEffect(()=>{void load();},[load]);
 
@@ -244,10 +258,25 @@ export default function GovernanceWorkspace({
     setBusy(false);
   }
 
+  function selectSection(next:"sovereign"|"trust"){
+    const url=new URL(window.location.href);
+    if(next==="trust")url.searchParams.set("section","trust");
+    else url.searchParams.delete("section");
+    window.history.pushState(window.history.state,"",url.toString());
+    setSection(next);
+  }
+
+  const governanceModeTabs=<div className="governanceModeTabs" role="tablist" aria-label="Governance sections">
+    <button type="button" role="tab" aria-selected={section==="sovereign"} className={section==="sovereign"?"active":""} onClick={()=>selectSection("sovereign")}>Sovereign Governance</button>
+    <button type="button" role="tab" aria-selected={section==="trust"} className={section==="trust"?"active":""} onClick={()=>selectSection("trust")}>Trust & Data Policy</button>
+  </div>;
+
+  if(section==="trust")return <div>{governanceModeTabs}<TrustPolicyPanel projectId={projectId} role={role} setNotice={setNotice} setError={setError}/></div>;
   if(loading)return <section className="panel"><p className="muted">Loading Sovereign Governance…</p></section>;
   if(!workspace)return <section className="panel"><p className="muted">Governance workspace is unavailable.</p></section>;
 
   return <div>
+    {governanceModeTabs}
     <section className="heroPanel">
       <div>
         <p className="eyebrow">RESONANCE SOVEREIGN GOVERNANCE</p>
