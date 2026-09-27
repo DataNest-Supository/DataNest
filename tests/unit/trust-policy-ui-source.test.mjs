@@ -40,7 +40,7 @@ test("Trust Policy UI explicitly separates processing, learning, publication, an
   assert.match(source,/Planned\/unknown controls are not verified trust guarantees\./);
   assert.match(source,/Visibility \/ processing/);
   assert.match(source,/Reuse \/ learning/);
-  for(const state of ["verified","partial","planned","unknown"])assert.match(source,new RegExp(state));
+  const domain=fs.readFileSync(libPath,"utf8");\n  assert.match(source,/evidenceStates\.map/);\n  for(const state of ["verified","partial","planned","unknown"])assert.match(domain,new RegExp(state));
   assert.doesNotMatch(source,/>\s*(?:Delete data|Purge|Anonymize)/i);
   assert.doesNotMatch(source,/API key|Password|Secret value/);
 });
