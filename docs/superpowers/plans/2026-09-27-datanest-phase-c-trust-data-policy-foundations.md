@@ -5,7 +5,7 @@
 **Approved design:** `docs/superpowers/specs/2026-09-27-datanest-phase-c-trust-data-policy-foundations-design.md`  
 **Planning branch:** `design/datanest-phase-c-trust-data-policy-20260927`  
 **Target implementation branch:** `feature/datanest-phase-c-trust-data-policy`  
-**Plan status:** Ready for user execution approval after self-review
+**Plan status:** Self-review complete; ready for user execution approval
 
 ## Goal
 
