@@ -72,8 +72,8 @@ test("service evaluator is deny preserving for unresolved policy, external routi
     "project_learning_not_authorized","platform_learning_not_authorized",
     "publication_not_authorized","retention_hold_active","lineage_review_unresolved"
   ]) assert.match(source,new RegExp(token,"i"));
-  assert.match(source,/outcome','review_required'/i);
-  assert.match(source,/outcome','deny'/i);
+  assert.match(source,/outcome\s*:?=\s*'review_required'/i);
+  assert.match(source,/outcome\s*:?=\s*'deny'/i);
   assert.doesNotMatch(source,/delete from/i);
   assert.doesNotMatch(source,/truncate\s+/i);
 });
