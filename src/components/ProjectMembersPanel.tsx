@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
+import { useSingleFlight } from "@/lib/singleFlight";
 
 type Member={
   user_id:string;
@@ -70,6 +71,7 @@ export default function ProjectMembersPanel({
   const [workspace,setWorkspace]=useState<Workspace|null>(null);
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
+  const {activeAction,run:runSingleFlight}=useSingleFlight();
   const [email,setEmail]=useState("");
   const [role,setRole]=useState<"admin"|"operator"|"viewer">("viewer");
   const [inviteState,setInviteState]=useState<InviteState>("idle");
@@ -102,35 +104,38 @@ export default function ProjectMembersPanel({
     if(!supabase||!workspace?.can_invite)return;
 
     const normalizedTarget=normalizeEmail(targetEmail);
-    setBusy(true);
-    setInviteState("sending");
-    setInviteFeedback("Sending invitation to "+normalizedTarget+"…");
-    setError("");
-    try{
-      const {data,error}=await supabase.functions.invoke("send-project-member-invite",{
-        body:{projectId,email:normalizedTarget,role:targetRole}
-      });
-      if(error)throw error;
-      const payload=(data||{}) as Record<string,unknown>;
-      const delivery=String(payload.delivery||"invite");
-      const feedback=delivery==="recovery"
-        ?"Invite sent to "+normalizedTarget+". The confirmed account will receive a secure recovery link. Voting remains disabled until that person signs in and accepts project access."
-        :delivery==="reinvite"
-          ?"Invitation resent to "+normalizedTarget+". The unconfirmed account will receive a fresh project invite. Voting remains disabled until that person authenticates and accepts project access."
-          :"Invite sent to "+normalizedTarget+". Voting remains disabled until that person authenticates and accepts project access.";
-      if(clearAfter)setEmail("");
-      setInviteState("sent");
-      setInviteFeedback(feedback);
-      setNotice(feedback);
-      await load();
-    }catch(inviteError){
-      const feedback=await inviteErrorMessage(inviteError);
-      setInviteState("failed");
-      setInviteFeedback("Invite failed. "+feedback);
-      setError(feedback);
-    }finally{
-      setBusy(false);
-    }
+    await runSingleFlight("invite:"+normalizedTarget,async()=>{
+      setBusy(true);
+      setInviteState("sending");
+      setInviteFeedback("Sending invitation to "+normalizedTarget+"…");
+      setNotice("Sending project invitation to "+normalizedTarget+"…");
+      setError("");
+      try{
+        const {data,error}=await supabase.functions.invoke("send-project-member-invite",{
+          body:{projectId,email:normalizedTarget,role:targetRole}
+        });
+        if(error)throw error;
+        const payload=(data||{}) as Record<string,unknown>;
+        const delivery=String(payload.delivery||"invite");
+        const feedback=delivery==="recovery"
+          ?"Invite sent to "+normalizedTarget+". The confirmed account will receive a secure recovery link. Voting remains disabled until that person signs in and accepts project access."
+          :delivery==="reinvite"
+            ?"Invitation resent to "+normalizedTarget+". The unconfirmed account will receive a fresh project invite. Voting remains disabled until that person authenticates and accepts project access."
+            :"Invite sent to "+normalizedTarget+". Voting remains disabled until that person authenticates and accepts project access.";
+        if(clearAfter)setEmail("");
+        setInviteState("sent");
+        setInviteFeedback(feedback);
+        setNotice(feedback);
+        await load();
+      }catch(inviteError){
+        const feedback=await inviteErrorMessage(inviteError);
+        setInviteState("failed");
+        setInviteFeedback("Invite failed. "+feedback);
+        setError(feedback);
+      }finally{
+        setBusy(false);
+      }
+    });
   }
 
   async function sendInvite(event:FormEvent){
@@ -149,17 +154,22 @@ export default function ProjectMembersPanel({
 
   async function revokeInvite(id:string){
     const supabase=getSupabase();if(!supabase)return;
-    setBusy(true);setError("");
-    const {error}=await supabase.rpc("revoke_project_member_invite_v1",{
-      target_invite:id,
-      target_reason:"Revoked from the Governance membership workspace."
+    await runSingleFlight("revoke-invite:"+id,async()=>{
+      setBusy(true);setError("");setNotice("Revoking pending project invitation…");
+      try{
+        const {error}=await supabase.rpc("revoke_project_member_invite_v1",{
+          target_invite:id,
+          target_reason:"Revoked from the Governance membership workspace."
+        });
+        if(error)throw error;
+        setNotice("Pending project invitation revoked. It remains in the audit history and is not voting-eligible.");
+        await load();
+      }catch(actionError){
+        setError(actionError instanceof Error?actionError.message:"Unable to revoke project invitation. You can retry safely.");
+      }finally{
+        setBusy(false);
+      }
     });
-    if(error)setError(error.message);
-    else{
-      setNotice("Pending project invitation revoked. It remains in the audit history and is not voting-eligible.");
-      await load();
-    }
-    setBusy(false);
   }
 
   if(loading)return <section className="panel"><p className="muted">Loading project membership…</p></section>;
@@ -179,6 +189,7 @@ export default function ProjectMembersPanel({
             :"Send project invite";
 
   return <section className="panel membershipPanel">
+    {activeAction&&<p className="muted" role="status">Membership action in progress · duplicate submissions are blocked until the request finishes.</p>}
     <div className="panelHead">
       <div><p className="eyebrow">FORMAL MEMBERSHIP</p><h3>Project members + governance voters</h3></div>
       <span className="countPill">{workspace.active_formal_voter_count} ACTIVE VOTER{workspace.active_formal_voter_count===1?"":"S"}</span>
