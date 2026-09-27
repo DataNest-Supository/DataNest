@@ -517,12 +517,12 @@ async function main() {
 
   const strictBlockers = getStrictBlockers(supabase);
   const apply = a.apply
-    ? (a.strict && strictBlockers.length
+    ? (strictBlockers.length
       ? {
           deleted:[],
           failed:[],
           skipped:true,
-          reason:"strict_control_plane_blockers",
+          reason:"control_plane_blockers",
           blockerCount:strictBlockers.length,
         }
       : await applyDeletes(repo, token, github.branches))
