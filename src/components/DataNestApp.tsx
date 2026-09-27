@@ -30,6 +30,17 @@ const schedulerFilterOptions=["ALL","PLANNED","READY","QUEUED","RUNNING","MANUAL
 type SchedulerFilter = typeof schedulerFilterOptions[number];
 const operationalUrlStateKeys=["page","mode","filter","sort"] as const;
 const workspaceScopedUrlStateKeys=[...operationalUrlStateKeys,"section"] as const;
+const paginatedWorkspaceViews=new Set<ViewKey>(["unifi","scheduler","runs","checkpoints","audit"]);
+function scopeUrlToWorkspace(url:URL,view:ViewKey){
+  if(!paginatedWorkspaceViews.has(view))url.searchParams.delete("page");
+  if(view!=="scheduler"){
+    url.searchParams.delete("mode");
+    url.searchParams.delete("filter");
+    url.searchParams.delete("sort");
+  }
+  if(view!=="governance")url.searchParams.delete("section");
+  return url;
+}
 function urlPageIndex(url:URL){
   const raw=Number(url.searchParams.get("page")||"1");
   return Number.isInteger(raw)&&raw>0?raw-1:0;
@@ -805,11 +816,11 @@ export default function DataNestApp({session}:{session:Session}) {
       const requested=url.searchParams.get("view");
       const valid=requested&&viewKeys.has(requested as ViewKey);
       const next=valid ? requested as ViewKey : "overview";
+      const originalUrl=url.toString();
 
-      if(requested&&(!valid||requested==="overview")){
-        url.searchParams.delete("view");
-        window.history.replaceState(window.history.state,"",url.toString());
-      }
+      if(requested&&(!valid||requested==="overview"))url.searchParams.delete("view");
+      scopeUrlToWorkspace(url,next);
+      if(url.toString()!==originalUrl)window.history.replaceState(window.history.state,"",url.toString());
 
       const page=urlPageIndex(url);
       if(next==="unifi"||next==="scheduler")setJobPage(page);
@@ -1028,13 +1039,7 @@ export default function DataNestApp({session}:{session:Session}) {
     const shareUrl=new URL(window.location.href);
     shareUrl.searchParams.delete("release");
     shareUrl.searchParams.delete("_reload");
-    if(view!=="governance")shareUrl.searchParams.delete("section");
-    if(!["unifi","scheduler","runs","checkpoints","audit"].includes(view))shareUrl.searchParams.delete("page");
-    if(view!=="scheduler"){
-      shareUrl.searchParams.delete("mode");
-      shareUrl.searchParams.delete("filter");
-      shareUrl.searchParams.delete("sort");
-    }
+    scopeUrlToWorkspace(shareUrl,view);
     shareUrl.hash="";
     try{
       await navigator.clipboard.writeText(shareUrl.toString());

@@ -959,3 +959,132 @@ test("shared operational deep links restore presentation state and copy canonica
   expect(copied).not.toMatch(/job(?:Id|_id)=/i);
   expect(copied).not.toMatch(/session(?:Id|_id)=/i);
 });
+
+
+test("browser history restores workspace-local presentation state without stale parameter leakage", async ({ page }) => {
+  const projectId = "00000000-0000-4000-8000-000000000010";
+  const userId = "00000000-0000-4000-8000-000000000001";
+  const stamp = "2026-09-27T08:00:00Z";
+  const jobs = Array.from({length:21},(_,index)=>({
+    id:"00000000-0000-4000-9000-"+String(index+1).padStart(12,"0"),
+    job_number:index+1,
+    title:"History Job "+String(index+1),
+    description:null,
+    priority:100-index,
+    status:index===20?"READY":"QUEUED",
+    required_capabilities:["chat"],
+    acceptance:{},
+    created_at:stamp,
+    updated_at:new Date(Date.parse(stamp)+index*1000).toISOString(),
+    deadline:null
+  }));
+  const runs = Array.from({length:21},(_,index)=>({
+    id:"10000000-0000-4000-9000-"+String(index+1).padStart(12,"0"),
+    job_id:jobs[index].id,
+    run_number:index+1,
+    connector_kind:"chat",
+    status:"COMPLETED",
+    started_at:new Date(Date.parse(stamp)+index*1000).toISOString(),
+    completed_at:new Date(Date.parse(stamp)+index*1000+500).toISOString(),
+    error_category:null
+  })).reverse();
+
+  await page.route("**/runtime-config.js", route => route.fulfill({
+    contentType:"application/javascript",
+    body:"window.__DATANEST_CONFIG__={supabaseUrl:'https://fixture.supabase.co',supabasePublishableKey:'fixture-key',authoritative:true}"
+  }));
+  await page.addInitScript(({userId}) => {
+    const encode = (data: unknown) => btoa(JSON.stringify(data)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+    localStorage.setItem("sb-fixture-auth-token", JSON.stringify({
+      access_token:`${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:userId,exp:4102444800,role:"authenticated"})}.fixture`,
+      refresh_token:"fixture", token_type:"bearer", expires_at:4102444800,
+      user:{id:userId,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid"}
+    }));
+  }, {userId});
+
+  await page.route("https://fixture.supabase.co/**", route => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+    let body:unknown = [];
+    const headers:Record<string,string> = {"Content-Type":"application/json"};
+
+    if(path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE",created_at:stamp};
+    if(path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"viewer",status:"active"};
+    if(path.endsWith("/get_project_dashboard_summary")) body = {total_jobs:21,active_jobs:21,running_jobs:0,blocked_jobs:0,available_capabilities:0,registered_capabilities:0};
+    if(path.endsWith("/jobs")){
+      const offset=Number(url.searchParams.get("offset")||"0");
+      const limit=Number(url.searchParams.get("limit")||"20");
+      const selected=jobs.slice(offset,Math.min(offset+limit,jobs.length));
+      body=selected;
+      headers["Content-Range"]=selected.length ? offset+"-"+String(offset+selected.length-1)+"/21" : "*/21";
+    }
+    if(path.endsWith("/runs")){
+      const offset=Number(url.searchParams.get("offset")||"0");
+      const limit=Number(url.searchParams.get("limit")||"20");
+      const selected=runs.slice(offset,Math.min(offset+limit,runs.length));
+      body=selected;
+      headers["Content-Range"]=selected.length ? offset+"-"+String(offset+selected.length-1)+"/21" : "*/21";
+    }
+
+    return route.fulfill({status:200,headers,body:JSON.stringify(body)});
+  });
+
+  await page.goto(appPath+"?view=scheduler&page=2&mode=queue&filter=READY&sort=recent&section=trust");
+  await expect(page.getByRole("heading",{name:"TranScheduler"})).toBeVisible();
+  await expect(page).toHaveURL(/view=scheduler/);
+  await expect(page).toHaveURL(/page=2/);
+  await expect(page).toHaveURL(/mode=queue/);
+  await expect(page).toHaveURL(/filter=READY/);
+  await expect(page).toHaveURL(/sort=recent/);
+  await expect(page).not.toHaveURL(/section=/);
+  await expect(page.getByText("History Job 21",{exact:true})).toBeVisible();
+
+  const projectNav=page.getByRole("navigation",{name:"Project workspaces"});
+  await projectNav.getByRole("button",{name:"Runs"}).click();
+  await expect(page.getByRole("heading",{name:"Runs"})).toBeVisible();
+  await expect(page).toHaveURL(/view=runs/);
+  await expect(page).not.toHaveURL(/mode=/);
+  await expect(page).not.toHaveURL(/filter=/);
+  await expect(page).not.toHaveURL(/sort=/);
+  await expect(page).not.toHaveURL(/section=/);
+
+  await page.getByLabel("Pagination").getByRole("button",{name:"Next"}).click();
+  await expect(page).toHaveURL(/view=runs/);
+  await expect(page).toHaveURL(/page=2/);
+  await expect(page.getByText("RUN-1",{exact:true})).toBeVisible();
+
+  await projectNav.getByRole("button",{name:"TranScheduler"}).click();
+  await expect(page.getByRole("heading",{name:"TranScheduler"})).toBeVisible();
+  await expect(page).toHaveURL(/view=scheduler/);
+  await expect(page).toHaveURL(/page=2/);
+  await expect(page).toHaveURL(/mode=queue/);
+  await expect(page).toHaveURL(/filter=READY/);
+  await expect(page).toHaveURL(/sort=recent/);
+
+  await page.goBack();
+  await expect(page.getByRole("heading",{name:"Runs"})).toBeVisible();
+  await expect(page).toHaveURL(/view=runs/);
+  await expect(page).toHaveURL(/page=2/);
+  await expect(page).not.toHaveURL(/mode=/);
+  await expect(page).not.toHaveURL(/filter=/);
+  await expect(page).not.toHaveURL(/sort=/);
+  await expect(page).not.toHaveURL(/section=/);
+  await expect(page.getByText("RUN-1",{exact:true})).toBeVisible();
+
+  await page.goBack();
+  await expect(page.getByRole("heading",{name:"TranScheduler"})).toBeVisible();
+  await expect(page).toHaveURL(/view=scheduler/);
+  await expect(page).toHaveURL(/page=2/);
+  await expect(page).toHaveURL(/mode=queue/);
+  await expect(page).toHaveURL(/filter=READY/);
+  await expect(page).toHaveURL(/sort=recent/);
+  await expect(page).not.toHaveURL(/section=/);
+
+  await page.goForward();
+  await expect(page.getByRole("heading",{name:"Runs"})).toBeVisible();
+  await expect(page).toHaveURL(/view=runs/);
+  await expect(page).toHaveURL(/page=2/);
+  await expect(page).not.toHaveURL(/mode=/);
+  await expect(page).not.toHaveURL(/filter=/);
+  await expect(page).not.toHaveURL(/sort=/);
+});
