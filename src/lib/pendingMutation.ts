@@ -1,6 +1,7 @@
 "use client";
 
 const PENDING_MUTATION_PREFIX="datanest.pendingMutation.";
+export const PENDING_MUTATION_EVENT="datanest:pending-mutation-change";
 
 export type PendingMutationIntent<T extends Record<string,unknown>=Record<string,unknown>>={
   kind:string;
@@ -11,6 +12,14 @@ export type PendingMutationIntent<T extends Record<string,unknown>=Record<string
 
 function storageKey(scope:string){
   return PENDING_MUTATION_PREFIX+scope;
+}
+
+function notifyPendingMutationChange(scope:string){
+  try{
+    window.dispatchEvent(new CustomEvent(PENDING_MUTATION_EVENT,{detail:{scope}}));
+  }catch{
+    // Same-tab notification is a UX aid; session storage remains the continuity source.
+  }
 }
 
 function validIntent(value:unknown):value is PendingMutationIntent{
@@ -57,6 +66,7 @@ export function getOrCreatePendingMutation<T extends Record<string,unknown>>(
   };
   try{
     window.sessionStorage.setItem(storageKey(scope),JSON.stringify(next));
+    notifyPendingMutationChange(scope);
   }catch{
     // The request can still proceed; server idempotency remains authoritative for this attempt.
   }
@@ -64,7 +74,12 @@ export function getOrCreatePendingMutation<T extends Record<string,unknown>>(
 }
 
 export function clearPendingMutation(scope:string){
-  try{window.sessionStorage.removeItem(storageKey(scope));}catch{}
+  let changed=false;
+  try{
+    changed=window.sessionStorage.getItem(storageKey(scope))!==null;
+    window.sessionStorage.removeItem(storageKey(scope));
+  }catch{}
+  if(changed)notifyPendingMutationChange(scope);
 }
 
 export function pendingMutationStorageKey(scope:string){
