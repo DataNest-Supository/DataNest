@@ -61,3 +61,15 @@ test("submission creation freezes certified memory but status never serializes i
   assert.doesNotMatch(loadSubmission,/certified_memory_snapshot/);
   assert.doesNotMatch(loadSubmission,/certified_memory_ids/);
 });
+
+
+test("submission freezes the production project-learning policy for staging analysis",()=>{
+  assert.match(source,/createClient\(supabaseUrl,serviceKey/);
+  assert.match(source,/service_evaluate_data_policy_v1/);
+  assert.match(source,/target_purpose:"project_learning"/);
+  assert.match(source,/target_requested_operation:"reuse"/);
+  assert.match(source,/learning_policy_outcome/);
+  assert.match(source,/learning_reuse_state/);
+  assert.match(source,/learning_policy_version/);
+  assert.match(source,/learning_decision_record_id/);
+});
