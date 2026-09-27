@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
 const aiPath=path.join(root,"supabase/functions/datanest-ai-chat/index.ts");
+const intakePath=path.join(root,"supabase/functions/datanest-ai-intake/index.ts");
 const fileAccessPath=path.join(root,"supabase/migrations/20260925191008_datanest_ai_file_access_gateway.sql");
 const intakePath=path.join(root,"supabase/functions/datanest-ai-intake/index.ts");
 
