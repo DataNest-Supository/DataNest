@@ -13,7 +13,7 @@ test("DataNest AI keeps visibility and reuse metadata independent while initial 
   const source=fs.readFileSync(aiPath,"utf8");
   assert.match(source,/visibility_class:visibilityClass/);
   assert.match(source,/reuse_state:reuseState/);
-  assert.match(source,/requested_learning_eligible:learningEligible/);
+  assert.match(source,/learning_requested:learningEligible/);
   assert.match(source,/learning_eligible:false/);
 });
 
