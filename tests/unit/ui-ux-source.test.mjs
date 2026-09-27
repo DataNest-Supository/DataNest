@@ -24,6 +24,7 @@ const pendingMutationSource = fs.readFileSync(path.join(repoRoot, "src/lib/pendi
 const mutationReconciliationSource = fs.readFileSync(path.join(repoRoot, "src/lib/mutationReconciliation.ts"), "utf8");
 const supabaseSource = fs.readFileSync(path.join(repoRoot, "src/lib/supabase.ts"), "utf8");
 const unifiIdempotencyMigrationSource = fs.readFileSync(path.join(repoRoot, "supabase/migrations/20260927180402_add_unifi_idempotent_manifest_v2.sql"), "utf8");
+const productLabEvidenceMigrationSource = fs.readFileSync(path.join(repoRoot, "supabase/migrations/20260924145008_version_product_lab_evidence_and_dedupe_test_credit.sql"), "utf8");
 const cssSource = fs.readFileSync(path.join(repoRoot, "src/app/globals.css"), "utf8");
 
 test("mobile navigation keeps refresh and release controls reachable", () => {
@@ -574,6 +575,20 @@ test("Spark reservations reconcile against authoritative request-key state", () 
 
 test("PostgREST automatic retries are disabled so mutation reconciliation remains explicit", () => {
   assert.match(supabaseSource, /db:\s*\{\s*retry:\s*false\s*\}/);
+});
+
+test("Product Lab test evidence uses request identity for authoritative reconciliation", () => {
+  assert.match(productLabEvidenceMigrationSource, /add column if not exists request_id uuid/);
+  assert.match(productLabEvidenceMigrationSource, /create unique index if not exists product_test_runs_user_request_idx/);
+  assert.match(productLabEvidenceMigrationSource, /on public\.product_test_runs\(tester_user_id,request_id\)/);
+  assert.match(productLabSource, /getOrCreatePendingMutation\(testRunRequestScope,"product_test_run",payload\)/);
+  assert.match(productLabSource, /request_id:intent\.requestKey/);
+  assert.match(productLabSource, /\.eq\("tester_user_id",currentUserId\)/);
+  assert.match(productLabSource, /\.eq\("request_id",intent\.requestKey\)/);
+  assert.match(productLabSource, /Recovered confirmed Product Lab test evidence/);
+  assert.match(productLabSource, /Previous Product Lab test result was not recorded/);
+  assert.match(productLabSource, /Product Lab test result is still unconfirmed/);
+  assert.match(productLabSource, /disabled=\{testRunLocked\}/);
 });
 
 test("Product Lab mutation feedback remains visible after workspace navigation", () => {
