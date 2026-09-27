@@ -42,3 +42,11 @@ Use read access sufficient for the configured project status, branch status, sec
 3. Review delete candidates and all warnings.
 4. Run with `apply=true`, `strict=true` only when the strict dry run is clean.
 5. Preserve generated artifacts as cleanup evidence.
+
+## Variant-family triage
+
+Branch Cleaner groups iterative branch names such as `-v2`, `-v3`, `-current`, `-current-main`, and dated suffixes. Older siblings are compared directly with the newest sibling.
+
+- `contained_by_newer_sibling` means the older sibling is fully represented by the newer sibling, but it remains review-only while it has commits not yet in `main`.
+- `divergent_variant_unique_work` means both siblings contain distinct history. Branch Cleaner preserves both branches and does not call the older one superseded.
+- No family relationship overrides the zero-unique-commits rule for deletion.

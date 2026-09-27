@@ -8,6 +8,7 @@ import {
   migrationNameFromFile,
   compareMigrationParity,
   normalizeBranchFamily,
+  summarizeFamilyRelation,
 } from "../../scripts/branch-cleaner.mjs";
 
 const config = {
@@ -20,6 +21,41 @@ const now = new Date("2026-09-26T18:00:00Z");
 test("normalizes iterative branch families without conflating the feature stem", () => {
   assert.equal(normalizeBranchFamily("feat/datanest-ai-command-context-lock-v4"), "feat/datanest-ai-command-context-lock");
   assert.equal(normalizeBranchFamily("fix/staging-routing-current-main-20260925"), "fix/staging-routing");
+});
+
+
+test("detects when an older family branch is fully contained in a newer sibling", () => {
+  const relation = summarizeFamilyRelation(
+    { status:"ahead", ahead_by:4, behind_by:0 },
+    "feat/example-v2"
+  );
+  assert.equal(relation.contained, true);
+  const result = classifyBranch({
+    name:"feat/example",
+    updatedAt:"2026-09-26T17:59:00Z",
+    familyHasNewerSibling:true,
+    familyRelation:relation,
+    compare:{ ahead_by:2, behind_by:5, status:"diverged" },
+  }, config, now);
+  assert.equal(result.decision, "review");
+  assert.equal(result.reason, "contained_by_newer_sibling");
+});
+
+test("preserves divergent family variants as unique work", () => {
+  const relation = summarizeFamilyRelation(
+    { status:"diverged", ahead_by:6, behind_by:3 },
+    "feat/example-v2"
+  );
+  assert.equal(relation.contained, false);
+  const result = classifyBranch({
+    name:"feat/example",
+    updatedAt:"2026-09-26T17:59:00Z",
+    familyHasNewerSibling:true,
+    familyRelation:relation,
+    compare:{ ahead_by:3, behind_by:5, status:"diverged" },
+  }, config, now);
+  assert.equal(result.decision, "review");
+  assert.equal(result.reason, "divergent_variant_unique_work");
 });
 
 test("extracts unique audit IDs", () => {

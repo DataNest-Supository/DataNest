@@ -21,6 +21,17 @@ export function normalizeBranchFamily(name) {
   return value;
 }
 
+export function summarizeFamilyRelation(compare, target) {
+  const status = compare?.status || "unknown";
+  const rawAhead = compare?.ahead_by ?? compare?.aheadBy;
+  const rawBehind = compare?.behind_by ?? compare?.behindBy;
+  const ahead = rawAhead == null ? null : Number(rawAhead);
+  const behind = rawBehind == null ? null : Number(rawBehind);
+  const contained = status !== "unknown" && behind === 0 &&
+    (status === "ahead" || status === "identical");
+  return { target:target || null, status, ahead, behind, contained };
+}
+
 export function extractAuditIds(text) {
   return [...new Set(String(text || "").match(/AUD-\d{3}/g) || [])].sort();
 }
@@ -46,10 +57,12 @@ export function classifyBranch(branch, config, now = new Date()) {
     return { decision:"delete_candidate", reason:branch.mergedPr ? "merged_no_unique_commits" : "no_unique_commits", ageDays:age, ahead, behind, status };
   if (branch.mergedPr && ahead != null && ahead > 0)
     return { decision:"review", reason:"post_merge_unique_commits", ageDays:age, ahead, behind, status };
+  if (branch.familyRelation?.contained)
+    return { decision:"review", reason:"contained_by_newer_sibling", ageDays:age, ahead, behind, status };
+  if (branch.familyHasNewerSibling)
+    return { decision:"review", reason:"divergent_variant_unique_work", ageDays:age, ahead, behind, status };
   if (Number.isFinite(age) && age >= config.staleDays && ahead != null && ahead > 0)
     return { decision:"review", reason:"stale_unique_work", ageDays:age, ahead, behind, status };
-  if (branch.familyHasNewerSibling)
-    return { decision:"review", reason:"possible_superseded_variant", ageDays:age, ahead, behind, status };
   return { decision:"keep", reason:"active_or_unresolved", ageDays:age, ahead, behind, status };
 }
 
@@ -248,13 +261,40 @@ async function githubAudit(repo, token, config) {
       .forEach((b) => superseded.add(b.name));
   }
 
+  const familyRelations = new Map();
+  await Promise.all([...families.values()].filter((group) => group.length > 1).map(async (group) => {
+    const ordered = [...group]
+      .sort((a,b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
+    const newest = ordered[0];
+    await mapLimit(ordered.slice(1), 4, async (branch) => {
+      try {
+        const compare = await gh(
+          repo,
+          "/compare/" + encodeURIComponent(branch.name) + "..." + encodeURIComponent(newest.name),
+          token
+        );
+        familyRelations.set(branch.name, summarizeFamilyRelation(compare, newest.name));
+      } catch {
+        familyRelations.set(branch.name, summarizeFamilyRelation({ status:"unknown" }, newest.name));
+      }
+    });
+  }));
+
   return {
     pullRequestCount:prs.length,
-    branches:facts.map((b) => ({
-      ...b,
-      family:normalizeBranchFamily(b.name),
-      classification:classifyBranch({ ...b, familyHasNewerSibling:superseded.has(b.name) }, config)
-    }))
+    branches:facts.map((b) => {
+      const familyRelation = familyRelations.get(b.name) || null;
+      return {
+        ...b,
+        family:normalizeBranchFamily(b.name),
+        familyRelation,
+        classification:classifyBranch({
+          ...b,
+          familyHasNewerSibling:superseded.has(b.name),
+          familyRelation
+        }, config)
+      };
+    })
   };
 }
 
@@ -536,9 +576,15 @@ function markdown(r) {
     ""
   ];
   for (const b of r.github.branches.filter((x) => x.classification.decision !== "keep")) {
+    const family = b.familyRelation
+      ? " / sibling=" + b.familyRelation.target +
+        " / sibling-status=" + b.familyRelation.status +
+        " / sibling-behind=" + (b.familyRelation.behind ?? "?")
+      : "";
     lines.push("- " + b.name + ": " + b.classification.decision + " / " +
       b.classification.reason + " / ahead=" + (b.classification.ahead ?? "?") +
-      " / age=" + (Number.isFinite(b.classification.ageDays) ? b.classification.ageDays.toFixed(1) : "?"));
+      " / age=" + (Number.isFinite(b.classification.ageDays) ? b.classification.ageDays.toFixed(1) : "?") +
+      family);
   }
   lines.push("", "## Supabase control-plane audit", "");
   if (r.supabase.skipped) {
