@@ -1220,8 +1220,17 @@ test("UNIFI single-flight blocks same-tick duplicate submit and unlocks retry af
   await expect(page.getByLabel("Job title")).toHaveValue("Single-flight manifest");
 
   await form.evaluate(node=>node.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true})));
+  const projectNav=page.getByRole("navigation",{name:"Project workspaces"});
+  await projectNav.getByRole("button",{name:"TranScheduler"}).click();
+  await expect(page.getByRole("heading",{name:"TranScheduler"})).toBeVisible();
   await expect(page.getByText("JOB-00042 created transactionally by UNIFI.",{exact:true})).toBeVisible();
   expect(createCalls).toBe(2);
+
+  await projectNav.getByRole("button",{name:"UNIFI Planner"}).click();
+  await expect(page.getByRole("heading",{name:"Job Manifest Planner"})).toBeVisible();
+  await expect(page.getByLabel("Job title")).toHaveValue("");
+  const staleDraftKeys=await page.evaluate(()=>Object.keys(sessionStorage).filter(key=>key.includes("datanest.sessionDraft.unifi:")));
+  expect(staleDraftKeys).toEqual([]);
 });
 
 
