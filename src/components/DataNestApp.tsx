@@ -14,6 +14,7 @@ import ExecutionAuthorityPanel from "@/components/ExecutionAuthorityPanel";
 import ResourceFabricPanel from "@/components/ResourceFabricPanel";
 import type { ExecutionAuthorityRole } from "@/lib/executionAuthority";
 import { useSessionDraftState } from "@/lib/sessionDraft";
+import { useSingleFlight } from "@/lib/singleFlight";
 
 type Project = { id:string; slug:string; name:string; description:string|null; status:string; created_at:string };
 type Tool = { id:string; tool_key:string; name:string; role:string; enabled:boolean; config:Record<string,unknown> };
@@ -1406,7 +1407,7 @@ export default function DataNestApp({session}:{session:Session}) {
         {!loadingCore&&project&&view==="products"&&<ProductsWorkspace projectId={project.id} currentUserId={session.user.id} role={membership?.role||"viewer"}/>}
         {!loadingCore&&project&&view==="thinktank"&&<ThinkTankWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} canReview={canManageAi} setNotice={setNotice} setError={setError}/>}
         {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace key={project.id+":"+session.user.id} projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError} preferredJobId={activeDataNestAiSession?.jobId||null} onActiveSessionChange={updateActiveWorkContext}/>}
-        {!loadingCore&&project&&view==="productlab"&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate}/>}
+        {!loadingCore&&project&&view==="productlab"&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate} setNotice={setNotice} setError={setError}/>}
         {!loadingCore&&project&&view==="unifi"&&<UnifiPlanner project={project} currentUserId={session.user.id} jobs={jobs} capabilities={capabilities} reload={async()=>{await loadJobsPage(jobPage);await loadSummary(project.id);await loadRecentJobs(project.id);}} setNotice={setNotice} setError={setError} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} activeJobId={activeDataNestAiSession?.jobId||null}/>}
         {!loadingCore&&view==="scheduler"&&project&&<Scheduler projectId={project.id} projectName={project?.name||"Resonance DataNest"} projectSlug={project?.slug||"resonance-datanest"} currentUserId={session.user.id} role={membership?.role||"viewer"} jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null} setNotice={setNotice} setError={setError} filter={schedulerFilter} viewMode={schedulerViewMode} sortMode={schedulerSortMode} onFilter={setSchedulerFilter} onViewMode={setSchedulerViewMode} onSortMode={setSchedulerSortMode}/>} 
         {!loadingCore&&view==="runs"&&<Runs runs={runs} jobLookup={jobLookup} page={runPage} total={runCount} onPage={setRunPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
@@ -1514,7 +1515,7 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
   const [capability,setCapability,capabilityDraft]=useSessionDraftState(draftPrefix+"capability","chat");
   const [tests,setTests,testsDraft]=useSessionDraftState(draftPrefix+"tests",true);
   const [artifact,setArtifact,artifactDraft]=useSessionDraftState(draftPrefix+"artifact",true);
-  const [saving,setSaving]=useState(false);
+  const {activeAction,busy:saving,run:runSingleFlight}=useSingleFlight();
   const hasSessionDraft=[titleDraft,descriptionDraft,priorityDraft,capabilityDraft,testsDraft,artifactDraft].some(item=>item.hasStoredDraft);
   const known=Array.from(new Set(["chat",...capabilities.map(item=>item.capability)]));
 
@@ -1524,31 +1525,30 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
     if(!supabase||!title.trim()) return;
     if(!canOperate){setError("Your DataNest role is read-only.");return;}
 
-    setSaving(true);
-    setNotice("");
-    setError("");
-
-    try {
-      const {data,error}=await supabase.rpc("create_job_manifest",{
-        target_project:project.id,
-        job_title:title.trim(),
-        job_description:description.trim()||null,
-        job_priority:priority,
-        required_capability:capability,
-        tests_required:tests,
-        artifact_required:artifact
-      });
-      if(error) throw error;
-      const row=Array.isArray(data)?data[0]:data;
-      const number=(row as Record<string,unknown>|null)?.job_number;
-      setTitle("");setDescription("");setPriority(50);setCapability("chat");setTests(true);setArtifact(true);
-      setNotice("JOB-"+String(number||"?").padStart(5,"0")+" created transactionally by UNIFI.");
-      await reload();
-    } catch(createError) {
-      setError(createError instanceof Error ? createError.message : "Unable to create the UNIFI job.");
-    } finally {
-      setSaving(false);
-    }
+    await runSingleFlight("create-job",async()=>{
+      setNotice("Creating Job Manifest…");
+      setError("");
+      try {
+        const {data,error}=await supabase.rpc("create_job_manifest",{
+          target_project:project.id,
+          job_title:title.trim(),
+          job_description:description.trim()||null,
+          job_priority:priority,
+          required_capability:capability,
+          tests_required:tests,
+          artifact_required:artifact
+        });
+        if(error) throw error;
+        const row=Array.isArray(data)?data[0]:data;
+        const number=(row as Record<string,unknown>|null)?.job_number;
+        setTitle("");setDescription("");setPriority(50);setCapability("chat");setTests(true);setArtifact(true);
+        setNotice("JOB-"+String(number||"?").padStart(5,"0")+" created transactionally by UNIFI.");
+        await reload();
+      } catch(createError) {
+        setError(createError instanceof Error ? createError.message : "Unable to create the UNIFI job.");
+        throw createError;
+      }
+    }).catch(()=>{});
   }
 
   const prepared=jobs.filter(item=>["PLANNED","READY","QUEUED"].includes(item.status));
@@ -1556,7 +1556,7 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
     <div className="panel stickyPanel"><p className="eyebrow">UNIFI</p><h2>Job Manifest Planner</h2><p className="muted">Prepare work completely before consuming scarce execution capacity.</p>
       {hasSessionDraft&&<p className="muted" role="status">Browser-session draft active · unfinished inputs are restored after workspace navigation or reload.</p>}
       {!canOperate&&<div className="notice errorNotice">Viewer access is read-only. Ask a DataNest owner or admin for operator access to create jobs.</div>}
-      <form className="plannerForm" onSubmit={createJob} aria-busy={saving}>
+      <form className="plannerForm" onSubmit={createJob} aria-busy={saving} data-active-action={activeAction||undefined}>
         <label>Job title<input value={title} onChange={event=>setTitle(event.target.value)} required placeholder="e.g. Validate production deployment"/></label>
         <label>Objective / context<textarea value={description} onChange={event=>setDescription(event.target.value)} rows={6} placeholder="What must be done, constraints, expected output…"/></label>
         <div className="fieldRow">
