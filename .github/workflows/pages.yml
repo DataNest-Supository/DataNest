@@ -12,7 +12,8 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  # Finish the live release checks before deploying the newest pending commit.
+  cancel-in-progress: false
 
 jobs:
   build:
