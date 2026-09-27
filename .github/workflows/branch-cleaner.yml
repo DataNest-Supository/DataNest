@@ -13,6 +13,13 @@ on:
         required: true
         default: true
         type: boolean
+  push:
+    branches: [main]
+    paths:
+      - "scripts/branch-cleaner.mjs"
+      - "branch-cleaner.config.json"
+      - "tests/unit/branch-cleaner.test.mjs"
+      - ".github/workflows/branch-cleaner.yml"
 
 permissions:
   contents: write
@@ -20,12 +27,16 @@ permissions:
 
 jobs:
   audit:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'Remove Branch-Cleaner age guard and clean safe branches' }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.0.0
         with:
           node-version: 22
+
+      - name: Verify Branch-Cleaner unit tests
+        run: node --test tests/unit/branch-cleaner.test.mjs
 
       - name: Run Branch-Cleaner
         env:
@@ -34,8 +45,12 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           ARGS=""
-          if [ "${{ inputs.strict }}" = "true" ]; then ARGS="$ARGS --strict"; fi
-          if [ "${{ inputs.apply }}" = "true" ]; then ARGS="$ARGS --apply"; fi
+          if [ "${{ github.event_name }}" = "push" ]; then
+            ARGS="--strict --apply"
+          else
+            if [ "${{ inputs.strict }}" = "true" ]; then ARGS="$ARGS --strict"; fi
+            if [ "${{ inputs.apply }}" = "true" ]; then ARGS="$ARGS --apply"; fi
+          fi
           node scripts/branch-cleaner.mjs $ARGS
 
       - name: Upload report

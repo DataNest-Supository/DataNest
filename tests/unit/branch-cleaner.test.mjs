@@ -13,7 +13,6 @@ import {
 const config = {
   baseBranch: "main",
   staleDays: 14,
-  minDeleteAgeDays: 7,
   protectedPatterns: ["^main$", "^release/"],
 };
 const now = new Date("2026-09-26T18:00:00Z");
@@ -39,8 +38,8 @@ test("keeps branches with open pull requests", () => {
   assert.equal(result.reason, "open_pr");
 });
 
-test("only proposes deletion when an old branch has no unique commits", () => {
-  const result = classifyBranch({ name:"fix/merged", mergedPr:true, updatedAt:"2026-09-01T00:00:00Z", compare:{ ahead_by:0, behind_by:8, status:"behind" } }, config, now);
+test("proposes deletion immediately when a branch has no unique commits", () => {
+  const result = classifyBranch({ name:"fix/merged", mergedPr:true, updatedAt:"2026-09-26T17:59:00Z", compare:{ ahead_by:0, behind_by:8, status:"behind" } }, config, now);
   assert.equal(result.decision, "delete_candidate");
   assert.equal(result.reason, "merged_no_unique_commits");
 });

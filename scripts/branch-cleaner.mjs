@@ -42,7 +42,7 @@ export function classifyBranch(branch, config, now = new Date()) {
     return { decision:"keep", reason:"protected", ageDays:age, ahead, behind, status };
   if (branch.openPr)
     return { decision:"keep", reason:"open_pr", ageDays:age, ahead, behind, status };
-  if (ahead === 0 && status !== "unknown" && Number.isFinite(age) && age >= config.minDeleteAgeDays)
+  if (ahead === 0 && status !== "unknown" && Number.isFinite(age))
     return { decision:"delete_candidate", reason:branch.mergedPr ? "merged_no_unique_commits" : "no_unique_commits", ageDays:age, ahead, behind, status };
   if (branch.mergedPr && ahead != null && ahead > 0)
     return { decision:"review", reason:"post_merge_unique_commits", ageDays:age, ahead, behind, status };

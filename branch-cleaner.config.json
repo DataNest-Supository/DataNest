@@ -2,7 +2,6 @@
   "schemaVersion": 1,
   "baseBranch": "main",
   "staleDays": 14,
-  "minDeleteAgeDays": 7,
   "protectedPatterns": [
     "^main$",
     "^production$",
