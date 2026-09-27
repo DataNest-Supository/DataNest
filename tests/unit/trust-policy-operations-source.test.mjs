@@ -69,7 +69,7 @@ test("provider profile activation retires the prior current profile",()=>{
   const start=source.indexOf("create or replace function public.activate_provider_trust_profile_v1");
   const end=source.indexOf("create or replace function public.suspend_provider_trust_profile_v1",start);
   const body=source.slice(start,end);
-  assert.match(body,/update public\.provider_trust_profiles set status='retired'/i);
+  assert.match(body,/update public\.provider_trust_profiles[\s\S]*?set status='retired'/i);
   assert.doesNotMatch(body,/set status='restricted'/i);
 });
 
