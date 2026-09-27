@@ -67,7 +67,7 @@ export default function RonsasIntegrationPanel() {
         <div><dt>Contract</dt><dd>{status?.contract || "ronsas-status@1"}</dd></div>
         <div><dt>Status channel</dt><dd>Cloud</dd></div>
         <div><dt>Runtime model</dt><dd>{status?.runtimeMode || "local-first"}</dd></div>
-        <div><dt>DataNest authority</dt><dd>{status?.managedByDataNest === false ? "INVALID" : "Managed · required"}</dd></div>
+        <div><dt>DataNest authority</dt><dd>Managed · required</dd></div>
         <div><dt>Commercial mode</dt><dd>{status?.billingState || "free-promotion"}</dd></div>
         <div><dt>RONSAS Hub</dt><dd>{hubState}{status?.hub.status ? ` · HTTP ${status.hub.status}` : ""}</dd></div>
         <div><dt>AppDev authority</dt><dd>{status?.authority.owner || "DataNest-Supository"}</dd></div>
