@@ -696,8 +696,10 @@ test("active Job locator crosses paginated Scheduler pages without filtering pro
     if (path.endsWith("/jobs")) {
       const range = request.headers()["range"] || "";
       const match = range.match(/(\d+)-(\d+)/);
-      const from = match ? Number(match[1]) : 0;
-      const to = match ? Number(match[2]) : Math.min(19,allJobs.length-1);
+      const offset = Number(url.searchParams.get("offset") || (match ? match[1] : "0"));
+      const limit = Number(url.searchParams.get("limit") || (match ? String(Number(match[2])-Number(match[1])+1) : "20"));
+      const from = Number.isFinite(offset) ? offset : 0;
+      const to = from + (Number.isFinite(limit) ? limit : 20) - 1;
       const selected = allJobs.slice(from,Math.min(to+1,allJobs.length));
       const select = url.searchParams.get("select") || "";
       body = select==="id,status" ? selected.map(job=>({id:job.id,status:job.status})) : selected;
