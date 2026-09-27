@@ -339,6 +339,7 @@ Required validation:
 - `valid_from < expires_at` when expiry exists;
 - all numeric limits are null or non-negative, with operation/concurrency/external-call/retry/runtime/target/file/recipient limits strictly positive when supplied;
 - A4-class envelope or `require_independent_approval=true` cannot be approved by its proposer;
+- `approve_authority_envelope_v1` records `approval_type='independent'` for A4/independent-review envelopes and `approval_type='ordinary'` otherwise;
 - `granted_autonomy` cannot exceed requested autonomy;
 - approval cannot add scope/operations/capabilities/consequence classes;
 - activation requires approved state and an unexpired approval;
@@ -421,7 +422,8 @@ Rules:
 - operator may not restore or widen;
 - service function is service-role-only and accepts only `paused|blocked`;
 - route mode accepts only `report_only|enforced`;
-- missing route mode reads as `report_only`;
+- store route state in the existing `scheduler_policies` table under policy keys `authority_execution:external_ai_provider` and `authority_execution:job_start`; each value is JSON with `mode`, `reason`, nullable `evidence_reference`, `updated_by`, and `updated_at`;
+- missing route policy reads as `report_only`;
 - every change emits an `EXECUTION_CIRCUIT_BREAKER_CHANGED` or `AUTHORITY_ROUTE_MODE_CHANGED` event with actor/reason/evidence;
 - no function automatically flips a route to `enforced`.
 
@@ -479,9 +481,25 @@ service_evaluate_execution_authority_v1(
 ) returns jsonb
 
 get_authority_execution_workspace_v1(target_project uuid) returns jsonb
+
+get_job_execution_authority_summary_v1(
+  target_project uuid,
+  target_jobs uuid[]
+) returns jsonb
 ```
 
 Service evaluator: revoke from `public,anon,authenticated`; grant only `service_role`.
+
+`get_job_execution_authority_summary_v1` is authenticated/read-only. It validates project access and returns an object keyed by Job UUID. Each entry contains exactly:
+
+- `route_mode: report_only|enforced`;
+- nullable `envelope_id` and `envelope_status`;
+- `lease_states` keyed by required capability key;
+- applicable `breaker_state`;
+- nullable latest `decision_outcome` and `decision_reason_code`;
+- `readiness: not_evaluated|report_only|ready_for_check|approval_required|lease_missing|lease_expired|paused|blocked`.
+
+This summary never consumes lease counters and never claims `Authorized` unless the latest matching enforced `job_start` decision is `allow`; otherwise `ready_for_check` means only that visible prerequisites appear present and execution must still reevaluate server-side.
 
 Workspace JSON must include:
 
@@ -555,6 +573,8 @@ Expected: FAIL.
 - [ ] **Step 3: Override `transition_job_status(uuid,text)` additively**
 
 In the new migration, `CREATE OR REPLACE` the existing signature; do not edit the historical migration.
+
+The replacement remains the same public signature and authenticated grant, but becomes `SECURITY DEFINER SET search_path=public,private,auth` so it can call the revoked private evaluator. It must explicitly require `auth.uid()` and re-run the existing `private.has_project_role(...,array['owner','admin','operator'])` check before any transition. Revoke from `public,anon`; grant to `authenticated` only.
 
 Preserve all current transitions and role checks.
 
@@ -744,13 +764,14 @@ In `GovernanceWorkspace.tsx`:
 
 - [ ] **Step 6: Add scheduler authority presentation without creating permission**
 
-In `DataNestApp.tsx`, add a read-only authority readiness cue to TranScheduler using the Authority workspace/read model or a small dedicated read RPC from Task 2.
+In `DataNestApp.tsx`, load `get_job_execution_authority_summary_v1(project.id,currentPageJobIds)` when the scheduler page/job set changes. Keep this summary separate from capability health and from the Job objects.
 
 The scheduler header/rows may show:
 
 - `Authority not evaluated`;
 - `Report only`;
-- `Authorized`;
+- `Ready for authority check`;
+- `Authorized` only when the latest matching enforced decision is `allow`;
 - `Approval required`;
 - `Lease missing/expired`;
 - `Paused by policy`.
