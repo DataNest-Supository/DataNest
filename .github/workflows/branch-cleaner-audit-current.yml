@@ -1,4 +1,4 @@
-name: Branch-Cleaner Current Dry Audit
+name: Branch-Cleaner Current Apply
 
 on:
   push:
@@ -8,12 +8,12 @@ on:
       - ".github/branch-cleaner/supabase-verified-snapshot.json"
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: read
 
 jobs:
-  audit:
-    if: ${{ github.event.head_commit.message == 'Run Branch-Cleaner current dry audit' }}
+  cleanup:
+    if: ${{ github.event.head_commit.message == 'Apply Branch-Cleaner current safe cleanup' }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7.0.1
@@ -22,16 +22,16 @@ jobs:
           node-version: 22
       - name: Verify Branch-Cleaner unit tests
         run: node --test tests/unit/branch-cleaner.test.mjs
-      - name: Run strict dry audit
+      - name: Apply strict safe cleanup
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        run: node scripts/branch-cleaner.mjs --strict
+        run: node scripts/branch-cleaner.mjs --strict --apply
       - name: Upload report
         if: always()
         uses: actions/upload-artifact@v6.0.0
         with:
-          name: branch-cleaner-current-dry-audit
+          name: branch-cleaner-current-apply
           path: artifacts/branch-cleaner/
           if-no-files-found: error
