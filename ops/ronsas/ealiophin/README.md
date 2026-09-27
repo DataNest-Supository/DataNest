@@ -32,3 +32,11 @@ Career Compass, SovereignForge, LyricSync Studio, and Scene Song Spark remain ex
 ## Migration provenance
 
 The operational model was recovered from historical RONSAS branch `ronsas/resonance-appdev-integration-20260924` at commit `058e5a347be0dd5313c7e53fb3611653d26494ac`. Legacy absolute paths and standalone repository authority were intentionally not carried forward.
+
+## SyncVision MuseTalk
+
+SyncVision's recovered MuseTalk 1.5 bridge now lives inside DataNest at `apps/ronsas/syncvision/runtime/musetalk/musetalk_bridge.py`. The governed launcher is `ops/ronsas/ealiophin/START-SYNCVISION-MUSETALK.ps1` and binds only to `127.0.0.1:7863` with network-runtime offline controls preserved.
+
+The bridge is optional because the MuseTalk engine, pinned model files, Python environment, and FFmpeg remain machine-local assets. Their state belongs in `%LOCALAPPDATA%\\Resonance\\DataNest-RONSAS\\r5-local-ai.json`; source authority remains DataNest. Existing installations may still carry the historical local-state schema identifier during migration, but no OpenNova repository or path is used as runtime source authority.
+
+`START-RONSAS-DATANEST.ps1` starts the bridge automatically only when its DataNest source, launcher, and machine-local state are present. `STATUS-RONSAS-DATANEST.ps1` always reports it, and `STOP-RONSAS-DATANEST.ps1` stops it only when the DataNest runtime owns the process.
