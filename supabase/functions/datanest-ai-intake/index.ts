@@ -1,4 +1,4 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
 import { resolveDataNestAiStaging } from "../_shared/datanestAiStaging.ts";
 import { sha256Text } from "../_shared/datanestAiRuntime.ts";
 import { replayContentMatches } from "../_shared/datanestAiContinuity.ts";
