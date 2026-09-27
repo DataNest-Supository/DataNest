@@ -16,21 +16,29 @@ Any branch with unique commits remains `review` or `keep`. Unknown compare state
 
 ## Strict Supabase verification
 
-Strict/apply mode verifies the configured Supabase application and AI staging authorities before destructive cleanup. The application authority also enforces exact Git-to-live migration history parity.
+Strict/apply mode must verify the configured Supabase application and AI staging authorities before destructive cleanup. The application authority also enforces exact Git-to-live migration history parity.
 
-GitHub Actions therefore requires an encrypted repository secret named:
+Branch Cleaner accepts either of these verification sources:
 
-`SUPABASE_ACCESS_TOKEN`
+1. **Live management verification** using the encrypted GitHub Actions secret `SUPABASE_ACCESS_TOKEN`.
+2. **Fresh verified evidence** from `.github/branch-cleaner/supabase-verified-snapshot.json`.
 
-Supabase currently documents access-token authentication for CI management operations; Branch Cleaner must not replace this with an unauthenticated or partial health check.
+The snapshot path is fail-closed. The script rejects it when it is missing, expired, older than the configured maximum age, dated too far in the future, incomplete, mapped to the wrong project refs, unhealthy, or inconsistent with Git migration history.
 
-Use a least-privilege scoped Supabase access token with read access sufficient for the configured project status, branch status, security advisors, and migration history checks. Store it only as an encrypted GitHub Actions secret.
+The configured maximum snapshot age is controlled by `supabaseEvidenceMaxAgeMinutes` in `branch-cleaner.config.json`.
 
-If the secret is absent, strict/apply fails before branch deletion. A non-strict, non-apply dry run may still report GitHub branch hygiene, but its report must show Supabase verification as unavailable and must not be treated as destructive approval.
+When both sources are unavailable or invalid, strict/apply remains blocked.
+
+## Credential guidance
+
+Supabase currently documents access-token authentication for CI management operations. When using live verification, store a least-privilege scoped token only as the encrypted GitHub Actions secret `SUPABASE_ACCESS_TOKEN`.
+
+Use read access sufficient for the configured project status, branch status, security advisors, and migration history checks.
 
 ## Recommended operator flow
 
-1. Run Branch Cleaner with `apply=false`, `strict=true`.
-2. Review delete candidates and all warnings.
-3. Run with `apply=true`, `strict=true` only when the Supabase credential is configured and the dry run is clean.
-4. Preserve generated artifacts as cleanup evidence.
+1. Refresh live Supabase evidence or configure the encrypted access-token secret.
+2. Run Branch Cleaner with `apply=false`, `strict=true`.
+3. Review delete candidates and all warnings.
+4. Run with `apply=true`, `strict=true` only when the strict dry run is clean.
+5. Preserve generated artifacts as cleanup evidence.
