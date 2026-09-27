@@ -143,3 +143,21 @@ test("owner/admin can reject proposed portfolio changes without changing active 
   assert.match(source,/status='rejected'/i);
   assert.match(source,/Only proposed .* may be rejected/i);
 });
+
+
+test("Portfolio Item creation cannot fabricate governed product identity",()=>{
+  const source=sql();
+  if(!source)return;
+  assert.match(
+    source,
+    /if\s+target_kind\s*=\s*'governed_product'[\s\S]*Product Registry[\s\S]*promotion workflow/i
+  );
+});
+
+test("candidate promotion persists authoritative exact Product Lab evidence",()=>{
+  const source=sql();
+  if(!source)return;
+  assert.match(source,/authoritative_lab_evidence\s+jsonb/i);
+  assert.match(source,/jsonb_agg[\s\S]*surface_id[\s\S]*build_commit[\s\S]*release_id[\s\S]*test_run_id/i);
+  assert.match(source,/authoritative_product_lab_evidence[\s\S]*authoritative_lab_evidence/i);
+});
