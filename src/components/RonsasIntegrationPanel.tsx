@@ -70,7 +70,7 @@ export default function RonsasIntegrationPanel() {
         <div><dt>DataNest dependency</dt><dd>Independent · non-blocking</dd></div>
         <div><dt>RONSAS Hub</dt><dd>{hubState}{status?.hub.status ? ` · HTTP ${status.hub.status}` : ""}</dd></div>
         <div><dt>AppDev authority</dt><dd>{status?.authority.owner || "ResonanceAppDev"}</dd></div>
-        <div><dt>Control source</dt><dd>{status?.authority.controlRepository || "resonance36912-cell/RONSAS"}</dd></div>
+        <div><dt>Control source</dt><dd>{status?.authority.controlRepository || "DataNest-Supository/DataNest"}</dd></div>
         <div><dt>Hub source</dt><dd>{status?.authority.hubRepository || "resonance36912-cell/resonance-hub"}</dd></div>
         <div><dt>Checked</dt><dd>{status?.checkedAt ? new Date(status.checkedAt).toLocaleString() : "—"}</dd></div>
       </dl>
