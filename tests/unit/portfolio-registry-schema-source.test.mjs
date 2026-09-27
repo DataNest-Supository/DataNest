@@ -40,7 +40,10 @@ test("portfolio registry schema pins the approved identity, lifecycle, relations
   assert.match(sql,/unique index[\s\S]*source_authority[\s\S]*source_reference[\s\S]*where source_reference is not null/i);
   assert.match(sql,/unique index[\s\S]*portfolio_classifications[\s\S]*portfolio_item_id[\s\S]*where status='active'/i);
 
-  assert.match(sql,/alter table public\.product_surfaces[\s\S]*add column if not exists portfolio_item_id uuid/i);\n  assert.doesNotMatch(sql,/portfolio_item_id uuid references public\.portfolio_items\(id\)/i);\n  assert.match(sql,/create unique index portfolio_items_id_project_unique_idx[\s\S]*on public\.portfolio_items\(id,project_id\)/i);\n  assert.match(sql,/add constraint product_surfaces_portfolio_item_project_fkey[\s\S]*foreign key\s*\(portfolio_item_id,project_id\)[\s\S]*references public\.portfolio_items\(id,project_id\)[\s\S]*on delete set null\s*\(portfolio_item_id\)/i);
+  assert.match(sql,/alter table public\.product_surfaces[\s\S]*add column if not exists portfolio_item_id uuid/i);
+  assert.doesNotMatch(sql,/portfolio_item_id uuid references public\.portfolio_items\(id\)/i);
+  assert.match(sql,/create unique index portfolio_items_id_project_unique_idx[\s\S]*on public\.portfolio_items\(id,project_id\)/i);
+  assert.match(sql,/add constraint product_surfaces_portfolio_item_project_fkey[\s\S]*foreign key\s*\(portfolio_item_id,project_id\)[\s\S]*references public\.portfolio_items\(id,project_id\)[\s\S]*on delete set null\s*\(portfolio_item_id\)/i);
   assert.match(sql,/create index[\s\S]*product_surfaces[\s\S]*portfolio_item_id/i);
 
   assert.match(sql,/create (or replace )?view public\.portfolio_registry_view[\s\S]*security_invoker\s*=\s*true/i);
@@ -62,7 +65,8 @@ test("portfolio registry foundation indexes every new foreign-key column",()=>{
   if(!fs.existsSync(migrationPath))return;
   const sql=fs.readFileSync(migrationPath,"utf8");
   for(const token of [
-    "portfolio_items_project_idx",\n    "portfolio_items_id_project_unique_idx",
+    "portfolio_items_project_idx",
+    "portfolio_items_id_project_unique_idx",
     "portfolio_items_linked_product_idx",
     "portfolio_classifications_project_idx",
     "portfolio_classifications_item_idx",
