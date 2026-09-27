@@ -311,6 +311,8 @@ Retention is determined from:
 
 A single blanket retention period is not appropriate for all data.
 
+Phase C must not invent statutory, contractual, or sector-specific retention durations. Where no authoritative duration is established, the policy records a review cadence or `review_due` state and preserves existing content until an authorized policy supplies a defensible disposition rule.
+
 ### 9.2 Retention policy object
 
 A retention policy should be versioned and include:
@@ -445,7 +447,7 @@ Significant policy-sensitive operations should produce a compact decision record
 - requested operation;
 - effective visibility class;
 - effective reuse state;
-- policy/manfiest versions consulted;
+- policy/manifest versions consulted;
 - provider profile if relevant;
 - outcome: allow/deny/review-required;
 - denial/review reason code;
@@ -523,7 +525,9 @@ Do not infer public or learning state from file paths, repository visibility, UR
 
 Insert policy evaluation into selected external-provider and learning/reuse paths.
 
-Any enforcement change must retain current functionality for cases already explicitly permitted while failing closed for unknown or contradictory new policy state.
+Enforcement must not be activated for a live route until every currently routed provider and in-scope data source on that route has explicit reviewed policy coverage. Existing allowlists, budgets, connection records, repository visibility, or historical behavior are evidence inputs only; they do not silently become trust approval. The implementation may stage policy evaluation in report-only mode while coverage is completed, but report-only mode must never authorize a route that the existing system would deny.
+
+Once enforcement is activated for a route, any enforcement change must retain current functionality for cases already explicitly permitted by the reviewed policy while failing closed for absent, expired, suspended, unknown, or contradictory policy state.
 
 ### Stage 4 — retention review workflow
 
