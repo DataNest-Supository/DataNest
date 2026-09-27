@@ -14,6 +14,7 @@ import ExecutionAuthorityPanel from "@/components/ExecutionAuthorityPanel";
 import ResourceFabricPanel from "@/components/ResourceFabricPanel";
 import type { ExecutionAuthorityRole } from "@/lib/executionAuthority";
 import { useSessionDraftState } from "@/lib/sessionDraft";
+import { useSingleFlight } from "@/lib/singleFlight";
 
 type Project = { id:string; slug:string; name:string; description:string|null; status:string; created_at:string };
 type Tool = { id:string; tool_key:string; name:string; role:string; enabled:boolean; config:Record<string,unknown> };
@@ -1514,7 +1515,7 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
   const [capability,setCapability,capabilityDraft]=useSessionDraftState(draftPrefix+"capability","chat");
   const [tests,setTests,testsDraft]=useSessionDraftState(draftPrefix+"tests",true);
   const [artifact,setArtifact,artifactDraft]=useSessionDraftState(draftPrefix+"artifact",true);
-  const [saving,setSaving]=useState(false);
+  const {activeAction,busy:saving,run:runSingleFlight}=useSingleFlight();
   const hasSessionDraft=[titleDraft,descriptionDraft,priorityDraft,capabilityDraft,testsDraft,artifactDraft].some(item=>item.hasStoredDraft);
   const known=Array.from(new Set(["chat",...capabilities.map(item=>item.capability)]));
 
@@ -1524,31 +1525,30 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
     if(!supabase||!title.trim()) return;
     if(!canOperate){setError("Your DataNest role is read-only.");return;}
 
-    setSaving(true);
-    setNotice("");
-    setError("");
-
-    try {
-      const {data,error}=await supabase.rpc("create_job_manifest",{
-        target_project:project.id,
-        job_title:title.trim(),
-        job_description:description.trim()||null,
-        job_priority:priority,
-        required_capability:capability,
-        tests_required:tests,
-        artifact_required:artifact
-      });
-      if(error) throw error;
-      const row=Array.isArray(data)?data[0]:data;
-      const number=(row as Record<string,unknown>|null)?.job_number;
-      setTitle("");setDescription("");setPriority(50);setCapability("chat");setTests(true);setArtifact(true);
-      setNotice("JOB-"+String(number||"?").padStart(5,"0")+" created transactionally by UNIFI.");
-      await reload();
-    } catch(createError) {
-      setError(createError instanceof Error ? createError.message : "Unable to create the UNIFI job.");
-    } finally {
-      setSaving(false);
-    }
+    await runSingleFlight("create-job",async()=>{
+      setNotice("Creating Job Manifest…");
+      setError("");
+      try {
+        const {data,error}=await supabase.rpc("create_job_manifest",{
+          target_project:project.id,
+          job_title:title.trim(),
+          job_description:description.trim()||null,
+          job_priority:priority,
+          required_capability:capability,
+          tests_required:tests,
+          artifact_required:artifact
+        });
+        if(error) throw error;
+        const row=Array.isArray(data)?data[0]:data;
+        const number=(row as Record<string,unknown>|null)?.job_number;
+        setTitle("");setDescription("");setPriority(50);setCapability("chat");setTests(true);setArtifact(true);
+        setNotice("JOB-"+String(number||"?").padStart(5,"0")+" created transactionally by UNIFI.");
+        await reload();
+      } catch(createError) {
+        setError(createError instanceof Error ? createError.message : "Unable to create the UNIFI job.");
+        throw createError;
+      }
+    }).catch(()=>{});
   }
 
   const prepared=jobs.filter(item=>["PLANNED","READY","QUEUED"].includes(item.status));
@@ -1556,7 +1556,7 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
     <div className="panel stickyPanel"><p className="eyebrow">UNIFI</p><h2>Job Manifest Planner</h2><p className="muted">Prepare work completely before consuming scarce execution capacity.</p>
       {hasSessionDraft&&<p className="muted" role="status">Browser-session draft active · unfinished inputs are restored after workspace navigation or reload.</p>}
       {!canOperate&&<div className="notice errorNotice">Viewer access is read-only. Ask a DataNest owner or admin for operator access to create jobs.</div>}
-      <form className="plannerForm" onSubmit={createJob} aria-busy={saving}>
+      <form className="plannerForm" onSubmit={createJob} aria-busy={saving} data-active-action={activeAction||undefined}>
         <label>Job title<input value={title} onChange={event=>setTitle(event.target.value)} required placeholder="e.g. Validate production deployment"/></label>
         <label>Objective / context<textarea value={description} onChange={event=>setDescription(event.target.value)} rows={6} placeholder="What must be done, constraints, expected output…"/></label>
         <div className="fieldRow">
