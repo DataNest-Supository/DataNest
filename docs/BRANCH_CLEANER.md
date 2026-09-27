@@ -1,84 +1,36 @@
-# Branch-Cleaner
+# Branch Cleaner Operations
 
-Branch-Cleaner is DataNest's audit-aware branch hygiene and control-plane inspection tool.
+Branch Cleaner is a fail-closed GitHub branch hygiene tool for the DataNest repository.
 
-It combines the operational lessons already captured in DataNest's GitHub/Supabase reviews into one conservative workflow:
+## Deletion eligibility
 
-- inventory every Git branch and correlate it with pull-request history;
-- compare each branch with the configured base branch;
-- group iterative names such as `-v2`, `-v3`, `-current-main`, and date suffixes without assuming they are redundant;
-- classify branches as **keep**, **review**, or **delete_candidate**;
-- load DataNest's published audit findings/backlog as evidence and preserve their validation state;
-- inspect configured Supabase projects separately for project health, branch failures, security advisors, performance advisors, Git/Supabase branch drift, and migration-history parity;
-- emit JSON + Markdown reports with SHA-256 fingerprints of the audit inputs;
-- default to dry-run; deletion happens only with `--apply`.
+There is no branch-age floor. A branch can be deleted immediately only when all of these are true:
 
-## Safety model
+- it is not `main`, protected, or matched by a protected branch pattern;
+- it has no open pull request;
+- GitHub comparison with `main` is known;
+- it has exactly zero unique commits (`ahead_by = 0`);
+- strict control-plane verification has no blockers.
 
-A branch is never a delete candidate when it is the base/protected branch, has an open PR, has unique commits, GitHub comparison is unresolved, or branch recency cannot be established.
+Any branch with unique commits remains `review` or `keep`. Unknown compare state remains `keep`.
 
-A branch may become a delete candidate only when:
+## Strict Supabase verification
 
-1. it is old enough to satisfy `minDeleteAgeDays`;
-2. GitHub successfully proves it has **zero commits ahead** of the base branch; and
-3. it is not protected and has no open PR.
+Strict/apply mode verifies the configured Supabase application and AI staging authorities before destructive cleanup. The application authority also enforces exact Git-to-live migration history parity.
 
-Supabase findings never trigger Git-branch deletion. Performance advisor output is review evidence, not an instruction to remove indexes or schema objects.
+GitHub Actions therefore requires an encrypted repository secret named:
 
-Published external-audit findings also remain evidence until DataNest validation changes their state; Branch-Cleaner does not promote reported findings into certification.
+`SUPABASE_ACCESS_TOKEN`
 
-## DataNest authority map
+Supabase currently documents access-token authentication for CI management operations; Branch Cleaner must not replace this with an unauthenticated or partial health check.
 
-The default configuration keeps the two audited backend contexts distinct:
+Use a least-privilege scoped Supabase access token with read access sufficient for the configured project status, branch status, security advisors, and migration history checks. Store it only as an encrypted GitHub Actions secret.
 
-- `sgqdmfgjbprsoqsmgigi` — DataNest application/control-plane authority, expected Git branch `main`;
-- `qchttpcyqlqnhvahprhz` — DataNest AI staging/audit environment.
+If the secret is absent, strict/apply fails before branch deletion. A non-strict, non-apply dry run may still report GitHub branch hygiene, but its report must show Supabase verification as unavailable and must not be treated as destructive approval.
 
-This separation is intentional and supports the audit requirement to prove production/staging isolation.
+## Recommended operator flow
 
-## Run locally
-
-```bash
-export GITHUB_REPOSITORY=DataNest-Supository/DataNest
-export GITHUB_TOKEN=...
-export SUPABASE_ACCESS_TOKEN=... # optional; without it Supabase inspection is skipped
-
-npm run branch-cleaner
-```
-
-Strict dry-run:
-
-```bash
-npm run branch-cleaner:strict
-```
-
-Apply only proven-safe Git branch deletions (control-plane blockers still prevent deletion even without `--strict`):
-
-```bash
-node scripts/branch-cleaner.mjs --apply --strict
-```
-
-Reports are written to `artifacts/branch-cleaner/branch-cleaner-report.{json,md}`.
-
-## GitHub Actions
-
-Use **Actions → Branch-Cleaner → Run workflow**.
-
-- `apply=false` is the review-first path.
-- `apply=true` enables deletion of only `delete_candidate` branches.
-- add a repository secret named `SUPABASE_ACCESS_TOKEN`; destructive cleanup always fails closed when Supabase verification is unavailable.
-- use a narrowly scoped Supabase token; do not expose service-role keys or database passwords.
-
-## Tests
-
-```bash
-npm run test:branch-cleaner
-```
-
-The test suite covers protected/base branches, open PRs, unique commits after merge, iterative branch-family parsing, Supabase default-branch failures, audit-ID extraction, and the critical rule that compare/API uncertainty can never become a delete candidate.
-
-## Migration-history parity
-
-For the application authority, Branch-Cleaner compares `supabase/migrations/*.sql` with Supabase's applied migration history. Missing migrations, repo-only migrations, and timestamp/version mismatches are strict blockers when `enforceMigrationParity` is enabled.
-
-This check exists because Supabase preview branches are created by replaying Git migration history. A healthy production database can therefore coexist with a broken branching state when production changes were applied outside the Git migration chain. Branch-Cleaner reports that drift and blocks destructive cleanup; it does not rewrite migration history automatically.
+1. Run Branch Cleaner with `apply=false`, `strict=true`.
+2. Review delete candidates and all warnings.
+3. Run with `apply=true`, `strict=true` only when the Supabase credential is configured and the dry run is clean.
+4. Preserve generated artifacts as cleanup evidence.
