@@ -963,6 +963,20 @@ Commit message:
 
 Do not model policy as a single boolean consent flag.
 
+`TrustPolicyPanel` props are exactly:
+
+```ts
+{
+  projectId:string;
+  currentUserId:string;
+  role:TrustPolicyRole;
+  setNotice:(value:string)=>void;
+  setError:(value:string)=>void;
+}
+```
+
+`GovernanceWorkspace` keeps its existing props and adds `role:TrustPolicyRole`.
+
 ## Governance integration
 
 Preserve current default `?view=governance` behavior.
@@ -1102,7 +1116,7 @@ Test at least:
 3. Operator can propose permitted policy/review work but cannot activate public/platform-learning/provider trust.
 4. Owner/admin can activate reviewed policy through governed RPCs.
 5. Visibility and reuse state are shown independently.
-6. Provider with suspended/expired/missing trust state is visibly not approved for external routing.
+6. Provider with suspended/expired/missing trust state is visibly not approved for external routing; report-only state is visibly unresolved rather than falsely approved.
 7. Legal Eagle or explicit hard learning exclusion remains non-learning even if the project manifest is broader.
 8. Retention review shows holds/lineage blockers and no destructive action.
 9. Planned/unknown Trust Manifest claims remain visibly non-verified.
@@ -1175,6 +1189,8 @@ Migration replay must pass all historical migrations plus:
 
 DataNest AI Certification must remain green.
 
+Also run the existing external-AI return/source tests because Phase C now stamps AI Companion learning policy in `datanest-ai-intake`.
+
 ## Scope review
 
 Before merge:
@@ -1228,7 +1244,7 @@ Before requesting merge approval, verify:
 
 # Plan self-review
 
-**Spec coverage:** Tasks 1-6 cover both policy dimensions, explicit subject bindings, Trust Manifests, Provider Trust Profiles, retention policy/holds/reviews, minimal lineage, governed mutations, fail-closed evaluation, DataNest AI provider/learning enforcement, Governance UX, audit events, and compatibility.
+**Spec coverage:** Tasks 1-6 cover both policy dimensions, explicit subject bindings, Trust Manifests, Provider Trust Profiles, append-only policy decisions, retention policy/holds/reviews, minimal lineage, governed mutations, report-only-to-enforced rollout, fail-closed evaluation, DataNest AI + AI Companion provider/learning enforcement, Governance UX, audit events, and compatibility.
 
 **Authority consistency:** The plan keeps RLS/RBAC and Job/file access above trust policy; service-role evaluation cannot manufacture user access. Provider trust narrows existing provider authorization rather than replacing it. Certified memory remains authoritative for reusable project knowledge.
 
@@ -1236,7 +1252,7 @@ Before requesting merge approval, verify:
 
 **Learning safety:** Legal Eagle and any authoritative `learning_eligible=false` input is a hard denial for learning. `project_learning_eligible` is eligibility only; certification remains a separate existing review path.
 
-**Provider safety:** Missing, suspended, retired, expired, or insufficient Provider Trust Profile denies external routing. This may degrade to the existing safe embedded fallback but cannot fabricate external success.
+**Provider safety:** In `enforced` mode, missing, suspended, retired, expired, or insufficient Provider Trust Profile blocks external routing. In `report_only`, the decision is recorded but cannot override any existing denial; enforced activation is gated on complete current route coverage.
 
 **Trust-claim safety:** Trust Manifests track `verified|partial|planned|unknown`; activation cannot turn planned target-state concepts into verified controls without evidence.
 
