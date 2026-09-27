@@ -421,6 +421,8 @@ test("active Job evidence locator spans paginated Runs, Checkpoints, and Audit w
 test("workspace presentation state is URL-addressable without exposing active Job identity", () => {
   assert.match(appSource, /const operationalUrlStateKeys=\["page","mode","filter","sort"\] as const/);
   assert.match(appSource, /const workspaceScopedUrlStateKeys=\[\.\.\.operationalUrlStateKeys,"section"\] as const/);
+  assert.match(appSource, /const paginatedWorkspaceViews=new Set<ViewKey>\(\["unifi","scheduler","runs","checkpoints","audit"\]\)/);
+  assert.match(appSource, /function scopeUrlToWorkspace\(url:URL,view:ViewKey\)/);
   assert.match(appSource, /function urlPageIndex\(url:URL\)/);
   assert.match(appSource, /function schedulerViewModeFromUrl\(url:URL\):SchedulerViewMode/);
   assert.match(appSource, /function schedulerFilterFromUrl\(url:URL\):SchedulerFilter/);
@@ -439,10 +441,10 @@ test("workspace presentation state is URL-addressable without exposing active Jo
 });
 
 
-test("copied workspace links remove presentation state owned by other workspaces", () => {
-  assert.match(appSource, /if\(view!=="governance"\)shareUrl\.searchParams\.delete\("section"\)/);
-  assert.match(appSource, /if\(!\["unifi","scheduler","runs","checkpoints","audit"\]\.includes\(view\)\)shareUrl\.searchParams\.delete\("page"\)/);
-  assert.match(appSource, /if\(view!=="scheduler"\)\{\s*shareUrl\.searchParams\.delete\("mode"\);\s*shareUrl\.searchParams\.delete\("filter"\);\s*shareUrl\.searchParams\.delete\("sort"\)/);
+test("workspace scoping is shared by history restoration and copied deep links", () => {
+  assert.match(appSource, /function scopeUrlToWorkspace\(url:URL,view:ViewKey\)\{[\s\S]*?paginatedWorkspaceViews\.has\(view\)[\s\S]*?view!=="scheduler"[\s\S]*?view!=="governance"/);
+  assert.match(appSource, /const originalUrl=url\.toString\(\);[\s\S]*?scopeUrlToWorkspace\(url,next\);[\s\S]*?history\.replaceState/);
+  assert.match(appSource, /scopeUrlToWorkspace\(shareUrl,view\)/);
 });
 
 
