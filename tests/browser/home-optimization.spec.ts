@@ -743,7 +743,7 @@ test("active Job locator crosses paginated Scheduler pages without filtering pro
   await page.goBack();
   await expect(page).toHaveURL(/\?view=scheduler&(?:[^#]*&)?page=2(?:&|$)/);
   await expect(page.locator(".ganttRow[data-active-context='true']")).toHaveCount(1);
-  await expect(page.getByText("Active Job revealed in TranScheduler.",{exact:true})).toBeVisible();
+  await expect(page.locator(".ganttRow[data-active-context='true']").getByText("Off-page active Job",{exact:true})).toBeVisible();
   await expect(page.getByRole("region",{name:"Active work context"}).getByRole("status",{name:"Visible evidence signal"})).toContainText("On this page: 1 matching Job record.");
 });
 
