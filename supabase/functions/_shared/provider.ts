@@ -6,6 +6,7 @@ export type ProviderConnection={
   endpoint_host:string;
   model:string;
   secret:string;
+  metadata?:Record<string,unknown>|null;
 };
 
 export type ProviderCallResult={
@@ -89,4 +90,25 @@ export async function callOpenAiCompatibleProvider(input:{
     inputTokens:Number(usage.prompt_tokens??usage.input_tokens??0),
     outputTokens:Number(usage.completion_tokens??usage.output_tokens??0)
   };
+}
+
+
+export function resolveOcrPdfRoute(connection:ProviderConnection):string|null{
+  const metadata=(connection.metadata||{}) as Record<string,unknown>;
+  const capabilities=(metadata.capabilities||{}) as Record<string,unknown>;
+  if(capabilities.ocr_pdf!==true)return null;
+
+  const raw=typeof metadata.ocr_endpoint==="string"
+    ?metadata.ocr_endpoint.trim()
+    :"";
+  if(!raw)return null;
+
+  const url=new URL(raw);
+  if(url.protocol!=="https:"||url.hostname.toLowerCase()!==connection.endpoint_host.toLowerCase()){
+    throw new Error("provider_endpoint_rejected");
+  }
+  if(url.username||url.password||(url.port&&url.port!=="443")){
+    throw new Error("provider_endpoint_rejected");
+  }
+  return url.toString();
 }

@@ -29,6 +29,7 @@ export type LearningEvidence={
   jobId?:string|null;
   sourceType?:string|null;
   sourceUserId?:string|null;
+  independenceKey?:string|null;
   metadata?:Record<string,unknown>|null;
 };
 
@@ -88,12 +89,31 @@ export function isUsefulLearningEvidence(event:LearningEvidence):boolean {
 }
 
 function evidenceIdentity(event:LearningEvidence):string{
+  if(event.independenceKey?.trim())return event.independenceKey.trim();
   return [
     event.jobId||"",
     event.sessionId||"",
     event.sourceUserId||"",
     event.sourceType||""
   ].join("|");
+}
+
+function scalarSignatures(value:string):string[]{
+  const normalized=value.toLowerCase().replace(/,/g,"");
+  const matches=normalized.matchAll(/\b(-?\d+(?:\.\d+)?)\s*(%|ms|s|sec|secs|seconds?|min|mins|minutes?|day|days|h|hr|hrs|hours?|kb|mb|gb|tb|mg|g|kg|ml|l|zar|usd|eur|r)\b/g);
+  return [...new Set([...matches].map(match=>{
+    const number=Number(match[1]);
+    const unit=String(match[2]||"").toLowerCase();
+    return Number.isFinite(number)?number+"|"+unit:"";
+  }).filter(Boolean))].sort();
+}
+
+function hasScalarConflict(events:LearningEvidence[]):boolean{
+  const signatures=events
+    .map(event=>scalarSignatures(event.content))
+    .filter(values=>values.length);
+  if(signatures.length<2)return false;
+  return new Set(signatures.map(values=>values.join(","))).size>1;
 }
 
 function negationPolarity(value:string):boolean{
@@ -198,7 +218,12 @@ export function candidateFromRepeatedEvidence(
   if(trendTokens.length<2)return null;
 
   const polarities=new Set(similar.map(event=>negationPolarity(event.content)));
-  const hasConflict=polarities.size>1;
+  const explicitConflict=similar.some(event=>
+    event.metadata?.certified_memory_conflict===true||
+    event.metadata?.scalar_conflict===true||
+    event.metadata?.explicit_conflict===true
+  );
+  const hasConflict=polarities.size>1||hasScalarConflict(similar)||explicitConflict;
   const risk=classifyLearningRisk(similar.map(item=>item.content).join(" "));
   const normalizedKnowledge=representative.content.trim().replace(/\s+/g," ");
   const independentEvidenceCount=new Set(similar.map(evidenceIdentity)).size;

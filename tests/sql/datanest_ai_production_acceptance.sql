@@ -89,3 +89,20 @@ begin
     raise exception 'authenticated must not execute private DataNest AI privileged functions directly';
   end if;
 end $$;
+
+
+do $$
+begin
+  if to_regprocedure('public.authorize_datanest_ai_file_access(uuid)') is null then
+    raise exception 'authorize_datanest_ai_file_access missing';
+  end if;
+  if has_function_privilege('anon','public.authorize_datanest_ai_file_access(uuid)','execute') then
+    raise exception 'anon must not execute file authorization gateway';
+  end if;
+  if not has_function_privilege('authenticated','public.authorize_datanest_ai_file_access(uuid)','execute') then
+    raise exception 'authenticated must execute file authorization gateway';
+  end if;
+  if has_function_privilege('authenticated','private.authorize_datanest_ai_file_access(uuid)','execute') then
+    raise exception 'authenticated must not execute private file authorization helper';
+  end if;
+end $$;
