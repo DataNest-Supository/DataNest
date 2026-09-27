@@ -1418,22 +1418,28 @@ test("stale recovery stays preserved and user-scoped across account transitions"
     }
 
     const staleStartedAt=new Date(Date.now()-2*60*60*1000).toISOString();
-    sessionStorage.setItem("datanest.pendingMutation.unifi-job:"+projectId+":"+userId,JSON.stringify({
-      kind:"unifi_job",
-      requestKey:"50000000-0000-4000-8000-000000000001",
-      payload:{title:"Stale manifest",description:null,priority:50,capability:"chat",tests:true,artifact:true},
-      startedAt:staleStartedAt,
-      verificationState:"unconfirmed",
-      lastCheckedAt:staleStartedAt
-    }));
-    sessionStorage.setItem("datanest.pendingMutation.sparks-redemption:"+projectId+":"+otherUserId,JSON.stringify({
-      kind:"spark_redemption",
-      requestKey:"50000000-0000-4000-8000-000000000099",
-      payload:{serviceId:"20000000-0000-4000-8000-000000000001",quantity:1,note:null},
-      startedAt:staleStartedAt,
-      verificationState:"unconfirmed",
-      lastCheckedAt:staleStartedAt
-    }));
+    const firstKey="datanest.pendingMutation.unifi-job:"+projectId+":"+userId;
+    if(!sessionStorage.getItem(firstKey)){
+      sessionStorage.setItem(firstKey,JSON.stringify({
+        kind:"unifi_job",
+        requestKey:"50000000-0000-4000-8000-000000000001",
+        payload:{title:"Stale manifest",description:null,priority:50,capability:"chat",tests:true,artifact:true},
+        startedAt:staleStartedAt,
+        verificationState:"unconfirmed",
+        lastCheckedAt:staleStartedAt
+      }));
+    }
+    const secondKey="datanest.pendingMutation.sparks-redemption:"+projectId+":"+otherUserId;
+    if(!sessionStorage.getItem(secondKey)){
+      sessionStorage.setItem(secondKey,JSON.stringify({
+        kind:"spark_redemption",
+        requestKey:"50000000-0000-4000-8000-000000000099",
+        payload:{serviceId:"20000000-0000-4000-8000-000000000001",quantity:1,note:null},
+        startedAt:staleStartedAt,
+        verificationState:"unconfirmed",
+        lastCheckedAt:staleStartedAt
+      }));
+    }
   }, {projectId,userId,otherUserId});
 
   await page.route("https://fixture.supabase.co/**", route => {
