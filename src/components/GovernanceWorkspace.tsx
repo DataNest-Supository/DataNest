@@ -6,6 +6,7 @@ import ProjectMembersPanel from "@/components/ProjectMembersPanel";
 import TrustPolicyPanel from "@/components/TrustPolicyPanel";
 import ExecutionAuthorityPanel from "@/components/ExecutionAuthorityPanel";
 import type { TrustPolicyRole } from "@/lib/trustPolicy";
+import { useSessionDraftState } from "@/lib/sessionDraft";
 
 type Protocol={
   id:string;project_id:string;protocol_key:string;version:number;title:string;mission:string|null;vision:string|null;
@@ -89,28 +90,34 @@ export default function GovernanceWorkspace({
     return ()=>window.removeEventListener("popstate",sync);
   },[]);
 
-  const [protocolTitle,setProtocolTitle]=useState("");
-  const [protocolMission,setProtocolMission]=useState("");
-  const [protocolVision,setProtocolVision]=useState("");
-  const [protocolBody,setProtocolBody]=useState("");
-  const [protocolPrinciples,setProtocolPrinciples]=useState("");
+  const draftPrefix="governance:"+projectId+":"+currentUserId+":";
+  const [protocolTitle,setProtocolTitle,protocolTitleDraft]=useSessionDraftState(draftPrefix+"protocol-title","");
+  const [protocolMission,setProtocolMission,protocolMissionDraft]=useSessionDraftState(draftPrefix+"protocol-mission","");
+  const [protocolVision,setProtocolVision,protocolVisionDraft]=useSessionDraftState(draftPrefix+"protocol-vision","");
+  const [protocolBody,setProtocolBody,protocolBodyDraft]=useSessionDraftState(draftPrefix+"protocol-body","");
+  const [protocolPrinciples,setProtocolPrinciples,protocolPrinciplesDraft]=useSessionDraftState(draftPrefix+"protocol-principles","");
 
   const [proposalType,setProposalType]=useState("operational_rule");
-  const [proposalTitle,setProposalTitle]=useState("");
-  const [proposalSummary,setProposalSummary]=useState("");
-  const [proposalBody,setProposalBody]=useState("");
+  const [proposalTitle,setProposalTitle,proposalTitleDraft]=useSessionDraftState(draftPrefix+"proposal-title","");
+  const [proposalSummary,setProposalSummary,proposalSummaryDraft]=useSessionDraftState(draftPrefix+"proposal-summary","");
+  const [proposalBody,setProposalBody,proposalBodyDraft]=useSessionDraftState(draftPrefix+"proposal-body","");
   const [proposalProtocolId,setProposalProtocolId]=useState("");
 
   const [disputeTargetType,setDisputeTargetType]=useState("decision");
   const [disputeTargetId,setDisputeTargetId]=useState("");
-  const [disputeTitle,setDisputeTitle]=useState("");
-  const [disputeGrounds,setDisputeGrounds]=useState("");
-  const [disputeRemedy,setDisputeRemedy]=useState("");
+  const [disputeTitle,setDisputeTitle,disputeTitleDraft]=useSessionDraftState(draftPrefix+"dispute-title","");
+  const [disputeGrounds,setDisputeGrounds,disputeGroundsDraft]=useSessionDraftState(draftPrefix+"dispute-grounds","");
+  const [disputeRemedy,setDisputeRemedy,disputeRemedyDraft]=useSessionDraftState(draftPrefix+"dispute-remedy","");
 
   const [resolutionDisputeId,setResolutionDisputeId]=useState("");
   const [resolutionOutcome,setResolutionOutcome]=useState("clarified");
-  const [resolutionText,setResolutionText]=useState("");
+  const [resolutionText,setResolutionText,resolutionTextDraft]=useSessionDraftState(draftPrefix+"resolution-text","");
   const [replacementProposalId,setReplacementProposalId]=useState("");
+  const hasSessionDraft=[
+    protocolTitleDraft,protocolMissionDraft,protocolVisionDraft,protocolBodyDraft,protocolPrinciplesDraft,
+    proposalTitleDraft,proposalSummaryDraft,proposalBodyDraft,
+    disputeTitleDraft,disputeGroundsDraft,disputeRemedyDraft,resolutionTextDraft
+  ].some(item=>item.hasStoredDraft);
 
   const load=useCallback(async()=>{
     if(section!=="sovereign"){setLoading(false);return;}
@@ -294,6 +301,7 @@ export default function GovernanceWorkspace({
 
   return <div>
     {governanceModeTabs}
+    {hasSessionDraft&&<p className="muted" role="status">Governance draft restored · saved only in this browser session until its form is submitted.</p>}
     <section className="heroPanel">
       <div>
         <p className="eyebrow">RESONANCE SOVEREIGN GOVERNANCE</p>
