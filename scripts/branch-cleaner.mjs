@@ -56,6 +56,16 @@ export function classifyBranch(branch, config, now = new Date()) {
     };
   if (branch.mergedPr && ahead != null && ahead > 0 && branch.postMergeActivity)
     return { decision:"review", reason:"post_merge_unique_commits", ageDays:age, ahead, behind, status };
+  if (branch.mergedPr && ahead != null && ahead > 0 && branch.archiveMatchesTip)
+    return {
+      decision:"archived",
+      reason:"merged_history_archived",
+      archiveTag:branch.archiveTag || null,
+      ageDays:age,
+      ahead,
+      behind,
+      status
+    };
   if (branch.mergedPr && ahead != null && ahead > 0)
     return { decision:"review", reason:"merged_pr_unique_history", ageDays:age, ahead, behind, status };
   if (Number.isFinite(age) && age >= config.staleDays && ahead != null && ahead > 0)
@@ -213,10 +223,23 @@ async function mapLimit(items, limit, fn) {
 }
 
 async function githubAudit(repo, token, config) {
-  const [branches, prs] = await Promise.all([
+  const archiveTagPrefix = String(config.archiveTagPrefix || "branch-archive/");
+  const archiveEndpoint = "/git/matching-refs/tags/" +
+    archiveTagPrefix.split("/").map(encodeURIComponent).join("/");
+  const [branches, prs, archiveRefsRaw] = await Promise.all([
     paginate(repo, "/branches", token),
-    paginate(repo, "/pulls?state=all&sort=updated&direction=desc", token)
+    paginate(repo, "/pulls?state=all&sort=updated&direction=desc", token),
+    gh(repo, archiveEndpoint, token).catch(() => [])
   ]);
+  const archiveRefs = Array.isArray(archiveRefsRaw) ? archiveRefsRaw : [];
+  const archiveRefPrefix = "refs/tags/" + archiveTagPrefix;
+  const archiveTips = new Map();
+  for (const ref of archiveRefs) {
+    if (!String(ref?.ref || "").startsWith(archiveRefPrefix)) continue;
+    const branchName = String(ref.ref).slice(archiveRefPrefix.length);
+    if (!branchName) continue;
+    archiveTips.set(branchName, ref?.object?.sha || null);
+  }
 
   const prsByBranch = new Map();
   for (const pr of prs) {
@@ -258,6 +281,8 @@ async function githubAudit(repo, token, config) {
       compare:{ status:d.status || "unknown", ahead_by:d.ahead_by ?? null, behind_by:d.behind_by ?? null },
       openPr:linked.some((p) => p.state === "open"),
       mergedPr:linked.some((p) => !!p.merged_at),
+      archiveTag:archiveTips.has(b.name) ? archiveTagPrefix + b.name : null,
+      archiveMatchesTip:archiveTips.get(b.name) === b.commit.sha,
       auditIds:extractAuditIds(linked.map((p) => (p.title || "") + "\n" + (p.body || "")).join("\n"))
     };
   });
@@ -585,7 +610,8 @@ function markdown(r) {
     lines.push("- " + b.name + ": " + b.classification.decision + " / " +
       b.classification.reason + " / ahead=" + (b.classification.ahead ?? "?") +
       " / age=" + (Number.isFinite(b.classification.ageDays) ? b.classification.ageDays.toFixed(1) : "?") +
-      (b.classification.preservedBy ? " / preserved-by=" + b.classification.preservedBy : ""));
+      (b.classification.preservedBy ? " / preserved-by=" + b.classification.preservedBy : "") +
+      (b.classification.archiveTag ? " / archive-tag=" + b.classification.archiveTag : ""));
   }
   lines.push("", "## Supabase control-plane audit", "");
   if (r.supabase.skipped) {

@@ -61,3 +61,15 @@ Branch Cleaner compares the branch-tip commit timestamp with the latest linked P
 - `merged_pr_unique_history` means the PR merged but the current branch tip does not show post-merge activity; the unique commit SHAs remain review-only history.
 
 Neither classification is automatically deleted while `ahead_by > 0`. This distinction improves review priority without weakening commit-lineage protection.
+
+## Archived merged history
+
+Merged PR source branches can preserve commit lineage that is not reachable from `main` after squash/rebase merging. Branch Cleaner supports a non-destructive archive state using lightweight Git tags.
+
+The configured tag prefix is `branch-archive/`. For an archived branch named `feature/example`, the expected tag is:
+
+`branch-archive/feature/example`
+
+Branch Cleaner only reports `merged_history_archived` when the archive tag points to the **exact current branch tip SHA**, the branch has a merged PR, the branch still has history ahead of `main`, and there is no detected post-merge activity.
+
+Archived branches use the `archived` decision. They are not delete candidates. If the branch advances, the tag no longer matches the tip and Branch Cleaner returns the branch to review.

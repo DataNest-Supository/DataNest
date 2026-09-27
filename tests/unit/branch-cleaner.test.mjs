@@ -62,6 +62,21 @@ test("distinguishes merged PR history from actual post-merge activity", () => {
   assert.equal(result.reason, "merged_pr_unique_history");
 });
 
+test("recognizes exact archive tags without making archived history deletable", () => {
+  const result = classifyBranch({
+    name:"fix/squash-merged",
+    mergedPr:true,
+    postMergeActivity:false,
+    archiveMatchesTip:true,
+    archiveTag:"branch-archive/fix/squash-merged",
+    updatedAt:"2026-09-01T00:00:00Z",
+    compare:{ ahead_by:3, behind_by:9, status:"diverged" },
+  }, config, now);
+  assert.equal(result.decision, "archived");
+  assert.equal(result.reason, "merged_history_archived");
+  assert.equal(result.archiveTag, "branch-archive/fix/squash-merged");
+});
+
 test("marks ancestry-proven older variants as preserved but never delete candidates", () => {
   const result = classifyBranch({
     name:"feat/example-v2",
