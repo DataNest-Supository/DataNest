@@ -458,18 +458,20 @@ $$;
 create or replace function public.create_trust_manifest_draft_v1(
   target_project uuid,
   target_scope_type text,
+  target_default_visibility_class text,
+  target_default_reuse_state text,
+  target_policy_version text,
+  target_enforcement_mode text default 'report_only',
   target_product uuid default null,
-  target_default_visibility_class text default 'project_restricted',
-  target_default_reuse_state text default 'runtime_only',
+  target_retention_policy uuid default null,
+  target_approved_provider_keys text[] default '{}'::text[],
   target_publication_policy text default 'governed_only',
   target_export_policy text default 'governed_only',
+  target_certified_memory_policy text default 'existing_governed_pipeline',
   target_evidence_state text default 'unknown',
   target_evidence_reference text default null,
   target_known_limitations text default null,
-  target_policy_version text default 'trust-policy-v1',
-  target_retention_policy uuid default null,
-  target_enforcement_mode text default 'report_only',
-  target_approved_provider_keys text[] default '{}'::text[]
+  target_review_due_at timestamptz default null
 ) returns uuid
 language plpgsql
 security definer
@@ -487,9 +489,14 @@ begin
   end if;
   if target_scope_type not in ('project','product') then raise exception 'Unsupported Trust Manifest scope.'; end if;
   if target_enforcement_mode not in ('report_only','enforced') then raise exception 'Unsupported Trust Manifest enforcement mode.'; end if;
+  if target_certified_memory_policy<>'existing_governed_pipeline' then
+    raise exception 'Certified memory authority remains on the existing governed pipeline.';
+  end if;
   if target_scope_type='project' and target_product is not null then raise exception 'Project Trust Manifest cannot target a product.'; end if;
   if target_scope_type='product' then
-    if target_product is null or not exists(select 1 from public.products p where p.id=target_product and p.project_id=target_project) then
+    if target_product is null or not exists(
+      select 1 from public.products p where p.id=target_product and p.project_id=target_project
+    ) then
       raise exception 'Product subject not found in project.';
     end if;
   end if;
@@ -499,9 +506,9 @@ begin
     raise exception 'Retention policy project mismatch.';
   end if;
 
-  select coalesce(array_agg(distinct lower(btrim(value))) filter (where nullif(btrim(value),'') is not null),'{}'::text[])
+  select coalesce(array_agg(distinct lower(btrim(provider_key))) filter (where nullif(btrim(provider_key),'') is not null),'{}'::text[])
   into normalized_provider_keys
-  from unnest(coalesce(target_approved_provider_keys,'{}'::text[])) value;
+  from unnest(coalesce(target_approved_provider_keys,'{}'::text[])) provider_key;
 
   select coalesce(max(version),0)+1 into next_version
   from public.trust_manifests
@@ -513,12 +520,16 @@ begin
   insert into public.trust_manifests(
     project_id,scope_type,product_id,version,status,default_visibility_class,default_reuse_state,
     publication_policy,export_policy,certified_memory_policy,evidence_state,evidence_reference,
-    known_limitations,policy_version,retention_policy_id,enforcement_mode,approved_provider_keys,created_by
+    known_limitations,policy_version,retention_policy_id,enforcement_mode,approved_provider_keys,
+    review_due_at,created_by
   ) values(
-    target_project,target_scope_type,target_product,next_version,'draft',target_default_visibility_class,target_default_reuse_state,
-    target_publication_policy,target_export_policy,'existing_governed_pipeline',target_evidence_state,
-    nullif(btrim(coalesce(target_evidence_reference,'')),''),nullif(btrim(coalesce(target_known_limitations,'')),''),
-    btrim(target_policy_version),target_retention_policy,target_enforcement_mode,normalized_provider_keys,caller
+    target_project,target_scope_type,target_product,next_version,'draft',
+    target_default_visibility_class,target_default_reuse_state,target_publication_policy,target_export_policy,
+    target_certified_memory_policy,target_evidence_state,
+    nullif(btrim(coalesce(target_evidence_reference,'')),''),
+    nullif(btrim(coalesce(target_known_limitations,'')),''),
+    btrim(target_policy_version),target_retention_policy,target_enforcement_mode,normalized_provider_keys,
+    target_review_due_at,caller
   ) returning id into new_id;
 
   perform private.record_trust_policy_event(
@@ -656,8 +667,8 @@ create or replace function public.create_provider_trust_profile_v1(
   target_data_locality_guarantees text default null,
   target_credential_boundary_description text default null,
   target_evidence_state text default 'unknown',
-  target_review_due_at timestamptz default null,
-  target_known_limitations text default null
+  target_known_limitations text default null,
+  target_review_due_at timestamptz default null
 ) returns uuid
 language plpgsql
 security definer
@@ -682,7 +693,6 @@ begin
   else
     resolved_provider_key:=lower(btrim(target_provider_key));
   end if;
-
   if nullif(resolved_provider_key,'') is null then raise exception 'Provider key is required.'; end if;
 
   insert into public.provider_trust_profiles(
@@ -698,7 +708,8 @@ begin
     nullif(btrim(coalesce(target_retention_posture,'')),''),nullif(btrim(coalesce(target_training_reuse_posture,'')),''),
     nullif(btrim(coalesce(target_security_evidence_reference,'')),''),nullif(btrim(coalesce(target_contractual_evidence_reference,'')),''),
     nullif(btrim(coalesce(target_data_locality_guarantees,'')),''),nullif(btrim(coalesce(target_credential_boundary_description,'')),''),
-    target_evidence_state,btrim(target_policy_version),target_review_due_at,nullif(btrim(coalesce(target_known_limitations,'')),''),caller
+    target_evidence_state,btrim(target_policy_version),target_review_due_at,
+    nullif(btrim(coalesce(target_known_limitations,'')),''),caller
   ) returning id into new_id;
 
   perform private.record_trust_policy_event(
@@ -811,18 +822,17 @@ $$;
 create or replace function public.propose_retention_policy_v1(
   target_project uuid,
   target_policy_key text,
-  target_applicable_visibility_classes text[],
-  target_applicable_reuse_states text[],
-  target_applicable_subject_types text[],
   target_default_disposition_intent text,
   target_requires_lineage_review boolean,
+  target_applicable_visibility_classes text[] default '{}'::text[],
+  target_applicable_reuse_states text[] default '{}'::text[],
+  target_applicable_subject_types text[] default '{}'::text[],
   target_default_retention_days integer default null,
   target_review_interval_days integer default null,
   target_rules jsonb default '{}'::jsonb,
   target_minimum_evidence jsonb default '{}'::jsonb,
   target_authority_basis text default null,
   target_evidence_reference text default null,
-  target_status_reason text default null,
   target_review_due_at timestamptz default null
 ) returns uuid
 language plpgsql
@@ -845,12 +855,16 @@ begin
     default_retention_days,review_interval_days,default_disposition_intent,rules,minimum_evidence,requires_lineage_review,
     authority_basis,evidence_reference,status_reason,review_due_at,created_by
   ) values(
-    target_project,btrim(target_policy_key),next_version,'draft',coalesce(target_applicable_visibility_classes,'{}'::text[]),
-    coalesce(target_applicable_reuse_states,'{}'::text[]),coalesce(target_applicable_subject_types,'{}'::text[]),
+    target_project,btrim(target_policy_key),next_version,'draft',
+    coalesce(target_applicable_visibility_classes,'{}'::text[]),
+    coalesce(target_applicable_reuse_states,'{}'::text[]),
+    coalesce(target_applicable_subject_types,'{}'::text[]),
     target_default_retention_days,target_review_interval_days,target_default_disposition_intent,
-    coalesce(target_rules,'{}'::jsonb),coalesce(target_minimum_evidence,'{}'::jsonb),target_requires_lineage_review,
-    nullif(btrim(coalesce(target_authority_basis,'')),''),nullif(btrim(coalesce(target_evidence_reference,'')),''),
-    nullif(btrim(coalesce(target_status_reason,'')),''),target_review_due_at,caller
+    coalesce(target_rules,'{}'::jsonb),coalesce(target_minimum_evidence,'{}'::jsonb),
+    target_requires_lineage_review,
+    nullif(btrim(coalesce(target_authority_basis,'')),''),
+    nullif(btrim(coalesce(target_evidence_reference,'')),''),
+    null,target_review_due_at,caller
   ) returning id into new_id;
 
   perform private.record_trust_policy_event(
@@ -910,10 +924,10 @@ $$;
 create or replace function public.place_retention_hold_v1(
   target_project uuid,
   target_subject_type text,
+  target_hold_type text,
+  target_reason text,
   target_subject_id uuid default null,
   target_subject_reference text default null,
-  target_hold_type text default 'governance',
-  target_reason text default null,
   target_evidence_reference text default null
 ) returns uuid
 language plpgsql
@@ -923,12 +937,20 @@ as $$
 declare caller uuid:=auth.uid(); new_id uuid;
 begin
   if caller is null then raise insufficient_privilege using message='Authentication is required.'; end if;
-  if not private.has_project_role(target_project,array['owner','admin']) then raise insufficient_privilege using message='Owner or admin access is required.'; end if;
+  if not private.has_project_role(target_project,array['owner','admin']) then
+    raise insufficient_privilege using message='Owner or admin access is required.';
+  end if;
   perform private.trust_validate_subject(target_project,target_subject_type,target_subject_id,target_subject_reference);
-  insert into public.retention_holds(project_id,subject_type,subject_id,subject_reference,hold_type,reason,evidence_reference,status,placed_by)
-  values(target_project,target_subject_type,target_subject_id,nullif(btrim(coalesce(target_subject_reference,'')),''),target_hold_type,btrim(target_reason),nullif(btrim(coalesce(target_evidence_reference,'')),''),'active',caller)
-  returning id into new_id;
-  perform private.record_trust_policy_event(target_project,'RETENTION_HOLD_PLACED',caller,jsonb_build_object('hold_id',new_id,'hold_type',target_hold_type));
+  if nullif(btrim(coalesce(target_reason,'')),'') is null then raise exception 'Retention hold reason is required.'; end if;
+  insert into public.retention_holds(
+    project_id,subject_type,subject_id,subject_reference,hold_type,reason,evidence_reference,status,placed_by
+  ) values(
+    target_project,target_subject_type,target_subject_id,nullif(btrim(coalesce(target_subject_reference,'')),''),
+    target_hold_type,btrim(target_reason),nullif(btrim(coalesce(target_evidence_reference,'')),''),'active',caller
+  ) returning id into new_id;
+  perform private.record_trust_policy_event(
+    target_project,'RETENTION_HOLD_PLACED',caller,jsonb_build_object('hold_id',new_id,'hold_type',target_hold_type)
+  );
   return new_id;
 end;
 $$;
@@ -956,12 +978,11 @@ $$;
 create or replace function public.request_retention_review_v1(
   target_project uuid,
   target_subject_type text,
+  target_proposed_disposition text,
+  target_rationale text,
   target_subject_id uuid default null,
   target_subject_reference text default null,
   target_retention_policy uuid default null,
-  target_proposed_disposition text default 'review_due',
-  target_rationale text default null,
-  target_due_at timestamptz default null,
   target_evidence_reference text default null
 ) returns uuid
 language plpgsql
@@ -976,13 +997,22 @@ declare
   lineage jsonb;
 begin
   if caller is null then raise insufficient_privilege using message='Authentication is required.'; end if;
-  if not private.has_project_role(target_project,array['owner','admin','operator']) then raise insufficient_privilege using message='Owner, admin, or operator access is required.'; end if;
+  if not private.has_project_role(target_project,array['owner','admin','operator']) then
+    raise insufficient_privilege using message='Owner, admin, or operator access is required.';
+  end if;
   perform private.trust_validate_subject(target_project,target_subject_type,target_subject_id,target_subject_reference);
+  if nullif(btrim(coalesce(target_rationale,'')),'') is null then raise exception 'Retention review rationale is required.'; end if;
 
   if target_retention_policy is not null then
-    select * into policy from public.retention_policies where id=target_retention_policy and project_id=target_project and status='active';
+    select * into policy
+    from public.retention_policies
+    where id=target_retention_policy and project_id=target_project and status='active';
   else
-    select * into policy from public.retention_policies where project_id=target_project and status='active' order by effective_from desc nulls last,created_at desc limit 1;
+    select * into policy
+    from public.retention_policies
+    where project_id=target_project and status='active'
+    order by effective_from desc nulls last,created_at desc
+    limit 1;
   end if;
   if not found then raise exception 'An active retention policy is required for review.'; end if;
 
@@ -999,10 +1029,14 @@ begin
   ) values(
     target_project,target_subject_type,target_subject_id,nullif(btrim(coalesce(target_subject_reference,'')),''),
     policy.id,'pending',target_proposed_disposition,policy.policy_key||':'||policy.version::text,btrim(target_rationale),
-    jsonb_build_object('active_hold_count',hold_count),lineage,target_due_at,caller,nullif(btrim(coalesce(target_evidence_reference,'')),'')
+    jsonb_build_object('active_hold_count',hold_count),lineage,policy.review_due_at,caller,
+    nullif(btrim(coalesce(target_evidence_reference,'')),'')
   ) returning id into new_id;
 
-  perform private.record_trust_policy_event(target_project,'RETENTION_REVIEW_REQUESTED',caller,jsonb_build_object('retention_review_id',new_id,'proposed_disposition',target_proposed_disposition));
+  perform private.record_trust_policy_event(
+    target_project,'RETENTION_REVIEW_REQUESTED',caller,
+    jsonb_build_object('retention_review_id',new_id,'proposed_disposition',target_proposed_disposition)
+  );
   return new_id;
 end;
 $$;
@@ -1076,12 +1110,12 @@ $$;
 create or replace function public.record_data_policy_lineage_v1(
   target_project uuid,
   target_source_subject_type text,
+  target_derived_subject_type text,
+  target_relation_type text,
   target_source_subject_id uuid default null,
   target_source_subject_reference text default null,
-  target_derived_subject_type text default null,
   target_derived_subject_id uuid default null,
   target_derived_subject_reference text default null,
-  target_relation_type text default 'references',
   target_evidence_reference text default null
 ) returns uuid
 language plpgsql
@@ -1091,7 +1125,9 @@ as $$
 declare caller uuid:=auth.uid(); new_id uuid;
 begin
   if caller is null then raise insufficient_privilege using message='Authentication is required.'; end if;
-  if not private.has_project_role(target_project,array['owner','admin','operator']) then raise insufficient_privilege using message='Owner, admin, or operator access is required.'; end if;
+  if not private.has_project_role(target_project,array['owner','admin','operator']) then
+    raise insufficient_privilege using message='Owner, admin, or operator access is required.';
+  end if;
   perform private.trust_validate_subject(target_project,target_source_subject_type,target_source_subject_id,target_source_subject_reference);
   perform private.trust_validate_subject(target_project,target_derived_subject_type,target_derived_subject_id,target_derived_subject_reference);
   insert into public.data_policy_lineage(
@@ -1102,7 +1138,10 @@ begin
     target_derived_subject_type,target_derived_subject_id,nullif(btrim(coalesce(target_derived_subject_reference,'')),''),
     target_relation_type,'active',nullif(btrim(coalesce(target_evidence_reference,'')),''),caller
   ) returning id into new_id;
-  perform private.record_trust_policy_event(target_project,'DATA_POLICY_LINEAGE_RECORDED',caller,jsonb_build_object('lineage_id',new_id,'relation_type',target_relation_type));
+  perform private.record_trust_policy_event(
+    target_project,'DATA_POLICY_LINEAGE_RECORDED',caller,
+    jsonb_build_object('lineage_id',new_id,'relation_type',target_relation_type)
+  );
   return new_id;
 end;
 $$;
@@ -1365,42 +1404,42 @@ revoke all on function private.trust_resolve_effective_policy(uuid,text,uuid,tex
 revoke all on function public.propose_data_policy_binding_v1(uuid,text,text,text,text,uuid,text,boolean,text) from public,anon;
 revoke all on function public.approve_data_policy_binding_v1(uuid) from public,anon;
 revoke all on function public.reject_data_policy_binding_v1(uuid,text) from public,anon;
-revoke all on function public.create_trust_manifest_draft_v1(uuid,text,uuid,text,text,text,text,text,text,text,text,uuid,text,text[]) from public,anon;
+revoke all on function public.create_trust_manifest_draft_v1(uuid,text,text,text,text,text,uuid,uuid,text[],text,text,text,text,text,text,timestamptz) from public,anon;
 revoke all on function public.activate_trust_manifest_v1(uuid) from public,anon;
 revoke all on function public.reject_trust_manifest_v1(uuid,text) from public,anon;
-revoke all on function public.create_provider_trust_profile_v1(uuid,text,text,text,text[],text[],text,text,uuid,text[],text[],text,text,text,text,text,timestamptz,text) from public,anon;
+revoke all on function public.create_provider_trust_profile_v1(uuid,text,text,text,text[],text[],text,text,uuid,text[],text[],text,text,text,text,text,text,timestamptz) from public,anon;
 revoke all on function public.activate_provider_trust_profile_v1(uuid) from public,anon;
 revoke all on function public.suspend_provider_trust_profile_v1(uuid,text) from public,anon;
 revoke all on function public.retire_provider_trust_profile_v1(uuid,text) from public,anon;
-revoke all on function public.propose_retention_policy_v1(uuid,text,text[],text[],text[],text,boolean,integer,integer,jsonb,jsonb,text,text,text,timestamptz) from public,anon;
+revoke all on function public.propose_retention_policy_v1(uuid,text,text,boolean,text[],text[],text[],integer,integer,jsonb,jsonb,text,text,timestamptz) from public,anon;
 revoke all on function public.approve_retention_policy_v1(uuid) from public,anon;
 revoke all on function public.reject_retention_policy_v1(uuid,text) from public,anon;
-revoke all on function public.place_retention_hold_v1(uuid,text,uuid,text,text,text,text) from public,anon;
+revoke all on function public.place_retention_hold_v1(uuid,text,text,text,uuid,text,text) from public,anon;
 revoke all on function public.release_retention_hold_v1(uuid,text) from public,anon;
-revoke all on function public.request_retention_review_v1(uuid,text,uuid,text,uuid,text,text,timestamptz,text) from public,anon;
+revoke all on function public.request_retention_review_v1(uuid,text,text,text,uuid,text,uuid,text) from public,anon;
 revoke all on function public.resolve_retention_review_v1(uuid,text,text,text) from public,anon;
-revoke all on function public.record_data_policy_lineage_v1(uuid,text,uuid,text,text,uuid,text,text,text) from public,anon;
+revoke all on function public.record_data_policy_lineage_v1(uuid,text,text,text,uuid,text,uuid,text,text) from public,anon;
 revoke all on function public.get_trust_policy_workspace_v1(uuid) from public,anon;
 revoke all on function public.service_evaluate_data_policy_v1(uuid,uuid,text,text,text,text,uuid,text,uuid,text,boolean) from public,anon,authenticated;
 
 grant execute on function public.propose_data_policy_binding_v1(uuid,text,text,text,text,uuid,text,boolean,text) to authenticated,service_role;
 grant execute on function public.approve_data_policy_binding_v1(uuid) to authenticated,service_role;
 grant execute on function public.reject_data_policy_binding_v1(uuid,text) to authenticated,service_role;
-grant execute on function public.create_trust_manifest_draft_v1(uuid,text,uuid,text,text,text,text,text,text,text,text,uuid,text,text[]) to authenticated,service_role;
+grant execute on function public.create_trust_manifest_draft_v1(uuid,text,text,text,text,text,uuid,uuid,text[],text,text,text,text,text,text,timestamptz) to authenticated,service_role;
 grant execute on function public.activate_trust_manifest_v1(uuid) to authenticated,service_role;
 grant execute on function public.reject_trust_manifest_v1(uuid,text) to authenticated,service_role;
-grant execute on function public.create_provider_trust_profile_v1(uuid,text,text,text,text[],text[],text,text,uuid,text[],text[],text,text,text,text,text,timestamptz,text) to authenticated,service_role;
+grant execute on function public.create_provider_trust_profile_v1(uuid,text,text,text,text[],text[],text,text,uuid,text[],text[],text,text,text,text,text,text,timestamptz) to authenticated,service_role;
 grant execute on function public.activate_provider_trust_profile_v1(uuid) to authenticated,service_role;
 grant execute on function public.suspend_provider_trust_profile_v1(uuid,text) to authenticated,service_role;
 grant execute on function public.retire_provider_trust_profile_v1(uuid,text) to authenticated,service_role;
-grant execute on function public.propose_retention_policy_v1(uuid,text,text[],text[],text[],text,boolean,integer,integer,jsonb,jsonb,text,text,text,timestamptz) to authenticated,service_role;
+grant execute on function public.propose_retention_policy_v1(uuid,text,text,boolean,text[],text[],text[],integer,integer,jsonb,jsonb,text,text,timestamptz) to authenticated,service_role;
 grant execute on function public.approve_retention_policy_v1(uuid) to authenticated,service_role;
 grant execute on function public.reject_retention_policy_v1(uuid,text) to authenticated,service_role;
-grant execute on function public.place_retention_hold_v1(uuid,text,uuid,text,text,text,text) to authenticated,service_role;
+grant execute on function public.place_retention_hold_v1(uuid,text,text,text,uuid,text,text) to authenticated,service_role;
 grant execute on function public.release_retention_hold_v1(uuid,text) to authenticated,service_role;
-grant execute on function public.request_retention_review_v1(uuid,text,uuid,text,uuid,text,text,timestamptz,text) to authenticated,service_role;
+grant execute on function public.request_retention_review_v1(uuid,text,text,text,uuid,text,uuid,text) to authenticated,service_role;
 grant execute on function public.resolve_retention_review_v1(uuid,text,text,text) to authenticated,service_role;
-grant execute on function public.record_data_policy_lineage_v1(uuid,text,uuid,text,text,uuid,text,text,text) to authenticated,service_role;
+grant execute on function public.record_data_policy_lineage_v1(uuid,text,text,text,uuid,text,uuid,text,text) to authenticated,service_role;
 grant execute on function public.get_trust_policy_workspace_v1(uuid) to authenticated,service_role;
 grant execute on function public.service_evaluate_data_policy_v1(uuid,uuid,text,text,text,text,uuid,text,uuid,text,boolean) to service_role;
 
