@@ -2,6 +2,8 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
+import { useSingleFlight } from "@/lib/singleFlight";
+import { clearSessionRequestKey, getOrCreateSessionRequestKey } from "@/lib/sessionRequestKey";
 
 type Balance={account_id:string;account_type:"project"|"platform"|"locked";project_id:string|null;balance:number};
 type Service={
@@ -52,6 +54,7 @@ export default function SparksWorkspace({
   const [workspace,setWorkspace]=useState<Workspace|null>(null);
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
+  const {activeAction,run:runSingleFlight}=useSingleFlight();
   const [serviceKey,setServiceKey]=useState("");
   const [serviceName,setServiceName]=useState("");
   const [serviceDescription,setServiceDescription]=useState("");
@@ -107,22 +110,27 @@ export default function SparksWorkspace({
     const price=Number(servicePrice);
     if(!serviceKey.trim()||!serviceName.trim()||!Number.isFinite(price)||price<=0)return;
 
-    setBusy(true);setError("");
-    const {error}=await supabase.rpc("publish_spark_service_v1",{
-      target_project:projectId,
-      target_service_key:serviceKey.trim().toLowerCase(),
-      target_name:serviceName.trim(),
-      target_spark_price:price,
-      target_description:serviceDescription.trim()||null,
-      target_terms:serviceTerms.trim()||null
+    await runSingleFlight("publish-service",async()=>{
+      setBusy(true);setError("");setNotice("Publishing Spark service…");
+      try{
+        const {error}=await supabase.rpc("publish_spark_service_v1",{
+          target_project:projectId,
+          target_service_key:serviceKey.trim().toLowerCase(),
+          target_name:serviceName.trim(),
+          target_spark_price:price,
+          target_description:serviceDescription.trim()||null,
+          target_terms:serviceTerms.trim()||null
+        });
+        if(error)throw error;
+        setServiceKey("");setServiceName("");setServiceDescription("");setServiceTerms("");setServicePrice("100");
+        setNotice("Spark service published under the internal-utility policy.");
+        await load();
+      }catch(actionError){
+        setError(actionError instanceof Error?actionError.message:"Unable to publish Spark service. You can retry safely.");
+      }finally{
+        setBusy(false);
+      }
     });
-    if(error)setError(error.message);
-    else{
-      setServiceKey("");setServiceName("");setServiceDescription("");setServiceTerms("");setServicePrice("100");
-      setNotice("Spark service published under the internal-utility policy.");
-      await load();
-    }
-    setBusy(false);
   }
 
   async function requestRedemption(event:FormEvent){
@@ -130,43 +138,67 @@ export default function SparksWorkspace({
     const supabase=getSupabase();
     if(!supabase||!selectedService)return;
     const qty=Math.max(1,Math.min(100,Number(quantity)||1));
+    const requestScope="sparks-redemption:"+projectId+":"+currentUserId+":"+selectedService.id;
 
-    setBusy(true);setError("");
-    const {error}=await supabase.rpc("request_spark_redemption_v1",{
-      target_service:selectedService.id,
-      target_quantity:qty,
-      target_request_key:crypto.randomUUID(),
-      target_note:requestNote.trim()||null
+    await runSingleFlight("request-redemption",async()=>{
+      setBusy(true);setError("");setNotice("Reserving Sparks for the selected service…");
+      const requestKey=getOrCreateSessionRequestKey(requestScope);
+      try{
+        const {error}=await supabase.rpc("request_spark_redemption_v1",{
+          target_service:selectedService.id,
+          target_quantity:qty,
+          target_request_key:requestKey,
+          target_note:requestNote.trim()||null
+        });
+        if(error)throw error;
+        clearSessionRequestKey(requestScope);
+        setQuantity("1");setRequestNote("");
+        setNotice("Sparks reserved. They remain locked until the service is fulfilled or the request is cancelled.");
+        await load();
+      }catch(actionError){
+        setError((actionError instanceof Error?actionError.message:"Unable to reserve Sparks.")+" Retry keeps the same request key to avoid a duplicate reservation.");
+      }finally{
+        setBusy(false);
+      }
     });
-    if(error)setError(error.message);
-    else{
-      setQuantity("1");setRequestNote("");
-      setNotice("Sparks reserved. They remain locked until the service is fulfilled or the request is cancelled.");
-      await load();
-    }
-    setBusy(false);
   }
 
   async function cancelRedemption(id:string){
     const supabase=getSupabase();if(!supabase)return;
-    setBusy(true);setError("");
-    const {error}=await supabase.rpc("cancel_spark_redemption_v1",{
-      target_redemption:id,target_reason:"Cancelled from the Sparks workspace."
+    await runSingleFlight("cancel-redemption:"+id,async()=>{
+      setBusy(true);setError("");setNotice("Cancelling Spark reservation…");
+      try{
+        const {error}=await supabase.rpc("cancel_spark_redemption_v1",{
+          target_redemption:id,target_reason:"Cancelled from the Sparks workspace."
+        });
+        if(error)throw error;
+        setNotice("Spark reservation released.");
+        await load();
+      }catch(actionError){
+        setError(actionError instanceof Error?actionError.message:"Unable to cancel Spark reservation. You can retry safely.");
+      }finally{
+        setBusy(false);
+      }
     });
-    if(error)setError(error.message);
-    else{setNotice("Spark reservation released.");await load();}
-    setBusy(false);
   }
 
   async function fulfillRedemption(id:string){
     const supabase=getSupabase();if(!supabase||!canOperate)return;
-    setBusy(true);setError("");
-    const {error}=await supabase.rpc("fulfill_spark_redemption_v1",{
-      target_redemption:id,target_note:"Fulfilled from the Sparks workspace."
+    await runSingleFlight("fulfill-redemption:"+id,async()=>{
+      setBusy(true);setError("");setNotice("Fulfilling Spark service…");
+      try{
+        const {error}=await supabase.rpc("fulfill_spark_redemption_v1",{
+          target_redemption:id,target_note:"Fulfilled from the Sparks workspace."
+        });
+        if(error)throw error;
+        setNotice("Spark service fulfilled; the locked Sparks were consumed.");
+        await load();
+      }catch(actionError){
+        setError(actionError instanceof Error?actionError.message:"Unable to fulfill Spark service. You can retry safely.");
+      }finally{
+        setBusy(false);
+      }
     });
-    if(error)setError(error.message);
-    else{setNotice("Spark service fulfilled; the locked Sparks were consumed.");await load();}
-    setBusy(false);
   }
 
   if(loading)return <section className="panel"><p className="muted">Loading Sparks…</p></section>;
@@ -176,6 +208,7 @@ export default function SparksWorkspace({
   const boundaries=workspace.boundaries||{};
 
   return <div>
+    {activeAction&&<p className="muted" role="status">Spark action in progress · duplicate submissions are blocked until the request finishes.</p>}
     <section className="heroPanel">
       <div>
         <p className="eyebrow">SPARKS · INTERNAL UTILITY</p>
