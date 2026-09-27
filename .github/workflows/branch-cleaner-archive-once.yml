@@ -1,0 +1,197 @@
+name: Archive Frozen Merged Branch History
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/branch-cleaner-archive-once.yml"
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  archive:
+    if: ${{ github.event.head_commit.message == 'Archive frozen merged branch heads' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+
+      - name: Revalidate and archive exact merged heads
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          OWNER="${REPO%%/*}"
+          mkdir -p artifacts/branch-cleaner
+          REPORT="artifacts/branch-cleaner/archive-frozen-merged-heads.md"
+          archived=0
+          already=0
+          skipped=0
+          failed=0
+          {
+            echo "# Frozen merged branch archive"
+            echo
+            echo "Main SHA: ${GITHUB_SHA}"
+            echo
+          } > "$REPORT"
+
+          while IFS='|' read -r branch expected_sha pr; do
+            [ -n "$branch" ] || continue
+            encoded=$(python3 -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=""))' "$branch")
+
+            if ! branch_json=$(gh api "repos/$REPO/branches/$encoded" 2>/dev/null); then
+              echo "- SKIP `$branch`: branch missing" | tee -a "$REPORT"
+              skipped=$((skipped+1))
+              continue
+            fi
+
+            actual_sha=$(printf '%s' "$branch_json" | jq -r '.commit.sha')
+            protected=$(printf '%s' "$branch_json" | jq -r '.protected')
+            if [ "$actual_sha" != "$expected_sha" ]; then
+              echo "- SKIP `$branch`: tip moved from expected $expected_sha to $actual_sha" | tee -a "$REPORT"
+              skipped=$((skipped+1))
+              continue
+            fi
+            if [ "$protected" = "true" ]; then
+              echo "- SKIP `$branch`: protected" | tee -a "$REPORT"
+              skipped=$((skipped+1))
+              continue
+            fi
+
+            open_prs=$(gh api -X GET "repos/$REPO/pulls" -f state=open -f head="$OWNER:$branch" --jq 'length')
+            if [ "$open_prs" != "0" ]; then
+              echo "- SKIP `$branch`: open PR exists" | tee -a "$REPORT"
+              skipped=$((skipped+1))
+              continue
+            fi
+
+            pr_json=$(gh api "repos/$REPO/pulls/$pr")
+            merged_at=$(printf '%s' "$pr_json" | jq -r '.merged_at // empty')
+            pr_head=$(printf '%s' "$pr_json" | jq -r '.head.ref')
+            pr_sha=$(printf '%s' "$pr_json" | jq -r '.head.sha')
+            if [ -z "$merged_at" ] || [ "$pr_head" != "$branch" ] || [ "$pr_sha" != "$expected_sha" ]; then
+              echo "- SKIP `$branch`: merged PR head no longer proves exact frozen tip" | tee -a "$REPORT"
+              skipped=$((skipped+1))
+              continue
+            fi
+
+            tag="branch-archive/$branch"
+            existing=$(git ls-remote --tags origin "refs/tags/$tag" | awk '{print $1}')
+            if [ -n "$existing" ]; then
+              if [ "$existing" = "$expected_sha" ]; then
+                echo "- EXISTS `$tag` -> $expected_sha" | tee -a "$REPORT"
+                already=$((already+1))
+                continue
+              fi
+              echo "- FAIL `$tag`: existing tag points to $existing, expected $expected_sha" | tee -a "$REPORT"
+              failed=$((failed+1))
+              continue
+            fi
+
+            git tag "$tag" "$expected_sha"
+            git push origin "refs/tags/$tag"
+            echo "- ARCHIVED `$branch` as `$tag` -> $expected_sha (PR #$pr)" | tee -a "$REPORT"
+            archived=$((archived+1))
+          done <<'CANDIDATES'
+ci-remove-remote-desktop-dependency|e1c532987d59518e884bca3cf445ace6a59df0a2|70
+enhance/branch-cleaner-archive-awareness-20260927|c91c8406fc90ae647bb9d645a589425aee5987d5|121
+enhance/branch-cleaner-family-containment-20260927|224c073898de0e1f432ecd77c8ad8299e50e59c9|118
+enhance/branch-cleaner-merge-activity-20260927|b816ec3706ea397e4a857e5dd6ea6eaac7dcc5c2|120
+feat/center-datanest-ai-chat|039de8f002ac22f1443e28656268d62af6a08945|59
+feat/datanest-ai-chat-directly-below-hero|4f049cada37648a315de96c145ea11c0c5bff908|62
+feat/datanest-ai-command-access-v2|555f96ef75d45b8cbe58d3a68081f4f4e0332f3c|79
+feat/datanest-ai-command-console|44c560bd7d97ecc4e661c9f4fbcf1139bc58543e|63
+feat/datanest-ai-command-context-lock-v4|17fbaa0d925d8e216f6a7578cee4007f7c3b1110|90
+feat/datanest-ai-hero-presence|96917c0044694018f4bc7feab3e441c74bcb51f4|58
+feat/datanest-ai-live-transcript|e67d00db720fee5348745e4349349d5f52ba2131|67
+feat/datanest-ai-quick-commands-v2|b4f1fc6a4e580d8056045102ad5144fcd0e5fbab|65
+feat/datanest-ai-session-drafts|3694530c6c75680a655355532c8c1b73ec8839fd|92
+feat/datanest-ai-vertical-command-flow-v2|868f64ade293a50320a81f8d2ecb67a108a72dfd|61
+feat/datanest-purposeful-transitions|1eac0f80e5fdc8117b3032a22fe7680e47dce80d|94
+feat/ronsas-cloud-integration-20260926|dd123760ada7fd6f6183fb89ad80f86bbf6e9e51|98
+feature/companion-auto-return|a82bb63b5f451e7ced9f4ba331a14addbd71016f|44
+feature/datanest-ai-live-turn-response-20260925|934f83fb3fc5589df589e5073a3ac72fdf357661|30
+feature/datanest-contribution-intelligence-v1|fe6a98032cb46f1e3c4bf122d9bb970a69c9d95b|8
+feature/datanest-external-audit-return-v1|7fe751866cb75eb71c2f4940aa5d7ea862242fcd|16
+feature/datanest-project-member-invitations-v1|092603fb014365d3354c64a60c8fc380a65fc7bf|13
+feature/datanest-sovereign-governance-v1|ee7d111563717a246d1c6cfc3f24b1e9baa13b37|12
+feature/datanest-sparks-economy-v1|ad8d35423789b09aae141e9dbc068f2f0cfdc7a4|11
+feature/datanest-stakeholder-contribution-v1|720ed8bb12e71255196880dad8b6021151093228|6
+feature/datanest-think-tanks-v1|984669c73eda083630181e55e04cfbcaf8c30632|10
+feature/datanest-transparency-audit-library-v1|b1d7d0bef6e3ae101c6aa1fbaa05d3dcbffa999f|14
+feature/legal-eagle-live-v2|032529329b76326f590785107ce51a3da6b07a22|73
+feature/products-hero-animation|cdf7b946cd03264cccfd470c670e74b1acdff253|75
+feature/products-resonance-assistance-legal-eagle|bf477d2bec779aa12e1446ba3ccb260092c30335|56
+fix/audit-p1-wave1-20260925|5af062aa43c9f3bc6fe0c34d4efcd87753ab9ac2|17
+fix/branch-cleaner-strict-preflight-20260927|fffe4442194ac36bfd87ab44b12e9fe8c0c1ca1d|109
+fix/chatgpt-companion-prefill-dock|cb436cd44fdc8cf2a07246f0ddbb80cfec009b4d|42
+fix/chatgpt-companion-prefill-placement-20260925|334b562725f90e98e50f5c906a846a2459596261|43
+fix/datanest-ai-candidate-dedup-20260925|5b7d767d2556b5f92636c9b3c541efb7303b4222|32
+fix/datanest-ai-console-sync-shell-v2|f02e681c4089b55bfcf3c6f5c62f2fd991b134f3|71
+fix/datanest-ai-job-scoped-drafts-v3|84f9e53756e256d64ccafb458853c0fe7eb8c85a|84
+fix/datanest-ai-job-scoped-sessions|784cb7b126016e5080faab52f0fad4ee30a54f54|97
+fix/datanest-ai-user-scoped-session-drafts-v2|4b94025206c1d5d7f1c09c86a5104024166ba0f5|95
+fix/home-alignment-20260926|e85d9ce3bacf200e623565231c3b8722b5e51678|52
+fix/home-rail-rounding-tolerance|490cf9ece040cf92ace10792f377de08ec05c55b|57
+fix/invite-password-setup|580149ea970be6f891febe810915ff5b334dbcce|33
+fix/legal-eagle-release-manifest-v2|1421f66153f391f510b055b04fdad1c38c571b95|77
+fix/project-invite-password-for-existing-users|ccfcbdcd71a155a30480e502714b7c5953e93816|35
+fix/project-invite-retry-v3-current|cf12481a2ca7985b276c54e766594087fd36df75|54
+fix/restore-production-migration-history-20260927|dcbc08c95b3fc8a9f956bbc36f11730c1ff55185|112
+fix/review-ai-return-safety-20260925|e9b7f6e5b8b0819c219e35e9c33f189e4a0b8b29|15
+fix/stakeholder-release-manifest|3b29b92e12d747561e5a0dab8641a19a22bc47ca|7
+hotfix/stakeholder-model-version-ambiguity|b7c88d683287e2f76306db58bb9111f7d840deab|9
+remove-remote-desktop-final|d7ef3dd86ca04db54ea712ba48ec6943aebb5612|85
+test/datanest-ai-hero-console-layout|e5b1e1cdb119dca84b8145933fccd4c8b5c052cb|69
+test/home-ai-rail-alignment-20260926|c86666c24b88ac4ef71704b5ee4519d2e7152304|55
+tool/branch-cleaner-20260926|f6e2e0370d31324ea6293c1ef484741b48bfb8a6|108
+ui/datanest-ai-command-center-20260927|a1571c989da48feac0aebd7efddca88cde181e0f|115
+ui/datanest-command-palette-20260925|71c44ef53d3fd3bee7c4aa4560cbf183299751c5|25
+ui/datanest-command-palette-arrows-20260925|ccb91e5d5fe03acb56937368955ae733d3128fea|31
+ui/datanest-command-palette-enter-20260925|4ab78f3c13285399964b8db635bcf4f428823cfc|29
+ui/datanest-command-palette-focus-20260925|f475c9a9cef25ab130f2b92ec65e2940f589b1fd|28
+ui/datanest-mobile-operational-cards-20260925|f6836b3e781451930903fe984f75405f4866568e|24
+ui/datanest-mobile-scheduler-filter-v2-20260925|f0090c1c818d855bbdad39063dfd31ce934ba0f2|27
+ui/datanest-navigation-continuity-20260925|21dc8622078a4056cf88b2b5cea24ec2b68a6f45|23
+ui/datanest-navigation-density-20260927|6408492fbe27929b06c939f1616b277614c5f961|124
+ui/datanest-ux-polish-20260925|c71c356819c1dabebb55119118c46df3914500e8|21
+ui/datanest-ux-polish-wave2-20260925|736a676751abf079c63c6c31d34c12ec312675c0|22
+ui/optimize-and-disable-vercel-20260926|be7bef79b8161bb940196b771f661bd572adf113|50
+ui/project-invite-feedback-20260926|a7b6b4330f36193367ebce64de5d61fab79e384b|51
+CANDIDATES
+
+          {
+            echo
+            echo "Archived: $archived"
+            echo "Already archived: $already"
+            echo "Skipped: $skipped"
+            echo "Failed: $failed"
+          } | tee -a "$REPORT"
+
+          if [ "$failed" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Verify archive-aware Branch-Cleaner
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: node scripts/branch-cleaner.mjs --strict
+
+      - name: Upload archive evidence
+        if: always()
+        uses: actions/upload-artifact@v6.0.0
+        with:
+          name: branch-cleaner-archive-evidence
+          path: artifacts/branch-cleaner/
+          if-no-files-found: error
