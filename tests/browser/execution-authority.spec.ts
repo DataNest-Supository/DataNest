@@ -142,7 +142,10 @@ test("operator can propose bounded authority but cannot approve A3 or manage bre
   await page.goto(appPath+"?view=scheduler");
   await page.getByRole("button",{name:"Authority & Execution",exact:true}).click();
 
-  await expect(page.locator("summary").filter({hasText:"Propose Authority Envelope"})).toBeVisible();
+  const proposal=page.locator("details").filter({hasText:"Propose Authority Envelope"});
+  await expect(proposal.locator("summary")).toBeVisible();
+  await proposal.locator("summary").click();
+  await expect(proposal.locator('option[value="A4"]')).toHaveCount(0);
   await expect(page.getByText("A3 · workflow:fixture",{exact:true})).toBeVisible();
   await expect(page.getByRole("button",{name:"Approve",exact:true})).toHaveCount(0);
   await expect(page.locator("summary").filter({hasText:"Issue Capability Lease"})).toHaveCount(0);
