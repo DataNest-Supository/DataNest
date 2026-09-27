@@ -1525,8 +1525,22 @@ test("durable recovery hydrates a clean browser session without creating replace
       id:"60000000-0000-4000-8000-000000000010",project_id:projectId,user_id:userId,
       scope:"unifi-job:"+projectId+":"+userId,mutation_kind:"unifi_job",request_key:requestKey,
       payload:{title:"Recovered across devices",description:"Durable fixture",priority:80,capability:"chat",tests:true,artifact:true},
-      started_at:stamp,verification_state:"unconfirmed",last_checked_at:stamp,attempt_count:1,last_attempt_at:stamp
+      started_at:stamp,verification_state:"unconfirmed",last_checked_at:stamp,attempt_count:2,last_attempt_at:stamp
     }];
+
+    if(path.endsWith("/get_mutation_recovery_diagnostics_v1")) body = {
+      generated_at:stamp,unresolved_total:1,unverified_total:0,unconfirmed_total:1,safe_retry_total:0,
+      recent_total:0,aging_total:0,stale_total:1,max_attempt_count:2,oldest_started_at:stamp,resolved_24h:1,
+      items:[{
+        id:"60000000-0000-4000-8000-000000000010",mutation_kind:"unifi_job",request_suffix:"00000010",
+        started_at:stamp,age_seconds:7200,verification_state:"unconfirmed",last_checked_at:stamp,
+        attempt_count:2,last_attempt_at:stamp
+      }],
+      recent_resolutions:[{
+        id:"60000000-0000-4000-8000-000000000011",mutation_kind:"spark_redemption",request_suffix:"00000011",
+        resolution:"confirmed",started_at:stamp,resolved_at:stamp,elapsed_seconds:120,attempt_count:1
+      }]
+    };
 
     if(path.endsWith("/jobs")){
       if(url.searchParams.has("client_request_id")){
@@ -1554,7 +1568,17 @@ test("durable recovery hydrates a clean browser session without creating replace
   const recovery=page.getByRole("region",{name:"Unresolved operations"});
   await expect(recovery).toContainText("UNIFI Job Manifest");
   await expect(recovery).toContainText("durable ledger");
+  await expect(recovery).toContainText("2 attempts");
   await expect(recovery).toContainText("request identity preserved");
+
+  const projectNav=page.getByRole("navigation",{name:"Project workspaces"});
+  await projectNav.getByRole("button",{name:"Settings"}).click();
+  const diagnostics=page.getByRole("region",{name:"Recovery diagnostics"});
+  await expect(diagnostics).toContainText("Durable mutation continuity");
+  await expect(diagnostics).toContainText("Open identities");
+  await expect(diagnostics).toContainText("Peak attempts");
+  await expect(diagnostics).toContainText("…00000010");
+  await expect(diagnostics).toContainText("unconfirmed");
 
   const restored=await page.evaluate(()=>Object.entries(sessionStorage).filter(([key])=>key.startsWith("datanest.pendingMutation.unifi-job:")));
   expect(restored).toHaveLength(1);
