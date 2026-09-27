@@ -32,7 +32,7 @@
     "release-evidence-is-not-backend-attestation",
     "reported-audit-findings-remain-pending-until-reproduced",
     "never-delete-default-protected-or-open-pr-branches",
-    "never-delete-a-branch-with-unique-commits",
+    "never-delete-unique-history-without-live-verified-exact-archive-preservation",
     "supabase-performance-advice-is-review-evidence-not-auto-remediation",
     "keep-production-and-ai-staging-authority-distinct",
     "do-not-export-secrets-or-raw-ai-memory",
@@ -41,5 +41,6 @@
   ],
   "supabaseEvidenceFile": ".github/branch-cleaner/supabase-verified-snapshot.json",
   "supabaseEvidenceMaxAgeMinutes": 90,
-  "archiveTagPrefix": "branch-archive/"
+  "archiveTagPrefix": "branch-archive/",
+  "allowArchivedPrune": false
 }

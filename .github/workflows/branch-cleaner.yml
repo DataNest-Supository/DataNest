@@ -13,6 +13,11 @@ on:
         required: true
         default: true
         type: boolean
+      prune_archived:
+        description: Also prune exact-tag archived merged history after live revalidation
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -39,6 +44,7 @@ jobs:
           ARGS=""
           if [ "${{ inputs.strict }}" = "true" ]; then ARGS="$ARGS --strict"; fi
           if [ "${{ inputs.apply }}" = "true" ]; then ARGS="$ARGS --apply"; fi
+          if [ "${{ inputs.prune_archived }}" = "true" ]; then ARGS="$ARGS --prune-archived"; fi
           node scripts/branch-cleaner.mjs $ARGS
 
       - name: Upload report
