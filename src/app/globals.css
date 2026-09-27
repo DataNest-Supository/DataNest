@@ -4667,3 +4667,20 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
 .trustPolicyWorkspace input,.trustPolicyWorkspace select,.trustPolicyWorkspace textarea{min-width:0;max-width:100%}
 @container datanest-main (max-width:760px){.trustPolicyActionGrid,.trustPolicyWarnings{grid-template-columns:1fr}}
 @media(max-width:520px){.governanceModeTabs button{flex:1 1 auto}.trustPolicyCards{grid-template-columns:1fr}}
+
+
+/* Phase D · Authority & Execution */
+.executionAuthorityWorkspace{display:grid;gap:14px;min-width:0;margin-top:14px}
+.executionAuthorityBoundary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.executionAuthorityBoundary p{margin:0;padding:11px 12px;border:1px solid rgba(102,220,255,.14);border-radius:10px;background:rgba(102,220,255,.035);color:#c7d6e0;font-size:9px;line-height:1.5}
+.autonomyGrid,.executionAuthorityCards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.autonomyCard.highImpact{border-color:rgba(244,198,111,.22);background:rgba(244,198,111,.025)}
+.authorityHighImpactNotice{margin:8px 0 0;padding:8px 10px;border:1px solid rgba(244,198,111,.2);border-radius:8px;background:rgba(244,198,111,.035);color:#e9d6ad;font-size:9px;line-height:1.45}
+.executionAuthorityActionGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.executionAuthorityActionGrid .panel{margin:0;min-width:0}
+.executionAuthorityWorkspace .settingsGrid{min-width:0}
+.executionAuthorityWorkspace .settingsGrid label{min-width:0}
+.executionAuthorityWorkspace input,.executionAuthorityWorkspace select,.executionAuthorityWorkspace textarea{min-width:0;max-width:100%}
+.authorityReasonField{display:grid;gap:6px;margin-top:12px;color:#b7cadb;font-size:10px;font-weight:700}
+@container datanest-main (max-width:860px){.executionAuthorityBoundary{grid-template-columns:1fr}.executionAuthorityActionGrid{grid-template-columns:1fr}}
+@media(max-width:520px){.autonomyGrid,.executionAuthorityCards{grid-template-columns:1fr}.executionAuthorityBoundary{grid-template-columns:1fr}}
