@@ -187,3 +187,18 @@ The DataNest AI START HERE guidance includes a direct **Select Job Manifest** ac
 - When no Job selector exists, the action routes to UNIFI Planner so the user can create the missing Job Manifest instead of encountering a dead control.
 
 The action changes navigation/focus only. It does not select a Job automatically, create a Job, or mutate governed state.
+
+
+## Active Job journey rail
+
+Active Work Context includes a compact Job-specific journey rail:
+
+`Plan → Schedule → Run → Checkpoint → Audit`
+
+This rail is intentionally separate from the platform lifecycle rail. The platform rail answers where the user is in DataNest's broader Discover → Govern → Build → Execute → Verify lifecycle; the Job journey rail answers which operational view of the currently selected Job is open.
+
+Only the current Job view receives an active marker. Earlier steps are not marked complete, passed, verified, or done. The rail does not infer progress from Job status, run status, checkpoints, audit events, authority decisions, or resource-capability state.
+
+Every step is directly navigable while preserving the existing browser-local Active Work Context. Navigation performs no governed writes and does not change Job state.
+
+At phone widths the five Job steps remain inside the viewport as an equal-width grid, with the location disclaimer retained: `Location only · not completion state`.
