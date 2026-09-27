@@ -22,12 +22,14 @@ const resourceFabricSource = fs.readFileSync(path.join(repoRoot, "src/components
 const singleFlightSource = fs.readFileSync(path.join(repoRoot, "src/lib/singleFlight.ts"), "utf8");
 const pendingMutationSource = fs.readFileSync(path.join(repoRoot, "src/lib/pendingMutation.ts"), "utf8");
 const durableRecoverySource = fs.readFileSync(path.join(repoRoot, "src/lib/durableRecovery.ts"), "utf8");
+const recoveryDiagnosticsSource = fs.readFileSync(path.join(repoRoot, "src/components/RecoveryDiagnosticsPanel.tsx"), "utf8");
 const mutationReconciliationSource = fs.readFileSync(path.join(repoRoot, "src/lib/mutationReconciliation.ts"), "utf8");
 const supabaseSource = fs.readFileSync(path.join(repoRoot, "src/lib/supabase.ts"), "utf8");
 const unifiIdempotencyMigrationSource = fs.readFileSync(path.join(repoRoot, "supabase/migrations/20260927180402_add_unifi_idempotent_manifest_v2.sql"), "utf8");
 const productLabEvidenceMigrationSource = fs.readFileSync(path.join(repoRoot, "supabase/migrations/20260924145008_version_product_lab_evidence_and_dedupe_test_credit.sql"), "utf8");
 const durableRecoveryMigrationSource = fs.readFileSync(path.join(repoRoot, "supabase/migrations/20260927202758_add_durable_mutation_recovery_ledger.sql"), "utf8");
 const durableRecoveryHardeningSource = fs.readFileSync(path.join(repoRoot, "supabase/migrations/20260927203127_harden_durable_mutation_recovery_idempotency.sql"), "utf8");
+const durableRecoveryObservabilitySource = fs.readFileSync(path.join(repoRoot, "supabase/migrations/20260927213827_add_mutation_recovery_observability.sql"), "utf8");
 const cssSource = fs.readFileSync(path.join(repoRoot, "src/app/globals.css"), "utf8");
 
 test("mobile navigation keeps refresh and release controls reachable", () => {
@@ -682,4 +684,43 @@ test("durable recovery client uses only governed recovery RPCs", () => {
   assert.match(durableRecoverySource, /resolve_mutation_recovery_v1/);
   assert.match(durableRecoverySource, /durable:true/);
   assert.doesNotMatch(durableRecoverySource, /\.from\("mutation_recovery_ledger"\)/);
+});
+
+
+test("recovery observability exposes read-only sanitized telemetry", () => {
+  assert.match(durableRecoveryObservabilitySource, /get_mutation_recovery_diagnostics_v1/);
+  assert.match(durableRecoveryObservabilitySource, /security invoker/);
+  assert.match(durableRecoveryObservabilitySource, /request_suffix/);
+  assert.match(durableRecoveryObservabilitySource, /attempt_count/);
+  assert.match(durableRecoveryObservabilitySource, /resolved_24h/);
+  assert.match(durableRecoveryObservabilitySource, /stale_total/);
+  assert.match(durableRecoveryObservabilitySource, /revoke all on function public\.get_mutation_recovery_diagnostics_v1\(uuid\) from public,anon/);
+  assert.doesNotMatch(durableRecoveryObservabilitySource, /'payload'/);
+  assert.doesNotMatch(durableRecoveryObservabilitySource, /\b(insert|update|delete)\b/i);
+});
+
+test("recovery diagnostics UI is read-only and exposes synchronization health", () => {
+  assert.match(recoveryDiagnosticsSource, /RECOVERY OBSERVABILITY/);
+  assert.match(recoveryDiagnosticsSource, /Sync recovery ledger/);
+  assert.match(recoveryDiagnosticsSource, /Review open recoveries/);
+  assert.match(recoveryDiagnosticsSource, /Peak attempts/);
+  assert.match(recoveryDiagnosticsSource, /Resolved 24h/);
+  assert.match(recoveryDiagnosticsSource, /authoritative domain records still determine whether a mutation succeeded/);
+  assert.doesNotMatch(recoveryDiagnosticsSource, /force|replay|mark success/i);
+  assert.match(appSource, /recoveryLastSyncedAt/);
+  assert.match(appSource, /recoverySyncing/);
+  assert.match(appSource, /<RecoveryDiagnosticsPanel/);
+  assert.match(cssSource, /\.recoveryDiagnosticMetrics\{/);
+  assert.match(cssSource, /\.recoveryDiagnosticRow\{/);
+});
+
+test("pending mutation continuity carries durable attempt telemetry", () => {
+  assert.match(pendingMutationSource, /attemptCount:number/);
+  assert.match(pendingMutationSource, /lastAttemptAt:string\|null/);
+  assert.match(pendingMutationSource, /attemptCount:0/);
+  assert.match(pendingMutationSource, /markPendingMutationDurable\([\s\S]{0,500}attemptCount/);
+  assert.match(durableRecoverySource, /get_mutation_recovery_diagnostics_v1/);
+  assert.match(durableRecoverySource, /attemptCount:record\.attemptCount/);
+  assert.match(durableRecoverySource, /lastAttemptAt:record\.lastAttemptAt/);
+  assert.match(appSource, /item\.attemptCount/);
 });
