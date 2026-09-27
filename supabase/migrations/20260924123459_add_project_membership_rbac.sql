@@ -11,13 +11,23 @@ create table if not exists public.project_members (
 
 alter table public.project_members enable row level security;
 
-insert into public.project_members(project_id,user_id,role,status)
-values (
-  'c2aa30c1-fc82-4524-8510-021ac0fef967'::uuid,
-  'd4519e05-b184-476d-85cf-3da806cca822'::uuid,
-  'owner',
-  'active'
+-- Replay-safe bootstrap membership:
+-- production had concrete project/user UUIDs at first application, but preview/local
+-- databases generate a fresh project UUID and do not copy production auth users.
+with p as (
+  select id
+  from public.projects
+  where slug = 'resonance-datanest'
+),
+u as (
+  select id
+  from auth.users
+  where id = 'd4519e05-b184-476d-85cf-3da806cca822'::uuid
 )
+insert into public.project_members(project_id,user_id,role,status)
+select p.id, u.id, 'owner', 'active'
+from p
+cross join u
 on conflict (project_id,user_id) do update
 set role='owner', status='active', updated_at=now();
 
