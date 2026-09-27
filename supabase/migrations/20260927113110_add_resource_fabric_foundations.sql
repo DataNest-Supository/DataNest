@@ -13,7 +13,9 @@ create table public.resource_registry (
   owner_user_id uuid references auth.users(id) on delete set null,
   owner_label text,
   trust_level text not null default 'unknown' check (trust_level in ('unknown','declared','verified','governed')),
-  location_class text not null default 'unknown' check (location_class in ('unknown','local','regional','global','external')),
+  location_class text not null default 'unknown' check (location_class in (
+    'unknown','local_device','local_network','private_cloud','managed_cloud','public_cloud','external','human'
+  )),
   region_hint text,
   supported_visibility_classes text[] not null default '{}'::text[]
     check (supported_visibility_classes <@ array[
@@ -27,6 +29,7 @@ create table public.resource_registry (
   last_seen_at timestamptz,
   metadata jsonb not null default '{}'::jsonb check (jsonb_typeof(metadata)='object'),
   created_by uuid references auth.users(id) on delete set null,
+  created_source text not null default 'user' check (created_source in ('user','system_backfill','service')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -100,7 +103,7 @@ create table public.sovereign_node_policies (
   project_id uuid not null references public.projects(id) on delete cascade,
   resource_id uuid not null references public.resource_registry(id) on delete restrict,
   version integer not null check (version>0),
-  status text not null default 'draft' check (status in ('draft','active','suspended','superseded','rejected')),
+  status text not null default 'draft' check (status in ('draft','active','suspended','superseded','retired')),
   allowed_capabilities text[] not null default '{}'::text[],
   resource_ceiling jsonb not null default '{}'::jsonb check (jsonb_typeof(resource_ceiling)='object'),
   schedule_policy jsonb not null default '{}'::jsonb check (jsonb_typeof(schedule_policy)='object'),
@@ -139,7 +142,7 @@ create unique index sovereign_node_policies_one_active_uidx
 insert into public.resource_registry(
   resource_key,resource_kind,display_name,owner_kind,trust_level,location_class,
   supported_visibility_classes,cost_profile,limits,health_status,health_summary,
-  enabled,metadata,created_by
+  enabled,metadata,created_by,created_source
 )
 select
   'legacy:'||c.project_id::text||':'||md5(c.account_key||':'||c.connector_kind),
@@ -159,7 +162,8 @@ select
     'legacy_account_key',c.account_key,
     'legacy_connector_kind',c.connector_kind
   ),
-  null
+  null,
+  'system_backfill'
 from (
   select distinct project_id,account_key,connector_kind
   from public.capabilities
