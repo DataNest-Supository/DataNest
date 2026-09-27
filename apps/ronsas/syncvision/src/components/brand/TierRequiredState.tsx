@@ -21,7 +21,7 @@ export function sanitizeDenialReason(
     .replace(/\b[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]{8,}\b/g, "[token]")
     .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi, "[id]")
     .replace(/\b[A-Fa-f0-9]{16,}\b/g, "[token]")
-    .replace(/\bsk_[A-Za-z0-9_-]{8,}\b/g, "[token]")
+    .replace(/\b[a-z]{2}_[A-Za-z0-9_-]{8,}\b/gi, "[token]")
     .replace(/\b(?:Bearer|Basic|apikey|api_key|token)\s+[A-Za-z0-9._-]+/gi, "[token]")
     .replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, "[ip]")
     .replace(/\s+at\s+[^\n]+/g, "")
