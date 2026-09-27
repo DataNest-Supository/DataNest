@@ -240,7 +240,7 @@ export default function ResourceFabricPanel({
 
           {txt(resource.resource_kind)==="local_node"&&<div className="authorityHighImpactNotice">
             <b>Sovereign node policy:</b> {nodePolicy.id?"v"+txt(nodePolicy.version)+" · "+resourceFabricLabel(txt(nodePolicy.status)):"No policy yet — automated matching fails closed."}
-            <br/>Interactive remote control: disabled.
+            <br/><span>Interactive remote control: disabled.</span>
           </div>}
 
           {canManage&&<div className="rowActions">
