@@ -33,7 +33,7 @@ export async function updateTrendCandidate(input:{
     .limit(250);
   if(error)throw error;
 
-  const evidence=(data||[]).map(item=>({
+  const evidence=(data||[]).map((item:any)=>({
     id:String(item.id),
     content:String(item.content),
     jobId:String(item.job_id||""),
@@ -46,17 +46,17 @@ export async function updateTrendCandidate(input:{
     metadata:typeof item.metadata==="object"&&item.metadata!==null
       ?item.metadata as Record<string,unknown>
       :{}
-  })).filter(item=>item.metadata.learning_eligible===true)
-    .filter(item=>{
+  })).filter((item:any)=>item.metadata.learning_eligible===true)
+    .filter((item:any)=>{
       const reuseState=String(item.metadata.reuse_state||"project_learning_eligible");
       return projectLearningReuseStates.has(reuseState);
     });
-  const current=evidence.find(item=>item.id===input.inputEventId);
+  const current=evidence.find((item:any)=>item.id===input.inputEventId);
   if(!current)return {candidateId:null,trendKey:null,evidenceCount:0};
 
   const ordered=[
     current,
-    ...evidence.filter(item=>item.id!==input.inputEventId)
+    ...evidence.filter((item:any)=>item.id!==input.inputEventId)
   ];
   const candidate=candidateFromRepeatedEvidence(ordered);
   if(!candidate)return {candidateId:null,trendKey:null,evidenceCount:1};
@@ -91,7 +91,7 @@ export async function updateTrendCandidate(input:{
   if(overlapLinksError)throw overlapLinksError;
 
   const overlapCandidateId=bestCandidateByEvidenceOverlap(
-    (overlapLinks||[]).map(link=>({
+    (overlapLinks||[]).map((link:any)=>({
       candidateId:String(link.candidate_id),
       eventId:String(link.event_id)
     })),
@@ -216,8 +216,8 @@ export async function updateTrendCandidate(input:{
   if(linkedEvidenceError)throw linkedEvidenceError;
   const activeEvidence=new Set(candidate.evidenceIds);
   const staleEvidence=(linkedEvidence||[])
-    .map(item=>String(item.event_id))
-    .filter(eventId=>!activeEvidence.has(eventId));
+    .map((item:any)=>String(item.event_id))
+    .filter((eventId:string)=>!activeEvidence.has(eventId));
   if(staleEvidence.length){
     const {error:staleEvidenceError}=await input.staging
       .from("ai_candidate_evidence")
