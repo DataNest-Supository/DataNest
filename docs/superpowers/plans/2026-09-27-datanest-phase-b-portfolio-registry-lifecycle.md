@@ -21,7 +21,7 @@
 - Product Lab environment values `local|preview|staging|production` remain independent of portfolio lifecycle and product promotion.
 - Classification, relationship, and lifecycle histories are append-only; rejected/superseded records remain queryable.
 - Product promotion is transactional and cannot leave an orphan `products` row or a falsely promoted candidate.
-- Retirement is blocked while active critical dependants remain.
+- Retirement is blocked while active critical dependants or active linked Product Lab production surfaces remain.
 - Existing `products`, `product_records`, RONSAS import snapshots, Product Lab surfaces/test cases/test runs, current URLs, and Portfolio Pulse governed-product semantics are preserved.
 - New portfolio tables are project-scoped with RLS. Authenticated clients receive SELECT only; all portfolio state changes use governed RPCs.
 - Anonymous control-plane writes remain prohibited.
@@ -34,7 +34,7 @@
 1. **Historical ownership claim:** imported RONSAS child records may contain `ownership:"RONSAS"`; backfill must preserve that as provenance while creating `pending_review` items with no active `product_owned` classification.
 2. **Lifecycle/runtime confusion:** a Product Lab surface with `environment="production"` is runtime evidence only and cannot promote a candidate or create a governed product.
 3. **Partial promotion failure:** candidate promotion must be one database transaction; any validation/write failure leaves the candidate and Product Registry unchanged.
-4. **Dependency-safe retirement:** retirement must fail while another active Portfolio Item has an active `depends_on` relationship with `criticality="critical"`.
+4. **Dependency-safe retirement:** retirement must fail while another active Portfolio Item has an active `depends_on` relationship with `criticality="critical"` or while the item still has an active linked Product Lab `production` surface.
 5. **Compatibility:** current `?view=products&product=ronsas&recordType=...&q=...` links, canonical RONSAS name, billing-off banner, Product Lab legacy surfaces, and Portfolio Pulse product count must remain unchanged.
 
 ---
@@ -172,7 +172,7 @@ Assert:
 - `product_owned` requires a same-project governed product target;
 - approval supersedes a prior active classification before activating the new one;
 - relationship approval rejects self/cross-project links and calls a recursive `contains` cycle guard;
-- retirement calls a critical-dependant guard;
+- retirement calls both a critical-dependant guard and an active-production-surface guard;
 - promotion requires candidate kind, active independent-product classification, promotion packet, linked versioned Product Lab evidence, and one transaction;
 - promotion inserts `billing_enabled=false` and accepts no billing parameter;
 - every significant RPC inserts `PORTFOLIO_` evidence into `public.events`.
@@ -192,10 +192,13 @@ Define private helpers:
 - `portfolio_item_project(target_item uuid) returns uuid`
 - `portfolio_contains_path(target_project uuid,start_item uuid,sought_item uuid) returns boolean`
 - `portfolio_has_active_critical_dependants(target_item uuid) returns boolean`
+- `portfolio_has_active_production_surfaces(target_item uuid) returns boolean`
 - `validate_portfolio_promotion_packet(target_packet jsonb) returns void`
 
 Promotion packet requires non-empty evidence for:
-`problem`, `users`, `value_proposition`, `repeat_demand_evidence`, `operational_owner`, `independent_lifecycle_justification`, `product_lab_evidence`.
+`problem_statement`, `intended_users`, `value_proposition`, `repeat_demand_evidence`, `operational_owner`, `independent_lifecycle_justification`, `product_lab_evidence`, `known_risks`, and `dependencies`.
+
+Classification, commercial state, exact linked build identity, and governance approver are derived from authoritative current state during the RPC rather than trusted from caller-supplied JSON.
 
 Do not grant browser execution on private helpers.
 
@@ -217,7 +220,7 @@ Each mutation writes a `PORTFOLIO_...` event.
 
 `deprecate_portfolio_item_v1` and `retire_portfolio_item_v1` create and approve the transition atomically for owner/admin.
 
-`retire_portfolio_item_v1` rejects active critical dependants and preserves history.
+`retire_portfolio_item_v1` rejects active critical dependants and any active linked Product Lab surface with `environment='production' and status='active'`, then preserves history.
 
 `promote_product_candidate_v1`:
 1. locks item;
@@ -497,7 +500,7 @@ Assert:
 5. 390x844 has no document horizontal overflow.
 6. Existing legacy product URL still behaves as existing `products.spec.ts` requires.
 7. Viewer/operator/owner role fixtures expose only the permitted actions.
-8. Retirement RPC error for critical dependants leaves displayed lifecycle unchanged.
+8. Retirement RPC errors for either critical dependants or an active linked production surface leave displayed lifecycle unchanged.
 
 Run:
 
@@ -624,6 +627,6 @@ After all tasks:
 
 **Type consistency:** UI types use Task 1 view fields and Task 2 RPC names. `PortfolioRole` matches existing membership roles. Product Lab adds only nullable `portfolio_item_id`.
 
-**Review Focus:** historical ownership is pinned in Task 3 and browser Task 6; lifecycle/runtime separation in Tasks 4/6; atomic promotion in Task 2; critical dependency retirement in Task 2/6; compatibility in Tasks 5/6.
+**Review Focus:** historical ownership is pinned in Task 3 and browser Task 6; lifecycle/runtime separation in Tasks 4/6; atomic promotion in Task 2; critical-dependency and active-production-surface retirement guards in Task 2/6; compatibility in Tasks 5/6.
 
 **Proportion:** This is one six-task vertical plan for one coherent Phase B subsystem. It deliberately excludes Phase C-H and physical application/repository consolidation.
