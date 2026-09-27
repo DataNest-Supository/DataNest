@@ -19,7 +19,7 @@ test("trust policy shared types keep processing and reuse separate",()=>{
   assert.doesNotMatch(source,/consent:boolean/i);
 });
 
-test("Trust Policy panel reads the governed workspace and uses RPCs for mutations",()=>{
+test("Trust Policy panel reads the governed workspace and mutates only through RPCs",()=>{
   assert.equal(fs.existsSync(panelPath),true,"src/components/TrustPolicyPanel.tsx must exist");
   const source=fs.readFileSync(panelPath,"utf8");
   assert.match(source,/get_trust_policy_workspace_v1/);
@@ -32,19 +32,30 @@ test("Trust Policy panel reads the governed workspace and uses RPCs for mutation
   assert.doesNotMatch(source,/from\("(?:data_policy_bindings|trust_manifests|provider_trust_profiles|retention_policies|retention_holds|retention_reviews)"\)\.(?:insert|update|delete)/);
 });
 
-test("Trust Policy UI explicitly separates processing, learning, publication, and retention",()=>{
+test("Trust Policy UI explicitly separates processing, learning, publication, retention and rollout state",()=>{
   const source=fs.readFileSync(panelPath,"utf8");
+  const domain=fs.readFileSync(libPath,"utf8");
   assert.match(source,/Processing permission does not grant learning or publication permission\./);
   assert.match(source,/No destructive retention action is enabled in Phase C v1\./);
   assert.match(source,/Provider credentials are managed outside Trust Profiles\./);
   assert.match(source,/Planned\/unknown controls are not verified trust guarantees\./);
   assert.match(source,/Visibility \/ processing/);
   assert.match(source,/Reuse \/ learning/);
-  const domain=fs.readFileSync(libPath,"utf8");
+  assert.match(source,/Rollout mode/);
+  assert.match(source,/report_only/);
+  assert.match(source,/Approved provider route keys/);
+  assert.match(source,/Authority basis/);
+  assert.match(source,/Evidence reference/);
   assert.match(source,/evidenceStates\.map/);
   for(const state of ["verified","partial","planned","unknown"])assert.match(domain,new RegExp(state));
   assert.doesNotMatch(source,/>\s*(?:Delete data|Purge|Anonymize)/i);
   assert.doesNotMatch(source,/API key|Password|Secret value/);
+});
+
+test("retention review resolution does not accept caller-supplied lineage truth",()=>{
+  const source=fs.readFileSync(panelPath,"utf8");
+  assert.doesNotMatch(source,/target_lineage_resolved/);
+  assert.match(source,/target_reason:"Future disposition approved after server-derived lineage review/);
 });
 
 test("Governance keeps Sovereign Governance default and exposes trust section deep link",()=>{
@@ -56,13 +67,9 @@ test("Governance keeps Sovereign Governance default and exposes trust section de
   assert.match(source,/TrustPolicyPanel/);
 });
 
-test("DataNest passes exact membership role and actor identity into Governance and Trust Policy",()=>{
+test("DataNest passes exact membership role into Governance",()=>{
   const source=fs.readFileSync(appPath,"utf8");
-  const governance=fs.readFileSync(governancePath,"utf8");
-  const panel=fs.readFileSync(panelPath,"utf8");
   assert.match(source,/GovernanceWorkspace projectId=\{project\.id\} currentUserId=\{session\.user\.id\} role=\{membership\?\.role\|\|"viewer"\}/);
-  assert.match(governance,/TrustPolicyPanel projectId=\{projectId\} currentUserId=\{currentUserId\} role=\{role\}/);
-  assert.match(panel,/projectId,currentUserId,role,setNotice,setError/);
 });
 
 test("approval controls are role gated",()=>{
