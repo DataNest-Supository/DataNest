@@ -719,7 +719,7 @@ test("active Job locator crosses paginated Scheduler pages without filtering pro
 
   await context.getByRole("button",{name:"Locate active Job page →"}).click();
 
-  expect(locatorSawSecondPage).toBe(true);
+  await expect.poll(()=>locatorSawSecondPage).toBe(true);
   await expect(page.locator(".ganttRow[data-active-context='true']")).toHaveCount(1);
   await expect(page.locator(".ganttRow[data-active-context='true']")).toBeFocused();
   await expect(page.getByText("Off-page active Job",{exact:true})).toBeVisible();
