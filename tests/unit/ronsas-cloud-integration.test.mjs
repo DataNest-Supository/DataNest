@@ -2,49 +2,39 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-const edge=readFileSync(
-  new URL("../../supabase/functions/ronsas-status/index.ts",import.meta.url),
-  "utf8"
-);
-const client=readFileSync(
-  new URL("../../src/lib/ronsas.ts",import.meta.url),
-  "utf8"
-);
-const panel=readFileSync(
-  new URL("../../src/components/RonsasIntegrationPanel.tsx",import.meta.url),
-  "utf8"
-);
-const app=readFileSync(
-  new URL("../../src/components/DataNestApp.tsx",import.meta.url),
-  "utf8"
-);
-const config=readFileSync(
-  new URL("../../supabase/config.toml",import.meta.url),
-  "utf8"
-);
-const manifest=readFileSync(
-  new URL("../../scripts/write-release-manifest.mjs",import.meta.url),
-  "utf8"
-);
+const edge=readFileSync(new URL("../../supabase/functions/ronsas-status/index.ts",import.meta.url),"utf8");
+const client=readFileSync(new URL("../../src/lib/ronsas.ts",import.meta.url),"utf8");
+const panel=readFileSync(new URL("../../src/components/RonsasIntegrationPanel.tsx",import.meta.url),"utf8");
+const app=readFileSync(new URL("../../src/components/DataNestApp.tsx",import.meta.url),"utf8");
+const config=readFileSync(new URL("../../supabase/config.toml",import.meta.url),"utf8");
+const manifest=readFileSync(new URL("../../scripts/write-release-manifest.mjs",import.meta.url),"utf8");
 
-test("RONSAS integration is cloud-only and non-blocking",()=>{
+test("RONSAS status is cloud-backed while runtime authority is DataNest local-first",()=>{
   assert.match(edge,/const HUB_ORIGIN = "https:\/\/reson8\.life\/"/);
+  assert.match(edge,/mode: "cloud"/);
+  assert.match(edge,/runtimeMode: "local-first"/);
+  assert.match(edge,/managedByDataNest: true/);
+  assert.match(edge,/billingState: "free-promotion"/);
+  assert.match(edge,/independent: false/);
   assert.match(edge,/localInteractionRequired: false/);
-  assert.match(edge,/independent: true/);
-  assert.match(edge,/Local RONSAS origins are not permitted/);
-  assert.match(edge,/controlRepository: "resonance36912-cell\/RONSAS"/);
-  assert.match(edge,/hubRepository: "resonance36912-cell\/resonance-hub"/);
+  assert.match(edge,/controlRepository: "DataNest-Supository\/DataNest"/);
+  assert.match(edge,/hubRepository: "DataNest-Supository\/DataNest"/);
+  assert.doesNotMatch(edge,/resonance36912-cell\/RONSAS|resonance36912-cell\/resonance-hub/);
   assert.doesNotMatch(edge,/http:\/\/127\.0\.0\.1|http:\/\/localhost/);
 });
 
-test("DataNest exposes the versioned RONSAS contract through JWT-protected Supabase",()=>{
+test("DataNest exposes the governed RONSAS status contract through JWT-protected Supabase",()=>{
   assert.match(config,/\[functions\.ronsas-status\][\s\S]*verify_jwt = true/);
   assert.match(edge,/npm:@supabase\/server@1\.8\.0/);
   assert.match(edge,/withSupabase\(\{ auth: "user" \}/);
   assert.match(client,/functions\.invoke\("ronsas-status"/);
   assert.match(client,/status\.contract !== "ronsas-status@1"/);
-  assert.match(panel,/Local interaction<\/dt><dd>Not required/);
-  assert.match(panel,/DataNest dependency<\/dt><dd>Independent · non-blocking/);
+  assert.match(client,/status\.runtimeMode !== "local-first"/);
+  assert.match(client,/status\.managedByDataNest !== true/);
+  assert.match(client,/status\.independent !== false/);
+  assert.match(panel,/Runtime model<\/dt><dd>\{status\?\.runtimeMode \|\| "local-first"\}/);
+  assert.match(panel,/DataNest authority<\/dt><dd>/);
+  assert.match(panel,/DataNest-Supository\/DataNest/);
   assert.match(app,/RonsasIntegrationPanel/);
   assert.match(manifest,/ronsasStatus:process\.env\.DATANEST_EDGE_RONSAS_STATUS \|\| "ronsas-status@1"/);
 });

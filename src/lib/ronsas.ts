@@ -4,6 +4,9 @@ export type RonsasStatus = {
   contract: "ronsas-status@1";
   checkedAt: string;
   mode: "cloud";
+  runtimeMode: "local-first";
+  managedByDataNest: true;
+  billingState: "free-promotion";
   independent: boolean;
   localInteractionRequired: boolean;
   authority: {
@@ -38,6 +41,10 @@ export async function getRonsasStatus(): Promise<RonsasStatus> {
     !status ||
     status.contract !== "ronsas-status@1" ||
     status.mode !== "cloud" ||
+    status.runtimeMode !== "local-first" ||
+    status.managedByDataNest !== true ||
+    status.billingState !== "free-promotion" ||
+    status.independent !== false ||
     status.localInteractionRequired !== false ||
     !status.authority ||
     !status.hub
