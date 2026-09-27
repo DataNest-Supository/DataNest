@@ -161,3 +161,14 @@ The Active Work Context strip is actionable, not only descriptive. Its primary a
 The strip also keeps a secondary Return to DataNest AI action whenever the primary action leads elsewhere.
 
 These actions do not mutate Job state, create execution records, or write governance evidence. They only preserve orientation and reduce navigation search cost around the already-selected Job.
+
+
+## DataNest AI task-guide action
+
+The DataNest AI START HERE guidance includes a direct **Select Job Manifest** action.
+
+- When an accessible Job selector exists, the action scrolls and focuses that governed Job control.
+- Reduced-motion preferences use immediate scrolling rather than smooth animation.
+- When no Job selector exists, the action routes to UNIFI Planner so the user can create the missing Job Manifest instead of encountering a dead control.
+
+The action changes navigation/focus only. It does not select a Job automatically, create a Job, or mutate governed state.
