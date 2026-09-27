@@ -977,7 +977,7 @@ export default function DataNestApp({session}:{session:Session}) {
               <span className={"badge "+tone(activeDataNestAiSession.status)}>{activeDataNestAiSession.status.replaceAll("_"," ")}</span>
               <small>{activeDataNestAiSession.sessionId?"AI session linked":"Job context linked"}</small>
             </div>
-            {activeContextEvidence&&<div className={"activeWorkContextEvidence "+activeContextEvidence.state} aria-label="Visible evidence signal">
+            {activeContextEvidence&&<div className={"activeWorkContextEvidence "+activeContextEvidence.state} role="region" aria-label="Visible evidence signal">
               <span>{activeContextEvidence.label}</span>
               <small>{activeContextEvidence.detail}</small>
             </div>}
