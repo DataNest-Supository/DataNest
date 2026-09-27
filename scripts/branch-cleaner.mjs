@@ -44,6 +44,16 @@ export function classifyBranch(branch, config, now = new Date()) {
     return { decision:"keep", reason:"open_pr", ageDays:age, ahead, behind, status };
   if (ahead === 0 && status !== "unknown" && Number.isFinite(age))
     return { decision:"delete_candidate", reason:branch.mergedPr ? "merged_no_unique_commits" : "no_unique_commits", ageDays:age, ahead, behind, status };
+  if (branch.familyContainedBy && ahead != null && ahead > 0)
+    return {
+      decision:"review",
+      reason:"superseded_reachable_from_sibling",
+      preservedBy:branch.familyContainedBy,
+      ageDays:age,
+      ahead,
+      behind,
+      status
+    };
   if (branch.mergedPr && ahead != null && ahead > 0)
     return { decision:"review", reason:"post_merge_unique_commits", ageDays:age, ahead, behind, status };
   if (Number.isFinite(age) && age >= config.staleDays && ahead != null && ahead > 0)
@@ -241,11 +251,26 @@ async function githubAudit(repo, token, config) {
     families.set(family, [...(families.get(family) || []), b]);
   }
   const superseded = new Set();
+  const containedBy = new Map();
   for (const group of families.values()) {
-    [...group]
-      .sort((a,b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
-      .slice(1)
-      .forEach((b) => superseded.add(b.name));
+    const ordered = [...group]
+      .sort((a,b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
+    const newest = ordered[0];
+    for (const older of ordered.slice(1)) {
+      superseded.add(older.name);
+      try {
+        const relation = await gh(
+          repo,
+          "/compare/" + encodeURIComponent(older.sha) + "..." + encodeURIComponent(newest.sha),
+          token
+        );
+        if (relation?.merge_base_commit?.sha === older.sha && Number(relation.behind_by || 0) === 0) {
+          containedBy.set(older.name, newest.name);
+        }
+      } catch {
+        // Naming/date similarity alone is not enough to claim ancestry.
+      }
+    }
   }
 
   return {
@@ -253,7 +278,11 @@ async function githubAudit(repo, token, config) {
     branches:facts.map((b) => ({
       ...b,
       family:normalizeBranchFamily(b.name),
-      classification:classifyBranch({ ...b, familyHasNewerSibling:superseded.has(b.name) }, config)
+      classification:classifyBranch({
+        ...b,
+        familyHasNewerSibling:superseded.has(b.name),
+        familyContainedBy:containedBy.get(b.name) || null
+      }, config)
     }))
   };
 }
@@ -538,7 +567,8 @@ function markdown(r) {
   for (const b of r.github.branches.filter((x) => x.classification.decision !== "keep")) {
     lines.push("- " + b.name + ": " + b.classification.decision + " / " +
       b.classification.reason + " / ahead=" + (b.classification.ahead ?? "?") +
-      " / age=" + (Number.isFinite(b.classification.ageDays) ? b.classification.ageDays.toFixed(1) : "?"));
+      " / age=" + (Number.isFinite(b.classification.ageDays) ? b.classification.ageDays.toFixed(1) : "?") +
+      (b.classification.preservedBy ? " / preserved-by=" + b.classification.preservedBy : ""));
   }
   lines.push("", "## Supabase control-plane audit", "");
   if (r.supabase.skipped) {
