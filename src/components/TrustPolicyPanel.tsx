@@ -43,9 +43,10 @@ function splitList(value:string){
 }
 
 export default function TrustPolicyPanel({
-  projectId,role,setNotice,setError
+  projectId,currentUserId,role,setNotice,setError
 }:{
   projectId:string;
+  currentUserId:string;
   role:TrustPolicyRole;
   setNotice:(value:string)=>void;
   setError:(value:string)=>void;
@@ -234,12 +235,11 @@ export default function TrustPolicyPanel({
       target_default_retention_days:retentionDays?Number(retentionDays):null,
       target_review_interval_days:retentionReviewDays?Number(retentionReviewDays):null,
       target_default_disposition_intent:retentionDisposition,
-      target_rules:{phase_c_v1:"non_destructive"},
+      target_rules:{phase_c_v1:"non_destructive",proposal_reason:retentionReason.trim()||null},
       target_minimum_evidence:{review_required:true},
       target_requires_lineage_review:true,
       target_authority_basis:retentionAuthorityBasis.trim()||null,
       target_evidence_reference:retentionEvidenceReference.trim()||null,
-      target_status_reason:retentionReason.trim()||null,
       target_review_due_at:retentionReviewDue?new Date(retentionReviewDue).toISOString():null
     },"Retention policy proposal recorded. No data was deleted or anonymized.");
   }
@@ -254,7 +254,6 @@ export default function TrustPolicyPanel({
       target_retention_policy:reviewPolicyId||null,
       target_proposed_disposition:reviewDisposition,
       target_rationale:reviewRationale.trim(),
-      target_due_at:null,
       target_evidence_reference:null
     },"Retention review requested. This is review evidence only, not a destructive action.");
     setReviewRationale("");
@@ -314,6 +313,7 @@ export default function TrustPolicyPanel({
         <div><dt>Visibility / processing</dt><dd>{trustPolicyLabel(text(activeManifest.default_visibility_class))}</dd></div>
         <div><dt>Reuse / learning</dt><dd>{trustPolicyLabel(text(activeManifest.default_reuse_state))}</dd></div>
         <div><dt>Policy version</dt><dd>{text(activeManifest.policy_version)}</dd></div>
+        <div><dt>Enforcement</dt><dd>{trustPolicyLabel(text(activeManifest.enforcement_mode)||"report_only")}</dd></div>
         <div><dt>Evidence</dt><dd>{text(activeManifest.evidence_reference)||"—"}</dd></div>
         <div><dt>Known limitations</dt><dd>{text(activeManifest.known_limitations)||"None recorded"}</dd></div>
       </dl>:<p className="muted">No active project Trust Manifest exists. External provider routing, publication and learning decisions therefore remain fail-closed where Phase C policy is required.</p>}
@@ -346,7 +346,7 @@ export default function TrustPolicyPanel({
         <p>Reuse / learning: {trustPolicyLabel(text(item.reuse_state))}</p>
         <small>{text(item.rationale)}</small>
         {canApprove&&<div className="rowActions">
-          <button className="primaryButton compact" disabled={busy} onClick={()=>void rpc("approve_data_policy_binding_v1",{target_binding:item.id},"Data policy proposal approved.")}>Approve</button>
+          <button className="primaryButton compact" disabled={busy||(text(item.proposed_by)===currentUserId&&(text(item.visibility_class)==="public"||["platform_learning_eligible","datanest_certified_knowledge","publicly_reusable"].includes(text(item.reuse_state))||Boolean(item.publication_authorized)))} onClick={()=>void rpc("approve_data_policy_binding_v1",{target_binding:item.id},"Data policy proposal approved.")}>Approve</button>
           <button className="textButton" disabled={busy} onClick={()=>void rpc("reject_data_policy_binding_v1",{target_binding:item.id,target_reason:"Rejected from Trust & Data Policy workspace."},"Data policy proposal rejected.")}>Reject</button>
         </div>}
       </article>)}</div>:<p className="muted">No policy proposals are awaiting review.</p>}
