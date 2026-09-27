@@ -5,6 +5,7 @@ declare
   column_type text;
   index_def text;
   function_def text;
+  compact_function_def text;
 begin
   select data_type into column_type
   from information_schema.columns
@@ -33,11 +34,12 @@ begin
   select pg_get_functiondef(
     'public.create_job_manifest_v2(uuid,uuid,text,text,integer,text,boolean,boolean)'::regprocedure
   ) into function_def;
+  compact_function_def := regexp_replace(function_def,'\\s+','','g');
 
-  if function_def not ilike '%client_request_id = target_request_key%'
+  if compact_function_def not ilike '%client_request_id=target_request_key%'
      or function_def not ilike '%Client request key already exists for a different UNIFI Job Manifest payload%'
-     or function_def not ilike '%project_id, client_request_id, title%'
-     or function_def not ilike '%''client_request_id'', target_request_key%' then
+     or compact_function_def not ilike '%project_id,client_request_id,title%'
+     or compact_function_def not ilike '%''client_request_id'',target_request_key%' then
     raise exception 'UNIFI idempotent manifest function does not preserve reconciliation invariants.';
   end if;
 end $$;
