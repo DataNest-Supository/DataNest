@@ -13,11 +13,11 @@ RONSAS is a DataNest Product. All RONSAS application source, runtime configurati
 | Creative Studio | `resonance36912-cell/rons-creative-studio-sovereign-source` | `apps/ronsas/creative-studio` | Imported from `c7e0ac7ab341369ed26483eac3df4e83c1de6b6d`; exact source tree `17bc265d00ddd7413046a1f8c567925fa7ba9e21` (297 blobs) |
 | SyncVision | `resonance36912-cell/rons-sync-vision-sovereign-source` | `apps/ronsas/syncvision` | Structurally imported from `e224152bee53fb2a07837fe4838f59dd8e679d43` (501 files); **migration gate remains open** because four large binary assets are currently zero-byte placeholders |
 | YouTube Optimizer | `resonance36912-cell/rons-youtube-optimizer-sovereign-source` | `apps/ronsas/youtube-optimizer` | Imported: 236 files |
-| Career Compass | No canonical GitHub source repository located | `apps/ronsas/career-compass` | Source recovery required |
-| SovereignForge | No canonical GitHub source repository located | `apps/ronsas/sovereign-forge` | Source recovery required |
-| LyricSync Studio | No canonical GitHub source repository located | `apps/ronsas/lyricsync-studio` | Source recovery required |
-| Scene Song Spark | No canonical GitHub source repository located | `apps/ronsas/scene-song-spark` | Source recovery required |
-| RONS Control Center / Open Nova operations | Historical RONSAS control-plane sources | `apps/ronsas/control-center` and/or `ops/ronsas` | Reconciliation required |
+| Career Compass | No executable source located in connected GitHub/Dropbox history | `apps/ronsas/career-compass` | Source recovery exhausted; only a historical logo and design-document mention were found |
+| SovereignForge | No executable source located in connected GitHub/Dropbox history | `apps/ronsas/sovereign-forge` | Source recovery exhausted; governance protocol documents only |
+| LyricSync Studio | No executable source located in connected GitHub/Dropbox history | `apps/ronsas/lyricsync-studio` | Source recovery exhausted; no source/branch/repository hits |
+| Scene Song Spark | No executable source located in connected GitHub/Dropbox history | `apps/ronsas/scene-song-spark` | Source recovery exhausted; no source/branch/repository hits |
+| RONS Control Center / Open Nova operations | Historical RONSAS control-plane sources | `ops/ronsas/ealiophin` plus app-local runtime source | Reconciled into DataNest-native start/status/stop, supervisor, and optional SyncVision MuseTalk controls |
 
 ## SyncVision integrity gate
 
@@ -29,6 +29,31 @@ The following canonical source assets must be restored exactly before SyncVision
 - `src/assets/resonance-app-dev-logo.png` — 1,833,523 bytes
 
 The DataNest CI import-contract gate checks these exact sizes so the placeholder state cannot be merged silently.
+
+### Recovery attempts completed
+
+- Direct GitHub connector transfer is not binary-safe for these four private blobs: file reads return empty content or UTF-8 decoding errors.
+- The public SyncVision deployment did not expose exact copies at the tested canonical asset paths.
+- The connected Dropbox RONS audit mirror contains SyncVision source bundles/codebooks and historical local-app snapshots, but those packages omit the four canonical binary payloads.
+- Public `@ffmpeg/core` 0.12.x packages were scanned by exact Git blob identity. None matched the canonical customized `ffmpeg-core.js` blob `3d61450a0dc22df37bcf7fda591b7fd3214a8223`, so no public-package WASM was accepted.
+- The Ealiophin self-hosted runner remained unassigned during recovery attempts. The integrity gate therefore stays closed rather than substituting non-canonical bytes.
+
+
+## DataNest-native control plane
+
+Active RONSAS operational authority now lives under `ops/ronsas/ealiophin` and reads application source only from this repository.
+
+- `RONSAS-MODULES.json` declares DataNest as the single repository authority and preserves `free-promotion` / `paidCheckoutActive: false`.
+- `START-RONSAS-DATANEST.ps1`, `STATUS-RONSAS-DATANEST.ps1`, and `STOP-RONSAS-DATANEST.ps1` govern the local suite and track only DataNest-owned process state.
+- `RONSAS-SUPERVISOR.ps1` performs bounded recovery for required modules without Open Nova paths, Desktop Commander, or the historical standalone repository.
+- SyncVision's recovered MuseTalk 1.5 bridge now lives at `apps/ronsas/syncvision/runtime/musetalk/musetalk_bridge.py` and is registered as an optional localhost-only service at `127.0.0.1:7863` because its model/Python/FFmpeg assets remain machine-local.
+- ePublisher already contains the recovered local STT server byte-for-byte inside its DataNest source, so no duplicate external STT runtime is required.
+
+Historical runner-recovery scripts were not copied wholesale because they are hard-bound to `resonance36912-cell/RONSAS`, old runner identities, and old local paths. They remain evidence only until a DataNest-scoped runner-management design is implemented.
+
+## Source-recovery conclusion
+
+Connected GitHub repositories, RONSAS branches/commit history, and the Dropbox RONS audit mirror were searched for the four unresolved applications. No executable source was found. Career Compass yielded only a logo and a documentation-only theme commit; SovereignForge yielded governance protocol documents; LyricSync Studio and Scene Song Spark yielded no executable-source hits. Recreating any of these applications would therefore be **new DataNest development**, not source migration, and must not be mislabeled as recovered source.
 
 ## Validation boundaries
 
