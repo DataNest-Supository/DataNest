@@ -155,20 +155,17 @@ const SAFE_KEYS = [
   "RETENTION_VIDEOS",
   "RETENTION_LIGHTHOUSE",
 ];
-const SECRET_KEY_PATTERNS = [
-  /(?:^|_)TOKEN$/i,
-  /(?:^|_)SECRET(?:_|$)/i,
-  /(?:^|_)SERVICE_ROLE_KEY$/i,
-  /(?:^|_)API_KEY$/i,
-  /(?:^|_)PUBLISHABLE_KEY$/i,
-  /(?:^|_)WEBHOOK_URL$/i,
-];
+const PRIVATE_ENV_MARKERS = new Set(["TOKEN", "SECRET", "KEY", "WEBHOOK"]);
+const isPrivateEnvironmentKey = (key) => {
+  const parts = String(key).toUpperCase().split("_").filter(Boolean);
+  return parts.some((part) => PRIVATE_ENV_MARKERS.has(part));
+};
 
 const environment = {};
 for (const key of SAFE_KEYS) if (env[key] !== undefined) environment[key] = env[key];
 const secretsPresence = {};
 const secretKeys = Object.keys(env)
-  .filter((key) => SECRET_KEY_PATTERNS.some((pattern) => pattern.test(key)))
+  .filter(isPrivateEnvironmentKey)
   .sort();
 for (const key of secretKeys) secretsPresence[key] = env[key] ? "set" : "unset";
 
