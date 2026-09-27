@@ -135,3 +135,14 @@ test("current provider key is deterministic and project scoped",()=>{
   assert.match(source,/lower\([^\n;]*provider[^\n;]*\)[\s\S]{0,200}lower\([^\n;]*endpoint_host[^\n;]*\)/i);
   assert.match(source,/Provider connection project mismatch/i);
 });
+
+test("governed operation signatures match the approved Phase C contract",()=>{
+  const source=sql(); if(!source)return;
+  assert.match(source,/propose_data_policy_binding_v1\(\s*target_project uuid,\s*target_subject_type text,\s*target_visibility_class text,\s*target_reuse_state text,\s*target_rationale text,\s*target_subject_id uuid default null,\s*target_subject_reference text default null,\s*target_publication_authorized boolean default false,\s*target_evidence_reference text default null\s*\)/i);
+  assert.match(source,/create_trust_manifest_draft_v1\([\s\S]*target_enforcement_mode text default 'report_only'[\s\S]*target_approved_provider_keys text\[\] default '\{\}'/i);
+  assert.match(source,/create_provider_trust_profile_v1\([\s\S]*target_provider_key text,[\s\S]*target_provider_category text,[\s\S]*target_policy_version text,[\s\S]*target_allowed_visibility_classes text\[\],[\s\S]*target_allowed_purposes text\[\],[\s\S]*target_retention_posture text,[\s\S]*target_training_reuse_posture text/i);
+  assert.match(source,/propose_retention_policy_v1\([\s\S]*target_default_disposition_intent text,[\s\S]*target_requires_lineage_review boolean,[\s\S]*target_authority_basis text default null,[\s\S]*target_evidence_reference text default null/i);
+  assert.match(source,/resolve_retention_review_v1\(\s*target_review uuid,\s*target_status text,\s*target_reason text,\s*target_evidence_reference text default null\s*\)/i);
+  assert.match(source,/get_trust_policy_workspace_v1\(target_project uuid\) returns jsonb/i);
+});
+
