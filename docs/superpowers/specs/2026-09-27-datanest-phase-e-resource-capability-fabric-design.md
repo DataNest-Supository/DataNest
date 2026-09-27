@@ -311,7 +311,7 @@ For each distinct existing `(project_id, account_key, connector_kind)` group:
 2. create an active Resource Project Binding for the existing project;
 3. link the existing capability rows to that Resource.
 
-Backfilled resources must use conservative metadata:
+Backfilled resources must use system provenance (`created_source='system_backfill'`, `created_by=null`) because migration replay has no authenticated human actor. Backfilled resources must use conservative metadata:
 
 - `trust_level='unknown'`;
 - `health_status='unknown'`;
