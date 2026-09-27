@@ -288,7 +288,7 @@ export default function TrustPolicyPanel({
       <div>
         <p className="eyebrow">PHASE C · TRUST & DATA POLICY</p>
         <h2>Processing, reuse, provider trust and retention</h2>
-        <p>Processing permission does not grant learning or publication permission. DataNest evaluates these authorities independently and preserves existing project, Job, file-access and certified-memory controls.</p>
+        <p>Processing permission does not grant learning or publication permission. DataNest evaluates these authorities independently and preserves existing project, Job, file-access and certified-memory controls. High-impact widening requires independent review.</p>
         <div className="heroActions"><button className="secondaryButton compact" onClick={()=>void load()}>Refresh</button></div>
       </div>
     </section>
