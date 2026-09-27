@@ -24,7 +24,7 @@ test("portfolio registry shared types and labels match the approved domain",()=>
   }
 });
 
-test("portfolio registry panel is project scoped and read only on load",()=>{
+test("portfolio registry panel is project scoped and all mutations use governed RPCs",()=>{
   assert.equal(fs.existsSync(panelPath),true,"src/components/PortfolioRegistryPanel.tsx must exist");
   const source=fs.readFileSync(panelPath,"utf8");
   assert.match(source,/from\("portfolio_registry_view"\)/);
@@ -36,8 +36,13 @@ test("portfolio registry panel is project scoped and read only on load",()=>{
   assert.match(source,/Product Lab evidence/);
   assert.match(source,/Relationships/);
   assert.match(source,/non-authoritative/i);
-  assert.doesNotMatch(source,/promote_product_candidate_v1/);
-  assert.doesNotMatch(source,/approve_portfolio_/);
+  assert.match(source,/supabase\.rpc\(name,args\)/);
+  assert.match(source,/promote_product_candidate_v1/);
+  assert.match(source,/approve_portfolio_classification_v1/);
+  assert.match(source,/reject_portfolio_classification_v1/);
+  assert.doesNotMatch(source,/from\("portfolio_(?:items|classifications|relationships|lifecycle_events)"\)\.insert/);
+  assert.doesNotMatch(source,/from\("portfolio_(?:items|classifications|relationships|lifecycle_events)"\)\.update/);
+  assert.doesNotMatch(source,/from\("portfolio_(?:items|classifications|relationships|lifecycle_events)"\)\.delete/);
 });
 
 test("Products exposes governed product and portfolio registry modes without redefining products",()=>{
