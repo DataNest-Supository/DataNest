@@ -539,10 +539,13 @@ test("mutation-heavy workspaces use the shared single-flight boundary", () => {
   assert.match(resourceFabricSource, /useSingleFlight\(\)/);
 });
 
-test("pending mutation journal preserves request identity and payload for authoritative reconciliation", () => {
+test("pending mutation journal preserves request identity, payload, and same-tab change signals", () => {
   assert.match(pendingMutationSource, /const PENDING_MUTATION_PREFIX="datanest\.pendingMutation\."/);
+  assert.match(pendingMutationSource, /PENDING_MUTATION_EVENT="datanest:pending-mutation-change"/);
   assert.match(pendingMutationSource, /requestKey:crypto\.randomUUID\(\)/);
   assert.match(pendingMutationSource, /window\.sessionStorage\.setItem\(storageKey\(scope\),JSON\.stringify\(next\)\)/);
+  assert.match(pendingMutationSource, /window\.dispatchEvent\(new CustomEvent\(PENDING_MUTATION_EVENT,\{detail:\{scope\}\}\)\)/);
+  assert.match(pendingMutationSource, /if\(changed\)notifyPendingMutationChange\(scope\)/);
   assert.match(pendingMutationSource, /existing&&existing\.kind===kind&&JSON\.stringify\(existing\.payload\)===JSON\.stringify\(payload\)/);
   assert.match(mutationReconciliationSource, /state:"confirmed"/);
   assert.match(mutationReconciliationSource, /state:"not_recorded"/);
@@ -596,4 +599,18 @@ test("Product Lab mutation feedback remains visible after workspace navigation",
   assert.match(productLabSource, /Product Lab action in progress/);
   assert.doesNotMatch(productLabSource, /const \[notice,setNotice\]=useState/);
   assert.doesNotMatch(productLabSource, /const \[error,setError\]=useState/);
+});
+
+test("global recovery center surfaces deterministic pending mutations across workspaces", () => {
+  assert.match(appSource, /scope:"unifi-job:"\+suffix/);
+  assert.match(appSource, /scope:"sparks-redemption:"\+suffix/);
+  assert.match(appSource, /scope:"productlab-test-run:"\+suffix/);
+  assert.match(appSource, /window\.addEventListener\(PENDING_MUTATION_EVENT,sync\)/);
+  assert.match(appSource, /aria-label="Unresolved operations"/);
+  assert.match(appSource, /AUTHORITATIVE RECOVERY/);
+  assert.match(appSource, /Review &amp; reconcile →/);
+  assert.match(appSource, /request identity preserved/);
+  assert.match(appSource, /openPendingRecovery\(item\)/);
+  assert.match(cssSource, /\.mutationRecoveryCenter\{/);
+  assert.match(cssSource, /\.mutationRecoveryTopButton\{/);
 });
