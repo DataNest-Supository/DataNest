@@ -4510,3 +4510,55 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
   .activeWorkContextActions>*{width:100%;min-width:0}
   .activeWorkContextActions .activeWorkContextClear{grid-column:1/-1}
 }
+
+
+/* Active context record focus */
+.schedulerRow.contextMatch,
+.ganttRow.contextMatch,
+.dataRow.contextMatch,
+.checkpointCard.contextMatch,
+.timelineItem.contextMatch{
+  position:relative;
+  outline:1px solid rgba(66,231,255,.34);
+  outline-offset:-1px;
+  background:linear-gradient(135deg,rgba(66,231,255,.075),rgba(139,92,246,.045) 54%,rgba(8,11,25,.1));
+  box-shadow:inset 3px 0 0 rgba(66,231,255,.68)
+}
+.ganttRow.contextMatch .ganttBar{
+  border-color:rgba(91,231,255,.72);
+  box-shadow:0 7px 22px rgba(0,0,0,.18),0 0 0 1px rgba(66,231,255,.18),0 0 18px rgba(66,231,255,.12)
+}
+.timelineItem.contextMatch{
+  padding:10px 10px 18px 8px;
+  margin:0 -10px 6px -8px;
+  border-radius:10px
+}
+.timelineItem.contextMatch::before{left:12px}
+.timelineItem.contextMatch .timelineDot{margin-left:0}
+.contextJobCell{display:grid;gap:4px}
+.contextMatchTag{
+  display:inline-flex!important;
+  width:max-content;
+  max-width:100%;
+  align-items:center;
+  min-height:16px;
+  margin-top:5px!important;
+  padding:2px 6px;
+  border:1px solid rgba(66,231,255,.25);
+  border-radius:999px;
+  background:rgba(66,231,255,.075);
+  color:#8cecff!important;
+  font-size:6px!important;
+  font-weight:900;
+  line-height:1.2;
+  letter-spacing:.11em;
+  text-transform:uppercase
+}
+.contextMatchCardTag{margin:0 0 7px!important}
+@media(max-width:600px){
+  .schedulerRow.contextMatch,
+  .dataRow.contextMatch,
+  .checkpointCard.contextMatch,
+  .timelineItem.contextMatch{box-shadow:inset 2px 0 0 rgba(66,231,255,.68)}
+  .contextMatchTag{font-size:6px!important}
+}

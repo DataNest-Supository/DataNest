@@ -129,3 +129,18 @@ The context persists in `sessionStorage`, so it survives workspace navigation an
 When users return to DataNest AI, the handed-off Job is preferred over the first accessible Job in the list. Unmounting the AI workspace no longer clears the context; project/user changes and explicit clearing remain the boundaries.
 
 This layer is navigation state only. It does not change Job status, create runs, alter checkpoints, or write audit records.
+
+
+## Context-focused operational evidence
+
+Active Work Context provides focus inside operational and evidence workspaces without filtering the project record.
+
+When the active Job is present on the current page:
+- TranScheduler highlights its queue row and Gantt row.
+- Runs highlights execution records belonging to that Job.
+- Checkpoints highlights resumable evidence belonging to that Job.
+- Audit highlights immutable events belonging to that Job.
+
+Matching records expose an accessible active-context marker and a restrained visual treatment. Non-matching Jobs, runs, checkpoints, and events remain visible and retain their existing order.
+
+This is deliberately a focus layer, not a data filter. A local browser context must never hide project evidence or change scheduling/audit semantics.

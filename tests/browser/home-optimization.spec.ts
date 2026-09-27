@@ -511,10 +511,16 @@ test("AI & I keeps DataNest AI at the core while governed products stay product 
 });
 
 
-test("active work context survives navigation and reload", async ({ page }) => {
+test("active work context survives handoffs and focuses related operational evidence", async ({ page }) => {
   const projectId = "00000000-0000-4000-8000-000000000010";
   const userId = "00000000-0000-4000-8000-000000000001";
   const jobId = "00000000-0000-4000-8000-000000000099";
+  const otherJobId = "00000000-0000-4000-8000-000000000100";
+  const stamp = "2026-09-27T05:00:00Z";
+  const jobs = [
+    {id:jobId,job_number:42,title:"Persistent context fixture",description:"Active handoff fixture",priority:80,status:"READY",required_capabilities:["chat"],acceptance:{},created_at:stamp,updated_at:stamp,deadline:null},
+    {id:otherJobId,job_number:43,title:"Other visible project work",description:"Must remain visible",priority:50,status:"QUEUED",required_capabilities:["chat"],acceptance:{},created_at:stamp,updated_at:stamp,deadline:null}
+  ];
 
   await page.route("**/runtime-config.js", route => route.fulfill({
     contentType: "application/javascript",
@@ -535,10 +541,23 @@ test("active work context survives navigation and reload", async ({ page }) => {
   await page.route("https://fixture.supabase.co/**", route => {
     const path = new URL(route.request().url()).pathname;
     let body: unknown = [];
-    if (path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE",created_at:"2026-09-26T00:00:00Z"};
+    if (path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE",created_at:stamp};
     if (path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"viewer",status:"active"};
-    if (path.endsWith("/get_project_dashboard_summary")) body = {total_jobs:0,active_jobs:0,running_jobs:0,blocked_jobs:0,available_capabilities:0,registered_capabilities:0};
-    return route.fulfill({contentType:"application/json",body:JSON.stringify(body)});
+    if (path.endsWith("/get_project_dashboard_summary")) body = {total_jobs:2,active_jobs:2,running_jobs:1,blocked_jobs:0,available_capabilities:0,registered_capabilities:0};
+    if (path.endsWith("/jobs")) body = jobs;
+    if (path.endsWith("/runs")) body = [
+      {id:"run-active",job_id:jobId,run_number:8,connector_kind:"chat",status:"RUNNING",started_at:stamp,completed_at:null,error_category:null},
+      {id:"run-other",job_id:otherJobId,run_number:7,connector_kind:"chat",status:"COMPLETED",started_at:stamp,completed_at:stamp,error_category:null}
+    ];
+    if (path.endsWith("/checkpoints")) body = [
+      {id:"checkpoint-active",job_id:jobId,completed:["Context preserved"],remaining:["Validate evidence"],resume_instruction:"Resume the active Job.",created_at:stamp},
+      {id:"checkpoint-other",job_id:otherJobId,completed:["Other work"],remaining:[],resume_instruction:null,created_at:stamp}
+    ];
+    if (path.endsWith("/events")) body = [
+      {id:8,job_id:jobId,event_type:"job_context_verified",actor:"fixture@example.invalid",payload:{source:"active-context"},created_at:stamp},
+      {id:7,job_id:otherJobId,event_type:"job_updated",actor:"fixture@example.invalid",payload:{source:"other-work"},created_at:stamp}
+    ];
+    return route.fulfill({contentType:"application/json",headers:{"Content-Range":"0-1/2"},body:JSON.stringify(body)});
   });
 
   await page.goto(appPath+"?view=unifi");
@@ -550,16 +569,36 @@ test("active work context survives navigation and reload", async ({ page }) => {
 
   await context.getByRole("button",{name:"Open TranScheduler"}).click();
   await expect(page).toHaveURL(/\?view=scheduler/);
-  await expect(page.getByRole("region",{name:"Active work context"})).toBeVisible();
+  await expect(page.locator(".ganttRow")).toHaveCount(2);
+  await expect(page.locator(".ganttRow[data-active-context='true']")).toHaveCount(1);
+  await expect(page.locator(".ganttRow[data-active-context='true']").getByText("ACTIVE CONTEXT",{exact:true})).toBeVisible();
+  await expect(page.getByText("Other visible project work",{exact:true})).toBeVisible();
 
   await page.reload();
   await expect(page.getByRole("region",{name:"Active work context"})).toBeVisible();
-  await expect(page.getByText("Persistent context fixture",{exact:true})).toBeVisible();
+  await expect(page.locator(".ganttRow[data-active-context='true']")).toHaveCount(1);
 
   await page.setViewportSize({width:390,height:844});
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 
+  await page.getByRole("button",{name:"Continue · Runs →"}).click();
+  await expect(page).toHaveURL(/\?view=runs/);
+  await expect(page.locator(".dataRow:not(.headerRow)")).toHaveCount(2);
+  await expect(page.locator(".dataRow[data-active-context='true']")).toHaveCount(1);
+
+  await page.getByRole("button",{name:"Continue · Checkpoints →"}).click();
+  await expect(page).toHaveURL(/\?view=checkpoints/);
+  await expect(page.locator(".checkpointCard")).toHaveCount(2);
+  await expect(page.locator(".checkpointCard[data-active-context='true']")).toHaveCount(1);
+
+  await page.getByRole("button",{name:"Continue · Audit →"}).click();
+  await expect(page).toHaveURL(/\?view=audit/);
+  await expect(page.locator(".timelineItem")).toHaveCount(2);
+  await expect(page.locator(".timelineItem[data-active-context='true']")).toHaveCount(1);
+  await expect(page.getByText("other-work",{exact:false})).toBeVisible();
+
   await page.getByRole("button",{name:"Clear context"}).click();
   await expect(page.getByRole("region",{name:"Active work context"})).toBeHidden();
+  await expect(page.locator("[data-active-context='true']")).toHaveCount(0);
   expect(await page.evaluate(({projectId,userId}) => sessionStorage.getItem("datanest.activeWorkContext:"+projectId+":"+userId), {projectId,userId})).toBeNull();
 });

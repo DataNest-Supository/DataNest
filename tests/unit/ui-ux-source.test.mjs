@@ -271,3 +271,22 @@ test("DataNest AI restores the handed-off Job instead of resetting to the first 
   assert.match(aiWorkspaceSource, /status:selectedJob\.status/);
   assert.doesNotMatch(aiWorkspaceSource, /useEffect\(\(\)=>\(\)=>onActiveSessionChange\(null\)/);
 });
+
+
+test("active Job context remains visible inside operational evidence views without filtering project data", () => {
+  assert.match(appSource, /Scheduler[\s\S]*?activeJobId=\{activeDataNestAiSession\?\.jobId\|\|null\}/);
+  assert.match(appSource, /Runs[\s\S]*?activeJobId=\{activeDataNestAiSession\?\.jobId\|\|null\}/);
+  assert.match(appSource, /Checkpoints[\s\S]*?activeJobId=\{activeDataNestAiSession\?\.jobId\|\|null\}/);
+  assert.match(appSource, /Audit[\s\S]*?activeJobId=\{activeDataNestAiSession\?\.jobId\|\|null\}/);
+  assert.match(appSource, /data-active-context=\{job\.id===activeJobId\?"true":undefined\}/);
+  assert.match(appSource, /data-active-context=\{active\?"true":undefined\}/);
+  assert.match(appSource, /ACTIVE CONTEXT/);
+  assert.match(appSource, /const visible=filter==="ALL"\?jobs:jobs\.filter\(item=>item\.status===filter\)/);
+  assert.doesNotMatch(appSource, /jobs\.filter\(item=>item\.id===activeJobId\)/);
+  assert.match(cssSource, /\.schedulerRow\.contextMatch/);
+  assert.match(cssSource, /\.ganttRow\.contextMatch/);
+  assert.match(cssSource, /\.dataRow\.contextMatch/);
+  assert.match(cssSource, /\.checkpointCard\.contextMatch/);
+  assert.match(cssSource, /\.timelineItem\.contextMatch/);
+  assert.match(cssSource, /\.contextMatchTag\{/);
+});
