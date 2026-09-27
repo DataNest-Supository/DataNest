@@ -4650,3 +4650,20 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
 .portfolioLifecycleControls p{margin:0;color:#90a1ae;font-size:9px;line-height:1.45}
 .portfolioPromotionPolicy{grid-column:1/-1;padding:8px 10px;border:1px solid rgba(66,231,255,.18);border-radius:9px;color:#bdeefa;font-size:8px;font-weight:900;letter-spacing:.05em}
 @container datanest-main (max-width:760px){.portfolioActionForm{grid-template-columns:1fr}}
+
+
+/* Phase C · Trust & Data Policy */
+.governanceModeTabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.governanceModeTabs button{min-height:36px;padding:8px 12px;border:1px solid rgba(255,255,255,.09);border-radius:999px;background:rgba(255,255,255,.025);color:#93a7ba;font-size:9px;font-weight:900;letter-spacing:.05em;cursor:pointer}
+.governanceModeTabs button.active{border-color:rgba(66,231,255,.34);background:rgba(66,231,255,.075);color:#e5fbff}
+.trustPolicyWorkspace{display:grid;gap:14px;min-width:0}
+.trustPolicyWarnings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.trustPolicyWarnings p{margin:0;padding:10px 12px;border:1px solid rgba(244,198,111,.16);border-radius:10px;background:rgba(244,198,111,.035);color:#c7d2da;font-size:9px;line-height:1.45}
+.trustPolicyCards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.trustPolicyActionGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.trustPolicyActionGrid .panel{margin:0;min-width:0}
+.trustPolicyWorkspace .settingsGrid{min-width:0}
+.trustPolicyWorkspace .settingsGrid label{min-width:0}
+.trustPolicyWorkspace input,.trustPolicyWorkspace select,.trustPolicyWorkspace textarea{min-width:0;max-width:100%}
+@container datanest-main (max-width:760px){.trustPolicyActionGrid,.trustPolicyWarnings{grid-template-columns:1fr}}
+@media(max-width:520px){.governanceModeTabs button{flex:1 1 auto}.trustPolicyCards{grid-template-columns:1fr}}
