@@ -1168,6 +1168,11 @@ test("UNIFI reconciles pending, not-recorded, and confirmed-after-error outcomes
   let createCalls = 0;
   let reconciliationCalls = 0;
   let serverRecorded = false;
+  let durableActive = false;
+  let durableVerification:"unverified"|"unconfirmed"|"confirmed_absent" = "unverified";
+  let durableRequestKey = "";
+  let durablePayload:Record<string,unknown> = {};
+  let durableStartedAt = stamp;
   const requestKeys:string[] = [];
 
   await page.route("**/runtime-config.js", route => route.fulfill({
@@ -1192,6 +1197,48 @@ test("UNIFI reconciles pending, not-recorded, and confirmed-after-error outcomes
     if(path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE",created_at:stamp};
     if(path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"operator",status:"active"};
     if(path.endsWith("/get_project_dashboard_summary")) body = {total_jobs:0,active_jobs:0,running_jobs:0,blocked_jobs:0,available_capabilities:0,registered_capabilities:0};
+
+    if(path.endsWith("/list_mutation_recoveries_v1")){
+      body=durableActive?[{
+        id:"60000000-0000-4000-8000-000000000001",project_id:projectId,user_id:userId,
+        scope:"unifi-job:"+projectId+":"+userId,mutation_kind:"unifi_job",request_key:durableRequestKey,
+        payload:durablePayload,started_at:durableStartedAt,verification_state:durableVerification,
+        last_checked_at:durableVerification==="unverified"?null:stamp,attempt_count:1,last_attempt_at:stamp
+      }]:[];
+    }
+
+    if(path.endsWith("/register_mutation_recovery_v1")){
+      const payload=route.request().postDataJSON() as {
+        target_scope:string;target_kind:string;target_request_key:string;target_payload:Record<string,unknown>;target_started_at:string
+      };
+      durableActive=true;
+      durableVerification="unverified";
+      durableRequestKey=payload.target_request_key;
+      durablePayload=payload.target_payload;
+      durableStartedAt=payload.target_started_at;
+      return route.fulfill({status:200,headers,body:JSON.stringify({
+        id:"60000000-0000-4000-8000-000000000001",project_id:projectId,user_id:userId,
+        scope:payload.target_scope,mutation_kind:payload.target_kind,request_key:durableRequestKey,
+        payload:durablePayload,started_at:durableStartedAt,verification_state:durableVerification,
+        last_checked_at:null,attempt_count:1,last_attempt_at:stamp,resolved_at:null,resolution:null,active:true
+      })});
+    }
+
+    if(path.endsWith("/mark_mutation_recovery_verification_v1")){
+      const payload=route.request().postDataJSON() as {target_state:"unconfirmed"|"confirmed_absent"};
+      durableVerification=payload.target_state;
+      return route.fulfill({status:200,headers,body:JSON.stringify({
+        id:"60000000-0000-4000-8000-000000000001",verification_state:durableVerification,last_checked_at:stamp
+      })});
+    }
+
+    if(path.endsWith("/resolve_mutation_recovery_v1")){
+      const payload=route.request().postDataJSON() as {target_resolution:string};
+      durableActive=false;
+      return route.fulfill({status:200,headers,body:JSON.stringify({
+        id:"60000000-0000-4000-8000-000000000001",resolution:payload.target_resolution,resolved_at:stamp,active:false
+      })});
+    }
 
     if(path.endsWith("/jobs")){
       if(url.searchParams.has("client_request_id")){
@@ -1299,6 +1346,11 @@ test("Spark reservation reconciliation reuses one request identity and recovers 
   const requestKeys:string[] = [];
   let redemptionCalls = 0;
   let serverRecorded = false;
+  let sparkDurableActive = false;
+  let sparkDurableVerification:"unverified"|"unconfirmed"|"confirmed_absent" = "unverified";
+  let sparkDurableRequestKey = "";
+  let sparkDurablePayload:Record<string,unknown> = {};
+  let sparkDurableStartedAt = stamp;
 
   await page.route("**/runtime-config.js", route => route.fulfill({
     contentType:"application/javascript",
@@ -1323,6 +1375,48 @@ test("Spark reservation reconciliation reuses one request identity and recovers 
     if(path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"operator",status:"active"};
     if(path.endsWith("/get_project_dashboard_summary")) body = {total_jobs:0,active_jobs:0,running_jobs:0,blocked_jobs:0,available_capabilities:0,registered_capabilities:0};
     if(path.endsWith("/jobs")) headers["Content-Range"]="*/0";
+
+    if(path.endsWith("/list_mutation_recoveries_v1")){
+      body=sparkDurableActive?[{
+        id:"60000000-0000-4000-8000-000000000002",project_id:projectId,user_id:userId,
+        scope:"sparks-redemption:"+projectId+":"+userId,mutation_kind:"spark_redemption",request_key:sparkDurableRequestKey,
+        payload:sparkDurablePayload,started_at:sparkDurableStartedAt,verification_state:sparkDurableVerification,
+        last_checked_at:sparkDurableVerification==="unverified"?null:stamp,attempt_count:1,last_attempt_at:stamp
+      }]:[];
+    }
+
+    if(path.endsWith("/register_mutation_recovery_v1")){
+      const payload=route.request().postDataJSON() as {
+        target_scope:string;target_kind:string;target_request_key:string;target_payload:Record<string,unknown>;target_started_at:string
+      };
+      sparkDurableActive=true;
+      sparkDurableVerification="unverified";
+      sparkDurableRequestKey=payload.target_request_key;
+      sparkDurablePayload=payload.target_payload;
+      sparkDurableStartedAt=payload.target_started_at;
+      return route.fulfill({status:200,headers,body:JSON.stringify({
+        id:"60000000-0000-4000-8000-000000000002",project_id:projectId,user_id:userId,
+        scope:payload.target_scope,mutation_kind:payload.target_kind,request_key:sparkDurableRequestKey,
+        payload:sparkDurablePayload,started_at:sparkDurableStartedAt,verification_state:sparkDurableVerification,
+        last_checked_at:null,attempt_count:1,last_attempt_at:stamp,resolved_at:null,resolution:null,active:true
+      })});
+    }
+
+    if(path.endsWith("/mark_mutation_recovery_verification_v1")){
+      const payload=route.request().postDataJSON() as {target_state:"unconfirmed"|"confirmed_absent"};
+      sparkDurableVerification=payload.target_state;
+      return route.fulfill({status:200,headers,body:JSON.stringify({
+        id:"60000000-0000-4000-8000-000000000002",verification_state:sparkDurableVerification,last_checked_at:stamp
+      })});
+    }
+
+    if(path.endsWith("/resolve_mutation_recovery_v1")){
+      const payload=route.request().postDataJSON() as {target_resolution:string};
+      sparkDurableActive=false;
+      return route.fulfill({status:200,headers,body:JSON.stringify({
+        id:"60000000-0000-4000-8000-000000000002",resolution:payload.target_resolution,resolved_at:stamp,active:false
+      })});
+    }
 
     if(path.endsWith("/get_sparks_workspace_v1")) body = {
       policy:{policy_version:"fixture-v1"},
