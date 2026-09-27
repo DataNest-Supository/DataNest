@@ -585,7 +585,7 @@ begin
             where pp.project_id=target.project_id
               and pp.provider_connection_id=c.id
               and pp.provider_key=private.trust_provider_key_for_connection(target.project_id,c.id)
-              and pp.status='active'
+              and pp.status in ('active','restricted')
               and (pp.review_due_at is null or pp.review_due_at>now())
           )
         )
@@ -1139,15 +1139,15 @@ $$;
 
 create or replace function public.service_evaluate_data_policy_v1(
   target_project uuid,
+  target_actor_user uuid,
   target_subject_type text,
   target_purpose text,
-  target_operation text,
-  target_actor_user uuid,
+  target_requested_operation text,
   target_trace_id text,
-  target_provider_key text,
   target_subject_id uuid default null,
   target_subject_reference text default null,
   target_provider_connection uuid default null,
+  target_provider_key text default null,
   target_hard_learning_exclusion boolean default false
 ) returns jsonb
 language plpgsql
@@ -1167,7 +1167,7 @@ declare
   publication_allowed boolean;
   lineage jsonb;
   hold_count integer:=0;
-  enforcement_mode text:='enforced';
+  enforcement_mode text:='report_only';
   resolved_provider_key text;
   manifest_id uuid;
   binding_id uuid;
@@ -1179,7 +1179,7 @@ begin
   ) then
     raise exception 'Unsupported data policy purpose.';
   end if;
-  if target_operation not in ('process','reuse','publish','export','audit','future_disposition') then
+  if target_requested_operation not in ('process','reuse','publish','export','audit','future_disposition') then
     raise exception 'Unsupported data policy operation.';
   end if;
 
@@ -1210,7 +1210,7 @@ begin
      and (
        target_provider_connection is not null
        or target_purpose in ('external_provider_processing','project_learning','platform_learning','publication','retention_management')
-       or target_operation in ('reuse','publish','future_disposition')
+       or target_requested_operation in ('reuse','publish','future_disposition')
      ) then
     outcome:='review_required'; reason_code:='policy_unresolved';
   end if;
@@ -1239,7 +1239,7 @@ begin
 
       if not found then
         outcome:='deny'; reason_code:='provider_profile_missing';
-      elsif profile.status<>'active' or (profile.review_due_at is not null and profile.review_due_at<=now()) then
+      elsif profile.status not in ('active','restricted') or (profile.review_due_at is not null and profile.review_due_at<=now()) then
         outcome:='deny'; reason_code:='provider_profile_inactive';
       elsif not (visibility=any(profile.allowed_visibility_classes)) then
         outcome:='deny'; reason_code:='provider_visibility_denied';
@@ -1250,7 +1250,7 @@ begin
   end if;
 
   if outcome='allow' and target_hard_learning_exclusion
-     and (target_purpose in ('project_learning','platform_learning') or target_operation='reuse') then
+     and (target_purpose in ('project_learning','platform_learning') or target_requested_operation='reuse') then
     outcome:='deny'; reason_code:='hard_learning_exclusion';
   end if;
 
@@ -1262,12 +1262,12 @@ begin
     outcome:='deny'; reason_code:='platform_learning_not_authorized';
   end if;
 
-  if outcome='allow' and (target_purpose='publication' or target_operation='publish')
+  if outcome='allow' and (target_purpose='publication' or target_requested_operation='publish')
      and (visibility<>'public' or not publication_allowed) then
     outcome:='deny'; reason_code:='publication_not_authorized';
   end if;
 
-  if target_operation='future_disposition' then
+  if target_requested_operation='future_disposition' then
     select count(*)::integer into hold_count
     from public.retention_holds h
     where h.project_id=target_project and h.subject_type=target_subject_type and h.status='active'
@@ -1300,7 +1300,7 @@ begin
     enforcement_mode,policy_version
   ) values(
     target_project,decision_trace,target_actor_user,target_subject_type,target_subject_id,target_subject_reference,
-    target_purpose,target_operation,outcome,reason_code,visibility,reuse_state,
+    target_purpose,target_requested_operation,outcome,reason_code,visibility,reuse_state,
     publication_allowed,coalesce(manifest_id,rollout_manifest.id),binding_id,profile.id,retention_policy_id,
     enforcement_mode,coalesce(policy->>'policy_version','unresolved')
   )
@@ -1313,7 +1313,7 @@ begin
     where project_id=target_project
       and trace_id=decision_trace
       and purpose=target_purpose
-      and requested_operation=target_operation;
+      and requested_operation=target_requested_operation;
   end if;
 
   perform private.record_trust_policy_event(
@@ -1325,7 +1325,7 @@ begin
       'subject_id',target_subject_id,
       'subject_reference',target_subject_reference,
       'purpose',target_purpose,
-      'operation',target_operation,
+      'operation',target_requested_operation,
       'outcome',outcome,
       'reason_code',reason_code,
       'visibility_class',visibility,
@@ -1390,7 +1390,7 @@ revoke all on function public.request_retention_review_v1(uuid,text,uuid,text,uu
 revoke all on function public.resolve_retention_review_v1(uuid,text,text,text) from public,anon;
 revoke all on function public.record_data_policy_lineage_v1(uuid,text,uuid,text,text,uuid,text,text,text) from public,anon;
 revoke all on function public.get_trust_policy_workspace_v1(uuid) from public,anon;
-revoke all on function public.service_evaluate_data_policy_v1(uuid,text,text,text,uuid,text,text,uuid,text,uuid,boolean) from public,anon,authenticated;
+revoke all on function public.service_evaluate_data_policy_v1(uuid,uuid,text,text,text,text,uuid,text,uuid,text,boolean) from public,anon,authenticated;
 
 grant execute on function public.propose_data_policy_binding_v1(uuid,text,text,text,text,uuid,text,boolean,text) to authenticated,service_role;
 grant execute on function public.approve_data_policy_binding_v1(uuid) to authenticated,service_role;
@@ -1411,6 +1411,6 @@ grant execute on function public.request_retention_review_v1(uuid,text,uuid,text
 grant execute on function public.resolve_retention_review_v1(uuid,text,text,text) to authenticated,service_role;
 grant execute on function public.record_data_policy_lineage_v1(uuid,text,uuid,text,text,uuid,text,text,text) to authenticated,service_role;
 grant execute on function public.get_trust_policy_workspace_v1(uuid) to authenticated,service_role;
-grant execute on function public.service_evaluate_data_policy_v1(uuid,text,text,text,uuid,text,text,uuid,text,uuid,boolean) to service_role;
+grant execute on function public.service_evaluate_data_policy_v1(uuid,uuid,text,text,text,text,uuid,text,uuid,text,boolean) to service_role;
 
 commit;
