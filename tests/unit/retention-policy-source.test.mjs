@@ -88,3 +88,12 @@ test("Phase C v1 introduces no destructive retention executor",()=>{
   assert.doesNotMatch(source,/storage\.objects[\s\S]*(?:delete|update)/i);
   assert.doesNotMatch(source,/update public\.(?:certified_memory|products|portfolio_items|product_records|jobs)\s+set/i);
 });
+
+test("retention durations require attributable authority",()=>{
+  const source=sql(); if(!source)return;
+  assert.match(source,/authority_basis text/i);
+  assert.match(source,/evidence_reference text/i);
+  assert.match(source,/default_retention_days is null[\s\S]*review_interval_days is not null/i);
+  assert.match(source,/default_retention_days is not null[\s\S]*authority_basis[\s\S]*evidence_reference/i);
+  assert.match(source,/default_disposition_intent='delete_when_authorized'[\s\S]*authority_basis[\s\S]*evidence_reference/i);
+});
