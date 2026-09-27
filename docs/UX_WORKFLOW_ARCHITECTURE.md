@@ -332,3 +332,5 @@ Malformed Scheduler `mode`, `filter` and `sort` values fall back to their safe d
 **Copy view link** is available from workspace actions on desktop and mobile. It copies the canonical current presentation URL while removing release/cache-busting parameters such as `release` and `_reload`.
 
 The copied link contains presentation state only. Active Job identity, DataNest AI session identity, authority state and other authenticated governed context are never added to the URL.
+
+Workspace-specific presentation parameters are scoped to the workspace that owns them. Operational paging/mode/filter/sort state is cleared when users navigate to another workspace, while Governance alone retains its `section` parameter. Invalid Governance section values canonicalize to Sovereign Governance and are removed from the URL. Copying a view link also strips presentation parameters that do not belong to the active workspace, preventing stale cross-workspace state from leaking into shared links.
