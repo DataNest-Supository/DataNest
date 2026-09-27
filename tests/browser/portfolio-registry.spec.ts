@@ -85,7 +85,8 @@ test("Portfolio Registry preserves pending ownership, composition, and product c
 
   await page.getByRole("button",{name:"Governed Products",exact:true}).click();
   await expect(page.getByText("Resonance Open Nova Sovereign Application Suite",{exact:true})).toBeVisible();
-  await expect(page.getByText("FREE PROMOTION · BILLING OFF",{exact:true})).toBeVisible();\n  await expect(page.locator(".catalogProduct .productStatus")).toHaveText("MAINTAINED");
+  await expect(page.getByText("FREE PROMOTION · BILLING OFF",{exact:true} )).toBeVisible();
+  await expect(page.locator(".catalogProduct .productStatus")).toHaveText("MAINTAINED");
   await expect(page.getByRole("region",{name:"RONSAS Composition"})).toContainText("Transcription Capability");
   await expect(page.getByRole("region",{name:"RONSAS Composition"})).toContainText("Provider X");
   await expect(page.getByRole("region",{name:"RONSAS Composition"})).toContainText("Sync Vision");
