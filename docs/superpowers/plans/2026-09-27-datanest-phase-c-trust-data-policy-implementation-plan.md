@@ -1,4 +1,4 @@
-# DataNest Phase C — Trust and Data Policy Foundations Implementation Plan
+> **Superseded execution contract:** This earlier planning draft is retained for history. The approved implementation contract is `docs/superpowers/plans/2026-09-27-datanest-phase-c-trust-data-policy-foundations.md`.\n\n# DataNest Phase C — Trust and Data Policy Foundations Implementation Plan
 
 **Date:** 2026-09-27  
 **Repository:** `DataNest-Supository/DataNest`  
