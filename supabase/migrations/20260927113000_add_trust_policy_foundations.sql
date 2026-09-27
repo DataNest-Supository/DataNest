@@ -67,6 +67,8 @@ create table public.trust_manifests (
   policy_version text not null check (length(btrim(policy_version))>0),
   effective_from timestamptz,
   review_due_at timestamptz,
+  enforcement_mode text not null default 'report_only' check (enforcement_mode in ('report_only','enforced')),
+  approved_provider_keys text[] not null default '{}'::text[],
   supersedes_manifest_id uuid references public.trust_manifests(id),
   created_by uuid not null references auth.users(id),
   approved_by uuid references auth.users(id),
@@ -157,17 +159,66 @@ create index provider_trust_profiles_created_by_idx on public.provider_trust_pro
 create index provider_trust_profiles_approved_by_idx on public.provider_trust_profiles(approved_by) where approved_by is not null;
 create index provider_trust_profiles_supersedes_idx on public.provider_trust_profiles(supersedes_profile_id) where supersedes_profile_id is not null;
 create index provider_trust_profiles_key_idx on public.provider_trust_profiles(project_id,provider_key,status);
-create unique index provider_trust_profiles_one_active_uidx
+create unique index provider_trust_profiles_one_current_uidx
   on public.provider_trust_profiles(
     project_id,
     coalesce(provider_connection_id,'00000000-0000-0000-0000-000000000000'::uuid),
     provider_key
   )
-  where status='active';
+  where status in ('active','restricted','suspended');
+
+
+create table public.data_policy_decisions (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  trace_id text not null check (length(btrim(trace_id))>0),
+  actor_user_id uuid references auth.users(id),
+  subject_type text not null check (subject_type in (
+    'project','product','job','ai_event','certified_memory','portfolio_item','file','transparency_artifact','other'
+  )),
+  subject_id uuid,
+  subject_reference text,
+  purpose text not null check (purpose in (
+    'job_execution','user_requested_analysis','certification_review','project_learning','platform_learning',
+    'product_operation','external_provider_processing','publication','audit','security_investigation',
+    'export','retention_management'
+  )),
+  requested_operation text not null check (length(btrim(requested_operation))>0),
+  outcome text not null check (outcome in ('allow','deny','review_required')),
+  reason_code text not null check (length(btrim(reason_code))>0),
+  effective_visibility_class text check (effective_visibility_class is null or effective_visibility_class in (
+    'public','nest_private','project_restricted','organization_restricted','high_sensitivity','local_only'
+  )),
+  effective_reuse_state text check (effective_reuse_state is null or effective_reuse_state in (
+    'runtime_only','session_context','project_learning_eligible','project_certified_memory',
+    'platform_learning_eligible','datanest_certified_knowledge','publicly_reusable'
+  )),
+  publication_authorized boolean not null default false,
+  manifest_id uuid references public.trust_manifests(id) on delete set null,
+  binding_id uuid references public.data_policy_bindings(id) on delete set null,
+  provider_profile_id uuid references public.provider_trust_profiles(id) on delete set null,
+  retention_policy_id uuid,
+  enforcement_mode text not null check (enforcement_mode in ('report_only','enforced')),
+  policy_version text not null check (length(btrim(policy_version))>0),
+  created_at timestamptz not null default now(),
+  check (subject_id is not null or nullif(btrim(coalesce(subject_reference,'')),'') is not null)
+);
+
+create index data_policy_decisions_project_time_idx on public.data_policy_decisions(project_id,created_at desc);
+create index data_policy_decisions_trace_idx on public.data_policy_decisions(trace_id);
+create index data_policy_decisions_actor_idx on public.data_policy_decisions(actor_user_id) where actor_user_id is not null;
+create index data_policy_decisions_manifest_idx on public.data_policy_decisions(manifest_id) where manifest_id is not null;
+create index data_policy_decisions_binding_idx on public.data_policy_decisions(binding_id) where binding_id is not null;
+create index data_policy_decisions_provider_profile_idx on public.data_policy_decisions(provider_profile_id) where provider_profile_id is not null;
+create index data_policy_decisions_retention_policy_idx on public.data_policy_decisions(retention_policy_id) where retention_policy_id is not null;
+create index data_policy_decisions_subject_idx on public.data_policy_decisions(project_id,subject_type,subject_id);
+create unique index data_policy_decisions_trace_operation_uidx
+  on public.data_policy_decisions(project_id,trace_id,purpose,requested_operation);
 
 alter table public.data_policy_bindings enable row level security;
 alter table public.trust_manifests enable row level security;
 alter table public.provider_trust_profiles enable row level security;
+alter table public.data_policy_decisions enable row level security;
 
 drop policy if exists data_policy_bindings_select on public.data_policy_bindings;
 create policy data_policy_bindings_select on public.data_policy_bindings
@@ -184,17 +235,25 @@ create policy provider_trust_profiles_select on public.provider_trust_profiles
 for select to authenticated
 using (private.has_project_access(project_id));
 
+drop policy if exists data_policy_decisions_select on public.data_policy_decisions;
+create policy data_policy_decisions_select on public.data_policy_decisions
+for select to authenticated
+using (private.has_project_access(project_id));
+
 revoke all on table public.data_policy_bindings from public,anon,authenticated;
 revoke all on table public.trust_manifests from public,anon,authenticated;
 revoke all on table public.provider_trust_profiles from public,anon,authenticated;
+revoke all on table public.data_policy_decisions from public,anon,authenticated;
 
 grant select on table public.data_policy_bindings to authenticated;
 grant select on table public.trust_manifests to authenticated;
 grant select on table public.provider_trust_profiles to authenticated;
+grant select on table public.data_policy_decisions to authenticated;
 
 grant select,insert,update,delete on table public.data_policy_bindings to service_role;
 grant select,insert,update,delete on table public.trust_manifests to service_role;
 grant select,insert,update,delete on table public.provider_trust_profiles to service_role;
+grant select,insert on table public.data_policy_decisions to service_role;
 
 create or replace view public.active_data_policy_binding_view
 with (security_invoker=true)
