@@ -214,14 +214,6 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
     [jobs,selectedJobId]
   );
 
-  const catalogProductsForPulse=useMemo(
-    ()=>catalogProducts.map(product=>({
-      ...product,
-      lifecycle_status:governedProductLifecycle(product,portfolioItems)
-    })),
-    [catalogProducts,portfolioItems]
-  );
-
   useEffect(()=>{
     let active=true;
     const load=async()=>{
