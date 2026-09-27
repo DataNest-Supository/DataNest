@@ -37,6 +37,16 @@ const policyVersion="datanest-ai-governed-memory-v2";
 const mutableLearningStates=new Set([
   "INTAKE","NEEDS_EVIDENCE","AUDITED","VERIFIED","VALIDATED"
 ]);
+const visibilityClasses=new Set([
+  "public","nest_private","project_restricted","organization_restricted","high_sensitivity","local_only"
+]);
+const rawReuseStates=new Set([
+  "runtime_only","session_context","project_learning_eligible"
+]);
+const projectLearningReuseStates=new Set([
+  "project_learning_eligible","project_certified_memory",
+  "platform_learning_eligible","datanest_certified_knowledge","publicly_reusable"
+]);
 
 type AnyClient=SupabaseClient<any>;
 
@@ -246,7 +256,10 @@ async function updateTrendCandidate(input:{
     metadata:typeof item.metadata==="object"&&item.metadata!==null
       ?item.metadata as Record<string,unknown>
       :{}
-  })).filter(item=>item.metadata.learning_eligible!==false);
+  })).filter(item=>{
+    const reuseState=String(item.metadata.reuse_state||"project_learning_eligible");
+    return item.metadata.learning_eligible!==false&&projectLearningReuseStates.has(reuseState);
+  });
   const current=evidence.find(item=>item.id===input.inputEventId);
   if(!current)return {candidateId:null,trendKey:null,evidenceCount:0};
 
@@ -585,6 +598,24 @@ Deno.serve(async(request:Request)=>{
       return json({error:"Legal Eagle requires a jurisdiction before substantive assistance."},400,origin);
     }
 
+    const requestedVisibilityClass=String(body.visibilityClass||"").trim();
+    if(requestedVisibilityClass&&!visibilityClasses.has(requestedVisibilityClass)){
+      return json({error:"Unsupported DataNest AI visibility class."},400,origin);
+    }
+    const visibilityClass=requestedVisibilityClass||"project_restricted";
+
+    const requestedReuseState=String(body.reuseState||"").trim();
+    if(requestedReuseState&&!rawReuseStates.has(requestedReuseState)){
+      return json({error:"Unsupported DataNest AI reuse state."},400,origin);
+    }
+    const reuseState=legalMode
+      ?"session_context"
+      :(requestedReuseState||"project_learning_eligible");
+    const policyPurpose=legalMode
+      ?"legal_assistance"
+      :(String(body.policyPurpose||"").trim().slice(0,160)||"datanest_ai");
+    const learningEligible=!legalMode&&reuseState==="project_learning_eligible";
+
     const job=await loadAuthorizedJob(userClient,jobId);
 
     if(action==="context"){
@@ -687,7 +718,10 @@ Deno.serve(async(request:Request)=>{
               product_mode:legalMode?"legal_eagle":"datanest_ai",
               jurisdiction:legalMode?jurisdiction:null,
               legal_task:legalMode?legalTask:null,
-              learning_eligible:!legalMode
+              learning_eligible:learningEligible,
+              visibility_class:visibilityClass,
+              reuse_state:reuseState,
+              purpose:policyPurpose
             }
           })
           .select("id,trace_id,session_id")
@@ -764,56 +798,78 @@ Deno.serve(async(request:Request)=>{
 
         if(connectionData){
           const connection=connectionData as ProviderConnection;
-          const {data:authz,error:authzError}=await serviceClient.rpc(
-            "service_authorize_ai_request",{
-              target_request:activeRequestId,
-              target_connection:connection.id
+          const {data:trustData,error:trustError}=await userClient.rpc(
+            "evaluate_provider_policy_v1",{
+              target_project:job.project_id,
+              target_provider_key:connection.provider,
+              target_visibility_class:visibilityClass,
+              target_purpose:policyPurpose,
+              target_reuse_state:reuseState
             }
           );
-          if(authzError)throw authzError;
-          if(Boolean((authz as Record<string,unknown>|null)?.allowed)){
-            try{
-              const ext=await callOpenAiCompatibleProvider({
-                connection,
-                governedPrompt,
-                maxOutputTokens:Number((authz as Record<string,unknown>).max_output_tokens||4000)
-              });
-              await finishUsageRequest(serviceClient,{
-                requestId:activeRequestId,
-                target_status:"succeeded",
-                inputTokens:ext.inputTokens,
-                outputTokens:ext.outputTokens
-              });
-              requestStatus="succeeded";
-              return {
-                content:ext.content,
-                providerMode:"external",
-                providerLabel:connection.label,
-                inputTokens:ext.inputTokens,
-                outputTokens:ext.outputTokens
-              };
-            }catch(error){
-              const category=(error as Error&{category?:string}).category==="failed"
-                ?"failed"
-                :"unknown";
-              requestStatus=category;
-              await finishUsageRequest(serviceClient,{
-                requestId:activeRequestId,
-                target_status:category,
-                errorCategory:category==="failed"?"provider_failure":"provider_outcome_unknown",
-                errorMessage:category==="failed"
-                  ?"Provider rejected or could not complete the request."
-                  :"Provider outcome is unknown; DataNest will not retry automatically."
-              });
-            }
-          }else{
+          if(trustError)throw trustError;
+          const trust=(trustData||{}) as Record<string,unknown>;
+
+          if(!Boolean(trust.permitted)){
             requestStatus="denied";
             await finishUsageRequest(serviceClient,{
               requestId:activeRequestId,
               target_status:"denied",
-              errorCategory:String((authz as Record<string,unknown>|null)?.reason||"policy_denied"),
-              errorMessage:"Provider request blocked by DataNest policy."
+              errorCategory:"provider_trust_policy_denied",
+              errorMessage:"Provider Trust Profile blocked external routing: "+String(trust.reason||"policy denied")
             });
+          }else{
+            const {data:authz,error:authzError}=await serviceClient.rpc(
+              "service_authorize_ai_request",{
+                target_request:activeRequestId,
+                target_connection:connection.id
+              }
+            );
+            if(authzError)throw authzError;
+            if(Boolean((authz as Record<string,unknown>|null)?.allowed)){
+              try{
+                const ext=await callOpenAiCompatibleProvider({
+                  connection,
+                  governedPrompt,
+                  maxOutputTokens:Number((authz as Record<string,unknown>).max_output_tokens||4000)
+                });
+                await finishUsageRequest(serviceClient,{
+                  requestId:activeRequestId,
+                  target_status:"succeeded",
+                  inputTokens:ext.inputTokens,
+                  outputTokens:ext.outputTokens
+                });
+                requestStatus="succeeded";
+                return {
+                  content:ext.content,
+                  providerMode:"external",
+                  providerLabel:connection.label,
+                  inputTokens:ext.inputTokens,
+                  outputTokens:ext.outputTokens
+                };
+              }catch(error){
+                const category=(error as Error&{category?:string}).category==="failed"
+                  ?"failed"
+                  :"unknown";
+                requestStatus=category;
+                await finishUsageRequest(serviceClient,{
+                  requestId:activeRequestId,
+                  target_status:category,
+                  errorCategory:category==="failed"?"provider_failure":"provider_outcome_unknown",
+                  errorMessage:category==="failed"
+                    ?"Provider rejected or could not complete the request."
+                    :"Provider outcome is unknown; DataNest will not retry automatically."
+                });
+              }
+            }else{
+              requestStatus="denied";
+              await finishUsageRequest(serviceClient,{
+                requestId:activeRequestId,
+                target_status:"denied",
+                errorCategory:String((authz as Record<string,unknown>|null)?.reason||"policy_denied"),
+                errorMessage:"Provider request blocked by DataNest policy."
+              });
+            }
           }
         }
 
@@ -855,7 +911,10 @@ Deno.serve(async(request:Request)=>{
               product_mode:legalMode?"legal_eagle":"datanest_ai",
               jurisdiction:legalMode?jurisdiction:null,
               legal_task:legalMode?legalTask:null,
-              learning_eligible:!legalMode
+              learning_eligible:learningEligible,
+              visibility_class:visibilityClass,
+              reuse_state:reuseState,
+              purpose:policyPurpose
             }
           })
           .select("id,trace_id")
@@ -911,7 +970,10 @@ Deno.serve(async(request:Request)=>{
       trendAnalysis,
       productMode:legalMode?"legal_eagle":null,
       jurisdiction:legalMode?jurisdiction:null,
-      learningEligible:!legalMode
+      learningEligible,
+      visibilityClass,
+      reuseState,
+      policyPurpose
     },200,origin);
   }catch(error){
     const message=error instanceof Error?error.message:"Unable to process DataNest AI request.";
