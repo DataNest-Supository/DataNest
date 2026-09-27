@@ -13,15 +13,22 @@ declare
   chosen_slug text;
   suffix text;
 begin
-  select * into ronsas_product
-  from public.products
-  where slug='ronsas'
-  order by created_at
+  select p.* into ronsas_product
+  from public.products p
+  join public.projects pr on pr.id=p.project_id
+  where p.slug='ronsas'
+    and pr.slug='resonance-datanest'
+  order by p.created_at
   limit 1;
 
   if not found then
-    if exists(select 1 from public.products) then
-      raise exception 'RONSAS governed product was not found for portfolio baseline backfill.';
+    if exists(
+      select 1
+      from public.products p
+      join public.projects pr on pr.id=p.project_id
+      where pr.slug='resonance-datanest'
+    ) then
+      raise exception 'RONSAS governed product was not found for the Resonance DataNest project portfolio baseline backfill.';
     end if;
     return;
   end if;
