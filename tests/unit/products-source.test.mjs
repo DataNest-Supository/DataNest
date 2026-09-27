@@ -52,7 +52,8 @@ test("Legal Eagle backend requires jurisdiction and blocks automatic learning",(
   assert.match(gateway,/Legal Eagle requires a jurisdiction before substantive assistance/);
   assert.match(gateway,/do not create an attorney-client relationship or legal privilege/);
   assert.match(gateway,/Do not fabricate statutes, cases, citations, court rules, filing requirements or deadlines/);
-  assert.match(gateway,/const learningEligible=!legalMode&&reuseState==="project_learning_eligible"/);\n  assert.match(gateway,/learning_eligible:learningEligible/);
+  assert.match(gateway,/const learningEligible=!legalMode&&reuseState==="project_learning_eligible"/);
+  assert.match(gateway,/learning_eligible:learningEligible/);
   assert.match(gateway,/filter\(item=>item\.metadata\.learning_eligible===true\)/);
   assert.match(gateway,/if\(legalMode\)\{\s*trendAnalysis=\{status:"not_applicable"\};\s*return;/);
   assert.match(gateway,/target_hard_learning_exclusion:!learningEligible/);
