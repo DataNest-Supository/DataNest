@@ -78,3 +78,13 @@ test("approval controls are role gated",()=>{
   assert.match(source,/canApproveTrustPolicy\(role\)/);
   assert.match(source,/Owner \/ admin/);
 });
+
+test("Trust Policy receives current actor for independent-review safeguards",()=>{
+  const governance=fs.readFileSync(governancePath,"utf8");
+  const panel=fs.readFileSync(panelPath,"utf8");
+  assert.match(governance,/TrustPolicyPanel projectId=\{projectId\} currentUserId=\{currentUserId\} role=\{role\}/);
+  assert.match(panel,/currentUserId:string/);
+  assert.match(panel,/item\.proposed_by[\s\S]{0,180}currentUserId|item\.created_by[\s\S]{0,180}currentUserId/);
+  assert.match(panel,/independent review/i);
+});
+
