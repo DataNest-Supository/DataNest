@@ -6,6 +6,7 @@ import ResonancePortfolioPulse from "@/components/ResonancePortfolioPulse";
 import { FREE_PROMOTION_LABEL, RONSAS_FULL_NAME } from "@/lib/ecosystemAuthority";
 import PortfolioRegistryPanel from "@/components/PortfolioRegistryPanel";
 import { type PortfolioRegistryRow, type PortfolioRole } from "@/lib/portfolioRegistry";
+import { getRonsasAppLaunch } from "@/lib/ronsasApps";
 
 
 type CatalogProduct = {
@@ -704,11 +705,21 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
                   return <section className="catalogRecordGroup" key={type}>
                     <div className="catalogRecordGroupHead"><h4>{catalogRecordLabels[type]||type}</h4><span>{items.length}</span></div>
                     <div className="catalogRecordList">
-                      {items.map(record=><article className="catalogRecord" key={record.id}>
-                        <div><small>{record.code||record.record_type.replaceAll("_"," ")}</small><b>{record.name||record.code||"Governed record"}</b></div>
-                        {record.status&&<span>{record.status}</span>}
-                        <p>{payloadText(record.payload,"description","rule","target_outcome","decision","summary","purpose","mitigation","location")}</p>
-                      </article>)}
+                      {items.map(record=>{
+                        const launch=record.record_type==="application"?getRonsasAppLaunch(record.name):null;
+                        return <article className="catalogRecord" key={record.id}>
+                          <div><small>{record.code||record.record_type.replaceAll("_"," ")}</small><b>{record.name||record.code||"Governed record"}</b></div>
+                          <div className="catalogRecordMeta">
+                            {record.status&&<span>{record.status}</span>}
+                            {launch&&<a
+                              className="catalogRecordLaunch"
+                              href={launch.href}
+                              aria-label={`Open ${record.name||launch.name} in DataNest`}
+                            >Open in DataNest ↗</a>}
+                          </div>
+                          <p>{payloadText(record.payload,"description","rule","target_outcome","decision","summary","purpose","mitigation","location")}</p>
+                        </article>;
+                      })}
                     </div>
                   </section>;
                 })}

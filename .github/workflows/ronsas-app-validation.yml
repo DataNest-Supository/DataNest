@@ -7,6 +7,8 @@ on:
       - "apps/ronsas/**"
       - "ops/ronsas/**"
       - "scripts/validate-ronsas-imports.mjs"
+      - "scripts/build-ronsas-pages.mjs"
+      - "src/lib/ronsasApps.ts"
       - ".github/workflows/ronsas-app-validation.yml"
   push:
     branches: [main]
@@ -14,6 +16,8 @@ on:
       - "apps/ronsas/**"
       - "ops/ronsas/**"
       - "scripts/validate-ronsas-imports.mjs"
+      - "scripts/build-ronsas-pages.mjs"
+      - "src/lib/ronsasApps.ts"
       - ".github/workflows/ronsas-app-validation.yml"
   workflow_dispatch:
 
@@ -34,13 +38,13 @@ jobs:
         include:
           - name: ePublisher
             path: apps/ronsas/epublisher
-            verify: npm test && npm run build:types && npm run build
+            verify: npm test && npm run build:types && npm run build -- --base=/DataNest/apps/epublisher/
           - name: Creative Studio
             path: apps/ronsas/creative-studio
-            verify: npm test && npm run build
+            verify: npm test && npm run build -- --base=/DataNest/apps/creative-studio/
           - name: SyncVision
             path: apps/ronsas/syncvision
-            verify: npm run typecheck && npm test && npm run build
+            verify: npm run typecheck && npm test && npm run build -- --base=/DataNest/apps/syncvision/
           - name: Career Compass
             path: apps/ronsas/career-compass
             verify: npm test && npm run build
@@ -67,6 +71,32 @@ jobs:
         run: npm ci
       - name: Validate from DataNest source
         run: ${{ matrix.verify }}
+
+  datanest-pages-bundle:
+    name: DataNest Pages RONSAS bundle
+    runs-on: ubuntu-24.04
+    env:
+      DATANEST_STATIC_EXPORT: "true"
+      NEXT_PUBLIC_BASE_PATH: "/DataNest"
+      NEXT_PUBLIC_SUPABASE_URL: "https://sgqdmfgjbprsoqsmgigi.supabase.co"
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_yIf5HFKNNteed4HdYCS2Vw_4TB-4LvB"
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+      - name: Install DataNest dependencies
+        run: npm ci
+      - name: Build DataNest static shell
+        run: npm run build
+      - name: Bundle RONSAS apps into DataNest
+        run: node scripts/build-ronsas-pages.mjs
+      - name: Verify bundled launch targets
+        run: |
+          for app in career-compass creative-studio epublisher lyricsync-studio scene-song-spark sovereign-forge syncvision; do
+            test -f "out/apps/$app/index.html"
+          done
+          test -f out/apps/manifest.json
 
   youtube-optimizer:
     name: YouTube Optimizer
