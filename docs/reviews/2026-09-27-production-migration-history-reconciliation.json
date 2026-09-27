@@ -1,0 +1,349 @@
+{
+  "schemaVersion": 1,
+  "reconciliationDate": "2026-09-27",
+  "sourceProjectRef": "sgqdmfgjbprsoqsmgigi",
+  "sourceGitHead": "a2d870e6cd63c58a2db5413f077a2593b2c1e27e",
+  "sourceMigrationTable": "supabase_migrations.schema_migrations",
+  "productionMutation": false,
+  "appliedMigrationCount": 53,
+  "priorGitSqlFileCount": 16,
+  "removedLegacyPathCount": 16,
+  "removedLegacyPaths": [
+    "supabase/migrations/20260924230000_datanest_ai_production.sql",
+    "supabase/migrations/20260924234500_harden_authenticated_private_gateways.sql",
+    "supabase/migrations/20260925020000_datanest_stakeholder_contribution_v1.sql",
+    "supabase/migrations/20260925021000_harden_stakeholder_contribution_indexes.sql",
+    "supabase/migrations/20260925034500_datanest_contribution_intelligence_v1.sql",
+    "supabase/migrations/20260925035000_fix_contribution_intelligence_refresh.sql",
+    "supabase/migrations/20260925035500_harden_contribution_intelligence_indexes.sql",
+    "supabase/migrations/20260925040000_fix_contribution_workspace_model_version_ambiguity.sql",
+    "supabase/migrations/20260925043000_datanest_think_tanks_v1.sql",
+    "supabase/migrations/20260925043500_harden_datanest_think_tanks_indexes.sql",
+    "supabase/migrations/20260925050000_datanest_sparks_economy_v1.sql",
+    "supabase/migrations/20260925060000_datanest_sovereign_governance_v1.sql",
+    "supabase/migrations/20260925070000_datanest_project_member_invitations_v1.sql",
+    "supabase/migrations/20260926061000_governed_product_catalog.sql",
+    "supabase/migrations/external_ai_companion_mode.sql",
+    "supabase/migrations/external_ai_tracked_prompt_prefill.sql"
+  ],
+  "migrations": [
+    {
+      "version": "20260924111936",
+      "name": "bootstrap_resonance_datanest_control_plane",
+      "statementCount": 1,
+      "sqlChars": 10418
+    },
+    {
+      "version": "20260924112127",
+      "name": "add_resonance_datanest_fk_indexes",
+      "statementCount": 1,
+      "sqlChars": 744
+    },
+    {
+      "version": "20260924112200",
+      "name": "seed_resonance_datanest_bootstrap_state",
+      "statementCount": 1,
+      "sqlChars": 6943
+    },
+    {
+      "version": "20260924113814",
+      "name": "record_resonance_datanest_web_ui_release",
+      "statementCount": 1,
+      "sqlChars": 1905
+    },
+    {
+      "version": "20260924115211",
+      "name": "record_provider_agnostic_runtime_hardening",
+      "statementCount": 1,
+      "sqlChars": 2175
+    },
+    {
+      "version": "20260924115830",
+      "name": "record_free_public_runtime_deployment",
+      "statementCount": 1,
+      "sqlChars": 1971
+    },
+    {
+      "version": "20260924122805",
+      "name": "fix_authenticated_app_table_grants",
+      "statementCount": 1,
+      "sqlChars": 803
+    },
+    {
+      "version": "20260924123459",
+      "name": "add_project_membership_rbac",
+      "statementCount": 1,
+      "sqlChars": 9016
+    },
+    {
+      "version": "20260924123602",
+      "name": "remove_anon_control_plane_privileges",
+      "statementCount": 1,
+      "sqlChars": 390
+    },
+    {
+      "version": "20260924123753",
+      "name": "harden_rbac_helpers_and_indexes",
+      "statementCount": 1,
+      "sqlChars": 5769
+    },
+    {
+      "version": "20260924124204",
+      "name": "add_transactional_unifi_job_rpcs",
+      "statementCount": 1,
+      "sqlChars": 4809
+    },
+    {
+      "version": "20260924124319",
+      "name": "add_project_dashboard_summary_rpc",
+      "statementCount": 1,
+      "sqlChars": 1305
+    },
+    {
+      "version": "20260924131629",
+      "name": "add_rnd_collaboration_ai_tracking",
+      "statementCount": 1,
+      "sqlChars": 35179
+    },
+    {
+      "version": "20260924131742",
+      "name": "allow_collaborator_dashboard_summary",
+      "statementCount": 1,
+      "sqlChars": 1116
+    },
+    {
+      "version": "20260924132136",
+      "name": "harden_rnd_rpc_boundaries_and_indexes",
+      "statementCount": 1,
+      "sqlChars": 5682
+    },
+    {
+      "version": "20260924132933",
+      "name": "upgrade_rnd_ai_collaboration_loop",
+      "statementCount": 1,
+      "sqlChars": 11303
+    },
+    {
+      "version": "20260924133218",
+      "name": "normalize_rnd_ai_suggestion_types",
+      "statementCount": 1,
+      "sqlChars": 3721
+    },
+    {
+      "version": "20260924134713",
+      "name": "add_stakeholder_ai_credit_and_product_lab",
+      "statementCount": 1,
+      "sqlChars": 33701
+    },
+    {
+      "version": "20260924135447",
+      "name": "complete_stakeholder_read_access",
+      "statementCount": 1,
+      "sqlChars": 913
+    },
+    {
+      "version": "20260924135846",
+      "name": "grant_service_role_edge_function_access",
+      "statementCount": 1,
+      "sqlChars": 818
+    },
+    {
+      "version": "20260924135934",
+      "name": "index_stakeholder_and_product_lab_foreign_keys",
+      "statementCount": 1,
+      "sqlChars": 1211
+    },
+    {
+      "version": "20260924144645",
+      "name": "separate_usage_acceptance_and_version_stake_scoring",
+      "statementCount": 1,
+      "sqlChars": 24346
+    },
+    {
+      "version": "20260924144912",
+      "name": "add_idempotent_ai_budgets_allowlists_and_revocation",
+      "statementCount": 1,
+      "sqlChars": 34764
+    },
+    {
+      "version": "20260924145008",
+      "name": "version_product_lab_evidence_and_dedupe_test_credit",
+      "statementCount": 1,
+      "sqlChars": 5290
+    },
+    {
+      "version": "20260924145038",
+      "name": "preserve_denied_failed_unknown_ai_request_states",
+      "statementCount": 1,
+      "sqlChars": 1770
+    },
+    {
+      "version": "20260924145929",
+      "name": "add_security_acceptance_run_log",
+      "statementCount": 1,
+      "sqlChars": 866
+    },
+    {
+      "version": "20260924150148",
+      "name": "use_builtin_message_fingerprint",
+      "statementCount": 1,
+      "sqlChars": 2438
+    },
+    {
+      "version": "20260924150346",
+      "name": "lock_service_rpc_execute_privileges",
+      "statementCount": 1,
+      "sqlChars": 1192
+    },
+    {
+      "version": "20260924150605",
+      "name": "fix_project_default_ai_budget_upsert",
+      "statementCount": 1,
+      "sqlChars": 3926
+    },
+    {
+      "version": "20260924150836",
+      "name": "harden_public_read_rpcs_and_index_integrity_foreign_keys",
+      "statementCount": 1,
+      "sqlChars": 5074
+    },
+    {
+      "version": "20260924152302",
+      "name": "add_tracked_external_ai_chat_sessions",
+      "statementCount": 1,
+      "sqlChars": 8969
+    },
+    {
+      "version": "20260924152612",
+      "name": "index_external_ai_session_user",
+      "statementCount": 1,
+      "sqlChars": 118
+    },
+    {
+      "version": "20260924153734",
+      "name": "pilot_ai_race_reservations_and_reconciliation",
+      "statementCount": 1,
+      "sqlChars": 22271
+    },
+    {
+      "version": "20260924154115",
+      "name": "fix_ai_finish_parameter_ambiguity",
+      "statementCount": 1,
+      "sqlChars": 3050
+    },
+    {
+      "version": "20260924161824",
+      "name": "add_external_ai_sidebar_launch_mode",
+      "statementCount": 1,
+      "sqlChars": 2548
+    },
+    {
+      "version": "20260924163640",
+      "name": "external_ai_companion_mode",
+      "statementCount": 1,
+      "sqlChars": 1589
+    },
+    {
+      "version": "20260924170201",
+      "name": "external_ai_tracked_prompt_prefill",
+      "statementCount": 1,
+      "sqlChars": 2073
+    },
+    {
+      "version": "20260924230805",
+      "name": "datanest_ai_production",
+      "statementCount": 1,
+      "sqlChars": 17321
+    },
+    {
+      "version": "20260924230811",
+      "name": "harden_authenticated_private_gateways",
+      "statementCount": 1,
+      "sqlChars": 580
+    },
+    {
+      "version": "20260925000530",
+      "name": "datanest_stakeholder_contribution_v1",
+      "statementCount": 1,
+      "sqlChars": 41762
+    },
+    {
+      "version": "20260925000534",
+      "name": "harden_stakeholder_contribution_indexes",
+      "statementCount": 1,
+      "sqlChars": 1442
+    },
+    {
+      "version": "20260925015523",
+      "name": "datanest_contribution_intelligence_v1",
+      "statementCount": 1,
+      "sqlChars": 38713
+    },
+    {
+      "version": "20260925015529",
+      "name": "fix_contribution_intelligence_refresh",
+      "statementCount": 1,
+      "sqlChars": 15936
+    },
+    {
+      "version": "20260925015534",
+      "name": "harden_contribution_intelligence_indexes",
+      "statementCount": 1,
+      "sqlChars": 539
+    },
+    {
+      "version": "20260925020254",
+      "name": "fix_contribution_workspace_model_version_ambiguity",
+      "statementCount": 1,
+      "sqlChars": 2844
+    },
+    {
+      "version": "20260925022558",
+      "name": "datanest_think_tanks_v1",
+      "statementCount": 1,
+      "sqlChars": 43108
+    },
+    {
+      "version": "20260925022603",
+      "name": "harden_datanest_think_tanks_indexes",
+      "statementCount": 1,
+      "sqlChars": 403
+    },
+    {
+      "version": "20260925024028",
+      "name": "datanest_sparks_economy_v1",
+      "statementCount": 1,
+      "sqlChars": 29213
+    },
+    {
+      "version": "20260925053442",
+      "name": "datanest_sovereign_governance_v1",
+      "statementCount": 1,
+      "sqlChars": 43014
+    },
+    {
+      "version": "20260925061327",
+      "name": "datanest_project_member_invitations_v1",
+      "statementCount": 1,
+      "sqlChars": 14921
+    },
+    {
+      "version": "20260925191008",
+      "name": "datanest_ai_file_access_gateway",
+      "statementCount": 1,
+      "sqlChars": 1705
+    },
+    {
+      "version": "20260925194836",
+      "name": "datanest_ai_provider_metadata_v3",
+      "statementCount": 1,
+      "sqlChars": 2023
+    },
+    {
+      "version": "20260926055810",
+      "name": "add_governed_product_catalog",
+      "statementCount": 1,
+      "sqlChars": 4047
+    }
+  ]
+}
