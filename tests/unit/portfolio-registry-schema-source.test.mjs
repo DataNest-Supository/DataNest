@@ -72,6 +72,13 @@ test("portfolio registry foundation indexes every new foreign-key column",()=>{
     "portfolio_relationships_target_idx",
     "portfolio_lifecycle_events_project_idx",
     "portfolio_lifecycle_events_item_idx",
+    "portfolio_items_created_by_idx",
+    "portfolio_classifications_proposed_by_idx",
+    "portfolio_classifications_approved_by_idx",
+    "portfolio_relationships_proposed_by_idx",
+    "portfolio_relationships_approved_by_idx",
+    "portfolio_lifecycle_events_proposed_by_idx",
+    "portfolio_lifecycle_events_approved_by_idx",
     "product_surfaces_portfolio_item_idx"
   ]){
     assert.match(sql,new RegExp(token,"i"));
