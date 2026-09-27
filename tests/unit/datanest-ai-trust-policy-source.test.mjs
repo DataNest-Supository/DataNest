@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
 const aiPath=path.join(root,"supabase/functions/datanest-ai-chat/index.ts");
+const learningPath=path.join(root,"supabase/functions/_shared/datanestAiLearning.ts");
 const intakePath=path.join(root,"supabase/functions/datanest-ai-intake/index.ts");
 const fileAccessPath=path.join(root,"supabase/migrations/20260925191008_datanest_ai_file_access_gateway.sql");
 
@@ -77,8 +78,8 @@ test("Legal Eagle remains a hard non-learning mode",()=>{
 });
 
 test("automatic learning only admits explicitly authorized evidence",()=>{
-  const source=fs.readFileSync(aiPath,"utf8");
-  assert.match(source,/\.filter\(item=>item\.metadata\.learning_eligible===true\)/);
+  const source=fs.readFileSync(learningPath,"utf8");
+  assert.match(source,/\.filter\(\(item:any\)=>item\.metadata\.learning_eligible===true\)/);
   assert.doesNotMatch(source,/item\.metadata\.learning_eligible!==false/);
   assert.match(source,/projectLearningReuseStates\.has\(reuseState\)/);
 });

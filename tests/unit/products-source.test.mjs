@@ -8,6 +8,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
 const app=fs.readFileSync(path.join(root,"src/components/DataNestApp.tsx"),"utf8");
 const products=fs.readFileSync(path.join(root,"src/components/ProductsWorkspace.tsx"),"utf8");
 const gateway=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-chat/index.ts"),"utf8");
+const learningGateway=fs.readFileSync(path.join(root,"supabase/functions/_shared/datanestAiLearning.ts"),"utf8");
 const productMigration=fs.readFileSync(path.join(root,"supabase/migrations/20260926055810_add_governed_product_catalog.sql"),"utf8");
 const ronsasSnapshot=fs.readFileSync(path.join(root,"data/imports/ronsas-product-20260926.jsonl"),"utf8");
 
@@ -55,7 +56,7 @@ test("Legal Eagle backend requires jurisdiction and blocks automatic learning",(
   assert.match(gateway,/const learningEligible=!legalMode&&reuseState==="project_learning_eligible"/);
   assert.match(gateway,/requested_learning_eligible:learningEligible/);
   assert.match(gateway,/learning_eligible:finalLearningEligible/);
-  assert.match(gateway,/filter\(item=>item\.metadata\.learning_eligible===true\)/);
+  assert.match(learningGateway,/filter\(\(item:any\)=>item\.metadata\.learning_eligible===true\)/);
   assert.match(gateway,/if\(legalMode\)\{\s*trendAnalysis=\{status:"not_applicable"\};\s*return;/);
   assert.match(gateway,/target_hard_learning_exclusion:!learningEligible/);
 });
