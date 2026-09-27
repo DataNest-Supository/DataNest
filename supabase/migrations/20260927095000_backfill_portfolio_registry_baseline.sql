@@ -20,7 +20,10 @@ begin
   limit 1;
 
   if not found then
-    raise exception 'RONSAS governed product was not found for portfolio baseline backfill.';
+    if exists(select 1 from public.products) then
+      raise exception 'RONSAS governed product was not found for portfolio baseline backfill.';
+    end if;
+    return;
   end if;
 
   select pm.user_id,coalesce(u.email,pm.user_id::text)
