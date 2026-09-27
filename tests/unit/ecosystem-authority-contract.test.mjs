@@ -70,3 +70,26 @@ test("authority documentation keeps target-state concepts honest and Sparks alig
   assert.match(readme,/GitHub Pages.*current public delivery target/i);
   assert.match(readme,/Supabase/i);
 });
+
+
+test("governed-memory design records the 2026-09-27 retention supersession",()=>{
+  const memoryDesign=fs.readFileSync(
+    path.join(root,"docs/superpowers/specs/2026-09-24-datanest-ai-governed-memory-design.md"),
+    "utf8"
+  );
+  const masterSpec=fs.readFileSync(
+    path.join(root,"docs/superpowers/specs/2026-09-27-datanest-ecosystem-business-operating-architecture-design.md"),
+    "utf8"
+  );
+
+  assert.match(memoryDesign,/## Retention Supersession Amendment — 2026-09-27/);
+  assert.match(memoryDesign,/policy-driven retention/i);
+  assert.match(memoryDesign,/classification/i);
+  assert.match(memoryDesign,/declared purpose/i);
+  assert.match(memoryDesign,/legal or contractual obligations/i);
+  assert.match(memoryDesign,/does not authorize deletion/i);
+  assert.match(memoryDesign,/existing records/i);
+
+  assert.match(masterSpec,/Retention amendment/i);
+  assert.match(masterSpec,/does not itself authorize implementation/i);
+});
