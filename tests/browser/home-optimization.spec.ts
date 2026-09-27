@@ -1572,6 +1572,7 @@ test("durable recovery hydrates a clean browser session without creating replace
   await expect(recovery).toContainText("request identity preserved");
 
   const projectNav=page.getByRole("navigation",{name:"Project workspaces"});
+  await projectNav.getByText("System",{exact:true}).click();
   await projectNav.getByRole("button",{name:"Settings"}).click();
   const diagnostics=page.getByRole("region",{name:"Recovery diagnostics"});
   await expect(diagnostics).toContainText("Durable mutation continuity");
