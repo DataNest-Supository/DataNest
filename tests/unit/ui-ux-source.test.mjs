@@ -479,12 +479,15 @@ test("shared workspace links clamp stale pages only with exact counts and strip 
 });
 
 
-test("browser-session drafts are scoped, reload-safe, and avoid persistent local storage", () => {
+test("browser-session drafts are scoped, reload-safe, and clear synchronously after unmounted success", () => {
   assert.match(sessionDraftSource, /const SESSION_DRAFT_PREFIX="datanest\.sessionDraft\."/);
   assert.match(sessionDraftSource, /window\.sessionStorage\.getItem\(storageKey\)/);
   assert.match(sessionDraftSource, /window\.sessionStorage\.setItem\(storageKey,current\)/);
   assert.match(sessionDraftSource, /window\.sessionStorage\.removeItem\(storageKey\)/);
-  assert.match(sessionDraftSource, /if\(hydratedKey!==storageKey\)return/);
+  assert.match(sessionDraftSource, /const valueRef=useRef\(initialValue\)/);
+  assert.match(sessionDraftSource, /const setDraftValue=useCallback<Dispatch<SetStateAction<T>>>/);
+  assert.match(sessionDraftSource, /const stored=persistValue\(nextValue\)/);
+  assert.match(sessionDraftSource, /if\(mountedRef\.current\)\{\s*setValue\(nextValue\)/);
   assert.doesNotMatch(sessionDraftSource, /localStorage/);
 });
 
@@ -539,6 +542,9 @@ test("Spark reservation retries reuse a session-stable request identity until su
   assert.match(sparksSource, /getOrCreateSessionRequestKey\(requestScope\)/);
   assert.match(sparksSource, /target_request_key:requestKey/);
   assert.match(sparksSource, /clearSessionRequestKey\(requestScope\)/);
+  assert.match(sparksSource, /function clearCurrentRedemptionRequestKey\(\)/);
+  assert.match(sparksSource, /onChange=\{e=>\{clearCurrentRedemptionRequestKey\(\);setQuantity/);
+  assert.match(sparksSource, /onChange=\{e=>\{clearCurrentRedemptionRequestKey\(\);setRequestNote/);
   assert.match(sparksSource, /Retry keeps the same request key to avoid a duplicate reservation/);
 });
 
