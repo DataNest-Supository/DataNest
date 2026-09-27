@@ -55,6 +55,18 @@ Historical runner-recovery scripts were not copied wholesale because they are ha
 
 Connected GitHub repositories, RONSAS branches/commit history, and the Dropbox RONS audit mirror were searched for the four unresolved applications. No executable source was found. Career Compass yielded only a logo and a documentation-only theme commit; SovereignForge yielded governance protocol documents; LyricSync Studio and Scene Song Spark yielded no executable-source hits. Recreating any of these applications would therefore be **new DataNest development**, not source migration, and must not be mislabeled as recovered source.
 
+## DataNest application validation
+
+The permanent root workflow `.github/workflows/ronsas-app-validation.yml` validates each imported executable component from its DataNest path. Initial run `36353945388` passed all five jobs:
+
+- ePublisher — `npm ci`, tests, type build, production build: **pass**
+- Creative Studio — `npm ci`, tests, production build: **pass**
+- SyncVision — `npm ci`, TypeScript checks, tests, production build: **pass**
+- YouTube Optimizer — frozen Bun install, type-check, tests, production build: **pass**
+- Sovereign Backend — Python 3.12 dependency install/check and pytest: **pass**
+
+This proves the imported application source is executable from DataNest. SyncVision remains uncertified only because the independent binary-integrity contract correctly rejects its four zero-byte canonical-asset placeholders.
+
 ## Validation boundaries
 
 - Root DataNest TypeScript validation covers the root Next.js application and excludes standalone packages under `apps/ronsas`.
