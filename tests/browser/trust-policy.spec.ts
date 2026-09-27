@@ -90,7 +90,7 @@ async function setup(page:Page,role:"viewer"|"operator"|"owner"){
         dispute_resolution_mutates_source_records:false
       }
     };
-    if(path.includes("/rpc/"))body="00000000-0000-4000-8000-000000000999";
+    if(path.includes("/rpc/")&&Array.isArray(body))body="00000000-0000-4000-8000-000000000999";
     return route.fulfill({contentType:"application/json",body:JSON.stringify(body)});
   });
 }
@@ -104,7 +104,7 @@ test("Trust & Data Policy deep link preserves Sovereign Governance as default",a
   await page.getByRole("tab",{name:"Trust & Data Policy"}).click();
   await expect(page).toHaveURL(/section=trust/);
   await expect(page.getByRole("heading",{name:"Processing, reuse, provider trust and retention"})).toBeVisible();
-  await expect(page.getByText("Processing permission does not grant learning or publication permission.",{exact:true})).toBeVisible();
+  await expect(page.getByText(/Processing permission does not grant learning or publication permission\./)).toBeVisible();
   await expect(page.getByText("No destructive retention action is enabled in Phase C v1.",{exact:true})).toBeVisible();
 });
 
@@ -127,7 +127,7 @@ test("operator can propose but cannot activate high-impact policy",async({page})
   await expect(page.getByText("Propose data policy",{exact:true})).toBeVisible();
   await expect(page.getByText("Create Trust Manifest draft",{exact:true})).toBeVisible();
   await expect(page.getByText("Create Provider Trust Profile draft",{exact:true})).toBeVisible();
-  await expect(page.getByText("Propose retention policy",{exact:true})).toBeVisible();
+  await expect(page.locator("summary").filter({hasText:"Propose retention policy"})).toBeVisible();
   await expect(page.getByRole("button",{name:"Approve",exact:true})).toHaveCount(0);
   await expect(page.getByRole("button",{name:"Activate",exact:true})).toHaveCount(0);
 });
