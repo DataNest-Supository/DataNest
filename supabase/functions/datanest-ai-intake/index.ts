@@ -110,6 +110,9 @@ Deno.serve(async(request:Request)=>{
     const staging=createClient(stagingEnv.url,stagingEnv.key,{
       auth:{persistSession:false,autoRefreshToken:false}
     });
+    const serviceClient=createClient(supabaseUrl,serviceKey,{
+      auth:{persistSession:false,autoRefreshToken:false}
+    });
 
     const {data:userData,error:userError}=await userClient.auth.getUser();
     if(userError||!userData.user)return json({error:"Authentication is required."},401,origin);
@@ -145,10 +148,49 @@ Deno.serve(async(request:Request)=>{
     if(jobError||!job)return json({error:"Job collaboration access is required."},403,origin);
 
     const contentHash=await sha256Text(content);
+    const traceKey=String(
+      (session.context_snapshot as Record<string,unknown>|null)?.trace_key||""
+    )||"DN-AI-"+crypto.randomUUID();
+
+    let learningPolicy:Record<string,unknown>={
+      outcome:"review_required",
+      reason_code:"policy_evaluation_unavailable",
+      reuse_state:"runtime_only",
+      policy_version:"unresolved",
+      decision_record_id:null
+    };
+    const {data:learningPolicyData,error:learningPolicyError}=await serviceClient.rpc(
+      "service_evaluate_data_policy_v1",{
+        target_project:String(session.project_id),
+        target_actor_user:user.id,
+        target_subject_type:"job",
+        target_purpose:"project_learning",
+        target_requested_operation:"reuse",
+        target_trace_id:traceKey,
+        target_subject_id:String(session.job_id),
+        target_subject_reference:null,
+        target_provider_connection:null,
+        target_provider_key:null,
+        target_hard_learning_exclusion:false
+      }
+    );
+    if(!learningPolicyError&&learningPolicyData){
+      learningPolicy=learningPolicyData as Record<string,unknown>;
+    }
+    const learningEligible=String(learningPolicy.outcome||"deny")==="allow";
+    const policyMetadata=(base:Record<string,unknown>)=>({
+      ...base,
+      learning_eligible:learningEligible,
+      decision_record_id:learningPolicy.decision_record_id,
+      effective_reuse_state:learningPolicy.reuse_state,
+      policy_version:learningPolicy.policy_version,
+      policy_reason_code:learningPolicy.reason_code
+    });
+
     if(session.staging_event_id){
       const {data:linkedEvent,error:linkedEventError}=await staging
         .from("ai_intake_events")
-        .select("id,trace_id,content_hash,session_id,external_ai_session_id")
+        .select("id,trace_id,content_hash,session_id,external_ai_session_id,metadata")
         .eq("id",String(session.staging_event_id))
         .maybeSingle();
       if(linkedEventError)throw linkedEventError;
@@ -158,6 +200,16 @@ Deno.serve(async(request:Request)=>{
       if(!replayContentMatches(String(linkedEvent.content_hash||""),contentHash)){
         return json({error:"This external AI session is already staged with different content."},409,origin);
       }
+      const {error:restampError}=await staging
+        .from("ai_intake_events")
+        .update({metadata:policyMetadata(
+          typeof linkedEvent.metadata==="object"&&linkedEvent.metadata!==null
+            ?linkedEvent.metadata as Record<string,unknown>
+            :{}
+        )})
+        .eq("id",String(linkedEvent.id))
+        .eq("project_id",String(session.project_id));
+      if(restampError)throw restampError;
       return json({
         eventId:String(linkedEvent.id),
         traceId:String(linkedEvent.trace_id||session.staging_trace_id||""),
@@ -167,10 +219,6 @@ Deno.serve(async(request:Request)=>{
         idempotent:true
       },200,origin);
     }
-
-    const traceKey=String(
-      (session.context_snapshot as Record<string,unknown>|null)?.trace_key||""
-    )||"DN-AI-"+crypto.randomUUID();
 
     const stagingSession=await ensureCompanionSession({
       staging,
@@ -183,7 +231,7 @@ Deno.serve(async(request:Request)=>{
 
     const {data:existing,error:existingError}=await staging
       .from("ai_intake_events")
-      .select("id,trace_id,content_hash,session_id")
+      .select("id,trace_id,content_hash,session_id,metadata")
       .eq("source_type","ai_companion")
       .eq("external_ai_session_id",String(session.id))
       .limit(1)
@@ -209,16 +257,27 @@ Deno.serve(async(request:Request)=>{
           external_ai_session_id:String(session.id),
           content,
           content_hash:contentHash,
-          metadata:{
+          metadata:policyMetadata({
             trace_key:traceKey,
             trust_state:"uncertified",
             source:"external_ai_companion"
-          }
+          })
         })
         .select("id,trace_id,content_hash,session_id")
         .single();
       if(createError||!created)throw createError||new Error("Unable to stage external AI evidence.");
       staged=created as Record<string,unknown>;
+    }else{
+      const {error:stampError}=await staging
+        .from("ai_intake_events")
+        .update({metadata:policyMetadata(
+          typeof staged.metadata==="object"&&staged.metadata!==null
+            ?staged.metadata as Record<string,unknown>
+            :{}
+        )})
+        .eq("id",String(staged.id))
+        .eq("project_id",String(session.project_id));
+      if(stampError)throw stampError;
     }
 
     const {data:linked,error:linkError}=await userClient.rpc(

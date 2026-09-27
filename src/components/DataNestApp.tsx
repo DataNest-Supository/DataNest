@@ -191,6 +191,7 @@ const AiOperationsDashboard = dynamic(() => import("@/components/AiOperationsDas
   loading: () => <section className="panel"><p className="muted">Loading AI administration…</p></section>
 });
 
+
 const ProductsWorkspace = dynamic(() => import("@/components/ProductsWorkspace"), {
   ssr: false,
   loading: () => <section className="panel"><p className="muted">Loading Resonance products…</p></section>
@@ -1022,7 +1023,7 @@ export default function DataNestApp({session}:{session:Session}) {
         {!loadingCore&&project&&view==="overview"&&<ResonanceHome project={project} jobs={recentJobs} counts={summary} canOperate={canOperate} onNavigate={setView}/>}
         {!loadingCore&&project&&view==="stakeholder"&&<StakeholderWorkspace projectId={project.id} currentUserId={session.user.id} canReview={canManageAi}/>}
         {!loadingCore&&project&&view==="sparks"&&<SparksWorkspace projectId={project.id} currentUserId={session.user.id} canOperate={canOperate} canManage={canManageAi} setNotice={setNotice} setError={setError}/>}
-        {!loadingCore&&project&&view==="governance"&&<GovernanceWorkspace projectId={project.id} currentUserId={session.user.id} canManage={canManageAi} setNotice={setNotice} setError={setError}/>}
+        {!loadingCore&&project&&view==="governance"&&<GovernanceWorkspace projectId={project.id} currentUserId={session.user.id} role={membership?.role||"viewer"} canManage={canManageAi} setNotice={setNotice} setError={setError}/>} 
         {!loadingCore&&project&&view==="products"&&<ProductsWorkspace projectId={project.id} currentUserId={session.user.id} role={membership?.role||"viewer"}/>}
         {!loadingCore&&project&&view==="thinktank"&&<ThinkTankWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} canReview={canManageAi} setNotice={setNotice} setError={setError}/>}
         {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace key={project.id+":"+session.user.id} projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError} preferredJobId={activeDataNestAiSession?.jobId||null} onActiveSessionChange={updateActiveWorkContext}/>}
@@ -1481,6 +1482,7 @@ function Settings({
     {project&&<div className="fullWidth" aria-label="AI Administration">
       <AiOperationsDashboard projectId={project.id} currentUserId={currentUserId} canManageAi={canManageAi}/>
     </div>}
+
     <div className="panel fullWidth"><p className="eyebrow">SCHEDULER</p><h3>Policies</h3><div className="policyGrid">{policies.map(policy=><article key={policy.id}><b>{policy.policy_key}</b><pre>{JSON.stringify(policy.value,null,2)}</pre></article>)}</div></div>
   </section>;
 }
