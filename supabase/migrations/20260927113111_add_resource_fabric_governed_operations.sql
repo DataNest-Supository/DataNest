@@ -188,7 +188,9 @@ create or replace function public.register_project_resource_v1(
   target_supported_visibility_classes text[] default '{}'::text[],
   target_cost_profile jsonb default '{}'::jsonb,
   target_limits jsonb default '{}'::jsonb,
-  target_metadata jsonb default '{}'::jsonb
+  target_metadata jsonb default '{}'::jsonb,
+  target_allowed_capabilities text[] default '{}'::text[],
+  target_owner_user uuid default null
 ) returns uuid
 language plpgsql
 security definer
@@ -197,6 +199,7 @@ as $$
 declare
   caller uuid:=auth.uid();
   resource_id uuid;
+  normalized_capabilities text[];
 begin
   if caller is null then
     raise insufficient_privilege using message='Authentication is required.';
@@ -213,10 +216,18 @@ begin
     'product_capability','human_specialist'
   ) then raise exception 'Unsupported Resource Fabric resource kind.'; end if;
   if target_owner_kind not in ('project','user','organization','external','system') then raise exception 'Unsupported Resource owner kind.'; end if;
+  if target_owner_kind='user' and target_owner_user is null then raise exception 'User-owned Resource requires an owner user.'; end if;
   if target_trust_level not in ('unknown','declared','verified','governed') then raise exception 'Unsupported Resource trust level.'; end if;
-  if target_location_class not in ('unknown','local','regional','global','external') then raise exception 'Unsupported Resource location class.'; end if;
+  if target_location_class not in (
+    'unknown','local_device','local_network','private_cloud','managed_cloud','public_cloud','external','human'
+  ) then raise exception 'Unsupported Resource location class.'; end if;
 
   perform private.resource_validate_visibility_classes(coalesce(target_supported_visibility_classes,'{}'::text[]));
+
+  select coalesce(array_agg(distinct btrim(value)) filter(where nullif(btrim(value),'') is not null),'{}'::text[])
+  into normalized_capabilities
+  from unnest(coalesce(target_allowed_capabilities,'{}'::text[])) value;
+
   perform private.resource_reject_credential_payload(coalesce(target_cost_profile,'{}'::jsonb));
   perform private.resource_reject_credential_payload(coalesce(target_limits,'{}'::jsonb));
   perform private.resource_reject_credential_payload(coalesce(target_metadata,'{}'::jsonb));
@@ -227,7 +238,7 @@ begin
     cost_profile,limits,health_status,health_summary,enabled,metadata,created_by
   ) values(
     btrim(target_resource_key),target_resource_kind,btrim(target_display_name),target_owner_kind,
-    case when target_owner_kind='user' then caller else null end,
+    case when target_owner_kind='user' then target_owner_user else null end,
     nullif(btrim(coalesce(target_owner_label,'')),''),
     target_trust_level,target_location_class,nullif(btrim(coalesce(target_region_hint,'')),''),
     coalesce(target_supported_visibility_classes,'{}'::text[]),
@@ -239,7 +250,7 @@ begin
   insert into public.resource_project_bindings(
     project_id,resource_id,status,allowed_capabilities,created_by,approved_by,approved_at
   ) values(
-    target_project,resource_id,'active','{}'::text[],caller,caller,now()
+    target_project,resource_id,'active',normalized_capabilities,caller,caller,now()
   );
 
   perform private.resource_record_event(
@@ -249,7 +260,8 @@ begin
       'resource_key',btrim(target_resource_key),
       'resource_kind',target_resource_kind,
       'trust_level',target_trust_level,
-      'location_class',target_location_class
+      'location_class',target_location_class,
+      'allowed_capabilities',normalized_capabilities
     )
   );
 
@@ -258,9 +270,9 @@ end;
 $$;
 
 create or replace function public.set_resource_project_binding_state_v1(
-  target_project uuid,
-  target_resource uuid,
-  target_state text
+  target_binding uuid,
+  target_state text,
+  target_reason text default null
 ) returns uuid
 language plpgsql
 security definer
@@ -268,43 +280,53 @@ set search_path=public,private,auth
 as $$
 declare
   caller uuid:=auth.uid();
-  binding_id uuid;
+  binding public.resource_project_bindings%rowtype;
 begin
   if caller is null then
     raise insufficient_privilege using message='Authentication is required.';
   end if;
-  if not private.has_project_role(target_project,array['owner','admin']) then
+
+  select * into binding
+  from public.resource_project_bindings b
+  where b.id=target_binding
+  for update;
+
+  if not found then raise exception 'Resource Project Binding not found.'; end if;
+  if not private.has_project_role(binding.project_id,array['owner','admin']) then
     raise insufficient_privilege using message='Owner or admin access is required to manage Resource Fabric supply.';
   end if;
   if target_state not in ('active','suspended','retired') then
     raise exception 'Unsupported Resource Project Binding state.';
   end if;
-
-  select b.id into binding_id
-  from public.resource_project_bindings b
-  where b.project_id=target_project and b.resource_id=target_resource
-  for update;
-
-  if binding_id is null then raise exception 'Resource Project Binding not found.'; end if;
+  if binding.status='retired' and target_state<>'retired' then
+    raise exception 'Retired Resource bindings cannot be reactivated.';
+  end if;
 
   update public.resource_project_bindings
   set status=target_state,
-      approved_by=caller,
+      approved_by=case when target_state='active' then caller else approved_by end,
       approved_at=case when target_state='active' then now() else approved_at end,
       updated_at=now()
-  where id=binding_id;
+  where id=binding.id;
 
   perform private.resource_record_event(
-    target_project,'RESOURCE_BINDING_STATE_CHANGED',caller::text,
-    jsonb_build_object('resource_id',target_resource,'binding_id',binding_id,'state',target_state)
+    binding.project_id,'RESOURCE_BINDING_STATE_CHANGED',caller::text,
+    jsonb_build_object(
+      'resource_id',binding.resource_id,
+      'binding_id',binding.id,
+      'previous_state',binding.status,
+      'state',target_state,
+      'reason',nullif(btrim(coalesce(target_reason,'')),'')
+    )
   );
-  return binding_id;
+  return binding.id;
 end;
 $$;
 
 create or replace function public.upsert_sovereign_node_policy_v1(
   target_project uuid,
   target_resource uuid,
+  target_status text,
   target_allowed_capabilities text[],
   target_resource_ceiling jsonb default '{}'::jsonb,
   target_schedule_policy jsonb default '{}'::jsonb,
@@ -312,8 +334,7 @@ create or replace function public.upsert_sovereign_node_policy_v1(
   target_data_scope jsonb default '{}'::jsonb,
   target_prohibited_operations text[] default '{}'::text[],
   target_network_policy jsonb default '{}'::jsonb,
-  target_interactive_remote_control boolean default false,
-  target_activate boolean default false
+  target_interactive_remote_control boolean default false
 ) returns uuid
 language plpgsql
 security definer
@@ -322,9 +343,14 @@ as $$
 declare
   caller uuid:=auth.uid();
   resource public.resource_registry%rowtype;
+  binding public.resource_project_bindings%rowtype;
   prior public.sovereign_node_policies%rowtype;
   next_version integer;
   new_id uuid;
+  normalized_capabilities text[];
+  schedule_mode text;
+  start_hour integer;
+  end_hour integer;
 begin
   if caller is null then raise insufficient_privilege using message='Authentication is required.'; end if;
   if not private.has_project_role(target_project,array['owner','admin']) then
@@ -332,6 +358,7 @@ begin
   end if;
 
   perform private.resource_validate_binding(target_project,target_resource,true);
+
   select * into resource from public.resource_registry where id=target_resource;
   if not found then raise exception 'Resource not found.'; end if;
   if resource.resource_kind<>'local_node' then
@@ -340,8 +367,25 @@ begin
   if target_interactive_remote_control then
     raise exception 'Interactive remote control is not permitted by Phase E sovereign node policy.';
   end if;
-  if coalesce(cardinality(target_allowed_capabilities),0)=0 then
-    raise exception 'Sovereign Node Policy requires at least one allowed capability.';
+  if target_status not in ('draft','active','suspended','retired') then
+    raise exception 'Unsupported sovereign node policy status.';
+  end if;
+
+  select * into binding
+  from public.resource_project_bindings b
+  where b.project_id=target_project and b.resource_id=target_resource
+  for update;
+
+  select coalesce(array_agg(distinct btrim(value)) filter(where nullif(btrim(value),'') is not null),'{}'::text[])
+  into normalized_capabilities
+  from unnest(coalesce(target_allowed_capabilities,'{}'::text[])) value;
+
+  if target_status='active' and cardinality(normalized_capabilities)=0 then
+    raise exception 'Active Sovereign Node Policy requires at least one allowed capability.';
+  end if;
+  if cardinality(binding.allowed_capabilities)>0
+     and not normalized_capabilities <@ binding.allowed_capabilities then
+    raise exception 'Sovereign node policy capabilities must remain within the project binding.';
   end if;
 
   perform private.resource_validate_visibility_classes(coalesce(target_allowed_visibility_classes,'{}'::text[]));
@@ -350,6 +394,22 @@ begin
   perform private.resource_reject_credential_payload(coalesce(target_schedule_policy,'{}'::jsonb));
   perform private.resource_reject_credential_payload(coalesce(target_data_scope,'{}'::jsonb));
   perform private.resource_reject_credential_payload(coalesce(target_network_policy,'{}'::jsonb));
+
+  schedule_mode:=coalesce(target_schedule_policy->>'mode','always');
+  if schedule_mode not in ('always','disabled','utc_window') then
+    raise exception 'Unsupported sovereign node schedule mode.';
+  end if;
+  if schedule_mode='utc_window' then
+    begin
+      start_hour:=(target_schedule_policy->>'start_hour_utc')::integer;
+      end_hour:=(target_schedule_policy->>'end_hour_utc')::integer;
+    exception when others then
+      raise exception 'utc_window schedule requires integer start_hour_utc and end_hour_utc.';
+    end;
+    if start_hour not between 0 and 23 or end_hour not between 0 and 23 then
+      raise exception 'utc_window hours must be between 0 and 23.';
+    end if;
+  end if;
 
   select * into prior
   from public.sovereign_node_policies p
@@ -360,7 +420,7 @@ begin
 
   next_version:=coalesce(prior.version,0)+1;
 
-  if target_activate then
+  if target_status<>'draft' then
     update public.sovereign_node_policies
     set status='superseded'
     where project_id=target_project and resource_id=target_resource and status='active';
@@ -372,9 +432,7 @@ begin
     network_policy,interactive_remote_control,created_by,approved_by,approved_at,
     supersedes_policy_id
   ) values(
-    target_project,target_resource,next_version,
-    case when target_activate then 'active' else 'draft' end,
-    target_allowed_capabilities,
+    target_project,target_resource,next_version,target_status,normalized_capabilities,
     coalesce(target_resource_ceiling,'{}'::jsonb),
     coalesce(target_schedule_policy,'{}'::jsonb),
     coalesce(target_allowed_visibility_classes,'{}'::text[]),
@@ -383,18 +441,21 @@ begin
     coalesce(target_network_policy,'{}'::jsonb),
     false,
     caller,
-    case when target_activate then caller else null end,
-    case when target_activate then now() else null end,
-    prior.id
+    case when target_status='draft' then null else caller end,
+    case when target_status='draft' then null else now() end,
+    case when prior.id is not null and target_status<>'draft' then prior.id else null end
   )
   returning id into new_id;
 
   perform private.resource_record_event(
     target_project,'SOVEREIGN_NODE_POLICY_VERSIONED',caller::text,
     jsonb_build_object(
-      'policy_id',new_id,'resource_id',target_resource,'version',next_version,
-      'status',case when target_activate then 'active' else 'draft' end,
-      'interactive_remote_control',false
+      'policy_id',new_id,
+      'resource_id',target_resource,
+      'version',next_version,
+      'status',target_status,
+      'interactive_remote_control',false,
+      'supersedes_policy_id',case when prior.id is not null and target_status<>'draft' then prior.id else null end
     )
   );
 
@@ -518,6 +579,10 @@ declare
   outcome text;
   reason_code text;
   active_policy public.sovereign_node_policies%rowtype;
+  schedule_mode text;
+  start_hour integer;
+  end_hour integer;
+  current_hour integer;
 begin
   if nullif(btrim(coalesce(target_capability,'')),'') is null then raise exception 'Requested capability is required.'; end if;
   perform private.resource_validate_operations(array[target_requested_operation]);
@@ -549,8 +614,6 @@ begin
       outcome:='review_required';reason_code:='resource_health_unknown';
     elsif row_record.health_status='unhealthy' then
       outcome:='ineligible';reason_code:='resource_unhealthy';
-    elsif row_record.health_status='degraded' then
-      outcome:='review_required';reason_code:='resource_degraded';
     elsif not (target_visibility_class=any(row_record.supported_visibility_classes)) then
       outcome:='ineligible';reason_code:='visibility_not_supported';
     elsif not row_record.capability_enabled then
@@ -559,6 +622,9 @@ begin
       outcome:='ineligible';reason_code:='capability_state_ineligible';
     elsif not (row_record.running<row_record.concurrency_limit) then
       outcome:='ineligible';reason_code:='capability_concurrency_exhausted';
+    elsif cardinality(row_record.allowed_capabilities)>0
+      and not (target_capability=any(row_record.allowed_capabilities)) then
+      outcome:='ineligible';reason_code:='binding_capability_not_allowed';
     end if;
 
     if outcome='eligible' and row_record.resource_kind='local_node' then
@@ -569,12 +635,36 @@ begin
         and p.status='active'
       limit 1;
 
-      if found and (
-        not (target_capability=any(active_policy.allowed_capabilities))
-        or target_requested_operation=any(active_policy.prohibited_operations)
-        or not (target_visibility_class=any(active_policy.allowed_visibility_classes))
-      ) then
-        outcome:='ineligible';reason_code:='sovereign_policy_denied';
+      if not found then
+        outcome:='ineligible';reason_code:='sovereign_policy_missing';
+      elsif not (target_capability=any(active_policy.allowed_capabilities)) then
+        outcome:='ineligible';reason_code:='sovereign_capability_not_allowed';
+      elsif target_requested_operation=any(active_policy.prohibited_operations) then
+        outcome:='ineligible';reason_code:='sovereign_operation_prohibited';
+      elsif not (target_visibility_class=any(active_policy.allowed_visibility_classes)) then
+        outcome:='ineligible';reason_code:='visibility_not_supported';
+      else
+        schedule_mode:=coalesce(active_policy.schedule_policy->>'mode','always');
+        if schedule_mode='disabled' then
+          outcome:='ineligible';reason_code:='sovereign_schedule_closed';
+        elsif schedule_mode='utc_window' then
+          begin
+            start_hour:=(active_policy.schedule_policy->>'start_hour_utc')::integer;
+            end_hour:=(active_policy.schedule_policy->>'end_hour_utc')::integer;
+            current_hour:=extract(hour from now() at time zone 'utc')::integer;
+            if start_hour=end_hour then
+              outcome:='ineligible';reason_code:='sovereign_schedule_closed';
+            elsif start_hour<end_hour and not (current_hour>=start_hour and current_hour<end_hour) then
+              outcome:='ineligible';reason_code:='sovereign_schedule_closed';
+            elsif start_hour>end_hour and not (current_hour>=start_hour or current_hour<end_hour) then
+              outcome:='ineligible';reason_code:='sovereign_schedule_closed';
+            end if;
+          exception when others then
+            outcome:='ineligible';reason_code:='sovereign_schedule_closed';
+          end;
+        elsif schedule_mode<>'always' then
+          outcome:='ineligible';reason_code:='sovereign_schedule_closed';
+        end if;
       end if;
     end if;
 
@@ -634,16 +724,16 @@ revoke all on function private.resource_reject_credential_payload(jsonb) from pu
 revoke all on function private.resource_record_event(uuid,text,text,jsonb) from public,anon,authenticated;
 
 revoke all on function public.get_resource_fabric_workspace_v1(uuid) from public,anon;
-revoke all on function public.register_project_resource_v1(uuid,text,text,text,text,text,text,text,text,text[],jsonb,jsonb,jsonb) from public,anon;
-revoke all on function public.set_resource_project_binding_state_v1(uuid,uuid,text) from public,anon;
-revoke all on function public.upsert_sovereign_node_policy_v1(uuid,uuid,text[],jsonb,jsonb,text[],jsonb,text[],jsonb,boolean,boolean) from public,anon;
+revoke all on function public.register_project_resource_v1(uuid,text,text,text,text,text,text,text,text,text[],jsonb,jsonb,jsonb,text[],uuid) from public,anon;
+revoke all on function public.set_resource_project_binding_state_v1(uuid,text,text) from public,anon;
+revoke all on function public.upsert_sovereign_node_policy_v1(uuid,uuid,text,text[],jsonb,jsonb,text[],jsonb,text[],jsonb,boolean) from public,anon;
 revoke all on function public.service_record_resource_health_v1(uuid,uuid,text,text,text,text,timestamptz,uuid,text,jsonb,text) from public,anon,authenticated;
 revoke all on function public.service_resolve_resource_candidates_v1(uuid,text,text,text,text) from public,anon,authenticated;
 
 grant execute on function public.get_resource_fabric_workspace_v1(uuid) to authenticated,service_role;
-grant execute on function public.register_project_resource_v1(uuid,text,text,text,text,text,text,text,text,text[],jsonb,jsonb,jsonb) to authenticated,service_role;
-grant execute on function public.set_resource_project_binding_state_v1(uuid,uuid,text) to authenticated,service_role;
-grant execute on function public.upsert_sovereign_node_policy_v1(uuid,uuid,text[],jsonb,jsonb,text[],jsonb,text[],jsonb,boolean,boolean) to authenticated,service_role;
+grant execute on function public.register_project_resource_v1(uuid,text,text,text,text,text,text,text,text,text[],jsonb,jsonb,jsonb,text[],uuid) to authenticated,service_role;
+grant execute on function public.set_resource_project_binding_state_v1(uuid,text,text) to authenticated,service_role;
+grant execute on function public.upsert_sovereign_node_policy_v1(uuid,uuid,text,text[],jsonb,jsonb,text[],jsonb,text[],jsonb,boolean) to authenticated,service_role;
 grant execute on function public.service_record_resource_health_v1(uuid,uuid,text,text,text,text,timestamptz,uuid,text,jsonb,text) to service_role;
 grant execute on function public.service_resolve_resource_candidates_v1(uuid,text,text,text,text) to service_role;
 
