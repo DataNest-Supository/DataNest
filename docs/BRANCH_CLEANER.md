@@ -52,7 +52,7 @@ Strict dry-run:
 npm run branch-cleaner:strict
 ```
 
-Apply only proven-safe Git branch deletions:
+Apply only proven-safe Git branch deletions (control-plane blockers still prevent deletion even without `--strict`):
 
 ```bash
 node scripts/branch-cleaner.mjs --apply --strict
@@ -66,7 +66,7 @@ Use **Actions → Branch-Cleaner → Run workflow**.
 
 - `apply=false` is the review-first path.
 - `apply=true` enables deletion of only `delete_candidate` branches.
-- add a repository secret named `SUPABASE_ACCESS_TOKEN`; strict cleanup fails closed when Supabase verification is unavailable.
+- add a repository secret named `SUPABASE_ACCESS_TOKEN`; destructive cleanup always fails closed when Supabase verification is unavailable.
 - use a narrowly scoped Supabase token; do not expose service-role keys or database passwords.
 
 ## Tests
