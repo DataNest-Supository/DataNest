@@ -423,6 +423,14 @@ Spark reservation already has the server uniqueness contract `(user_id, request_
 
 An unchanged retry retains the same identity. Editing service, quantity or note is explicit new intent and discards the old pending identity.
 
+### Product Lab test-evidence contract
+
+Product Lab test evidence already carries `product_test_runs.request_id` with a server-enforced unique partial index on `(tester_user_id, request_id)`. Recording a pass/fail/blocked result now journals that identity before the insert and reconciles directly against the test-run table if the insert response is ambiguous.
+
+A confirmed row clears the pending intent and submitted notes/evidence. A confirmed absence restores the original result payload and permits a safe retry with the same request identity. If the verification read itself fails, the relevant test-result controls remain locked until authoritative state can be rechecked.
+
+Editing test notes or evidence after a confirmed absence is treated as new intent and clears the old pending request identity. Product surface creation and test-case creation remain single-flight only because those tables do not yet expose an equivalent client request identity; they must not be promoted to authoritative reconciliation by heuristic matching.
+
 ### Retry ownership
 
 The application disables library-level PostgREST automatic retries through the Supabase client configuration. Mutation retry/reconciliation therefore remains explicit in DataNest rather than being silently repeated underneath the single-flight layer.
