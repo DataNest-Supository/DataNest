@@ -56,7 +56,9 @@ test("health observations are append-only and trace-idempotent",()=>{
   assert.match(source,/create table public\.resource_health_observations/i);
   assert.match(source,/trace_id text not null/i);
   assert.match(source,/create unique index[\s\S]*resource_health_observations[\s\S]*trace/i);
-  assert.doesNotMatch(source,/on delete cascade[\s\S]*resource_health_observations/i);
+  const block=source.match(/create table public\.resource_health_observations \([\s\S]*?\n\);/i);
+  assert.ok(block);
+  assert.doesNotMatch(block[0],/on delete cascade/i);
   assert.doesNotMatch(source,/delete from public\.resource_health_observations/i);
 });
 
