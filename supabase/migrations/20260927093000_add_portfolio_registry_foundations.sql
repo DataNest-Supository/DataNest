@@ -28,6 +28,8 @@ create table public.portfolio_items (
 
 create index portfolio_items_project_idx
   on public.portfolio_items(project_id,review_state,item_kind);
+create unique index portfolio_items_id_project_unique_idx
+  on public.portfolio_items(id,project_id);
 create index portfolio_items_linked_product_idx
   on public.portfolio_items(linked_product_id)
   where linked_product_id is not null;
@@ -143,7 +145,12 @@ create index portfolio_lifecycle_events_approved_by_idx
   where approved_by is not null;
 
 alter table public.product_surfaces
-  add column if not exists portfolio_item_id uuid references public.portfolio_items(id) on delete set null;
+  add column if not exists portfolio_item_id uuid;
+alter table public.product_surfaces
+  add constraint product_surfaces_portfolio_item_project_fkey
+  foreign key (portfolio_item_id,project_id)
+  references public.portfolio_items(id,project_id)
+  on delete set null (portfolio_item_id);
 create index if not exists product_surfaces_portfolio_item_idx
   on public.product_surfaces(portfolio_item_id)
   where portfolio_item_id is not null;
