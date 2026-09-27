@@ -9,7 +9,7 @@ It combines the operational lessons already captured in DataNest's GitHub/Supaba
 - group iterative names such as `-v2`, `-v3`, `-current-main`, and date suffixes without assuming they are redundant;
 - classify branches as **keep**, **review**, or **delete_candidate**;
 - load DataNest's published audit findings/backlog as evidence and preserve their validation state;
-- inspect configured Supabase projects separately for project health, branch failures, security advisors, performance advisors, and Git/Supabase branch drift;
+- inspect configured Supabase projects separately for project health, branch failures, security advisors, performance advisors, Git/Supabase branch drift, and migration-history parity;
 - emit JSON + Markdown reports with SHA-256 fingerprints of the audit inputs;
 - default to dry-run; deletion happens only with `--apply`.
 
@@ -76,3 +76,9 @@ npm run test:branch-cleaner
 ```
 
 The test suite covers protected/base branches, open PRs, unique commits after merge, iterative branch-family parsing, Supabase default-branch failures, audit-ID extraction, and the critical rule that compare/API uncertainty can never become a delete candidate.
+
+## Migration-history parity
+
+For the application authority, Branch-Cleaner compares `supabase/migrations/*.sql` with Supabase's applied migration history. Missing migrations, repo-only migrations, and timestamp/version mismatches are strict blockers when `enforceMigrationParity` is enabled.
+
+This check exists because Supabase preview branches are created by replaying Git migration history. A healthy production database can therefore coexist with a broken branching state when production changes were applied outside the Git migration chain. Branch-Cleaner reports that drift and blocks destructive cleanup; it does not rewrite migration history automatically.
