@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - "supabase/functions/**"
+      - "supabase/migrations/**"
       - "supabase/config.toml"
       - ".github/workflows/edge-function-validation.yml"
 
