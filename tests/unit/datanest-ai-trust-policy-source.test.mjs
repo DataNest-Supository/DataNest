@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
 const aiPath=path.join(root,"supabase/functions/datanest-ai-chat/index.ts");
-const fileAccessPath=path.join(root,"supabase/migrations/20260925191008_datanest_ai_file_access_gateway.sql");
+const fileAccessPath=path.join(root,"supabase/migrations/20260925191008_datanest_ai_file_access_gateway.sql");\nconst intakePath=path.join(root,"supabase/functions/datanest-ai-intake/index.ts");
 
 test("DataNest AI keeps Phase C visibility and reuse metadata independent",()=>{
   const source=fs.readFileSync(aiPath,"utf8");
@@ -68,3 +68,53 @@ test("Phase C does not replace Job file authorization",()=>{
   assert.match(fileAccess,/authorize_datanest_ai_file_access/);
   assert.doesNotMatch(source,/service_evaluate_data_policy_v1[\s\S]*bypass.*file/i);
 });
+
+test("external provider policy uses the approved server-side subject and rollout contract",()=>{
+  const source=fs.readFileSync(aiPath,"utf8");
+  assert.match(source,/target_actor_user:user\.id/);
+  assert.match(source,/target_subject_type:"job"/);
+  assert.match(source,/target_subject_id:job\.id/);
+  assert.match(source,/target_trace_id:stagedInputTraceId/);
+  assert.match(source,/target_requested_operation:"process"/);
+  assert.match(source,/target_provider_key:providerKey/);
+  assert.match(source,/const providerKey=connection\.provider\.toLowerCase\(\)\+":"\+connection\.endpoint_host\.toLowerCase\(\)/);
+  assert.match(source,/String\(phaseCPolicy\.enforcement_mode\|\|"report_only"\)==="enforced"[\s\S]{0,180}String\(phaseCPolicy\.outcome\|\|"deny"\)!=="allow"/);
+  assert.match(source,/service_authorize_ai_request/);
+});
+
+test("learning policy stamps final eligibility before trend extraction",()=>{
+  const source=fs.readFileSync(aiPath,"utf8");
+  assert.match(source,/target_actor_user:user\.id/);
+  assert.match(source,/target_subject_type:"job"/);
+  assert.match(source,/target_subject_id:job\.id/);
+  assert.match(source,/target_trace_id:String\(inputEvent\.traceId\|\|stagedInputTraceId\)/);
+  assert.match(source,/target_requested_operation:"reuse"/);
+  assert.match(source,/const finalLearningEligible=learningEligible&&String\(learningPolicy\.outcome\|\|"deny"\)==="allow"/);
+  assert.match(source,/data_policy_decision_id:learningPolicy\.decision_record_id/);
+  assert.match(source,/effective_reuse_state:learningPolicy\.reuse_state/);
+  assert.match(source,/learning_eligible:finalLearningEligible/);
+  const stamp=source.indexOf("learning_eligible:finalLearningEligible");
+  const trend=source.indexOf("updateTrendCandidate({");
+  assert.ok(stamp>=0&&trend>stamp,"final learning eligibility must be persisted before trend extraction");
+});
+
+test("automatic learning requires explicit true eligibility",()=>{
+  const source=fs.readFileSync(aiPath,"utf8");
+  assert.match(source,/item\.metadata\.learning_eligible===true/);
+  assert.doesNotMatch(source,/item\.metadata\.learning_eligible!==false/);
+});
+
+test("AI Companion intake is stamped by the same project-learning policy",()=>{
+  const source=fs.readFileSync(intakePath,"utf8");
+  assert.match(source,/service_evaluate_data_policy_v1/);
+  assert.match(source,/target_actor_user:user\.id/);
+  assert.match(source,/target_subject_type:"job"/);
+  assert.match(source,/target_subject_id:String\(session\.job_id\)/);
+  assert.match(source,/target_purpose:"project_learning"/);
+  assert.match(source,/target_requested_operation:"reuse"/);
+  assert.match(source,/target_trace_id:traceKey/);
+  assert.match(source,/learning_eligible:learningAllowed/);
+  assert.match(source,/data_policy_decision_id:learningPolicy\.decision_record_id/);
+  assert.match(source,/effective_reuse_state:learningPolicy\.reuse_state/);
+});
+
