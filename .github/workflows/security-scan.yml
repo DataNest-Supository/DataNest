@@ -97,6 +97,7 @@ jobs:
             --config p/react \
             --config p/nodejsscan \
             --config p/secrets \
+            --exclude apps/ronsas/syncvision/public/ffmpeg-core/ffmpeg-core.js \
             --sarif \
             --output semgrep.sarif \
             .
