@@ -27,10 +27,13 @@ test("portfolio operations expose the approved governed RPC contract",()=>{
     "create_portfolio_item_v1",
     "propose_portfolio_classification_v1",
     "approve_portfolio_classification_v1",
+    "reject_portfolio_classification_v1",
     "propose_portfolio_relationship_v1",
     "approve_portfolio_relationship_v1",
+    "reject_portfolio_relationship_v1",
     "propose_portfolio_lifecycle_transition_v1",
     "approve_portfolio_lifecycle_transition_v1",
+    "reject_portfolio_lifecycle_transition_v1",
     "promote_product_candidate_v1",
     "deprecate_portfolio_item_v1",
     "retire_portfolio_item_v1"
@@ -110,14 +113,33 @@ test("governed operations are RPC-only for authenticated users",()=>{
     "create_portfolio_item_v1",
     "propose_portfolio_classification_v1",
     "approve_portfolio_classification_v1",
+    "reject_portfolio_classification_v1",
     "propose_portfolio_relationship_v1",
     "approve_portfolio_relationship_v1",
+    "reject_portfolio_relationship_v1",
     "propose_portfolio_lifecycle_transition_v1",
     "approve_portfolio_lifecycle_transition_v1",
+    "reject_portfolio_lifecycle_transition_v1",
     "promote_product_candidate_v1",
     "deprecate_portfolio_item_v1",
     "retire_portfolio_item_v1"
   ]){
     assert.match(source,new RegExp("grant execute on function public\\."+fn+"\\([^;]+to authenticated, service_role","is"));
   }
+});
+
+
+test("owner/admin can reject proposed portfolio changes without changing active state",()=>{
+  const source=sql();
+  if(!source)return;
+  for(const fn of [
+    "reject_portfolio_classification_v1",
+    "reject_portfolio_relationship_v1",
+    "reject_portfolio_lifecycle_transition_v1"
+  ]){
+    assert.match(source,new RegExp("create or replace function public\\."+fn+"\\(","i"));
+    assert.match(source,new RegExp("grant execute on function public\\."+fn+"\\([^;]+to authenticated, service_role","is"));
+  }
+  assert.match(source,/status='rejected'/i);
+  assert.match(source,/Only proposed .* may be rejected/i);
 });
