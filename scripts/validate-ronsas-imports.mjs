@@ -13,6 +13,10 @@ const required = [
   "apps/ronsas/youtube-optimizer/package.json",
   "apps/ronsas/youtube-optimizer/bun.lock",
   "apps/ronsas/sovereign-backend/requirements-dev.txt",
+  "apps/ronsas/syncvision/runtime/musetalk/musetalk_bridge.py",
+  "ops/ronsas/ealiophin/START-SYNCVISION-MUSETALK.ps1",
+  "ops/ronsas/ealiophin/RONSAS-MODULES.json",
+  "ops/ronsas/ealiophin/START-RONSAS-DATANEST.ps1",
 ];
 
 const controlRequired = [
@@ -132,3 +136,41 @@ if (failures.length) {
 }
 
 console.log("RONSAS import and DataNest control-plane contract validation passed.");
+
+const registryPath = resolve(root, "ops/ronsas/ealiophin/RONSAS-MODULES.json");
+if (existsSync(registryPath)) {
+  try {
+    const registry = JSON.parse(readFileSync(registryPath, "utf8"));
+    if (registry.repository !== "DataNest-Supository/DataNest") {
+      failures.push("RONSAS module registry source authority is not DataNest-Supository/DataNest");
+    }
+    if (registry.policy?.paidCheckoutActive !== false || registry.policy?.billingState !== "free-promotion") {
+      failures.push("RONSAS module registry does not preserve the free-promotion billing policy");
+    }
+    const museTalk = registry.modules?.find((module) => module.id === "syncvision-musetalk");
+    if (!museTalk) {
+      failures.push("RONSAS module registry is missing syncvision-musetalk");
+    } else {
+      if (museTalk.health !== "http://127.0.0.1:7863/health") {
+        failures.push("SyncVision MuseTalk health endpoint must remain localhost-only on port 7863");
+      }
+      if (museTalk.required !== false) {
+        failures.push("SyncVision MuseTalk must remain optional until machine-local model prerequisites are installed");
+      }
+    }
+  } catch (error) {
+    failures.push(`invalid RONSAS module registry: ${error.message}`);
+  }
+}
+
+for (const [rel, forbidden] of [
+  ["ops/ronsas/ealiophin/START-SYNCVISION-MUSETALK.ps1", ["Resonance\\\\OpenNova", "rons-sovereign-codebase", "resonance36912-cell/RONSAS"]],
+  ["ops/ronsas/ealiophin/START-RONSAS-DATANEST.ps1", ["Resonance\\\\OpenNova", "rons-sovereign-codebase", "resonance36912-cell/RONSAS"]],
+]) {
+  const path = resolve(root, rel);
+  if (!existsSync(path)) continue;
+  const source = readFileSync(path, "utf8");
+  for (const token of forbidden) {
+    if (source.includes(token)) failures.push(`legacy authority token remains in ${rel}: ${token}`);
+  }
+}
