@@ -181,7 +181,7 @@ Deno.serve(async(request:Request)=>{
     const policyMetadata=(base:Record<string,unknown>)=>({
       ...base,
       learning_eligible:learningAllowed,
-      data_policy_decision_id:learningPolicy.decision_record_id,
+      decision_record_id:learningPolicy.decision_record_id,
       effective_reuse_state:learningPolicy.reuse_state,
       policy_version:learningPolicy.policy_version,
       policy_reason_code:learningPolicy.reason_code
