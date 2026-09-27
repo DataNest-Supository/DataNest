@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
+const learningSource=fs.readFileSync(path.join(root,"supabase/functions/_shared/datanestAiLearning.ts"),"utf8");
 
 test("navigation exposes DataNest AI and not the R&D Dashboard", () => {
   const source=fs.readFileSync(path.join(root,"src/components/DataNestApp.tsx"),"utf8");
@@ -169,7 +170,7 @@ test("all AI usage finalization checks RPC errors", () => {
 
 
 test("certified learning candidates are frozen against later trend evidence", () => {
-  const gateway=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-chat/index.ts"),"utf8");
+  const gateway=learningSource;
   assert.match(gateway,/select\("id,lifecycle_state,evidence_count"\)/);
   assert.match(
     gateway,
@@ -300,7 +301,7 @@ test("DataNest AI surfaces the returned assistant turn before refreshing the gov
 
 
 test("trend analysis reuses an existing intake candidate before creating a duplicate", () => {
-  const gateway=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-chat/index.ts"),"utf8");
+  const gateway=learningSource;
   assert.match(gateway,/bestCandidateByEvidenceOverlap/);
   assert.match(
     gateway,
@@ -314,7 +315,7 @@ test("trend analysis reuses an existing intake candidate before creating a dupli
 
 
 test("trend candidate creation uses a deterministic project-scoped id for concurrent requests", () => {
-  const gateway=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-chat/index.ts"),"utf8");
+  const gateway=learningSource;
   assert.match(gateway,/stableCandidateIdFromHash/);
   assert.match(gateway,/candidateIdentityHash/);
   assert.match(gateway,/input\.projectId[\s\S]{0,120}candidate\.trendKey/);
@@ -324,7 +325,7 @@ test("trend candidate creation uses a deterministic project-scoped id for concur
 
 
 test("low-risk learning validation is automated and candidate-sealed", () => {
-  const gateway=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-chat/index.ts"),"utf8");
+  const gateway=learningSource;
   assert.match(gateway,/automatedLearningGateResults/);
   assert.match(gateway,/candidateValidationSeal/);
   assert.match(gateway,/from\("ai_validation_runs"\)[\s\S]{0,1200}actor_type:"automation"/);
