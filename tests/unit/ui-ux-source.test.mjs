@@ -10,6 +10,10 @@ const homeSource = fs.readFileSync(path.join(repoRoot, "src/components/Resonance
 const journeySource = fs.readFileSync(path.join(repoRoot, "src/components/PurposeJourney.tsx"), "utf8");
 const aiWorkspaceSource = fs.readFileSync(path.join(repoRoot, "src/components/DataNestAiWorkspace.tsx"), "utf8");
 const workflowPhasesSource = fs.readFileSync(path.join(repoRoot, "src/lib/workflowPhases.ts"), "utf8");
+const sessionDraftSource = fs.readFileSync(path.join(repoRoot, "src/lib/sessionDraft.ts"), "utf8");
+const governanceSource = fs.readFileSync(path.join(repoRoot, "src/components/GovernanceWorkspace.tsx"), "utf8");
+const thinkTankSource = fs.readFileSync(path.join(repoRoot, "src/components/ThinkTankWorkspace.tsx"), "utf8");
+const productLabSource = fs.readFileSync(path.join(repoRoot, "src/components/ProductLab.tsx"), "utf8");
 const cssSource = fs.readFileSync(path.join(repoRoot, "src/app/globals.css"), "utf8");
 
 test("mobile navigation keeps refresh and release controls reachable", () => {
@@ -465,4 +469,30 @@ test("shared workspace links clamp stale pages only with exact counts and strip 
   assert.match(appSource, />Copy view link<\/button>/);
   assert.doesNotMatch(appSource, /shareUrl\.searchParams\.set\("job(?:Id|_id)"/i);
   assert.doesNotMatch(appSource, /shareUrl\.searchParams\.set\("session(?:Id|_id)"/i);
+});
+
+
+test("browser-session drafts are scoped, reload-safe, and avoid persistent local storage", () => {
+  assert.match(sessionDraftSource, /const SESSION_DRAFT_PREFIX="datanest\.sessionDraft\."/);
+  assert.match(sessionDraftSource, /window\.sessionStorage\.getItem\(storageKey\)/);
+  assert.match(sessionDraftSource, /window\.sessionStorage\.setItem\(storageKey,current\)/);
+  assert.match(sessionDraftSource, /window\.sessionStorage\.removeItem\(storageKey\)/);
+  assert.match(sessionDraftSource, /if\(hydratedKey!==storageKey\)return/);
+  assert.doesNotMatch(sessionDraftSource, /localStorage/);
+});
+
+test("authored workflow drafts are user-and-project scoped on high-value workspaces", () => {
+  assert.match(appSource, /const draftPrefix="unifi:"\+project\.id\+":"\+currentUserId\+":"/);
+  assert.match(governanceSource, /const draftPrefix="governance:"\+projectId\+":"\+currentUserId\+":"/);
+  assert.match(thinkTankSource, /const draftPrefix="thinktank:"\+projectId\+":"\+currentUserId\+":"/);
+  assert.match(productLabSource, /const draftPrefix="productlab:"\+projectId\+":"\+currentUserId\+":"/);
+  assert.match(appSource, /Browser-session draft active/);
+  assert.match(governanceSource, /Browser-session draft active/);
+  assert.match(thinkTankSource, /Browser-session draft active/);
+  assert.match(productLabSource, /Browser-session draft active/);
+});
+
+test("Think Tank message drafts are isolated per selected thread", () => {
+  assert.match(thinkTankSource, /draftPrefix\+"message:"\+selectedThreadId/);
+  assert.match(thinkTankSource, /draftPrefix\+"thread:"\+selectedChannelId\+":title"/);
 });
