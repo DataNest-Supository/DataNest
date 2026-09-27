@@ -250,6 +250,7 @@ async function openJourneyFixture(page: import('@playwright/test').Page) {
     if(path.endsWith("/projects")) body={id:projectId,slug:"resonance-datanest",name:"Journey fixture",description:null,status:"ACTIVE"};
     if(path.endsWith("/project_members")) body={project_id:projectId,user_id:userId,role:"viewer",status:"active"};
     if(path.endsWith("/get_project_dashboard_summary")) body={total_jobs:0,active_jobs:0,running_jobs:0,blocked_jobs:0};
+    if(path.endsWith("/get_governance_workspace_v1")) body={ratified_protocol:null,draft_protocols:[],proposals:[],decisions:[],disputes:[],can_manage:false,can_vote:false,member_role:"viewer",boundaries:{}};
     return route.fulfill({contentType:"application/json",body:JSON.stringify(body)});
   });
   await page.goto(appPath);
@@ -1006,7 +1007,7 @@ test("browser history restores workspace-local presentation state without stale 
     const url = new URL(route.request().url());
     const path = url.pathname;
     let body:unknown = [];
-    const headers:Record<string,string> = {"Content-Type":"application/json"};
+    const headers:Record<string,string> = {"Content-Type":"application/json","Access-Control-Expose-Headers":"Content-Range"};
 
     if(path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE",created_at:stamp};
     if(path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"viewer",status:"active"};
@@ -1041,7 +1042,7 @@ test("browser history restores workspace-local presentation state without stale 
 
   const projectNav=page.getByRole("navigation",{name:"Project workspaces"});
   await projectNav.getByRole("button",{name:"Runs"}).click();
-  await expect(page.getByRole("heading",{name:"Runs"})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"Runs",level:1,exact:true})).toBeVisible();
   await expect(page).toHaveURL(/view=runs/);
   await expect(page).not.toHaveURL(/mode=/);
   await expect(page).not.toHaveURL(/filter=/);
@@ -1062,7 +1063,7 @@ test("browser history restores workspace-local presentation state without stale 
   await expect(page).toHaveURL(/sort=recent/);
 
   await page.goBack();
-  await expect(page.getByRole("heading",{name:"Runs"})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"Runs",level:1,exact:true})).toBeVisible();
   await expect(page).toHaveURL(/view=runs/);
   await expect(page).toHaveURL(/page=2/);
   await expect(page).not.toHaveURL(/mode=/);
@@ -1081,7 +1082,7 @@ test("browser history restores workspace-local presentation state without stale 
   await expect(page).not.toHaveURL(/section=/);
 
   await page.goForward();
-  await expect(page.getByRole("heading",{name:"Runs"})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"Runs",level:1,exact:true})).toBeVisible();
   await expect(page).toHaveURL(/view=runs/);
   await expect(page).toHaveURL(/page=2/);
   await expect(page).not.toHaveURL(/mode=/);
