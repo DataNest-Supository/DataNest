@@ -619,7 +619,7 @@ test("global recovery center scopes, ages, and preserves unresolved operations a
   assert.match(appSource, /AUTHORITATIVE RECOVERY/);
   assert.match(appSource, /SAFE RETRY/);
   assert.match(appSource, /STALE/);
-  assert.match(appSource, /Review &amp; reconcile →/);
+  assert.match(appSource, /Review & reconcile →/);
   assert.match(appSource, /request identity preserved/);
   assert.match(appSource, /openPendingRecovery\(item\)/);
   assert.match(appSource, /will remain preserved in this browser session and will reappear only when this same account returns/);
