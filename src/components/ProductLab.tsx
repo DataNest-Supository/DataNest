@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
+import { useSessionDraftState } from "@/lib/sessionDraft";
 
 type Surface={
   id:string;project_id:string;name:string;url:string;environment:string;status:string;
@@ -44,18 +45,23 @@ export default function ProductLab({
   const [selectedSurfaceId,setSelectedSurfaceId]=useState("");
   const [previewKey,setPreviewKey]=useState(0);
 
-  const [surfaceName,setSurfaceName]=useState("Product Preview");
-  const [surfaceUrl,setSurfaceUrl]=useState("");
+  const draftPrefix="productlab:"+projectId+":"+currentUserId+":";
+  const [surfaceName,setSurfaceName,surfaceNameDraft]=useSessionDraftState(draftPrefix+"surface-name","Product Preview");
+  const [surfaceUrl,setSurfaceUrl,surfaceUrlDraft]=useSessionDraftState(draftPrefix+"surface-url","");
   const [surfaceEnv,setSurfaceEnv]=useState("preview");
-  const [surfaceBuild,setSurfaceBuild]=useState("");
-  const [surfaceRelease,setSurfaceRelease]=useState("");
+  const [surfaceBuild,setSurfaceBuild,surfaceBuildDraft]=useSessionDraftState(draftPrefix+"surface-build","");
+  const [surfaceRelease,setSurfaceRelease,surfaceReleaseDraft]=useSessionDraftState(draftPrefix+"surface-release","");
   const [selectedPortfolioItemId,setSelectedPortfolioItemId]=useState("");
 
-  const [caseTitle,setCaseTitle]=useState("");
-  const [caseExpected,setCaseExpected]=useState("");
-  const [caseDescription,setCaseDescription]=useState("");
-  const [runNotes,setRunNotes]=useState<Record<string,string>>({});
-  const [evidenceUrls,setEvidenceUrls]=useState<Record<string,string>>({});
+  const [caseTitle,setCaseTitle,caseTitleDraft]=useSessionDraftState(draftPrefix+"case-title","");
+  const [caseExpected,setCaseExpected,caseExpectedDraft]=useSessionDraftState(draftPrefix+"case-expected","");
+  const [caseDescription,setCaseDescription,caseDescriptionDraft]=useSessionDraftState(draftPrefix+"case-description","");
+  const [runNotes,setRunNotes,runNotesDraft]=useSessionDraftState<Record<string,string>>(draftPrefix+"run-notes",{});
+  const [evidenceUrls,setEvidenceUrls,evidenceUrlsDraft]=useSessionDraftState<Record<string,string>>(draftPrefix+"evidence-urls",{});
+  const hasSessionDraft=[
+    surfaceNameDraft,surfaceUrlDraft,surfaceBuildDraft,surfaceReleaseDraft,
+    caseTitleDraft,caseExpectedDraft,caseDescriptionDraft,runNotesDraft,evidenceUrlsDraft
+  ].some(item=>item.hasStoredDraft);
 
   const [notice,setNotice]=useState("");
   const [error,setError]=useState("");
@@ -135,7 +141,7 @@ export default function ProductLab({
     }).select("id").single();
 
     if(insertError){setError(insertError.message);return;}
-    setSurfaceUrl("");setSurfaceBuild("");setSurfaceRelease("");setSelectedPortfolioItemId("");
+    setSurfaceName("Product Preview");setSurfaceUrl("");setSurfaceEnv("preview");setSurfaceBuild("");setSurfaceRelease("");setSelectedPortfolioItemId("");
     setNotice("Product surface added with immutable build identity.");
     await load();
     if(data?.id)setSelectedSurfaceId(data.id);
@@ -195,8 +201,8 @@ export default function ProductLab({
 
     if(insertError){setError(insertError.message);return;}
 
-    setRunNotes(current=>({...current,[testCase.id]:""}));
-    setEvidenceUrls(current=>({...current,[testCase.id]:""}));
+    setRunNotes(current=>{const next={...current};delete next[testCase.id];return next;});
+    setEvidenceUrls(current=>{const next={...current};delete next[testCase.id];return next;});
     setNotice("Test evidence recorded for "+shortCommit(surface.build_commit)+". Test evidence is recorded once per tester/test-version/build.");
     await load();
   }
@@ -206,6 +212,7 @@ export default function ProductLab({
   }
 
   return <div className="productLab">
+    {hasSessionDraft&&<p className="muted" role="status">Product Lab draft restored · saved only in this browser session until submitted or recorded.</p>}
     <section className="sectionIntro">
       <p className="eyebrow">PRODUCT LAB</p>
       <h2>Versioned Live Product Display & Testing</h2>
