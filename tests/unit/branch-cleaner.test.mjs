@@ -110,3 +110,28 @@ test("migration parity reports missing and version-drifted history", () => {
     ["datanest_ai_production", "external_ai_companion_mode"]
   );
 });
+
+test("unknown branch recency can never become a delete candidate", () => {
+  const result = classifyBranch({
+    name:"fix/unknown-recency",
+    updatedAt:null,
+    compare:{ ahead_by:0, behind_by:12, status:"behind" },
+  }, config, now);
+  assert.equal(result.decision, "keep");
+  assert.equal(result.reason, "active_or_unresolved");
+  assert.equal(Number.isNaN(result.ageDays), true);
+});
+
+test("missing Supabase verification is a strict blocker", () => {
+  const blockers = getStrictBlockers({
+    skipped:true,
+    projects:[],
+    globalChecks:[{
+      level:"blocker",
+      code:"supabase_audit_unavailable",
+      detail:"Supabase verification is required before strict destructive cleanup.",
+    }],
+  });
+  assert.equal(blockers.length, 1);
+  assert.equal(blockers[0].code, "supabase_audit_unavailable");
+});
