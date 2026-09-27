@@ -251,7 +251,7 @@ test("Overview omits capacity and Operations omits the Capabilities surface", ()
   assert.doesNotMatch(source,/function Capabilities\(/);
 
   assert.match(source,/<Scheduler [^>]*jobs=\{jobs\} capabilities=\{capabilities\}/);
-  assert.match(source,/<UnifiPlanner project=\{project\} jobs=\{jobs\} capabilities=\{capabilities\}/);
+  assert.match(source,/<UnifiPlanner project=\{project\} currentUserId=\{session\.user\.id\} jobs=\{jobs\} capabilities=\{capabilities\}/);
 });
 
 
