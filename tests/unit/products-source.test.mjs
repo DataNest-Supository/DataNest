@@ -99,7 +99,7 @@ test("governed product catalog schema is versioned with project-scoped RLS",()=>
 
 test("RONSAS import snapshot remains complete and preserves commercial governance",()=>{
   const rows=ronsasSnapshot.trim().split("\n").map(line=>JSON.parse(line));
-  assert.equal(rows.length,72);
+  assert.equal(rows.length,73);
   const product=rows.find(row=>row.record_type==="product");
   assert.ok(product);
   assert.equal(product.slug,"ronsas");
@@ -111,11 +111,12 @@ test("RONSAS import snapshot remains complete and preserves commercial governanc
   assert.equal(product.execution_authority,"DataNest");
   assert.equal(product.promotion_authority,"DataNest");
   assert.equal(product.hosting_model,"replaceable_delivery_infrastructure");
-  assert.equal(product.primary_runtime,"Windows local environment");
+  assert.equal(product.primary_runtime,"DataNest repository source with Windows local runtime");
+  assert.equal(product.source_repository,"DataNest-Supository/DataNest");
 
   const children=rows.filter(row=>row.record_type!=="product");
-  assert.equal(children.length,71);
-  assert.equal(children.filter(row=>row.record_type==="application").length,9);
+  assert.equal(children.length,72);
+  assert.equal(children.filter(row=>row.record_type==="application").length,10);
   assert.equal(children.filter(row=>row.record_type==="governance_control").length,8);
   assert.equal(children.filter(row=>row.record_type==="risk").length,6);
   assert.equal(children.filter(row=>row.record_type==="roadmap_item").length,7);

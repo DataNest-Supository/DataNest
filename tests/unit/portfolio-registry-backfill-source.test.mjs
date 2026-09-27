@@ -56,17 +56,18 @@ test("historical RONSAS applications become pending-review identities with prove
   assert.match(sql,/substr\(replace\((?:pr|app)\.id::text,'-',''\),1,8\)/i);
 });
 
-test("current RONSAS import snapshot has nine historical applications and old ownership is not current authority",()=>{
+test("current RONSAS import snapshot has ten governed applications under DataNest authority",()=>{
   const rows=fs.readFileSync(importPath,"utf8")
     .split(/\r?\n/)
     .filter(Boolean)
     .map(line=>JSON.parse(line));
   const apps=rows.filter(row=>row.record_type==="application");
 
-  assert.equal(apps.length,9);
+  assert.equal(apps.length,10);
   assert.deepEqual(
     apps.map(row=>row.name).sort(),
     [
+      "Career Compass",
       "Creative Studio",
       "LyricSync Studio",
       "RONS Control Center",
