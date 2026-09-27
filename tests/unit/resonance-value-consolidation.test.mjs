@@ -14,7 +14,7 @@ test("Products workspace exposes a governed Resonance portfolio pulse",()=>{
   assert.match(pulse,/record_type==="evidence"/);
   assert.match(pulse,/record_type==="risk"/);
   assert.match(pulse,/record_type==="source_branch"\|\|item\.record_type==="datanest_branch"/);
-  assert.match(products,/ResonancePortfolioPulse products=\{catalogProducts\}/);
+  assert.match(products,/ResonancePortfolioPulse products=\{catalogProductsForPulse\}/);
   assert.match(products,/source_branch:"Source branches"/);
 });
 
