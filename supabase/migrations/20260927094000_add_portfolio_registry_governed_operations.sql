@@ -600,7 +600,7 @@ begin
     from public.product_surfaces s
     where s.portfolio_item_id=item.id
       and s.project_id=item.project_id
-      and nullif(btrim(coalesce(s.build_commit,'')),'') is not null
+      and s.build_commit is not null\n      and nullif(btrim(s.build_commit),'') is not null
       and exists(
         select 1 from public.product_test_runs tr
         where tr.surface_id=s.id and tr.project_id=item.project_id
