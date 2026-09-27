@@ -667,6 +667,7 @@ test("active Job locator crosses paginated Scheduler pages without filtering pro
     deadline:null
   });
   const allJobs = Array.from({length:21},(_,index)=>makeJob(index));
+  let locatorSawSecondPage = false;
 
   await page.route("**/runtime-config.js", route => route.fulfill({
     contentType:"application/javascript",
@@ -702,6 +703,7 @@ test("active Job locator crosses paginated Scheduler pages without filtering pro
       const to = from + (Number.isFinite(limit) ? limit : 20) - 1;
       const selected = allJobs.slice(from,Math.min(to+1,allJobs.length));
       const select = url.searchParams.get("select") || "";
+      if(select==="id,status"&&from===20) locatorSawSecondPage = true;
       body = select==="id,status" ? selected.map(job=>({id:job.id,status:job.status})) : selected;
       headers["Content-Range"] = selected.length ? from+"-"+String(from+selected.length-1)+"/21" : "*/21";
     }
@@ -717,7 +719,7 @@ test("active Job locator crosses paginated Scheduler pages without filtering pro
 
   await context.getByRole("button",{name:"Locate active Job page →"}).click();
 
-  await expect(page.getByLabel("Pagination")).toContainText("Page 2 of 2");
+  expect(locatorSawSecondPage).toBe(true);
   await expect(page.locator(".ganttRow[data-active-context='true']")).toHaveCount(1);
   await expect(page.locator(".ganttRow[data-active-context='true']")).toBeFocused();
   await expect(page.getByText("Off-page active Job",{exact:true})).toBeVisible();

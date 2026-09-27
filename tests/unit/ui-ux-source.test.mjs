@@ -394,6 +394,9 @@ test("active Job can be located across paginated Job pages without changing gove
   assert.match(appSource, /\.order\("priority",\{ascending:false\}\)/);
   assert.match(appSource, /\.order\("created_at",\{ascending:false\}\)/);
   assert.match(appSource, /setJobPage\(page\)/);
+  assert.match(appSource, /if\(rows\.length<PAGE_SIZE\)break/);
+  assert.match(appSource, /seenPageSignatures=new Set<string>\(\)/);
+  assert.match(appSource, /Job pagination did not advance/);
   assert.match(appSource, /Locate active Job page →/);
   assert.match(appSource, /Active Job was not found in the project Job pages checked\./);
   assert.match(appSource, /Active Job exists in the project but is not a prepared UNIFI record/);

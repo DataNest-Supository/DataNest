@@ -394,12 +394,15 @@ export default function DataNestApp({session}:{session:Session}) {
     if(!project||!activeDataNestAiSession||!(view==="unifi"||view==="scheduler"))return;
     const supabase=getSupabase();
     if(!supabase)return;
-    const pages=Math.max(1,Math.ceil(jobCount/PAGE_SIZE));
+    const reportedPages=jobCount>0?Math.max(1,Math.ceil(jobCount/PAGE_SIZE)):null;
     setLocatingActiveJob(true);
     setError("");
-    setNotice("Locating the active Job across "+pages+" project "+(pages===1?"page":"pages")+"…");
+    setNotice(reportedPages
+      ? "Locating the active Job across "+reportedPages+" project "+(reportedPages===1?"page":"pages")+"…"
+      : "Locating the active Job across project pages…");
     try{
-      for(let page=0;page<pages;page+=1){
+      const seenPageSignatures=new Set<string>();
+      for(let page=0;;page+=1){
         const {from,to}=pageRange(page);
         const {data,error:queryError}=await supabase
           .from("jobs")
@@ -408,28 +411,41 @@ export default function DataNestApp({session}:{session:Session}) {
           .order("priority",{ascending:false})
           .order("created_at",{ascending:false})
           .range(from,to);
-        if(queryError){setError(queryError.message);return;}
-        const match=(data||[]).find(item=>item.id===activeDataNestAiSession.jobId) as {id:string;status:string}|undefined;
-        if(!match)continue;
-        if(view==="unifi"&&!preparedJobStates.has(match.status)){
-          setNotice("Active Job exists in the project but is not a prepared UNIFI record at status "+match.status.replaceAll("_"," ")+".");
+        if(queryError){
+          setError(queryError.message);
           return;
         }
-        pendingActiveJobPageFocusRef.current=true;
-        if(jobPage!==page){
-          setJobPage(page);
-        }else if(view==="scheduler"){
-          window.dispatchEvent(new CustomEvent(ACTIVE_CONTEXT_REVEAL_EVENT));
-          pendingActiveJobPageFocusRef.current=false;
-        }else{
-          window.requestAnimationFrame(()=>{
-            if(focusRenderedActiveContextRecord())setNotice("Active Job located and focused on this UNIFI page.");
-            else setNotice("Active Job is on this UNIFI page but its prepared record is not rendered.");
+        const rows=(data||[]) as Array<{id:string;status:string}>;
+        const match=rows.find(item=>item.id===activeDataNestAiSession.jobId);
+        if(match){
+          if(view==="unifi"&&!preparedJobStates.has(match.status)){
+            setNotice("Active Job exists in the project but is not a prepared UNIFI record at status "+match.status.replaceAll("_"," ")+".");
+            return;
+          }
+          pendingActiveJobPageFocusRef.current=true;
+          if(jobPage!==page){
+            setJobPage(page);
+          }else if(view==="scheduler"){
+            window.dispatchEvent(new CustomEvent(ACTIVE_CONTEXT_REVEAL_EVENT));
             pendingActiveJobPageFocusRef.current=false;
-          });
+          }else{
+            window.requestAnimationFrame(()=>{
+              if(focusRenderedActiveContextRecord())setNotice("Active Job located and focused on this UNIFI page.");
+              else setNotice("Active Job is on this UNIFI page but its prepared record is not rendered.");
+              pendingActiveJobPageFocusRef.current=false;
+            });
+          }
+          setNotice("Active Job located on page "+(page+1)+(reportedPages?" of "+reportedPages:"")+".");
+          return;
         }
-        setNotice("Active Job located on page "+(page+1)+" of "+pages+".");
-        return;
+        if(rows.length<PAGE_SIZE)break;
+        if(reportedPages!==null&&page+1>=reportedPages)break;
+        const signature=rows[0]?.id+":"+rows[rows.length-1]?.id;
+        if(seenPageSignatures.has(signature)){
+          setNotice("Active Job search stopped because Job pagination did not advance.");
+          return;
+        }
+        seenPageSignatures.add(signature);
       }
       setNotice("Active Job was not found in the project Job pages checked.");
     }finally{
