@@ -131,15 +131,6 @@ for (const rel of controlRequired.filter((path) => path.endsWith(".ps1") || path
   }
 }
 
-if (failures.length) {
-  console.error("RONSAS import/control contract validation failed:");
-  for (const failure of failures) console.error(`- ${failure}`);
-  process.exit(1);
-}
-
-console.log("RONSAS import and DataNest control-plane contract validation passed.");
-
-const registryPath = resolve(root, "ops/ronsas/ealiophin/RONSAS-MODULES.json");
 if (existsSync(registryPath)) {
   try {
     const registry = JSON.parse(readFileSync(registryPath, "utf8"));
@@ -176,3 +167,11 @@ for (const [rel, forbidden] of [
     if (source.includes(token)) failures.push(`legacy authority token remains in ${rel}: ${token}`);
   }
 }
+
+if (failures.length) {
+  console.error("RONSAS import/control contract validation failed:");
+  for (const failure of failures) console.error(`- ${failure}`);
+  process.exit(1);
+}
+
+console.log("RONSAS import and DataNest control-plane contract validation passed.");
