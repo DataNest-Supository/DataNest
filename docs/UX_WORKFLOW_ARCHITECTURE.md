@@ -215,3 +215,19 @@ Only the current Job view receives an active marker. Earlier steps are not marke
 Every step is directly navigable while preserving the existing browser-local Active Work Context. Navigation performs no governed writes and does not change Job state.
 
 At phone widths the five Job steps remain inside the viewport as an equal-width grid, with the location disclaimer retained: `Location only · not completion state`.
+
+
+## Active-record anchoring
+
+When Active Work Context has matching evidence loaded in the current workspace, the context strip exposes a **Jump to visible evidence** control.
+
+The control scrolls to and keyboard-focuses the first rendered record marked as belonging to the active Job:
+- UNIFI prepared Job Manifest
+- TranScheduler queue or Gantt record
+- Run record
+- Checkpoint
+- Audit event
+
+Reduced-motion preferences disable smooth scrolling. If matching data is loaded but the current subview does not render the matching record, DataNest reports that limitation instead of pretending the jump succeeded.
+
+This feature does not filter, reorder, mutate, or select governed records. It only anchors viewport and focus to evidence that is already rendered.

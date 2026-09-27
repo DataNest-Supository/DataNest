@@ -4540,6 +4540,20 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
 }
 .activeWorkContextEvidence.not-visible span{color:#e8c47a}
 .activeWorkContextEvidence.context span{color:#89dff3}
+.activeWorkContextEvidenceJump{
+  justify-self:start;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:#87dff3;
+  font-size:7px;
+  font-weight:900;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  cursor:pointer
+}
+.activeWorkContextEvidenceJump:hover{text-decoration:underline}
+.activeWorkContextEvidenceJump:focus-visible{outline:2px solid #a6e6ed;outline-offset:3px;border-radius:3px}
 .activeWorkContextActions{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap}
 .activeWorkContextPrimary{white-space:nowrap}
 .activeWorkContextClear{color:#7f8fa1}
@@ -4648,6 +4662,16 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
 }
 .timelineItem.contextMatch::before{left:12px}
 .timelineItem.contextMatch .timelineDot{margin-left:0}
+.manifestCard.contextMatch{
+  outline:1px solid rgba(66,231,255,.34);
+  outline-offset:-1px;
+  background:linear-gradient(135deg,rgba(66,231,255,.07),rgba(139,92,246,.04));
+  box-shadow:inset 3px 0 0 rgba(66,231,255,.68)
+}
+.contextMatch:focus{
+  outline:2px solid rgba(126,235,255,.92)!important;
+  outline-offset:3px!important
+}
 .contextJobCell{display:grid;gap:4px}
 .contextMatchTag{
   display:inline-flex!important;

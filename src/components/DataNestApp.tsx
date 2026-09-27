@@ -352,6 +352,17 @@ export default function DataNestApp({session}:{session:Session}) {
     updateActiveWorkContext(null);
   },[updateActiveWorkContext]);
 
+  const focusActiveContextRecord=useCallback(()=>{
+    const target=document.querySelector<HTMLElement>('[data-active-context="true"]');
+    if(!target){
+      setNotice("Active Job evidence is loaded, but its matching record is not rendered in this workspace view.");
+      return;
+    }
+    const reduceMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches||document.documentElement.dataset.motionPaused==="true";
+    target.scrollIntoView({behavior:reduceMotion?"auto":"smooth",block:"center"});
+    target.focus({preventScroll:true});
+  },[]);
+
   const commandItems=useMemo(()=>{
     const query=commandQuery.trim().toLowerCase();
     if(!query)return nav;
@@ -994,6 +1005,7 @@ export default function DataNestApp({session}:{session:Session}) {
               <span>{activeContextEvidence.label}</span>
               <small>{activeContextEvidence.detail}</small>
             </div>}
+            {activeContextEvidence?.state==="visible"&&["unifi","scheduler","runs","checkpoints","audit"].includes(view)&&<button className="activeWorkContextEvidenceJump" type="button" onClick={focusActiveContextRecord}>Jump to visible evidence ↓</button>}
           </div>
           <div className="activeWorkContextActions">
             <button className="primaryButton compact activeWorkContextPrimary" type="button" onClick={()=>setView(activeContextAction.key)}>{activeContextAction.label}</button>
@@ -1056,7 +1068,7 @@ export default function DataNestApp({session}:{session:Session}) {
         {!loadingCore&&project&&view==="thinktank"&&<ThinkTankWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} canReview={canManageAi} setNotice={setNotice} setError={setError}/>}
         {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace key={project.id+":"+session.user.id} projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError} preferredJobId={activeDataNestAiSession?.jobId||null} onActiveSessionChange={updateActiveWorkContext}/>}
         {!loadingCore&&project&&view==="productlab"&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate}/>}
-        {!loadingCore&&project&&view==="unifi"&&<UnifiPlanner project={project} jobs={jobs} capabilities={capabilities} reload={async()=>{await loadJobsPage(jobPage);await loadSummary(project.id);await loadRecentJobs(project.id);}} setNotice={setNotice} setError={setError} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage}/>}
+        {!loadingCore&&project&&view==="unifi"&&<UnifiPlanner project={project} jobs={jobs} capabilities={capabilities} reload={async()=>{await loadJobsPage(jobPage);await loadSummary(project.id);await loadRecentJobs(project.id);}} setNotice={setNotice} setError={setError} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} activeJobId={activeDataNestAiSession?.jobId||null}/>}
         {!loadingCore&&view==="scheduler"&&project&&<Scheduler projectId={project.id} projectName={project?.name||"Resonance DataNest"} projectSlug={project?.slug||"resonance-datanest"} currentUserId={session.user.id} role={membership?.role||"viewer"} jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null} setNotice={setNotice} setError={setError}/>} 
         {!loadingCore&&view==="runs"&&<Runs runs={runs} jobLookup={jobLookup} page={runPage} total={runCount} onPage={setRunPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
         {!loadingCore&&view==="checkpoints"&&<Checkpoints checkpoints={checkpoints} jobLookup={jobLookup} page={checkpointPage} total={checkpointCount} onPage={setCheckpointPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
@@ -1155,7 +1167,7 @@ function Metric({label,value,note}:{label:string;value:number;note:string}) {
   return <article className="metricCard"><span>{label}</span><strong>{value}</strong><small>{note}</small></article>;
 }
 
-function UnifiPlanner({project,jobs,capabilities,reload,setNotice,setError,canOperate,page,total,onPage}:{project:Project;jobs:Job[];capabilities:Capability[];reload:()=>Promise<void>;setNotice:(v:string)=>void;setError:(v:string)=>void;canOperate:boolean;page:number;total:number;onPage:(p:number)=>void}) {
+function UnifiPlanner({project,jobs,capabilities,reload,setNotice,setError,canOperate,page,total,onPage,activeJobId}:{project:Project;jobs:Job[];capabilities:Capability[];reload:()=>Promise<void>;setNotice:(v:string)=>void;setError:(v:string)=>void;canOperate:boolean;page:number;total:number;onPage:(p:number)=>void;activeJobId:string|null}) {
   const [title,setTitle]=useState("");
   const [description,setDescription]=useState("");
   const [priority,setPriority]=useState(50);
@@ -1214,7 +1226,7 @@ function UnifiPlanner({project,jobs,capabilities,reload,setNotice,setError,canOp
       </form>
     </div>
     <div className="panel"><div className="panelHead"><div><p className="eyebrow">PLANNING</p><h3>Prepared jobs</h3></div><span className="countPill">{total+" total"}</span></div><div className="manifestList">
-      {prepared.map(job=><article className="manifestCard" key={job.id}><div className="rowBetween"><b>{jobCode(job)}</b><Badge value={job.status}/></div><h4>{job.title}</h4><p>{job.description||"No description supplied."}</p><div className="manifestMeta"><span>{"Priority "+job.priority}</span><span>{job.required_capabilities?.join(", ")||"chat"}</span><span>{formatDate(job.created_at)}</span></div><JobInviteForm jobId={job.id} canInvite={canOperate} compact onSent={setNotice}/></article>)}
+      {prepared.map(job=>{const active=job.id===activeJobId;return <article className={"manifestCard "+(active?"contextMatch":"")} data-active-context={active?"true":undefined} tabIndex={active?-1:undefined} aria-label={active?"Active work context · "+jobCode(job)+" · "+job.title:undefined} key={job.id}>{active&&<span className="contextMatchTag contextMatchCardTag">ACTIVE CONTEXT</span>}<div className="rowBetween"><b>{jobCode(job)}</b><Badge value={job.status}/></div><h4>{job.title}</h4><p>{job.description||"No description supplied."}</p><div className="manifestMeta"><span>{"Priority "+job.priority}</span><span>{job.required_capabilities?.join(", ")||"chat"}</span><span>{formatDate(job.created_at)}</span></div><JobInviteForm jobId={job.id} canInvite={canOperate} compact onSent={setNotice}/></article>;})}
       {!prepared.length&&<EmptyState title="No prepared jobs on this page" text="Create a job or navigate to another queue page."/>}
     </div><Pagination page={page} total={total} onPage={onPage}/></div>
   </section>;
@@ -1316,7 +1328,7 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
           /></div>:viewMode==="queue"?<div className="schedulerProjectGroup">
             <ProjectGroupHeader projectName={projectName} projectSlug={projectSlug} jobs={orderedVisible}/>
             <div className="schedulerTable"><div className="schedulerRow headerRow"><span>Job</span><span>Priority</span><span>Capability</span><span>Status</span><span>Controls</span></div>
-            {orderedVisible.map(job=><div className={"schedulerRow "+(job.id===activeJobId?"contextMatch":"")} data-active-context={job.id===activeJobId?"true":undefined} aria-label={job.id===activeJobId?"Active work context · "+jobCode(job)+" · "+job.title:undefined} key={job.id}>
+            {orderedVisible.map(job=><div className={"schedulerRow "+(job.id===activeJobId?"contextMatch":"")} data-active-context={job.id===activeJobId?"true":undefined} tabIndex={job.id===activeJobId?-1:undefined} aria-label={job.id===activeJobId?"Active work context · "+jobCode(job)+" · "+job.title:undefined} key={job.id}>
               <div data-label="Job"><b>{jobCode(job)}</b><small>{job.title}</small>{job.id===activeJobId&&<span className="contextMatchTag">ACTIVE CONTEXT</span>}</div>
               <span data-label="Priority" className="schedulerPriorityCell"><b>{"P"+job.priority}</b><PriorityScale value={job.priority}/></span>
               <span data-label="Capability">{job.required_capabilities?.join(", ")||"chat"}</span>
@@ -1440,7 +1452,7 @@ function SchedulerGantt({projectName,projectSlug,jobs,onStatus,canOperate,active
               ? "Closed "+formatDate(job.updated_at)
               : "Active through now · no deadline";
 
-          return <article className={"ganttRow "+(job.id===activeJobId?"contextMatch":"")} data-active-context={job.id===activeJobId?"true":undefined} aria-label={job.id===activeJobId?"Active work context · "+jobCode(job)+" · "+job.title:undefined} key={job.id}>
+          return <article className={"ganttRow "+(job.id===activeJobId?"contextMatch":"")} data-active-context={job.id===activeJobId?"true":undefined} tabIndex={job.id===activeJobId?-1:undefined} aria-label={job.id===activeJobId?"Active work context · "+jobCode(job)+" · "+job.title:undefined} key={job.id}>
             <div className="ganttJobLabel">
               <div className="ganttJobTitle">
                 <div><b>{jobCode(job)}</b><small title={job.title}>{job.title}</small>{job.id===activeJobId&&<span className="contextMatchTag">ACTIVE CONTEXT</span>}</div>
@@ -1479,7 +1491,7 @@ function SchedulerGantt({projectName,projectSlug,jobs,onStatus,canOperate,active
 function Runs({runs,jobLookup,page,total,onPage,onNavigate,activeJobId}:{runs:Run[];jobLookup:Map<string,Job>;page:number;total:number;onPage:(p:number)=>void;onNavigate:(v:ViewKey)=>void;activeJobId:string|null}) {
   return <section className="panel"><div className="panelHead"><div><p className="eyebrow">EXECUTION HISTORY</p><h2>Runs</h2></div><span className="countPill">{total}</span></div>
     {runs.length?<div className="dataTable"><div className="dataRow headerRow"><span>Run</span><span>Job</span><span>Connector</span><span>Status</span><span>Started</span></div>
-      {runs.map(run=>{const job=jobLookup.get(run.job_id);const active=run.job_id===activeJobId;return <div className={"dataRow "+(active?"contextMatch":"")} data-active-context={active?"true":undefined} aria-label={active?"Active work context · RUN-"+run.run_number:undefined} key={run.id}>
+      {runs.map(run=>{const job=jobLookup.get(run.job_id);const active=run.job_id===activeJobId;return <div className={"dataRow "+(active?"contextMatch":"")} data-active-context={active?"true":undefined} tabIndex={active?-1:undefined} aria-label={active?"Active work context · RUN-"+run.run_number:undefined} key={run.id}>
         <b data-label="Run">{"RUN-"+run.run_number}</b>
         <span data-label="Job" className="contextJobCell">{job?jobCode(job):run.job_id.slice(0,8)}{active&&<small className="contextMatchTag">ACTIVE CONTEXT</small>}</span>
         <span data-label="Connector">{run.connector_kind}</span>
@@ -1492,12 +1504,12 @@ function Runs({runs,jobLookup,page,total,onPage,onNavigate,activeJobId}:{runs:Ru
 }
 
 function Checkpoints({checkpoints,jobLookup,page,total,onPage,onNavigate,activeJobId}:{checkpoints:Checkpoint[];jobLookup:Map<string,Job>;page:number;total:number;onPage:(p:number)=>void;onNavigate:(v:ViewKey)=>void;activeJobId:string|null}) {
-  return <>{checkpoints.length?<section className="checkpointGrid">{checkpoints.map(checkpoint=>{const job=jobLookup.get(checkpoint.job_id);const active=checkpoint.job_id===activeJobId;return <article className={"checkpointCard "+(active?"contextMatch":"")} data-active-context={active?"true":undefined} aria-label={active?"Active work context · "+(job?jobCode(job):checkpoint.job_id.slice(0,8)):undefined} key={checkpoint.id}>{active&&<span className="contextMatchTag contextMatchCardTag">ACTIVE CONTEXT</span>}<div className="rowBetween"><div><p className="eyebrow">CHECKPOINT</p><h3>{job?jobCode(job):checkpoint.job_id.slice(0,8)}</h3></div><small>{formatDate(checkpoint.created_at)}</small></div><h4>{job?.title||"Project continuation"}</h4><div className="checkpointColumns"><div><b>Completed</b>{checkpoint.completed?.map(item=><span key={item}>{"✓ "+item}</span>)}</div><div><b>Remaining</b>{checkpoint.remaining?.map(item=><span key={item}>{"→ "+item}</span>)}</div></div>{checkpoint.resume_instruction&&<div className="resumeBox"><b>Resume</b>{checkpoint.resume_instruction}</div>}</article>;})}</section>:<EmptyState title="No checkpoints yet" text="Durable continuation points appear after executable work records resumable state." actionLabel="Open Runs" onAction={()=>onNavigate("runs")}/>}<Pagination page={page} total={total} onPage={onPage}/></>;
+  return <>{checkpoints.length?<section className="checkpointGrid">{checkpoints.map(checkpoint=>{const job=jobLookup.get(checkpoint.job_id);const active=checkpoint.job_id===activeJobId;return <article className={"checkpointCard "+(active?"contextMatch":"")} data-active-context={active?"true":undefined} tabIndex={active?-1:undefined} aria-label={active?"Active work context · "+(job?jobCode(job):checkpoint.job_id.slice(0,8)):undefined} key={checkpoint.id}>{active&&<span className="contextMatchTag contextMatchCardTag">ACTIVE CONTEXT</span>}<div className="rowBetween"><div><p className="eyebrow">CHECKPOINT</p><h3>{job?jobCode(job):checkpoint.job_id.slice(0,8)}</h3></div><small>{formatDate(checkpoint.created_at)}</small></div><h4>{job?.title||"Project continuation"}</h4><div className="checkpointColumns"><div><b>Completed</b>{checkpoint.completed?.map(item=><span key={item}>{"✓ "+item}</span>)}</div><div><b>Remaining</b>{checkpoint.remaining?.map(item=><span key={item}>{"→ "+item}</span>)}</div></div>{checkpoint.resume_instruction&&<div className="resumeBox"><b>Resume</b>{checkpoint.resume_instruction}</div>}</article>;})}</section>:<EmptyState title="No checkpoints yet" text="Durable continuation points appear after executable work records resumable state." actionLabel="Open Runs" onAction={()=>onNavigate("runs")}/>}<Pagination page={page} total={total} onPage={onPage}/></>;
 }
 
 function Audit({events,jobLookup,page,total,onPage,onNavigate,activeJobId}:{events:AuditEvent[];jobLookup:Map<string,Job>;page:number;total:number;onPage:(p:number)=>void;onNavigate:(v:ViewKey)=>void;activeJobId:string|null}) {
   return <section className="panel"><div className="panelHead"><div><p className="eyebrow">IMMUTABLE HISTORY</p><h2>Audit trail</h2></div><span className="countPill">{total}</span></div>{events.length?<div className="timeline">
-    {events.map(event=>{const active=event.job_id===activeJobId;return <div className={"timelineItem "+(active?"contextMatch":"")} data-active-context={active?"true":undefined} aria-label={active?"Active work context · "+event.event_type.replaceAll("_"," "):undefined} key={event.id}><div className="timelineDot"/><div>{active&&<span className="contextMatchTag">ACTIVE CONTEXT</span>}<div className="rowBetween"><b>{event.event_type.replaceAll("_"," ")}</b><small>{formatDate(event.created_at)}</small></div><p>{(event.job_id&&jobLookup.get(event.job_id)?jobCode(jobLookup.get(event.job_id)!)+" · ":"")+event.actor}</p><code>{JSON.stringify(event.payload)}</code></div></div>;})}
+    {events.map(event=>{const active=event.job_id===activeJobId;return <div className={"timelineItem "+(active?"contextMatch":"")} data-active-context={active?"true":undefined} tabIndex={active?-1:undefined} aria-label={active?"Active work context · "+event.event_type.replaceAll("_"," "):undefined} key={event.id}><div className="timelineDot"/><div>{active&&<span className="contextMatchTag">ACTIVE CONTEXT</span>}<div className="rowBetween"><b>{event.event_type.replaceAll("_"," ")}</b><small>{formatDate(event.created_at)}</small></div><p>{(event.job_id&&jobLookup.get(event.job_id)?jobCode(jobLookup.get(event.job_id)!)+" · ":"")+event.actor}</p><code>{JSON.stringify(event.payload)}</code></div></div>;})}
   </div>:<EmptyState title="No audit events yet" text="Governed project actions will appear here as immutable operational evidence." actionLabel="Open Checkpoints" onAction={()=>onNavigate("checkpoints")}/>}<Pagination page={page} total={total} onPage={onPage}/></section>;
 }
 

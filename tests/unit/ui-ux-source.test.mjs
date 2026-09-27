@@ -349,3 +349,21 @@ test("active Job journey rail shows location without claiming completion", () =>
   const journeySource = appSource.slice(journeyStart,journeyEnd);
   assert.doesNotMatch(journeySource, /status|completed|verified|passed/i);
 });
+
+
+test("active evidence can anchor to its rendered record without filtering", () => {
+  assert.match(appSource, /const focusActiveContextRecord=useCallback/);
+  assert.match(appSource, /document\.querySelector<HTMLElement>\('\[data-active-context="true"\]'\)/);
+  assert.match(appSource, /prefers-reduced-motion: reduce/);
+  assert.match(appSource, /target\.scrollIntoView\(\{behavior:reduceMotion\?"auto":"smooth",block:"center"\}\)/);
+  assert.match(appSource, /target\.focus\(\{preventScroll:true\}\)/);
+  assert.match(appSource, /Jump to visible evidence ↓/);
+  assert.match(appSource, /tabIndex=\{job\.id===activeJobId\?-1:undefined\}/);
+  assert.match(appSource, /tabIndex=\{active\?-1:undefined\}/);
+  assert.match(appSource, /manifestCard.*contextMatch/);
+  assert.match(cssSource, /\.activeWorkContextEvidenceJump\{/);
+  assert.match(cssSource, /\.contextMatch:focus\{/);
+  assert.match(cssSource, /\.manifestCard\.contextMatch\{/);
+  assert.match(appSource, /Active Job evidence is loaded, but its matching record is not rendered in this workspace view\./);
+  assert.doesNotMatch(appSource, /filter\(item=>item\.id===activeJobId\)/);
+});
