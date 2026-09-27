@@ -1,0 +1,110 @@
+name: Archive Merged Branch History
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/branch-history-archive-once.yml"
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  archive:
+    if: ${{ github.event.head_commit.message == 'Archive merged branch history tags' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Fetch branch and archive refs
+        run: |
+          git fetch origin '+refs/heads/*:refs/remotes/origin/*' '+refs/tags/*:refs/tags/*' --prune
+
+      - name: Preflight archive manifest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          OWNER="${REPO%%/*}"
+          gh api --paginate "repos/$REPO/pulls?state=open&per_page=100" --jq '.[].head.ref' > /tmp/open-pr-branches.txt
+          while IFS=$'\t' read -r branch expected tag; do
+            if grep -Fxq "$branch" /tmp/open-pr-branches.txt; then
+              echo "::error::Archive candidate has an open PR: $branch"
+              exit 2
+            fi
+            ref="refs/remotes/origin/$branch"
+            if ! git show-ref --verify --quiet "$ref"; then
+              echo "::error::Archive candidate no longer exists: $branch"
+              exit 2
+            fi
+            actual=$(git rev-parse "$ref")
+            if [ "$actual" != "$expected" ]; then
+              echo "::error::Archive candidate moved: $branch expected=$expected actual=$actual"
+              exit 2
+            fi
+            if git show-ref --verify --quiet "refs/tags/$tag"; then
+              tagged=$(git rev-parse "refs/tags/$tag^{commit}")
+              if [ "$tagged" != "$expected" ]; then
+                echo "::error::Archive tag collision: $tag expected=$expected actual=$tagged"
+                exit 2
+              fi
+            fi
+          done < <(jq -r '.entries[] | [.branch,.sha,.tag] | @tsv' .github/branch-cleaner/merged-history-archive-20260927.json)
+
+      - name: Create and push archive tags
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/branch-cleaner
+          report="artifacts/branch-cleaner/merged-history-archive.md"
+          {
+            echo "# Merged branch history archive"
+            echo
+            echo "Manifest: .github/branch-cleaner/merged-history-archive-20260927.json"
+            echo
+          } > "$report"
+
+          created=0
+          existing=0
+          while IFS=$'\t' read -r branch expected tag; do
+            if git show-ref --verify --quiet "refs/tags/$tag"; then
+              echo "- EXISTS `$tag` -> `$expected`" >> "$report"
+              existing=$((existing+1))
+            else
+              git tag "$tag" "$expected"
+              echo "- CREATED `$tag` -> `$expected`" >> "$report"
+              created=$((created+1))
+            fi
+          done < <(jq -r '.entries[] | [.branch,.sha,.tag] | @tsv' .github/branch-cleaner/merged-history-archive-20260927.json)
+
+          git push origin 'refs/tags/branch-archive/*:refs/tags/branch-archive/*'
+
+          {
+            echo
+            echo "Created: $created"
+            echo "Already existed: $existing"
+            echo "Branches deleted: 0"
+          } >> "$report"
+
+      - name: Verify remote archive tags
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin '+refs/tags/branch-archive/*:refs/tags/branch-archive/*'
+          while IFS=$'\t' read -r branch expected tag; do
+            actual=$(git rev-parse "refs/tags/$tag^{commit}")
+            test "$actual" = "$expected"
+          done < <(jq -r '.entries[] | [.branch,.sha,.tag] | @tsv' .github/branch-cleaner/merged-history-archive-20260927.json)
+
+      - name: Upload archive evidence
+        if: always()
+        uses: actions/upload-artifact@v6.0.0
+        with:
+          name: merged-branch-history-archive
+          path: artifacts/branch-cleaner/
+          if-no-files-found: warn
