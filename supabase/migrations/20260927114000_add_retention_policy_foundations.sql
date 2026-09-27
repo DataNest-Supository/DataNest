@@ -20,6 +20,8 @@ create table public.retention_policies (
   status_reason text,
   effective_from timestamptz,
   review_due_at timestamptz,
+  authority_basis text,
+  evidence_reference text,
   supersedes_policy_id uuid references public.retention_policies(id),
   created_by uuid not null references auth.users(id),
   approved_by uuid references auth.users(id),
@@ -35,7 +37,24 @@ create table public.retention_policies (
   ]::text[]),
   check (applicable_subject_types <@ array[
     'project','product','job','ai_event','certified_memory','portfolio_item','file','transparency_artifact','other'
-  ]::text[])
+  ]::text[]),
+  check (default_retention_days is not null or (default_retention_days is null and review_interval_days is not null)),
+  check (
+    default_retention_days is null
+    or (
+      default_retention_days is not null
+      and nullif(btrim(coalesce(authority_basis,'')),'') is not null
+      and nullif(btrim(coalesce(evidence_reference,'')),'') is not null
+    )
+  ),
+  check (
+    default_disposition_intent<>'delete_when_authorized'
+    or (
+      default_disposition_intent='delete_when_authorized'
+      and nullif(btrim(coalesce(authority_basis,'')),'') is not null
+      and nullif(btrim(coalesce(evidence_reference,'')),'') is not null
+    )
+  )
 );
 
 create index retention_policies_project_idx on public.retention_policies(project_id,created_at desc);
