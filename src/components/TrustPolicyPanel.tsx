@@ -70,6 +70,8 @@ export default function TrustPolicyPanel({
   const [manifestLimitations,setManifestLimitations]=useState("");
   const [manifestPolicyVersion,setManifestPolicyVersion]=useState("phase-c-trust-v1");
   const [manifestRetentionPolicy,setManifestRetentionPolicy]=useState("");
+  const [manifestEnforcementMode,setManifestEnforcementMode]=useState("report_only");
+  const [manifestApprovedProviderKeys,setManifestApprovedProviderKeys]=useState("");
 
   const [providerConnection,setProviderConnection]=useState("");
   const [providerKey,setProviderKey]=useState("");
@@ -97,6 +99,8 @@ export default function TrustPolicyPanel({
   const [retentionReviewDays,setRetentionReviewDays]=useState("90");
   const [retentionDisposition,setRetentionDisposition]=useState<RetentionDispositionIntent>("retain");
   const [retentionReason,setRetentionReason]=useState("");
+  const [retentionAuthorityBasis,setRetentionAuthorityBasis]=useState("");
+  const [retentionEvidenceReference,setRetentionEvidenceReference]=useState("");
   const [retentionReviewDue,setRetentionReviewDue]=useState("");
 
   const [reviewSubjectType,setReviewSubjectType]=useState("project");
@@ -189,7 +193,9 @@ export default function TrustPolicyPanel({
       target_evidence_reference:manifestEvidence.trim()||null,
       target_known_limitations:manifestLimitations.trim()||null,
       target_policy_version:manifestPolicyVersion.trim(),
-      target_retention_policy:manifestRetentionPolicy||null
+      target_retention_policy:manifestRetentionPolicy||null,
+      target_enforcement_mode:manifestEnforcementMode,
+      target_approved_provider_keys:splitList(manifestApprovedProviderKeys)
     },"Trust Manifest draft created. It is not active until independent owner/admin review.");
   }
 
@@ -231,6 +237,8 @@ export default function TrustPolicyPanel({
       target_rules:{phase_c_v1:"non_destructive"},
       target_minimum_evidence:{review_required:true},
       target_requires_lineage_review:true,
+      target_authority_basis:retentionAuthorityBasis.trim()||null,
+      target_evidence_reference:retentionEvidenceReference.trim()||null,
       target_status_reason:retentionReason.trim()||null,
       target_review_due_at:retentionReviewDue?new Date(retentionReviewDue).toISOString():null
     },"Retention policy proposal recorded. No data was deleted or anonymized.");
@@ -355,9 +363,9 @@ export default function TrustPolicyPanel({
         <p>{text(item.rationale)}</p>
         <div className="manifestMeta"><span>holds {text(item.active_hold_count)||"0"}</span><span>lineage {text(item.active_lineage_count)||"0"}</span><span>blocked {String(Boolean(item.future_disposition_blocked))}</span></div>
         {canApprove&&<div className="rowActions">
-          <button className="secondaryButton compact" disabled={busy} onClick={()=>void rpc("resolve_retention_review_v1",{target_review:item.id,target_status:"keep",target_lineage_resolved:false,target_rationale:"Keep after governed review.",target_evidence_reference:null},"Retention review resolved: keep.")}>Keep</button>
-          <button className="secondaryButton compact" disabled={busy} onClick={()=>void rpc("resolve_retention_review_v1",{target_review:item.id,target_status:"blocked",target_lineage_resolved:false,target_rationale:"Blocked pending further evidence.",target_evidence_reference:null},"Retention review blocked.")}>Block</button>
-          <button className="primaryButton compact" disabled={busy||Boolean(item.future_disposition_blocked)} onClick={()=>void rpc("resolve_retention_review_v1",{target_review:item.id,target_status:"approved_for_future_disposition",target_lineage_resolved:true,target_rationale:"Future disposition approved after explicit lineage review. No destructive action executed.",target_evidence_reference:null},"Future disposition review approved; no data was deleted.")}>Approve future disposition</button>
+          <button className="secondaryButton compact" disabled={busy} onClick={()=>void rpc("resolve_retention_review_v1",{target_review:item.id,target_status:"keep",target_reason:"Keep after governed review.",target_evidence_reference:null},"Retention review resolved: keep.")}>Keep</button>
+          <button className="secondaryButton compact" disabled={busy} onClick={()=>void rpc("resolve_retention_review_v1",{target_review:item.id,target_status:"blocked",target_reason:"Blocked pending further evidence.",target_evidence_reference:null},"Retention review blocked.")}>Block</button>
+          <button className="primaryButton compact" disabled={busy||Boolean(item.future_disposition_blocked)} onClick={()=>void rpc("resolve_retention_review_v1",{target_review:item.id,target_status:"approved_for_future_disposition",target_reason:"Future disposition approved after server-derived lineage review. No destructive action executed.",target_evidence_reference:null},"Future disposition review approved; no data was deleted.")}>Approve future disposition</button>
         </div>}
       </article>)}</div>:<p className="muted">No retention reviews are pending.</p>}
     </section>
@@ -391,6 +399,9 @@ export default function TrustPolicyPanel({
           <label>Known limitations<textarea rows={3} value={manifestLimitations} onChange={e=>setManifestLimitations(e.target.value)}/></label>
           <label>Policy version<input value={manifestPolicyVersion} onChange={e=>setManifestPolicyVersion(e.target.value)} required/></label>
           <label>Retention policy<select value={manifestRetentionPolicy} onChange={e=>setManifestRetentionPolicy(e.target.value)}><option value="">None</option>{activePolicies.map(item=><option key={text(item.id)} value={text(item.id)}>{text(item.policy_key)} v{text(item.version)}</option>)}</select></label>
+          <label>Rollout mode<select value={manifestEnforcementMode} onChange={e=>setManifestEnforcementMode(e.target.value)}><option value="report_only">Report only</option><option value="enforced">Enforced</option></select></label>
+          <label>Approved provider route keys<input value={manifestApprovedProviderKeys} onChange={e=>setManifestApprovedProviderKeys(e.target.value)} placeholder="provider:endpoint-host, one per line or comma separated"/></label>
+          <small className="muted">Start with report-only. Enforced activation requires an active project policy binding, an active retention policy, and reviewed coverage for every active AI provider route.</small>
           <button className="primaryButton" disabled={busy||!manifestPolicyVersion.trim()}>Create manifest draft</button>
         </form>
       </details>
@@ -399,7 +410,7 @@ export default function TrustPolicyPanel({
         <summary>Create Provider Trust Profile draft</summary>
         <form className="settingsGrid" onSubmit={createProviderProfile}>
           <label>Provider connection ID<input value={providerConnection} onChange={e=>setProviderConnection(e.target.value)} placeholder="Optional existing connection UUID"/></label>
-          <label>Provider key<input value={providerKey} onChange={e=>setProviderKey(e.target.value)} required placeholder="openai or governed provider key"/></label>
+          <label>Provider key<input value={providerKey} onChange={e=>setProviderKey(e.target.value)} required={!providerConnection.trim()} placeholder={providerConnection.trim()?"Derived server-side as provider:endpoint-host":"Stable provider key"}/></label>
           <label>Category<select value={providerCategory} onChange={e=>setProviderCategory(e.target.value)}>{["ai_model","storage","execution","search","communications","other"].map(value=><option key={value} value={value}>{trustPolicyLabel(value)}</option>)}</select></label>
           <label>Allowed visibility classes<input value={providerVisibility} onChange={e=>setProviderVisibility(e.target.value)}/></label>
           <label>Allowed purposes<input value={providerPurposes} onChange={e=>setProviderPurposes(e.target.value)}/></label>
@@ -415,7 +426,7 @@ export default function TrustPolicyPanel({
           <label>Policy version<input value={providerPolicyVersion} onChange={e=>setProviderPolicyVersion(e.target.value)} required/></label>
           <label>Review due<input type="date" value={providerReviewDue} onChange={e=>setProviderReviewDue(e.target.value)}/></label>
           <label>Known limitations<textarea rows={2} value={providerLimitations} onChange={e=>setProviderLimitations(e.target.value)}/></label>
-          <button className="primaryButton" disabled={busy||!providerKey.trim()||!providerRetentionPosture.trim()||!providerTrainingPosture.trim()}>Create provider profile draft</button>
+          <button className="primaryButton" disabled={busy||(!providerConnection.trim()&&!providerKey.trim())||!providerRetentionPosture.trim()||!providerTrainingPosture.trim()}>Create provider profile draft</button>
         </form>
       </details>
 
@@ -430,6 +441,8 @@ export default function TrustPolicyPanel({
           <label>Review interval days<input type="number" min="1" value={retentionReviewDays} onChange={e=>setRetentionReviewDays(e.target.value)}/></label>
           <label>Disposition intent<select value={retentionDisposition} onChange={e=>setRetentionDisposition(e.target.value as RetentionDispositionIntent)}>{retentionDispositionIntents.map(value=><option key={value} value={value}>{trustPolicyLabel(value)}</option>)}</select></label>
           <label>Status reason<textarea rows={2} value={retentionReason} onChange={e=>setRetentionReason(e.target.value)}/></label>
+          <label>Authority basis<input value={retentionAuthorityBasis} onChange={e=>setRetentionAuthorityBasis(e.target.value)} placeholder="Required for fixed duration or delete-when-authorized intent"/></label>
+          <label>Evidence reference<input value={retentionEvidenceReference} onChange={e=>setRetentionEvidenceReference(e.target.value)} placeholder="Policy, contract, regulation, decision, or reviewed evidence"/></label>
           <label>Review due<input type="date" value={retentionReviewDue} onChange={e=>setRetentionReviewDue(e.target.value)}/></label>
           <button className="primaryButton" disabled={busy||!retentionKey.trim()}>Propose retention policy</button>
         </form>
