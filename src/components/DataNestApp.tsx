@@ -10,6 +10,8 @@ import { workflowPhaseForView, workflowPhases } from "@/lib/workflowPhases";
 import JobInviteForm from "@/components/JobInviteForm";
 import ResonanceHome from "@/components/ResonanceHome";
 import MotionControl from "@/components/MotionControl";
+import ExecutionAuthorityPanel from "@/components/ExecutionAuthorityPanel";
+import type { ExecutionAuthorityRole } from "@/lib/executionAuthority";
 
 type Project = { id:string; slug:string; name:string; description:string|null; status:string; created_at:string };
 type Tool = { id:string; tool_key:string; name:string; role:string; enabled:boolean; config:Record<string,unknown> };
@@ -1029,7 +1031,7 @@ export default function DataNestApp({session}:{session:Session}) {
         {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace key={project.id+":"+session.user.id} projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError} preferredJobId={activeDataNestAiSession?.jobId||null} onActiveSessionChange={updateActiveWorkContext}/>}
         {!loadingCore&&project&&view==="productlab"&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate}/>}
         {!loadingCore&&project&&view==="unifi"&&<UnifiPlanner project={project} jobs={jobs} capabilities={capabilities} reload={async()=>{await loadJobsPage(jobPage);await loadSummary(project.id);await loadRecentJobs(project.id);}} setNotice={setNotice} setError={setError} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage}/>}
-        {!loadingCore&&view==="scheduler"&&<Scheduler projectName={project?.name||"Resonance DataNest"} projectSlug={project?.slug||"resonance-datanest"} jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
+        {!loadingCore&&view==="scheduler"&&project&&<Scheduler projectId={project.id} projectName={project?.name||"Resonance DataNest"} projectSlug={project?.slug||"resonance-datanest"} currentUserId={session.user.id} role={membership?.role||"viewer"} jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null} setNotice={setNotice} setError={setError}/>} 
         {!loadingCore&&view==="runs"&&<Runs runs={runs} jobLookup={jobLookup} page={runPage} total={runCount} onPage={setRunPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
         {!loadingCore&&view==="checkpoints"&&<Checkpoints checkpoints={checkpoints} jobLookup={jobLookup} page={checkpointPage} total={checkpointCount} onPage={setCheckpointPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
         {!loadingCore&&view==="audit"&&<Audit events={events} jobLookup={jobLookup} page={eventPage} total={eventCount} onPage={setEventPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
@@ -1208,9 +1210,9 @@ function formatGanttTick(value:number,span:number) {
   return new Intl.DateTimeFormat(undefined,options).format(new Date(value));
 }
 
-function Scheduler({projectName,projectSlug,jobs,capabilities,onStatus,canOperate,page,total,onPage,onNavigate,activeJobId}:{projectName:string;projectSlug:string;jobs:Job[];capabilities:Capability[];onStatus:(j:Job,s:string)=>Promise<void>;canOperate:boolean;page:number;total:number;onPage:(p:number)=>void;onNavigate:(v:ViewKey)=>void;activeJobId:string|null}) {
+function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,capabilities,onStatus,canOperate,page,total,onPage,onNavigate,activeJobId,setNotice,setError}:{projectId:string;projectName:string;projectSlug:string;currentUserId:string;role:ExecutionAuthorityRole;jobs:Job[];capabilities:Capability[];onStatus:(j:Job,s:string)=>Promise<void>;canOperate:boolean;page:number;total:number;onPage:(p:number)=>void;onNavigate:(v:ViewKey)=>void;activeJobId:string|null;setNotice:(value:string)=>void;setError:(value:string)=>void}) {
   const [filter,setFilter]=useState("ALL");
-  const [viewMode,setViewMode]=useState<"queue"|"gantt">("gantt");
+  const [viewMode,setViewMode]=useState<"queue"|"gantt"|"authority">("gantt");
   const [sortMode,setSortMode]=useState<"priority"|"deadline"|"recent">("priority");
   const filterOptions=["ALL","PLANNED","READY","QUEUED","RUNNING","MANUAL_ACTION","BLOCKED","COMPLETED"];
   const visible=filter==="ALL"?jobs:jobs.filter(item=>item.status===filter);
@@ -1249,6 +1251,7 @@ function Scheduler({projectName,projectSlug,jobs,capabilities,onStatus,canOperat
           <div className="schedulerViewSwitch" role="group" aria-label="TranScheduler view">
             <button type="button" className={viewMode==="queue"?"active":""} aria-pressed={viewMode==="queue"} onClick={()=>setViewMode("queue")}>Queue</button>
             <button type="button" className={viewMode==="gantt"?"active":""} aria-pressed={viewMode==="gantt"} onClick={()=>setViewMode("gantt")}>Gantt chart</button>
+            <button type="button" className={viewMode==="authority"?"active":""} aria-pressed={viewMode==="authority"} onClick={()=>setViewMode("authority")}>Authority & Execution</button>
           </div>
           <label className="schedulerSortControl">Sort
             <select aria-label="Sort project jobs" value={sortMode} onChange={event=>setSortMode(event.target.value as "priority"|"deadline"|"recent")}>
@@ -1266,36 +1269,40 @@ function Scheduler({projectName,projectSlug,jobs,capabilities,onStatus,canOperat
           <span>{deadlineCount+" deadlines"}</span>
         </div>
       </div>
-      <label className="schedulerFilterMobile">Status filter
-        <select aria-label="Status filter" value={filter} onChange={event=>setFilter(event.target.value)}>
-          {filterOptions.map(item=><option key={item} value={item}>{item.replace("_"," ")}</option>)}
-        </select>
-      </label>
-      <div className="filterBar schedulerFilterDesktop">{filterOptions.map(item=><button key={item} className={filter===item?"active":""} onClick={()=>setFilter(item)}>{item.replace("_"," ")}</button>)}</div>
+      {viewMode==="authority"
+        ? <ExecutionAuthorityPanel projectId={projectId} currentUserId={currentUserId} role={role} jobs={jobs} setNotice={setNotice} setError={setError}/>
+        : <>
+          <label className="schedulerFilterMobile">Status filter
+            <select aria-label="Status filter" value={filter} onChange={event=>setFilter(event.target.value)}>
+              {filterOptions.map(item=><option key={item} value={item}>{item.replace("_"," ")}</option>)}
+            </select>
+          </label>
+          <div className="filterBar schedulerFilterDesktop">{filterOptions.map(item=><button key={item} className={filter===item?"active":""} onClick={()=>setFilter(item)}>{item.replace("_"," ")}</button>)}</div>
 
-      {!orderedVisible.length?<div className="schedulerEmptyState"><EmptyState
-        title={total===0?"No project jobs yet":"No jobs match this filter"}
-        text={total===0?"Create a complete Job Manifest in UNIFI before scheduling execution.":"Clear the current status filter to return to the project queue."}
-        actionLabel={total===0?"Open UNIFI Planner":"Show all jobs"}
-        onAction={()=>{if(total===0)onNavigate("unifi");else setFilter("ALL");}}
-      /></div>:viewMode==="queue"?<div className="schedulerProjectGroup">
-        <ProjectGroupHeader projectName={projectName} projectSlug={projectSlug} jobs={orderedVisible}/>
-        <div className="schedulerTable"><div className="schedulerRow headerRow"><span>Job</span><span>Priority</span><span>Capability</span><span>Status</span><span>Controls</span></div>
-        {orderedVisible.map(job=><div className={"schedulerRow "+(job.id===activeJobId?"contextMatch":"")} data-active-context={job.id===activeJobId?"true":undefined} aria-label={job.id===activeJobId?"Active work context · "+jobCode(job)+" · "+job.title:undefined} key={job.id}>
-          <div data-label="Job"><b>{jobCode(job)}</b><small>{job.title}</small>{job.id===activeJobId&&<span className="contextMatchTag">ACTIVE CONTEXT</span>}</div>
-          <span data-label="Priority" className="schedulerPriorityCell"><b>{"P"+job.priority}</b><PriorityScale value={job.priority}/></span>
-          <span data-label="Capability">{job.required_capabilities?.join(", ")||"chat"}</span>
-          <span data-label="Status"><Badge value={job.status}/></span>
-          <div className="rowActions" data-label="Controls">
-            {canOperate ? <>
-              {!finalStates.has(job.status)&&job.status!=="PAUSED"&&<button onClick={()=>void onStatus(job,"PAUSED")}>Pause</button>}
-              {job.status==="PAUSED"&&<button onClick={()=>void onStatus(job,"READY")}>Resume</button>}
-              {!finalStates.has(job.status)&&<button onClick={()=>void onStatus(job,"CANCELLED")}>Cancel</button>}
-            </> : <span className="muted">Read only</span>}
-          </div>
-        </div>)}
-      </div></div>:<SchedulerGantt projectName={projectName} projectSlug={projectSlug} jobs={orderedVisible} onStatus={onStatus} canOperate={canOperate} activeJobId={activeJobId}/>} 
-      <Pagination page={page} total={total} onPage={onPage}/>
+          {!orderedVisible.length?<div className="schedulerEmptyState"><EmptyState
+            title={total===0?"No project jobs yet":"No jobs match this filter"}
+            text={total===0?"Create a complete Job Manifest in UNIFI before scheduling execution.":"Clear the current status filter to return to the project queue."}
+            actionLabel={total===0?"Open UNIFI Planner":"Show all jobs"}
+            onAction={()=>{if(total===0)onNavigate("unifi");else setFilter("ALL");}}
+          /></div>:viewMode==="queue"?<div className="schedulerProjectGroup">
+            <ProjectGroupHeader projectName={projectName} projectSlug={projectSlug} jobs={orderedVisible}/>
+            <div className="schedulerTable"><div className="schedulerRow headerRow"><span>Job</span><span>Priority</span><span>Capability</span><span>Status</span><span>Controls</span></div>
+            {orderedVisible.map(job=><div className={"schedulerRow "+(job.id===activeJobId?"contextMatch":"")} data-active-context={job.id===activeJobId?"true":undefined} aria-label={job.id===activeJobId?"Active work context · "+jobCode(job)+" · "+job.title:undefined} key={job.id}>
+              <div data-label="Job"><b>{jobCode(job)}</b><small>{job.title}</small>{job.id===activeJobId&&<span className="contextMatchTag">ACTIVE CONTEXT</span>}</div>
+              <span data-label="Priority" className="schedulerPriorityCell"><b>{"P"+job.priority}</b><PriorityScale value={job.priority}/></span>
+              <span data-label="Capability">{job.required_capabilities?.join(", ")||"chat"}</span>
+              <span data-label="Status"><Badge value={job.status}/></span>
+              <div className="rowActions" data-label="Controls">
+                {canOperate ? <>
+                  {!finalStates.has(job.status)&&job.status!=="PAUSED"&&<button onClick={()=>void onStatus(job,"PAUSED")}>Pause</button>}
+                  {job.status==="PAUSED"&&<button onClick={()=>void onStatus(job,"READY")}>Resume</button>}
+                  {!finalStates.has(job.status)&&<button onClick={()=>void onStatus(job,"CANCELLED")}>Cancel</button>}
+                </> : <span className="muted">Read only</span>}
+              </div>
+            </div>)}
+          </div></div>:<SchedulerGantt projectName={projectName} projectSlug={projectSlug} jobs={orderedVisible} onStatus={onStatus} canOperate={canOperate} activeJobId={activeJobId}/>}
+          <Pagination page={page} total={total} onPage={onPage}/>
+        </>}
     </section>
   </>;
 }

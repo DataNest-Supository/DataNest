@@ -45,6 +45,23 @@ The Phase C source implementation adds a project-scoped **Trust & Data Policy** 
 
 This section records source architecture only. Production availability, provider-policy rollout, retention enforcement, or public trust claims require their own verified promotion evidence.
 
+
+## Authority and Execution Controls
+
+The Phase D source implementation adds bounded **execution authority** above existing project membership, Job controls, Phase C trust policy, provider authorization and scheduler capacity.
+
+- An **Authority Envelope** records task-scoped authority for an actor under an accountable human sponsor. It binds the project/Job context, purpose, autonomy level, permitted capabilities and operations, data scope, resource ceiling, expiry, reversibility, evidence requirements and trace identity. It is not credential storage.
+- Autonomy is explicit: **A0 Observe**, **A1 Advise**, **A2 Prepare**, **A3 Execute**, and **A4 High-impact**. Phase D v1 treats A4 as human-gated and does not issue generic automated A4 Capability Leases.
+- A **Capability Lease** is short-lived execution authorization. Existing TranScheduler `reservations` remain resource-capacity reservations. Capacity reservation and authorization lease are separate requirements and neither substitutes for the other.
+- The permission gradient is `observe → prepare → write → execute → promote → destruct`. Authority is never inferred only from project role, provider, capability name or Job status.
+- Project-scoped circuit breakers can halt autonomous writes, deployments, external communications or resource execution without disabling safe read-only platform functions.
+- `service_authorize_execution_v1(...)` is a service-only, fail-closed evaluator. It validates identity, sponsor membership, envelope/lease scope and expiry, autonomy ceiling, breaker state, capability health/concurrency and resource ceilings; allowed calls atomically consume lease operation budget and append an execution-authority decision.
+- Existing human `transition_job_status(...)` controls remain a separate attributable path. Human Pause/Resume/Cancel is not silently reclassified as autonomous execution and does not require an Authority Envelope.
+- Phase C data policy, provider trust, AI budgets, RLS/RBAC, Job/file authorization and certified-memory controls remain independent prerequisites. A Phase D allow result cannot manufacture those permissions.
+- Phase E Resource Fabric, Cloud-Nest, Supository, ILM, Outcome Ledger and later architecture-programme concepts remain target-state work outside Phase D.
+
+This section records source architecture only. Production availability or autonomous execution rollout requires exact-head verification and separate promotion evidence.
+
 ## Project
 **Resonance DataNest** is the project operating environment.
 
