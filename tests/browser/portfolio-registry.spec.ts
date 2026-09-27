@@ -127,6 +127,6 @@ test("Owner approvals and retirement failures preserve displayed lifecycle",asyn
   await page.getByRole("button",{name:/Transcription Capability/}).click();
   await page.getByLabel("Lifecycle reason").fill("Critical dependency guard fixture");
   await page.getByRole("button",{name:"Retire",exact:true}).click();
-  await expect(page.getByRole("alert")).toContainText("active critical dependants");
+  await expect(page.locator(".catalogError[role=\"alert\"]")).toContainText("active critical dependants");
   await expect(page.getByText("Active",{exact:true}).first()).toBeVisible();
 });
