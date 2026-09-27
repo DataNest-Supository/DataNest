@@ -402,3 +402,17 @@ test("active Job can be located across paginated Job pages without changing gove
   assert.match(appSource, /Active Job exists in the project but is not a prepared UNIFI record/);
   assert.doesNotMatch(appSource, /locateActiveJobPage[\s\S]{0,1200}?updateJobStatus/);
 });
+
+
+test("active Job evidence locator spans paginated Runs, Checkpoints, and Audit without mutations", () => {
+  assert.match(appSource, /const \[locatingActiveEvidence,setLocatingActiveEvidence\]=useState\(false\)/);
+  assert.match(appSource, /pendingActiveEvidenceFocusRef=useRef<"runs"\|"checkpoints"\|"audit"\|null>\(null\)/);
+  assert.match(appSource, /const locateActiveEvidencePage=useCallback\(async\(\)=>/);
+  assert.match(appSource, /from\("runs"\)\.select\("id,job_id"\)\.order\("started_at",\{ascending:false\}\)/);
+  assert.match(appSource, /from\("checkpoints"\)\.select\("id,job_id"\)\.order\("created_at",\{ascending:false\}\)/);
+  assert.match(appSource, /from\("events"\)\.select\("id,job_id"\)\.eq\("project_id",project\.id\)\.order\("created_at",\{ascending:false\}\)/);
+  assert.match(appSource, /if\(rows\.length<PAGE_SIZE\)break/);
+  assert.match(appSource, /Locate active evidence page →/);
+  assert.match(appSource, /Active Job .* evidence located and focused/);
+  assert.doesNotMatch(appSource, /locateActiveEvidencePage[\s\S]{0,2600}?updateJobStatus/);
+});

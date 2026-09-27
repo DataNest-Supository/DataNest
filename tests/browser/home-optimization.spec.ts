@@ -726,3 +726,136 @@ test("active Job locator crosses paginated Scheduler pages without filtering pro
   await expect(page.getByText("Active Job revealed in TranScheduler.",{exact:true})).toBeVisible();
   await expect(page.getByRole("region",{name:"Active work context"}).getByRole("status",{name:"Visible evidence signal"})).toContainText("On this page: 1 matching Job record.");
 });
+
+
+test("active evidence locator crosses paginated Runs, Checkpoints, and Audit", async ({ page }) => {
+  const projectId = "00000000-0000-4000-8000-000000000010";
+  const userId = "00000000-0000-4000-8000-000000000001";
+  const activeJobId = "00000000-0000-4000-8000-000000000099";
+  const otherJobId = "00000000-0000-4000-8000-000000000100";
+  const stamp = "2026-09-27T07:00:00Z";
+  const scans = {runs:false,checkpoints:false,audit:false};
+  const mutations:string[] = [];
+
+  const jobs = [
+    {id:activeJobId,job_number:52,title:"Deep evidence active Job",description:null,priority:90,status:"READY",required_capabilities:["chat"],acceptance:{},created_at:stamp,updated_at:stamp,deadline:null},
+    {id:otherJobId,job_number:53,title:"Other evidence Job",description:null,priority:40,status:"QUEUED",required_capabilities:["chat"],acceptance:{},created_at:stamp,updated_at:stamp,deadline:null}
+  ];
+  const runs = Array.from({length:21},(_,index)=>({
+    id:"run-"+String(index+1),
+    job_id:index===20?activeJobId:otherJobId,
+    run_number:index+1,
+    connector_kind:"chat",
+    status:index===20?"RUNNING":"COMPLETED",
+    started_at:new Date(Date.parse(stamp)-index*1000).toISOString(),
+    completed_at:index===20?null:stamp,
+    error_category:null
+  }));
+  const checkpoints = Array.from({length:21},(_,index)=>({
+    id:"checkpoint-"+String(index+1),
+    job_id:index===20?activeJobId:otherJobId,
+    completed:index===20?["Recovered paginated context"]:["Other checkpoint"],
+    remaining:index===20?["Verify downstream continuity"]:[],
+    resume_instruction:index===20?"Resume deep evidence context.":null,
+    created_at:new Date(Date.parse(stamp)-index*1000).toISOString()
+  }));
+  const events = Array.from({length:21},(_,index)=>({
+    id:index+1,
+    job_id:index===20?activeJobId:otherJobId,
+    event_type:index===20?"active_evidence_recovered":"other_evidence_event",
+    actor:"fixture@example.invalid",
+    payload:{index,kind:index===20?"active":"other"},
+    created_at:new Date(Date.parse(stamp)-index*1000).toISOString()
+  }));
+
+  const pageSlice = <T,>(request:import("@playwright/test").Request, rows:T[]) => {
+    const url = new URL(request.url());
+    const range = request.headers()["range"] || "";
+    const match = range.match(/(\d+)-(\d+)/);
+    const offset = Number(url.searchParams.get("offset") || (match ? match[1] : "0"));
+    const limit = Number(url.searchParams.get("limit") || (match ? String(Number(match[2])-Number(match[1])+1) : "20"));
+    const from = Number.isFinite(offset) ? offset : 0;
+    const size = Number.isFinite(limit) ? limit : 20;
+    return {from,selected:rows.slice(from,Math.min(from+size,rows.length)),select:url.searchParams.get("select") || ""};
+  };
+
+  await page.route("**/runtime-config.js", route => route.fulfill({
+    contentType:"application/javascript",
+    body:"window.__DATANEST_CONFIG__={supabaseUrl:'https://fixture.supabase.co',supabasePublishableKey:'fixture-key',authoritative:true}"
+  }));
+  await page.addInitScript(({projectId,userId,activeJobId}) => {
+    const encode = (data: unknown) => btoa(JSON.stringify(data)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+    localStorage.setItem("sb-fixture-auth-token", JSON.stringify({
+      access_token:`${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:userId,exp:4102444800,role:"authenticated"})}.fixture`,
+      refresh_token:"fixture", token_type:"bearer", expires_at:4102444800,
+      user:{id:userId,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid"}
+    }));
+    sessionStorage.setItem("datanest.activeWorkContext:"+projectId+":"+userId, JSON.stringify({
+      jobId:activeJobId,sessionId:"session-deep-evidence",jobNumber:52,title:"Deep evidence active Job",status:"READY"
+    }));
+  }, {projectId,userId,activeJobId});
+
+  await page.route("https://fixture.supabase.co/**", route => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const path = url.pathname;
+    if (["/runs","/checkpoints","/events"].some(suffix=>path.endsWith(suffix)) && request.method()!=="GET") {
+      mutations.push(request.method()+" "+path);
+    }
+    let body:unknown = [];
+    if(path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE",created_at:stamp};
+    if(path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"viewer",status:"active"};
+    if(path.endsWith("/get_project_dashboard_summary")) body = {total_jobs:2,active_jobs:2,running_jobs:1,blocked_jobs:0,available_capabilities:0,registered_capabilities:0};
+    if(path.endsWith("/jobs")) body = jobs;
+    if(path.endsWith("/runs")) {
+      const {from,selected,select}=pageSlice(request,runs);
+      if(select==="id,job_id"&&from===20)scans.runs=true;
+      body = select==="id,job_id" ? selected.map(row=>({id:row.id,job_id:row.job_id})) : selected;
+    }
+    if(path.endsWith("/checkpoints")) {
+      const {from,selected,select}=pageSlice(request,checkpoints);
+      if(select==="id,job_id"&&from===20)scans.checkpoints=true;
+      body = select==="id,job_id" ? selected.map(row=>({id:row.id,job_id:row.job_id})) : selected;
+    }
+    if(path.endsWith("/events")) {
+      const {from,selected,select}=pageSlice(request,events);
+      if(select==="id,job_id"&&from===20)scans.audit=true;
+      body = select==="id,job_id" ? selected.map(row=>({id:row.id,job_id:row.job_id})) : selected;
+    }
+    return route.fulfill({status:200,headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  });
+
+  await page.goto(appPath+"?view=runs");
+  let context = page.getByRole("region",{name:"Active work context"});
+  await expect(context.getByRole("status",{name:"Visible evidence signal"})).toContainText("Run evidence not visible");
+  await expect(page.locator(".dataRow[data-active-context='true']")).toHaveCount(0);
+  await context.getByRole("button",{name:"Locate active evidence page →"}).click();
+  await expect(page.locator(".dataRow[data-active-context='true']")).toHaveCount(1);
+  await expect(page.locator(".dataRow[data-active-context='true']")).toBeFocused();
+  expect(scans.runs).toBe(true);
+  await expect(context.getByRole("status",{name:"Visible evidence signal"})).toContainText("On this page: 1 matching run.");
+
+  await context.getByRole("navigation",{name:"Active Job journey"}).getByRole("button",{name:"Open Checkpoint for active Job"}).click();
+  await expect(page).toHaveURL(/\?view=checkpoints/);
+  context = page.getByRole("region",{name:"Active work context"});
+  await expect(context.getByRole("status",{name:"Visible evidence signal"})).toContainText("Checkpoint evidence not visible");
+  await expect(page.locator(".checkpointCard[data-active-context='true']")).toHaveCount(0);
+  await context.getByRole("button",{name:"Locate active evidence page →"}).click();
+  await expect(page.locator(".checkpointCard[data-active-context='true']")).toHaveCount(1);
+  await expect(page.locator(".checkpointCard[data-active-context='true']")).toBeFocused();
+  expect(scans.checkpoints).toBe(true);
+  await expect(context.getByRole("status",{name:"Visible evidence signal"})).toContainText("On this page: 1 matching checkpoint.");
+
+  await context.getByRole("navigation",{name:"Active Job journey"}).getByRole("button",{name:"Open Audit for active Job"}).click();
+  await expect(page).toHaveURL(/\?view=audit/);
+  context = page.getByRole("region",{name:"Active work context"});
+  await expect(context.getByRole("status",{name:"Visible evidence signal"})).toContainText("Audit evidence not visible");
+  await expect(page.locator(".timelineItem[data-active-context='true']")).toHaveCount(0);
+  await context.getByRole("button",{name:"Locate active evidence page →"}).click();
+  await expect(page.locator(".timelineItem[data-active-context='true']")).toHaveCount(1);
+  await expect(page.locator(".timelineItem[data-active-context='true']")).toBeFocused();
+  expect(scans.audit).toBe(true);
+  await expect(context.getByRole("status",{name:"Visible evidence signal"})).toContainText("On this page: 1 matching audit event.");
+
+  expect(mutations).toEqual([]);
+});

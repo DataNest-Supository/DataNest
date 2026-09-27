@@ -285,3 +285,20 @@ Only Job identifiers and status are read during the scan. Exact Job counts are u
 UNIFI keeps its narrower prepared-state boundary. If the Job exists but is no longer `PLANNED`, `READY`, or `QUEUED`, DataNest reports that fact instead of navigating to a page where the record would still not render.
 
 The locator changes only local pagination and presentation state. It does not update Job status, authority decisions, reservations, ILM state, scheduler policy, or audit evidence.
+
+
+## Downstream evidence pagination resilience
+
+Active Work Context extends page recovery beyond Job manifests into **Runs, Checkpoints, and Audit**.
+
+When matching active-Job evidence is not on the currently loaded page, DataNest exposes **Locate active evidence page**. The locator performs read-only scans using the exact ordering already used by each workspace:
+
+- Runs: `started_at` descending;
+- Checkpoints: `created_at` descending;
+- Audit: project-scoped `created_at` descending.
+
+The scan reads only evidence identifiers and `job_id`. Exact counts are an optimization, not a dependency: the locator can continue until a short/end page and stops defensively if pagination does not advance.
+
+When matching evidence is found, DataNest changes only the local workspace page, waits for the matching record to render, then scrolls and keyboard-focuses that record through the shared Active Work Context focus primitive.
+
+This recovery path never changes execution state, checkpoint contents, audit events, Job status, authority decisions, reservations, scheduler policy, or ILM state.
