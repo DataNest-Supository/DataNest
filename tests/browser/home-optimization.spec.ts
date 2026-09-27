@@ -1041,7 +1041,7 @@ test("browser history restores workspace-local presentation state without stale 
 
   const projectNav=page.getByRole("navigation",{name:"Project workspaces"});
   await projectNav.getByRole("button",{name:"Runs"}).click();
-  await expect(page.getByRole("heading",{name:"Runs"})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"Runs",level:1,exact:true})).toBeVisible();
   await expect(page).toHaveURL(/view=runs/);
   await expect(page).not.toHaveURL(/mode=/);
   await expect(page).not.toHaveURL(/filter=/);
@@ -1062,7 +1062,7 @@ test("browser history restores workspace-local presentation state without stale 
   await expect(page).toHaveURL(/sort=recent/);
 
   await page.goBack();
-  await expect(page.getByRole("heading",{name:"Runs"})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"Runs",level:1,exact:true})).toBeVisible();
   await expect(page).toHaveURL(/view=runs/);
   await expect(page).toHaveURL(/page=2/);
   await expect(page).not.toHaveURL(/mode=/);
@@ -1081,7 +1081,7 @@ test("browser history restores workspace-local presentation state without stale 
   await expect(page).not.toHaveURL(/section=/);
 
   await page.goForward();
-  await expect(page.getByRole("heading",{name:"Runs"})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"Runs",level:1,exact:true})).toBeVisible();
   await expect(page).toHaveURL(/view=runs/);
   await expect(page).toHaveURL(/page=2/);
   await expect(page).not.toHaveURL(/mode=/);
