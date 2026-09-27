@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createHash } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { pathToFileURL } from "node:url";
@@ -91,6 +91,49 @@ export function getStrictBlockers(supabase) {
     ...(supabase?.globalChecks || []),
     ...(supabase?.projects || []).flatMap((p) => p.checks || []),
   ].filter((c) => c.level === "blocker");
+}
+
+export function migrationNameFromFile(file) {
+  return String(file || "")
+    .replace(/\.sql$/i, "")
+    .replace(/^\d{14}_/, "");
+}
+
+export function compareMigrationParity(repoFiles = [], liveMigrations = []) {
+  const repoEntries = repoFiles
+    .filter((file) => String(file).endsWith(".sql"))
+    .map((file) => ({
+      file,
+      version:(String(file).match(/^(\d{14})_/) || [])[1] || null,
+      name:migrationNameFromFile(file),
+    }));
+  const liveEntries = liveMigrations
+    .filter((m) => m?.name)
+    .map((m) => ({ version:String(m.version || ""), name:String(m.name) }));
+
+  const repoNames = new Set(repoEntries.map((m) => m.name));
+  const liveNames = new Set(liveEntries.map((m) => m.name));
+  const repoVersionsByName = new Map(repoEntries.map((m) => [m.name, m.version]));
+  const liveVersionsByName = new Map(liveEntries.map((m) => [m.name, m.version]));
+
+  return {
+    repoCount:repoEntries.length,
+    liveCount:liveEntries.length,
+    repoOnly:[...repoNames].filter((name) => !liveNames.has(name)).sort(),
+    liveOnly:[...liveNames].filter((name) => !repoNames.has(name)).sort(),
+    versionMismatches:[...repoNames]
+      .filter((name) => liveNames.has(name))
+      .filter((name) => {
+        const repoVersion = repoVersionsByName.get(name);
+        const liveVersion = liveVersionsByName.get(name);
+        return repoVersion && liveVersion && repoVersion !== liveVersion;
+      })
+      .map((name) => ({
+        name,
+        repoVersion:repoVersionsByName.get(name),
+        liveVersion:liveVersionsByName.get(name),
+      })),
+  };
 }
 
 function parseArgs(argv) {
@@ -265,7 +308,10 @@ async function supabaseAudit(config, token) {
       ["project", "/v1/projects/" + entry.ref],
       ["branches", "/v1/projects/" + entry.ref + "/branches"],
       ["securityAdvisors", "/v1/projects/" + entry.ref + "/advisors/security"],
-      ["performanceAdvisors", "/v1/projects/" + entry.ref + "/advisors/performance"]
+      ["performanceAdvisors", "/v1/projects/" + entry.ref + "/advisors/performance"],
+      ...(entry.migrationSourceDir
+        ? [["migrations", "/v1/projects/" + entry.ref + "/database/migrations"]]
+        : [])
     ];
     await Promise.all(calls.map(async ([key, endpoint]) => {
       try { p[key] = await sb(endpoint, token); }
@@ -274,7 +320,44 @@ async function supabaseAudit(config, token) {
     p.branches = Array.isArray(p.branches) ? p.branches : p.branches?.branches || [];
     p.securityAdvisors = advisorList(p.securityAdvisors);
     p.performanceAdvisors = advisorList(p.performanceAdvisors);
+    p.migrations = Array.isArray(p.migrations) ? p.migrations : p.migrations?.migrations || [];
     p.checks = evaluateSupabaseProject(p, entry);
+
+    if (entry.migrationSourceDir) {
+      try {
+        const repoFiles = await readdir(entry.migrationSourceDir);
+        p.migrationParity = compareMigrationParity(repoFiles, p.migrations);
+        if (entry.enforceMigrationParity &&
+            (p.migrationParity.repoOnly.length ||
+             p.migrationParity.liveOnly.length ||
+             p.migrationParity.versionMismatches.length)) {
+          p.checks.push({
+            level:"blocker",
+            code:"migration_history_drift",
+            detail:"Git migration history does not reproduce live migration history: " +
+              p.migrationParity.repoCount + " repo files vs " +
+              p.migrationParity.liveCount + " applied migrations; " +
+              p.migrationParity.liveOnly.length + " live-only, " +
+              p.migrationParity.repoOnly.length + " repo-only, " +
+              p.migrationParity.versionMismatches.length + " version mismatches",
+          });
+        }
+      } catch (error) {
+        p.errors.push({
+          key:"migrationParity",
+          status:null,
+          message:error.message,
+        });
+        if (entry.enforceMigrationParity) {
+          p.checks.push({
+            level:"blocker",
+            code:"migration_parity_unresolved",
+            detail:"Could not verify migration parity from " + entry.migrationSourceDir,
+          });
+        }
+      }
+    }
+
     projects.push(p);
   }
 
@@ -352,6 +435,15 @@ function markdown(r) {
         "- Security advisors: " + p.securityAdvisors.length,
         "- Performance advisors: " + p.performanceAdvisors.length
       );
+      if (p.migrationParity) {
+        lines.push(
+          "- Migration parity: repo=" + p.migrationParity.repoCount +
+            ", live=" + p.migrationParity.liveCount +
+            ", live-only=" + p.migrationParity.liveOnly.length +
+            ", repo-only=" + p.migrationParity.repoOnly.length +
+            ", version-mismatches=" + p.migrationParity.versionMismatches.length
+        );
+      }
       for (const c of p.checks) lines.push("- " + c.level + " " + c.code + ": " + c.detail);
       for (const e of p.errors) lines.push("- warning " + e.key + ": " + (e.status || "error") + " " + e.message);
       lines.push("");
