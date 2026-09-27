@@ -89,3 +89,12 @@ test("baseline backfill writes attributable portfolio audit evidence without inf
   assert.match(sql,/insert into public\.events/i);
   assert.doesNotMatch(sql,/relationship_type[\s\S]{0,300}'contains'/i);
 });
+
+
+test("RONSAS baseline is scoped to the canonical Resonance DataNest project",()=>{
+  const sql=migration();
+  if(!sql)return;
+  assert.match(sql,/join\s+public\.projects\s+[a-z]+\s+on\s+[a-z]+\.id\s*=\s*[a-z]+\.project_id/is);
+  assert.match(sql,/projects[\s\S]*slug='resonance-datanest'/i);
+  assert.doesNotMatch(sql,/from\s+public\.products\s*\n\s*where\s+slug='ronsas'[\s\S]*limit\s+1/i);
+});
