@@ -1,0 +1,64 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+  classifyBranch,
+  evaluateSupabaseProject,
+  extractAuditIds,
+  normalizeBranchFamily,
+} from "../../scripts/branch-cleaner.mjs";
+
+const config = {
+  baseBranch: "main",
+  staleDays: 14,
+  minDeleteAgeDays: 7,
+  protectedPatterns: ["^main$", "^release/"],
+};
+const now = new Date("2026-09-26T18:00:00Z");
+
+test("normalizes iterative branch families without conflating the feature stem", () => {
+  assert.equal(normalizeBranchFamily("feat/datanest-ai-command-context-lock-v4"), "feat/datanest-ai-command-context-lock");
+  assert.equal(normalizeBranchFamily("fix/staging-routing-current-main-20260925"), "fix/staging-routing");
+});
+
+test("extracts unique audit IDs", () => {
+  assert.deepEqual(extractAuditIds("AUD-003 then AUD-010 and AUD-003"), ["AUD-003", "AUD-010"]);
+});
+
+test("never marks the base branch for deletion", () => {
+  const result = classifyBranch({ name:"main", updatedAt:"2026-01-01T00:00:00Z", compare:{ ahead_by:0 } }, config, now);
+  assert.equal(result.decision, "keep");
+  assert.equal(result.reason, "protected");
+});
+
+test("keeps branches with open pull requests", () => {
+  const result = classifyBranch({ name:"feat/live", openPr:true, updatedAt:"2026-01-01T00:00:00Z", compare:{ ahead_by:0 } }, config, now);
+  assert.equal(result.decision, "keep");
+  assert.equal(result.reason, "open_pr");
+});
+
+test("only proposes deletion when an old branch has no unique commits", () => {
+  const result = classifyBranch({ name:"fix/merged", mergedPr:true, updatedAt:"2026-09-01T00:00:00Z", compare:{ ahead_by:0, behind_by:8, status:"behind" } }, config, now);
+  assert.equal(result.decision, "delete_candidate");
+  assert.equal(result.reason, "merged_no_unique_commits");
+});
+
+test("does not delete a branch that has post-merge unique commits", () => {
+  const result = classifyBranch({ name:"fix/merged-but-changed", mergedPr:true, updatedAt:"2026-09-01T00:00:00Z", compare:{ ahead_by:2, behind_by:5 } }, config, now);
+  assert.equal(result.decision, "review");
+  assert.equal(result.reason, "post_merge_unique_commits");
+});
+
+test("flags a failed default Supabase branch as a blocker", () => {
+  const checks = evaluateSupabaseProject({
+    project:{ status:"ACTIVE_HEALTHY" },
+    branches:[{ name:"main", git_branch:"main", is_default:true, status:"MIGRATIONS_FAILED" }],
+  }, { expectedGitBranch:"main" });
+  assert.equal(checks[0].level, "blocker");
+  assert.equal(checks[0].code, "supabase_branch_failure");
+});
+
+test("compare uncertainty can never become a delete candidate", () => {
+  const result = classifyBranch({ name:"fix/unknown", updatedAt:"2026-01-01T00:00:00Z", compare:{ status:"unknown", ahead_by:null } }, config, now);
+  assert.equal(result.decision, "keep");
+  assert.equal(result.reason, "active_or_unresolved");
+});
