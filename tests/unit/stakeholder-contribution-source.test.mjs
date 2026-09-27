@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const migration = readFileSync(
-  new URL("../../supabase/migrations/20260925020000_datanest_stakeholder_contribution_v1.sql", import.meta.url),
+  new URL("../../supabase/migrations/20260925000530_datanest_stakeholder_contribution_v1.sql", import.meta.url),
   "utf8"
 );
 const app = readFileSync(new URL("../../src/components/DataNestApp.tsx", import.meta.url),"utf8");
