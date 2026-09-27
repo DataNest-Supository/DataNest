@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
+import { useSessionDraftState } from "@/lib/sessionDraft";
 
 type Role="owner"|"admin"|"operator"|"viewer";
 type Channel={
@@ -75,13 +76,15 @@ export default function ThinkTankWorkspace({
   const [busy,setBusy]=useState(false);
   const threadLoadGeneration=useRef(0);
 
-  const [channelName,setChannelName]=useState("");
-  const [channelDescription,setChannelDescription]=useState("");
+  const draftPrefix="thinktank:"+projectId+":"+currentUserId+":";
+  const [channelName,setChannelName,channelNameDraft]=useSessionDraftState(draftPrefix+"channel-name","");
+  const [channelDescription,setChannelDescription,channelDescriptionDraft]=useSessionDraftState(draftPrefix+"channel-description","");
   const [channelScope,setChannelScope]=useState<"project"|"job">("project");
   const [channelJobId,setChannelJobId]=useState("");
-  const [threadTitle,setThreadTitle]=useState("");
-  const [draft,setDraft]=useState("");
+  const [threadTitle,setThreadTitle,threadTitleDraft]=useSessionDraftState(draftPrefix+"thread:"+selectedChannelId+":title","");
+  const [draft,setDraft,messageDraft]=useSessionDraftState(draftPrefix+"message:"+selectedThreadId,"");
   const [command,setCommand]=useState("discussion");
+  const hasSessionDraft=[channelNameDraft,channelDescriptionDraft,threadTitleDraft,messageDraft].some(item=>item.hasStoredDraft);
 
   const selectedChannel=useMemo(
     ()=>channels.find(item=>item.id===selectedChannelId)||null,
@@ -438,6 +441,7 @@ export default function ThinkTankWorkspace({
   if(loading)return <section className="panel"><p className="muted">Loading Think Tanks…</p></section>;
 
   return <div>
+    {hasSessionDraft&&<p className="muted" role="status">Think Tank draft restored · saved only in this browser session until submitted.</p>}
     <section className="heroPanel">
       <div>
         <p className="eyebrow">THINK TANKS + DATANEST AI</p>
