@@ -42,3 +42,11 @@ Use read access sufficient for the configured project status, branch status, sec
 3. Review delete candidates and all warnings.
 4. Run with `apply=true`, `strict=true` only when the strict dry run is clean.
 5. Preserve generated artifacts as cleanup evidence.
+
+## Superseded branch families
+
+Branch-family naming is only a review hint. Branch Cleaner does not treat a similar name, version suffix, date suffix, or newer timestamp as proof that work is preserved.
+
+For multi-version families, Branch Cleaner performs a GitHub compare from the older tip to the newest sibling. It records `superseded_reachable_from_sibling` only when the older tip is the merge base and therefore an ancestor of the newer sibling.
+
+This remains a **review** classification, not a delete classification, while the branch has commits that are still unique relative to `main`. The report includes `preserved-by=<branch>` so operators can consolidate deliberately without losing lineage.

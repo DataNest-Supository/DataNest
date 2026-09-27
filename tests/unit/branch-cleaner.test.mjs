@@ -50,6 +50,19 @@ test("does not delete a branch that has post-merge unique commits", () => {
   assert.equal(result.reason, "post_merge_unique_commits");
 });
 
+test("marks ancestry-proven older variants as preserved but never delete candidates", () => {
+  const result = classifyBranch({
+    name:"feat/example-v2",
+    updatedAt:"2026-09-26T17:00:00Z",
+    compare:{ ahead_by:3, behind_by:5, status:"diverged" },
+    familyHasNewerSibling:true,
+    familyContainedBy:"feat/example-v3",
+  }, config, now);
+  assert.equal(result.decision, "review");
+  assert.equal(result.reason, "superseded_reachable_from_sibling");
+  assert.equal(result.preservedBy, "feat/example-v3");
+});
+
 test("flags a failed default Supabase branch as a blocker", () => {
   const checks = evaluateSupabaseProject({
     project:{ status:"ACTIVE_HEALTHY" },
