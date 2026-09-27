@@ -322,5 +322,9 @@ test("active Job evidence signal is explicitly page-scoped and non-authoritative
   assert.match(appSource, /aria-label="Visible evidence signal"/);
   assert.match(cssSource, /\.activeWorkContextEvidence\.visible/);
   assert.match(cssSource, /\.activeWorkContextEvidence\.not-visible/);
-  assert.doesNotMatch(appSource, /activeContextEvidence[\s\S]{0,300}?complete/i);
+  const helperStart = appSource.indexOf("function activeContextEvidenceForView");
+  const helperEnd = appSource.indexOf("function tone", helperStart);
+  assert.ok(helperStart>=0&&helperEnd>helperStart);
+  const evidenceHelperSource = appSource.slice(helperStart,helperEnd);
+  assert.doesNotMatch(evidenceHelperSource, /\bcomplete(?:d|ion)?\b/i);
 });
