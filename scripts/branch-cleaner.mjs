@@ -88,6 +88,16 @@ export function classifyBranch(branch, config, now = new Date()) {
   return { decision:"keep", reason:"active_or_unresolved", ageDays:age, ahead, behind, status };
 }
 
+export function isArchivedPruneTarget(branch, config = {}, requested = false) {
+  return !!(
+    requested &&
+    config.allowArchivedPrune === true &&
+    branch?.classification?.decision === "archived" &&
+    branch?.classification?.reason === "merged_history_archived" &&
+    branch?.classification?.archiveTag
+  );
+}
+
 export function evaluateSupabaseProject(project, config = {}) {
   const checks = [];
   const status = project.project?.status || project.status || "UNKNOWN";
@@ -172,10 +182,11 @@ export function compareMigrationParity(repoFiles = [], liveMigrations = []) {
 }
 
 function parseArgs(argv) {
-  const out = { apply:false, strict:false, config:"branch-cleaner.config.json", reportDir:"artifacts/branch-cleaner", staleDays:null };
+  const out = { apply:false, strict:false, pruneArchived:false, config:"branch-cleaner.config.json", reportDir:"artifacts/branch-cleaner", staleDays:null };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--apply") out.apply = true;
     else if (argv[i] === "--strict") out.strict = true;
+    else if (argv[i] === "--prune-archived") out.pruneArchived = true;
     else if (argv[i] === "--config") out.config = argv[++i];
     else if (argv[i] === "--report-dir") out.reportDir = argv[++i];
     else if (argv[i] === "--stale-days") out.staleDays = Number(argv[++i]);
@@ -583,10 +594,86 @@ async function supabaseAudit(config, token) {
   };
 }
 
-async function applyDeletes(repo, token, branches) {
+async function revalidateDeletion(repo, token, branch, config, pruneArchived) {
+  if (
+    branch.name === config.baseBranch ||
+    matches(branch.name, config.protectedPatterns)
+  ) return { ok:false, reason:"protected_by_config" };
+
+  const owner = repo.split("/")[0];
+  const branchPath = encodeURIComponent(branch.name);
+  const [liveBranch, openPrs] = await Promise.all([
+    gh(repo, "/branches/" + branchPath, token),
+    gh(repo, "/pulls?state=open&head=" + encodeURIComponent(owner + ":" + branch.name), token),
+  ]);
+
+  if (liveBranch?.protected) return { ok:false, reason:"protected_live" };
+  if (Array.isArray(openPrs) && openPrs.length) return { ok:false, reason:"open_pr_live" };
+
+  if (branch.classification.decision === "delete_candidate") {
+    const compare = await gh(
+      repo,
+      "/compare/" + encodeURIComponent(config.baseBranch) + "..." + encodeURIComponent(branch.name),
+      token
+    );
+    if (Number(compare?.ahead_by) !== 0 || compare?.status === "unknown")
+      return { ok:false, reason:"unique_or_unknown_commits_live" };
+    return { ok:true, liveSha:liveBranch?.commit?.sha || null, mode:"standard" };
+  }
+
+  if (!isArchivedPruneTarget(branch, config, pruneArchived))
+    return { ok:false, reason:"archived_prune_not_authorized" };
+
+  const archiveTag = String(branch.classification.archiveTag || "");
+  const tagRef = ["tags", ...archiveTag.split("/")].map(encodeURIComponent).join("/");
+  const [tag, commit, prs] = await Promise.all([
+    gh(repo, "/git/ref/" + tagRef, token),
+    gh(repo, "/commits/" + liveBranch.commit.sha, token),
+    gh(repo, "/pulls?state=all&head=" + encodeURIComponent(owner + ":" + branch.name), token),
+  ]);
+
+  const liveSha = liveBranch?.commit?.sha || null;
+  const tagSha = tag?.object?.sha || null;
+  if (!liveSha || tagSha !== liveSha)
+    return { ok:false, reason:"archive_tag_tip_mismatch_live" };
+
+  const mergedAt = (Array.isArray(prs) ? prs : [])
+    .map((p) => p.merged_at)
+    .filter(Boolean)
+    .sort()
+    .at(-1) || null;
+  if (!mergedAt) return { ok:false, reason:"merged_pr_missing_live" };
+
+  const updatedAt = commit?.commit?.committer?.date || commit?.commit?.author?.date || null;
+  if (
+    !updatedAt ||
+    !Number.isFinite(Date.parse(updatedAt)) ||
+    !Number.isFinite(Date.parse(mergedAt)) ||
+    Date.parse(updatedAt) > Date.parse(mergedAt)
+  ) return { ok:false, reason:"post_merge_activity_live" };
+
+  return { ok:true, liveSha, mode:"archived" };
+}
+
+async function applyDeletes(repo, token, branches, config, options = {}) {
   const deleted = [], failed = [];
-  for (const b of branches.filter((x) => x.classification.decision === "delete_candidate")) {
+  const pruneArchived = options.pruneArchived === true;
+  const targets = branches.filter((branch) =>
+    branch.classification.decision === "delete_candidate" ||
+    isArchivedPruneTarget(branch, config, pruneArchived)
+  );
+
+  for (const b of targets) {
     try {
+      const verification = await revalidateDeletion(repo, token, b, config, pruneArchived);
+      if (!verification.ok) {
+        failed.push({
+          branch:b.name,
+          status:null,
+          message:"live deletion revalidation failed: " + verification.reason
+        });
+        continue;
+      }
       const ref = ["heads", ...b.name.split("/")].map(encodeURIComponent).join("/");
       await gh(repo, "/git/refs/" + ref, token, { method:"DELETE" });
       deleted.push(b.name);
@@ -672,6 +759,7 @@ function markdown(r) {
     "",
     "- Deleted: " + (r.apply.deleted.join(", ") || "none"),
     "- Delete failures: " + r.apply.failed.length,
+    "- Archived prune requested: " + (r.pruneArchived ? "yes" : "no"),
     "- Apply skipped: " + (r.apply.skipped ? (r.apply.reason || "yes") : "no"),
     "",
     "Branch-Cleaner reports evidence; it does not convert deletion, an advisor result, or a published audit into certification."
@@ -683,6 +771,10 @@ async function main() {
   const a = parseArgs(process.argv.slice(2));
   const config = JSON.parse(await readFile(a.config, "utf8"));
   if (Number.isFinite(a.staleDays) && a.staleDays > 0) config.staleDays = a.staleDays;
+  if (a.pruneArchived && !a.apply)
+    throw new Error("--prune-archived requires --apply.");
+  if (a.pruneArchived && config.allowArchivedPrune !== true)
+    throw new Error("Archived pruning is disabled by branch-cleaner.config.json.");
 
   const repo = process.env.BRANCH_CLEANER_REPOSITORY || process.env.GITHUB_REPOSITORY;
   const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
@@ -719,14 +811,15 @@ async function main() {
           reason:"control_plane_blockers",
           blockerCount:strictBlockers.length,
         }
-      : await applyDeletes(repo, token, github.branches))
+      : await applyDeletes(repo, token, github.branches, config, { pruneArchived:a.pruneArchived }))
     : { deleted:[], failed:[], skipped:false };
 
   const report = {
     schemaVersion:1,
     generatedAt:new Date().toISOString(),
     repository:repo,
-    mode:a.apply ? "apply" : "dry-run",
+    mode:a.apply ? (a.pruneArchived ? "apply+prune-archived" : "apply") : "dry-run",
+    pruneArchived:a.pruneArchived,
     guardrails:config.guardrails || [],
     learning,
     github:{ ...github, counts:decisionCounts(github.branches) },

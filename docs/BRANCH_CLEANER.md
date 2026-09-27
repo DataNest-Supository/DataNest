@@ -85,3 +85,17 @@ The report includes the newer sibling plus GitHub's compare status and ahead/beh
 - `possible_superseded_variant`: naming suggests a newer sibling but the comparison could not establish a relation.
 
 All three remain non-destructive review states while commits are unique relative to `main`.
+
+## Optional archived-branch pruning
+
+Archive-aware cleanup remains disabled by default. Setting `allowArchivedPrune=true` only enables the capability; deletion still requires the explicit `--apply --prune-archived` mode (or the matching workflow input).
+
+Before deleting an archived branch, Branch Cleaner revalidates live GitHub state immediately:
+
+- the branch is still unprotected and is not covered by a protected pattern;
+- there is still no open pull request for the branch;
+- the configured archive tag still points to the exact live branch-tip SHA;
+- the branch still has at least one merged pull request;
+- the live branch-tip commit timestamp does not show post-merge activity.
+
+If any check changes between audit and apply, the branch is not deleted and strict mode records the revalidation failure. Standard apply mode continues to ignore archived branches.

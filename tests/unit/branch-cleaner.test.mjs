@@ -8,6 +8,7 @@ import {
   migrationNameFromFile,
   compareMigrationParity,
   normalizeBranchFamily,
+  isArchivedPruneTarget,
 } from "../../scripts/branch-cleaner.mjs";
 
 const config = {
@@ -75,6 +76,19 @@ test("recognizes exact archive tags without making archived history deletable", 
   assert.equal(result.decision, "archived");
   assert.equal(result.reason, "merged_history_archived");
   assert.equal(result.archiveTag, "branch-archive/fix/squash-merged");
+});
+
+test("archived pruning requires both explicit mode and config opt-in", () => {
+  const branch = {
+    classification:{
+      decision:"archived",
+      reason:"merged_history_archived",
+      archiveTag:"branch-archive/fix/example",
+    },
+  };
+  assert.equal(isArchivedPruneTarget(branch, { allowArchivedPrune:false }, true), false);
+  assert.equal(isArchivedPruneTarget(branch, { allowArchivedPrune:true }, false), false);
+  assert.equal(isArchivedPruneTarget(branch, { allowArchivedPrune:true }, true), true);
 });
 
 test("marks ancestry-proven older variants as preserved but never delete candidates", () => {
