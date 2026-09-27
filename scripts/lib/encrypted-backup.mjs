@@ -24,7 +24,7 @@ export function parseBackupKey(value){
 export function encryptBackup(plaintext,keyInput){
   const key=parseBackupKey(keyInput);
   const iv=randomBytes(12);
-  const cipher=createCipheriv("aes-256-gcm",key,iv);
+  const cipher=createCipheriv("aes-256-gcm",key,iv,{authTagLength:16});
   const ciphertext=Buffer.concat([cipher.update(plaintext),cipher.final()]);
   const envelope={
     format:"datanest-ai-backup",
