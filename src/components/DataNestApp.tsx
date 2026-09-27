@@ -191,10 +191,6 @@ const AiOperationsDashboard = dynamic(() => import("@/components/AiOperationsDas
   loading: () => <section className="panel"><p className="muted">Loading AI administration…</p></section>
 });
 
-const TrustDataPanel = dynamic(() => import("@/components/TrustDataPanel"), {
-  ssr: false,
-  loading: () => <section className="panel"><p className="muted">Loading Trust & Data…</p></section>
-});
 
 const ProductsWorkspace = dynamic(() => import("@/components/ProductsWorkspace"), {
   ssr: false,
@@ -1486,9 +1482,7 @@ function Settings({
     {project&&<div className="fullWidth" aria-label="AI Administration">
       <AiOperationsDashboard projectId={project.id} currentUserId={currentUserId} canManageAi={canManageAi}/>
     </div>}
-    {project&&<div className="fullWidth" aria-label="Trust & Data Administration">
-      <TrustDataPanel projectId={project.id} currentUserId={currentUserId} role={membership?.role||"viewer"}/>
-    </div>}
+
     <div className="panel fullWidth"><p className="eyebrow">SCHEDULER</p><h3>Policies</h3><div className="policyGrid">{policies.map(policy=><article key={policy.id}><b>{policy.policy_key}</b><pre>{JSON.stringify(policy.value,null,2)}</pre></article>)}</div></div>
   </section>;
 }
