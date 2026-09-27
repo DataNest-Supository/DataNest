@@ -15,7 +15,8 @@ import ResourceFabricPanel from "@/components/ResourceFabricPanel";
 import type { ExecutionAuthorityRole } from "@/lib/executionAuthority";
 import { useSessionDraftState } from "@/lib/sessionDraft";
 import { useSingleFlight } from "@/lib/singleFlight";
-import { PENDING_MUTATION_EVENT, classifyPendingMutationAge, clearPendingMutation, getOrCreatePendingMutation, loadPendingMutation, markPendingMutationVerification, type PendingMutationAge, type PendingMutationIntent, type PendingMutationVerification } from "@/lib/pendingMutation";
+import { PENDING_MUTATION_EVENT, classifyPendingMutationAge, clearPendingMutation, getOrCreatePendingMutation, loadPendingMutation, markPendingMutationDurable, markPendingMutationVerification, restorePendingMutation, type PendingMutationAge, type PendingMutationIntent, type PendingMutationVerification } from "@/lib/pendingMutation";
+import { durableRecoveryToPendingIntent, listDurableRecoveries, markDurableRecoveryVerification, registerDurableRecovery, resolveDurableRecovery } from "@/lib/durableRecovery";
 import { reconcileServerMutation, type MutationReconciliationState } from "@/lib/mutationReconciliation";
 
 type Project = { id:string; slug:string; name:string; description:string|null; status:string; created_at:string };
@@ -74,16 +75,19 @@ type JobExecutionAuthorityState = {
   decision_reason_code?:string|null;
   readiness?:string|null;
 };
-type MutationRecoveryItem = {
+type MutationRecoveryDescriptor = {
   scope:string;
   kind:string;
   view:ViewKey;
   label:string;
   detail:string;
+};
+type MutationRecoveryItem = MutationRecoveryDescriptor & {
   startedAt:string;
   age:PendingMutationAge;
   verificationState:PendingMutationVerification;
   lastCheckedAt:string|null;
+  durable:boolean;
 };
 
 const PAGE_SIZE = 20;
@@ -410,6 +414,9 @@ export default function DataNestApp({session}:{session:Session}) {
   const [notice,setNotice]=useState("");
   const [error,setError]=useState("");
   const [pendingRecoveries,setPendingRecoveries]=useState<MutationRecoveryItem[]>([]);
+  const [recoveryHydrated,setRecoveryHydrated]=useState(false);
+  const [recoveryLedgerError,setRecoveryLedgerError]=useState("");
+  const recoverySyncingRef=useRef(false);
   const [health,setHealth]=useState<HealthState>({state:"checking",checkedAt:null,message:"Checking control plane…"});
   const [reloadingLatest,setReloadingLatest]=useState(false);
   const [locatingActiveJob,setLocatingActiveJob]=useState(false);
@@ -421,7 +428,7 @@ export default function DataNestApp({session}:{session:Session}) {
   const canManageAi=membership ? ["owner","admin"].includes(membership.role) : false;
 
   const pendingRecoveryDescriptors=useMemo(()=>{
-    if(!project)return [] as Array<Omit<MutationRecoveryItem,"startedAt">>;
+    if(!project)return [] as MutationRecoveryDescriptor[];
     const suffix=project.id+":"+session.user.id;
     return [
       {
@@ -462,12 +469,38 @@ export default function DataNestApp({session}:{session:Session}) {
         startedAt:intent.startedAt,
         age:classifyPendingMutationAge(intent.startedAt),
         verificationState:intent.verificationState,
-        lastCheckedAt:intent.lastCheckedAt
+        lastCheckedAt:intent.lastCheckedAt,
+        durable:intent.durable
       });
     }
     next.sort((a,b)=>a.startedAt.localeCompare(b.startedAt));
     setPendingRecoveries(next);
   },[project,pendingRecoveryDescriptors]);
+
+  const synchronizeDurableRecoveries=useCallback(async()=>{
+    if(!project)return;
+    if(recoverySyncingRef.current)return;
+    recoverySyncingRef.current=true;
+    try{
+      const serverRecoveries=await listDurableRecoveries(project.id);
+      for(const serverRecovery of serverRecoveries){
+        const descriptor=pendingRecoveryDescriptors.find(item=>item.scope===serverRecovery.scope&&item.kind===serverRecovery.mutationKind);
+        if(!descriptor)continue;
+        const local=loadPendingMutation(descriptor.scope);
+        if(local&&local.requestKey!==serverRecovery.requestKey){
+          throw new Error("Durable recovery conflict detected for "+descriptor.label+". Review this account on the device that created the other unresolved identity.");
+        }
+        restorePendingMutation(descriptor.scope,durableRecoveryToPendingIntent(serverRecovery));
+      }
+      setRecoveryLedgerError("");
+      setRecoveryHydrated(true);
+      syncPendingRecoveries();
+    }catch(syncError){
+      setRecoveryLedgerError(syncError instanceof Error?syncError.message:"Unable to synchronize the durable recovery ledger.");
+    }finally{
+      recoverySyncingRef.current=false;
+    }
+  },[project,pendingRecoveryDescriptors,syncPendingRecoveries]);
 
   const openPendingRecovery=useCallback((item:MutationRecoveryItem)=>{
     setView(item.view);
@@ -863,19 +896,28 @@ export default function DataNestApp({session}:{session:Session}) {
 
   useEffect(()=>{ void loadCore(); },[loadCore]);
   useEffect(()=>{
+    setRecoveryHydrated(false);
+    setRecoveryLedgerError("");
+  },[project?.id,session.user.id]);
+  useEffect(()=>{
     syncPendingRecoveries();
-    const sync=()=>syncPendingRecoveries();
-    const ageTimer=window.setInterval(sync,60000);
-    window.addEventListener(PENDING_MUTATION_EVENT,sync);
-    window.addEventListener("pageshow",sync);
-    window.addEventListener("focus",sync);
+    if(project)void synchronizeDurableRecoveries();
+    const localSync=()=>syncPendingRecoveries();
+    const durableSync=()=>{
+      syncPendingRecoveries();
+      if(project)void synchronizeDurableRecoveries();
+    };
+    const ageTimer=window.setInterval(durableSync,60000);
+    window.addEventListener(PENDING_MUTATION_EVENT,localSync);
+    window.addEventListener("pageshow",durableSync);
+    window.addEventListener("focus",durableSync);
     return()=>{
       window.clearInterval(ageTimer);
-      window.removeEventListener(PENDING_MUTATION_EVENT,sync);
-      window.removeEventListener("pageshow",sync);
-      window.removeEventListener("focus",sync);
+      window.removeEventListener(PENDING_MUTATION_EVENT,localSync);
+      window.removeEventListener("pageshow",durableSync);
+      window.removeEventListener("focus",durableSync);
     };
-  },[syncPendingRecoveries]);
+  },[project,syncPendingRecoveries,synchronizeDurableRecoveries]);
   useEffect(()=>{
     if(!project){
       setActiveDataNestAiSession(null);
@@ -1125,7 +1167,7 @@ export default function DataNestApp({session}:{session:Session}) {
     if(pendingRecoveries.length>0){
       const noun=pendingRecoveries.length===1?"operation":"operations";
       const confirmed=window.confirm(
-        pendingRecoveries.length+" unresolved "+noun+" will remain preserved in this browser session and will reappear only when this same account returns. Sign out without resolving "+(pendingRecoveries.length===1?"it":"them")+" now?"
+        pendingRecoveries.length+" unresolved "+noun+" will remain preserved in this browser session and, when durably registered, in the recovery ledger. They remain scoped to this account and will reappear when it returns. Sign out without resolving "+(pendingRecoveries.length===1?"it":"them")+" now?"
       );
       if(!confirmed)return;
     }
@@ -1434,7 +1476,7 @@ export default function DataNestApp({session}:{session:Session}) {
             <div>
               <p className="eyebrow">AUTHORITATIVE RECOVERY</p>
               <h2>{pendingRecoveries.length===1?"1 unresolved operation":pendingRecoveries.length+" unresolved operations"}</h2>
-              <p>These requests have preserved identities but are not yet finalized in this browser session. Review server state before issuing replacement work.</p>
+              <p>These requests have preserved identities and are not yet finalized. Durable entries can recover across tabs and devices; authoritative mutation state still decides the outcome.</p>
             </div>
             <span className="badge warn">{pendingRecoveries.length} OPEN</span>
           </div>
@@ -1448,7 +1490,7 @@ export default function DataNestApp({session}:{session:Session}) {
                   </span>
                 </div>
                 <p>{item.verificationState==="confirmed_absent"?"Server state confirmed no record for the preserved request. Resume the original retry or edit it into new intent.":item.detail}</p>
-                <small>Started {formatDate(item.startedAt)} · request identity preserved{item.lastCheckedAt?" · checked "+formatDate(item.lastCheckedAt):""}</small>
+                <small>Started {formatDate(item.startedAt)} · request identity preserved · {item.durable?"durable ledger":"session continuity"}{item.lastCheckedAt?" · checked "+formatDate(item.lastCheckedAt):""}</small>
               </div>
               <button className="secondaryButton compact" type="button" onClick={()=>openPendingRecovery(item)}>{item.verificationState==="confirmed_absent"?"Resume safe retry →":"Review &amp; reconcile →"}</button>
             </article>)}
@@ -1528,13 +1570,19 @@ export default function DataNestApp({session}:{session:Session}) {
         <div key={view} className="viewStage workspaceArrival">
         {!loadingCore&&project&&view==="overview"&&<ResonanceHome project={project} jobs={recentJobs} counts={summary} canOperate={canOperate} onNavigate={setView}/>}
         {!loadingCore&&project&&view==="stakeholder"&&<StakeholderWorkspace projectId={project.id} currentUserId={session.user.id} canReview={canManageAi}/>}
-        {!loadingCore&&project&&view==="sparks"&&<SparksWorkspace projectId={project.id} currentUserId={session.user.id} canOperate={canOperate} canManage={canManageAi} setNotice={setNotice} setError={setError}/>}
+        {!loadingCore&&project&&["sparks","productlab","unifi"].includes(view)&&!recoveryHydrated&&<section className="panel" role="status" aria-live="polite">
+          <p className="eyebrow">DURABLE RECOVERY</p>
+          <h2>Synchronizing mutation continuity</h2>
+          <p className="muted">{recoveryLedgerError||"Checking this account for unresolved server-backed request identities before enabling mutation controls."}</p>
+          {recoveryLedgerError&&<button className="secondaryButton compact" type="button" onClick={()=>void synchronizeDurableRecoveries()}>Retry recovery sync</button>}
+        </section>}
+        {!loadingCore&&project&&view==="sparks"&&recoveryHydrated&&<SparksWorkspace projectId={project.id} currentUserId={session.user.id} canOperate={canOperate} canManage={canManageAi} setNotice={setNotice} setError={setError}/>}
         {!loadingCore&&project&&view==="governance"&&<GovernanceWorkspace projectId={project.id} currentUserId={session.user.id} role={membership?.role||"viewer"} canManage={canManageAi} setNotice={setNotice} setError={setError}/>} 
         {!loadingCore&&project&&view==="products"&&<ProductsWorkspace projectId={project.id} currentUserId={session.user.id} role={membership?.role||"viewer"}/>}
         {!loadingCore&&project&&view==="thinktank"&&<ThinkTankWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} canReview={canManageAi} setNotice={setNotice} setError={setError}/>}
         {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace key={project.id+":"+session.user.id} projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError} preferredJobId={activeDataNestAiSession?.jobId||null} onActiveSessionChange={updateActiveWorkContext}/>}
-        {!loadingCore&&project&&view==="productlab"&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate} setNotice={setNotice} setError={setError}/>}
-        {!loadingCore&&project&&view==="unifi"&&<UnifiPlanner project={project} currentUserId={session.user.id} jobs={jobs} capabilities={capabilities} reload={async()=>{await loadJobsPage(jobPage);await loadSummary(project.id);await loadRecentJobs(project.id);}} setNotice={setNotice} setError={setError} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} activeJobId={activeDataNestAiSession?.jobId||null}/>}
+        {!loadingCore&&project&&view==="productlab"&&recoveryHydrated&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate} setNotice={setNotice} setError={setError}/>}
+        {!loadingCore&&project&&view==="unifi"&&recoveryHydrated&&<UnifiPlanner project={project} currentUserId={session.user.id} jobs={jobs} capabilities={capabilities} reload={async()=>{await loadJobsPage(jobPage);await loadSummary(project.id);await loadRecentJobs(project.id);}} setNotice={setNotice} setError={setError} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} activeJobId={activeDataNestAiSession?.jobId||null}/>}
         {!loadingCore&&view==="scheduler"&&project&&<Scheduler projectId={project.id} projectName={project?.name||"Resonance DataNest"} projectSlug={project?.slug||"resonance-datanest"} currentUserId={session.user.id} role={membership?.role||"viewer"} jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null} setNotice={setNotice} setError={setError} filter={schedulerFilter} viewMode={schedulerViewMode} sortMode={schedulerSortMode} onFilter={setSchedulerFilter} onViewMode={setSchedulerViewMode} onSortMode={setSchedulerSortMode}/>} 
         {!loadingCore&&view==="runs"&&<Runs runs={runs} jobLookup={jobLookup} page={runPage} total={runCount} onPage={setRunPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
         {!loadingCore&&view==="checkpoints"&&<Checkpoints checkpoints={checkpoints} jobLookup={jobLookup} page={checkpointPage} total={checkpointCount} onPage={setCheckpointPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
