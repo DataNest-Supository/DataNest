@@ -46,8 +46,8 @@ test("Capability Lease issuance remains distinct from resource reservation",()=>
   const source=sql();
   assert.match(source,/insert into public\.capability_leases/i);
   assert.match(source,/capability\.capability=any\(envelope\.permitted_capabilities\)/i);
-  assert.match(source,/target_expires_at<=envelope\.expires_at/i);
-  assert.match(source,/target_max_operations<=\(envelope\.resource_ceiling->>'max_operations'\)::integer/i);
+  assert.match(source,/target_expires_at<=now\(\) or target_expires_at>envelope\.expires_at/i);
+  assert.match(source,/target_max_operations>max_envelope_operations[\s\S]*exceed Authority Envelope resource ceiling/i);
   assert.doesNotMatch(source,/insert into public\.reservations[\s\S]*issue_capability_lease_v1/i);
 });
 
