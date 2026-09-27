@@ -121,7 +121,7 @@ test("Owner approvals and retirement failures preserve displayed lifecycle",asyn
   await page.getByRole("button",{name:/Candidate Studio/}).click();
   await page.getByLabel("Lifecycle reason").fill("Retirement guard fixture");
   await page.getByRole("button",{name:"Retire",exact:true}).click();
-  await expect(page.getByRole("alert")).toContainText("active linked production surface");
+  await expect(page.locator(".catalogError").filter({hasText:"active linked production surface"})).toBeVisible();
   await expect(page.getByText("Candidate",{exact:true}).first()).toBeVisible();
 
   await page.getByRole("button",{name:/Transcription Capability/}).click();
