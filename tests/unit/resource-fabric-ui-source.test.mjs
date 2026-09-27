@@ -43,7 +43,7 @@ test("Resource Fabric mutation controls are owner/admin gated",()=>{
 
 test("TranScheduler adds Resource Fabric as sibling mode while Gantt remains default",()=>{
   const source=fs.readFileSync(appPath,"utf8");
-  assert.match(source,/useState<"queue"\|"gantt"\|"authority"\|"resources">\("gantt"\)/);
+  assert.match(source,/type SchedulerViewMode = "queue"\|"gantt"\|"authority"\|"resources"/);\n  assert.match(source,/useState<SchedulerViewMode>\("gantt"\)/);
   assert.match(source,/>Queue<\/button>/);
   assert.match(source,/>Gantt chart<\/button>/);
   assert.match(source,/>Authority & Execution<\/button>/);

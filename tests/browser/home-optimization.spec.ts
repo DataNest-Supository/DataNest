@@ -599,10 +599,21 @@ test("active work context survives handoffs and focuses related operational evid
 
   await page.getByRole("group",{name:"TranScheduler view"}).getByRole("button",{name:"Queue"}).click();
   await page.locator(".schedulerFilterDesktop").getByRole("button",{name:"QUEUED",exact:true}).click();
+  await page.getByLabel("Sort project jobs").selectOption("recent");
+  await expect(page).toHaveURL(/mode=queue/);
+  await expect(page).toHaveURL(/filter=QUEUED/);
+  await expect(page).toHaveURL(/sort=recent/);
+  await page.reload();
+  await expect(page.getByRole("group",{name:"TranScheduler view"}).getByRole("button",{name:"Queue"})).toHaveAttribute("aria-pressed","true");
+  await expect(page.locator(".schedulerFilterDesktop").getByRole("button",{name:"QUEUED",exact:true})).toHaveClass(/active/);
+  await expect(page.getByLabel("Sort project jobs")).toHaveValue("recent");
   await expect(page.locator(".schedulerRow[data-active-context='true']")).toHaveCount(0);
   await expect(page.getByText("Other visible project work",{exact:true})).toBeVisible();
   await page.getByRole("region",{name:"Active work context"}).getByRole("button",{name:/Jump to visible evidence/}).click();
   await expect(page.getByRole("group",{name:"TranScheduler view"}).getByRole("button",{name:"Gantt chart"})).toHaveAttribute("aria-pressed","true");
+  await expect(page).not.toHaveURL(/mode=queue/);
+  await expect(page).not.toHaveURL(/filter=QUEUED/);
+  await expect(page).toHaveURL(/sort=recent/);
   await expect(page.locator(".ganttRow[data-active-context='true']")).toBeFocused();
   await expect(page.getByText("Active Job revealed in TranScheduler.",{exact:true})).toBeVisible();
 
@@ -721,8 +732,17 @@ test("active Job locator crosses paginated Scheduler pages without filtering pro
 
   await expect(page.locator(".ganttRow[data-active-context='true']")).toHaveCount(1);
   await expect(page.locator(".ganttRow[data-active-context='true']")).toBeFocused();
+  await expect(page).toHaveURL(/\?view=scheduler&(?:[^#]*&)?page=2(?:&|$)/);
   expect(locatorSawSecondPage).toBe(true);
   await expect(page.locator(".ganttRow[data-active-context='true']").getByText("Off-page active Job",{exact:true})).toBeVisible();
+  await page.reload();
+  await expect(page.locator(".ganttRow[data-active-context='true']")).toHaveCount(1);
+  await expect(page).toHaveURL(/\?view=scheduler&(?:[^#]*&)?page=2(?:&|$)/);
+  await page.getByRole("region",{name:"Active work context"}).getByRole("button",{name:"Review active Job runs"}).click();
+  await expect(page).toHaveURL(/\?view=runs/);
+  await page.goBack();
+  await expect(page).toHaveURL(/\?view=scheduler&(?:[^#]*&)?page=2(?:&|$)/);
+  await expect(page.locator(".ganttRow[data-active-context='true']")).toHaveCount(1);
   await expect(page.getByText("Active Job revealed in TranScheduler.",{exact:true})).toBeVisible();
   await expect(page.getByRole("region",{name:"Active work context"}).getByRole("status",{name:"Visible evidence signal"})).toContainText("On this page: 1 matching Job record.");
 });

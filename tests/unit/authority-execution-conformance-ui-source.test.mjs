@@ -70,7 +70,7 @@ test("Governance adds Authority and Execution as a third deep-linkable section w
 
 test("TranScheduler preserves its operational Authority mode and loads read-only job authority summaries",()=>{
   const source=app();
-  assert.match(source,/useState<"queue"\|"gantt"\|"authority"\|"resources">\("gantt"\)/);
+  assert.match(source,/type SchedulerViewMode = "queue"\|"gantt"\|"authority"\|"resources"/);\n  assert.match(source,/useState<SchedulerViewMode>\("gantt"\)/);
   assert.match(source,/get_job_execution_authority_summary_v1/);
   assert.match(source,/Authority not evaluated/);
   assert.match(source,/Report only/);
