@@ -539,13 +539,19 @@ test("mutation-heavy workspaces use the shared single-flight boundary", () => {
   assert.match(resourceFabricSource, /useSingleFlight\(\)/);
 });
 
-test("pending mutation journal preserves request identity, payload, and same-tab change signals", () => {
+test("pending mutation journal preserves identity, lifecycle state, and same-tab change signals", () => {
   assert.match(pendingMutationSource, /const PENDING_MUTATION_PREFIX="datanest\.pendingMutation\."/);
   assert.match(pendingMutationSource, /PENDING_MUTATION_EVENT="datanest:pending-mutation-change"/);
+  assert.match(pendingMutationSource, /PENDING_MUTATION_AGING_MS=15\*60\*1000/);
+  assert.match(pendingMutationSource, /PENDING_MUTATION_STALE_MS=60\*60\*1000/);
+  assert.match(pendingMutationSource, /verificationState:"unverified"/);
+  assert.match(pendingMutationSource, /lastCheckedAt:null/);
   assert.match(pendingMutationSource, /requestKey:crypto\.randomUUID\(\)/);
   assert.match(pendingMutationSource, /window\.sessionStorage\.setItem\(storageKey\(scope\),JSON\.stringify\(next\)\)/);
   assert.match(pendingMutationSource, /window\.dispatchEvent\(new CustomEvent\(PENDING_MUTATION_EVENT,\{detail:\{scope\}\}\)\)/);
-  assert.match(pendingMutationSource, /if\(changed\)notifyPendingMutationChange\(scope\)/);
+  assert.match(pendingMutationSource, /markPendingMutationVerification/);
+  assert.match(pendingMutationSource, /reason==="confirmed_absent_new_intent"&&existing\.verificationState!=="confirmed_absent"/);
+  assert.match(pendingMutationSource, /classifyPendingMutationAge/);
   assert.match(pendingMutationSource, /existing&&existing\.kind===kind&&JSON\.stringify\(existing\.payload\)===JSON\.stringify\(payload\)/);
   assert.match(mutationReconciliationSource, /state:"confirmed"/);
   assert.match(mutationReconciliationSource, /state:"not_recorded"/);
@@ -601,16 +607,35 @@ test("Product Lab mutation feedback remains visible after workspace navigation",
   assert.doesNotMatch(productLabSource, /const \[error,setError\]=useState/);
 });
 
-test("global recovery center surfaces deterministic pending mutations across workspaces", () => {
+test("global recovery center scopes, ages, and preserves unresolved operations across account transitions", () => {
+  assert.match(appSource, /const suffix=project\.id\+":"\+session\.user\.id/);
   assert.match(appSource, /scope:"unifi-job:"\+suffix/);
   assert.match(appSource, /scope:"sparks-redemption:"\+suffix/);
   assert.match(appSource, /scope:"productlab-test-run:"\+suffix/);
+  assert.match(appSource, /classifyPendingMutationAge\(intent\.startedAt\)/);
+  assert.match(appSource, /window\.setInterval\(sync,60000\)/);
   assert.match(appSource, /window\.addEventListener\(PENDING_MUTATION_EVENT,sync\)/);
   assert.match(appSource, /aria-label="Unresolved operations"/);
   assert.match(appSource, /AUTHORITATIVE RECOVERY/);
+  assert.match(appSource, /SAFE RETRY/);
+  assert.match(appSource, /STALE/);
   assert.match(appSource, /Review &amp; reconcile →/);
   assert.match(appSource, /request identity preserved/);
   assert.match(appSource, /openPendingRecovery\(item\)/);
-  assert.match(cssSource, /\.mutationRecoveryCenter\{/);
+  assert.match(appSource, /will remain preserved in this browser session and will reappear only when this same account returns/);
+  assert.doesNotMatch(appSource, /signOut\(\)[\s\S]{0,180}clearPendingMutation/);
+  assert.match(cssSource, /\.mutationRecoveryItem\.stale\{/);
   assert.match(cssSource, /\.mutationRecoveryTopButton\{/);
+});
+
+
+test("deterministic reconciliation marks verification state before lifecycle cleanup", () => {
+  assert.match(appSource, /markPendingMutationVerification\(requestScope,"confirmed_absent"\)/);
+  assert.match(appSource, /markPendingMutationVerification\(requestScope,"unconfirmed"\)/);
+  assert.match(appSource, /clearPendingMutation\(requestScope,"confirmed"\)/);
+  assert.match(appSource, /clearPendingMutation\(requestScope,"confirmed_absent_new_intent"\)/);
+  assert.match(sparksSource, /markPendingMutationVerification\(redemptionRequestScope,"confirmed_absent"\)/);
+  assert.match(sparksSource, /markPendingMutationVerification\(redemptionRequestScope,"unconfirmed"\)/);
+  assert.match(productLabSource, /markPendingMutationVerification\(testRunRequestScope,"confirmed_absent"\)/);
+  assert.match(productLabSource, /markPendingMutationVerification\(testRunRequestScope,"unconfirmed"\)/);
 });
