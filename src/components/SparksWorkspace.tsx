@@ -103,6 +103,11 @@ export default function SparksWorkspace({
     [workspace,selectedServiceId]
   );
 
+  function clearCurrentRedemptionRequestKey(){
+    if(!selectedServiceId)return;
+    clearSessionRequestKey("sparks-redemption:"+projectId+":"+currentUserId+":"+selectedServiceId);
+  }
+
   async function publishService(event:FormEvent){
     event.preventDefault();
     const supabase=getSupabase();
@@ -264,11 +269,11 @@ export default function SparksWorkspace({
     <section className="panel">
       <div className="panelHead"><div><p className="eyebrow">REDEEM</p><h3>Approved project services</h3></div><span className="countPill">{workspace.services.length}</span></div>
       {workspace.services.length?<form onSubmit={requestRedemption} className="settingsGrid">
-        <label>Service<select value={selectedServiceId} onChange={e=>setSelectedServiceId(e.target.value)}>
+        <label>Service<select value={selectedServiceId} onChange={e=>{clearCurrentRedemptionRequestKey();setSelectedServiceId(e.target.value);}}>
           {workspace.services.map(service=><option key={service.id} value={service.id}>{service.name+" · "+fmt(service.spark_price)+" Sparks"}</option>)}
         </select></label>
-        <label>Quantity<input type="number" min="1" max="100" value={quantity} onChange={e=>setQuantity(e.target.value)}/></label>
-        <label>Request note<input value={requestNote} onChange={e=>setRequestNote(e.target.value)} placeholder="Optional context for fulfillment"/></label>
+        <label>Quantity<input type="number" min="1" max="100" value={quantity} onChange={e=>{clearCurrentRedemptionRequestKey();setQuantity(e.target.value);}}/></label>
+        <label>Request note<input value={requestNote} onChange={e=>{clearCurrentRedemptionRequestKey();setRequestNote(e.target.value);}} placeholder="Optional context for fulfillment"/></label>
         <div>
           <p className="muted">{selectedService?.description||"Approved internal Resonance service."}</p>
           {selectedService?.terms&&<small>{selectedService.terms}</small>}
