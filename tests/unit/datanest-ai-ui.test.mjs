@@ -37,3 +37,14 @@ test("DataNest AI command center keeps responsive and reduced-motion safeguards"
   assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
   assert.match(css,/\.datanestAiHeroVisual\s*\{[^}]*min-height:300px/s);
 });
+
+
+test("DataNest shell keeps navigation compact and the active workspace cyan-led on desktop",()=>{
+  const css=read("src/app/datanest-ai-optimized.css");
+
+  assert.match(css,/@media\(min-width:1181px\)\{[^}]*\.appFrame\{[^}]*grid-template-columns:252px minmax\(0,1fr\)/s);
+  assert.match(css,/@media\(min-width:901px\) and \(max-width:1180px\)\{[^}]*\.appFrame:not\(\.aiDockOpen\)\{[^}]*grid-template-columns:252px minmax\(0,1fr\)/s);
+  assert.match(css,/\.navGroup\s*\{[^}]*margin-bottom:12px/s);
+  assert.match(css,/\.navGroup button\s*\{[^}]*padding:9px 10px/s);
+  assert.match(css,/\.navGroup button\.active\s*\{[^}]*box-shadow:inset 2px 0 0 var\(--cyan\)/s);
+});
