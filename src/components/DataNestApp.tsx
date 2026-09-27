@@ -1542,6 +1542,13 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
     setArtifact(intent.payload.artifact);
   }
 
+  function clearUnifiIntentForEdit(){
+    if(reconciliationLocked)return false;
+    clearPendingMutation(requestScope);
+    setReconciliationState("idle");
+    return true;
+  }
+
   async function reconcileUnifiIntent(intent:PendingMutationIntent<UnifiPendingPayload>,announce:boolean){
     const supabase=getSupabase();
     if(!supabase){
@@ -1651,13 +1658,13 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
       {reconciliationState==="not_recorded"&&<div className="notice goodNotice" role="status">Server state confirms the previous request was not recorded. Retrying this restored manifest reuses the same request identity.</div>}
       {!canOperate&&<div className="notice errorNotice">Viewer access is read-only. Ask a DataNest owner or admin for operator access to create jobs.</div>}
       <form className="plannerForm" onSubmit={createJob} aria-busy={saving||reconciliationState==="checking"} data-active-action={activeAction||undefined}>
-        <label>Job title<input value={title} onChange={event=>setTitle(event.target.value)} required placeholder="e.g. Validate production deployment"/></label>
-        <label>Objective / context<textarea value={description} onChange={event=>setDescription(event.target.value)} rows={6} placeholder="What must be done, constraints, expected output…"/></label>
+        <label>Job title<input disabled={reconciliationLocked} value={title} onChange={event=>{if(clearUnifiIntentForEdit())setTitle(event.target.value);}} required placeholder="e.g. Validate production deployment"/></label>
+        <label>Objective / context<textarea disabled={reconciliationLocked} value={description} onChange={event=>{if(clearUnifiIntentForEdit())setDescription(event.target.value);}} rows={6} placeholder="What must be done, constraints, expected output…"/></label>
         <div className="fieldRow">
-          <label>Priority<select value={priority} onChange={event=>setPriority(Number(event.target.value))}><option value={100}>100 · Critical</option><option value={80}>80 · High</option><option value={50}>50 · Normal</option><option value={20}>20 · Background</option><option value={5}>5 · Maintenance</option></select></label>
-          <label>Required capability<select value={capability} onChange={event=>setCapability(event.target.value)}>{known.map(item=><option key={item}>{item}</option>)}</select></label>
+          <label>Priority<select disabled={reconciliationLocked} value={priority} onChange={event=>{if(clearUnifiIntentForEdit())setPriority(Number(event.target.value));}}><option value={100}>100 · Critical</option><option value={80}>80 · High</option><option value={50}>50 · Normal</option><option value={20}>20 · Background</option><option value={5}>5 · Maintenance</option></select></label>
+          <label>Required capability<select disabled={reconciliationLocked} value={capability} onChange={event=>{if(clearUnifiIntentForEdit())setCapability(event.target.value);}}>{known.map(item=><option key={item}>{item}</option>)}</select></label>
         </div>
-        <div className="checkRow"><label><input type="checkbox" checked={tests} onChange={event=>setTests(event.target.checked)}/> Tests required</label><label><input type="checkbox" checked={artifact} onChange={event=>setArtifact(event.target.checked)}/> Artifact required</label></div>
+        <div className="checkRow"><label><input disabled={reconciliationLocked} type="checkbox" checked={tests} onChange={event=>{if(clearUnifiIntentForEdit())setTests(event.target.checked);}}/> Tests required</label><label><input disabled={reconciliationLocked} type="checkbox" checked={artifact} onChange={event=>{if(clearUnifiIntentForEdit())setArtifact(event.target.checked);}}/> Artifact required</label></div>
         <button className="primaryButton" disabled={saving||reconciliationLocked||!canOperate}>{saving?"Creating…":reconciliationState==="checking"?"Checking server state…":"Create Job Manifest"}</button>
       </form>
     </div>
