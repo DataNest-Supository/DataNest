@@ -11,6 +11,11 @@ import {
   type ProviderConnection
 } from "../_shared/provider.ts";
 import {
+  resolveIlm1Route,
+  type Ilm1RouteResult,
+  type IlmProfile
+} from "../_shared/ilm.ts";
+import {
   bestCandidateByEvidenceOverlap,
   candidateFromRepeatedEvidence,
   stableCandidateIdFromHash
@@ -204,6 +209,221 @@ async function loadCertifiedMemory(input:{
   if(error)throw error;
   const items=(data as {items?:unknown[]}|null)?.items;
   return Array.isArray(items)?items as Array<Record<string,unknown>>:[];
+}
+
+
+async function loadActiveIlmProfile(input:{
+  serviceClient:AnyClient;
+  projectId:string;
+}):Promise<IlmProfile|null>{
+  const {data,error}=await input.serviceClient
+    .from("ilm_profiles")
+    .select("id,project_id,version,profile_key,allowed_purposes,default_capability,allowed_resource_kinds,memory_policy,routing_policy,evaluation_policy")
+    .eq("project_id",input.projectId)
+    .eq("profile_key","ilm-1")
+    .eq("status","active")
+    .order("version",{ascending:false})
+    .limit(1)
+    .maybeSingle();
+  if(error){
+    const code=String((error as {code?:unknown}).code||"");
+    const message=String((error as {message?:unknown}).message||"");
+    if(code==="42P01"||code==="PGRST205"||/ilm_profiles.*schema cache/i.test(message)){
+      return null;
+    }
+    throw error;
+  }
+  if(!data)return null;
+  return {
+    id:String(data.id),
+    projectId:String(data.project_id),
+    version:Number(data.version),
+    profileKey:String(data.profile_key),
+    allowedPurposes:Array.isArray(data.allowed_purposes)?data.allowed_purposes.map(String):[],
+    defaultCapability:String(data.default_capability||"chat"),
+    allowedResourceKinds:Array.isArray(data.allowed_resource_kinds)?data.allowed_resource_kinds.map(String):[],
+    memoryPolicy:typeof data.memory_policy==="object"&&data.memory_policy?data.memory_policy as Record<string,unknown>:{},
+    routingPolicy:typeof data.routing_policy==="object"&&data.routing_policy?data.routing_policy as Record<string,unknown>:{},
+    evaluationPolicy:typeof data.evaluation_policy==="object"&&data.evaluation_policy?data.evaluation_policy as Record<string,unknown>:{}
+  };
+}
+
+async function resolveActiveIlmRoute(input:{
+  serviceClient:AnyClient;
+  userId:string;
+  job:JobContext;
+  requestId:string;
+  traceId:string;
+  purpose:string;
+  visibilityClass:string;
+  learningEligible:boolean;
+  requestedConnection:string|null;
+  certifiedMemory:Array<Record<string,unknown>>;
+}):Promise<{route:Ilm1RouteResult|null;connection:ProviderConnection|null}>{
+  const profile=await loadActiveIlmProfile({
+    serviceClient:input.serviceClient,
+    projectId:input.job.project_id
+  });
+  if(!profile)return {route:null,connection:null};
+
+  let selectedConnection:ProviderConnection|null=null;
+  const requestedCapability=profile.defaultCapability
+    ||(Array.isArray(input.job.required_capabilities)&&input.job.required_capabilities.length
+      ?String(input.job.required_capabilities[0])
+      :"chat");
+
+  const route=await resolveIlm1Route({
+    loadCertifiedMemory:async()=>input.certifiedMemory.map(item=>({
+      id:String(item.id||""),
+      normalizedKnowledge:String(item.normalized_knowledge||"")
+    })).filter(item=>Boolean(item.id)),
+    evaluateDataPolicy:async()=>{
+      const {data,error}=await input.serviceClient.rpc("service_evaluate_data_policy_v1",{
+        target_project:input.job.project_id,
+        target_actor_user:input.userId,
+        target_subject_type:"job",
+        target_purpose:input.purpose,
+        target_requested_operation:"process",
+        target_trace_id:input.traceId,
+        target_subject_id:input.job.id,
+        target_subject_reference:null,
+        target_provider_connection:null,
+        target_provider_key:null,
+        target_hard_learning_exclusion:!input.learningEligible
+      });
+      if(error)throw error;
+      const policy=(data||{}) as Record<string,unknown>;
+      const outcome=String(policy.outcome||"review_required");
+      return {
+        outcome:outcome==="allow"?"allow":outcome==="deny"?"deny":"review_required",
+        enforcementMode:String(policy.enforcement_mode||"report_only"),
+        reasonCode:String(policy.reason_code||"policy_review_required"),
+        evidence:{
+          decision_trace:policy.decision_trace||null,
+          decision_record_id:policy.decision_record_id||null,
+          visibility_class:policy.visibility_class||input.visibilityClass,
+          reuse_state:policy.reuse_state||null,
+          policy_version:policy.policy_version||null,
+          enforcement_mode:policy.enforcement_mode||null
+        }
+      };
+    },
+    resolveResourceCandidates:async(routeInput)=>{
+      const effectiveVisibility=String(routeInput.policy.evidence?.visibility_class||input.visibilityClass);
+      const {data,error}=await input.serviceClient.rpc("service_resolve_resource_candidates_v1",{
+        target_project:input.job.project_id,
+        target_capability:requestedCapability,
+        target_requested_operation:"prepare",
+        target_visibility_class:effectiveVisibility,
+        target_trace_id:input.traceId
+      });
+      if(error)throw error;
+      const result=(data||{}) as Record<string,unknown>;
+      const rawCandidates=Array.isArray(result.eligible_candidates)?result.eligible_candidates:[];
+      return {
+        eligibleCandidates:rawCandidates.map(value=>{
+          const row=value as Record<string,unknown>;
+          return {
+            resourceId:String(row.resource_id||""),
+            capabilityId:String(row.capability_id||""),
+            resourceKind:String(row.resource_kind||""),
+            resourceKey:row.resource_key?String(row.resource_key):undefined
+          };
+        }).filter(candidate=>candidate.resourceId&&candidate.capabilityId&&candidate.resourceKind),
+        decisions:Array.isArray(result.decisions)
+          ?result.decisions as Array<Record<string,unknown>>
+          :[]
+      };
+    },
+    resolveProviderConnection:async(routeInput)=>{
+      const {data:connectionData,error:connectionError}=await input.serviceClient.rpc(
+        "service_get_ai_provider_connection_v2",{
+          target_project:input.job.project_id,
+          target_user:input.userId,
+          target_connection:input.requestedConnection
+        }
+      );
+      if(connectionError)throw connectionError;
+      if(!connectionData)return null;
+
+      const connection=connectionData as ProviderConnection;
+      const providerKey=connection.provider.toLowerCase()+":"+connection.endpoint_host.toLowerCase();
+      const {data:providerPolicyData,error:providerPolicyError}=await input.serviceClient.rpc(
+        "service_evaluate_data_policy_v1",{
+          target_project:input.job.project_id,
+          target_actor_user:input.userId,
+          target_subject_type:"job",
+          target_purpose:"external_provider_processing",
+          target_requested_operation:"process",
+          target_trace_id:input.traceId,
+          target_subject_id:input.job.id,
+          target_subject_reference:null,
+          target_provider_connection:connection.id,
+          target_provider_key:providerKey,
+          target_hard_learning_exclusion:!input.learningEligible
+        }
+      );
+      if(providerPolicyError)throw providerPolicyError;
+      const providerPolicy=(providerPolicyData||{}) as Record<string,unknown>;
+      if(String(providerPolicy.outcome||"deny")!=="allow")return null;
+
+      selectedConnection=connection;
+      const candidate=routeInput.resources.eligibleCandidates[0]||null;
+      return {
+        connectionId:connection.id,
+        providerKey,
+        modelLabel:connection.model,
+        resourceId:candidate?.resourceId||null,
+        capabilityId:candidate?.capabilityId||null,
+        routeKind:"provider_model" as const,
+        policyEvidence:{
+          provider_decision_trace:providerPolicy.decision_trace||null,
+          provider_decision_record_id:providerPolicy.decision_record_id||null,
+          provider_profile_id:providerPolicy.provider_profile_id||null,
+          provider_policy_version:providerPolicy.policy_version||null,
+          provider_enforcement_mode:providerPolicy.enforcement_mode||null
+        }
+      };
+    },
+    recordRouteDecision:async(routeInput)=>{
+      const {data,error}=await input.serviceClient.rpc("service_record_intelligence_route_v1",{
+        target_project:routeInput.projectId,
+        target_trace_id:routeInput.traceId,
+        target_profile:routeInput.profileId,
+        target_purpose:routeInput.purpose,
+        target_visibility_class:routeInput.visibilityClass,
+        target_requested_operation:routeInput.requestedOperation,
+        target_requested_capability:routeInput.requestedCapability,
+        target_route_kind:routeInput.routeKind,
+        target_decision:routeInput.decision,
+        target_reason_codes:routeInput.reasonCodes,
+        target_certified_memory_ids:routeInput.certifiedMemoryIds,
+        target_job:routeInput.jobId,
+        target_ai_usage_request:routeInput.aiUsageRequestId,
+        target_resource:routeInput.resourceId,
+        target_capability:routeInput.capabilityId,
+        target_provider_connection:routeInput.providerConnectionId,
+        target_provider_key:routeInput.providerKey,
+        target_model_label:routeInput.modelLabel,
+        target_policy_evidence:routeInput.policyEvidence,
+        target_resource_evidence:routeInput.resourceEvidence
+      });
+      if(error)throw error;
+      return {id:String(data||"")};
+    }
+  },{
+    projectId:input.job.project_id,
+    jobId:input.job.id,
+    aiUsageRequestId:input.requestId,
+    traceId:input.traceId,
+    profile,
+    purpose:input.purpose,
+    visibilityClass:input.visibilityClass,
+    requestedOperation:"prepare",
+    requestedCapability
+  });
+
+  return {route,connection:selectedConnection};
 }
 
 
@@ -789,46 +1009,26 @@ Deno.serve(async(request:Request)=>{
           userMessage:message
         });
 
-        const {data:connectionData,error:connectionError}=await serviceClient.rpc(
-          "service_get_ai_provider_connection_v2",{
-            target_project:job.project_id,
-            target_user:user.id,
-            target_connection:requestedConnection
-          }
-        );
-        if(connectionError)throw connectionError;
+        const ilm=await resolveActiveIlmRoute({
+          serviceClient,
+          userId:user.id,
+          job,
+          requestId:activeRequestId,
+          traceId:stagedInputTraceId,
+          purpose:policyPurpose,
+          visibilityClass,
+          learningEligible,
+          requestedConnection,
+          certifiedMemory
+        });
 
-        if(connectionData){
-          const connection=connectionData as ProviderConnection;
-          const providerKey=connection.provider.toLowerCase()+":"+connection.endpoint_host.toLowerCase();
-          const {data:phaseCPolicyData,error:phaseCPolicyError}=await serviceClient.rpc(
-            "service_evaluate_data_policy_v1",{
-              target_project:job.project_id,
-              target_actor_user:user.id,
-              target_subject_type:"job",
-              target_purpose:"external_provider_processing",
-              target_requested_operation:"process",
-              target_trace_id:stagedInputTraceId,
-              target_subject_id:job.id,
-              target_subject_reference:null,
-              target_provider_connection:connection.id,
-              target_provider_key:providerKey,
-              target_hard_learning_exclusion:!learningEligible
-            }
-          );
-          if(phaseCPolicyError)throw phaseCPolicyError;
-          const phaseCPolicy=(phaseCPolicyData||{}) as Record<string,unknown>;
-
-          const phaseCPolicyEnforced=String(phaseCPolicy.enforcement_mode||"report_only")==="enforced";
-          if(phaseCPolicyEnforced&&String(phaseCPolicy.outcome||"deny")!=="allow"){
-            requestStatus="denied";
-            await finishUsageRequest(serviceClient,{
-              requestId:activeRequestId,
-              target_status:"denied",
-              errorCategory:"provider_trust_policy_denied",
-              errorMessage:"Provider Trust Profile blocked external routing: "+String(phaseCPolicy.reason_code||"policy_denied")
-            });
-          }else{
+        if(ilm.route){
+          if(
+            ilm.route.decision==="selected" &&
+            ilm.route.routeKind==="provider_model" &&
+            ilm.connection
+          ){
+            const connection=ilm.connection;
             const {data:authz,error:authzError}=await serviceClient.rpc(
               "service_authorize_ai_request",{
                 target_request:activeRequestId,
@@ -880,9 +1080,111 @@ Deno.serve(async(request:Request)=>{
                 errorMessage:"Provider request blocked by DataNest policy."
               });
             }
+          }else if(ilm.route.decision==="rejected"){
+            requestStatus="denied";
+            await finishUsageRequest(serviceClient,{
+              requestId:activeRequestId,
+              target_status:"denied",
+              errorCategory:ilm.route.reasonCodes[0]||"ilm_route_rejected",
+              errorMessage:"ILM-1 rejected external intelligence routing for this request."
+            });
           }
+        }else{
+          const {data:connectionData,error:connectionError}=await serviceClient.rpc(
+            "service_get_ai_provider_connection_v2",{
+              target_project:job.project_id,
+              target_user:user.id,
+              target_connection:requestedConnection
+            }
+          );
+          if(connectionError)throw connectionError;
+  
+          if(connectionData){
+            const connection=connectionData as ProviderConnection;
+            const providerKey=connection.provider.toLowerCase()+":"+connection.endpoint_host.toLowerCase();
+            const {data:phaseCPolicyData,error:phaseCPolicyError}=await serviceClient.rpc(
+              "service_evaluate_data_policy_v1",{
+                target_project:job.project_id,
+                target_actor_user:user.id,
+                target_subject_type:"job",
+                target_purpose:"external_provider_processing",
+                target_requested_operation:"process",
+                target_trace_id:stagedInputTraceId,
+                target_subject_id:job.id,
+                target_subject_reference:null,
+                target_provider_connection:connection.id,
+                target_provider_key:providerKey,
+                target_hard_learning_exclusion:!learningEligible
+              }
+            );
+            if(phaseCPolicyError)throw phaseCPolicyError;
+            const phaseCPolicy=(phaseCPolicyData||{}) as Record<string,unknown>;
+  
+            const phaseCPolicyEnforced=String(phaseCPolicy.enforcement_mode||"report_only")==="enforced";
+            if(phaseCPolicyEnforced&&String(phaseCPolicy.outcome||"deny")!=="allow"){
+              requestStatus="denied";
+              await finishUsageRequest(serviceClient,{
+                requestId:activeRequestId,
+                target_status:"denied",
+                errorCategory:"provider_trust_policy_denied",
+                errorMessage:"Provider Trust Profile blocked external routing: "+String(phaseCPolicy.reason_code||"policy_denied")
+              });
+            }else{
+              const {data:authz,error:authzError}=await serviceClient.rpc(
+                "service_authorize_ai_request",{
+                  target_request:activeRequestId,
+                  target_connection:connection.id
+                }
+              );
+              if(authzError)throw authzError;
+              if(Boolean((authz as Record<string,unknown>|null)?.allowed)){
+                try{
+                  const ext=await callOpenAiCompatibleProvider({
+                    connection,
+                    governedPrompt,
+                    maxOutputTokens:Number((authz as Record<string,unknown>).max_output_tokens||4000)
+                  });
+                  await finishUsageRequest(serviceClient,{
+                    requestId:activeRequestId,
+                    target_status:"succeeded",
+                    inputTokens:ext.inputTokens,
+                    outputTokens:ext.outputTokens
+                  });
+                  requestStatus="succeeded";
+                  return {
+                    content:ext.content,
+                    providerMode:"external",
+                    providerLabel:connection.label,
+                    inputTokens:ext.inputTokens,
+                    outputTokens:ext.outputTokens
+                  };
+                }catch(error){
+                  const category=(error as Error&{category?:string}).category==="failed"
+                    ?"failed"
+                    :"unknown";
+                  requestStatus=category;
+                  await finishUsageRequest(serviceClient,{
+                    requestId:activeRequestId,
+                    target_status:category,
+                    errorCategory:category==="failed"?"provider_failure":"provider_outcome_unknown",
+                    errorMessage:category==="failed"
+                      ?"Provider rejected or could not complete the request."
+                      :"Provider outcome is unknown; DataNest will not retry automatically."
+                  });
+                }
+              }else{
+                requestStatus="denied";
+                await finishUsageRequest(serviceClient,{
+                  requestId:activeRequestId,
+                  target_status:"denied",
+                  errorCategory:String((authz as Record<string,unknown>|null)?.reason||"policy_denied"),
+                  errorMessage:"Provider request blocked by DataNest policy."
+                });
+              }
+            }
+          }
+  
         }
-
         if(requestStatus==="pending"){
           await finishUsageRequest(serviceClient,{
             requestId:activeRequestId,

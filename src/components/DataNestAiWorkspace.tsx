@@ -5,6 +5,7 @@ import { getSupabase } from "@/lib/supabase";
 import DataNestAiChatPanel,{type DataNestAiEvent} from "@/components/DataNestAiChatPanel";
 import DataNestAiMemoryPanel,{type CertifiedMemoryItem} from "@/components/DataNestAiMemoryPanel";
 import DataNestAiCertificationPanel from "@/components/DataNestAiCertificationPanel";
+import IntelligenceFabricPanel from "@/components/IntelligenceFabricPanel";
 import JobInviteForm from "@/components/JobInviteForm";
 
 type Role="owner"|"admin"|"operator"|"viewer";
@@ -481,6 +482,14 @@ export default function DataNestAiWorkspace({
         <section className="datanestAiSupportGrid">
           <div aria-label="Certified Memory">
             <DataNestAiMemoryPanel items={context.certifiedMemory||[]}/>
+          </div>
+          <div aria-label="Intelligence Fabric">
+            <IntelligenceFabricPanel
+              projectId={projectId}
+              role={role}
+              setNotice={setNotice}
+              setError={setError}
+            />
           </div>
         </section>
 
