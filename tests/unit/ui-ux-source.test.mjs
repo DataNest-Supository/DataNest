@@ -646,15 +646,15 @@ test("global recovery center scopes, hydrates, ages, and preserves unresolved op
 
 test("deterministic reconciliation persists continuity before writes and finalizes durable state before cleanup", () => {
   assert.match(appSource, /registerDurableRecovery\(project\.id,requestScope,intent\)/);
-  assert.match(appSource, /markPendingMutationDurable\(requestScope\)/);
+  assert.match(appSource, /markPendingMutationDurable\(requestScope,\{attemptCount:durable\.attemptCount,lastAttemptAt:durable\.lastAttemptAt\}\)/);
   assert.match(appSource, /resolveDurableRecovery\(project\.id,requestScope,intent\.requestKey,"confirmed"\)/);
   assert.match(appSource, /markDurableRecoveryVerification\(project\.id,requestScope,intent\.requestKey,"confirmed_absent"\)/);
   assert.match(appSource, /resolveDurableRecovery\(project\.id,requestScope,pending\.requestKey,"superseded_after_absence"\)/);
   assert.match(sparksSource, /registerDurableRecovery\(projectId,redemptionRequestScope,intent\)/);
-  assert.match(sparksSource, /markPendingMutationDurable\(redemptionRequestScope\)/);
+  assert.match(sparksSource, /markPendingMutationDurable\(redemptionRequestScope,\{attemptCount:durable\.attemptCount,lastAttemptAt:durable\.lastAttemptAt\}\)/);
   assert.match(sparksSource, /resolveDurableRecovery\(projectId,redemptionRequestScope,intent\.requestKey,"confirmed"\)/);
   assert.match(productLabSource, /registerDurableRecovery\(projectId,testRunRequestScope,intent\)/);
-  assert.match(productLabSource, /markPendingMutationDurable\(testRunRequestScope\)/);
+  assert.match(productLabSource, /markPendingMutationDurable\(testRunRequestScope,\{attemptCount:durable\.attemptCount,lastAttemptAt:durable\.lastAttemptAt\}\)/);
   assert.match(productLabSource, /resolveDurableRecovery\(projectId,testRunRequestScope,intent\.requestKey,"confirmed"\)/);
   assert.match(productLabSource, /Use Change evidence before creating different intent/);
 });
