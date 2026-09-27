@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
+import { useSingleFlight } from "@/lib/singleFlight";
 import {
   autonomyDescriptions,
   autonomyLabels,
@@ -92,6 +93,7 @@ export default function ExecutionAuthorityPanel({
   const [workspace,setWorkspace]=useState<Workspace|null>(null);
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
+  const {activeAction,run:runSingleFlight}=useSingleFlight();
 
   const [jobId,setJobId]=useState(jobs[0]?.id||"");
   const [actorType,setActorType]=useState("human");
@@ -203,10 +205,22 @@ export default function ExecutionAuthorityPanel({
 
   async function rpc(name:string,args:Record<string,unknown>,notice:string){
     const supabase=getSupabase(); if(!supabase)return false;
-    setBusy(true); setError("");
-    const {error}=await supabase.rpc(name,args);
-    if(error){setError(error.message);setBusy(false);return false;}
-    setNotice(notice); await load(); setBusy(false); return true;
+    const result=await runSingleFlight(name,async()=>{
+      setBusy(true);setError("");setNotice("Authority & Execution action in progress…");
+      try{
+        const {error}=await supabase.rpc(name,args);
+        if(error)throw error;
+        setNotice(notice);
+        await load();
+        return true;
+      }catch(actionError){
+        setError(actionError instanceof Error?actionError.message:"Authority & Execution action failed. You can retry safely.");
+        return false;
+      }finally{
+        setBusy(false);
+      }
+    });
+    return Boolean(result.started&&result.value);
   }
 
   function toggleConsequence(value:ConsequenceClass){
@@ -295,6 +309,7 @@ export default function ExecutionAuthorityPanel({
   if(!workspace)return <section className="panel"><p className="muted">Authority & Execution workspace is unavailable.</p></section>;
 
   return <div className="executionAuthorityWorkspace">
+    {activeAction&&<p className="muted" role="status">Authority & Execution action in progress · duplicate submissions are blocked until the request finishes.</p>}
     <section className="executionAuthorityBoundary" aria-label="Execution authority boundaries">
       <p><b>Capacity reservation ≠ authorization lease.</b> A reservation allocates resource capacity; a Capability Lease authorizes a bounded operation.</p>
       <p><b>AVAILABLE does not mean authorized.</b> Capability health and execution permission are independent and both must allow.</p>
