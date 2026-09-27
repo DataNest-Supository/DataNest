@@ -718,7 +718,7 @@ Deno.serve(async(request:Request)=>{
               product_mode:legalMode?"legal_eagle":"datanest_ai",
               jurisdiction:legalMode?jurisdiction:null,
               legal_task:legalMode?legalTask:null,
-              requested_learning_eligible:learningEligible,
+              learning_requested:learningEligible,
               learning_eligible:false,
               visibility_class:visibilityClass,
               reuse_state:reuseState,
@@ -921,7 +921,7 @@ Deno.serve(async(request:Request)=>{
               product_mode:legalMode?"legal_eagle":"datanest_ai",
               jurisdiction:legalMode?jurisdiction:null,
               legal_task:legalMode?legalTask:null,
-              requested_learning_eligible:learningEligible,
+              learning_requested:learningEligible,
               learning_eligible:false,
               visibility_class:visibilityClass,
               reuse_state:reuseState,
@@ -979,14 +979,14 @@ Deno.serve(async(request:Request)=>{
                 product_mode:legalMode?"legal_eagle":"datanest_ai",
                 jurisdiction:legalMode?jurisdiction:null,
                 legal_task:legalMode?legalTask:null,
-                requested_learning_eligible:learningEligible,
+                learning_requested:learningEligible,
                 learning_eligible:finalLearningEligible,
                 visibility_class:visibilityClass,
                 reuse_state:reuseState,
                 effective_reuse_state:learningPolicy.reuse_state,
                 purpose:policyPurpose,
                 policy_version:learningPolicy.policy_version||policyVersion,
-                decision_record_id:learningPolicy.decision_record_id
+                data_policy_decision_id:learningPolicy.decision_record_id
               }
             })
             .eq("id",String(inputEvent.id||""))
