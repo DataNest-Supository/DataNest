@@ -286,3 +286,5 @@ After merge:
 ## Verification retrigger note
 
 The first exact-head certification attempt after the Phase E browser fixes was cancelled by workflow concurrency before a certification job was created, while the immediately preceding certification run was still active. Runtime/schema implementation is unchanged by this note. A fresh exact-head gate set is required so DataNest AI Certification can complete on the same commit as CI, migration replay, PR verification, and Edge Function Validation.
+
+**Gate retrigger:** workflow concurrency has cleared. This documentation-only update intentionally starts a fresh exact-head verification cycle; it does not change Phase E runtime, schema, authority, health, resolver, scheduler, or UI behavior.
