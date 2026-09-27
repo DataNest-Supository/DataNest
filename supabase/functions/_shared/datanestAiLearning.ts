@@ -236,14 +236,14 @@ export async function updateTrendCandidate(input:{
     confidence:candidate.confidence,
     hasConflict:candidate.hasConflict,
     contentHash,
-    input.policyVersion,
+    policyVersion:input.policyVersion,
     evidenceHash
   });
 
   if(automatedGates.length){
     const seal=candidateValidationSeal({
       contentHash,
-      input.policyVersion,
+      policyVersion:input.policyVersion,
       evidenceHash,
       evidenceCount:candidate.evidenceIds.length,
       riskClass:candidate.riskClass,
