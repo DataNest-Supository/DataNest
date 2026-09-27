@@ -256,10 +256,11 @@ async function updateTrendCandidate(input:{
     metadata:typeof item.metadata==="object"&&item.metadata!==null
       ?item.metadata as Record<string,unknown>
       :{}
-  })).filter(item=>{
-    const reuseState=String(item.metadata.reuse_state||"project_learning_eligible");
-    return item.metadata.learning_eligible!==false&&projectLearningReuseStates.has(reuseState);
-  });
+  })).filter(item=>item.metadata.learning_eligible===true)
+    .filter(item=>{
+      const reuseState=String(item.metadata.reuse_state||"project_learning_eligible");
+      return projectLearningReuseStates.has(reuseState);
+    });
   const current=evidence.find(item=>item.id===input.inputEventId);
   if(!current)return {candidateId:null,trendKey:null,evidenceCount:0};
 
@@ -717,7 +718,8 @@ Deno.serve(async(request:Request)=>{
               product_mode:legalMode?"legal_eagle":"datanest_ai",
               jurisdiction:legalMode?jurisdiction:null,
               legal_task:legalMode?legalTask:null,
-              learning_eligible:!legalMode&&learningEligible,
+              requested_learning_eligible:learningEligible,
+              learning_eligible:false,
               visibility_class:visibilityClass,
               reuse_state:reuseState,
               purpose:policyPurpose
@@ -798,25 +800,26 @@ Deno.serve(async(request:Request)=>{
 
         if(connectionData){
           const connection=connectionData as ProviderConnection;
+          const providerKey=connection.provider.toLowerCase()+":"+connection.endpoint_host.toLowerCase();
           const {data:phaseCPolicyData,error:phaseCPolicyError}=await serviceClient.rpc(
             "service_evaluate_data_policy_v1",{
               target_project:job.project_id,
-              target_subject_type:"ai_event",
-              target_purpose:"external_provider_processing",
-              target_operation:"process",
               target_actor_user:user.id,
+              target_subject_type:"job",
+              target_purpose:"external_provider_processing",
+              target_requested_operation:"process",
               target_trace_id:stagedInputTraceId,
-              target_provider_key:connection.provider.toLowerCase()+":"+connection.endpoint_host.toLowerCase(),
-              target_subject_id:null,
-              target_subject_reference:stagedInputTraceId,
+              target_subject_id:job.id,
+              target_subject_reference:null,
               target_provider_connection:connection.id,
+              target_provider_key:providerKey,
               target_hard_learning_exclusion:!learningEligible
             }
           );
           if(phaseCPolicyError)throw phaseCPolicyError;
           const phaseCPolicy=(phaseCPolicyData||{}) as Record<string,unknown>;
 
-          const phaseCPolicyEnforced=String(phaseCPolicy.enforcement_mode||"enforced")==="enforced";
+          const phaseCPolicyEnforced=String(phaseCPolicy.enforcement_mode||"report_only")==="enforced";
           if(phaseCPolicyEnforced&&String(phaseCPolicy.outcome||"deny")!=="allow"){
             requestStatus="denied";
             await finishUsageRequest(serviceClient,{
@@ -918,7 +921,8 @@ Deno.serve(async(request:Request)=>{
               product_mode:legalMode?"legal_eagle":"datanest_ai",
               jurisdiction:legalMode?jurisdiction:null,
               legal_task:legalMode?legalTask:null,
-              learning_eligible:!legalMode&&learningEligible,
+              requested_learning_eligible:learningEligible,
+              learning_eligible:false,
               visibility_class:visibilityClass,
               reuse_state:reuseState,
               purpose:policyPurpose
@@ -951,22 +955,49 @@ Deno.serve(async(request:Request)=>{
           const {data:learningPolicyData,error:learningPolicyError}=await serviceClient.rpc(
             "service_evaluate_data_policy_v1",{
               target_project:job.project_id,
-              target_subject_type:"ai_event",
-              target_purpose:"project_learning",
-              target_operation:"reuse",
               target_actor_user:user.id,
+              target_subject_type:"job",
+              target_purpose:"project_learning",
+              target_requested_operation:"reuse",
               target_trace_id:String(inputEvent.traceId||stagedInputTraceId),
-              target_provider_key:null,
-              target_subject_id:null,
-              target_subject_reference:String(inputEvent.traceId||stagedInputTraceId),
+              target_subject_id:job.id,
+              target_subject_reference:null,
               target_provider_connection:null,
+              target_provider_key:null,
               target_hard_learning_exclusion:!learningEligible
             }
           );
           if(learningPolicyError)throw learningPolicyError;
           const learningPolicy=(learningPolicyData||{}) as Record<string,unknown>;
-          const learningPolicyEnforced=String(learningPolicy.enforcement_mode||"enforced")==="enforced";
-          if(learningPolicyEnforced&&String(learningPolicy.outcome||"deny")!=="allow"){
+          const finalLearningEligible=learningEligible&&String(learningPolicy.outcome||"deny")==="allow";
+          const {error:learningStampError}=await stagingClient
+            .from("ai_intake_events")
+            .update({
+              metadata:{
+                request_id:activeRequestId,
+                trust_state:"uncertified",
+                product_mode:legalMode?"legal_eagle":"datanest_ai",
+                jurisdiction:legalMode?jurisdiction:null,
+                legal_task:legalMode?legalTask:null,
+                requested_learning_eligible:learningEligible,
+                learning_eligible:finalLearningEligible,
+                visibility_class:visibilityClass,
+                reuse_state:reuseState,
+                effective_reuse_state:learningPolicy.reuse_state,
+                purpose:policyPurpose,
+                policy_version:learningPolicy.policy_version||policyVersion,
+                data_policy_decision_id:learningPolicy.decision_record_id
+              }
+            })
+            .eq("id",String(inputEvent.id||""))
+            .eq("project_id",job.project_id);
+          if(learningStampError)throw learningStampError;
+
+          if(legalMode){
+            trendAnalysis={status:"not_applicable"};
+            return;
+          }
+          if(!finalLearningEligible){
             trendAnalysis={status:"not_applicable"};
             return;
           }
