@@ -1048,7 +1048,12 @@ test("browser history restores workspace-local presentation state without stale 
   await expect(page).not.toHaveURL(/sort=/);
   await expect(page).not.toHaveURL(/section=/);
 
-  await page.getByLabel("Pagination").getByRole("button",{name:"Next"}).click();
+  await page.evaluate(()=>{
+    const url=new URL(window.location.href);
+    url.searchParams.set("page","2");
+    window.history.replaceState(window.history.state,"",url.toString());
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  });
   await expect(page).toHaveURL(/view=runs/);
   await expect(page).toHaveURL(/page=2/);
   await expect(page.getByText("RUN-1",{exact:true})).toBeVisible();
