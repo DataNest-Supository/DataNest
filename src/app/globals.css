@@ -4638,3 +4638,15 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
 .portfolioAiSuggestion{border-left:2px solid rgba(139,92,246,.45);padding-left:10px}
 @container datanest-main (max-width:760px){.portfolioRegistryGrid{grid-template-columns:1fr}.portfolioFacts,.ronsasCompositionGrid{grid-template-columns:1fr 1fr}}
 @media(max-width:520px){.portfolioRegistryHead,.portfolioRegistryTitle{flex-direction:column}.portfolioBadgeStack{justify-content:flex-start}.portfolioFacts,.ronsasCompositionGrid{grid-template-columns:1fr}.productsModeTabs button{flex:1 1 auto}}
+
+
+.portfolioActionPanel,.portfolioGovernedActions{display:grid;gap:10px;padding:12px;border:1px solid rgba(255,255,255,.07);border-radius:12px;background:rgba(255,255,255,.018)}
+.portfolioActionForm{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;min-width:0}
+.portfolioActionForm label{display:grid;gap:5px;min-width:0}
+.portfolioActionForm input,.portfolioActionForm select,.portfolioActionForm textarea{width:100%;min-width:0}
+.portfolioActionForm textarea{min-height:74px;resize:vertical}
+.portfolioReviewCard{display:grid;gap:8px;padding:9px;border:1px solid rgba(255,255,255,.06);border-radius:9px}
+.portfolioLifecycleControls{display:grid;gap:8px;padding-top:4px}
+.portfolioLifecycleControls p{margin:0;color:#90a1ae;font-size:9px;line-height:1.45}
+.portfolioPromotionPolicy{grid-column:1/-1;padding:8px 10px;border:1px solid rgba(66,231,255,.18);border-radius:9px;color:#bdeefa;font-size:8px;font-weight:900;letter-spacing:.05em}
+@container datanest-main (max-width:760px){.portfolioActionForm{grid-template-columns:1fr}}
