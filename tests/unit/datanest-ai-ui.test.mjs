@@ -37,3 +37,19 @@ test("DataNest AI command center keeps responsive and reduced-motion safeguards"
   assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
   assert.match(css,/\.datanestAiHeroVisual\s*\{[^}]*min-height:300px/s);
 });
+
+
+test("DataNest command center keeps navigation compact and gives the AI task guide a direct Job selector action",()=>{
+  const app=read("src/components/DataNestApp.tsx");
+  const css=read("src/app/globals.css");
+
+  assert.match(app,/className="workspaceTaskGuideAction"/);
+  assert.match(app,/>Select Job Manifest <span aria-hidden="true">→<\/span><\/button>/);
+  assert.match(app,/document\.getElementById\("datanest-ai-active-job"\)/);
+
+  assert.match(css,/\/\* Command-center navigation density \*\//);
+  assert.match(css,/\.appFrame\{[^}]*grid-template-columns:252px minmax\(0,1fr\)/s);
+  assert.match(css,/\.appFrame\.aiDockOpen\{[^}]*grid-template-columns:252px minmax\(0,1fr\) auto/s);
+  assert.match(css,/\.navGroup button\.active\{[^}]*inset 3px 0 0 var\(--cyan\)/s);
+  assert.match(css,/\.workspaceTaskGuideAction\s*\{/);
+});
