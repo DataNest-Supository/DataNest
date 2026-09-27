@@ -1,4 +1,4 @@
-// @ts-expect-error Supabase Edge resolves pinned npm: imports; repository Node tsc does not.
+// @ts-ignore -- Deno resolves the pinned npm: import; repository Node tsc does not.
 import { withSupabase } from "npm:@supabase/server@1.8.0";
 
 const CONTRACT = "ronsas-status@1";
