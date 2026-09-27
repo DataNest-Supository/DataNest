@@ -1556,9 +1556,10 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
         .select("id,job_number,status")
         .eq("project_id",project.id)
         .eq("client_request_id",intent.requestKey)
-        .maybeSingle();
+        .limit(1);
       if(error)throw error;
-      return data ? data as {id:string;job_number:number;status:string} : null;
+      const row=Array.isArray(data)?data[0]:null;
+      return row ? row as {id:string;job_number:number;status:string} : null;
     });
 
     if(result.state==="confirmed"&&result.value){
