@@ -15,6 +15,17 @@ test("staging backup encryption round-trips and does not expose plaintext", () =
 });
 
 
+test("staging backup decryption rejects shortened GCM authentication tags", () => {
+  const key=Buffer.alloc(32,7);
+  const envelope=JSON.parse(encryptBackup(Buffer.from("evidence"),key));
+  envelope.tag=Buffer.from(envelope.tag,"base64").subarray(0,12).toString("base64");
+  assert.throws(
+    () => decryptBackup(JSON.stringify(envelope),key),
+    /authentication tag must be exactly 16 bytes/i
+  );
+});
+
+
 test("replacement staging project can restore an original staging backup", () => {
   assert.doesNotThrow(() => validateRestoreRefs({
     backupSourceRef:"staging-original",
