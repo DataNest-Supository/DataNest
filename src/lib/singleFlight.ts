@@ -17,24 +17,22 @@ export function useSingleFlight(){
     return()=>{mountedRef.current=false;};
   },[]);
 
-  useEffect(()=>{
-    if(activeAction===null)return;
+  const run=useCallback(async<T>(key:string,action:()=>Promise<T>):Promise<SingleFlightResult<T>>=>{
+    if(activeRef.current!==null)return {started:false};
+    activeRef.current=key;
+    if(mountedRef.current)setActiveAction(key);
+
     const protectInFlightRequest=(event:BeforeUnloadEvent)=>{
       event.preventDefault();
       event.returnValue="";
     };
     window.addEventListener("beforeunload",protectInFlightRequest);
-    return()=>window.removeEventListener("beforeunload",protectInFlightRequest);
-  },[activeAction]);
 
-  const run=useCallback(async<T>(key:string,action:()=>Promise<T>):Promise<SingleFlightResult<T>>=>{
-    if(activeRef.current!==null)return {started:false};
-    activeRef.current=key;
-    if(mountedRef.current)setActiveAction(key);
     try{
       return {started:true,value:await action()};
     }finally{
       activeRef.current=null;
+      window.removeEventListener("beforeunload",protectInFlightRequest);
       if(mountedRef.current)setActiveAction(null);
     }
   },[]);
