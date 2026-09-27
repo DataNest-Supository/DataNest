@@ -4712,3 +4712,24 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
 .resourceFabricWorkspace input,.resourceFabricWorkspace select,.resourceFabricWorkspace textarea{min-width:0;max-width:100%}
 @container datanest-main (max-width:860px){.resourceFabricBoundary{grid-template-columns:1fr}.resourceFabricActionGrid{grid-template-columns:1fr}}
 @media(max-width:520px){.resourceFabricCards{grid-template-columns:1fr}.resourceCapabilityRow,.resourceHealthRow{grid-template-columns:1fr}}
+
+
+/* Phase F · Intelligence Fabric */
+.intelligenceFabricWorkspace{display:grid;gap:14px;min-width:0}
+.intelligenceFabricBoundary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.intelligenceFabricBoundary p{margin:0;padding:11px 12px;border:1px solid rgba(120,180,255,.14);border-radius:10px;background:rgba(95,135,255,.04);color:#cbd8e8;font-size:9px;line-height:1.5;overflow-wrap:anywhere}
+.intelligenceFabricSummary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.intelligenceFabricSummary article{display:grid;gap:4px;min-width:0;padding:11px;border:1px solid rgba(255,255,255,.06);border-radius:10px;background:rgba(255,255,255,.02)}
+.intelligenceFabricSummary small{color:#718aa0;font-size:8px;text-transform:uppercase;letter-spacing:.06em}
+.intelligenceFabricSummary b{color:#dbefff;font-size:12px;overflow-wrap:anywhere}
+.intelligenceFabricSummary span{color:#7f97aa;font-size:8px;line-height:1.45;overflow-wrap:anywhere}
+.intelligenceFabricEvidenceGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.intelligenceFabricEvidenceGrid>.panel{margin:0;min-width:0}
+.intelligenceEvidenceCard{min-width:0}
+.intelligenceEvidenceCard .manifestMeta{min-width:0;flex-wrap:wrap}
+.intelligenceEvidenceCard .manifestMeta span,.intelligenceEvidenceCard p{overflow-wrap:anywhere;word-break:break-word}
+.intelligenceFabricWorkspace .settingsGrid{min-width:0}
+.intelligenceFabricWorkspace .settingsGrid label{min-width:0}
+.intelligenceFabricWorkspace input,.intelligenceFabricWorkspace select,.intelligenceFabricWorkspace textarea{min-width:0;max-width:100%}
+@container datanest-main (max-width:980px){.intelligenceFabricEvidenceGrid{grid-template-columns:1fr}.intelligenceFabricBoundary,.intelligenceFabricSummary{grid-template-columns:1fr}}
+@media(max-width:520px){.intelligenceFabricWorkspace{gap:10px}.intelligenceFabricBoundary,.intelligenceFabricSummary,.intelligenceFabricEvidenceGrid{grid-template-columns:1fr}.intelligenceFabricBoundary p,.intelligenceFabricSummary article{min-width:0}}
