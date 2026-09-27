@@ -46,6 +46,7 @@ test("UI role-gates proposal, A3 approval, leases and circuit breakers",()=>{
   assert.match(source,/canManageCircuitBreakers\(role\)/);
   assert.match(source,/Owner \/ admin/);
   assert.match(source,/Human-gated A4/);
+  assert.match(source,/role==="operator"\?autonomyLevels\.filter\(level=>level!=="A4"\):autonomyLevels/);
 });
 
 test("TranScheduler keeps Gantt default and adds Authority & Execution as a sibling mode",()=>{
