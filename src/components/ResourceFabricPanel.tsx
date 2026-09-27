@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
+import { useSingleFlight } from "@/lib/singleFlight";
 import {
   canManageResourceFabric,
   resourceFabricLabel,
@@ -60,6 +61,7 @@ export default function ResourceFabricPanel({
   const [workspace,setWorkspace]=useState<ResourceWorkspace|null>(null);
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
+  const {activeAction,run:runSingleFlight}=useSingleFlight();
 
   const [resourceKey,setResourceKey]=useState("");
   const [displayName,setDisplayName]=useState("");
@@ -116,13 +118,22 @@ export default function ResourceFabricPanel({
   async function rpc(name:string,args:Record<string,unknown>,notice:string){
     const supabase=getSupabase();
     if(!supabase)return false;
-    setBusy(true);setError("");
-    const {error}=await supabase.rpc(name,args);
-    if(error){setError(error.message);setBusy(false);return false;}
-    setNotice(notice);
-    await load();
-    setBusy(false);
-    return true;
+    const result=await runSingleFlight(name,async()=>{
+      setBusy(true);setError("");setNotice("Resource Fabric action in progress…");
+      try{
+        const {error}=await supabase.rpc(name,args);
+        if(error)throw error;
+        setNotice(notice);
+        await load();
+        return true;
+      }catch(actionError){
+        setError(actionError instanceof Error?actionError.message:"Resource Fabric action failed. You can retry safely.");
+        return false;
+      }finally{
+        setBusy(false);
+      }
+    });
+    return Boolean(result.started&&result.value);
   }
 
   async function registerResource(event:FormEvent){
@@ -187,6 +198,7 @@ export default function ResourceFabricPanel({
   if(!workspace)return <section className="panel"><p className="muted">Resource Fabric workspace is unavailable.</p></section>;
 
   return <div className="resourceFabricWorkspace">
+    {activeAction&&<p className="muted" role="status">Resource Fabric action in progress · duplicate submissions are blocked until the request finishes.</p>}
     <section className="resourceFabricBoundary" aria-label="Resource Fabric boundaries">
       <p><b>Registration ≠ remote control.</b> A local node record describes bounded participation; it does not open an interactive control channel.</p>
       <p><b>Resource match ≠ reservation ≠ Capability Lease.</b> Matching identifies an eligible supply-side candidate only.</p>
