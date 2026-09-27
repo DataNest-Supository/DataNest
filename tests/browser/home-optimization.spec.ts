@@ -1006,7 +1006,7 @@ test("browser history restores workspace-local presentation state without stale 
     const url = new URL(route.request().url());
     const path = url.pathname;
     let body:unknown = [];
-    const headers:Record<string,string> = {"Content-Type":"application/json"};
+    const headers:Record<string,string> = {"Content-Type":"application/json","Access-Control-Expose-Headers":"Content-Range"};
 
     if(path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE",created_at:stamp};
     if(path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"viewer",status:"active"};
