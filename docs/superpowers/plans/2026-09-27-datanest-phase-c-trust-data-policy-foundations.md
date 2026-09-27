@@ -18,7 +18,7 @@ Phase C adds a project-scoped trust-policy layer beside the existing DataNest go
 - Existing RLS/RBAC and Job authorization remain the first authority gate.
 - Phase C policy is deny-preserving and cannot create access that other controls denied.
 - `data_policy_bindings` records explicit object/scope policy decisions.
-- `trust_manifests` records versioned project/product trust defaults and evidence state.
+- `trust_manifests` records versioned project/product trust defaults, evidence state, and explicit `report_only|enforced` rollout mode.
 - `provider_trust_profiles` constrains external providers by data class and declared purpose.
 - `retention_policies`, `retention_holds`, `retention_reviews`, and `data_policy_lineage` support non-destructive retention governance.
 - Governed RPCs are the only authenticated mutation path.
@@ -46,20 +46,20 @@ Phase C adds a project-scoped trust-policy layer beside the existing DataNest go
 - All new public multi-tenant tables use project-scoped RLS.
 - All new FK columns are indexed.
 - Significant trust/policy writes emit project audit events.
-- Unknown or contradictory policy fails closed for external routing, publication, project/platform learning, and destructive retention intent.
+- Unknown or contradictory policy always resolves to `deny` or `review_required`; when the applicable Trust Manifest is `enforced` it blocks external routing, publication, project/platform learning, and destructive retention intent.
+- Before enforcement coverage is complete, an external-provider route may run in explicit `report_only` mode: the Phase C decision is recorded but cannot override any denial from existing authorization/budget/allowlist controls.
+- A Trust Manifest cannot enter `enforced` mode until its project default classification, active retention policy, and every currently active AI provider connection in scope have reviewed Phase C coverage.
 - Safe embedded/local fallback may continue when external provider routing is denied.
+- Current AI provider trust keys use the deterministic lower-case form `<provider>:<endpoint_host>`.
 - Source changes are implemented and verified before any production promotion.
 
 ## Review focus
 
-1. **Authorization precedence:** trust policy must never grant access after RLS/RBAC/Job/file authorization denied it.
-2. **Independent dimensions:** visibility/processing and reuse/learning must not collapse into one consent flag.
-3. **Provider fail-closed:** no active matching Provider Trust Profile means no external routing for policy-bound content.
-4. **Legal Eagle hard exclusion:** `learning_eligible=false` must override a broader project manifest.
-5. **Non-destructive retention:** migrations and v1 RPCs may classify/review/hold, but cannot delete or anonymize existing data.
-6. **Lineage uncertainty:** unresolved lineage or active hold blocks future destructive disposition.
-7. **Trust-claim integrity:** target-state capabilities cannot be represented as implemented/verified.
-8. **Compatibility:** Phase B Portfolio Registry, Products, Product Lab, current DataNest AI authorization, existing URLs, Transparency, and billing-off behavior must remain intact.
+1. **Authorization precedence:** a Phase C allow/result must never turn an existing RLS/RBAC/Job/file/provider authorization denial into permission.
+2. **Rollout coverage:** `report_only` must preserve current authorized provider behavior while recording unresolved trust decisions; `enforced` must be impossible until project classification, retention, and every active AI provider route have reviewed coverage.
+3. **Learning exclusion:** Legal Eagle, explicit `learning_eligible=false`, and unresolved new learning policy must stay out of automatic project/platform learning even when a broader manifest exists.
+4. **Retention/lineage safety:** no Phase C migration or RPC may delete/anonymize existing data, and active holds or unresolved lineage must block future destructive disposition.
+5. **Trust-claim integrity:** planned/unknown controls and target-state capabilities must never render as verified trust guarantees; existing Products/Portfolio/RONSAS/billing behavior must remain compatible.
 
 ---
 
@@ -189,6 +189,8 @@ Fields:
 - `policy_version text not null`
 - `effective_from timestamptz null`
 - `review_due_at timestamptz null`
+- `enforcement_mode text not null default 'report_only'`
+- `approved_provider_keys text[] not null default '{}'`
 - `supersedes_manifest_id uuid null references public.trust_manifests(id)`
 - `created_by uuid not null references auth.users(id)`
 - `approved_by uuid null references auth.users(id)`
@@ -200,10 +202,13 @@ Controlled values:
 - status: `draft|active|superseded|rejected`
 - evidence state: `verified|partial|planned|unknown`
 - publication/export policy: `disabled|governed_only`
+- enforcement mode: `report_only|enforced`
 
 A project manifest has `product_id is null`; a product manifest requires a same-project `products` row.
 
 Create one-active-manifest partial unique indexes by project scope and product scope.
+
+`report_only` is the only safe default. `enforced` is a governed activation state and is never inferred from the presence of a manifest.
 
 ### `public.provider_trust_profiles`
 
@@ -255,7 +260,43 @@ Provider categories:
 
 An active provider profile requires non-empty allowed purposes, non-empty allowed visibility classes, a non-`unknown` evidence state, and explicit retention/training-reuse posture text. It must not contain secret material by design or UI.
 
-Create one active profile per project + provider connection/key, with supersession history preserved.
+For current AI routes, `provider_key` is exactly `lower(provider)||':'||lower(endpoint_host)`. A profile with `provider_connection_id` must match that connection's project and deterministic key.
+
+Treat `active|restricted|suspended` as current profile states for uniqueness; only `active|restricted` may ever permit a route, and `suspended` is an explicit current denial. Retired/draft rows are history/non-current.
+
+Create one current profile per project + provider connection/key, with supersession history preserved.
+
+### `public.data_policy_decisions`
+
+Append-only, trace-safe policy evaluation evidence.
+
+Fields:
+
+- `id uuid primary key default gen_random_uuid()`
+- `project_id uuid not null references public.projects(id) on delete cascade`
+- `trace_id text not null`
+- `actor_user_id uuid null references auth.users(id)`
+- `subject_type text not null`
+- `subject_id uuid null`
+- `subject_reference text null`
+- `purpose text not null`
+- `requested_operation text not null`
+- `outcome text not null check (outcome in ('allow','deny','review_required'))`
+- `reason_code text not null`
+- `effective_visibility_class text null`
+- `effective_reuse_state text null`
+- `publication_authorized boolean not null default false`
+- `manifest_id uuid null references public.trust_manifests(id)`
+- `binding_id uuid null references public.data_policy_bindings(id)`
+- `provider_profile_id uuid null references public.provider_trust_profiles(id)`
+- `retention_policy_id uuid null`
+- `enforcement_mode text not null check (enforcement_mode in ('report_only','enforced'))`
+- `policy_version text not null`
+- `created_at timestamptz not null default now()`
+
+The table never stores raw subject content. Browser roles receive read access only through project-scoped RLS; service-role evaluation is the only insertion path.
+
+Index `(project_id,created_at desc)`, `trace_id`, every FK, and subject lookup fields.
 
 ### Read models
 
@@ -271,7 +312,7 @@ Views expose current active state only; history tables remain authoritative.
 
 Assert:
 
-- all three tables exist with the exact controlled values above;
+- all four tables exist with the exact controlled values above;
 - one-active partial unique indexes exist;
 - every FK column has an index;
 - project-scoped RLS is enabled;
@@ -280,6 +321,8 @@ Assert:
 - service role access remains backend-only;
 - read views use `security_invoker=true`;
 - provider profiles contain no credential/secret value column;
+- Trust Manifests default to `report_only` and expose `report_only|enforced` only;
+- decision records are append-only, trace-safe, and contain no raw content column;
 - no existing AI provider connection, certified-memory, Products, Portfolio, or file-access table is deleted or rewritten.
 
 ## Step 2 — Run focused test and verify RED
@@ -340,6 +383,8 @@ Fields:
 - `status_reason text null`
 - `effective_from timestamptz null`
 - `review_due_at timestamptz null`
+- `authority_basis text null`
+- `evidence_reference text null`
 - `supersedes_policy_id uuid null references public.retention_policies(id)`
 - `created_by uuid not null references auth.users(id)`
 - `approved_by uuid null references auth.users(id)`
@@ -360,6 +405,8 @@ Controlled default disposition:
 - `legal_hold`
 
 The last three are policy intent only. No destructive executor exists in Phase C.
+
+If `default_retention_days` is non-null or `default_disposition_intent='delete_when_authorized'`, both `authority_basis` and `evidence_reference` must be non-empty. If no authoritative duration exists, `review_interval_days` must be non-null and the policy remains review-oriented rather than inventing a statutory/contractual duration.
 
 Add nullable `retention_policy_id uuid references public.retention_policies(id)` to `trust_manifests` and index it.
 
