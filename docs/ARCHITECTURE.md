@@ -226,3 +226,24 @@ Legal Eagle is the first live Resonance Assistance specialist and runs through t
 - Release contract: `datanest-ai-chat@2` identifies the gateway version that adds the Legal Eagle product mode and learning exclusion.
 - Legal Eagle input/output events are tagged `product_mode=legal_eagle` and `learning_eligible=false`.
 - Legal Eagle sessions are excluded from automatic trend extraction and project-wide learning. A legal matter therefore cannot silently become reusable institutional memory through the automatic learning pipeline.
+
+
+## Intelligence Fabric and ILM-1
+
+The Phase F source implementation adds **ILM-1** as DataNest's governed intelligence-composition layer. ILM-1 is an orchestration abstraction over approved memory, provider/model routes, tools, agents and Resource Fabric capabilities; it is **not** a trained proprietary foundation model.
+
+- `ilm_profiles` stores versioned project-scoped operating profiles. Owner/admin activation is explicit; projects without an active ILM-1 profile continue on the existing governed DataNest AI route.
+- `intelligence_route_decisions` is append-only route evidence tying the declared purpose and visibility state to certified-memory references, Phase C policy evidence, Phase E resource/capability evidence, and provider/model provenance where applicable.
+- `intelligence_evaluation_runs` records versioned deterministic, policy, human-review or certification-suite evidence. Evaluation history is evidence, not self-modifying model behavior.
+- `intelligence_capability_evidence` records observed fitness of a Phase E resource/capability for a declared intelligence purpose. It supplements Resource Fabric health and does not replace it.
+- ILM-1 resolves in governed order: certified memory → Phase C data policy → Phase E resource candidates → approved provider/model route → append-only route evidence.
+- A selected ILM route is **not** a capacity reservation, Capability Lease, Phase D execution authorization, or certified-memory promotion.
+- Provider credentials remain in the existing server-side provider connection boundary and never enter Intelligence Fabric tables or browser payloads.
+- Uncertified staging evidence remains current-Job/session context only. Project-wide reusable knowledge remains `certified_memory` and keeps its existing certification/promotion boundary.
+- `local_only` policy cannot silently escape to an external/provider-managed route.
+- The DataNest AI product identity remains provider-agnostic. Provider/model labels are operational provenance only.
+- The browser may read routing, evaluation and capability evidence; service evidence writes remain backend-only.
+- No Phase F source path exposes hidden chain-of-thought or claims foundation-model training/fine-tuning.
+- Phase G public growth/stakeholder surfaces and Phase H Outcome Ledger/Shadow Economics remain future work.
+
+This section records source architecture only. Production ILM-1 activation requires the Phase F migration, exact-head verification, and an explicitly active governed ILM profile.
