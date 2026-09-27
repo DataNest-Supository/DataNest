@@ -113,3 +113,19 @@ Phase mapping:
 - Verify: Checkpoints, Audit, Transparency
 
 The rail may scroll on compact tablet widths, but at phone width it collapses into a five-column phase grid with AI Core on its own row so every control remains physically inside the viewport.
+
+
+## Active work context handoff
+
+Selecting a Job inside DataNest AI establishes a browser-local active work context for the current project and user.
+
+The context carries:
+- Job identifier and display number
+- Job title and status
+- Linked DataNest AI session state
+
+The context persists in `sessionStorage`, so it survives workspace navigation and page reloads but is not treated as governed project state. Specialist workspaces surface it in a compact Active Work Context strip with actions to return to DataNest AI, open TranScheduler, or clear the local context.
+
+When users return to DataNest AI, the handed-off Job is preferred over the first accessible Job in the list. Unmounting the AI workspace no longer clears the context; project/user changes and explicit clearing remain the boundaries.
+
+This layer is navigation state only. It does not change Job status, create runs, alter checkpoints, or write audit records.

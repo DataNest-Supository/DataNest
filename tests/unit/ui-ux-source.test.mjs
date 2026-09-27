@@ -8,6 +8,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../
 const appSource = fs.readFileSync(path.join(repoRoot, "src/components/DataNestApp.tsx"), "utf8");
 const homeSource = fs.readFileSync(path.join(repoRoot, "src/components/ResonanceHome.tsx"), "utf8");
 const journeySource = fs.readFileSync(path.join(repoRoot, "src/components/PurposeJourney.tsx"), "utf8");
+const aiWorkspaceSource = fs.readFileSync(path.join(repoRoot, "src/components/DataNestAiWorkspace.tsx"), "utf8");
 const workflowPhasesSource = fs.readFileSync(path.join(repoRoot, "src/lib/workflowPhases.ts"), "utf8");
 const cssSource = fs.readFileSync(path.join(repoRoot, "src/app/globals.css"), "utf8");
 
@@ -247,3 +248,26 @@ test("specialist workspaces retain persistent lifecycle orientation", () => {
   assert.match(cssSource, /\.workflowPhaseSteps button>span\{display:none\}/);
 });
 
+
+
+test("active Job context persists across workspace handoffs", () => {
+  assert.match(appSource, /datanest\.activeWorkContext:/);
+  assert.match(appSource, /window\.sessionStorage\.setItem\(key,JSON\.stringify\(next\)\)/);
+  assert.match(appSource, /isActiveWorkContext\(parsed\)/);
+  assert.match(appSource, /aria-label="Active work context"/);
+  assert.match(appSource, /Return to DataNest AI/);
+  assert.match(appSource, /Open TranScheduler/);
+  assert.match(appSource, /Clear context/);
+  assert.match(appSource, /preferredJobId=\{activeDataNestAiSession\?\.jobId\|\|null\}/);
+  assert.match(cssSource, /\.activeWorkContext\{/);
+  assert.match(cssSource, /@media\(max-width:600px\)[\s\S]*?\.activeWorkContext\{grid-template-columns:1fr/);
+});
+
+test("DataNest AI restores the handed-off Job instead of resetting to the first Job", () => {
+  assert.match(aiWorkspaceSource, /preferredJobId\?:string\|null/);
+  assert.match(aiWorkspaceSource, /preferredJobId&&next\.some\(job=>job\.id===preferredJobId\)/);
+  assert.match(aiWorkspaceSource, /jobNumber:selectedJob\.job_number/);
+  assert.match(aiWorkspaceSource, /title:selectedJob\.title/);
+  assert.match(aiWorkspaceSource, /status:selectedJob\.status/);
+  assert.doesNotMatch(aiWorkspaceSource, /useEffect\(\(\)=>\(\)=>onActiveSessionChange\(null\)/);
+});

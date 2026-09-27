@@ -509,3 +509,57 @@ test("AI & I keeps DataNest AI at the core while governed products stay product 
   await expect(page).toHaveURL(/recordType=application/);
   await expect(page).toHaveURL(/q=RONSAS(\+|%20)App(\+|%20)1/);
 });
+
+
+test("active work context survives navigation and reload", async ({ page }) => {
+  const projectId = "00000000-0000-4000-8000-000000000010";
+  const userId = "00000000-0000-4000-8000-000000000001";
+  const jobId = "00000000-0000-4000-8000-000000000099";
+
+  await page.route("**/runtime-config.js", route => route.fulfill({
+    contentType: "application/javascript",
+    body: "window.__DATANEST_CONFIG__={supabaseUrl:'https://fixture.supabase.co',supabasePublishableKey:'fixture-key',authoritative:true}"
+  }));
+  await page.addInitScript(({projectId,userId,jobId}) => {
+    const encode = (data: unknown) => btoa(JSON.stringify(data)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+    localStorage.setItem("sb-fixture-auth-token", JSON.stringify({
+      access_token: `${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:userId,exp:4102444800,role:"authenticated"})}.fixture`,
+      refresh_token: "fixture", token_type:"bearer", expires_at:4102444800,
+      user:{id:userId,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid"}
+    }));
+    sessionStorage.setItem("datanest.activeWorkContext:"+projectId+":"+userId, JSON.stringify({
+      jobId, sessionId:"session-fixture", jobNumber:42, title:"Persistent context fixture", status:"READY"
+    }));
+  }, {projectId,userId,jobId});
+
+  await page.route("https://fixture.supabase.co/**", route => {
+    const path = new URL(route.request().url()).pathname;
+    let body: unknown = [];
+    if (path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE",created_at:"2026-09-26T00:00:00Z"};
+    if (path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"viewer",status:"active"};
+    if (path.endsWith("/get_project_dashboard_summary")) body = {total_jobs:0,active_jobs:0,running_jobs:0,blocked_jobs:0,available_capabilities:0,registered_capabilities:0};
+    return route.fulfill({contentType:"application/json",body:JSON.stringify(body)});
+  });
+
+  await page.goto(appPath+"?view=unifi");
+  const context = page.getByRole("region", {name:"Active work context"});
+  await expect(context).toBeVisible();
+  await expect(context.getByText("JOB-00042",{exact:true})).toBeVisible();
+  await expect(context.getByText("Persistent context fixture",{exact:true})).toBeVisible();
+  await expect(context.getByText("AI session linked",{exact:true})).toBeVisible();
+
+  await context.getByRole("button",{name:"Open TranScheduler"}).click();
+  await expect(page).toHaveURL(/\?view=scheduler/);
+  await expect(page.getByRole("region",{name:"Active work context"})).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole("region",{name:"Active work context"})).toBeVisible();
+  await expect(page.getByText("Persistent context fixture",{exact:true})).toBeVisible();
+
+  await page.setViewportSize({width:390,height:844});
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+
+  await page.getByRole("button",{name:"Clear context"}).click();
+  await expect(page.getByRole("region",{name:"Active work context"})).toBeHidden();
+  expect(await page.evaluate(({projectId,userId}) => sessionStorage.getItem("datanest.activeWorkContext:"+projectId+":"+userId), {projectId,userId})).toBeNull();
+});

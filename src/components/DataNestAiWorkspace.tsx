@@ -37,7 +37,8 @@ type Props={
   openScheduler:()=>void;
   setNotice:(value:string)=>void;
   setError:(value:string)=>void;
-  onActiveSessionChange:(session:{jobId:string;sessionId:string|null}|null)=>void;
+  preferredJobId?:string|null;
+  onActiveSessionChange:(session:{jobId:string;sessionId:string|null;jobNumber:number;title:string;status:string}|null)=>void;
 };
 
 const jobColumns="id,job_number,title,description,priority,status,required_capabilities,created_at,updated_at";
@@ -61,6 +62,7 @@ export default function DataNestAiWorkspace({
   openScheduler,
   setNotice,
   setError,
+  preferredJobId=null,
   onActiveSessionChange
 }:Props){
   const [jobs,setJobs]=useState<Job[]>([]);
@@ -103,7 +105,9 @@ export default function DataNestAiWorkspace({
       const current=selectedJobIdRef.current;
       const nextId=current&&next.some(job=>job.id===current)
         ?current
-        :next[0]?.id||"";
+        :preferredJobId&&next.some(job=>job.id===preferredJobId)
+          ?preferredJobId
+          :next[0]?.id||"";
       if(nextId!==current){
         contextRequestRef.current++;
         setContext(null);
@@ -120,7 +124,7 @@ export default function DataNestAiWorkspace({
     }finally{
       setJobsLoading(false);
     }
-  },[projectId]);
+  },[projectId,preferredJobId]);
 
   const refreshContext=useCallback(async(sessionOverride?:string)=>{
     if(!selectedJobId)return;
@@ -157,12 +161,17 @@ export default function DataNestAiWorkspace({
   useEffect(()=>{void loadJobs()},[loadJobs]);
 
   useEffect(()=>{
+    if(jobsLoading)return;
     onActiveSessionChange(
-      selectedJobId?{jobId:selectedJobId,sessionId:sessionId||null}:null
+      selectedJob?{
+        jobId:selectedJob.id,
+        sessionId:sessionId||null,
+        jobNumber:selectedJob.job_number,
+        title:selectedJob.title,
+        status:selectedJob.status
+      }:null
     );
-  },[selectedJobId,sessionId,onActiveSessionChange]);
-
-  useEffect(()=>()=>onActiveSessionChange(null),[onActiveSessionChange]);
+  },[jobsLoading,selectedJob,sessionId,onActiveSessionChange]);
 
   useEffect(()=>{
     if(!selectedJobId)return;

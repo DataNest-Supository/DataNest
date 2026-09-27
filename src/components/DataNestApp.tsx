@@ -22,7 +22,7 @@ type ProjectMember = { project_id:string; user_id:string; role:"owner"|"admin"|"
 type ViewKey = "overview"|"stakeholder"|"sparks"|"governance"|"products"|"thinktank"|"ai"|"productlab"|"unifi"|"scheduler"|"runs"|"checkpoints"|"audit"|"transparency"|"settings";
 type HealthState = { state:"checking"|"online"|"degraded"|"offline"; checkedAt:string|null; message:string };
 type Summary = { total:number; active:number; running:number; blocked:number; available:number; registered:number };
-type ActiveDataNestAiSession = { jobId:string; sessionId:string|null };
+type ActiveDataNestAiSession = { jobId:string; sessionId:string|null; jobNumber:number; title:string; status:string };
 
 const PAGE_SIZE = 20;
 const finalStates = new Set(["COMPLETED","FAILED","CANCELLED"]);
@@ -219,6 +219,12 @@ function formatDate(value:string|null) {
   return new Intl.DateTimeFormat(undefined,{month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"UTC",timeZoneName:"short"}).format(new Date(value));
 }
 function jobCode(job:Job) { return "JOB-" + String(job.job_number).padStart(5,"0"); }
+function activeWorkContextKey(projectId:string,userId:string){ return "datanest.activeWorkContext:"+projectId+":"+userId; }
+function isActiveWorkContext(value:unknown):value is ActiveDataNestAiSession {
+  if(!value||typeof value!=="object")return false;
+  const item=value as Record<string,unknown>;
+  return typeof item.jobId==="string"&&typeof item.jobNumber==="number"&&typeof item.title==="string"&&typeof item.status==="string"&&(typeof item.sessionId==="string"||item.sessionId===null);
+}
 function tone(value:string) {
   const v=value.toLowerCase();
   if (["available","completed","active","owner","admin","operator"].includes(v)) return "good";
@@ -274,6 +280,20 @@ export default function DataNestApp({session}:{session:Session}) {
 
   const canOperate=membership ? ["owner","admin","operator"].includes(membership.role) : false;
   const canManageAi=membership ? ["owner","admin"].includes(membership.role) : false;
+
+  const updateActiveWorkContext=useCallback((next:ActiveDataNestAiSession|null)=>{
+    setActiveDataNestAiSession(next);
+    if(!project)return;
+    const key=activeWorkContextKey(project.id,session.user.id);
+    try{
+      if(next)window.sessionStorage.setItem(key,JSON.stringify(next));
+      else window.sessionStorage.removeItem(key);
+    }catch{}
+  },[project?.id,session.user.id]);
+
+  const clearActiveWorkContext=useCallback(()=>{
+    updateActiveWorkContext(null);
+  },[updateActiveWorkContext]);
 
   const commandItems=useMemo(()=>{
     const query=commandQuery.trim().toLowerCase();
@@ -466,6 +486,28 @@ export default function DataNestApp({session}:{session:Session}) {
   },[project]);
 
   useEffect(()=>{ void loadCore(); },[loadCore]);
+  useEffect(()=>{
+    if(!project){
+      setActiveDataNestAiSession(null);
+      return;
+    }
+    const key=activeWorkContextKey(project.id,session.user.id);
+    try{
+      const raw=window.sessionStorage.getItem(key);
+      if(!raw){
+        setActiveDataNestAiSession(null);
+        return;
+      }
+      const parsed=JSON.parse(raw) as unknown;
+      if(isActiveWorkContext(parsed))setActiveDataNestAiSession(parsed);
+      else{
+        window.sessionStorage.removeItem(key);
+        setActiveDataNestAiSession(null);
+      }
+    }catch{
+      setActiveDataNestAiSession(null);
+    }
+  },[project?.id,session.user.id]);
   useEffect(()=>{
     const syncViewFromUrl=()=>{
       const url=new URL(window.location.href);
@@ -875,6 +917,21 @@ export default function DataNestApp({session}:{session:Session}) {
           </div>
           <button className={"workflowPhaseAi "+(view==="ai"?"active":"")} type="button" aria-current={view==="ai"?"page":undefined} onClick={()=>setView("ai")}><span aria-hidden="true">✦</span><b>AI CORE</b><small>cross-phase</small></button>
         </nav>}
+        {activeDataNestAiSession&&project&&view!=="overview"&&view!=="ai"&&view!=="settings"&&<section className="activeWorkContext" aria-label="Active work context">
+          <div className="activeWorkContextIdentity">
+            <p className="eyebrow">ACTIVE WORK CONTEXT</p>
+            <div><strong>{"JOB-"+String(activeDataNestAiSession.jobNumber).padStart(5,"0")}</strong><span>{activeDataNestAiSession.title}</span></div>
+          </div>
+          <div className="activeWorkContextState">
+            <span className={"badge "+tone(activeDataNestAiSession.status)}>{activeDataNestAiSession.status.replaceAll("_"," ")}</span>
+            <small>{activeDataNestAiSession.sessionId?"AI session linked":"Job context linked"}</small>
+          </div>
+          <div className="activeWorkContextActions">
+            <button className="secondaryButton compact" type="button" onClick={()=>setView("ai")}>Return to DataNest AI</button>
+            {view!=="scheduler"&&<button className="secondaryButton compact" type="button" onClick={()=>setView("scheduler")}>Open TranScheduler</button>}
+            <button className="ghostButton compact activeWorkContextClear" type="button" onClick={clearActiveWorkContext}>Clear context</button>
+          </div>
+        </section>}
         <div aria-live="polite">
           {notice&&<div className="notice goodNotice">{notice}</div>}
           {error&&<div className="notice errorNotice" role="alert">{error}</div>}
@@ -894,7 +951,7 @@ export default function DataNestApp({session}:{session:Session}) {
         {!loadingCore&&project&&view==="governance"&&<GovernanceWorkspace projectId={project.id} currentUserId={session.user.id} canManage={canManageAi} setNotice={setNotice} setError={setError}/>}
         {!loadingCore&&project&&view==="products"&&<ProductsWorkspace projectId={project.id}/>}
         {!loadingCore&&project&&view==="thinktank"&&<ThinkTankWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} canReview={canManageAi} setNotice={setNotice} setError={setError}/>}
-        {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace key={project.id+":"+session.user.id} projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError} onActiveSessionChange={setActiveDataNestAiSession}/>}
+        {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace key={project.id+":"+session.user.id} projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError} preferredJobId={activeDataNestAiSession?.jobId||null} onActiveSessionChange={updateActiveWorkContext}/>}
         {!loadingCore&&project&&view==="productlab"&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate}/>}
         {!loadingCore&&project&&view==="unifi"&&<UnifiPlanner project={project} jobs={jobs} capabilities={capabilities} reload={async()=>{await loadJobsPage(jobPage);await loadSummary(project.id);await loadRecentJobs(project.id);}} setNotice={setNotice} setError={setError} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage}/>}
         {!loadingCore&&view==="scheduler"&&<Scheduler projectName={project?.name||"Resonance DataNest"} projectSlug={project?.slug||"resonance-datanest"} jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} onNavigate={setView}/>}
