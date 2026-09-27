@@ -245,25 +245,25 @@ function activeContextEvidenceForView(
   events:AuditEvent[]
 ):ActiveContextEvidence {
   if(view==="unifi"||view==="scheduler"){
-    const count=jobs.filter(item=>item.id===activeJobId).length;
+    const count=jobs.reduce((total,item)=>total+(item.id===activeJobId?1:0),0);
     return count>0
       ? {state:"visible",label:"Job evidence visible",detail:`On this page: ${count} matching Job ${count===1?"record":"records"}.`}
       : {state:"not-visible",label:"Job evidence not visible",detail:"No matching Job record is loaded on this page."};
   }
   if(view==="runs"){
-    const count=runs.filter(item=>item.job_id===activeJobId).length;
+    const count=runs.reduce((total,item)=>total+(item.job_id===activeJobId?1:0),0);
     return count>0
       ? {state:"visible",label:"Run evidence visible",detail:`On this page: ${count} matching ${count===1?"run":"runs"}.`}
       : {state:"not-visible",label:"Run evidence not visible",detail:"No matching run is loaded on this page."};
   }
   if(view==="checkpoints"){
-    const count=checkpoints.filter(item=>item.job_id===activeJobId).length;
+    const count=checkpoints.reduce((total,item)=>total+(item.job_id===activeJobId?1:0),0);
     return count>0
       ? {state:"visible",label:"Checkpoint evidence visible",detail:`On this page: ${count} matching ${count===1?"checkpoint":"checkpoints"}.`}
       : {state:"not-visible",label:"Checkpoint evidence not visible",detail:"No matching checkpoint is loaded on this page."};
   }
   if(view==="audit"){
-    const count=events.filter(item=>item.job_id===activeJobId).length;
+    const count=events.reduce((total,item)=>total+(item.job_id===activeJobId?1:0),0);
     return count>0
       ? {state:"visible",label:"Audit evidence visible",detail:`On this page: ${count} matching audit ${count===1?"event":"events"}.`}
       : {state:"not-visible",label:"Audit evidence not visible",detail:"No matching audit event is loaded on this page."};
