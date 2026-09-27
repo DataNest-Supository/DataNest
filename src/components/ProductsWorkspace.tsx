@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 import ResonancePortfolioPulse from "@/components/ResonancePortfolioPulse";
+import { FREE_PROMOTION_LABEL, RONSAS_FULL_NAME } from "@/lib/ecosystemAuthority";
 
 
 type CatalogProduct = {
@@ -52,7 +53,6 @@ const catalogRecordOrder = [
   "governance_control","risk","source_branch","roadmap_item","decision","evidence","datanest_branch"
 ];
 
-const RONSAS_FULL_NAME="Resonance Open Nova Sovereign Application Suite";
 
 function governedProductFullName(product:CatalogProduct){
   return product.slug==="ronsas"||product.name.trim().toUpperCase()==="RONSAS"
@@ -528,7 +528,7 @@ export default function ProductsWorkspace({projectId}:{projectId:string}){
               <div className="catalogFlags">
                 <span className="productStatus">{(product.lifecycle_status||"ACTIVE").toUpperCase()}</span>
                 {executionAuthority==="DataNest"&&<span className="catalogInvariant">DATANEST MANAGED</span>}
-                {!product.billing_enabled&&<span className="catalogInvariant">FREE PROMOTION · BILLING OFF</span>}
+                {!product.billing_enabled&&<span className="catalogInvariant">{FREE_PROMOTION_LABEL}</span>}
               </div>
             </div>
 
