@@ -62,6 +62,11 @@ function governedProductFullName(product:CatalogProduct){
     :product.full_name;
 }
 
+function governedProductLifecycle(product:CatalogProduct,portfolioItems:PortfolioRegistryRow[]){
+  const linked=portfolioItems.find(item=>item.linked_product_id===product.id);
+  return linked?.current_lifecycle||product.lifecycle_status||"active";
+}
+
 function payloadText(payload:Record<string,unknown>,...keys:string[]) {
   for (const key of keys) {
     const value=payload[key];
@@ -604,7 +609,7 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
                 </div>
               </div>
               <div className="catalogFlags">
-                <span className="productStatus">{(product.lifecycle_status||"ACTIVE").toUpperCase()}</span>
+                <span className="productStatus">{governedProductLifecycle(product,portfolioItems).toUpperCase()}</span>
                 {executionAuthority==="DataNest"&&<span className="catalogInvariant">DATANEST MANAGED</span>}
                 {!product.billing_enabled&&<span className="catalogInvariant">{FREE_PROMOTION_LABEL}</span>}
               </div>
