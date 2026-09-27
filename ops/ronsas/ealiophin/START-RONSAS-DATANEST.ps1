@@ -133,6 +133,58 @@ exit `$LASTEXITCODE
     }
 }
 
+foreach ($module in @($Registry.modules | Where-Object { $_.kind -eq 'python-service' })) {
+    $source = Join-Path $RepoRoot ([string]$module.source)
+    $launcher = Join-Path $RepoRoot ([string]$module.launcher)
+    $serviceState = Join-Path $RuntimeRoot ([string]$module.state)
+
+    if (Test-Health ([string]$module.health)) {
+        Write-Host "[RONSAS] $($module.displayName) already healthy at $($module.health)." -ForegroundColor Green
+        $state.processes += [ordered]@{
+            id = [string]$module.id
+            pid = $null
+            owned = $false
+            source = [string]$module.source
+            health = [string]$module.health
+        }
+        continue
+    }
+
+    $missing = @()
+    if (-not (Test-Path -LiteralPath $source -PathType Leaf)) { $missing += "source=$source" }
+    if (-not (Test-Path -LiteralPath $launcher -PathType Leaf)) { $missing += "launcher=$launcher" }
+    if (-not (Test-Path -LiteralPath $serviceState -PathType Leaf)) { $missing += "state=$serviceState" }
+    if ($missing.Count -gt 0) {
+        $message = "$($module.displayName) prerequisites are not present: $($missing -join ', ')"
+        if ([bool]$module.required) { throw $message }
+        Write-Warning "[RONSAS] $message. Optional service will not be started."
+        continue
+    }
+
+    $stdout = Join-Path $LogRoot ("$($module.id).out.log")
+    $stderr = Join-Path $LogRoot ("$($module.id).err.log")
+    $process = Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',$launcher) -PassThru -WindowStyle Hidden -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+
+    if (-not (Wait-Health ([string]$module.health) 45)) {
+        try { & taskkill.exe /PID $process.Id /T /F | Out-Null } catch {}
+        $message = "$($module.displayName) did not become healthy at $($module.health). See $stderr"
+        if ([bool]$module.required) { throw $message }
+        Write-Warning "[RONSAS] $message"
+        continue
+    }
+
+    Write-Host "[RONSAS] $($module.displayName) healthy (PID $($process.Id))." -ForegroundColor Green
+    $state.processes += [ordered]@{
+        id = [string]$module.id
+        pid = [int]$process.Id
+        owned = $true
+        source = [string]$module.source
+        health = [string]$module.health
+        launcher = $launcher
+        startedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+    }
+}
+
 $state | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $StatePath -Encoding UTF8
 Write-Host "[RONSAS] DataNest runtime state: $StatePath" -ForegroundColor DarkGray
 Write-Host '[RONSAS] DataNest web application suite is ready.' -ForegroundColor Green
