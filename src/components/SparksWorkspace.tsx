@@ -129,6 +129,7 @@ export default function SparksWorkspace({
   async function reconcileRedemptionIntent(intent:PendingMutationIntent<SparkRedemptionPendingPayload>,announce:boolean){
     const supabase=getSupabase();
     if(!supabase){
+      markPendingMutationVerification(redemptionRequestScope,"unconfirmed");
       setRedemptionReconciliation("pending");
       if(announce)setError("Spark reservation is awaiting authoritative confirmation. Connectivity is unavailable, so do not issue a second request.");
       return {state:"pending" as const,value:null,error:new Error("Supabase unavailable")};
