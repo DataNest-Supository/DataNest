@@ -11,7 +11,7 @@ const css=fs.readFileSync(path.join(root,"src/components/CollaborationVisual.mod
 
 test("AI & I hero keeps DataNest AI at the core and renders governed products as product nodes",()=>{
   assert.match(home,/<CollaborationVisual[\s\S]*projectId={project\.id}/);
-  assert.match(home,/onOpenProducts={\(\)=>onNavigate\("products"\)}/);
+  assert.match(home,/onOpenProducts={\(target\?:ProductHeroTarget\)=>/);
   assert.match(visual,/from\("products"\)/);
   assert.match(visual,/from\("product_records"\)/);
   assert.match(visual,/\.eq\("record_type","application"\)/);
