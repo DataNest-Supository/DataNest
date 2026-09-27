@@ -361,7 +361,9 @@ export default function DataNestApp({session}:{session:Session}) {
   const [health,setHealth]=useState<HealthState>({state:"checking",checkedAt:null,message:"Checking control plane…"});
   const [reloadingLatest,setReloadingLatest]=useState(false);
   const [locatingActiveJob,setLocatingActiveJob]=useState(false);
+  const [locatingActiveEvidence,setLocatingActiveEvidence]=useState(false);
   const pendingActiveJobPageFocusRef=useRef(false);
+  const pendingActiveEvidenceFocusRef=useRef<"runs"|"checkpoints"|"audit"|null>(null);
 
   const canOperate=membership ? ["owner","admin","operator"].includes(membership.role) : false;
   const canManageAi=membership ? ["owner","admin"].includes(membership.role) : false;
@@ -452,6 +454,71 @@ export default function DataNestApp({session}:{session:Session}) {
       setLocatingActiveJob(false);
     }
   },[project,activeDataNestAiSession,view,jobCount,jobPage]);
+
+  const locateActiveEvidencePage=useCallback(async()=>{
+    if(!activeDataNestAiSession||!(view==="runs"||view==="checkpoints"||view==="audit"))return;
+    const supabase=getSupabase();
+    if(!supabase)return;
+
+    const evidenceView=view;
+    const total=evidenceView==="runs"?runCount:evidenceView==="checkpoints"?checkpointCount:eventCount;
+    const currentPage=evidenceView==="runs"?runPage:evidenceView==="checkpoints"?checkpointPage:eventPage;
+    const reportedPages=total>0?Math.max(1,Math.ceil(total/PAGE_SIZE)):null;
+    const evidenceLabel=evidenceView==="runs"?"run":evidenceView==="checkpoints"?"checkpoint":"audit event";
+
+    setLocatingActiveEvidence(true);
+    setError("");
+    setNotice(reportedPages
+      ? "Locating active Job "+evidenceLabel+" evidence across "+reportedPages+" "+(reportedPages===1?"page":"pages")+"…"
+      : "Locating active Job "+evidenceLabel+" evidence across workspace pages…");
+
+    try{
+      const seenPageSignatures=new Set<string>();
+      for(let page=0;;page+=1){
+        const {from,to}=pageRange(page);
+        const queryResult=evidenceView==="runs"
+          ? await supabase.from("runs").select("id,job_id").order("started_at",{ascending:false}).range(from,to)
+          : evidenceView==="checkpoints"
+            ? await supabase.from("checkpoints").select("id,job_id").order("created_at",{ascending:false}).range(from,to)
+            : project
+              ? await supabase.from("events").select("id,job_id").eq("project_id",project.id).order("created_at",{ascending:false}).range(from,to)
+              : {data:[],error:null};
+        if(queryResult.error){
+          setError(queryResult.error.message);
+          return;
+        }
+        const rows=(queryResult.data||[]) as Array<{id:string|number;job_id:string|null}>;
+        const match=rows.find(item=>item.job_id===activeDataNestAiSession.jobId);
+        if(match){
+          pendingActiveEvidenceFocusRef.current=evidenceView;
+          if(currentPage!==page){
+            if(evidenceView==="runs")setRunPage(page);
+            else if(evidenceView==="checkpoints")setCheckpointPage(page);
+            else setEventPage(page);
+          }else{
+            window.requestAnimationFrame(()=>{
+              if(focusRenderedActiveContextRecord())setNotice("Active Job "+evidenceLabel+" evidence located and focused.");
+              else setNotice("Active Job "+evidenceLabel+" evidence is on this page but is not rendered.");
+              pendingActiveEvidenceFocusRef.current=null;
+            });
+          }
+          setNotice("Active Job "+evidenceLabel+" evidence located on page "+(page+1)+(reportedPages?" of "+reportedPages:"")+".");
+          return;
+        }
+        if(rows.length<PAGE_SIZE)break;
+        if(reportedPages!==null&&page+1>=reportedPages)break;
+        const signature=String(rows[0]?.id)+":"+String(rows[rows.length-1]?.id);
+        if(seenPageSignatures.has(signature)){
+          setNotice("Active Job evidence search stopped because "+evidenceView+" pagination did not advance.");
+          return;
+        }
+        seenPageSignatures.add(signature);
+      }
+      setNotice("No matching active Job "+evidenceLabel+" evidence was found in the pages checked.");
+    }finally{
+      setLocatingActiveEvidence(false);
+    }
+  },[activeDataNestAiSession,view,project,runCount,checkpointCount,eventCount,runPage,checkpointPage,eventPage]);
 
   const commandItems=useMemo(()=>{
     const query=commandQuery.trim().toLowerCase();
@@ -767,6 +834,22 @@ export default function DataNestApp({session}:{session:Session}) {
   useEffect(()=>{ if(view==="runs") void loadRunsPage(runPage); },[view,runPage,loadRunsPage]);
   useEffect(()=>{ if(view==="checkpoints") void loadCheckpointsPage(checkpointPage); },[view,checkpointPage,loadCheckpointsPage]);
   useEffect(()=>{ if(view==="audit") void loadEventsPage(eventPage); },[view,eventPage,loadEventsPage]);
+  useEffect(()=>{
+    const pendingView=pendingActiveEvidenceFocusRef.current;
+    if(!pendingView||pendingView!==view||!activeDataNestAiSession)return;
+    const visible=pendingView==="runs"
+      ? runs.some(item=>item.job_id===activeDataNestAiSession.jobId)
+      : pendingView==="checkpoints"
+        ? checkpoints.some(item=>item.job_id===activeDataNestAiSession.jobId)
+        : events.some(item=>item.job_id===activeDataNestAiSession.jobId);
+    if(!visible)return;
+    pendingActiveEvidenceFocusRef.current=null;
+    const evidenceLabel=pendingView==="runs"?"run":pendingView==="checkpoints"?"checkpoint":"audit event";
+    window.requestAnimationFrame(()=>{
+      if(focusRenderedActiveContextRecord())setNotice("Active Job "+evidenceLabel+" evidence located and focused.");
+      else setNotice("Active Job "+evidenceLabel+" evidence loaded but its matching record is not rendered.");
+    });
+  },[runs,checkpoints,events,view,activeDataNestAiSession]);
   useEffect(()=>{ if(view==="settings") void loadPolicies(); },[view,loadPolicies]);
   useEffect(()=>{
     if(!project) return;
@@ -1111,6 +1194,7 @@ export default function DataNestApp({session}:{session:Session}) {
             </div>}
             {activeContextEvidence?.state==="visible"&&["unifi","scheduler","runs","checkpoints","audit"].includes(view)&&<button className="activeWorkContextEvidenceJump" type="button" onClick={focusActiveContextRecord}>Jump to visible evidence ↓</button>}
             {activeContextEvidence?.state==="not-visible"&&["unifi","scheduler"].includes(view)&&<button className="activeWorkContextEvidenceJump" type="button" disabled={locatingActiveJob} onClick={()=>void locateActiveJobPage()}>{locatingActiveJob?"Locating active Job…":"Locate active Job page →"}</button>}
+            {activeContextEvidence?.state==="not-visible"&&["runs","checkpoints","audit"].includes(view)&&<button className="activeWorkContextEvidenceJump" type="button" disabled={locatingActiveEvidence} onClick={()=>void locateActiveEvidencePage()}>{locatingActiveEvidence?"Locating active evidence…":"Locate active evidence page →"}</button>}
           </div>
           <div className="activeWorkContextActions">
             <button className="primaryButton compact activeWorkContextPrimary" type="button" onClick={()=>setView(activeContextAction.key)}>{activeContextAction.label}</button>
