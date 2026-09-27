@@ -4,6 +4,7 @@ import {
   classifyBranch,
   evaluateSupabaseProject,
   extractAuditIds,
+  getStrictBlockers,
   normalizeBranchFamily,
 } from "../../scripts/branch-cleaner.mjs";
 
@@ -61,4 +62,19 @@ test("compare uncertainty can never become a delete candidate", () => {
   const result = classifyBranch({ name:"fix/unknown", updatedAt:"2026-01-01T00:00:00Z", compare:{ status:"unknown", ahead_by:null } }, config, now);
   assert.equal(result.decision, "keep");
   assert.equal(result.reason, "active_or_unresolved");
+});
+
+test("strict blockers are resolved before destructive apply", () => {
+  const blockers = getStrictBlockers({
+    globalChecks: [],
+    projects: [{
+      checks: [{
+        level:"blocker",
+        code:"supabase_branch_failure",
+        detail:"main: MIGRATIONS_FAILED",
+      }],
+    }],
+  });
+  assert.equal(blockers.length, 1);
+  assert.equal(blockers[0].code, "supabase_branch_failure");
 });
