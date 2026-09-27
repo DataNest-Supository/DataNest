@@ -4,6 +4,20 @@ import { Button } from "@/components/ui/button";
 import type { FeatureGateState, GatedFeature } from "@/lib/featureGates";
 import type { EntitlementDenialKind } from "@/lib/tierRequired";
 
+function redactPrefixedCredentialTokens(value: string): string {
+  return value
+    .split(/(\s+)/)
+    .map((part) => {
+      const separator = part.indexOf("_");
+      if (separator !== 2) return part;
+      const prefix = part.slice(0, separator);
+      const body = part.slice(separator + 1);
+      if (!/^[A-Za-z]{2}$/.test(prefix) || body.length < 8 || !/^[A-Za-z0-9_-]+$/.test(body)) return part;
+      return "[token]";
+    })
+    .join("");
+}
+
 export function sanitizeDenialReason(
   raw: string | null | undefined,
   kind: EntitlementDenialKind | undefined,
@@ -13,6 +27,7 @@ export function sanitizeDenialReason(
   if (typeof raw !== "string") return fallback;
   let s = raw.trim();
   if (!s) return fallback;
+  s = redactPrefixedCredentialTokens(s);
   s = s
     .replace(/^[A-Z_][A-Z0-9_]{2,}\s*[:=]\s*/i, "")
     .replace(/^(code|error|status)\s*[:=]\s*[A-Za-z0-9_-]+[.,;]?\s*/gi, "")
@@ -21,7 +36,6 @@ export function sanitizeDenialReason(
     .replace(/\b[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]{8,}\b/g, "[token]")
     .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi, "[id]")
     .replace(/\b[A-Fa-f0-9]{16,}\b/g, "[token]")
-    .replace(/\b[a-z]{2}_[A-Za-z0-9_-]{8,}\b/gi, "[token]")
     .replace(/\b(?:Bearer|Basic|apikey|api_key|token)\s+[A-Za-z0-9._-]+/gi, "[token]")
     .replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, "[ip]")
     .replace(/\s+at\s+[^\n]+/g, "")
