@@ -121,3 +121,15 @@ test("RONSAS import snapshot remains complete and preserves commercial governanc
     ["audit","intake","main","staging"]
   );
 });
+
+
+test("Products preserves governed catalog semantics while adding Portfolio Registry",()=>{
+  assert.match(products,/Governed Products/);
+  assert.match(products,/Portfolio Registry/);
+  assert.match(products,/PortfolioRegistryPanel/);
+  assert.match(products,/ResonancePortfolioPulse products=\{catalogProducts\}/);
+  assert.match(products,/searchParams\.get\("product"\)/);
+  assert.match(products,/searchParams\.get\("recordType"\)/);
+  assert.match(products,/searchParams\.get\("q"\)/);
+  assert.match(products,/FREE_PROMOTION_LABEL/);
+});
