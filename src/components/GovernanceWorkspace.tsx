@@ -7,6 +7,7 @@ import TrustPolicyPanel from "@/components/TrustPolicyPanel";
 import ExecutionAuthorityPanel from "@/components/ExecutionAuthorityPanel";
 import type { TrustPolicyRole } from "@/lib/trustPolicy";
 import { useSessionDraftState } from "@/lib/sessionDraft";
+import { useSingleFlight } from "@/lib/singleFlight";
 
 type Protocol={
   id:string;project_id:string;protocol_key:string;version:number;title:string;mission:string|null;vision:string|null;
@@ -66,6 +67,7 @@ export default function GovernanceWorkspace({
   const [workspace,setWorkspace]=useState<Workspace|null>(null);
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
+  const {activeAction,run:runSingleFlight}=useSingleFlight();
   const [section,setSection]=useState<"sovereign"|"trust"|"authority">(()=>{
     if(typeof window==="undefined")return "sovereign";
     const requested=new URL(window.location.href).searchParams.get("section");
@@ -151,132 +153,150 @@ export default function GovernanceWorkspace({
     setDisputeTargetId(current=>current&&targetOptions.some(item=>item.id===current)?current:targetOptions[0]?.id||"");
   },[targetOptions]);
 
+  async function runGovernanceAction(key:string,action:()=>Promise<void>){
+    await runSingleFlight(key,async()=>{
+      setBusy(true);
+      setError("");
+      try{
+        await action();
+      }finally{
+        setBusy(false);
+      }
+    }).catch(error=>{
+      setError(error instanceof Error?error.message:"Governance action failed. You can retry safely.");
+    });
+  }
+
   async function createProtocolDraft(event:FormEvent){
     event.preventDefault();
     const supabase=getSupabase();if(!supabase||!canManage)return;
     const principles=protocolPrinciples.split("\n").map(item=>item.trim()).filter(Boolean);
-    setBusy(true);setError("");
-    const {error}=await supabase.rpc("create_governance_protocol_draft_v1",{
-      target_project:projectId,
-      target_title:protocolTitle.trim(),
-      target_mission:protocolMission.trim()||null,
-      target_vision:protocolVision.trim()||null,
-      target_body:protocolBody.trim(),
-      target_principles:principles
-    });
-    if(error)setError(error.message);
-    else{
+    await runGovernanceAction("create-protocol-draft",async()=>{
+      setNotice("Creating Governance protocol draft…");
+      const {error}=await supabase.rpc("create_governance_protocol_draft_v1",{
+        target_project:projectId,
+        target_title:protocolTitle.trim(),
+        target_mission:protocolMission.trim()||null,
+        target_vision:protocolVision.trim()||null,
+        target_body:protocolBody.trim(),
+        target_principles:principles
+      });
+      if(error)throw error;
       setProtocolTitle("");setProtocolMission("");setProtocolVision("");setProtocolBody("");setProtocolPrinciples("");
       setNotice("Governance protocol draft created. It is not adopted until an accepted protocol-change proposal is ratified.");
       await load();
-    }
-    setBusy(false);
+    });
   }
 
   async function createProposal(event:FormEvent){
     event.preventDefault();
     const supabase=getSupabase();if(!supabase)return;
-    setBusy(true);setError("");
-    const {error}=await supabase.rpc("create_governance_proposal_v1",{
-      target_project:projectId,
-      target_type:proposalType,
-      target_title:proposalTitle.trim(),
-      target_summary:proposalSummary.trim(),
-      target_body:proposalBody.trim(),
-      target_protocol:proposalType==="protocol_change"?(proposalProtocolId||null):null,
-      target_closes_at:null
-    });
-    if(error)setError(error.message);
-    else{
+    await runGovernanceAction("create-proposal",async()=>{
+      setNotice("Opening Governance proposal…");
+      const {error}=await supabase.rpc("create_governance_proposal_v1",{
+        target_project:projectId,
+        target_type:proposalType,
+        target_title:proposalTitle.trim(),
+        target_summary:proposalSummary.trim(),
+        target_body:proposalBody.trim(),
+        target_protocol:proposalType==="protocol_change"?(proposalProtocolId||null):null,
+        target_closes_at:null
+      });
+      if(error)throw error;
       setProposalTitle("");setProposalSummary("");setProposalBody("");setProposalProtocolId("");
       setNotice("Governance proposal opened. Formal votes are one active project member, one vote.");
       await load();
-    }
-    setBusy(false);
+    });
   }
 
   async function castVote(proposalId:string,choice:"support"|"oppose"|"abstain"){
     const supabase=getSupabase();if(!supabase)return;
-    setBusy(true);setError("");
-    const {error}=await supabase.rpc("cast_governance_vote_v1",{
-      target_proposal:proposalId,target_choice:choice,target_rationale:null
+    await runGovernanceAction("vote:"+proposalId,async()=>{
+      setNotice("Recording Governance vote…");
+      const {error}=await supabase.rpc("cast_governance_vote_v1",{
+        target_proposal:proposalId,target_choice:choice,target_rationale:null
+      });
+      if(error)throw error;
+      setNotice("Governance vote recorded as an append-only vote event.");
+      await load();
     });
-    if(error)setError(error.message);
-    else{setNotice("Governance vote recorded as an append-only vote event.");await load();}
-    setBusy(false);
   }
 
   async function withdrawProposal(proposalId:string){
     const supabase=getSupabase();if(!supabase)return;
-    setBusy(true);setError("");
-    const {error}=await supabase.rpc("withdraw_governance_proposal_v1",{
-      target_proposal:proposalId,target_reason:"Withdrawn from the governance workspace."
+    await runGovernanceAction("withdraw:"+proposalId,async()=>{
+      setNotice("Withdrawing Governance proposal…");
+      const {error}=await supabase.rpc("withdraw_governance_proposal_v1",{
+        target_proposal:proposalId,target_reason:"Withdrawn from the governance workspace."
+      });
+      if(error)throw error;
+      setNotice("Governance proposal withdrawn.");
+      await load();
     });
-    if(error)setError(error.message);
-    else{setNotice("Governance proposal withdrawn.");await load();}
-    setBusy(false);
   }
 
   async function closeProposal(proposalId:string){
     const supabase=getSupabase();if(!supabase||!canManage)return;
-    setBusy(true);setError("");
-    const {error}=await supabase.rpc("close_governance_proposal_v1",{
-      target_proposal:proposalId,target_summary:"Closed from the Sovereign Governance workspace."
+    await runGovernanceAction("close:"+proposalId,async()=>{
+      setNotice("Closing Governance vote…");
+      const {error}=await supabase.rpc("close_governance_proposal_v1",{
+        target_proposal:proposalId,target_summary:"Closed from the Sovereign Governance workspace."
+      });
+      if(error)throw error;
+      setNotice("Governance decision recorded from the latest effective member votes.");
+      await load();
     });
-    if(error)setError(error.message);
-    else{setNotice("Governance decision recorded from the latest effective member votes.");await load();}
-    setBusy(false);
   }
 
   async function ratifyProtocol(protocolId:string,proposalId:string){
     const supabase=getSupabase();if(!supabase||!canManage)return;
-    setBusy(true);setError("");
-    const {error}=await supabase.rpc("ratify_governance_protocol_v1",{
-      target_protocol:protocolId,target_proposal:proposalId
+    await runGovernanceAction("ratify:"+protocolId,async()=>{
+      setNotice("Ratifying Governance protocol version…");
+      const {error}=await supabase.rpc("ratify_governance_protocol_v1",{
+        target_protocol:protocolId,target_proposal:proposalId
+      });
+      if(error)throw error;
+      setNotice("Governance protocol version ratified and previous ratified version superseded, if any.");
+      await load();
     });
-    if(error)setError(error.message);
-    else{setNotice("Governance protocol version ratified and previous ratified version superseded, if any.");await load();}
-    setBusy(false);
   }
 
   async function fileDispute(event:FormEvent){
     event.preventDefault();
     const supabase=getSupabase();if(!supabase||!disputeTargetId)return;
-    setBusy(true);setError("");
-    const {error}=await supabase.rpc("file_governance_dispute_v1",{
-      target_project:projectId,
-      target_type:disputeTargetType,
-      target_id:disputeTargetId,
-      target_title:disputeTitle.trim(),
-      target_grounds:disputeGrounds.trim(),
-      target_requested_remedy:disputeRemedy.trim()||null
-    });
-    if(error)setError(error.message);
-    else{
+    await runGovernanceAction("file-dispute",async()=>{
+      setNotice("Filing Governance dispute…");
+      const {error}=await supabase.rpc("file_governance_dispute_v1",{
+        target_project:projectId,
+        target_type:disputeTargetType,
+        target_id:disputeTargetId,
+        target_title:disputeTitle.trim(),
+        target_grounds:disputeGrounds.trim(),
+        target_requested_remedy:disputeRemedy.trim()||null
+      });
+      if(error)throw error;
       setDisputeTitle("");setDisputeGrounds("");setDisputeRemedy("");
       setNotice("Governance dispute filed. The source protocol/proposal/decision remains unchanged.");
       await load();
-    }
-    setBusy(false);
+    });
   }
 
   async function resolveDispute(event:FormEvent){
     event.preventDefault();
     const supabase=getSupabase();if(!supabase||!canManage||!resolutionDisputeId)return;
-    setBusy(true);setError("");
-    const {error}=await supabase.rpc("resolve_governance_dispute_v1",{
-      target_dispute:resolutionDisputeId,
-      target_outcome:resolutionOutcome,
-      target_resolution:resolutionText.trim(),
-      target_replacement_proposal:resolutionOutcome==="refer_to_new_proposal"?(replacementProposalId||null):null
-    });
-    if(error)setError(error.message);
-    else{
+    await runGovernanceAction("resolve-dispute:"+resolutionDisputeId,async()=>{
+      setNotice("Resolving Governance dispute…");
+      const {error}=await supabase.rpc("resolve_governance_dispute_v1",{
+        target_dispute:resolutionDisputeId,
+        target_outcome:resolutionOutcome,
+        target_resolution:resolutionText.trim(),
+        target_replacement_proposal:resolutionOutcome==="refer_to_new_proposal"?(replacementProposalId||null):null
+      });
+      if(error)throw error;
       setResolutionText("");setReplacementProposalId("");
       setNotice("Governance dispute resolved by append-only correction record; source history was not rewritten.");
       await load();
-    }
-    setBusy(false);
+    });
   }
 
   function selectSection(next:"sovereign"|"trust"|"authority"){
@@ -301,7 +321,8 @@ export default function GovernanceWorkspace({
 
   return <div>
     {governanceModeTabs}
-    {hasSessionDraft&&<p className="muted" role="status">Governance draft restored · saved only in this browser session until its form is submitted.</p>}
+    {activeAction&&<p className="muted" role="status">Governance action in progress · duplicate submissions are blocked until the request finishes.</p>}
+    {hasSessionDraft&&<p className="muted" role="status">Browser-session draft active · unfinished Governance inputs are restored after workspace navigation or reload.</p>}
     <section className="heroPanel">
       <div>
         <p className="eyebrow">RESONANCE SOVEREIGN GOVERNANCE</p>

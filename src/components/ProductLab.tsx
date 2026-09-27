@@ -2,6 +2,8 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
+import { useSessionDraftState } from "@/lib/sessionDraft";
+import { useSingleFlight } from "@/lib/singleFlight";
 
 type Surface={
   id:string;project_id:string;name:string;url:string;environment:string;status:string;
@@ -31,11 +33,13 @@ function shortCommit(value:string|null){
 }
 
 export default function ProductLab({
-  projectId,currentUserId,canOperate
+  projectId,currentUserId,canOperate,setNotice,setError
 }:{
   projectId:string;
   currentUserId:string;
   canOperate:boolean;
+  setNotice:(value:string)=>void;
+  setError:(value:string)=>void;
 }){
   const [surfaces,setSurfaces]=useState<Surface[]>([]);
   const [portfolioItems,setPortfolioItems]=useState<PortfolioItemOption[]>([]);
@@ -44,21 +48,25 @@ export default function ProductLab({
   const [selectedSurfaceId,setSelectedSurfaceId]=useState("");
   const [previewKey,setPreviewKey]=useState(0);
 
-  const [surfaceName,setSurfaceName]=useState("Product Preview");
-  const [surfaceUrl,setSurfaceUrl]=useState("");
+  const draftPrefix="productlab:"+projectId+":"+currentUserId+":";
+  const [surfaceName,setSurfaceName,surfaceNameDraft]=useSessionDraftState(draftPrefix+"surface-name","Product Preview");
+  const [surfaceUrl,setSurfaceUrl,surfaceUrlDraft]=useSessionDraftState(draftPrefix+"surface-url","");
   const [surfaceEnv,setSurfaceEnv]=useState("preview");
-  const [surfaceBuild,setSurfaceBuild]=useState("");
-  const [surfaceRelease,setSurfaceRelease]=useState("");
+  const [surfaceBuild,setSurfaceBuild,surfaceBuildDraft]=useSessionDraftState(draftPrefix+"surface-build","");
+  const [surfaceRelease,setSurfaceRelease,surfaceReleaseDraft]=useSessionDraftState(draftPrefix+"surface-release","");
   const [selectedPortfolioItemId,setSelectedPortfolioItemId]=useState("");
 
-  const [caseTitle,setCaseTitle]=useState("");
-  const [caseExpected,setCaseExpected]=useState("");
-  const [caseDescription,setCaseDescription]=useState("");
-  const [runNotes,setRunNotes]=useState<Record<string,string>>({});
-  const [evidenceUrls,setEvidenceUrls]=useState<Record<string,string>>({});
+  const [caseTitle,setCaseTitle,caseTitleDraft]=useSessionDraftState(draftPrefix+"case-title","");
+  const [caseExpected,setCaseExpected,caseExpectedDraft]=useSessionDraftState(draftPrefix+"case-expected","");
+  const [caseDescription,setCaseDescription,caseDescriptionDraft]=useSessionDraftState(draftPrefix+"case-description","");
+  const [runNotes,setRunNotes,runNotesDraft]=useSessionDraftState<Record<string,string>>(draftPrefix+"run-notes",{});
+  const [evidenceUrls,setEvidenceUrls,evidenceUrlsDraft]=useSessionDraftState<Record<string,string>>(draftPrefix+"evidence-urls",{});
+  const hasSessionDraft=[
+    surfaceNameDraft,surfaceUrlDraft,surfaceBuildDraft,surfaceReleaseDraft,
+    caseTitleDraft,caseExpectedDraft,caseDescriptionDraft,runNotesDraft,evidenceUrlsDraft
+  ].some(item=>item.hasStoredDraft);
 
-  const [notice,setNotice]=useState("");
-  const [error,setError]=useState("");
+  const {activeAction,busy,run:runSingleFlight}=useSingleFlight();
   const [realtime,setRealtime]=useState("connecting");
 
   const load=useCallback(async()=>{
@@ -126,19 +134,23 @@ export default function ProductLab({
     if(!supabase||!canOperate)return;
     if(!surfaceBuild.trim()){setError("A build commit or immutable build identifier is required.");return;}
 
-    const {data,error:insertError}=await supabase.from("product_surfaces").insert({
-      project_id:projectId,name:surfaceName.trim(),url:surfaceUrl.trim(),environment:surfaceEnv,
-      status:"active",build_commit:surfaceBuild.trim(),release_id:surfaceRelease.trim()||null,
-      build_label:surfaceRelease.trim()||shortCommit(surfaceBuild.trim()),
-      portfolio_item_id:selectedPortfolioItemId||null,
-      created_by:currentUserId,updated_by:currentUserId
-    }).select("id").single();
+    await runSingleFlight("add-surface",async()=>{
+      setNotice("Registering versioned Product Lab surface…");
+      setError("");
+      const {data,error:insertError}=await supabase.from("product_surfaces").insert({
+        project_id:projectId,name:surfaceName.trim(),url:surfaceUrl.trim(),environment:surfaceEnv,
+        status:"active",build_commit:surfaceBuild.trim(),release_id:surfaceRelease.trim()||null,
+        build_label:surfaceRelease.trim()||shortCommit(surfaceBuild.trim()),
+        portfolio_item_id:selectedPortfolioItemId||null,
+        created_by:currentUserId,updated_by:currentUserId
+      }).select("id").single();
 
-    if(insertError){setError(insertError.message);return;}
-    setSurfaceUrl("");setSurfaceBuild("");setSurfaceRelease("");setSelectedPortfolioItemId("");
-    setNotice("Product surface added with immutable build identity.");
-    await load();
-    if(data?.id)setSelectedSurfaceId(data.id);
+      if(insertError){setError(insertError.message);throw insertError;}
+      setSurfaceName("Product Preview");setSurfaceUrl("");setSurfaceEnv("preview");setSurfaceBuild("");setSurfaceRelease("");setSelectedPortfolioItemId("");
+      setNotice("Product surface added with immutable build identity.");
+      await load();
+      if(data?.id)setSelectedSurfaceId(data.id);
+    }).catch(()=>{});
   }
 
   async function addTestCase(event:FormEvent){
@@ -147,16 +159,20 @@ export default function ProductLab({
     if(!supabase||!caseTitle.trim()||!caseExpected.trim())return;
     if(!selectedSurfaceId){setError("Select a versioned product surface before adding a test case.");return;}
 
-    const {error:insertError}=await supabase.from("product_test_cases").insert({
-      project_id:projectId,surface_id:selectedSurfaceId,title:caseTitle.trim(),
-      description:caseDescription.trim()||null,expected_result:caseExpected.trim(),
-      status:"active",created_by:currentUserId
-    });
+    await runSingleFlight("add-test-case",async()=>{
+      setNotice("Adding versioned Product Lab test case…");
+      setError("");
+      const {error:insertError}=await supabase.from("product_test_cases").insert({
+        project_id:projectId,surface_id:selectedSurfaceId,title:caseTitle.trim(),
+        description:caseDescription.trim()||null,expected_result:caseExpected.trim(),
+        status:"active",created_by:currentUserId
+      });
 
-    if(insertError){setError(insertError.message);return;}
-    setCaseTitle("");setCaseExpected("");setCaseDescription("");
-    setNotice("Version 1 of the test case was added.");
-    await load();
+      if(insertError){setError(insertError.message);throw insertError;}
+      setCaseTitle("");setCaseExpected("");setCaseDescription("");
+      setNotice("Version 1 of the test case was added.");
+      await load();
+    }).catch(()=>{});
   }
 
   async function recordRun(testCase:TestCase,result:"pass"|"fail"|"blocked"){
@@ -173,32 +189,36 @@ export default function ProductLab({
       if(!confirmed)return;
     }
 
-    const requestId=crypto.randomUUID();
-    const viewport={
-      width:window.innerWidth,
-      height:window.innerHeight,
-      devicePixelRatio:window.devicePixelRatio
-    };
+    await runSingleFlight("record-test:"+testCase.id,async()=>{
+      setNotice("Recording Product Lab test evidence…");
+      setError("");
+      const requestId=crypto.randomUUID();
+      const viewport={
+        width:window.innerWidth,
+        height:window.innerHeight,
+        devicePixelRatio:window.devicePixelRatio
+      };
 
-    const {error:insertError}=await supabase.from("product_test_runs").insert({
-      project_id:projectId,
-      surface_id:surface.id,
-      test_case_id:testCase.id,
-      tester_user_id:currentUserId,
-      result,
-      notes:runNotes[testCase.id]?.trim()||null,
-      evidence_url:evidenceUrls[testCase.id]?.trim()||null,
-      request_id:requestId,
-      browser_user_agent:navigator.userAgent,
-      viewport
-    });
+      const {error:insertError}=await supabase.from("product_test_runs").insert({
+        project_id:projectId,
+        surface_id:surface.id,
+        test_case_id:testCase.id,
+        tester_user_id:currentUserId,
+        result,
+        notes:runNotes[testCase.id]?.trim()||null,
+        evidence_url:evidenceUrls[testCase.id]?.trim()||null,
+        request_id:requestId,
+        browser_user_agent:navigator.userAgent,
+        viewport
+      });
 
-    if(insertError){setError(insertError.message);return;}
+      if(insertError){setError(insertError.message);throw insertError;}
 
-    setRunNotes(current=>({...current,[testCase.id]:""}));
-    setEvidenceUrls(current=>({...current,[testCase.id]:""}));
-    setNotice("Test evidence recorded for "+shortCommit(surface.build_commit)+". Test evidence is recorded once per tester/test-version/build.");
-    await load();
+      setRunNotes(current=>{const next={...current};delete next[testCase.id];return next;});
+      setEvidenceUrls(current=>{const next={...current};delete next[testCase.id];return next;});
+      setNotice("Test evidence recorded for "+shortCommit(surface.build_commit)+". Test evidence is recorded once per tester/test-version/build.");
+      await load();
+    }).catch(()=>{});
   }
 
   function latestRun(caseId:string){
@@ -206,14 +226,14 @@ export default function ProductLab({
   }
 
   return <div className="productLab">
+    {hasSessionDraft&&<p className="muted" role="status">Browser-session draft active · unfinished Product Lab inputs are restored after workspace navigation or reload.</p>}
     <section className="sectionIntro">
       <p className="eyebrow">PRODUCT LAB</p>
       <h2>Versioned Live Product Display & Testing</h2>
       <p>Every result is tied to a test-case version and product build. Repeated runs remain visible as versioned validation evidence.</p>
     </section>
 
-    {notice&&<div className="notice goodNotice">{notice}</div>}
-    {error&&<div className="notice errorNotice" role="alert">{error}</div>}
+    {activeAction&&<p className="muted" role="status">Product Lab action in progress · duplicate submissions are blocked until this request finishes.</p>}
 
     <section className="metricGrid">
       <article className="metricCard"><span>Surfaces</span><strong>{surfaces.length}</strong><small>Versioned preview/staging/production</small></article>
@@ -254,7 +274,7 @@ export default function ProductLab({
           <label>Test title<input value={caseTitle} onChange={e=>setCaseTitle(e.target.value)} placeholder="e.g. Job invite appears in DataNest workspace" required/></label>
           <label>Expected result<textarea rows={3} value={caseExpected} onChange={e=>setCaseExpected(e.target.value)} required/></label>
           <label>Notes<textarea rows={2} value={caseDescription} onChange={e=>setCaseDescription(e.target.value)}/></label>
-          <button className="secondaryButton" disabled={!selectedSurfaceId}>Add versioned test case</button>
+          <button className="secondaryButton" disabled={busy||!selectedSurfaceId}>{activeAction==="add-test-case"?"Adding test case…":"Add versioned test case"}</button>
         </form>
       </div>
     </section>
@@ -268,7 +288,7 @@ export default function ProductLab({
         <label>Build commit / immutable ID<input value={surfaceBuild} onChange={e=>setSurfaceBuild(e.target.value)} placeholder="Git commit SHA" required/></label>
         <label>Release ID<input value={surfaceRelease} onChange={e=>setSurfaceRelease(e.target.value)} placeholder="Optional release/tag"/></label>
         <label>Portfolio item<select value={selectedPortfolioItemId} onChange={e=>setSelectedPortfolioItemId(e.target.value)}><option value="">Unlinked / project-only surface</option>{portfolioItems.map(item=><option key={item.id} value={item.id}>{item.name} · {item.item_kind} · {item.review_state}</option>)}</select></label>
-        <button className="primaryButton">Add surface</button>
+        <button className="primaryButton" disabled={busy}>{activeAction==="add-surface"?"Adding surface…":"Add surface"}</button>
       </form>
     </section>}
 
@@ -282,9 +302,9 @@ export default function ProductLab({
           <label>Test notes<textarea rows={3} value={runNotes[tc.id]||""} onChange={e=>setRunNotes(current=>({...current,[tc.id]:e.target.value}))}/></label>
           <label>Evidence URL<input type="url" value={evidenceUrls[tc.id]||""} onChange={e=>setEvidenceUrls(current=>({...current,[tc.id]:e.target.value}))} placeholder="Optional screenshot, artifact, issue or recording"/></label>
           <div className="testActions">
-            <button className="primaryButton compact" type="button" onClick={()=>void recordRun(tc,"pass")}>Pass</button>
-            <button className="secondaryButton compact" type="button" onClick={()=>void recordRun(tc,"fail")}>Fail</button>
-            <button className="secondaryButton compact" type="button" onClick={()=>void recordRun(tc,"blocked")}>Blocked</button>
+            <button className="primaryButton compact" type="button" disabled={busy} onClick={()=>void recordRun(tc,"pass")}>Pass</button>
+            <button className="secondaryButton compact" type="button" disabled={busy} onClick={()=>void recordRun(tc,"fail")}>Fail</button>
+            <button className="secondaryButton compact" type="button" disabled={busy} onClick={()=>void recordRun(tc,"blocked")}>Blocked</button>
           </div>
           {latest&&<div className="testEvidence">
             <small>Latest: {formatDate(latest.created_at)} · test v{latest.test_case_version||tc.version} · build {shortCommit(latest.build_commit)}</small>

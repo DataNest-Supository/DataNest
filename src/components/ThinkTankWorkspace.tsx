@@ -2,6 +2,8 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
+import { useSessionDraftState } from "@/lib/sessionDraft";
+import { useSingleFlight } from "@/lib/singleFlight";
 
 type Role="owner"|"admin"|"operator"|"viewer";
 type Channel={
@@ -73,15 +75,18 @@ export default function ThinkTankWorkspace({
   const [aiSessionId,setAiSessionId]=useState("");
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
+  const {activeAction,run:runSingleFlight}=useSingleFlight();
   const threadLoadGeneration=useRef(0);
 
-  const [channelName,setChannelName]=useState("");
-  const [channelDescription,setChannelDescription]=useState("");
+  const draftPrefix="thinktank:"+projectId+":"+currentUserId+":";
+  const [channelName,setChannelName,channelNameDraft]=useSessionDraftState(draftPrefix+"channel-name","");
+  const [channelDescription,setChannelDescription,channelDescriptionDraft]=useSessionDraftState(draftPrefix+"channel-description","");
   const [channelScope,setChannelScope]=useState<"project"|"job">("project");
   const [channelJobId,setChannelJobId]=useState("");
-  const [threadTitle,setThreadTitle]=useState("");
-  const [draft,setDraft]=useState("");
+  const [threadTitle,setThreadTitle,threadTitleDraft]=useSessionDraftState(draftPrefix+"thread:"+selectedChannelId+":title","");
+  const [draft,setDraft,messageDraft]=useSessionDraftState(draftPrefix+"message:"+selectedThreadId,"");
   const [command,setCommand]=useState("discussion");
+  const hasSessionDraft=[channelNameDraft,channelDescriptionDraft,threadTitleDraft,messageDraft].some(item=>item.hasStoredDraft);
 
   const selectedChannel=useMemo(
     ()=>channels.find(item=>item.id===selectedChannelId)||null,
@@ -178,21 +183,26 @@ export default function ThinkTankWorkspace({
     if(!canOperate||!channelName.trim())return;
     const supabase=getSupabase();
     if(!supabase)return;
-    setBusy(true);setError("");
-    const {error}=await supabase.rpc("create_think_tank_channel_v1",{
-      target_project:projectId,
-      target_name:channelName.trim(),
-      target_description:channelDescription.trim()||null,
-      target_scope:channelScope,
-      target_job:channelScope==="job"?(channelJobId||null):null
+    await runSingleFlight("create-channel",async()=>{
+      setBusy(true);setError("");setNotice("Creating Think Tank channel…");
+      try{
+        const {error}=await supabase.rpc("create_think_tank_channel_v1",{
+          target_project:projectId,
+          target_name:channelName.trim(),
+          target_description:channelDescription.trim()||null,
+          target_scope:channelScope,
+          target_job:channelScope==="job"?(channelJobId||null):null
+        });
+        if(error)throw error;
+        setChannelName("");setChannelDescription("");setChannelJobId("");
+        setNotice("Think Tank channel created.");
+        await loadCore();
+      }catch(actionError){
+        setError(actionError instanceof Error?actionError.message:"Unable to create Think Tank channel.");
+      }finally{
+        setBusy(false);
+      }
     });
-    if(error)setError(error.message);
-    else{
-      setChannelName("");setChannelDescription("");setChannelJobId("");
-      setNotice("Think Tank channel created.");
-      await loadCore();
-    }
-    setBusy(false);
   }
 
   async function createThread(event:FormEvent){
@@ -200,18 +210,23 @@ export default function ThinkTankWorkspace({
     if(!selectedChannelId||!threadTitle.trim())return;
     const supabase=getSupabase();
     if(!supabase)return;
-    setBusy(true);setError("");
-    const {data,error}=await supabase.rpc("create_think_tank_thread_v1",{
-      target_channel:selectedChannelId,target_title:threadTitle.trim()
+    await runSingleFlight("create-thread",async()=>{
+      setBusy(true);setError("");setNotice("Creating Think Tank thread…");
+      try{
+        const {data,error}=await supabase.rpc("create_think_tank_thread_v1",{
+          target_channel:selectedChannelId,target_title:threadTitle.trim()
+        });
+        if(error)throw error;
+        setThreadTitle("");
+        setNotice("Think Tank thread created.");
+        await loadThreads(selectedChannelId);
+        if(data)setSelectedThreadId(String(data));
+      }catch(actionError){
+        setError(actionError instanceof Error?actionError.message:"Unable to create Think Tank thread.");
+      }finally{
+        setBusy(false);
+      }
     });
-    if(error)setError(error.message);
-    else{
-      setThreadTitle("");
-      setNotice("Think Tank thread created.");
-      await loadThreads(selectedChannelId);
-      if(data)setSelectedThreadId(String(data));
-    }
-    setBusy(false);
   }
 
   function buildAiPrompt(kind:string,userText:string){
@@ -315,58 +330,61 @@ export default function ThinkTankWorkspace({
 
   async function sendMessage(event:FormEvent){
     event.preventDefault();
-    if(!selectedThreadId||!draft.trim()||busy)return;
+    if(!selectedThreadId||!draft.trim())return;
     const supabase=getSupabase();
     if(!supabase)return;
-    setBusy(true);setError("");
-    try{
-      if(command==="discussion"){
-        const {error}=await supabase.rpc("post_think_tank_message_v1",{
-          target_thread:selectedThreadId,target_body:draft.trim(),
-          target_message_type:"discussion",target_command_name:null
-        });
-        if(error)throw error;
-        setNotice("Think Tank message posted.");
-      }else{
-        const {data:messageId,error:messageError}=await supabase.rpc("post_think_tank_message_v1",{
-          target_thread:selectedThreadId,
-          target_body:"@DataNest "+command.replaceAll("_","-")+" "+draft.trim(),
-          target_message_type:"ai_command",
-          target_command_name:command
-        });
-        if(messageError)throw messageError;
-
-        if(command==="record_decision"){
-          const {error}=await supabase.rpc("create_think_tank_decision_v1",{
-            target_thread:selectedThreadId,
-            target_title:draft.trim().slice(0,100),
-            target_decision:draft.trim(),
-            target_supersedes:null
+    await runSingleFlight("send-message:"+selectedThreadId,async()=>{
+      setBusy(true);setError("");
+      setNotice(command==="discussion"?"Posting Think Tank message…":"Running governed Think Tank action…");
+      try{
+        if(command==="discussion"){
+          const {error}=await supabase.rpc("post_think_tank_message_v1",{
+            target_thread:selectedThreadId,target_body:draft.trim(),
+            target_message_type:"discussion",target_command_name:null
           });
           if(error)throw error;
-          setNotice("Decision proposal recorded; independent owner/admin confirmation is still required.");
-        }else if(command==="propose_learning"){
-          const {error}=await supabase.rpc("propose_think_tank_learning_v1",{
-            target_thread:selectedThreadId,
-            target_knowledge:draft.trim(),
-            target_category:"think_tank",
-            target_source_messages:messageId?[String(messageId)]:[],
-            target_confidence:0.75
-          });
-          if(error)throw error;
-          setNotice("Learning candidate proposed; it is not certified until independent review.");
+          setNotice("Think Tank message posted.");
         }else{
-          await runAiCommand(command,draft.trim(),String(messageId||""));
+          const {data:messageId,error:messageError}=await supabase.rpc("post_think_tank_message_v1",{
+            target_thread:selectedThreadId,
+            target_body:"@DataNest "+command.replaceAll("_","-")+" "+draft.trim(),
+            target_message_type:"ai_command",
+            target_command_name:command
+          });
+          if(messageError)throw messageError;
+
+          if(command==="record_decision"){
+            const {error}=await supabase.rpc("create_think_tank_decision_v1",{
+              target_thread:selectedThreadId,
+              target_title:draft.trim().slice(0,100),
+              target_decision:draft.trim(),
+              target_supersedes:null
+            });
+            if(error)throw error;
+            setNotice("Decision proposal recorded; independent owner/admin confirmation is still required.");
+          }else if(command==="propose_learning"){
+            const {error}=await supabase.rpc("propose_think_tank_learning_v1",{
+              target_thread:selectedThreadId,
+              target_knowledge:draft.trim(),
+              target_category:"think_tank",
+              target_source_messages:messageId?[String(messageId)]:[],
+              target_confidence:0.75
+            });
+            if(error)throw error;
+            setNotice("Learning candidate proposed; it is not certified until independent review.");
+          }else{
+            await runAiCommand(command,draft.trim(),String(messageId||""));
+          }
         }
+        setDraft("");
+        await loadThread(selectedThreadId);
+        await loadThreads(selectedChannelId);
+      }catch(sendError){
+        setError(sendError instanceof Error?sendError.message:"Unable to process Think Tank message. Your draft is still available to retry.");
+      }finally{
+        setBusy(false);
       }
-      setDraft("");
-      await loadThread(selectedThreadId);
-      await loadThreads(selectedChannelId);
-    }catch(sendError){
-      setError(sendError instanceof Error?sendError.message:"Unable to process Think Tank message.");
-    }finally{
-      setBusy(false);
-    }
+    });
   }
 
   async function reviewDecision(id:string,status:"confirmed"|"rejected"){
@@ -438,6 +456,8 @@ export default function ThinkTankWorkspace({
   if(loading)return <section className="panel"><p className="muted">Loading Think Tanks…</p></section>;
 
   return <div>
+    {activeAction&&<p className="muted" role="status">Think Tank action in progress · duplicate submissions are blocked until the request finishes.</p>}
+    {hasSessionDraft&&<p className="muted" role="status">Browser-session draft active · unfinished Think Tank inputs are restored after workspace navigation or reload.</p>}
     <section className="heroPanel">
       <div>
         <p className="eyebrow">THINK TANKS + DATANEST AI</p>
