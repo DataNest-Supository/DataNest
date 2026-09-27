@@ -87,7 +87,7 @@ export default {
         localInteractionRequired: false,
         authority: {
           owner: "ResonanceAppDev",
-          controlRepository: "resonance36912-cell/RONSAS",
+          controlRepository: "DataNest-Supository/DataNest",
           hubRepository: "resonance36912-cell/resonance-hub",
           publicHub: HUB_ORIGIN,
         },
