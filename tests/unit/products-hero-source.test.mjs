@@ -10,7 +10,7 @@ const visual=fs.readFileSync(path.join(root,"src/components/CollaborationVisual.
 const css=fs.readFileSync(path.join(root,"src/components/CollaborationVisual.module.css"),"utf8");
 
 test("AI & I hero keeps DataNest AI at the core and renders governed products as product nodes",()=>{
-  assert.match(home,/CollaborationVisual projectId={project\.id}/);
+  assert.match(home,/<CollaborationVisual[\s\S]*projectId={project\.id}/);
   assert.match(home,/onOpenProducts={\(\)=>onNavigate\("products"\)}/);
   assert.match(visual,/from\("products"\)/);
   assert.match(visual,/from\("product_records"\)/);
