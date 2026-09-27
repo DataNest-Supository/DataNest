@@ -1,5 +1,19 @@
 # Resonance DataNest Architecture
 
+## Platform authority
+
+**Resonance DataNest** is the parent platform and web control plane. **RONSAS** is a governed product under `DataNest > Products > RONSAS`; it is not DataNest's parent or DataNest AI authority.
+
+The current target-state architecture authority is `docs/superpowers/specs/2026-09-27-datanest-ecosystem-business-operating-architecture-design.md`. Design approval does not itself prove implementation status.
+
+### Target-state concepts
+
+- **Cloud-Nest** — governed workspace abstraction planned for a later implementation phase.
+- **Supository** — governed knowledge and provenance abstraction planned for a later implementation phase.
+- **ILM (Inclusive Language Model)** — governed intelligence abstraction planned first as orchestration rather than a proprietary foundation-model claim.
+
+These concepts require separately implemented controls and evidence before they are treated as available product capabilities.
+
 ## Project
 **Resonance DataNest** is the project operating environment.
 
