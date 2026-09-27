@@ -257,7 +257,7 @@ The locator performs a read-only page scan using the same Job ordering as the op
 2. creation time descending;
 3. the existing 20-record page size.
 
-Only Job identifiers and status are read during the scan. When the matching Job is found, DataNest moves the local Job pagination to that page and reuses the existing reveal/focus behavior. TranScheduler then restores an unfiltered Gantt view and focuses the active Job.
+Only Job identifiers and status are read during the scan. Exact Job counts are used when available, but the locator does not depend on them: it can continue until it reaches a short/end page and also detects non-advancing pagination defensively. When the matching Job is found, DataNest moves the local Job pagination to that page and reuses the existing reveal/focus behavior. TranScheduler then restores an unfiltered Gantt view and focuses the active Job.
 
 UNIFI keeps its narrower prepared-state boundary. If the Job exists but is no longer `PLANNED`, `READY`, or `QUEUED`, DataNest reports that fact instead of navigating to a page where the record would still not render.
 
