@@ -665,8 +665,10 @@ export default function DataNestApp({session}:{session:Session}) {
       .order("created_at",{ascending:false})
       .range(from,to);
     if(queryError) setError(queryError.message);
-    else {
-      const total=count||0;
+    else if(count===null){
+      setJobs((data||[]) as Job[]);
+    }else{
+      const total=count;
       const lastPage=Math.max(0,Math.ceil(total/PAGE_SIZE)-1);
       setJobCount(total);
       if(page>lastPage){
@@ -689,8 +691,10 @@ export default function DataNestApp({session}:{session:Session}) {
       .order("started_at",{ascending:false})
       .range(from,to);
     if(queryError) setError(queryError.message);
-    else {
-      const total=count||0;
+    else if(count===null){
+      setRuns((data||[]) as Run[]);
+    }else{
+      const total=count;
       const lastPage=Math.max(0,Math.ceil(total/PAGE_SIZE)-1);
       setRunCount(total);
       if(page>lastPage){
@@ -713,8 +717,10 @@ export default function DataNestApp({session}:{session:Session}) {
       .order("created_at",{ascending:false})
       .range(from,to);
     if(queryError) setError(queryError.message);
-    else {
-      const total=count||0;
+    else if(count===null){
+      setCheckpoints((data||[]) as Checkpoint[]);
+    }else{
+      const total=count;
       const lastPage=Math.max(0,Math.ceil(total/PAGE_SIZE)-1);
       setCheckpointCount(total);
       if(page>lastPage){
@@ -739,8 +745,10 @@ export default function DataNestApp({session}:{session:Session}) {
       .order("created_at",{ascending:false})
       .range(from,to);
     if(queryError) setError(queryError.message);
-    else {
-      const total=count||0;
+    else if(count===null){
+      setEvents((data||[]) as AuditEvent[]);
+    }else{
+      const total=count;
       const lastPage=Math.max(0,Math.ceil(total/PAGE_SIZE)-1);
       setEventCount(total);
       if(page>lastPage){
