@@ -48,20 +48,23 @@ This section records source architecture only. Production availability, provider
 
 ## Authority and Execution Controls
 
-The Phase D source implementation adds bounded **execution authority** above existing project membership, Job controls, Phase C trust policy, provider authorization and scheduler capacity.
+The Phase D source implementation adds bounded **execution authority** above existing project membership, Job controls, Phase C trust policy, provider authorization and scheduler capacity. The approved model is additive over the earlier V1 Phase D baseline: legacy envelopes, leases and decisions remain historical/compatibility records, but they are not automatically promoted into canonical active authority.
 
-- An **Authority Envelope** records task-scoped authority for an actor under an accountable human sponsor. It binds the project/Job context, purpose, autonomy level, permitted capabilities and operations, data scope, resource ceiling, expiry, reversibility, evidence requirements and trace identity. It is not credential storage.
-- Autonomy is explicit: **A0 Observe**, **A1 Advise**, **A2 Prepare**, **A3 Execute**, and **A4 High-impact**. Phase D v1 treats A4 as human-gated and does not issue generic automated A4 Capability Leases.
-- A **Capability Lease** is short-lived execution authorization. Existing TranScheduler `reservations` remain resource-capacity reservations. Capacity reservation and authorization lease are separate requirements and neither substitutes for the other.
-- The permission gradient is `observe → prepare → write → execute → promote → destruct`. Authority is never inferred only from project role, provider, capability name or Job status.
-- Project-scoped circuit breakers can halt autonomous writes, deployments, external communications or resource execution without disabling safe read-only platform functions.
-- `service_authorize_execution_v1(...)` is a service-only, fail-closed evaluator. It validates identity, sponsor membership, envelope/lease scope and expiry, autonomy ceiling, breaker state, capability health/concurrency and resource ceilings; allowed calls atomically consume lease operation budget and append an execution-authority decision.
-- Existing human `transition_job_status(...)` controls remain a separate attributable path. Human Pause/Resume/Cancel is not silently reclassified as autonomous execution and does not require an Authority Envelope.
-- Phase C data policy, provider trust, AI budgets, RLS/RBAC, Job/file authorization and certified-memory controls remain independent prerequisites. A Phase D allow result cannot manufacture those permissions.
-- Phase E Resource Fabric, Cloud-Nest, Supository, ILM, Outcome Ledger and later architecture-programme concepts remain target-state work outside Phase D.
+- An **Authority Envelope** is attributable to an accountable human sponsor and may be project- or Job-scoped. It records purpose, requested/granted autonomy, explicitly allowed consequence classes, operation/capability/target scope, expiry, reversibility, evidence references and bounded non-monetary limits. It is not credential storage.
+- Autonomy and consequence are independent. **A0 Observe**, **A1 Advise**, **A2 Prepare**, **A3 Execute**, and **A4 High-impact** establish autonomy ceilings; an operation is authorized only when its canonical consequence class is also explicitly allowed.
+- A4 remains human-gated. High-impact execution requires an unexpired **exact-action approval** bound to the operation, target and exact evidence identity. Phase D does not add a generic destructive, legal, financial, ownership or constitutional executor.
+- A **Capability Lease** is short-lived execution permission. Existing TranScheduler `reservations` remain resource-capacity reservations. A reservation is not a lease, and an available capability is not execution authorization.
+- Canonical circuit breakers are `autonomous_writes`, `external_communications`, `deployments` and `resource_execution`, with `enabled|paused|blocked` states. Safety automation may tighten a breaker but cannot silently restore `enabled`.
+- Route rollout is project-scoped. `external_ai_provider` and `job_start` default to **report-only** until an owner/admin explicitly moves the selected route to `enforced`.
+- `service_evaluate_execution_authority_v1(...)` is the service-only canonical evaluator. It resolves active envelope scope, consequence/autonomy, exact approval, Capability Leases, breaker state, capability health, optional capacity reservation, Phase C decision, limits and idempotent lease consumption.
+- External AI routing remains **Phase C trust/data policy → Phase D execution authority → existing provider/budget authorization → provider call**. A denial at an earlier gate cannot be widened downstream.
+- Only the existing `RESERVED -> RUNNING` Job boundary uses the canonical `job_start` route adapter. Other human Pause/Resume/Cancel and existing Job transitions remain governed human controls and are not silently reclassified as autonomous execution.
+- The Governance workspace exposes **Sovereign Governance**, **Trust & Data Policy**, and **Authority & Execution**. TranScheduler retains an operational Authority & Execution view plus read-only Job readiness; `Authorized` is shown only from a matching enforced allow decision.
+- Phase D does not invent a currency/pricing unit. Legacy `max_cost_minor` history is preserved but is not canonical Phase D authority or a billing control.
+- RLS/RBAC, Job collaboration, Job/file authorization, Phase C provider/data policy, provider budgets, certification and promotion remain independent prerequisites.
+- Phase E Resource Fabric and Phase F Intelligence Fabric / ILM-1 are later governed layers and remain independent of Phase D authority. Cloud-Nest, Supository, Outcome Ledger and later architecture-programme concepts remain **target-state / not yet live**.
 
-This section records source architecture only. Production availability or autonomous execution rollout requires exact-head verification and separate promotion evidence.
-
+This section records source architecture only. It does not claim production route enforcement, autonomous A4 execution, destructive/legal/financial authority, billing changes, or deployment promotion. Production availability still requires exact-head verification and a separate promotion decision.
 
 ## Resource and Capability Fabric
 

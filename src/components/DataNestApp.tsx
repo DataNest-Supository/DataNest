@@ -27,6 +27,16 @@ type ViewKey = "overview"|"stakeholder"|"sparks"|"governance"|"products"|"thinkt
 type HealthState = { state:"checking"|"online"|"degraded"|"offline"; checkedAt:string|null; message:string };
 type Summary = { total:number; active:number; running:number; blocked:number; available:number; registered:number };
 type ActiveDataNestAiSession = { jobId:string; sessionId:string|null; jobNumber:number; title:string; status:string };
+type JobExecutionAuthorityState = {
+  route_mode?:string;
+  envelope_id?:string|null;
+  envelope_status?:string|null;
+  lease_states?:Record<string,string>;
+  breaker_state?:string|null;
+  decision_outcome?:string|null;
+  decision_reason_code?:string|null;
+  readiness?:string|null;
+};
 
 const PAGE_SIZE = 20;
 const preparedJobStates = new Set(["PLANNED","READY","QUEUED"]);
@@ -1333,6 +1343,19 @@ function ganttTime(value:string|null|undefined) {
   return Number.isFinite(parsed)?parsed:null;
 }
 
+function jobAuthorityReadinessLabel(value:JobExecutionAuthorityState|undefined){
+  const readiness=String(value?.readiness||"not_evaluated");
+  if(readiness==="report_only")return "Report only";
+  if(readiness==="ready_for_check")return "Ready for authority check";
+  if(readiness==="authorized"&&String(value?.decision_outcome||"")==="allow")return "Authorized";
+  if(readiness==="approval_required")return "Approval required";
+  if(readiness==="lease_missing")return "Lease missing";
+  if(readiness==="lease_expired")return "Lease expired";
+  if(readiness==="paused")return "Paused by policy";
+  if(readiness==="blocked")return "Blocked by policy";
+  return "Authority not evaluated";
+}
+
 function formatGanttTick(value:number,span:number) {
   const day=24*60*60*1000;
   const options:Intl.DateTimeFormatOptions=span<=3*day
@@ -1347,7 +1370,22 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
   const [filter,setFilter]=useState("ALL");
   const [viewMode,setViewMode]=useState<"queue"|"gantt"|"authority"|"resources">("gantt");
   const [sortMode,setSortMode]=useState<"priority"|"deadline"|"recent">("priority");
+  const [authoritySummary,setAuthoritySummary]=useState<Record<string,JobExecutionAuthorityState>>({});
   const filterOptions=["ALL","PLANNED","READY","QUEUED","RUNNING","MANUAL_ACTION","BLOCKED","COMPLETED"];
+  useEffect(()=>{
+    let cancelled=false;
+    const supabase=getSupabase();
+    if(!supabase||jobs.length===0){setAuthoritySummary({});return ()=>{cancelled=true;};}
+    void supabase.rpc("get_job_execution_authority_summary_v1",{
+      target_project:projectId,
+      target_jobs:jobs.map(job=>job.id)
+    }).then(({data,error})=>{
+      if(cancelled)return;
+      if(error||!data){setAuthoritySummary({});return;}
+      setAuthoritySummary(data as Record<string,JobExecutionAuthorityState>);
+    });
+    return ()=>{cancelled=true;};
+  },[projectId,jobs]);
   const visible=filter==="ALL"?jobs:jobs.filter(item=>item.status===filter);
   const orderedVisible=[...visible].sort((left,right)=>{
     if(sortMode==="deadline"){
@@ -1443,7 +1481,7 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
               <div data-label="Job"><b>{jobCode(job)}</b><small>{job.title}</small>{job.id===activeJobId&&<span className="contextMatchTag">ACTIVE CONTEXT</span>}</div>
               <span data-label="Priority" className="schedulerPriorityCell"><b>{"P"+job.priority}</b><PriorityScale value={job.priority}/></span>
               <span data-label="Capability">{job.required_capabilities?.join(", ")||"chat"}</span>
-              <span data-label="Status"><Badge value={job.status}/></span>
+              <span data-label="Status"><Badge value={job.status}/><small className="schedulerAuthorityState">{jobAuthorityReadinessLabel(authoritySummary[job.id])}</small></span>
               <div className="rowActions" data-label="Controls">
                 {canOperate ? <>
                   {!finalStates.has(job.status)&&job.status!=="PAUSED"&&<button onClick={()=>void onStatus(job,"PAUSED")}>Pause</button>}

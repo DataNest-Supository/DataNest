@@ -17,14 +17,16 @@ test("DataNest AI keeps visibility and reuse metadata independent while initial 
   assert.match(source,/learning_eligible:false/);
 });
 
-test("external provider routing records Phase C before existing provider authorization",()=>{
+test("external provider routing records Phase C then Phase D before existing provider authorization",()=>{
   const source=fs.readFileSync(aiPath,"utf8");
   const phase=source.indexOf("service_evaluate_data_policy_v1");
-  const authz=source.indexOf("service_authorize_ai_request");
+  const authority=source.indexOf("service_evaluate_execution_authority_v1",phase);
+  const authz=source.indexOf("service_authorize_ai_request",authority);
   const call=source.indexOf("callOpenAiCompatibleProvider({",source.indexOf("callProvider:async"));
   assert.ok(phase>=0,"Phase C evaluator must be called");
-  assert.ok(authz>phase,"existing provider authorization must remain after Phase C evaluation");
-  assert.ok(call>authz,"provider call must occur only after both gates");
+  assert.ok(authority>phase,"Phase D evaluator must remain after Phase C evaluation");
+  assert.ok(authz>authority,"existing provider authorization must remain after Phase D evaluation");
+  assert.ok(call>authz,"provider call must occur only after all gates");
   assert.match(source,/const providerKey=connection\.provider\.toLowerCase\(\)\+":"\+connection\.endpoint_host\.toLowerCase\(\)/);
   assert.match(source,/target_actor_user:user\.id/);
   assert.match(source,/target_subject_type:"job"/);

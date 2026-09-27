@@ -1,6 +1,6 @@
 # Resonance DataNest UX Workflow Architecture
 
-Updated: 2026-09-26
+Updated: 2026-09-27
 
 ## Goal
 
@@ -34,6 +34,29 @@ Reduce cognitive load across DataNest without removing specialist workspaces or 
 
 ### System
 - Settings — administration, policies, tools, and project configuration.
+
+## Governance and execution authority
+
+Governance has three sibling sections:
+
+- **Sovereign Governance** — protocols, proposals, decisions and disputes.
+- **Trust & Data Policy** — visibility/processing, reuse/learning, provider trust and retention policy.
+- **Authority & Execution** — canonical Authority Envelopes, approvals, Capability Leases, circuit breakers, route modes and recent execution decisions.
+
+Sovereign Governance remains the default; `?view=governance&section=trust` and `?view=governance&section=authority` are explicit deep links.
+
+TranScheduler also retains an operational **Authority & Execution** mode beside Queue and Gantt. The two surfaces share the same governed backend state: Governance is the policy/review context, while TranScheduler is the execution context.
+
+Authority copy follows these boundaries:
+
+- **Capability Lease != capacity reservation.** Permission and resource allocation are separate.
+- **AVAILABLE != authorized.** Capability health never creates execution permission.
+- **Report only** means Phase D records the computed decision but does not block the existing route.
+- **Enforced** means a canonical non-allow decision blocks that selected route.
+- Job readiness may show Authority not evaluated, Report only, Ready for authority check, Approval required, Lease missing/expired, Paused/Blocked by policy, or Authorized.
+- **Authorized** is shown only when the latest matching enforced decision is `allow`; it is never derived from capability availability.
+- A4 remains exact-action human approval; the UI exposes no generic destructive, legal, financial or ownership executor.
+- Authority forms contain policy/evidence references only and never request credentials or secrets.
 
 ## Primary user journey
 

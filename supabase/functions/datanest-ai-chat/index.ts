@@ -259,14 +259,15 @@ async function resolveActiveIlmRoute(input:{
   learningEligible:boolean;
   requestedConnection:string|null;
   certifiedMemory:Array<Record<string,unknown>>;
-}):Promise<{route:Ilm1RouteResult|null;connection:ProviderConnection|null}>{
+}):Promise<{route:Ilm1RouteResult|null;connection:ProviderConnection|null;phaseCDecisionRecordId:string|null}>{
   const profile=await loadActiveIlmProfile({
     serviceClient:input.serviceClient,
     projectId:input.job.project_id
   });
-  if(!profile)return {route:null,connection:null};
+  if(!profile)return {route:null,connection:null,phaseCDecisionRecordId:null};
 
   let selectedConnection:ProviderConnection|null=null;
+  let selectedPhaseCDecisionRecordId:string|null=null;
   const requestedCapability=profile.defaultCapability
     ||(Array.isArray(input.job.required_capabilities)&&input.job.required_capabilities.length
       ?String(input.job.required_capabilities[0])
@@ -365,6 +366,7 @@ async function resolveActiveIlmRoute(input:{
       );
       if(providerPolicyError)throw providerPolicyError;
       const providerPolicy=(providerPolicyData||{}) as Record<string,unknown>;
+      selectedPhaseCDecisionRecordId=providerPolicy.decision_record_id?String(providerPolicy.decision_record_id):null;
       if(String(providerPolicy.outcome||"deny")!=="allow")return null;
 
       selectedConnection=connection;
@@ -423,7 +425,7 @@ async function resolveActiveIlmRoute(input:{
     requestedCapability
   });
 
-  return {route,connection:selectedConnection};
+  return {route,connection:selectedConnection,phaseCDecisionRecordId:selectedPhaseCDecisionRecordId};
 }
 
 
@@ -1029,6 +1031,49 @@ Deno.serve(async(request:Request)=>{
             ilm.connection
           ){
             const connection=ilm.connection;
+            const providerKey=connection.provider.toLowerCase()+":"+connection.endpoint_host.toLowerCase();
+            const {data:ilmPhaseDAuthorityData,error:ilmPhaseDAuthorityError}=await serviceClient.rpc(
+              "service_evaluate_execution_authority_v1",{
+                target_project:job.project_id,
+                target_requesting_user:user.id,
+                target_route_key:"external_ai_provider",
+                target_actor_type:"service",
+                target_actor_reference:"service:datanest-ai",
+                target_job:job.id,
+                target_operation:"external_provider_call",
+                target_consequence_class:"resource_execution",
+                target_requested_autonomy:"A3",
+                target_trace_id:stagedInputTraceId,
+                target_capability_keys:["external_ai:"+providerKey],
+                target_target_type:"provider",
+                target_target_reference:providerKey,
+                target_exact_evidence_identity:null,
+                target_phase_c_decision:ilm.phaseCDecisionRecordId,
+                target_provider_request:activeRequestId,
+                target_require_reservation:false,
+                target_consume_operation:true
+              }
+            );
+            if(ilmPhaseDAuthorityError){
+              requestStatus="denied";
+              await finishUsageRequest(serviceClient,{
+                requestId:activeRequestId,
+                target_status:"denied",
+                errorCategory:"execution_authority_evaluation_failed",
+                errorMessage:"Execution authority could not be evaluated; external routing was stopped safely."
+              });
+            }else{
+              const ilmPhaseDAuthority=(ilmPhaseDAuthorityData||{}) as Record<string,unknown>;
+              const ilmPhaseDAuthorityEnforced=String(ilmPhaseDAuthority.enforcement_mode||"report_only")==="enforced";
+              if(ilmPhaseDAuthorityEnforced&&String(ilmPhaseDAuthority.outcome||"deny")!=="allow"){
+                requestStatus="denied";
+                await finishUsageRequest(serviceClient,{
+                  requestId:activeRequestId,
+                  target_status:"denied",
+                  errorCategory:"execution_authority_denied",
+                  errorMessage:"Execution authority blocked external routing: "+String(ilmPhaseDAuthority.reason_code||"authority_denied")
+                });
+              }else{
             const {data:authz,error:authzError}=await serviceClient.rpc(
               "service_authorize_ai_request",{
                 target_request:activeRequestId,
@@ -1080,6 +1125,8 @@ Deno.serve(async(request:Request)=>{
                 errorMessage:"Provider request blocked by DataNest policy."
               });
             }
+              }
+            }
           }else if(ilm.route.decision==="rejected"){
             requestStatus="denied";
             await finishUsageRequest(serviceClient,{
@@ -1130,6 +1177,48 @@ Deno.serve(async(request:Request)=>{
                 errorMessage:"Provider Trust Profile blocked external routing: "+String(phaseCPolicy.reason_code||"policy_denied")
               });
             }else{
+              const {data:phaseDAuthorityData,error:phaseDAuthorityError}=await serviceClient.rpc(
+                "service_evaluate_execution_authority_v1",{
+                  target_project:job.project_id,
+                  target_requesting_user:user.id,
+                  target_route_key:"external_ai_provider",
+                  target_actor_type:"service",
+                  target_actor_reference:"service:datanest-ai",
+                  target_job:job.id,
+                  target_operation:"external_provider_call",
+                  target_consequence_class:"resource_execution",
+                  target_requested_autonomy:"A3",
+                  target_trace_id:stagedInputTraceId,
+                  target_capability_keys:["external_ai:"+providerKey],
+                  target_target_type:"provider",
+                  target_target_reference:providerKey,
+                  target_exact_evidence_identity:null,
+                  target_phase_c_decision:phaseCPolicy.decision_record_id||null,
+                  target_provider_request:activeRequestId,
+                  target_require_reservation:false,
+                  target_consume_operation:true
+                }
+              );
+              if(phaseDAuthorityError){
+                requestStatus="denied";
+                await finishUsageRequest(serviceClient,{
+                  requestId:activeRequestId,
+                  target_status:"denied",
+                  errorCategory:"execution_authority_evaluation_failed",
+                  errorMessage:"Execution authority could not be evaluated; external routing was stopped safely."
+                });
+              }else{
+                const phaseDAuthority=(phaseDAuthorityData||{}) as Record<string,unknown>;
+                const phaseDAuthorityEnforced=String(phaseDAuthority.enforcement_mode||"report_only")==="enforced";
+                if(phaseDAuthorityEnforced&&String(phaseDAuthority.outcome||"deny")!=="allow"){
+                  requestStatus="denied";
+                  await finishUsageRequest(serviceClient,{
+                    requestId:activeRequestId,
+                    target_status:"denied",
+                    errorCategory:"execution_authority_denied",
+                    errorMessage:"Execution authority blocked external routing: "+String(phaseDAuthority.reason_code||"authority_denied")
+                  });
+                }else{
               const {data:authz,error:authzError}=await serviceClient.rpc(
                 "service_authorize_ai_request",{
                   target_request:activeRequestId,
@@ -1180,6 +1269,7 @@ Deno.serve(async(request:Request)=>{
                   errorCategory:String((authz as Record<string,unknown>|null)?.reason||"policy_denied"),
                   errorMessage:"Provider request blocked by DataNest policy."
                 });
+              }                }
               }
             }
           }
