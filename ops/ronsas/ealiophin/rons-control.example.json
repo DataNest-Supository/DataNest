@@ -11,5 +11,7 @@
     "billingState": "free-promotion",
     "paidCheckoutActive": false,
     "runtimeStateTrackedInGit": false
-  }
+  },
+  "supervisor": "ops/ronsas/ealiophin/RONSAS-SUPERVISOR.ps1",
+  "installSupervisor": "ops/ronsas/ealiophin/INSTALL-RONSAS-SUPERVISOR.ps1"
 }
