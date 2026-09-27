@@ -24,6 +24,27 @@ type AuditEvent = { id:number; job_id:string|null; event_type:string; actor:stri
 type Policy = { id:string; policy_key:string; value:Record<string,unknown> };
 type ProjectMember = { project_id:string; user_id:string; role:"owner"|"admin"|"operator"|"viewer"; status:string };
 type ViewKey = "overview"|"stakeholder"|"sparks"|"governance"|"products"|"thinktank"|"ai"|"productlab"|"unifi"|"scheduler"|"runs"|"checkpoints"|"audit"|"transparency"|"settings";
+type SchedulerViewMode = "queue"|"gantt"|"authority"|"resources";
+type SchedulerSortMode = "priority"|"deadline"|"recent";
+const schedulerFilterOptions=["ALL","PLANNED","READY","QUEUED","RUNNING","MANUAL_ACTION","BLOCKED","COMPLETED"] as const;
+type SchedulerFilter = typeof schedulerFilterOptions[number];
+const workspaceUrlStateKeys=["page","mode","filter","sort"] as const;
+function urlPageIndex(url:URL){
+  const raw=Number(url.searchParams.get("page")||"1");
+  return Number.isInteger(raw)&&raw>0?raw-1:0;
+}
+function schedulerViewModeFromUrl(url:URL):SchedulerViewMode{
+  const raw=url.searchParams.get("mode");
+  return raw==="queue"||raw==="authority"||raw==="resources"||raw==="gantt"?raw:"gantt";
+}
+function schedulerSortModeFromUrl(url:URL):SchedulerSortMode{
+  const raw=url.searchParams.get("sort");
+  return raw==="deadline"||raw==="recent"||raw==="priority"?raw:"priority";
+}
+function schedulerFilterFromUrl(url:URL):SchedulerFilter{
+  const raw=url.searchParams.get("filter");
+  return schedulerFilterOptions.includes(raw as SchedulerFilter)?raw as SchedulerFilter:"ALL";
+}
 type HealthState = { state:"checking"|"online"|"degraded"|"offline"; checkedAt:string|null; message:string };
 type Summary = { total:number; active:number; running:number; blocked:number; available:number; registered:number };
 type ActiveDataNestAiSession = { jobId:string; sessionId:string|null; jobNumber:number; title:string; status:string };
@@ -354,6 +375,9 @@ export default function DataNestApp({session}:{session:Session}) {
   const [runPage,setRunPage]=useState(0);
   const [checkpointPage,setCheckpointPage]=useState(0);
   const [eventPage,setEventPage]=useState(0);
+  const [schedulerViewMode,setSchedulerViewMode]=useState<SchedulerViewMode>("gantt");
+  const [schedulerFilter,setSchedulerFilter]=useState<SchedulerFilter>("ALL");
+  const [schedulerSortMode,setSchedulerSortMode]=useState<SchedulerSortMode>("priority");
   const [loadingCore,setLoadingCore]=useState(true);
   const [loadingView,setLoadingView]=useState(false);
   const [notice,setNotice]=useState("");
@@ -745,6 +769,16 @@ export default function DataNestApp({session}:{session:Session}) {
         window.history.replaceState(window.history.state,"",url.toString());
       }
 
+      const page=urlPageIndex(url);
+      if(next==="unifi"||next==="scheduler")setJobPage(page);
+      else if(next==="runs")setRunPage(page);
+      else if(next==="checkpoints")setCheckpointPage(page);
+      else if(next==="audit")setEventPage(page);
+      if(next==="scheduler"){
+        setSchedulerViewMode(schedulerViewModeFromUrl(url));
+        setSchedulerFilter(schedulerFilterFromUrl(url));
+        setSchedulerSortMode(schedulerSortModeFromUrl(url));
+      }
       setView(next);
       setViewReady(true);
     };
@@ -762,10 +796,36 @@ export default function DataNestApp({session}:{session:Session}) {
 
     if(next)url.searchParams.set("view",next);
     else url.searchParams.delete("view");
+    workspaceUrlStateKeys.forEach(key=>url.searchParams.delete(key));
 
     window.history.pushState(window.history.state,"",url.toString());
     window.scrollTo({top:0,left:0,behavior:"auto"});
   },[view,viewReady]);
+  useEffect(()=>{
+    if(!viewReady)return;
+    const url=new URL(window.location.href);
+    const expectedView=view==="overview"?null:view;
+    if(url.searchParams.get("view")!==expectedView)return;
+
+    workspaceUrlStateKeys.forEach(key=>url.searchParams.delete(key));
+    const page=view==="unifi"||view==="scheduler"
+      ? jobPage
+      : view==="runs"
+        ? runPage
+        : view==="checkpoints"
+          ? checkpointPage
+          : view==="audit"
+            ? eventPage
+            : 0;
+    if(page>0)url.searchParams.set("page",String(page+1));
+    if(view==="scheduler"){
+      if(schedulerViewMode!=="gantt")url.searchParams.set("mode",schedulerViewMode);
+      if(schedulerFilter!=="ALL")url.searchParams.set("filter",schedulerFilter);
+      if(schedulerSortMode!=="priority")url.searchParams.set("sort",schedulerSortMode);
+    }
+    const nextUrl=url.toString();
+    if(nextUrl!==window.location.href)window.history.replaceState(window.history.state,"",nextUrl);
+  },[view,viewReady,jobPage,runPage,checkpointPage,eventPage,schedulerViewMode,schedulerFilter,schedulerSortMode]);
   useEffect(()=>{
     if(!viewReady)return;
     if(previousViewRef.current===view)return;
@@ -1258,7 +1318,7 @@ export default function DataNestApp({session}:{session:Session}) {
         {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace key={project.id+":"+session.user.id} projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError} preferredJobId={activeDataNestAiSession?.jobId||null} onActiveSessionChange={updateActiveWorkContext}/>}
         {!loadingCore&&project&&view==="productlab"&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate}/>}
         {!loadingCore&&project&&view==="unifi"&&<UnifiPlanner project={project} jobs={jobs} capabilities={capabilities} reload={async()=>{await loadJobsPage(jobPage);await loadSummary(project.id);await loadRecentJobs(project.id);}} setNotice={setNotice} setError={setError} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} activeJobId={activeDataNestAiSession?.jobId||null}/>}
-        {!loadingCore&&view==="scheduler"&&project&&<Scheduler projectId={project.id} projectName={project?.name||"Resonance DataNest"} projectSlug={project?.slug||"resonance-datanest"} currentUserId={session.user.id} role={membership?.role||"viewer"} jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null} setNotice={setNotice} setError={setError}/>} 
+        {!loadingCore&&view==="scheduler"&&project&&<Scheduler projectId={project.id} projectName={project?.name||"Resonance DataNest"} projectSlug={project?.slug||"resonance-datanest"} currentUserId={session.user.id} role={membership?.role||"viewer"} jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null} setNotice={setNotice} setError={setError} filter={schedulerFilter} viewMode={schedulerViewMode} sortMode={schedulerSortMode} onFilter={setSchedulerFilter} onViewMode={setSchedulerViewMode} onSortMode={setSchedulerSortMode}/>} 
         {!loadingCore&&view==="runs"&&<Runs runs={runs} jobLookup={jobLookup} page={runPage} total={runCount} onPage={setRunPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
         {!loadingCore&&view==="checkpoints"&&<Checkpoints checkpoints={checkpoints} jobLookup={jobLookup} page={checkpointPage} total={checkpointCount} onPage={setCheckpointPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
         {!loadingCore&&view==="audit"&&<Audit events={events} jobLookup={jobLookup} page={eventPage} total={eventCount} onPage={setEventPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
@@ -1450,12 +1510,12 @@ function formatGanttTick(value:number,span:number) {
   return new Intl.DateTimeFormat(undefined,options).format(new Date(value));
 }
 
-function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,capabilities,onStatus,canOperate,page,total,onPage,onNavigate,activeJobId,setNotice,setError}:{projectId:string;projectName:string;projectSlug:string;currentUserId:string;role:ExecutionAuthorityRole;jobs:Job[];capabilities:Capability[];onStatus:(j:Job,s:string)=>Promise<void>;canOperate:boolean;page:number;total:number;onPage:(p:number)=>void;onNavigate:(v:ViewKey)=>void;activeJobId:string|null;setNotice:(value:string)=>void;setError:(value:string)=>void}) {
-  const [filter,setFilter]=useState("ALL");
-  const [viewMode,setViewMode]=useState<"queue"|"gantt"|"authority"|"resources">("gantt");
-  const [sortMode,setSortMode]=useState<"priority"|"deadline"|"recent">("priority");
+function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,capabilities,onStatus,canOperate,page,total,onPage,onNavigate,activeJobId,setNotice,setError,filter,viewMode,sortMode,onFilter,onViewMode,onSortMode}:{projectId:string;projectName:string;projectSlug:string;currentUserId:string;role:ExecutionAuthorityRole;jobs:Job[];capabilities:Capability[];onStatus:(j:Job,s:string)=>Promise<void>;canOperate:boolean;page:number;total:number;onPage:(p:number)=>void;onNavigate:(v:ViewKey)=>void;activeJobId:string|null;setNotice:(value:string)=>void;setError:(value:string)=>void;filter:SchedulerFilter;viewMode:SchedulerViewMode;sortMode:SchedulerSortMode;onFilter:(value:SchedulerFilter)=>void;onViewMode:(value:SchedulerViewMode)=>void;onSortMode:(value:SchedulerSortMode)=>void}) {
+  const setFilter=onFilter;
+  const setViewMode=onViewMode;
+  const setSortMode=onSortMode;
   const [authoritySummary,setAuthoritySummary]=useState<Record<string,JobExecutionAuthorityState>>({});
-  const filterOptions=["ALL","PLANNED","READY","QUEUED","RUNNING","MANUAL_ACTION","BLOCKED","COMPLETED"];
+  const filterOptions=schedulerFilterOptions;
   useEffect(()=>{
     let cancelled=false;
     const supabase=getSupabase();
@@ -1526,7 +1586,7 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
             <button type="button" className={viewMode==="resources"?"active":""} aria-pressed={viewMode==="resources"} onClick={()=>setViewMode("resources")}>Resource Fabric</button>
           </div>
           <label className="schedulerSortControl">Sort
-            <select aria-label="Sort project jobs" value={sortMode} onChange={event=>setSortMode(event.target.value as "priority"|"deadline"|"recent")}>
+            <select aria-label="Sort project jobs" value={sortMode} onChange={event=>setSortMode(event.target.value as SchedulerSortMode)}>
               <option value="priority">Priority scale</option>
               <option value="deadline">Nearest deadline</option>
               <option value="recent">Recently updated</option>
@@ -1547,7 +1607,7 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
           ? <ResourceFabricPanel projectId={projectId} role={role} setNotice={setNotice} setError={setError}/>
           : <>
           <label className="schedulerFilterMobile">Status filter
-            <select aria-label="Status filter" value={filter} onChange={event=>setFilter(event.target.value)}>
+            <select aria-label="Status filter" value={filter} onChange={event=>setFilter(event.target.value as SchedulerFilter)}>
               {filterOptions.map(item=><option key={item} value={item}>{item.replace("_"," ")}</option>)}
             </select>
           </label>

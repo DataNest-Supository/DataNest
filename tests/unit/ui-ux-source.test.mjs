@@ -416,3 +416,20 @@ test("active Job evidence locator spans paginated Runs, Checkpoints, and Audit w
   assert.match(appSource, /Active Job .* evidence located and focused/);
   assert.doesNotMatch(appSource, /locateActiveEvidencePage[\s\S]{0,2600}?updateJobStatus/);
 });
+
+
+test("workspace presentation state is URL-addressable without exposing active Job identity", () => {
+  assert.match(appSource, /const workspaceUrlStateKeys=\["page","mode","filter","sort"\] as const/);
+  assert.match(appSource, /function urlPageIndex\(url:URL\)/);
+  assert.match(appSource, /function schedulerViewModeFromUrl\(url:URL\):SchedulerViewMode/);
+  assert.match(appSource, /function schedulerFilterFromUrl\(url:URL\):SchedulerFilter/);
+  assert.match(appSource, /function schedulerSortModeFromUrl\(url:URL\):SchedulerSortMode/);
+  assert.match(appSource, /if\(page>0\)url\.searchParams\.set\("page",String\(page\+1\)\)/);
+  assert.match(appSource, /if\(schedulerViewMode!=="gantt"\)url\.searchParams\.set\("mode",schedulerViewMode\)/);
+  assert.match(appSource, /if\(schedulerFilter!=="ALL"\)url\.searchParams\.set\("filter",schedulerFilter\)/);
+  assert.match(appSource, /if\(schedulerSortMode!=="priority"\)url\.searchParams\.set\("sort",schedulerSortMode\)/);
+  assert.match(appSource, /window\.history\.replaceState\(window\.history\.state,"",nextUrl\)/);
+  assert.match(appSource, /filter=\{schedulerFilter\} viewMode=\{schedulerViewMode\} sortMode=\{schedulerSortMode\}/);
+  assert.doesNotMatch(appSource, /searchParams\.set\("job(?:Id|_id)"/i);
+  assert.doesNotMatch(appSource, /searchParams\.set\("session(?:Id|_id)"/i);
+});

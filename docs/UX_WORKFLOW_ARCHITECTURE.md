@@ -302,3 +302,20 @@ The scan reads only evidence identifiers and `job_id`. Exact counts are an optim
 When matching evidence is found, DataNest changes only the local workspace page, waits for the matching record to render, then scrolls and keyboard-focuses that record through the shared Active Work Context focus primitive.
 
 This recovery path never changes execution state, checkpoint contents, audit events, Job status, authority decisions, reservations, scheduler policy, or ILM state.
+
+
+## URL-addressable workspace presentation state
+
+Operational presentation state is encoded in the workspace URL so reload and browser Back/Forward can reproduce the same working view without persisting governed state.
+
+Supported parameters:
+- `page`: one-based local page for UNIFI, TranScheduler, Runs, Checkpoints and Audit;
+- `mode`: TranScheduler presentation mode (`queue`, `gantt`, `authority`, or `resources`);
+- `filter`: TranScheduler status filter;
+- `sort`: TranScheduler sort mode (`priority`, `deadline`, or `recent`).
+
+Default values are omitted from the URL to keep deep links compact. Invalid values fall back to safe defaults and are canonicalized on render.
+
+Workspace changes still create browser-history entries through `?view=`. Local presentation changes replace the current entry, which means navigating away and then using Back restores the latest operational page/subview for that workspace without creating noisy history entries for every filter click.
+
+Active Job identifiers, AI session identifiers, authority state and other governed/private context are never written to URL parameters. Active Work Context remains authenticated session state.
