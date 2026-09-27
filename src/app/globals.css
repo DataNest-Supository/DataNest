@@ -451,6 +451,22 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .mobileSystemStatus.degraded{border-color:rgba(242,199,120,.25)}
 .mobileSystemStatus.offline{border-color:rgba(242,139,157,.25)}
 
+.mutationRecoveryTopButton{display:inline-flex;align-items:center;gap:7px;border-color:rgba(242,199,120,.34)!important;background:rgba(242,199,120,.065)!important;color:#ffe3ae!important}
+.mutationRecoveryTopButton span{min-width:19px;height:19px;padding:0 5px;border-radius:999px;display:inline-grid;place-items:center;background:rgba(242,199,120,.14);font-size:9px;font-weight:900}
+.mutationRecoveryCenter{margin:0 0 16px;padding:15px;border:1px solid rgba(242,199,120,.28);border-radius:14px;background:linear-gradient(135deg,rgba(242,199,120,.07),rgba(255,255,255,.018));display:grid;gap:12px;scroll-margin-top:96px}
+.mutationRecoveryHead{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.mutationRecoveryHead h2{margin:3px 0 5px;font-size:16px}
+.mutationRecoveryHead p:not(.eyebrow){margin:0;max-width:760px;color:#aebfce;font-size:10px;line-height:1.55}
+.mutationRecoveryList{display:grid;gap:8px}
+.mutationRecoveryItem{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:11px 12px;border:1px solid rgba(255,255,255,.07);border-radius:10px;background:rgba(3,12,21,.36)}
+.mutationRecoveryItem strong{display:block;font-size:11px;color:#f7e1b6}
+.mutationRecoveryItem p{margin:4px 0;color:#aebfce;font-size:10px;line-height:1.45}
+.mutationRecoveryItem small{color:var(--muted);font-size:9px}
+@media(max-width:720px){
+  .mutationRecoveryHead,.mutationRecoveryItem{align-items:flex-start;flex-direction:column}
+  .mutationRecoveryItem .secondaryButton{width:100%}
+}
+
 .srOnly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .quickSwitchButton{display:inline-flex;align-items:center;gap:8px}
 .shortcutHint{padding:2px 6px;border:1px solid var(--line);border-bottom-color:var(--line-strong);border-radius:6px;background:rgba(255,255,255,.035);color:#92aabd;font:8px/1.3 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:nowrap}
