@@ -143,7 +143,7 @@ test("governed operation signatures match the approved Phase C contract",()=>{
   assert.match(source,/create_provider_trust_profile_v1\([\s\S]*target_provider_key text,[\s\S]*target_provider_category text,[\s\S]*target_policy_version text,[\s\S]*target_allowed_visibility_classes text\[\],[\s\S]*target_allowed_purposes text\[\],[\s\S]*target_retention_posture text,[\s\S]*target_training_reuse_posture text/i);
   assert.match(source,/propose_retention_policy_v1\([\s\S]*target_default_disposition_intent text,[\s\S]*target_requires_lineage_review boolean,[\s\S]*target_authority_basis text default null,[\s\S]*target_evidence_reference text default null/i);
   assert.match(source,/resolve_retention_review_v1\(\s*target_review uuid,\s*target_status text,\s*target_reason text,\s*target_evidence_reference text default null\s*\)/i);
-  assert.match(source,/get_trust_policy_workspace_v1\(target_project uuid\) returns jsonb/i);
+  assert.match(source,/get_trust_policy_workspace_v1\(\s*target_project uuid\s*\) returns jsonb/i);
 });
 
 test("retention decision evidence links to governed retention policy",()=>{
