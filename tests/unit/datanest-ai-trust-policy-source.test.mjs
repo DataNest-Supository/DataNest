@@ -90,7 +90,7 @@ test("AI Companion intake uses the same Job-scoped project-learning policy",()=>
   assert.match(source,/target_purpose:"project_learning"/);
   assert.match(source,/target_requested_operation:"reuse"/);
   assert.match(source,/target_trace_id:traceKey/);
-  assert.match(source,/learning_eligible:learningAllowed/);
+  assert.match(source,/learning_eligible:learningEligible/);
   assert.match(source,/decision_record_id:learningPolicy\.decision_record_id/);
   assert.match(source,/effective_reuse_state:learningPolicy\.reuse_state/);
   assert.match(source,/policy_version:learningPolicy\.policy_version/);
