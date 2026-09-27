@@ -1,0 +1,76 @@
+{
+  "schema": "datanest.ronsas.module-registry.v2",
+  "suite": "RONSAS",
+  "fullName": "Resonance Open Nova Sovereign Application Suite",
+  "repository": "DataNest-Supository/DataNest",
+  "authority": {
+    "sourceRoot": ".",
+    "controlRoot": "ops/ronsas/ealiophin",
+    "runtimeRoot": "%LOCALAPPDATA%\\Resonance\\DataNest-RONSAS"
+  },
+  "policy": {
+    "singleRepositoryAuthority": true,
+    "localFirst": true,
+    "standaloneRepositories": "evidence-only",
+    "billingState": "free-promotion",
+    "paidCheckoutActive": false
+  },
+  "modules": [
+    {
+      "id": "epublisher",
+      "kind": "web-app",
+      "displayName": "RONSAS ePublisher",
+      "source": "apps/ronsas/epublisher",
+      "packageManager": "npm",
+      "port": 3101,
+      "health": "http://127.0.0.1:3101/",
+      "required": true
+    },
+    {
+      "id": "creative-studio",
+      "kind": "web-app",
+      "displayName": "RONSAS Creative Studio",
+      "source": "apps/ronsas/creative-studio",
+      "packageManager": "npm",
+      "port": 3201,
+      "health": "http://127.0.0.1:3201/",
+      "required": true
+    },
+    {
+      "id": "syncvision",
+      "kind": "web-app",
+      "displayName": "RONSAS SyncVision",
+      "source": "apps/ronsas/syncvision",
+      "packageManager": "npm",
+      "port": 3301,
+      "health": "http://127.0.0.1:3301/",
+      "required": true
+    },
+    {
+      "id": "youtube-optimizer",
+      "kind": "web-app",
+      "displayName": "RONSAS YouTube Optimizer",
+      "source": "apps/ronsas/youtube-optimizer",
+      "packageManager": "bun",
+      "port": 3401,
+      "health": "http://127.0.0.1:3401/",
+      "required": true
+    },
+    {
+      "id": "sovereign-backend",
+      "kind": "backend-source",
+      "displayName": "RONSAS Sovereign Backend",
+      "source": "apps/ronsas/sovereign-backend",
+      "compose": "apps/ronsas/sovereign-backend/deploy/compose.backend.yml",
+      "health": "http://127.0.0.1:58600/v1/backend/health",
+      "required": false,
+      "runtime": "machine-local containers and secrets"
+    }
+  ],
+  "sourceRecovery": [
+    "career-compass",
+    "sovereign-forge",
+    "lyricsync-studio",
+    "scene-song-spark"
+  ]
+}
