@@ -242,6 +242,7 @@ set search_path=public,private,auth
 as $$
 declare
   caller uuid:=auth.uid();
+  caller_role text;
   normalized_capabilities text[];
   normalized_operations text[];
   new_id uuid;
@@ -252,6 +253,10 @@ begin
   end if;
   if not private.has_project_role(target_project,array['owner','admin','operator']) then
     raise insufficient_privilege using message='Owner, admin, or operator access is required.';
+  end if;
+  caller_role:=private.execution_active_member_role(target_project,caller);
+  if target_autonomy_level='A4' and caller_role not in ('owner','admin') then
+    raise insufficient_privilege using message='A4 proposal requires owner or admin authority.';
   end if;
   if target_actor_type not in ('human','agent','application','model','service','workflow') then
     raise exception 'Unsupported actor type.';
