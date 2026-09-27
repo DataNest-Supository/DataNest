@@ -31,6 +31,9 @@ create index portfolio_items_project_idx
 create index portfolio_items_linked_product_idx
   on public.portfolio_items(linked_product_id)
   where linked_product_id is not null;
+create index portfolio_items_created_by_idx
+  on public.portfolio_items(created_by)
+  where created_by is not null;
 create unique index portfolio_items_linked_product_unique_idx
   on public.portfolio_items(linked_product_id)
   where linked_product_id is not null;
@@ -66,6 +69,11 @@ create index portfolio_classifications_item_idx
 create index portfolio_classifications_target_product_idx
   on public.portfolio_classifications(target_product_id)
   where target_product_id is not null;
+create index portfolio_classifications_proposed_by_idx
+  on public.portfolio_classifications(proposed_by);
+create index portfolio_classifications_approved_by_idx
+  on public.portfolio_classifications(approved_by)
+  where approved_by is not null;
 create unique index portfolio_classifications_one_active_idx
   on public.portfolio_classifications(portfolio_item_id)
   where status='active';
@@ -96,6 +104,11 @@ create index portfolio_relationships_source_idx
   on public.portfolio_relationships(source_item_id,status,relationship_type);
 create index portfolio_relationships_target_idx
   on public.portfolio_relationships(target_item_id,status,relationship_type);
+create index portfolio_relationships_proposed_by_idx
+  on public.portfolio_relationships(proposed_by);
+create index portfolio_relationships_approved_by_idx
+  on public.portfolio_relationships(approved_by)
+  where approved_by is not null;
 create unique index portfolio_relationships_active_unique_idx
   on public.portfolio_relationships(source_item_id,target_item_id,relationship_type)
   where status='active';
@@ -123,6 +136,11 @@ create index portfolio_lifecycle_events_project_idx
   on public.portfolio_lifecycle_events(project_id,status,created_at desc);
 create index portfolio_lifecycle_events_item_idx
   on public.portfolio_lifecycle_events(portfolio_item_id,status,created_at desc);
+create index portfolio_lifecycle_events_proposed_by_idx
+  on public.portfolio_lifecycle_events(proposed_by);
+create index portfolio_lifecycle_events_approved_by_idx
+  on public.portfolio_lifecycle_events(approved_by)
+  where approved_by is not null;
 
 alter table public.product_surfaces
   add column if not exists portfolio_item_id uuid references public.portfolio_items(id) on delete set null;
