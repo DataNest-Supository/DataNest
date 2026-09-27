@@ -1491,6 +1491,91 @@ test("Spark reservation reconciliation reuses one request identity and recovers 
 });
 
 
+test("durable recovery hydrates a clean browser session without creating replacement intent", async ({ page }) => {
+  const projectId = "00000000-0000-4000-8000-000000000010";
+  const userId = "00000000-0000-4000-8000-000000000001";
+  const requestKey = "50000000-0000-4000-8000-000000000010";
+  const stamp = "2026-09-27T08:00:00Z";
+  let verificationMarks = 0;
+
+  await page.route("**/runtime-config.js", route => route.fulfill({
+    contentType:"application/javascript",
+    body:"window.__DATANEST_CONFIG__={supabaseUrl:'https://fixture.supabase.co',supabasePublishableKey:'fixture-key',authoritative:true}"
+  }));
+  await page.addInitScript(({userId}) => {
+    const encode = (data: unknown) => btoa(JSON.stringify(data)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+    localStorage.setItem("sb-fixture-auth-token", JSON.stringify({
+      access_token:`${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:userId,exp:4102444800,role:"authenticated"})}.fixture`,
+      refresh_token:"fixture", token_type:"bearer", expires_at:4102444800,
+      user:{id:userId,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid"}
+    }));
+  }, {userId});
+
+  await page.route("https://fixture.supabase.co/**", route => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+    const headers:Record<string,string> = {"Content-Type":"application/json"};
+    let body:unknown = [];
+
+    if(path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE",created_at:stamp};
+    if(path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"operator",status:"active"};
+    if(path.endsWith("/get_project_dashboard_summary")) body = {total_jobs:0,active_jobs:0,running_jobs:0,blocked_jobs:0,available_capabilities:0,registered_capabilities:0};
+
+    if(path.endsWith("/list_mutation_recoveries_v1")) body = [{
+      id:"60000000-0000-4000-8000-000000000010",project_id:projectId,user_id:userId,
+      scope:"unifi-job:"+projectId+":"+userId,mutation_kind:"unifi_job",request_key:requestKey,
+      payload:{title:"Recovered across devices",description:"Durable fixture",priority:80,capability:"chat",tests:true,artifact:true},
+      started_at:stamp,verification_state:"unconfirmed",last_checked_at:stamp,attempt_count:1,last_attempt_at:stamp
+    }];
+
+    if(path.endsWith("/jobs")){
+      if(url.searchParams.has("client_request_id")){
+        headers["Content-Range"]="*/0";
+        return route.fulfill({status:200,headers,body:"[]"});
+      }
+      headers["Content-Range"]="*/0";
+    }
+
+    if(path.endsWith("/mark_mutation_recovery_verification_v1")){
+      verificationMarks += 1;
+      return route.fulfill({status:200,headers,body:JSON.stringify({
+        id:"60000000-0000-4000-8000-000000000010",
+        verification_state:"confirmed_absent",
+        last_checked_at:stamp
+      })});
+    }
+
+    return route.fulfill({status:200,headers,body:JSON.stringify(body)});
+  });
+
+  await page.goto(appPath+"?view=scheduler");
+  await expect(page.getByRole("heading",{name:"TranScheduler"})).toBeVisible();
+
+  const recovery=page.getByRole("region",{name:"Unresolved operations"});
+  await expect(recovery).toContainText("UNIFI Job Manifest");
+  await expect(recovery).toContainText("durable ledger");
+  await expect(recovery).toContainText("request identity preserved");
+
+  const restored=await page.evaluate(()=>Object.entries(sessionStorage).filter(([key])=>key.startsWith("datanest.pendingMutation.unifi-job:")));
+  expect(restored).toHaveLength(1);
+  const restoredIntent=JSON.parse(restored[0][1]) as {requestKey:string;durable:boolean;payload:{title:string}};
+  expect(restoredIntent.requestKey).toBe(requestKey);
+  expect(restoredIntent.durable).toBe(true);
+  expect(restoredIntent.payload.title).toBe("Recovered across devices");
+
+  await recovery.locator(".mutationRecoveryItem button").click();
+  await expect(page.getByRole("heading",{name:"Job Manifest Planner"})).toBeVisible();
+  await expect(page.getByLabel("Job title")).toHaveValue("Recovered across devices");
+  await expect(page.getByText(/previous request was not recorded/i)).toBeVisible();
+  await expect(page.getByRole("button",{name:"Create Job Manifest"})).toBeEnabled();
+  expect(verificationMarks).toBeGreaterThanOrEqual(1);
+
+  const afterReconcile=await page.evaluate(()=>JSON.parse(Object.values(sessionStorage).find(value=>value.includes("50000000-0000-4000-8000-000000000010"))||"null"));
+  expect(afterReconcile?.requestKey).toBe(requestKey);
+  expect(afterReconcile?.verificationState).toBe("confirmed_absent");
+});
+
+
 test("stale recovery stays preserved and user-scoped across account transitions", async ({ page }) => {
   const projectId = "00000000-0000-4000-8000-000000000010";
   const userId = "00000000-0000-4000-8000-000000000001";
