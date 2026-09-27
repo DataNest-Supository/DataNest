@@ -127,7 +127,7 @@ test("Products preserves governed catalog semantics while adding Portfolio Regis
   assert.match(products,/Governed Products/);
   assert.match(products,/Portfolio Registry/);
   assert.match(products,/PortfolioRegistryPanel/);
-  assert.match(products,/ResonancePortfolioPulse products=\{catalogProducts\}/);
+  assert.match(products,/ResonancePortfolioPulse products=\{catalogProductsForPulse\}/);
   assert.match(products,/searchParams\.get\("product"\)/);
   assert.match(products,/searchParams\.get\("recordType"\)/);
   assert.match(products,/searchParams\.get\("q"\)/);
