@@ -47,6 +47,18 @@
       "required": true
     },
     {
+      "id": "syncvision-musetalk",
+      "kind": "python-service",
+      "displayName": "RONSAS SyncVision MuseTalk Bridge",
+      "source": "apps/ronsas/syncvision/runtime/musetalk/musetalk_bridge.py",
+      "launcher": "ops/ronsas/ealiophin/START-SYNCVISION-MUSETALK.ps1",
+      "state": "r5-local-ai.json",
+      "port": 7863,
+      "health": "http://127.0.0.1:7863/health",
+      "required": false,
+      "runtime": "machine-local MuseTalk 1.5 engine, models, Python and FFmpeg; network runtime offline"
+    },
+    {
       "id": "youtube-optimizer",
       "kind": "web-app",
       "displayName": "RONSAS YouTube Optimizer",
