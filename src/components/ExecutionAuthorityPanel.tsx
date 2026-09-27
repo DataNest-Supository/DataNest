@@ -112,6 +112,7 @@ export default function ExecutionAuthorityPanel({
   const [breakerReason,setBreakerReason]=useState("");
 
   const canPropose=canProposeExecutionAuthority(role);
+  const proposalAutonomyLevels=role==="operator"?autonomyLevels.filter(level=>level!=="A4"):autonomyLevels;
   const canManageBreakers=canManageCircuitBreakers(role);
   const canManageLeases=role==="owner"||role==="admin";
 
@@ -322,7 +323,7 @@ export default function ExecutionAuthorityPanel({
           <label>Actor key<input value={actorKey} onChange={event=>setActorKey(event.target.value)} required/></label>
           <label>Sponsor user ID<input value={sponsorUser} onChange={event=>setSponsorUser(event.target.value)} required/></label>
           <label>Purpose<input value={purpose} onChange={event=>setPurpose(event.target.value)} required/></label>
-          <label>Autonomy level<select value={autonomyLevel} onChange={event=>setAutonomyLevel(event.target.value as AutonomyLevel)}>{autonomyLevels.map(level=><option key={level} value={level}>{level+" · "+autonomyLabels[level]}</option>)}</select></label>
+          <label>Autonomy level<select value={autonomyLevel} onChange={event=>setAutonomyLevel(event.target.value as AutonomyLevel)}>{proposalAutonomyLevels.map(level=><option key={level} value={level}>{level+" · "+autonomyLabels[level]}</option>)}</select></label>
           <label>Permitted capabilities<input value={permittedCapabilities} onChange={event=>setPermittedCapabilities(event.target.value)} placeholder="chat, deploy"/></label>
           <label>Permitted operations<input value={permittedOperations} onChange={event=>setPermittedOperations(event.target.value)} placeholder={executionOperations.join(", ")}/></label>
           <label>Expires<input type="datetime-local" value={envelopeExpiry} onChange={event=>setEnvelopeExpiry(event.target.value)} required/></label>
