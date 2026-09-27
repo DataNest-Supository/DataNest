@@ -63,6 +63,11 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
       primary_runtime:"Windows local environment",commercial_mode:"free promotion / no billing until pricing is established",
       billing_enabled:false,as_of_date:"2026-09-26",metadata:{parent_platform:"Resonance DataNest",product_role:"governed_product",execution_authority:"DataNest",promotion_authority:"DataNest",hosting_model:"replaceable_delivery_infrastructure"}
     }];
+    if (path.endsWith("/portfolio_registry_view")) body = [
+      {id:"00000000-0000-4000-8000-000000000401",project_id:projectId,slug:"ronsas",name:"RONSAS",item_kind:"governed_product",review_state:"classified",current_lifecycle:"active",linked_product_id:"24f2fa75-18b8-5b45-b624-b5dab381de9e",source_authority:"products",source_reference:"24f2fa75-18b8-5b45-b624-b5dab381de9e",metadata:{},active_classification_id:"00000000-0000-4000-8000-000000000501",active_classification:"product_owned",target_product_id:"24f2fa75-18b8-5b45-b624-b5dab381de9e",target_product_slug:"ronsas",target_product_name:"RONSAS",outgoing_relationship_count:0,incoming_relationship_count:0,product_lab_surface_count:0,product_lab_test_run_count:0},
+      {id:"00000000-0000-4000-8000-000000000402",project_id:projectId,slug:"sync-vision",name:"Sync Vision",item_kind:"application",review_state:"pending_review",current_lifecycle:null,linked_product_id:null,source_authority:"product_records",source_reference:"00000000-0000-4000-8000-000000000303",metadata:{historical_catalog:{parent_product_id:"24f2fa75-18b8-5b45-b624-b5dab381de9e"}},active_classification_id:null,active_classification:null,target_product_id:null,target_product_slug:null,target_product_name:null,outgoing_relationship_count:0,incoming_relationship_count:0,product_lab_surface_count:0,product_lab_test_run_count:0}
+    ];
+    if (path.endsWith("/portfolio_relationships")) body = [];
     if (path.endsWith("/product_records")) body = [
       {id:"00000000-0000-4000-8000-000000000301",product_id:"24f2fa75-18b8-5b45-b624-b5dab381de9e",record_type:"application",code:"APP-01",name:"RONSAS Hub",status:"active",sort_order:1,payload:{description:"Primary application hub"}},
       {id:"00000000-0000-4000-8000-000000000303",product_id:"24f2fa75-18b8-5b45-b624-b5dab381de9e",record_type:"application",code:"APP-02",name:"Sync Vision",status:"active/integration",sort_order:2,payload:{description:"Video/audio synchronization and generation workflow"}},
@@ -107,6 +112,10 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
   const syncVisionLaunch=page.getByRole("link",{name:"Open Sync Vision in DataNest"});
   await expect(syncVisionLaunch).toBeVisible();
   await expect(syncVisionLaunch).toHaveAttribute("href",/\/apps\/syncvision\/$/);
+
+  const compositionLaunch=page.getByLabel("RONSAS Composition").getByRole("link",{name:"Open Sync Vision in DataNest"});
+  await expect(compositionLaunch).toBeVisible();
+  await expect(compositionLaunch).toHaveAttribute("href",/\/apps\/syncvision\/$/);
 
   await expect(page.getByRole("heading", {name:"Products that carry their architecture, evidence and decisions with them."})).toBeVisible();
   await expect(page.getByText("Product Concept Incubator", {exact:true})).toBeVisible();
