@@ -1,0 +1,105 @@
+name: RONSAS Application Validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/ronsas/**"
+      - "ops/ronsas/**"
+      - "scripts/validate-ronsas-imports.mjs"
+      - ".github/workflows/ronsas-app-validation.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/ronsas/**"
+      - "ops/ronsas/**"
+      - "scripts/validate-ronsas-imports.mjs"
+      - ".github/workflows/ronsas-app-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ronsas-app-validation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  npm-apps:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: ePublisher
+            path: apps/ronsas/epublisher
+            verify: npm test && npm run build:types && npm run build
+          - name: Creative Studio
+            path: apps/ronsas/creative-studio
+            verify: npm test && npm run build
+          - name: SyncVision
+            path: apps/ronsas/syncvision
+            verify: npm run typecheck && npm test && npm run build
+          - name: Career Compass
+            path: apps/ronsas/career-compass
+            verify: npm test && npm run build
+          - name: SovereignForge
+            path: apps/ronsas/sovereign-forge
+            verify: npm test && npm run build
+          - name: LyricSync Studio
+            path: apps/ronsas/lyricsync-studio
+            verify: npm test && npm run build
+          - name: Scene Song Spark
+            path: apps/ronsas/scene-song-spark
+            verify: npm test && npm run build
+    defaults:
+      run:
+        working-directory: ${{ matrix.path }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ matrix.path }}/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Validate from DataNest source
+        run: ${{ matrix.verify }}
+
+  youtube-optimizer:
+    name: YouTube Optimizer
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: apps/ronsas/youtube-optimizer
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Type-check, test, and build
+        run: bun run typecheck && bun run test && bun run build
+
+  sovereign-backend:
+    name: Sovereign Backend
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: apps/ronsas/sovereign-backend
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: apps/ronsas/sovereign-backend/requirements-dev.txt
+      - name: Install dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Verify dependency environment
+        run: python -m pip check
+      - name: Run backend tests
+        run: python -m pytest -q
