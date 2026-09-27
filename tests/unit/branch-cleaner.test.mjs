@@ -45,9 +45,21 @@ test("proposes deletion immediately when a branch has no unique commits", () => 
 });
 
 test("does not delete a branch that has post-merge unique commits", () => {
-  const result = classifyBranch({ name:"fix/merged-but-changed", mergedPr:true, updatedAt:"2026-09-01T00:00:00Z", compare:{ ahead_by:2, behind_by:5 } }, config, now);
+  const result = classifyBranch({ name:"fix/merged-but-changed", mergedPr:true, postMergeActivity:true, updatedAt:"2026-09-01T00:00:00Z", compare:{ ahead_by:2, behind_by:5 } }, config, now);
   assert.equal(result.decision, "review");
   assert.equal(result.reason, "post_merge_unique_commits");
+});
+
+test("distinguishes merged PR history from actual post-merge activity", () => {
+  const result = classifyBranch({
+    name:"fix/squash-merged",
+    mergedPr:true,
+    postMergeActivity:false,
+    updatedAt:"2026-09-01T00:00:00Z",
+    compare:{ ahead_by:3, behind_by:9, status:"diverged" },
+  }, config, now);
+  assert.equal(result.decision, "review");
+  assert.equal(result.reason, "merged_pr_unique_history");
 });
 
 test("marks ancestry-proven older variants as preserved but never delete candidates", () => {
