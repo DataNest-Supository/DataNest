@@ -16,6 +16,7 @@ export type PendingMutationIntent<T extends Record<string,unknown>=Record<string
   startedAt:string;
   verificationState:PendingMutationVerification;
   lastCheckedAt:string|null;
+  durable:boolean;
 };
 
 function storageKey(scope:string){
@@ -47,14 +48,16 @@ function validIntent(value:unknown):value is PendingMutationIntent{
       ||verification==="unconfirmed"
       ||verification==="confirmed_absent"
     )
-    &&(item.lastCheckedAt===undefined||item.lastCheckedAt===null||typeof item.lastCheckedAt==="string");
+    &&(item.lastCheckedAt===undefined||item.lastCheckedAt===null||typeof item.lastCheckedAt==="string")
+    &&(item.durable===undefined||typeof item.durable==="boolean");
 }
 
 function normalizeIntent<T extends Record<string,unknown>>(value:PendingMutationIntent<T>):PendingMutationIntent<T>{
   return {
     ...value,
     verificationState:value.verificationState||"unverified",
-    lastCheckedAt:value.lastCheckedAt||null
+    lastCheckedAt:value.lastCheckedAt||null,
+    durable:value.durable===true
   };
 }
 
@@ -97,7 +100,8 @@ export function getOrCreatePendingMutation<T extends Record<string,unknown>>(
     payload,
     startedAt:new Date().toISOString(),
     verificationState:"unverified",
-    lastCheckedAt:null
+    lastCheckedAt:null,
+    durable:false
   };
   try{
     window.sessionStorage.setItem(storageKey(scope),JSON.stringify(next));
@@ -106,6 +110,28 @@ export function getOrCreatePendingMutation<T extends Record<string,unknown>>(
     // The request can still proceed; server idempotency remains authoritative for this attempt.
   }
   return next;
+}
+
+export function restorePendingMutation<T extends Record<string,unknown>>(
+  scope:string,
+  intent:PendingMutationIntent<T>
+){
+  const next=normalizeIntent(intent);
+  const existing=loadPendingMutation<T>(scope);
+  if(existing&&JSON.stringify(existing)===JSON.stringify(next))return existing;
+  try{
+    window.sessionStorage.setItem(storageKey(scope),JSON.stringify(next));
+    notifyPendingMutationChange(scope);
+  }catch{}
+  return next;
+}
+
+export function markPendingMutationDurable(scope:string){
+  const existing=loadPendingMutation(scope);
+  if(!existing)return null;
+  if(existing.durable)return existing;
+  const next:PendingMutationIntent={...existing,durable:true};
+  return restorePendingMutation(scope,next);
 }
 
 export function markPendingMutationVerification(scope:string,state:Exclude<PendingMutationVerification,"unverified">){
