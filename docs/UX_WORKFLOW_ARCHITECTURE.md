@@ -369,3 +369,30 @@ Draft persistence is intentionally browser-session local:
 - closing the browser session may discard the draft.
 
 Credential, password, token and secret fields are excluded from this persistence pattern. Draft storage is a continuity aid only and must not become an alternate store for authoritative project records or sensitive authentication material.
+
+## Long-running mutation resilience
+
+Mutation-heavy workspaces use a shared single-flight boundary at the event-handler layer. The lock is acquired synchronously before the first awaited network operation, so repeated submit/click events in the same browser task cannot intentionally start duplicate mutations.
+
+Current single-flight coverage includes:
+- UNIFI Job Manifest creation;
+- Product Lab surface, test-case and test-evidence writes;
+- Sovereign Governance proposal, vote, ratification and dispute actions;
+- Think Tank channel/thread/message authoring and governed AI commands;
+- Sparks service/reservation lifecycle actions;
+- project membership invitations and revocation;
+- Authority & Execution RPC mutations;
+- Resource Fabric registration and node-policy mutations.
+
+While a mutation is in flight, its originating workspace exposes a status message and disables conflicting controls. A native `beforeunload` guard is active for full page unloads so refresh/close/navigation that would terminate the JavaScript context requires browser confirmation. Normal internal workspace navigation remains allowed: the request promise continues in the existing app context, and completion/error feedback is written through the parent workspace notice channel where supported.
+
+Retry rules are conservative:
+- the single-flight lock is released in `finally`, so a failed request becomes retryable;
+- authored draft values remain intact on failure;
+- successful draft setters update `sessionStorage` synchronously, so a mutation that finishes after its form workspace unmounts can still clear the submitted draft;
+- operations without a server idempotency contract rely on duplicate-start prevention plus authoritative reload/reconciliation;
+- operations with an idempotency contract should preserve request identity across an unchanged retry.
+
+Sparks redemption uses the strongest retry contract currently available. Its `target_request_key` is stored in browser-session storage before the RPC begins, reused after an ambiguous failure, and cleared only after success. Changing the selected service, quantity or request note is treated as new intent and clears the prior request key before the next attempt. This prevents an unchanged retry from deliberately creating a second reservation identity while still allowing an edited request to become a new transaction.
+
+The UI does not claim that a client-side timeout or transport failure proves the server mutation failed. Where the result is ambiguous, authoritative workspace reload/state remains the source of truth.
