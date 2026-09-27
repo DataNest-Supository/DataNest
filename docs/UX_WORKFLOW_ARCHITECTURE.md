@@ -470,7 +470,7 @@ Pending scopes include both project ID and authenticated user ID. Signing out do
 
 Deterministic recovery continuity is also persisted in the server-backed `recovery.mutation_recovery_ledger`. The ledger is not mutation authority: it records request identity, bounded request payload, workflow scope, verification state, attempts and final continuity resolution. The actual UNIFI, Sparks and Product Lab domain tables remain the only evidence that a business mutation succeeded.
 
-The recovery table lives in the non-exposed `recovery` schema with RLS enabled. Authenticated clients can only select/insert/update rows owned by their own authenticated user and an active project membership; they have no direct delete privilege. Browser code reaches it through four `SECURITY INVOKER` RPCs:
+The recovery table lives in the non-exposed `recovery` schema with RLS enabled. Authenticated clients can only select/insert/update rows owned by their own authenticated user and an active project membership; they have no direct delete privilege. The mutation lifecycle reaches it through four `SECURITY INVOKER` RPCs:
 - `register_mutation_recovery_v1`;
 - `list_mutation_recoveries_v1`;
 - `mark_mutation_recovery_verification_v1`;
