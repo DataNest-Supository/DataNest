@@ -48,12 +48,12 @@ test("historical RONSAS applications become pending-review identities with prove
   assert.match(sql,/linked_product_id[\s\S]*null/i);
   assert.match(sql,/current_lifecycle[\s\S]*null/i);
   assert.match(sql,/source_authority[\s\S]*'product_records'/i);
-  assert.match(sql,/source_reference[\\s\\S]*(?:pr|app)\\.id::text/i);
+  assert.match(sql,/source_reference[\s\S]*(?:pr|app)\.id::text/i);
   assert.match(sql,/historical_catalog/i);
   assert.match(sql,/payload->>'ownership'/i);
   assert.doesNotMatch(sql,/insert into public\.portfolio_classifications[\s\S]{0,1000}product_owned/i);
   assert.match(sql,/on conflict/i);
-  assert.match(sql,/substr\\(replace\\((?:pr|app)\\.id::text,'-',''\\),1,8\\)/i);
+  assert.match(sql,/substr\(replace\((?:pr|app)\.id::text,'-',''\),1,8\)/i);
 });
 
 test("current RONSAS import snapshot has nine historical applications and old ownership is not current authority",()=>{
