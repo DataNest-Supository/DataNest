@@ -74,7 +74,7 @@ test("candidate resolution is service-only and fail-closed on binding health pri
     "binding_inactive","resource_disabled","resource_health_unknown","resource_unhealthy",
     "visibility_not_supported","capability_disabled","capability_state_ineligible","capability_concurrency_exhausted"
   ]) assert.match(source,new RegExp(token,"i"));
-  assert.match(source,/running<concurrency_limit/i);
+  assert.match(source,/running\s*<\s*(?:row_record\.)?concurrency_limit/i);
   assert.match(source,/revoke all on function public\.service_resolve_resource_candidates_v1\([^;]+from public,anon,authenticated/i);
   assert.match(source,/grant execute on function public\.service_resolve_resource_candidates_v1\([^;]+to service_role/i);
 });
