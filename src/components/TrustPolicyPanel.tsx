@@ -331,7 +331,7 @@ export default function TrustPolicyPanel({
         </div>
         <p className="muted">{text(item.training_reuse_posture)||"Training/reuse posture not recorded."}</p>
         {canApprove&&<div className="rowActions">
-          {text(item.status)==="draft"&&<button className="primaryButton compact" disabled={busy} onClick={()=>void rpc("activate_provider_trust_profile_v1",{target_profile:item.id},"Provider Trust Profile activated.")}>Activate</button>}
+          {text(item.status)==="draft"&&<><button className="primaryButton compact" disabled={busy||text(item.created_by)===currentUserId} onClick={()=>void rpc("activate_provider_trust_profile_v1",{target_profile:item.id},"Provider Trust Profile activated.")}>Activate</button>{text(item.created_by)===currentUserId&&<small>Independent review is required for a self-authored Provider Trust Profile.</small>}</>}
           {text(item.status)==="active"&&<button className="secondaryButton compact" disabled={busy} onClick={()=>void rpc("suspend_provider_trust_profile_v1",{target_profile:item.id,target_reason:"Suspended from Trust & Data Policy workspace."},"Provider Trust Profile suspended.")}>Suspend</button>}
           {text(item.status)!=="retired"&&<button className="textButton" disabled={busy} onClick={()=>void rpc("retire_provider_trust_profile_v1",{target_profile:item.id,target_reason:"Retired from Trust & Data Policy workspace."},"Provider Trust Profile retired.")}>Retire</button>}
         </div>}
@@ -481,7 +481,7 @@ export default function TrustPolicyPanel({
       <div className="trustPolicyCards">
         {draftManifests.map(item=><article className="manifestCard" key={text(item.id)}>
           <b>Trust Manifest v{text(item.version)}</b><p>{trustPolicyLabel(text(item.evidence_state))} · {text(item.evidence_reference)||"no evidence reference"}</p>
-          <div className="rowActions"><button className="primaryButton compact" disabled={busy} onClick={()=>void rpc("activate_trust_manifest_v1",{target_manifest:item.id},"Trust Manifest activated.")}>Activate</button><button className="textButton" disabled={busy} onClick={()=>void rpc("reject_trust_manifest_v1",{target_manifest:item.id,target_reason:"Rejected from Trust & Data Policy workspace."},"Trust Manifest rejected.")}>Reject</button></div>
+          <div className="rowActions"><button className="primaryButton compact" disabled={busy||text(item.created_by)===currentUserId} onClick={()=>void rpc("activate_trust_manifest_v1",{target_manifest:item.id},"Trust Manifest activated.")}>Activate</button><button className="textButton" disabled={busy} onClick={()=>void rpc("reject_trust_manifest_v1",{target_manifest:item.id,target_reason:"Rejected from Trust & Data Policy workspace."},"Trust Manifest rejected.")}>Reject</button></div>{text(item.created_by)===currentUserId&&<small>Independent review is required for a self-authored Trust Manifest.</small>}
         </article>)}
         {draftPolicies.map(item=><article className="manifestCard" key={text(item.id)}>
           <b>Retention policy · {text(item.policy_key)} v{text(item.version)}</b><p>{trustPolicyLabel(text(item.default_disposition_intent))}</p>
