@@ -232,6 +232,7 @@ function isActiveWorkContext(value:unknown):value is ActiveDataNestAiSession {
 }
 type ActiveContextAction = { key:ViewKey; label:string; detail:string };
 type ActiveContextEvidence = { state:"visible"|"not-visible"|"context"; label:string; detail:string };
+const ACTIVE_CONTEXT_REVEAL_EVENT="datanest:reveal-active-context";
 const activeJobJourneySteps:Array<{key:ViewKey;label:string;detail:string}> = [
   {key:"unifi",label:"Plan",detail:"Open the active Job Manifest in UNIFI planning."},
   {key:"scheduler",label:"Schedule",detail:"Review capability-aware scheduling for the active Job."},
@@ -256,7 +257,13 @@ function activeContextEvidenceForView(
   checkpoints:Checkpoint[],
   events:AuditEvent[]
 ):ActiveContextEvidence {
-  if(view==="unifi"||view==="scheduler"){
+  if(view==="unifi"){
+    const count=jobs.reduce((total,item)=>total+(item.id===activeJobId&&["PLANNED","READY","QUEUED"].includes(item.status)?1:0),0);
+    return count>0
+      ? {state:"visible",label:"Job evidence visible",detail:`On this page: ${count} matching prepared Job ${count===1?"record":"records"}.`}
+      : {state:"not-visible",label:"Prepared Job evidence not visible",detail:"No matching prepared Job record is rendered on this page."};
+  }
+  if(view==="scheduler"){
     const count=jobs.reduce((total,item)=>total+(item.id===activeJobId?1:0),0);
     return count>0
       ? {state:"visible",label:"Job evidence visible",detail:`On this page: ${count} matching Job ${count===1?"record":"records"}.`}
@@ -281,6 +288,14 @@ function activeContextEvidenceForView(
       : {state:"not-visible",label:"Audit evidence not visible",detail:"No matching audit event is loaded on this page."};
   }
   return {state:"context",label:"Context linked",detail:"This workspace does not expose active-Job evidence in the shell."};
+}
+function focusRenderedActiveContextRecord():boolean {
+  const target=document.querySelector<HTMLElement>('[data-active-context="true"]');
+  if(!target)return false;
+  const reduceMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches||document.documentElement.dataset.motionPaused==="true";
+  target.scrollIntoView({behavior:reduceMotion?"auto":"smooth",block:"center"});
+  target.focus({preventScroll:true});
+  return true;
 }
 function tone(value:string) {
   const v=value.toLowerCase();
@@ -353,15 +368,14 @@ export default function DataNestApp({session}:{session:Session}) {
   },[updateActiveWorkContext]);
 
   const focusActiveContextRecord=useCallback(()=>{
-    const target=document.querySelector<HTMLElement>('[data-active-context="true"]');
-    if(!target){
-      setNotice("Active Job evidence is loaded, but its matching record is not rendered in this workspace view.");
+    if(focusRenderedActiveContextRecord())return;
+    if(view==="scheduler"){
+      setNotice("Revealing the active Job in TranScheduler…");
+      window.dispatchEvent(new CustomEvent(ACTIVE_CONTEXT_REVEAL_EVENT));
       return;
     }
-    const reduceMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches||document.documentElement.dataset.motionPaused==="true";
-    target.scrollIntoView({behavior:reduceMotion?"auto":"smooth",block:"center"});
-    target.focus({preventScroll:true});
-  },[]);
+    setNotice("Active Job evidence is loaded, but its matching record is not rendered in this workspace view.");
+  },[view]);
 
   const commandItems=useMemo(()=>{
     const query=commandQuery.trim().toLowerCase();
@@ -1272,6 +1286,22 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
   });
   const activeCount=visible.filter(item=>!finalStates.has(item.status)).length;
   const deadlineCount=visible.filter(item=>Boolean(item.deadline)).length;
+
+  useEffect(()=>{
+    function revealActiveContext(){
+      setFilter("ALL");
+      setViewMode("gantt");
+      window.requestAnimationFrame(()=>window.requestAnimationFrame(()=>{
+        if(focusRenderedActiveContextRecord()){
+          setNotice("Active Job revealed in TranScheduler.");
+        }else{
+          setNotice("The active Job is loaded, but no rendered scheduler record is available.");
+        }
+      }));
+    }
+    window.addEventListener(ACTIVE_CONTEXT_REVEAL_EVENT,revealActiveContext);
+    return ()=>window.removeEventListener(ACTIVE_CONTEXT_REVEAL_EVENT,revealActiveContext);
+  },[setNotice]);
 
   return <>
     <section className="schedulerHero">

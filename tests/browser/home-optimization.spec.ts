@@ -597,6 +597,15 @@ test("active work context survives handoffs and focuses related operational evid
   await expect(page.getByRole("region",{name:"Active work context"})).toBeVisible();
   await expect(page.locator(".ganttRow[data-active-context='true']")).toHaveCount(1);
 
+  await page.getByRole("group",{name:"TranScheduler view"}).getByRole("button",{name:"Queue"}).click();
+  await page.locator(".schedulerFilterDesktop").getByRole("button",{name:"QUEUED",exact:true}).click();
+  await expect(page.locator(".schedulerRow[data-active-context='true']")).toHaveCount(0);
+  await expect(page.getByText("Other visible project work",{exact:true})).toBeVisible();
+  await page.getByRole("region",{name:"Active work context"}).getByRole("button",{name:/Jump to visible evidence/}).click();
+  await expect(page.getByRole("group",{name:"TranScheduler view"}).getByRole("button",{name:"Gantt chart"})).toHaveAttribute("aria-pressed","true");
+  await expect(page.locator(".ganttRow[data-active-context='true']")).toBeFocused();
+  await expect(page.getByText("Active Job revealed in TranScheduler.",{exact:true})).toBeVisible();
+
   await page.setViewportSize({width:390,height:844});
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 

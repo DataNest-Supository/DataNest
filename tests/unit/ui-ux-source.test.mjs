@@ -367,3 +367,19 @@ test("active evidence can anchor to its rendered record without filtering", () =
   assert.match(appSource, /Active Job evidence is loaded, but its matching record is not rendered in this workspace view\./);
   assert.doesNotMatch(appSource, /filter\(item=>item\.id===activeJobId\)/);
 });
+
+
+test("active context jump can reveal a hidden Scheduler record without changing governed state", () => {
+  assert.match(appSource, /const ACTIVE_CONTEXT_REVEAL_EVENT="datanest:reveal-active-context"/);
+  assert.match(appSource, /function focusRenderedActiveContextRecord\(\):boolean/);
+  assert.match(appSource, /if\(focusRenderedActiveContextRecord\(\)\)return/);
+  assert.match(appSource, /if\(view==="scheduler"\)/);
+  assert.match(appSource, /window\.dispatchEvent\(new CustomEvent\(ACTIVE_CONTEXT_REVEAL_EVENT\)\)/);
+  assert.match(appSource, /window\.addEventListener\(ACTIVE_CONTEXT_REVEAL_EVENT,revealActiveContext\)/);
+  assert.match(appSource, /setFilter\("ALL"\)/);
+  assert.match(appSource, /setViewMode\("gantt"\)/);
+  assert.match(appSource, /window\.requestAnimationFrame\(\(\)=>window\.requestAnimationFrame/);
+  assert.match(appSource, /Active Job revealed in TranScheduler\./);
+  assert.match(appSource, /Prepared Job evidence not visible/);
+  assert.doesNotMatch(appSource, /updateJobStatus[\s\S]{0,300}?ACTIVE_CONTEXT_REVEAL_EVENT/);
+});

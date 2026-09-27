@@ -231,3 +231,18 @@ The control scrolls to and keyboard-focuses the first rendered record marked as 
 Reduced-motion preferences disable smooth scrolling. If matching data is loaded but the current subview does not render the matching record, DataNest reports that limitation instead of pretending the jump succeeded.
 
 This feature does not filter, reorder, mutate, or select governed records. It only anchors viewport and focus to evidence that is already rendered.
+
+
+## Scheduler subview resilience
+
+Active Work Context can recover when TranScheduler temporarily hides the active Job because of a local status filter or a non-record subview.
+
+If **Jump to visible evidence** cannot find a rendered active-Job record while the Scheduler still has that Job loaded, DataNest:
+1. clears the local Scheduler status filter to `ALL`;
+2. returns to the Gantt record view;
+3. waits for the record view to render;
+4. scrolls to and keyboard-focuses the active Job.
+
+This recovery is view-local only. It does not mutate Job status, execution authority, resource reservations, ILM state, or persisted scheduler policy.
+
+UNIFI evidence is narrower: only prepared Job records (`PLANNED`, `READY`, or `QUEUED`) count as visible evidence there, because completed or otherwise non-prepared Jobs are not rendered in the planning list.
