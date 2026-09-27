@@ -11,7 +11,10 @@
     "test": "node --test --experimental-strip-types tests/unit/*.test.mjs",
     "test:browser:datanest-ai": "playwright test tests/browser/datanest-ai.spec.ts tests/browser/datanest-ai-return-safety.spec.ts",
     "test:stress:datanest-ai": "node tests/stress/datanest-ai-stress.mjs",
-    "seed:e2e:datanest-ai": "node scripts/seed-datanest-ai-e2e.mjs"
+    "seed:e2e:datanest-ai": "node scripts/seed-datanest-ai-e2e.mjs",
+    "branch-cleaner": "node scripts/branch-cleaner.mjs",
+    "branch-cleaner:strict": "node scripts/branch-cleaner.mjs --strict",
+    "test:branch-cleaner": "node --test tests/unit/branch-cleaner.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",

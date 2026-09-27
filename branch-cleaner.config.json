@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "baseBranch": "main",
+  "staleDays": 14,
+  "minDeleteAgeDays": 7,
+  "protectedPatterns": ["^main$", "^production$", "^release/"],
+  "supabaseProjects": [
+    {"ref":"sgqdmfgjbprsoqsmgigi","role":"application_authority","expectedGitBranch":"main"},
+    {"ref":"qchttpcyqlqnhvahprhz","role":"ai_staging_audit"}
+  ],
+  "auditSources": [
+    "public/transparency/audits/index.json",
+    "public/transparency/audits/external-full-system-audit-return-2026-09-25/findings.json",
+    "public/transparency/audits/external-full-system-audit-return-2026-09-25/remediation-backlog.json",
+    "docs/reviews/2026-09-25-live-review.md",
+    "docs/ARCHITECTURE.md",
+    "supabase/config.toml"
+  ],
+  "guardrails": [
+    "release-evidence-is-not-backend-attestation",
+    "reported-audit-findings-remain-pending-until-reproduced",
+    "never-delete-default-protected-or-open-pr-branches",
+    "never-delete-a-branch-with-unique-commits",
+    "supabase-performance-advice-is-review-evidence-not-auto-remediation",
+    "keep-production-and-ai-staging-authority-distinct",
+    "do-not-export-secrets-or-raw-ai-memory",
+    "prefer-project-scoped-authenticated-controls-and-explicit-grants",
+    "preserve-audit-and-certification-lineage"
+  ]
+}
