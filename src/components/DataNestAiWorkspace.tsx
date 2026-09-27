@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 import DataNestAiChatPanel,{type DataNestAiEvent} from "@/components/DataNestAiChatPanel";
 import DataNestAiMemoryPanel,{type CertifiedMemoryItem} from "@/components/DataNestAiMemoryPanel";
-import DataNestAiCertificationPanel from "@/components/DataNestAiCertificationPanel";\nimport IntelligenceFabricPanel from "@/components/IntelligenceFabricPanel";
+import DataNestAiCertificationPanel from "@/components/DataNestAiCertificationPanel";
+import IntelligenceFabricPanel from "@/components/IntelligenceFabricPanel";
 import JobInviteForm from "@/components/JobInviteForm";
 
 type Role="owner"|"admin"|"operator"|"viewer";
