@@ -1248,8 +1248,18 @@ test("UNIFI reconciles pending, not-recorded, and confirmed-after-error outcomes
 
   const pendingAfterAmbiguity=await page.evaluate(()=>Object.entries(sessionStorage).filter(([key])=>key.startsWith("datanest.pendingMutation.unifi-job:")));
   expect(pendingAfterAmbiguity.length).toBe(1);
+  await expect(page.getByRole("region",{name:"Unresolved operations"})).toContainText("UNIFI Job Manifest");
+  await expect(page.getByRole("button",{name:"1 unresolved operation"})).toBeVisible();
 
-  await page.getByRole("button",{name:"Recheck server state"}).click();
+  const projectNav=page.getByRole("navigation",{name:"Project workspaces"});
+  await projectNav.getByRole("button",{name:"TranScheduler"}).click();
+  await expect(page.getByRole("heading",{name:"TranScheduler"})).toBeVisible();
+  const recoveryCenter=page.getByRole("region",{name:"Unresolved operations"});
+  await expect(recoveryCenter).toContainText("UNIFI Job Manifest");
+  await expect(recoveryCenter).toContainText("request identity preserved");
+
+  await recoveryCenter.getByRole("button",{name:"Review & reconcile →"}).click();
+  await expect(page.getByRole("heading",{name:"Job Manifest Planner"})).toBeVisible();
   await expect(page.getByText(/previous request was not recorded/i)).toBeVisible();
   await expect(page.getByRole("button",{name:"Create Job Manifest"})).toBeEnabled();
   await expect(page.getByLabel("Job title")).toHaveValue("Reconciled manifest");
@@ -1257,10 +1267,11 @@ test("UNIFI reconciles pending, not-recorded, and confirmed-after-error outcomes
   await form.evaluate(node=>node.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true})));
   await expect.poll(()=>createCalls).toBe(2);
 
-  const projectNav=page.getByRole("navigation",{name:"Project workspaces"});
   await projectNav.getByRole("button",{name:"TranScheduler"}).click();
   await expect(page.getByRole("heading",{name:"TranScheduler"})).toBeVisible();
   await expect(page.getByText("Recovered confirmed JOB-00042 from authoritative server state.",{exact:true})).toBeVisible();
+  await expect(page.getByRole("region",{name:"Unresolved operations"})).toHaveCount(0);
+  await expect(page.getByRole("button",{name:/unresolved operation/})).toHaveCount(0);
 
   expect(requestKeys[1]).toBe(requestKeys[0]);
   expect(reconciliationCalls).toBeGreaterThanOrEqual(3);
