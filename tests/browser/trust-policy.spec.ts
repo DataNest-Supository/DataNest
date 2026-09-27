@@ -109,7 +109,7 @@ test("Trust & Data Policy deep link preserves Sovereign Governance as default",a
   await page.getByRole("tab",{name:"Trust & Data Policy"}).click();
   await expect(page).toHaveURL(/section=trust/);
   await expect(page.getByRole("heading",{name:"Processing, reuse, provider trust and retention"})).toBeVisible();
-  await expect(page.getByText(/Processing permission does not grant learning or publication permission\./)).toBeVisible();
+  await expect(page.getByRole("region",{name:"Trust policy boundaries"}).getByText("Processing permission does not grant learning or publication permission.",{exact:true})).toBeVisible();
   await expect(page.getByText("No destructive retention action is enabled in Phase C v1.",{exact:true})).toBeVisible();
 });
 
@@ -120,7 +120,7 @@ test("viewer sees trust state but no mutation controls",async({page})=>{
   await expect(page.getByText("Runtime Only",{exact:true}).first()).toBeVisible();
   await expect(page.getByText("fixture-provider",{exact:true})).toBeVisible();
   await expect(page.getByText("suspended",{exact:true})).toBeVisible();
-  await expect(page.getByText("Planned / target state",{exact:true})).toBeVisible();
+  await expect(page.getByText(/evidence Planned \/ target state/)).toBeVisible();
   await expect(page.getByText("Create Trust Manifest draft",{exact:true})).toHaveCount(0);
   await expect(page.getByRole("button",{name:"Approve",exact:true})).toHaveCount(0);
   await expect(page.getByRole("button",{name:/Delete data|Purge|Anonymize/i})).toHaveCount(0);
