@@ -106,7 +106,7 @@ export default function ResourceFabricPanel({
       };
       setWorkspace(next);
       const firstLocal=next.resources.find(item=>txt(obj(item.resource).resource_kind)==="local_node");
-      setNodeResource(current=>current||txt(obj(firstLocal).resource?.id)||txt(obj(firstLocal?.resource).id));
+      setNodeResource(current=>current||txt(obj(firstLocal?.resource).id));
     }
     setLoading(false);
   },[projectId,setError]);
