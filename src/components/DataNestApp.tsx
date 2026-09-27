@@ -1450,7 +1450,7 @@ export default function DataNestApp({session}:{session:Session}) {
                 <p>{item.verificationState==="confirmed_absent"?"Server state confirmed no record for the preserved request. Resume the original retry or edit it into new intent.":item.detail}</p>
                 <small>Started {formatDate(item.startedAt)} · request identity preserved{item.lastCheckedAt?" · checked "+formatDate(item.lastCheckedAt):""}</small>
               </div>
-              <button className="secondaryButton compact" type="button" onClick={()=>openPendingRecovery(item)}>{item.verificationState==="confirmed_absent"?"Resume safe retry →":"Review &amp; reconcile →"}</button>
+              <button className="secondaryButton compact" type="button" onClick={()=>openPendingRecovery(item)}>{item.verificationState==="confirmed_absent"?"Resume safe retry →":"Review & reconcile →"}</button>
             </article>)}
           </div>
         </section>}
