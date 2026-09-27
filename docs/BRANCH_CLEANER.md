@@ -50,3 +50,14 @@ Branch-family naming is only a review hint. Branch Cleaner does not treat a simi
 For multi-version families, Branch Cleaner performs a GitHub compare from the older tip to the newest sibling. It records `superseded_reachable_from_sibling` only when the older tip is the merge base and therefore an ancestor of the newer sibling.
 
 This remains a **review** classification, not a delete classification, while the branch has commits that are still unique relative to `main`. The report includes `preserved-by=<branch>` so operators can consolidate deliberately without losing lineage.
+
+## Merged PR history
+
+A merged pull request can still show commits ahead of `main` when GitHub used squash or rebase history. That does not by itself mean someone committed to the branch after merge.
+
+Branch Cleaner compares the branch-tip commit timestamp with the latest linked PR `merged_at` timestamp:
+
+- `post_merge_unique_commits` means the branch tip was committed after the PR merged.
+- `merged_pr_unique_history` means the PR merged but the current branch tip does not show post-merge activity; the unique commit SHAs remain review-only history.
+
+Neither classification is automatically deleted while `ahead_by > 0`. This distinction improves review priority without weakening commit-lineage protection.

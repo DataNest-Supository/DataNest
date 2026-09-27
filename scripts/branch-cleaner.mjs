@@ -54,8 +54,10 @@ export function classifyBranch(branch, config, now = new Date()) {
       behind,
       status
     };
-  if (branch.mergedPr && ahead != null && ahead > 0)
+  if (branch.mergedPr && ahead != null && ahead > 0 && branch.postMergeActivity)
     return { decision:"review", reason:"post_merge_unique_commits", ageDays:age, ahead, behind, status };
+  if (branch.mergedPr && ahead != null && ahead > 0)
+    return { decision:"review", reason:"merged_pr_unique_history", ageDays:age, ahead, behind, status };
   if (Number.isFinite(age) && age >= config.staleDays && ahead != null && ahead > 0)
     return { decision:"review", reason:"stale_unique_work", ageDays:age, ahead, behind, status };
   if (branch.familyHasNewerSibling)
@@ -233,11 +235,26 @@ async function githubAudit(repo, token, config) {
     const c = commit.status === "fulfilled" ? commit.value : {};
     const d = compare.status === "fulfilled" ? compare.value : { status:"unknown" };
     const linked = prsByBranch.get(b.name) || [];
+    const updatedAt = c.commit?.committer?.date || c.commit?.author?.date || null;
+    const mergedAt = linked
+      .map((p) => p.merged_at)
+      .filter(Boolean)
+      .sort()
+      .at(-1) || null;
+    const postMergeActivity = !!(
+      mergedAt &&
+      updatedAt &&
+      Number.isFinite(Date.parse(mergedAt)) &&
+      Number.isFinite(Date.parse(updatedAt)) &&
+      Date.parse(updatedAt) > Date.parse(mergedAt)
+    );
     return {
       name:b.name,
       sha:b.commit.sha,
       protected:!!b.protected,
-      updatedAt:c.commit?.committer?.date || c.commit?.author?.date || null,
+      updatedAt,
+      mergedAt,
+      postMergeActivity,
       compare:{ status:d.status || "unknown", ahead_by:d.ahead_by ?? null, behind_by:d.behind_by ?? null },
       openPr:linked.some((p) => p.state === "open"),
       mergedPr:linked.some((p) => !!p.merged_at),
