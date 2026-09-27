@@ -253,3 +253,35 @@
   .appFrame:not(.aiDockOpen){grid-template-columns:252px minmax(0,1fr)}
   .sidebar{padding-left:14px;padding-right:14px}
 }
+
+
+/* Actionable DataNest AI task contract */
+.workspaceTaskGuideAction{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  min-height:32px;
+  margin-top:9px;
+  padding:6px 10px;
+  border:1px solid rgba(66,231,255,.20);
+  border-radius:8px;
+  background:rgba(66,231,255,.055);
+  color:#c9f7ff;
+  font-size:9px;
+  font-weight:850;
+  cursor:pointer;
+}
+.workspaceTaskGuideAction:hover,
+.workspaceTaskGuideAction:focus-visible{
+  border-color:rgba(66,231,255,.38);
+  background:rgba(66,231,255,.10);
+  color:#fff;
+}
+.workspaceTaskGuideAction:focus-visible{outline:2px solid #a6e6ed;outline-offset:3px}
+.workspaceTaskGuideAction span{
+  display:inline;
+  margin:0;
+  color:inherit;
+  font-size:inherit;
+  letter-spacing:0;
+}

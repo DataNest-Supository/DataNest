@@ -176,3 +176,14 @@ Examples:
 The signal deliberately uses language such as `On this page` and `not visible`. It does not claim that a Job is complete, verified, absent from the project, or ready for promotion. Pagination and unloaded data remain outside the signal's authority.
 
 This is an orientation aid, not governed state. It performs no writes and must not be used as a substitute for authoritative completion, audit, or governance decisions.
+
+
+## DataNest AI task-guide action
+
+The DataNest AI START HERE guidance includes a direct **Select Job Manifest** action.
+
+- When an accessible Job selector exists, the action scrolls and focuses that governed Job control.
+- Reduced-motion preferences use immediate scrolling rather than smooth animation.
+- When no Job selector exists, the action routes to UNIFI Planner so the user can create the missing Job Manifest instead of encountering a dead control.
+
+The action changes navigation/focus only. It does not select a Job automatically, create a Job, or mutate governed state.
