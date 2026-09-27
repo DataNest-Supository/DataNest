@@ -13,7 +13,7 @@ const ronsasSnapshot=fs.readFileSync(path.join(root,"data/imports/ronsas-product
 
 test("Products is a first-class DataNest workspace",()=>{
   assert.match(app,/key:"products",label:"Products"/);
-  assert.match(app,/view==="products"&&<ProductsWorkspace projectId={project.id}\/>/);
+  assert.match(app,/view==="products"&&<ProductsWorkspace projectId={project.id} currentUserId={session.user.id} role={membership\?\.role\|\|"viewer"}\/>/);
   assert.match(app,/Inspect governed products, linked architecture, controls, evidence and specialist experiences/);
   assert.match(app,/Inspect governed Resonance products, their architecture, controls, evidence, risks and promotion branches/);
 });
