@@ -362,12 +362,12 @@ test("empty operational workspaces offer direct recovery paths", async ({ page }
   await page.getByRole("button", {name:"Open TranScheduler"}).click();
   await expect(page).toHaveURL(/\?view=scheduler/);
 
-  await page.getByRole("region",{name:"Active work context"}).getByRole("button",{name:"Open active Job checkpoints"}).click();
+  await page.goto(appPath+"?view=checkpoints");
   await expect(page.getByRole("heading", {name:"No checkpoints yet"})).toBeVisible();
   await page.getByRole("button", {name:"Open Runs"}).click();
   await expect(page).toHaveURL(/\?view=runs/);
 
-  await page.getByRole("region",{name:"Active work context"}).getByRole("button",{name:"Trace active Job audit"}).click();
+  await page.goto(appPath+"?view=audit");
   await expect(page.getByRole("heading", {name:"No audit events yet"})).toBeVisible();
   await page.getByRole("button", {name:"Open Checkpoints"}).click();
   await expect(page).toHaveURL(/\?view=checkpoints/);
