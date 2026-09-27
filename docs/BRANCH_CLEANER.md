@@ -73,3 +73,15 @@ The configured tag prefix is `branch-archive/`. For an archived branch named `fe
 Branch Cleaner only reports `merged_history_archived` when the archive tag points to the **exact current branch tip SHA**, the branch has a merged PR, the branch still has history ahead of `main`, and there is no detected post-merge activity.
 
 Archived branches use the `archived` decision. They are not delete candidates. If the branch advances, the tag no longer matches the tip and Branch Cleaner returns the branch to review.
+
+## Divergent branch families
+
+When an older branch and the newest sibling in the same normalized family can be compared successfully but the older tip is **not** an ancestor of the newer tip, Branch Cleaner records `divergent_family_variant`.
+
+The report includes the newer sibling plus GitHub's compare status and ahead/behind counts. This is stronger evidence than the legacy `possible_superseded_variant` label:
+
+- `superseded_reachable_from_sibling`: older history is provably contained by the newer sibling.
+- `divergent_family_variant`: Git proves the sibling histories diverged and require deliberate content review.
+- `possible_superseded_variant`: naming suggests a newer sibling but the comparison could not establish a relation.
+
+All three remain non-destructive review states while commits are unique relative to `main`.

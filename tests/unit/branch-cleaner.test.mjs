@@ -90,6 +90,21 @@ test("marks ancestry-proven older variants as preserved but never delete candida
   assert.equal(result.preservedBy, "feat/example-v3");
 });
 
+test("labels Git-proven sibling divergence explicitly", () => {
+  const result = classifyBranch({
+    name:"feat/example-v2",
+    updatedAt:"2026-09-26T17:00:00Z",
+    compare:{ ahead_by:3, behind_by:5, status:"diverged" },
+    familyHasNewerSibling:true,
+    familyDivergedFrom:{ name:"feat/example-v3", status:"diverged", ahead:2, behind:4 },
+  }, config, now);
+  assert.equal(result.decision, "review");
+  assert.equal(result.reason, "divergent_family_variant");
+  assert.equal(result.divergedFrom, "feat/example-v3");
+  assert.equal(result.familyAhead, 2);
+  assert.equal(result.familyBehind, 4);
+});
+
 test("flags a failed default Supabase branch as a blocker", () => {
   const checks = evaluateSupabaseProject({
     project:{ status:"ACTIVE_HEALTHY" },

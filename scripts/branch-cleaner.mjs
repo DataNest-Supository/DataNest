@@ -70,6 +70,19 @@ export function classifyBranch(branch, config, now = new Date()) {
     return { decision:"review", reason:"merged_pr_unique_history", ageDays:age, ahead, behind, status };
   if (Number.isFinite(age) && age >= config.staleDays && ahead != null && ahead > 0)
     return { decision:"review", reason:"stale_unique_work", ageDays:age, ahead, behind, status };
+  if (branch.familyDivergedFrom)
+    return {
+      decision:"review",
+      reason:"divergent_family_variant",
+      divergedFrom:branch.familyDivergedFrom.name,
+      familyStatus:branch.familyDivergedFrom.status || "diverged",
+      familyAhead:branch.familyDivergedFrom.ahead ?? null,
+      familyBehind:branch.familyDivergedFrom.behind ?? null,
+      ageDays:age,
+      ahead,
+      behind,
+      status
+    };
   if (branch.familyHasNewerSibling)
     return { decision:"review", reason:"possible_superseded_variant", ageDays:age, ahead, behind, status };
   return { decision:"keep", reason:"active_or_unresolved", ageDays:age, ahead, behind, status };
@@ -294,6 +307,7 @@ async function githubAudit(repo, token, config) {
   }
   const superseded = new Set();
   const containedBy = new Map();
+  const divergedFrom = new Map();
   for (const group of families.values()) {
     const ordered = [...group]
       .sort((a,b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
@@ -308,6 +322,13 @@ async function githubAudit(repo, token, config) {
         );
         if (relation?.merge_base_commit?.sha === older.sha && Number(relation.behind_by || 0) === 0) {
           containedBy.set(older.name, newest.name);
+        } else if (relation?.status && relation.status !== "unknown") {
+          divergedFrom.set(older.name, {
+            name:newest.name,
+            status:relation.status,
+            ahead:relation.ahead_by ?? null,
+            behind:relation.behind_by ?? null,
+          });
         }
       } catch {
         // Naming/date similarity alone is not enough to claim ancestry.
@@ -323,7 +344,8 @@ async function githubAudit(repo, token, config) {
       classification:classifyBranch({
         ...b,
         familyHasNewerSibling:superseded.has(b.name),
-        familyContainedBy:containedBy.get(b.name) || null
+        familyContainedBy:containedBy.get(b.name) || null,
+        familyDivergedFrom:divergedFrom.get(b.name) || null
       }, config)
     }))
   };
@@ -611,6 +633,12 @@ function markdown(r) {
       b.classification.reason + " / ahead=" + (b.classification.ahead ?? "?") +
       " / age=" + (Number.isFinite(b.classification.ageDays) ? b.classification.ageDays.toFixed(1) : "?") +
       (b.classification.preservedBy ? " / preserved-by=" + b.classification.preservedBy : "") +
+      (b.classification.divergedFrom
+        ? " / diverged-from=" + b.classification.divergedFrom +
+          "(" + (b.classification.familyStatus || "diverged") +
+          ",ahead=" + (b.classification.familyAhead ?? "?") +
+          ",behind=" + (b.classification.familyBehind ?? "?") + ")"
+        : "") +
       (b.classification.archiveTag ? " / archive-tag=" + b.classification.archiveTag : ""));
   }
   lines.push("", "## Supabase control-plane audit", "");
