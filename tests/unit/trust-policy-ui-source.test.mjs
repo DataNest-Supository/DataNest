@@ -56,9 +56,13 @@ test("Governance keeps Sovereign Governance default and exposes trust section de
   assert.match(source,/TrustPolicyPanel/);
 });
 
-test("DataNest passes exact membership role into Governance",()=>{
+test("DataNest passes exact membership role and actor identity into Governance and Trust Policy",()=>{
   const source=fs.readFileSync(appPath,"utf8");
+  const governance=fs.readFileSync(governancePath,"utf8");
+  const panel=fs.readFileSync(panelPath,"utf8");
   assert.match(source,/GovernanceWorkspace projectId=\{project\.id\} currentUserId=\{session\.user\.id\} role=\{membership\?\.role\|\|"viewer"\}/);
+  assert.match(governance,/TrustPolicyPanel projectId=\{projectId\} currentUserId=\{currentUserId\} role=\{role\}/);
+  assert.match(panel,/projectId,currentUserId,role,setNotice,setError/);
 });
 
 test("approval controls are role gated",()=>{
