@@ -62,6 +62,24 @@ The Phase D source implementation adds bounded **execution authority** above exi
 
 This section records source architecture only. Production availability or autonomous execution rollout requires exact-head verification and separate promotion evidence.
 
+
+## Resource and Capability Fabric
+
+The Phase E source implementation adds a governed **Resource Fabric** behind the existing scheduler-facing capability inventory.
+
+- `resource_registry` represents supply-side Resources such as local nodes, cloud workers, accelerator runtimes, browser runtimes, model/storage/API endpoints, external services, agent runtimes, product capabilities and optional human specialist capability.
+- `resource_project_bindings` is the explicit allowed-project boundary. A Resource is not usable by a project merely because it exists.
+- Existing `capabilities` remain the TranScheduler execution unit and retain their IDs. Phase E adds a compatibility `resource_id` link; existing Job manifests, reservations, Phase D Capability Leases and execution history are not replaced.
+- `resource_health_observations` is append-only health evidence. Browser clients cannot mark Resources healthy; trusted service ingestion may update current Resource/capability summaries while preserving observation history.
+- `sovereign_node_policies` version local-node participation policy for capabilities, ceilings, schedules, data visibility, data scope, prohibited operations and network metadata. Phase E v1 fixes interactive remote control off.
+- Resource matching is fail-closed on active project binding, Resource enablement/health, Phase C visibility suitability, capability availability and concurrency, plus sovereign-node policy where applicable.
+- A Resource candidate match is **not** a capacity reservation and is **not** Phase D execution authorization. TranScheduler reservations and Capability Leases remain separate prerequisites.
+- Local sovereign nodes are optional execution supply. DataNest production availability does not depend on a registered local computer.
+- Resource cost metadata is informational routing metadata only; Phase E does not enable billing, charging or settlement.
+- Phase F Intelligence Fabric, ILM-1, Cloud-Nest, Supository, Outcome Ledger and later programme concepts remain outside Phase E.
+
+This section records source architecture only. Production node enrollment or autonomous local execution requires separate authenticated agent/runtime evidence and promotion.
+
 ## Project
 **Resonance DataNest** is the project operating environment.
 

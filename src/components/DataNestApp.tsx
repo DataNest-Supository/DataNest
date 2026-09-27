@@ -11,6 +11,7 @@ import JobInviteForm from "@/components/JobInviteForm";
 import ResonanceHome from "@/components/ResonanceHome";
 import MotionControl from "@/components/MotionControl";
 import ExecutionAuthorityPanel from "@/components/ExecutionAuthorityPanel";
+import ResourceFabricPanel from "@/components/ResourceFabricPanel";
 import type { ExecutionAuthorityRole } from "@/lib/executionAuthority";
 
 type Project = { id:string; slug:string; name:string; description:string|null; status:string; created_at:string };
@@ -1212,7 +1213,7 @@ function formatGanttTick(value:number,span:number) {
 
 function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,capabilities,onStatus,canOperate,page,total,onPage,onNavigate,activeJobId,setNotice,setError}:{projectId:string;projectName:string;projectSlug:string;currentUserId:string;role:ExecutionAuthorityRole;jobs:Job[];capabilities:Capability[];onStatus:(j:Job,s:string)=>Promise<void>;canOperate:boolean;page:number;total:number;onPage:(p:number)=>void;onNavigate:(v:ViewKey)=>void;activeJobId:string|null;setNotice:(value:string)=>void;setError:(value:string)=>void}) {
   const [filter,setFilter]=useState("ALL");
-  const [viewMode,setViewMode]=useState<"queue"|"gantt"|"authority">("gantt");
+  const [viewMode,setViewMode]=useState<"queue"|"gantt"|"authority"|"resources">("gantt");
   const [sortMode,setSortMode]=useState<"priority"|"deadline"|"recent">("priority");
   const filterOptions=["ALL","PLANNED","READY","QUEUED","RUNNING","MANUAL_ACTION","BLOCKED","COMPLETED"];
   const visible=filter==="ALL"?jobs:jobs.filter(item=>item.status===filter);
@@ -1252,6 +1253,7 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
             <button type="button" className={viewMode==="queue"?"active":""} aria-pressed={viewMode==="queue"} onClick={()=>setViewMode("queue")}>Queue</button>
             <button type="button" className={viewMode==="gantt"?"active":""} aria-pressed={viewMode==="gantt"} onClick={()=>setViewMode("gantt")}>Gantt chart</button>
             <button type="button" className={viewMode==="authority"?"active":""} aria-pressed={viewMode==="authority"} onClick={()=>setViewMode("authority")}>Authority & Execution</button>
+            <button type="button" className={viewMode==="resources"?"active":""} aria-pressed={viewMode==="resources"} onClick={()=>setViewMode("resources")}>Resource Fabric</button>
           </div>
           <label className="schedulerSortControl">Sort
             <select aria-label="Sort project jobs" value={sortMode} onChange={event=>setSortMode(event.target.value as "priority"|"deadline"|"recent")}>
@@ -1271,7 +1273,9 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
       </div>
       {viewMode==="authority"
         ? <ExecutionAuthorityPanel projectId={projectId} currentUserId={currentUserId} role={role} jobs={jobs} setNotice={setNotice} setError={setError}/>
-        : <>
+        : viewMode==="resources"
+          ? <ResourceFabricPanel projectId={projectId} role={role} setNotice={setNotice} setError={setError}/>
+          : <>
           <label className="schedulerFilterMobile">Status filter
             <select aria-label="Status filter" value={filter} onChange={event=>setFilter(event.target.value)}>
               {filterOptions.map(item=><option key={item} value={item}>{item.replace("_"," ")}</option>)}

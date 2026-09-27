@@ -51,7 +51,7 @@ test("UI role-gates proposal, A3 approval, leases and circuit breakers",()=>{
 
 test("TranScheduler keeps Gantt default and adds Authority & Execution as a sibling mode",()=>{
   const source=fs.readFileSync(appPath,"utf8");
-  assert.match(source,/useState<"queue"\|"gantt"\|"authority">\("gantt"\)/);
+  assert.match(source,/useState<"queue"\|"gantt"\|"authority"\|"resources">\("gantt"\)/);
   assert.match(source,/>Queue<\/button>/);
   assert.match(source,/>Gantt chart<\/button>/);
   assert.match(source,/>Authority & Execution<\/button>/);

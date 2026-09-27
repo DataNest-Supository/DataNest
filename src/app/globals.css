@@ -3330,7 +3330,15 @@ code,pre{
 @container datanest-main (max-width:760px){
   .schedulerContextBar,.ganttViewerHead{display:grid}
   .schedulerContextStats,.ganttLegend{justify-content:flex-start}
-  .schedulerViewSwitch{width:max-content}
+  .schedulerContextControls{min-width:0;width:100%}
+  .schedulerViewSwitch{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    width:100%;
+    max-width:100%;
+    min-width:0;
+  }
+  .schedulerViewSwitch button{min-width:0;padding-inline:8px;white-space:normal}
 }
 
 /* 2026-09-26 TranScheduler project grouping and priority scale */
@@ -4684,3 +4692,23 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
 .authorityReasonField{display:grid;gap:6px;margin-top:12px;color:#b7cadb;font-size:10px;font-weight:700}
 @container datanest-main (max-width:860px){.executionAuthorityBoundary{grid-template-columns:1fr}.executionAuthorityActionGrid{grid-template-columns:1fr}}
 @media(max-width:520px){.autonomyGrid,.executionAuthorityCards{grid-template-columns:1fr}.executionAuthorityBoundary{grid-template-columns:1fr}}
+
+
+/* Phase E · Resource Fabric */
+.resourceFabricWorkspace{display:grid;gap:14px;min-width:0;margin-top:14px}
+.resourceFabricBoundary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.resourceFabricBoundary p{margin:0;padding:11px 12px;border:1px solid rgba(114,214,173,.14);border-radius:10px;background:rgba(114,214,173,.035);color:#c9d9d2;font-size:9px;line-height:1.5}
+.resourceFabricCards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.resourceFabricCard{display:grid;gap:10px;min-width:0}
+.resourceFabricCard .rowBetween>div{display:grid;gap:2px}
+.resourceFabricMeta{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.resourceCapabilityList,.resourceHealthEvidence{display:grid;gap:6px;padding-top:4px;border-top:1px solid rgba(255,255,255,.06)}
+.resourceCapabilityRow,.resourceHealthRow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;font-size:9px}
+.resourceHealthRow{grid-template-columns:auto auto minmax(0,1fr)}
+.resourceFabricActionGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.resourceFabricActionGrid .panel{margin:0;min-width:0}
+.resourceFabricWorkspace .settingsGrid{min-width:0}
+.resourceFabricWorkspace .settingsGrid label{min-width:0}
+.resourceFabricWorkspace input,.resourceFabricWorkspace select,.resourceFabricWorkspace textarea{min-width:0;max-width:100%}
+@container datanest-main (max-width:860px){.resourceFabricBoundary{grid-template-columns:1fr}.resourceFabricActionGrid{grid-template-columns:1fr}}
+@media(max-width:520px){.resourceFabricCards{grid-template-columns:1fr}.resourceCapabilityRow,.resourceHealthRow{grid-template-columns:1fr}}

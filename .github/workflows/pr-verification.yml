@@ -88,6 +88,7 @@ jobs:
           tests/browser/portfolio-registry.spec.ts
           tests/browser/trust-policy.spec.ts
           tests/browser/execution-authority.spec.ts
+          tests/browser/resource-fabric.spec.ts
           tests/browser/datanest-ai-layout.spec.ts
           tests/browser/datanest-ai-recovery.spec.ts
           tests/browser/transcheduler-project-gantt.spec.ts
