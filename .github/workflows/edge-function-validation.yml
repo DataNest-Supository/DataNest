@@ -23,6 +23,8 @@ jobs:
           - datanest-ai-chat
           - datanest-ai-intake
           - datanest-ai-certification
+          - datanest-ai-upload
+          - datanest-ai-file-worker
           - send-project-member-invite
           - ronsas-status
     steps:
