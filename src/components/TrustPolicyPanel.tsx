@@ -297,7 +297,7 @@ export default function TrustPolicyPanel({
       <p><b>Processing permission does not grant learning or publication permission.</b></p>
       <p><b>No destructive retention action is enabled in Phase C v1.</b></p>
       <p><b>Provider credentials are managed outside Trust Profiles.</b></p>
-      <p><b>Planned/unknown controls are not verified trust guarantees.</b></p>
+      <p><b>Planned/unknown controls are not verified trust guarantees.</b></p>\n      <p><b>High-impact widening requires independent review; authors cannot approve their own high-impact proposal.</b></p>
     </section>
 
     <section className="metricGrid">
