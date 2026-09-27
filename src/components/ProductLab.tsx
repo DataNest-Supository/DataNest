@@ -212,7 +212,7 @@ export default function ProductLab({
   }
 
   return <div className="productLab">
-    {hasSessionDraft&&<p className="muted" role="status">Product Lab draft restored · saved only in this browser session until submitted or recorded.</p>}
+    {hasSessionDraft&&<p className="muted" role="status">Browser-session draft active · unfinished Product Lab inputs are restored after workspace navigation or reload.</p>}
     <section className="sectionIntro">
       <p className="eyebrow">PRODUCT LAB</p>
       <h2>Versioned Live Product Display & Testing</h2>

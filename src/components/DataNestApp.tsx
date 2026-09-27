@@ -1554,7 +1554,7 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
   const prepared=jobs.filter(item=>["PLANNED","READY","QUEUED"].includes(item.status));
   return <section className="splitView">
     <div className="panel stickyPanel"><p className="eyebrow">UNIFI</p><h2>Job Manifest Planner</h2><p className="muted">Prepare work completely before consuming scarce execution capacity.</p>
-      {hasSessionDraft&&<p className="muted" role="status">Draft restored · saved only in this browser session until the Job Manifest is created.</p>}
+      {hasSessionDraft&&<p className="muted" role="status">Browser-session draft active · unfinished inputs are restored after workspace navigation or reload.</p>}
       {!canOperate&&<div className="notice errorNotice">Viewer access is read-only. Ask a DataNest owner or admin for operator access to create jobs.</div>}
       <form className="plannerForm" onSubmit={createJob} aria-busy={saving}>
         <label>Job title<input value={title} onChange={event=>setTitle(event.target.value)} required placeholder="e.g. Validate production deployment"/></label>

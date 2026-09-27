@@ -441,7 +441,7 @@ export default function ThinkTankWorkspace({
   if(loading)return <section className="panel"><p className="muted">Loading Think Tanks…</p></section>;
 
   return <div>
-    {hasSessionDraft&&<p className="muted" role="status">Think Tank draft restored · saved only in this browser session until submitted.</p>}
+    {hasSessionDraft&&<p className="muted" role="status">Browser-session draft active · unfinished Think Tank inputs are restored after workspace navigation or reload.</p>}
     <section className="heroPanel">
       <div>
         <p className="eyebrow">THINK TANKS + DATANEST AI</p>
