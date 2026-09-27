@@ -1,0 +1,54 @@
+name: Import RONSAS ePublisher into DataNest
+
+on:
+  push:
+    branches:
+      - migrate/ronsas-applications-into-datanest-20260927
+    paths:
+      - .github/workflows/migrate-ronsas-epublisher.yml
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out DataNest migration branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Import exact ePublisher source snapshot
+        shell: bash
+        env:
+          SOURCE_REPO: https://github.com/resonance36912-cell/rons-epublisher-sovereign-source.git
+          SOURCE_SHA: 2c10a27b4311e89ff3ea6cc4384aa05a15a1b621
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/rons-epublisher-source
+          git clone --filter=blob:none --no-checkout --single-branch --branch main "$SOURCE_REPO" /tmp/rons-epublisher-source
+          git -C /tmp/rons-epublisher-source checkout --detach "$SOURCE_SHA"
+          test "$(git -C /tmp/rons-epublisher-source rev-parse HEAD)" = "$SOURCE_SHA"
+
+          rm -rf apps/ronsas/epublisher
+          mkdir -p apps/ronsas/epublisher
+          rsync -a --delete --exclude='.git/' /tmp/rons-epublisher-source/ apps/ronsas/epublisher/
+
+          test -f apps/ronsas/epublisher/package.json
+          test -f apps/ronsas/epublisher/RONSAS-SOURCE-AUTHORITY.json
+
+      - name: Commit imported source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "DataNest Migration"
+          git config user.email "actions@users.noreply.github.com"
+          git add apps/ronsas/epublisher
+          if git diff --cached --quiet; then
+            echo "ePublisher is already imported at the pinned snapshot."
+            exit 0
+          fi
+          git commit -m "Import RONSAS ePublisher source into DataNest"
+          git push origin HEAD:migrate/ronsas-applications-into-datanest-20260927
