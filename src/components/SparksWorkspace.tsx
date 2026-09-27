@@ -139,9 +139,10 @@ export default function SparksWorkspace({
       const {data,error}=await supabase.from("spark_redemptions")
         .select("id,trace_key,status,service_id,quantity")
         .eq("request_key",intent.requestKey)
-        .maybeSingle();
+        .limit(1);
       if(error)throw error;
-      return data ? data as {id:string;trace_key:string;status:string;service_id:string;quantity:number} : null;
+      const row=Array.isArray(data)?data[0]:null;
+      return row ? row as {id:string;trace_key:string;status:string;service_id:string;quantity:number} : null;
     });
 
     if(result.state==="confirmed"&&result.value){
