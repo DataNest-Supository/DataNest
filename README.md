@@ -37,6 +37,17 @@ Standalone Node/Docker runtimes continue to expose the server health endpoint at
 
 GitHub and Supabase remain the required source/CI and backend authorities. Hosting is replaceable delivery infrastructure, not system authority.
 
+## Target-state architecture concepts
+
+The approved 27 Sep 2026 ecosystem design extends DataNest with target-state concepts that are intentionally separate from current production capability claims:
+
+- **Cloud-Nest** — planned governed workspace abstraction for identity, projects, knowledge, permissions and resources.
+- **Supository** — planned governed knowledge and provenance abstraction linking source, evidence, lineage and reuse policy.
+- **ILM (Inclusive Language Model)** — planned governed intelligence abstraction that begins as orchestration across approved models, tools, people and certified knowledge rather than a claim that Resonance has trained a proprietary foundation model.
+
+These concepts require separate implementation and evidence before DataNest presents them as available product capabilities.
+
+
 ## RONSAS cloud integration
 
 DataNest integrates with **RONSAS (Resonance Open Nova Sovereign Application Suite)** as a governed product through the authenticated Supabase Edge Function contract `ronsas-status@1`.
