@@ -64,7 +64,11 @@ async function setup(page:Page,role:"viewer"|"operator"|"owner"){
     if(path.endsWith("/get_project_dashboard_summary"))body={total_jobs:0,active_jobs:0,running_jobs:0,blocked_jobs:0,available_capabilities:0,registered_capabilities:0};
     if(path.includes("/rpc/")){
       if(path.endsWith("/retire_portfolio_item_v1")){
-        return route.fulfill({status:400,contentType:"application/json",body:JSON.stringify({message:"Portfolio item has an active linked production surface."})});
+        const payload=request.postDataJSON() as {target_item?:string};
+        const message=payload?.target_item===ids.shared
+          ?"Portfolio item has active critical dependants."
+          :"Portfolio item has an active linked production surface.";
+        return route.fulfill({status:400,contentType:"application/json",body:JSON.stringify({message})});
       }
       return route.fulfill({contentType:"application/json",body:JSON.stringify("00000000-0000-4000-8000-000000000999")});
     }
@@ -116,7 +120,13 @@ test("Owner approvals and retirement failures preserve displayed lifecycle",asyn
 
   await page.getByRole("button",{name:/Candidate Studio/}).click();
   await page.getByLabel("Lifecycle reason").fill("Retirement guard fixture");
-  await page.getByRole("button",{name:"Retire"}).click();
+  await page.getByRole("button",{name:"Retire",exact:true}).click();
   await expect(page.getByRole("alert")).toContainText("active linked production surface");
   await expect(page.getByText("Candidate",{exact:true}).first()).toBeVisible();
+
+  await page.getByRole("button",{name:/Transcription Capability/}).click();
+  await page.getByLabel("Lifecycle reason").fill("Critical dependency guard fixture");
+  await page.getByRole("button",{name:"Retire",exact:true}).click();
+  await expect(page.getByRole("alert")).toContainText("active critical dependants");
+  await expect(page.getByText("Active",{exact:true}).first()).toBeVisible();
 });
