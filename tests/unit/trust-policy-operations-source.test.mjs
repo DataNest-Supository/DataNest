@@ -107,3 +107,31 @@ test("Phase C operations expose no destructive retention executor",()=>{
   assert.doesNotMatch(source,/create or replace function public\.(?:delete|purge|anonymize|execute_retention|apply_retention)/i);
   assert.doesNotMatch(source,/storage\.objects[\s\S]*(?:delete|update)/i);
 });
+
+test("service evaluator records append-only decisions and exposes rollout mode",()=>{
+  const source=sql(); if(!source)return;
+  assert.match(source,/service_evaluate_data_policy_v1\([\s\S]*target_actor_user uuid[\s\S]*target_trace_id text[\s\S]*target_provider_key text[\s\S]*target_hard_learning_exclusion boolean/i);
+  assert.match(source,/insert into public\.data_policy_decisions/i);
+  assert.match(source,/enforcement_mode/i);
+  assert.match(source,/decision_record_id/i);
+  assert.doesNotMatch(source,/update public\.data_policy_decisions/i);
+  assert.doesNotMatch(source,/delete from public\.data_policy_decisions/i);
+});
+
+test("enforced manifests require complete reviewed route coverage",()=>{
+  const source=sql(); if(!source)return;
+  assert.match(source,/target\.enforcement_mode='enforced'/i);
+  assert.match(source,/active project-level policy binding/i);
+  assert.match(source,/active referenced retention policy/i);
+  assert.match(source,/ai_provider_connections/i);
+  assert.match(source,/approved_provider_keys/i);
+  assert.match(source,/provider_key/i);
+  assert.match(source,/review_due_at/i);
+  assert.match(source,/report_only/i);
+});
+
+test("current provider key is deterministic and project scoped",()=>{
+  const source=sql(); if(!source)return;
+  assert.match(source,/lower\([^\n;]*provider[^\n;]*\)[\s\S]{0,200}lower\([^\n;]*endpoint_host[^\n;]*\)/i);
+  assert.match(source,/Provider connection project mismatch/i);
+});
