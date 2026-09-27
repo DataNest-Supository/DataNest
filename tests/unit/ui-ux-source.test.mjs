@@ -319,7 +319,7 @@ test("active Job evidence signal is explicitly page-scoped and non-authoritative
   assert.match(appSource, /No matching run is loaded on this page/);
   assert.match(appSource, /No matching checkpoint is loaded on this page/);
   assert.match(appSource, /No matching audit event is loaded on this page/);
-  assert.match(appSource, /aria-label="Visible evidence signal"/);
+  assert.match(appSource, /role="status" aria-label="Visible evidence signal"/);
   assert.match(cssSource, /\.activeWorkContextEvidence\.visible/);
   assert.match(cssSource, /\.activeWorkContextEvidence\.not-visible/);
   const helperStart = appSource.indexOf("function activeContextEvidenceForView");
