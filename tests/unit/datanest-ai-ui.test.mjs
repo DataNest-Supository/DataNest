@@ -53,4 +53,6 @@ test("DataNest command center keeps navigation compact and gives the AI task gui
   assert.match(css,/\.appFrame\.aiDockOpen\{[^}]*grid-template-columns:252px minmax\(0,1fr\) auto/s);
   assert.match(css,/\.navGroup button\.active\{[^}]*inset 3px 0 0 var\(--cyan\)/s);
   assert.match(css,/\.workspaceTaskGuideAction\s*\{/);
+  assert.match(css,/@media\(min-width:1181px\)\{[^}]*\.appFrame\.aiDockOpen\{[^}]*grid-template-columns:252px minmax\(0,1fr\) auto/s);
+  assert.match(css,/@media\(min-width:901px\) and \(max-width:1180px\)\{[^}]*\.appFrame:not\(\.aiDockOpen\)\{[^}]*grid-template-columns:252px minmax\(0,1fr\)/s);
 });
