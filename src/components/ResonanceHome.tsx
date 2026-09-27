@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import CollaborationVisual from "./CollaborationVisual";
+import CollaborationVisual, { type ProductHeroTarget } from "./CollaborationVisual";
 import PurposeJourney from "./PurposeJourney";
 
 type HomeDestination = "ai" | "unifi" | "scheduler" | "governance" | "thinktank" | "sparks" | "products" | "transparency";
@@ -95,7 +95,20 @@ export default function ResonanceHome({
         </div>
       </div>
 
-      <CollaborationVisual projectId={project.id} onOpenProducts={()=>onNavigate("products")}/>
+      <CollaborationVisual
+        projectId={project.id}
+        onOpenProducts={(target?:ProductHeroTarget)=>{
+          const url=new URL(window.location.href);
+          if(target?.product)url.searchParams.set("product",target.product);
+          else url.searchParams.delete("product");
+          if(target?.recordType)url.searchParams.set("recordType",target.recordType);
+          else url.searchParams.delete("recordType");
+          if(target?.q)url.searchParams.set("q",target.q);
+          else url.searchParams.delete("q");
+          window.history.replaceState(window.history.state,"",url.toString());
+          onNavigate("products");
+        }}
+      />
     </section>
 
     <PurposeJourney onNavigate={onNavigate}/>

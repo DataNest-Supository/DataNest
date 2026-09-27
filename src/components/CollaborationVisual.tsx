@@ -6,6 +6,7 @@ import styles from "./CollaborationVisual.module.css";
 
 type GovernedProduct = {
   id:string;
+  slug:string;
   name:string;
   full_name:string|null;
   lifecycle_status:string|null;
@@ -17,6 +18,13 @@ type ProductApplication = {
   name:string|null;
   status:string|null;
   sort_order:number;
+  payload:Record<string,unknown>;
+};
+
+export type ProductHeroTarget = {
+  product?:string;
+  recordType?:"application";
+  q?:string;
 };
 
 const MAX_ORBIT_PRODUCTS=9;
@@ -29,12 +37,17 @@ function orbitPosition(index:number,total:number){
   };
 }
 
+function payloadText(payload:Record<string,unknown>|undefined,key:string){
+  const value=payload?.[key];
+  return typeof value==="string"&&value.trim()?value.trim():"";
+}
+
 export default function CollaborationVisual({
   projectId,
   onOpenProducts
 }:{
   projectId?:string;
-  onOpenProducts?:()=>void;
+  onOpenProducts?:(target?:ProductHeroTarget)=>void;
 }) {
   const [products,setProducts]=useState<GovernedProduct[]>([]);
   const [applications,setApplications]=useState<ProductApplication[]>([]);
@@ -62,12 +75,12 @@ export default function CollaborationVisual({
     void Promise.all([
       supabase
         .from("products")
-        .select("id,name,full_name,lifecycle_status")
+        .select("id,slug,name,full_name,lifecycle_status")
         .eq("project_id",projectId)
         .order("name"),
       supabase
         .from("product_records")
-        .select("id,product_id,name,status,sort_order")
+        .select("id,product_id,name,status,sort_order,payload")
         .eq("project_id",projectId)
         .eq("record_type","application")
         .order("sort_order",{ascending:true})
@@ -100,6 +113,14 @@ export default function CollaborationVisual({
       counts.set(application.product_id,(counts.get(application.product_id)||0)+1);
     }
     return counts;
+  },[applications]);
+
+  const primaryApplications=useMemo(()=>{
+    const primary=new Map<string,ProductApplication>();
+    for(const application of applications){
+      if(!primary.has(application.product_id))primary.set(application.product_id,application);
+    }
+    return primary;
   },[applications]);
 
   const orbitProducts=useMemo(
@@ -176,12 +197,33 @@ export default function CollaborationVisual({
       const position=orbitPosition(index,orbitProducts.length);
       const slotStyle={left:position.left+"%",top:position.top+"%"} as CSSProperties;
       const applicationCount=applicationCounts.get(product.id)||0;
-      return <div className={styles.portfolioProductSlot} style={slotStyle} key={product.id} aria-hidden="true">
-        <div className={styles.portfolioProductCard} style={{animationDelay:(index*-0.42)+"s"}}>
-          <span>{String(index+1).padStart(2,"0")}</span>
+      const primaryApplication=primaryApplications.get(product.id);
+      const domain=payloadText(primaryApplication?.payload,"domain")||"application";
+      const description=payloadText(primaryApplication?.payload,"description");
+      return <div className={styles.portfolioProductSlot} style={slotStyle} key={product.id}>
+        <button
+          type="button"
+          className={styles.portfolioProductCard}
+          style={{animationDelay:(index*-0.42)+"s"}}
+          onClick={()=>onOpenProducts?.({
+            product:product.slug,
+            recordType:"application",
+            q:primaryApplication?.name||undefined
+          })}
+          aria-label={"Open "+product.name+" applications in Products"}
+          title={description||undefined}
+        >
+          <span className={styles.portfolioProductTopline}>
+            <i className={styles.portfolioProductIndex}>{String(index+1).padStart(2,"0")}</i>
+            <em className={styles.portfolioProductDomain}>{domain}</em>
+          </span>
           <b>{product.name}</b>
           <small>{applicationCount} application{applicationCount===1?"":"s"}</small>
-        </div>
+          {primaryApplication&&<span className={styles.portfolioProductApplication}>
+            <span>{primaryApplication.name||"Governed application"}</span>
+            <em>{primaryApplication.status||"governed"}</em>
+          </span>}
+        </button>
       </div>;
     })}
 
@@ -189,7 +231,7 @@ export default function CollaborationVisual({
       <small>DATANEST CORE</small>
       <strong>DataNest AI</strong>
       <span>Shared intelligence</span>
-      <button type="button" onClick={onOpenProducts}>
+      <button type="button" onClick={()=>onOpenProducts?.()}>
         <span>Open Products</span><b aria-hidden="true">↗</b>
       </button>
     </div>
