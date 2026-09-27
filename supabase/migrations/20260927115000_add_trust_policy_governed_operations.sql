@@ -235,7 +235,7 @@ language plpgsql
 stable
 security definer
 set search_path=public,private
-as $
+as $$
 declare
   conn public.ai_provider_connections%rowtype;
 begin
@@ -250,7 +250,7 @@ begin
 
   return lower(btrim(conn.provider))||':'||lower(btrim(conn.endpoint_host));
 end;
-$;
+$$;
 
 create or replace function private.trust_resolve_effective_policy(
   target_project uuid,
