@@ -40,5 +40,6 @@
     "preserve-audit-and-certification-lineage"
   ],
   "supabaseEvidenceFile": ".github/branch-cleaner/supabase-verified-snapshot.json",
-  "supabaseEvidenceMaxAgeMinutes": 90
+  "supabaseEvidenceMaxAgeMinutes": 90,
+  "archiveTagPrefix": "branch-archive/"
 }
