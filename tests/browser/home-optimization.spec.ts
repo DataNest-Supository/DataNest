@@ -646,3 +646,79 @@ test("active work context survives handoffs and focuses related operational evid
   await expect(page.locator("[data-active-context='true']")).toHaveCount(0);
   expect(await page.evaluate(({projectId,userId}) => sessionStorage.getItem("datanest.activeWorkContext:"+projectId+":"+userId), {projectId,userId})).toBeNull();
 });
+
+
+test("active Job locator crosses paginated Scheduler pages without filtering project data", async ({ page }) => {
+  const projectId = "00000000-0000-4000-8000-000000000010";
+  const userId = "00000000-0000-4000-8000-000000000001";
+  const activeJobId = "00000000-0000-4000-8000-000000000099";
+  const stamp = "2026-09-27T06:00:00Z";
+  const makeJob = (index:number) => ({
+    id:index===20?activeJobId:"00000000-0000-4000-8000-"+String(index+1).padStart(12,"0"),
+    job_number:index+1,
+    title:index===20?"Off-page active Job":"Visible filler Job "+String(index+1),
+    description:null,
+    priority:100-index,
+    status:index===20?"READY":"QUEUED",
+    required_capabilities:["chat"],
+    acceptance:{},
+    created_at:stamp,
+    updated_at:stamp,
+    deadline:null
+  });
+  const allJobs = Array.from({length:21},(_,index)=>makeJob(index));
+
+  await page.route("**/runtime-config.js", route => route.fulfill({
+    contentType:"application/javascript",
+    body:"window.__DATANEST_CONFIG__={supabaseUrl:'https://fixture.supabase.co',supabasePublishableKey:'fixture-key',authoritative:true}"
+  }));
+  await page.addInitScript(({projectId,userId,activeJobId}) => {
+    const encode = (data: unknown) => btoa(JSON.stringify(data)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+    localStorage.setItem("sb-fixture-auth-token", JSON.stringify({
+      access_token:`${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:userId,exp:4102444800,role:"authenticated"})}.fixture`,
+      refresh_token:"fixture", token_type:"bearer", expires_at:4102444800,
+      user:{id:userId,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid"}
+    }));
+    sessionStorage.setItem("datanest.activeWorkContext:"+projectId+":"+userId, JSON.stringify({
+      jobId:activeJobId, sessionId:"session-off-page", jobNumber:21, title:"Off-page active Job", status:"READY"
+    }));
+  }, {projectId,userId,activeJobId});
+
+  await page.route("https://fixture.supabase.co/**", route => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const path = url.pathname;
+    let body: unknown = [];
+    const headers:Record<string,string> = {"Content-Type":"application/json"};
+    if (path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE",created_at:stamp};
+    if (path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"viewer",status:"active"};
+    if (path.endsWith("/get_project_dashboard_summary")) body = {total_jobs:21,active_jobs:21,running_jobs:0,blocked_jobs:0,available_capabilities:0,registered_capabilities:0};
+    if (path.endsWith("/jobs")) {
+      const range = request.headers()["range"] || "";
+      const match = range.match(/(\d+)-(\d+)/);
+      const from = match ? Number(match[1]) : 0;
+      const to = match ? Number(match[2]) : Math.min(19,allJobs.length-1);
+      const selected = allJobs.slice(from,Math.min(to+1,allJobs.length));
+      const select = url.searchParams.get("select") || "";
+      body = select==="id,status" ? selected.map(job=>({id:job.id,status:job.status})) : selected;
+      headers["Content-Range"] = selected.length ? from+"-"+String(from+selected.length-1)+"/21" : "*/21";
+    }
+    return route.fulfill({status:200,headers,body:JSON.stringify(body)});
+  });
+
+  await page.goto(appPath+"?view=scheduler");
+  const context = page.getByRole("region",{name:"Active work context"});
+  await expect(context).toBeVisible();
+  await expect(context.getByRole("status",{name:"Visible evidence signal"})).toContainText("Job evidence not visible");
+  await expect(page.locator(".ganttRow[data-active-context='true']")).toHaveCount(0);
+  await expect(page.getByText("Visible filler Job 1",{exact:true})).toBeVisible();
+
+  await context.getByRole("button",{name:"Locate active Job page →"}).click();
+
+  await expect(page.getByLabel("Pagination")).toContainText("Page 2 of 2");
+  await expect(page.locator(".ganttRow[data-active-context='true']")).toHaveCount(1);
+  await expect(page.locator(".ganttRow[data-active-context='true']")).toBeFocused();
+  await expect(page.getByText("Off-page active Job",{exact:true})).toBeVisible();
+  await expect(page.getByText("Active Job revealed in TranScheduler.",{exact:true})).toBeVisible();
+  await expect(page.getByRole("region",{name:"Active work context"}).getByRole("status",{name:"Visible evidence signal"})).toContainText("On this page: 1 matching Job record.");
+});

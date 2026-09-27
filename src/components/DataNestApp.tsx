@@ -29,6 +29,7 @@ type Summary = { total:number; active:number; running:number; blocked:number; av
 type ActiveDataNestAiSession = { jobId:string; sessionId:string|null; jobNumber:number; title:string; status:string };
 
 const PAGE_SIZE = 20;
+const preparedJobStates = new Set(["PLANNED","READY","QUEUED"]);
 const finalStates = new Set(["COMPLETED","FAILED","CANCELLED"]);
 const jobColumns = "id,job_number,title,description,priority,status,required_capabilities,acceptance,created_at,updated_at,deadline";
 
@@ -349,6 +350,8 @@ export default function DataNestApp({session}:{session:Session}) {
   const [error,setError]=useState("");
   const [health,setHealth]=useState<HealthState>({state:"checking",checkedAt:null,message:"Checking control plane…"});
   const [reloadingLatest,setReloadingLatest]=useState(false);
+  const [locatingActiveJob,setLocatingActiveJob]=useState(false);
+  const pendingActiveJobPageFocusRef=useRef(false);
 
   const canOperate=membership ? ["owner","admin","operator"].includes(membership.role) : false;
   const canManageAi=membership ? ["owner","admin"].includes(membership.role) : false;
@@ -376,6 +379,56 @@ export default function DataNestApp({session}:{session:Session}) {
     }
     setNotice("Active Job evidence is loaded, but its matching record is not rendered in this workspace view.");
   },[view]);
+
+  const locateActiveJobPage=useCallback(async()=>{
+    if(!project||!activeDataNestAiSession||!(view==="unifi"||view==="scheduler"))return;
+    const supabase=getSupabase();
+    if(!supabase)return;
+    const pages=Math.max(1,Math.ceil(jobCount/PAGE_SIZE));
+    setLocatingActiveJob(true);
+    setError("");
+    setNotice("Locating the active Job across "+pages+" project "+(pages===1?"page":"pages")+"…");
+    try{
+      for(let page=0;page<pages;page+=1){
+        const {from,to}=pageRange(page);
+        const {data,error:queryError}=await supabase
+          .from("jobs")
+          .select("id,status")
+          .eq("project_id",project.id)
+          .order("priority",{ascending:false})
+          .order("created_at",{ascending:false})
+          .range(from,to);
+        if(queryError){
+          setError(queryError.message);
+          return;
+        }
+        const match=(data||[]).find(item=>item.id===activeDataNestAiSession.jobId) as {id:string;status:string}|undefined;
+        if(!match)continue;
+        if(view==="unifi"&&!preparedJobStates.has(match.status)){
+          setNotice("Active Job exists in the project but is not a prepared UNIFI record at status "+match.status.replaceAll("_"," ")+".");
+          return;
+        }
+        pendingActiveJobPageFocusRef.current=true;
+        if(jobPage!==page){
+          setJobPage(page);
+        }else if(view==="scheduler"){
+          window.dispatchEvent(new CustomEvent(ACTIVE_CONTEXT_REVEAL_EVENT));
+          pendingActiveJobPageFocusRef.current=false;
+        }else{
+          window.requestAnimationFrame(()=>{
+            if(focusRenderedActiveContextRecord())setNotice("Active Job located and focused on this UNIFI page.");
+            else setNotice("Active Job is on this UNIFI page but its prepared record is not rendered.");
+            pendingActiveJobPageFocusRef.current=false;
+          });
+        }
+        setNotice("Active Job located on page "+(page+1)+" of "+pages+".");
+        return;
+      }
+      setNotice("Active Job was not found in the project Job pages checked.");
+    }finally{
+      setLocatingActiveJob(false);
+    }
+  },[project,activeDataNestAiSession,view,jobCount,jobPage]);
 
   const commandItems=useMemo(()=>{
     const query=commandQuery.trim().toLowerCase();
@@ -674,6 +727,20 @@ export default function DataNestApp({session}:{session:Session}) {
     if(!project) return;
     if(view==="unifi"||view==="scheduler") void loadJobsPage(jobPage);
   },[view,jobPage,project,loadJobsPage]);
+  useEffect(()=>{
+    if(!pendingActiveJobPageFocusRef.current||!activeDataNestAiSession)return;
+    if(!(view==="unifi"||view==="scheduler"))return;
+    if(!jobs.some(job=>job.id===activeDataNestAiSession.jobId))return;
+    pendingActiveJobPageFocusRef.current=false;
+    if(view==="scheduler"){
+      window.dispatchEvent(new CustomEvent(ACTIVE_CONTEXT_REVEAL_EVENT));
+      return;
+    }
+    window.requestAnimationFrame(()=>{
+      if(focusRenderedActiveContextRecord())setNotice("Active Job located and focused in UNIFI.");
+      else setNotice("Active Job is on this page but is not rendered in the prepared UNIFI list.");
+    });
+  },[jobs,view,activeDataNestAiSession]);
   useEffect(()=>{ if(view==="runs") void loadRunsPage(runPage); },[view,runPage,loadRunsPage]);
   useEffect(()=>{ if(view==="checkpoints") void loadCheckpointsPage(checkpointPage); },[view,checkpointPage,loadCheckpointsPage]);
   useEffect(()=>{ if(view==="audit") void loadEventsPage(eventPage); },[view,eventPage,loadEventsPage]);
@@ -1020,6 +1087,7 @@ export default function DataNestApp({session}:{session:Session}) {
               <small>{activeContextEvidence.detail}</small>
             </div>}
             {activeContextEvidence?.state==="visible"&&["unifi","scheduler","runs","checkpoints","audit"].includes(view)&&<button className="activeWorkContextEvidenceJump" type="button" onClick={focusActiveContextRecord}>Jump to visible evidence ↓</button>}
+            {activeContextEvidence?.state==="not-visible"&&["unifi","scheduler"].includes(view)&&<button className="activeWorkContextEvidenceJump" type="button" disabled={locatingActiveJob} onClick={()=>void locateActiveJobPage()}>{locatingActiveJob?"Locating active Job…":"Locate active Job page →"}</button>}
           </div>
           <div className="activeWorkContextActions">
             <button className="primaryButton compact activeWorkContextPrimary" type="button" onClick={()=>setView(activeContextAction.key)}>{activeContextAction.label}</button>

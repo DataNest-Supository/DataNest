@@ -383,3 +383,19 @@ test("active context jump can reveal a hidden Scheduler record without changing 
   assert.match(appSource, /Prepared Job evidence not visible/);
   assert.doesNotMatch(appSource, /updateJobStatus[\s\S]{0,300}?ACTIVE_CONTEXT_REVEAL_EVENT/);
 });
+
+
+test("active Job can be located across paginated Job pages without changing governed state", () => {
+  assert.match(appSource, /const \[locatingActiveJob,setLocatingActiveJob\]=useState\(false\)/);
+  assert.match(appSource, /const pendingActiveJobPageFocusRef=useRef\(false\)/);
+  assert.match(appSource, /const locateActiveJobPage=useCallback\(async\(\)=>/);
+  assert.match(appSource, /Math\.ceil\(jobCount\/PAGE_SIZE\)/);
+  assert.match(appSource, /\.select\("id,status"\)/);
+  assert.match(appSource, /\.order\("priority",\{ascending:false\}\)/);
+  assert.match(appSource, /\.order\("created_at",\{ascending:false\}\)/);
+  assert.match(appSource, /setJobPage\(page\)/);
+  assert.match(appSource, /Locate active Job page →/);
+  assert.match(appSource, /Active Job was not found in the project Job pages checked\./);
+  assert.match(appSource, /Active Job exists in the project but is not a prepared UNIFI record/);
+  assert.doesNotMatch(appSource, /locateActiveJobPage[\s\S]{0,1200}?updateJobStatus/);
+});

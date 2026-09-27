@@ -246,3 +246,19 @@ If **Jump to visible evidence** cannot find a rendered active-Job record while t
 This recovery is view-local only. It does not mutate Job status, execution authority, resource reservations, ILM state, or persisted scheduler policy.
 
 UNIFI evidence is narrower: only prepared Job records (`PLANNED`, `READY`, or `QUEUED`) count as visible evidence there, because completed or otherwise non-prepared Jobs are not rendered in the planning list.
+
+
+## Active Job pagination resilience
+
+When an active Job is not present on the currently loaded UNIFI or TranScheduler page, Active Work Context exposes **Locate active Job page**.
+
+The locator performs a read-only page scan using the same Job ordering as the operational Job query:
+1. priority descending;
+2. creation time descending;
+3. the existing 20-record page size.
+
+Only Job identifiers and status are read during the scan. When the matching Job is found, DataNest moves the local Job pagination to that page and reuses the existing reveal/focus behavior. TranScheduler then restores an unfiltered Gantt view and focuses the active Job.
+
+UNIFI keeps its narrower prepared-state boundary. If the Job exists but is no longer `PLANNED`, `READY`, or `QUEUED`, DataNest reports that fact instead of navigating to a page where the record would still not render.
+
+The locator changes only local pagination and presentation state. It does not update Job status, authority decisions, reservations, ILM state, scheduler policy, or audit evidence.
