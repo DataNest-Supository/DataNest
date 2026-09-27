@@ -466,6 +466,30 @@ Form edits cannot clear an `unverified` or `unconfirmed` intent. This prevents a
 
 Pending scopes include both project ID and authenticated user ID. Signing out does not clear unresolved intents: the user is warned that they remain preserved in the current browser session. Another account using the same tab cannot see those recovery items because its shell derives only that account's project/user scopes. If the original account returns during the same browser session, its unresolved items reappear.
 
+### Durable recovery ledger
+
+Deterministic recovery continuity is also persisted in the server-backed `recovery.mutation_recovery_ledger`. The ledger is not mutation authority: it records request identity, bounded request payload, workflow scope, verification state, attempts and final continuity resolution. The actual UNIFI, Sparks and Product Lab domain tables remain the only evidence that a business mutation succeeded.
+
+The recovery table lives in the non-exposed `recovery` schema with RLS enabled. Authenticated clients can only select/insert/update rows owned by their own authenticated user and an active project membership; they have no direct delete privilege. Browser code reaches it through four `SECURITY INVOKER` RPCs:
+- `register_mutation_recovery_v1`;
+- `list_mutation_recoveries_v1`;
+- `mark_mutation_recovery_verification_v1`;
+- `resolve_mutation_recovery_v1`.
+
+Anonymous execution is revoked. One unresolved recovery is permitted per project/user/workflow scope. The same request identity can be re-registered idempotently, while a different request identity is rejected until the existing recovery is resolved.
+
+Before UNIFI Job creation, Spark reservation or Product Lab test evidence is sent to its authoritative domain write, the request identity must be registered durably. If durable registration is unavailable, that mutation is not sent. This makes continuity persistence fail closed rather than allowing a new device to create untracked ambiguous work.
+
+At workspace startup, the shell lists unresolved recoveries for the active project/user and hydrates them into browser-session continuity before any of the three deterministic mutation workspaces mount. A second tab or device can therefore resume the original request identity without inventing a replacement identity.
+
+Durable finalization precedes local cleanup:
+1. authoritative success resolves the ledger as `confirmed`, then local continuity is cleared;
+2. authoritative absence first records `confirmed_absent`;
+3. unchanged retry keeps the same request identity;
+4. choosing **Change manifest**, **Change request** or **Change evidence** resolves the old ledger row as `superseded_after_absence` before edited new intent is allowed.
+
+Resolved ledger rows are retained as history. Registering an identity already finalized on another session returns its resolved state instead of reopening it. This is how multi-device convergence is distinguished from a new transaction.
+
 ### Retry ownership
 
 The application disables library-level PostgREST automatic retries through the Supabase client configuration. Mutation retry/reconciliation therefore remains explicit in DataNest rather than being silently repeated underneath the single-flight layer.

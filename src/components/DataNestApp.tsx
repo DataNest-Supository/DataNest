@@ -483,6 +483,7 @@ export default function DataNestApp({session}:{session:Session}) {
     recoverySyncingRef.current=true;
     try{
       const serverRecoveries=await listDurableRecoveries(project.id);
+      const serverByScope=new Map(serverRecoveries.map(item=>[item.scope,item]));
       for(const serverRecovery of serverRecoveries){
         const descriptor=pendingRecoveryDescriptors.find(item=>item.scope===serverRecovery.scope&&item.kind===serverRecovery.mutationKind);
         if(!descriptor)continue;
@@ -491,6 +492,18 @@ export default function DataNestApp({session}:{session:Session}) {
           throw new Error("Durable recovery conflict detected for "+descriptor.label+". Review this account on the device that created the other unresolved identity.");
         }
         restorePendingMutation(descriptor.scope,durableRecoveryToPendingIntent(serverRecovery));
+      }
+      for(const descriptor of pendingRecoveryDescriptors){
+        const local=loadPendingMutation(descriptor.scope);
+        if(!local||local.kind!==descriptor.kind)continue;
+        const serverRecovery=serverByScope.get(descriptor.scope);
+        if(serverRecovery)continue;
+        const registered=await registerDurableRecovery(project.id,descriptor.scope,local);
+        if(!registered.active){
+          clearPendingMutation(descriptor.scope,"durable_resolved");
+          continue;
+        }
+        restorePendingMutation(descriptor.scope,durableRecoveryToPendingIntent(registered));
       }
       setRecoveryLedgerError("");
       setRecoveryHydrated(true);
