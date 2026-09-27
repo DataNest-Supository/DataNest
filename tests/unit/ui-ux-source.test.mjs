@@ -509,9 +509,9 @@ test("Think Tank message drafts are isolated per selected thread", () => {
 
 
 test("authentication credentials are excluded from browser-session draft persistence", () => {
-  assert.match(authGateSource, /const \[password, setPassword\] = useState\("")/);
-  assert.match(authGateSource, /const \[newPassword, setNewPasswordValue\] = useState\("")/);
-  assert.match(authGateSource, /const \[confirmPassword, setConfirmPassword\] = useState\("")/);
+  assert.match(authGateSource, /const \[password, setPassword\] = useState\(""\)/);
+  assert.match(authGateSource, /const \[newPassword, setNewPasswordValue\] = useState\(""\)/);
+  assert.match(authGateSource, /const \[confirmPassword, setConfirmPassword\] = useState\(""\)/);
   assert.doesNotMatch(authGateSource, /useSessionDraftState|sessionDraft|sessionStorage\.setItem/);
 });
 
