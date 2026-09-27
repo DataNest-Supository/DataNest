@@ -398,7 +398,7 @@ export default function DataNestAiWorkspace({
     </section>
 
     {selectedJob&&<>
-      <section className="panel datanestAiJobPicker" aria-label="Choose active Job">
+      <section className="panel datanestAiJobPicker" aria-label="Select active Job Manifest">
         <label htmlFor="datanest-ai-active-job">Active Job context</label>
         <select id="datanest-ai-active-job" value={selectedJobId} onChange={event=>selectJob(event.target.value)}>
           {jobs.map(job=><option key={job.id} value={job.id}>{jobCode(job)+" · "+job.title}</option>)}
