@@ -393,6 +393,41 @@ Retry rules are conservative:
 - operations without a server idempotency contract rely on duplicate-start prevention plus authoritative reload/reconciliation;
 - operations with an idempotency contract should preserve request identity across an unchanged retry.
 
-Sparks redemption uses the strongest retry contract currently available. Its `target_request_key` is stored in browser-session storage before the RPC begins, reused after an ambiguous failure, and cleared only after success. Changing the selected service, quantity or request note is treated as new intent and clears the prior request key before the next attempt. This prevents an unchanged retry from deliberately creating a second reservation identity while still allowing an edited request to become a new transaction.
+Sparks redemption uses a server-enforced request identity. The browser records the intent before the RPC begins, reuses the same request identity for an unchanged retry, and clears it only after authoritative success is confirmed. Changing the selected service, quantity or request note is treated as new intent and clears the prior identity before the next attempt.
 
-The UI does not claim that a client-side timeout or transport failure proves the server mutation failed. Where the result is ambiguous, authoritative workspace reload/state remains the source of truth.
+The UI does not claim that a client-side timeout or transport failure proves the server mutation failed. Where the result is ambiguous, authoritative server state remains the source of truth.
+
+## Authoritative post-mutation reconciliation
+
+A transport or PostgREST error is not treated as proof that a governed mutation failed. Reconciliation follows a three-state contract:
+
+- **confirmed** — the server can read back the same request identity; the UI clears the pending intent and submitted draft, refreshes authoritative state and reports recovered success;
+- **not recorded** — the server can be reached and confirms no record exists for that request identity; the original payload is restored and an unchanged retry is safe;
+- **pending / unconfirmed** — the verification read itself cannot establish server truth; conflicting inputs and resubmission remain locked and the user is offered an explicit **Recheck server state** action. Connectivity restoration also triggers a recheck.
+
+The browser-session pending-intent journal uses the `datanest.pendingMutation.*` namespace and records only the mutation kind, client request identity, payload required to restore the form, and start timestamp. It is continuity metadata, not authoritative project state, and it is scoped by project plus authenticated user for the reconciled workflows.
+
+### UNIFI Job Manifest contract
+
+UNIFI Job Manifest creation now uses `create_job_manifest_v2` with a browser-generated `target_request_key`.
+
+The database stores that identity in `jobs.client_request_id` and enforces a unique partial index on `(project_id, client_request_id)`. Reusing the same identity with the same manifest payload returns the existing Job; reusing it with a different payload fails closed. This makes a post-error read by `project_id + client_request_id` deterministic rather than heuristic.
+
+The applied migration is aligned to the authoritative migration histories:
+- production: `20260927180402_add_unifi_idempotent_manifest_v2`;
+- DataNest AI staging: `20260927180420_add_unifi_idempotent_manifest_v2`.
+
+### Sparks reservation contract
+
+Spark reservation already has the server uniqueness contract `(user_id, request_key)`, and `request_spark_redemption_v1` returns the existing redemption for the same request key and payload. After an error, the UI reconciles directly against `spark_redemptions.request_key`.
+
+An unchanged retry retains the same identity. Editing service, quantity or note is explicit new intent and discards the old pending identity.
+
+### Retry ownership
+
+The application disables library-level PostgREST automatic retries through the Supabase client configuration. Mutation retry/reconciliation therefore remains explicit in DataNest rather than being silently repeated underneath the single-flight layer.
+
+No title matching, timestamp proximity, row-count guessing or other heuristic is accepted as proof of mutation success. A workflow can be promoted to this reconciliation class only when its database contract supplies:
+1. a client request identity;
+2. server-enforced uniqueness/idempotency for that identity; and
+3. an authenticated deterministic read-back path.
