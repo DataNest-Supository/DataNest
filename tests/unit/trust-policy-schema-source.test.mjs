@@ -104,3 +104,35 @@ test("Phase C foundation is additive and does not rewrite existing product, memo
   assert.doesNotMatch(source,/alter table public\.products\s+drop/i);
   assert.doesNotMatch(source,/create or replace function public\.authorize_datanest_ai_file_access/i);
 });
+
+test("Trust Manifests start report-only and decision evidence is append-only",()=>{
+  const source=sql(); if(!source)return;
+  assert.match(source,/enforcement_mode text not null default 'report_only'/i);
+  assert.match(source,/check \(enforcement_mode in \('report_only','enforced'\)\)/i);
+  assert.match(source,/approved_provider_keys text\[\] not null default '\{\}'/i);
+  assert.match(source,/create table public\.data_policy_decisions/i);
+  assert.match(source,/outcome text not null check \(outcome in \('allow','deny','review_required'\)\)/i);
+  assert.match(source,/enforcement_mode text not null check \(enforcement_mode in \('report_only','enforced'\)\)/i);
+  assert.match(source,/policy_version text not null/i);
+  const match=source.match(/create table public\.data_policy_decisions\s*\(([\s\S]*?)\n\);/i);
+  assert.ok(match,"data_policy_decisions table definition must exist");
+  assert.doesNotMatch(match[1],/\bcontent\s+(?:text|jsonb)/i);
+  assert.doesNotMatch(source,/grant\s+[^;]*(?:update|delete)[^;]*on table public\.data_policy_decisions[^;]*to service_role/i);
+});
+
+test("policy decision evidence is project-readable and fully indexed",()=>{
+  const source=sql(); if(!source)return;
+  assert.match(source,/alter table public\.data_policy_decisions enable row level security/i);
+  assert.match(source,/grant select on table public\.data_policy_decisions to authenticated/i);
+  assert.doesNotMatch(source,/grant\s+[^;]*(?:insert|update|delete)[^;]*on table public\.data_policy_decisions[^;]*to authenticated/i);
+  for(const token of [
+    "data_policy_decisions_project_time_idx","data_policy_decisions_trace_idx",
+    "data_policy_decisions_manifest_idx","data_policy_decisions_binding_idx",
+    "data_policy_decisions_provider_profile_idx","data_policy_decisions_retention_policy_idx"
+  ]) assert.match(source,new RegExp(token,"i"));
+});
+
+test("provider trust current-state uniqueness includes suspended explicit denial",()=>{
+  const source=sql(); if(!source)return;
+  assert.match(source,/provider_trust_profiles_one_current_uidx[\s\S]*where status in \('active','restricted','suspended'\)/i);
+});
