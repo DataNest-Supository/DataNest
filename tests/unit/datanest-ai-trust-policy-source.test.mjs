@@ -59,7 +59,7 @@ test("certified memory remains on the existing governed retrieval path",()=>{
   const source=fs.readFileSync(aiPath,"utf8");
   assert.match(source,/get_certified_memory_context/);
   assert.doesNotMatch(source,/from\("trust_manifests"\)[\s\S]*normalized_knowledge/);
-  assert.doesNotMatch(source,/insert\([\s\S]*certified_memory[\s\S]*service_evaluate_data_policy_v1/);
+  assert.doesNotMatch(source,/from\("certified_memory"\)\s*\.insert\(/);
 });
 
 test("Phase C does not replace Job file authorization",()=>{
