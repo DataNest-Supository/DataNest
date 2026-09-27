@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add a governed Portfolio Registry beside the existing Product Registry so DataNest can classify, relate, promote, deprecate, and retire applications/capabilities without inferring ownership or breaking current RONSAS/Product Lab behavior.
+**Goal:** Add the governed Portfolio Registry, evidence-backed lifecycle and promotion operations, idempotent RONSAS baseline backfill, Product Lab linkage, and compatible Products UX defined by the approved Phase B design.
 
-**Architecture:** Keep `products` authoritative for governed products and add append-only portfolio identity, classification, relationship, and lifecycle history around it. Use project-scoped Supabase RLS plus governed RPCs for significant writes, a `security_invoker` read view for current state, an optional Product Lab link, and a separate Portfolio Registry panel inside the existing Products workspace.
+**Architecture:** Keep `products` authoritative for governed products and add a separate project-scoped Portfolio Registry for applications, modules, capabilities, candidates, external capabilities, classifications, relationships, and lifecycle history. All portfolio mutations go through security-definer RPCs with explicit project-role checks and audit events; React reads a derived `portfolio_registry_view` and preserves the existing Products, Product Lab, Portfolio Pulse, RONSAS, billing-off, and URL behavior.
 
-**Tech Stack:** PostgreSQL/Supabase RLS and RPCs, Next.js 15.5.2, React 19.1.1, TypeScript 5.9.2, Supabase JS 2.57.4, Node test runner, Playwright 1.55.0.
+**Tech Stack:** PostgreSQL/Supabase migrations and RLS, Supabase RPCs, Next.js 15.5.2, React 19.1.1, TypeScript 5.9.2, Node `--test --experimental-strip-types`, Playwright 1.55.0.
 
 **Spec:** `docs/superpowers/specs/2026-09-27-datanest-phase-b-portfolio-registry-lifecycle-design.md`
 
@@ -14,393 +14,351 @@
 
 - DataNest remains the parent platform and control plane.
 - RONSAS remains a governed product under `DataNest > Products > RONSAS`.
-- `products` remains the canonical governed-product identity table.
-- Existing `product_records`, RONSAS import evidence, Product Lab test history, and current product URLs remain intact.
-- Historical RONSAS application placement is provenance only and must not create an active ownership classification.
-- Unknown or unresolved architectural ownership is `pending_review`; do not guess.
-- Promotion does not enable billing; promoted products default to `billing_enabled=false`.
-- Product Lab `production` environment does not imply governed-product promotion.
-- Significant classification, relationship, lifecycle, promotion, deprecation, and retirement writes must be validated inside governed database functions.
+- `products` remains authoritative for governed-product identity.
+- Historical RONSAS application records are provenance only; they must not create active RONSAS ownership automatically.
+- Unknown or unresolved architectural ownership is `pending_review`; never infer ownership from repository, URL, deployment, brand, or historical catalog placement.
+- RONSAS `billing_enabled` remains `false`; Phase B must not enable billing.
+- Product Lab environment values `local|preview|staging|production` remain independent of portfolio lifecycle and product promotion.
+- Classification, relationship, and lifecycle histories are append-only; rejected/superseded records remain queryable.
+- Product promotion is transactional and cannot leave an orphan `products` row or a falsely promoted candidate.
+- Retirement is blocked while active critical dependants remain.
+- Existing `products`, `product_records`, RONSAS import snapshots, Product Lab surfaces/test cases/test runs, current URLs, and Portfolio Pulse governed-product semantics are preserved.
+- New portfolio tables are project-scoped with RLS. Authenticated clients receive SELECT only; all portfolio state changes use governed RPCs.
 - Anonymous control-plane writes remain prohibited.
-- All new foreign-key columns must be indexed.
-- All new public multi-tenant tables must use project-scoped RLS.
-- Derived portfolio views must use invoker security so underlying RLS remains authoritative.
-- Cloud-Nest, Supository, ILM, Resource Fabric, billing, repository moves, runtime moves, and Phase C-H work are out of scope.
+- Every significant portfolio operation emits a `public.events` audit event with a `PORTFOLIO_` event type.
+- No repository move/merge, runtime move, cross-product data migration, Cloud-Nest/Supository/ILM/Resource Fabric implementation, billing activation, or unrelated Phase C-H work is in scope.
+- Source changes are committed and verified first; this plan does not directly apply migrations to production outside existing release/promotion gates.
 
 ## Review Focus
 
-1. **Historical ownership ambiguity:** every backfilled historical RONSAS application must stay `pending_review` with provenance and no active `product_owned` classification.
-2. **Promotion atomicity:** a failed candidate promotion must leave neither an orphan `products` row nor a partially promoted Portfolio Item.
-3. **Relationship integrity:** self-links, cross-project links, duplicate active classifications, and direct/indirect `contains` cycles must fail closed.
-4. **Retirement safety:** an item with active critical dependants or active linked production surfaces must not retire.
-5. **Compatibility:** current RONSAS deep links, billing-off banner, Product Lab legacy surfaces, and Portfolio Pulse governed-product counts must remain unchanged.
+1. **Historical ownership claim:** imported RONSAS child records may contain `ownership:"RONSAS"`; backfill must preserve that as provenance while creating `pending_review` items with no active `product_owned` classification.
+2. **Lifecycle/runtime confusion:** a Product Lab surface with `environment="production"` is runtime evidence only and cannot promote a candidate or create a governed product.
+3. **Partial promotion failure:** candidate promotion must be one database transaction; any validation/write failure leaves the candidate and Product Registry unchanged.
+4. **Dependency-safe retirement:** retirement must fail while another active Portfolio Item has an active `depends_on` relationship with `criticality="critical"`.
+5. **Compatibility:** current `?view=products&product=ronsas&recordType=...&q=...` links, canonical RONSAS name, billing-off banner, Product Lab legacy surfaces, and Portfolio Pulse product count must remain unchanged.
 
 ---
 
 ## File Structure
 
-- Create `supabase/migrations/20260927094500_add_portfolio_registry_v1.sql` — schema, indexes, RLS, read view, backfill, and governed RPCs.
-- Create `src/lib/portfolioRegistry.ts` — shared TypeScript types, labels, and pure formatting helpers.
-- Create `src/components/PortfolioRegistryPanel.tsx` — portfolio read/review UI isolated from the existing product catalog.
-- Modify `src/components/DataNestApp.tsx` — pass current project role authority into Products workspace.
-- Modify `src/components/ProductsWorkspace.tsx` — load Portfolio Registry state, preserve current Product Catalog behavior, and host the new panel/deep link.
-- Modify `src/components/ProductLab.tsx` — optional Portfolio Item association for surfaces.
-- Modify `src/app/globals.css` — Portfolio Registry and Product Lab linkage styles/mobile containment.
-- Create `tests/unit/portfolio-registry-source.test.mjs` — migration, RPC, RLS, backfill, and source contracts.
-- Modify `tests/unit/products-source.test.mjs` — compatibility assertions for RONSAS, billing-off, and product-only catalog semantics.
-- Modify `tests/unit/ui-ux-source.test.mjs` — Portfolio UI and Product Lab linkage source contracts.
-- Modify `tests/browser/products.spec.ts` — Portfolio Registry deep-link and browser regression coverage.
+- Create `supabase/migrations/20260927093000_add_portfolio_registry_foundations.sql` — registry/history tables, indexes, RLS, Product Lab nullable link, and security-invoker read model.
+- Create `supabase/migrations/20260927094000_add_portfolio_registry_governed_operations.sql` — item/classification/relationship/lifecycle/promotion/deprecation/retirement RPCs, safety helpers, and audit events.
+- Create `supabase/migrations/20260927095000_backfill_portfolio_registry_baseline.sql` — idempotent RONSAS baseline and historical application backfill.
+- Create `tests/unit/portfolio-registry-schema-source.test.mjs` — schema/RLS/read-model source contract.
+- Create `tests/unit/portfolio-registry-operations-source.test.mjs` — governed RPC, atomicity, audit, graph, and retirement source contract.
+- Create `tests/unit/portfolio-registry-backfill-source.test.mjs` — RONSAS and historical-application backfill contract.
+- Create `src/lib/portfolioRegistry.ts` — shared TypeScript types, labels, and role helpers.
+- Create `src/components/PortfolioRegistryPanel.tsx` — registry read/detail/governed-action UI.
+- Create `tests/unit/portfolio-registry-ui-source.test.mjs` — registry UI source contract.
+- Create `tests/unit/product-lab-portfolio-source.test.mjs` — Product Lab linkage source contract.
+- Create `tests/browser/portfolio-registry.spec.ts` — new portfolio browser behavior and compatibility checks.
+- Modify `src/components/ProductLab.tsx` — optional Portfolio Item association on surfaces.
+- Modify `src/components/ProductsWorkspace.tsx` — Governed Products / Portfolio Registry modes and RONSAS composition summary.
+- Modify `src/components/DataNestApp.tsx` — pass current user and project role into Products workspace.
+- Modify `src/app/globals.css` — registry/review/mobile styles.
+- Modify `tests/unit/products-source.test.mjs` — preserve RONSAS, billing, catalog, Pulse, and URL contracts.
+- Modify `tests/browser/products.spec.ts` only if fixture support is required by the additional registry reads; keep all existing assertions.
+- Modify `docs/ARCHITECTURE.md` — record implemented Portfolio Registry authority only after code exists.
 
-### Task 1: Portfolio Registry Schema, RLS, Read Model, and Backfill
+### Task 1: Portfolio Registry Schema, RLS & Read Model
 
 **Files:**
-- Create: `supabase/migrations/20260927094500_add_portfolio_registry_v1.sql`
-- Create: `tests/unit/portfolio-registry-source.test.mjs`
+- Create: `supabase/migrations/20260927093000_add_portfolio_registry_foundations.sql`
+- Create: `tests/unit/portfolio-registry-schema-source.test.mjs`
 
 **Interfaces:**
-- Produces tables:
-  - `public.portfolio_items`
-  - `public.portfolio_classifications`
-  - `public.portfolio_relationships`
-  - `public.portfolio_lifecycle_events`
-- Produces view: `public.portfolio_registry_view`
-- Produces nullable column: `public.product_surfaces.portfolio_item_id uuid`
-- Produces seeded Portfolio Items for RONSAS plus nine historical application records.
-- Later tasks consume these exact names.
+- Produces `portfolio_items`, `portfolio_classifications`, `portfolio_relationships`, `portfolio_lifecycle_events`.
+- Produces `portfolio_registry_view`.
+- Adds nullable `product_surfaces.portfolio_item_id uuid references public.portfolio_items(id) on delete set null`.
+- Later tasks consume the exact column/value names defined here.
 
-- [ ] **Step 1: Write the failing migration-source contract**
+- [ ] **Step 1: Write the failing schema contract**
 
-Create `tests/unit/portfolio-registry-source.test.mjs` and assert the migration contains:
-- four tables above;
-- checks for item kinds `governed_product, product_candidate, application, module, capability, external_capability`;
-- checks for review states `pending_review, classified, deprecated, retired`;
-- lifecycle states `concept, experiment, validating, candidate, active, maintained, deprecated, retired`;
-- classification values `product_owned, shared_datanest_capability, independent_datanest_product, registered_external_capability`;
-- relationship types `contains, uses, provides, depends_on, replaces, supersedes, integrates_with, derived_from`;
-- relationship criticality `optional, normal, critical`;
-- unique `(project_id,slug)` identity;
-- one active classification partial unique index on `portfolio_item_id where status='active'`;
-- indexes on every new FK column;
-- RLS enabled for every new public table;
-- no authenticated write grants that bypass governed functions for classifications/relationships/lifecycle;
-- `portfolio_registry_view` created with `security_invoker=true`;
-- nullable `product_surfaces.portfolio_item_id` plus index;
-- no deletion/update of `product_records`.
+Assert the migration defines:
 
-- [ ] **Step 2: Run the focused test and verify RED**
+```js
+assert.match(sql,/create table public\.portfolio_items/i);
+assert.match(sql,/governed_product.*product_candidate.*application.*module.*capability.*external_capability/is);
+assert.match(sql,/pending_review.*classified.*deprecated.*retired/is);
+assert.match(sql,/concept.*experiment.*validating.*candidate.*active.*maintained.*deprecated.*retired/is);
+assert.match(sql,/create table public\.portfolio_classifications/i);
+assert.match(sql,/product_owned.*shared_datanest_capability.*independent_datanest_product.*registered_external_capability/is);
+assert.match(sql,/create table public\.portfolio_relationships/i);
+assert.match(sql,/contains.*uses.*provides.*depends_on.*replaces.*supersedes.*integrates_with.*derived_from/is);
+assert.match(sql,/optional.*normal.*critical/is);
+assert.match(sql,/create table public\.portfolio_lifecycle_events/i);
+assert.match(sql,/portfolio_item_id uuid references public\.portfolio_items/i);
+assert.match(sql,/create (or replace )?view public\.portfolio_registry_view/i);
+assert.match(sql,/security_invoker/i);
+```
+
+Also pin:
+- unique `(project_id,slug)`;
+- partial unique `linked_product_id` when non-null;
+- partial unique `(project_id,source_authority,source_reference)` when source reference is non-null;
+- one active classification per item;
+- indexes on every new FK;
+- RLS on all four tables;
+- authenticated read policies use `private.is_project_stakeholder(project_id) or private.is_project_member(project_id)`;
+- authenticated does not receive direct INSERT/UPDATE/DELETE grants on portfolio tables;
+- service role keeps backend access.
+
+- [ ] **Step 2: Run RED**
 
 Run:
 
-`node --test --experimental-strip-types tests/unit/portfolio-registry-source.test.mjs`
+`node --test --experimental-strip-types tests/unit/portfolio-registry-schema-source.test.mjs`
 
 Expected: FAIL because the migration does not exist.
 
-- [ ] **Step 3: Implement the schema and indexes**
+- [ ] **Step 3: Implement the foundation migration**
 
-In `20260927094500_add_portfolio_registry_v1.sql`, create:
+Use these exact state values:
 
-`portfolio_items`
-- `id uuid primary key default gen_random_uuid()`
-- `project_id uuid not null references projects(id) on delete cascade`
-- `slug text not null`
-- `name text not null`
-- `item_kind text not null`
-- `review_state text not null default 'pending_review'`
-- `current_lifecycle_state text not null default 'concept'`
-- `linked_product_id uuid references products(id) on delete set null`
-- `operating_owner_user_id uuid references auth.users(id) on delete set null`
-- `source_authority text`
-- `source_reference text`
-- `metadata jsonb not null default '{}'`
-- `created_by uuid references auth.users(id) on delete set null`
-- timestamps
-- unique `(project_id,slug)`
-- unique partial index on non-null `linked_product_id`
+- `portfolio_items.item_kind`: `governed_product|product_candidate|application|module|capability|external_capability`
+- `review_state`: `pending_review|classified|deprecated|retired`
+- `current_lifecycle`: nullable; when non-null one of `concept|experiment|validating|candidate|active|maintained|deprecated|retired`
+- classification status: `proposed|active|superseded|rejected`
+- relationship status: `proposed|active|superseded|rejected`
+- lifecycle-event status: `proposed|approved|rejected`
 
-`portfolio_classifications`
-- project/item FKs;
-- `classification`, nullable `target_product_id`;
-- `status in ('proposed','active','superseded','rejected')`;
-- rationale/evidence/proposer/approver/timestamps;
-- check: `product_owned` requires `target_product_id`.
+History records include project/item IDs, rationale/reason, evidence reference, proposer/approver, and timestamps.
 
-`portfolio_relationships`
-- project/source/target FKs;
-- relationship type, nullable criticality;
-- status/rationale/evidence/proposer/approver/timestamps;
-- check `source_item_id <> target_item_id`.
+`portfolio_registry_view with (security_invoker=true)` resolves item identity, active classification, target product, current lifecycle, active relationship counts, linked Product Lab surface/test-run counts, and provenance fields.
 
-`portfolio_lifecycle_events`
-- project/item FKs;
-- nullable `from_state`, non-null `to_state`;
-- `status in ('proposed','active','superseded','rejected')`;
-- reason/evidence/proposer/approver/timestamps.
+Existing Product Lab rows remain valid because `portfolio_item_id` is nullable.
 
-Add all FK indexes explicitly.
-
-- [ ] **Step 4: Add RLS and read view**
-
-Follow the existing project helpers:
-- read: `private.is_project_stakeholder(project_id) or private.is_project_member(project_id)`;
-- Portfolio Item creation/update metadata: owner/admin/operator;
-- direct delete: owner/admin only, but application code must not use delete for ordinary lifecycle work;
-- classification/relationship/lifecycle tables: authenticated SELECT only through RLS; governed mutations occur through RPCs created in later tasks.
-
-Create `portfolio_registry_view with (security_invoker=true)` resolving:
-- item identity/current fields;
-- active classification and target product;
-- current lifecycle;
-- counts of active relationships;
-- count of linked Product Lab surfaces;
-- source provenance summary.
-
-- [ ] **Step 5: Implement idempotent baseline backfill**
-
-Backfill RONSAS by joining the existing `products.slug='ronsas'` row and insert/update one Portfolio Item:
-- slug `ronsas`;
-- kind `governed_product`;
-- review state `classified`;
-- lifecycle `active`;
-- linked product = existing RONSAS product;
-- active classification = `independent_datanest_product`.
-
-Backfill these exact historical application identities from RONSAS application records with `pending_review`, no active classification, and source row/import provenance:
-
-`epublisher`, `creative-studio`, `sync-vision`, `youtube-optimizer`, `sovereignforge`, `lyricsync-studio`, `scene-song-spark`, `resonance-appdev-reson8-adt`, `rons-control-center`.
-
-Use `insert ... on conflict (project_id,slug) do update` only for safe metadata/provenance normalization; do not infer ownership.
-
-- [ ] **Step 6: Run focused migration-source tests**
+- [ ] **Step 4: Run schema regression**
 
 Run:
 
-`node --test --experimental-strip-types tests/unit/portfolio-registry-source.test.mjs tests/unit/products-source.test.mjs`
+`node --test --experimental-strip-types tests/unit/portfolio-registry-schema-source.test.mjs tests/unit/products-source.test.mjs`
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit Task 1**
+- [ ] **Step 5: Commit**
 
 ```bash
-git add supabase/migrations/20260927094500_add_portfolio_registry_v1.sql tests/unit/portfolio-registry-source.test.mjs
-git commit -m "feat: add governed portfolio registry foundation"
+git add supabase/migrations/20260927093000_add_portfolio_registry_foundations.sql tests/unit/portfolio-registry-schema-source.test.mjs
+git commit -m "feat: add portfolio registry schema"
 ```
 
-### Task 2: Governed Classification, Relationship, and Lifecycle RPCs
+### Task 2: Governed Portfolio Operations, Atomic Promotion & Safety Guards
 
 **Files:**
-- Modify: `supabase/migrations/20260927094500_add_portfolio_registry_v1.sql`
-- Modify: `tests/unit/portfolio-registry-source.test.mjs`
+- Create: `supabase/migrations/20260927094000_add_portfolio_registry_governed_operations.sql`
+- Create: `tests/unit/portfolio-registry-operations-source.test.mjs`
 
 **Interfaces:**
-- Produces RPCs:
-  - `public.propose_portfolio_classification(target_item uuid, target_classification text, target_product uuid default null, target_rationale text default null, target_evidence_reference text default null) returns uuid`
-  - `public.approve_portfolio_classification(target_classification_id uuid) returns uuid`
-  - `public.propose_portfolio_relationship(target_source_item uuid, target_target_item uuid, target_relationship_type text, target_criticality text default null, target_rationale text default null, target_evidence_reference text default null) returns uuid`
-  - `public.approve_portfolio_relationship(target_relationship_id uuid) returns uuid`
-  - `public.propose_portfolio_lifecycle_transition(target_item uuid, target_state text, target_reason text, target_evidence_reference text default null) returns uuid`
-  - `public.approve_portfolio_lifecycle_transition(target_event_id uuid) returns uuid`
-- All RPCs use authenticated caller identity and project-role helpers.
+- Consumes Task 1 schema.
+- Produces:
+  - `create_portfolio_item_v1(target_project uuid, target_slug text, target_name text, target_kind text, target_lifecycle text default null, target_source_authority text default null, target_source_reference text default null, target_metadata jsonb default '{}'::jsonb) returns uuid`
+  - `propose_portfolio_classification_v1(target_item uuid, target_classification text, target_product uuid default null, target_rationale text default null, target_evidence_reference text default null) returns uuid`
+  - `approve_portfolio_classification_v1(target_classification_id uuid) returns uuid`
+  - `propose_portfolio_relationship_v1(target_source_item uuid, target_target_item uuid, target_relationship_type text, target_criticality text default 'normal', target_rationale text default null, target_evidence_reference text default null) returns uuid`
+  - `approve_portfolio_relationship_v1(target_relationship_id uuid) returns uuid`
+  - `propose_portfolio_lifecycle_transition_v1(target_item uuid, target_to_state text, target_reason text, target_evidence_reference text default null) returns uuid`
+  - `approve_portfolio_lifecycle_transition_v1(target_event_id uuid) returns uuid`
+  - `promote_product_candidate_v1(target_item uuid, target_category text, target_mission text, target_operating_model text, target_primary_runtime text, target_promotion_packet jsonb, target_evidence_reference text) returns uuid`
+  - `deprecate_portfolio_item_v1(target_item uuid, target_reason text, target_evidence_reference text default null) returns uuid`
+  - `retire_portfolio_item_v1(target_item uuid, target_reason text, target_evidence_reference text default null) returns uuid`
 
-- [ ] **Step 1: Extend failing source tests for authority and integrity**
+- [ ] **Step 1: Write the failing operations contract**
 
 Assert:
-- every security-definer function checks `auth.uid()`;
-- proposal RPCs require owner/admin/operator;
-- approval RPCs require owner/admin;
-- public EXECUTE is revoked before authenticated grant;
-- active classification approval supersedes any previous active classification in one transaction;
-- `product_owned` target product must belong to same project;
-- relationship source/target project must match;
-- self-reference rejected;
-- `contains` cycle detection exists through a recursive query;
-- lifecycle approval updates `portfolio_items.current_lifecycle_state` only after approval;
-- lifecycle history is never deleted.
+- every public RPC is `security definer`, sets a safe search path, validates `auth.uid()`, is revoked from `public`, and granted only to `authenticated`/service role;
+- create/propose requires `owner|admin|operator`;
+- approve/promote/deprecate/retire requires `owner|admin`;
+- `product_owned` requires a same-project governed product target;
+- approval supersedes a prior active classification before activating the new one;
+- relationship approval rejects self/cross-project links and calls a recursive `contains` cycle guard;
+- retirement calls a critical-dependant guard;
+- promotion requires candidate kind, active independent-product classification, promotion packet, linked versioned Product Lab evidence, and one transaction;
+- promotion inserts `billing_enabled=false` and accepts no billing parameter;
+- every significant RPC inserts `PORTFOLIO_` evidence into `public.events`.
 
-Run and verify FAIL before implementing.
-
-- [ ] **Step 2: Implement classification proposal/approval**
-
-Proposal inserts a `proposed` row after item/project/role validation.
-
-Approval must:
-1. lock the target Portfolio Item;
-2. validate proposed state and same-project target product;
-3. supersede any prior active classification;
-4. activate the proposal and stamp approver/time;
-5. update `portfolio_items.review_state='classified'` unless lifecycle is deprecated/retired.
-
-No external calls occur inside the transaction.
-
-- [ ] **Step 3: Implement relationship proposal/approval**
-
-Proposal validates same project and no self-reference.
-
-Approval validates:
-- source/target still exist in same project;
-- no `contains` cycle using recursive reachability from target to source;
-- no contradictory active relationship duplicate;
-- classification compatibility where a relationship requires a target product.
-
-Activate only after owner/admin approval.
-
-- [ ] **Step 4: Implement lifecycle proposal/approval**
-
-Proposal accepts only the controlled lifecycle values.
-
-Approval:
-- locks item;
-- records prior state as `from_state`;
-- activates event;
-- updates `current_lifecycle_state`;
-- maps `review_state` to `deprecated` or `retired` only for those lifecycle states, otherwise preserves `pending_review` vs `classified`.
-
-- [ ] **Step 5: Run focused RPC contract tests**
+- [ ] **Step 2: Run RED**
 
 Run:
 
-`node --test --experimental-strip-types tests/unit/portfolio-registry-source.test.mjs`
+`node --test --experimental-strip-types tests/unit/portfolio-registry-operations-source.test.mjs`
+
+Expected: FAIL.
+
+- [ ] **Step 3: Implement private helpers**
+
+Define private helpers:
+
+- `portfolio_item_project(target_item uuid) returns uuid`
+- `portfolio_contains_path(target_project uuid,start_item uuid,sought_item uuid) returns boolean`
+- `portfolio_has_active_critical_dependants(target_item uuid) returns boolean`
+- `validate_portfolio_promotion_packet(target_packet jsonb) returns void`
+
+Promotion packet requires non-empty evidence for:
+`problem`, `users`, `value_proposition`, `repeat_demand_evidence`, `operational_owner`, `independent_lifecycle_justification`, `product_lab_evidence`.
+
+Do not grant browser execution on private helpers.
+
+- [ ] **Step 4: Implement item/classification/relationship RPCs**
+
+`create_portfolio_item_v1` creates only identity/current optional lifecycle; it never sets active ownership.
+
+Classification/relationship proposals append records. Approval locks relevant rows, validates current project/state, and then activates/supersedes within the same transaction.
+
+For active `contains`, require the contained item to have active `product_owned` classification targeting the source item's linked governed product. `uses` and `depends_on` never create ownership.
+
+Each mutation writes a `PORTFOLIO_...` event.
+
+- [ ] **Step 5: Implement lifecycle and promotion RPCs**
+
+`propose_portfolio_lifecycle_transition_v1` creates a proposal only.
+
+`approve_portfolio_lifecycle_transition_v1` approves the event, updates `current_lifecycle`, and maps review state only when entering deprecated/retired.
+
+`deprecate_portfolio_item_v1` and `retire_portfolio_item_v1` create and approve the transition atomically for owner/admin.
+
+`retire_portfolio_item_v1` rejects active critical dependants and preserves history.
+
+`promote_product_candidate_v1`:
+1. locks item;
+2. requires `item_kind='product_candidate'`;
+3. validates promotion packet/evidence;
+4. requires active `independent_datanest_product` classification;
+5. requires at least one linked Product Lab surface with non-null `build_commit` and at least one test run for that surface;
+6. creates `products` using item slug/name and supplied fields;
+7. writes `commercial_mode='free promotion / no billing until pricing is established'`, `billing_enabled=false`;
+8. updates item to `governed_product`, links product, sets classified/active state;
+9. records approved lifecycle, a `product_records` promotion decision/evidence row, and `PORTFOLIO_PRODUCT_PROMOTED`;
+10. returns the new product UUID.
+
+Any error rolls back the entire function.
+
+- [ ] **Step 6: Run GREEN**
+
+Run:
+
+`node --test --experimental-strip-types tests/unit/portfolio-registry-schema-source.test.mjs tests/unit/portfolio-registry-operations-source.test.mjs`
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit Task 2**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add supabase/migrations/20260927094500_add_portfolio_registry_v1.sql tests/unit/portfolio-registry-source.test.mjs
-git commit -m "feat: add governed portfolio decision workflows"
+git add supabase/migrations/20260927094000_add_portfolio_registry_governed_operations.sql tests/unit/portfolio-registry-operations-source.test.mjs
+git commit -m "feat: add governed portfolio operations"
 ```
 
-### Task 3: Atomic Candidate Promotion, Deprecation, and Retirement Guards
+### Task 3: Idempotent RONSAS Baseline & Historical Application Backfill
 
 **Files:**
-- Modify: `supabase/migrations/20260927094500_add_portfolio_registry_v1.sql`
-- Modify: `tests/unit/portfolio-registry-source.test.mjs`
+- Create: `supabase/migrations/20260927095000_backfill_portfolio_registry_baseline.sql`
+- Create: `tests/unit/portfolio-registry-backfill-source.test.mjs`
+- Reference: `data/imports/ronsas-product-20260926.jsonl`
 
 **Interfaces:**
-- Produces:
-  - `public.promote_product_candidate(target_item uuid, target_product_payload jsonb, target_surface_id uuid, target_build_commit text, target_evidence_reference text) returns uuid`
-  - `public.deprecate_portfolio_item(target_item uuid, target_reason text, target_evidence_reference text default null) returns uuid`
-  - `public.retire_portfolio_item(target_item uuid, target_reason text, target_replacement_item uuid default null, target_evidence_reference text default null) returns uuid`
-- Promotion payload required keys:
-  - `slug`, `name`, `mission`, `category`, `operating_model`, `primary_runtime`
-  - `problem_statement`, `intended_users`, `value_proposition`, `demand_evidence`
-- Promotion always writes `billing_enabled=false` and `commercial_mode='free promotion / no billing until pricing is established'`.
+- Produces one active RONSAS governed-product Portfolio Item.
+- Produces one `pending_review` application Portfolio Item for each existing RONSAS `product_records.record_type='application'` row.
+- Creates no active application ownership relationship/classification.
 
-- [ ] **Step 1: Add failing promotion/retirement tests**
+- [ ] **Step 1: Write the failing backfill contract**
 
-Source-contract assertions must pin:
-- candidate kind and current lifecycle `candidate`;
-- non-null `operating_owner_user_id`;
-- active classification `independent_datanest_product`;
-- exact linked Product Lab surface;
-- exact non-null build commit equality;
-- at least one test run for that exact surface/build;
-- latest evidence for each active test case on that build contains no `fail` or `blocked`;
-- transaction creates product + link + kind/lifecycle/classification updates atomically;
-- billing forced false;
-- active critical dependant blocks retirement;
-- linked active `production` Product Lab surface blocks retirement;
-- replacement item, when supplied, must be same project and not self.
+Assert:
+- RONSAS resolves by existing `products.slug='ronsas'`;
+- baseline classification/lifecycle is attributed to an active project owner and backfill fails clearly if none exists;
+- RONSAS is `governed_product`, classified, active, linked to existing product, active `independent_datanest_product`;
+- no update changes RONSAS billing/commercial state;
+- historical applications come from existing `product_records` where `record_type='application'`;
+- each historical app is `application`, `pending_review`, `linked_product_id=null`, `current_lifecycle=null`;
+- provenance is `source_authority='product_records'`, `source_reference=pr.id::text`;
+- old `payload->>'ownership'` is stored only under provenance metadata;
+- migration never inserts `product_owned` for historical apps;
+- repeated execution is idempotent.
 
-Run and verify FAIL.
+Parse the current import snapshot and assert the nine historical application source records remain evidence only.
 
-- [ ] **Step 2: Implement `promote_product_candidate`**
-
-Within one short transaction:
-1. authenticate owner/admin;
-2. lock candidate item;
-3. validate kind/lifecycle/owner/classification;
-4. validate Product Lab surface belongs to item and exact build;
-5. validate current exact-build test evidence;
-6. validate required JSON keys;
-7. create `products` row with generated UUID and billing disabled;
-8. link Portfolio Item, change kind to `governed_product`, lifecycle to `active`, review state `classified`;
-9. record active lifecycle/promotion evidence;
-10. preserve existing historical source provenance.
-
-Any error rolls back the entire operation.
-
-- [ ] **Step 3: Implement deprecation and retirement**
-
-`deprecate_portfolio_item` requires owner/admin, records lifecycle history, and sets lifecycle/review state to deprecated.
-
-`retire_portfolio_item` additionally rejects:
-- active incoming `depends_on` relationship with `criticality='critical'`;
-- active linked Product Lab surface with `environment='production' and status='active'`;
-- invalid replacement item.
-
-On success record `replaces`/replacement provenance where supplied, set lifecycle/review state retired, and retain all historical records.
-
-- [ ] **Step 4: Run focused tests**
+- [ ] **Step 2: Run RED**
 
 Run:
 
-`node --test --experimental-strip-types tests/unit/portfolio-registry-source.test.mjs tests/unit/products-source.test.mjs`
+`node --test --experimental-strip-types tests/unit/portfolio-registry-backfill-source.test.mjs`
+
+Expected: FAIL.
+
+- [ ] **Step 3: Implement baseline backfill**
+
+RONSAS:
+- reuse existing product row;
+- deterministic Portfolio Item slug `ronsas`;
+- seed active independent-product classification and approved active lifecycle only when equivalent records do not exist;
+- do not alter product commercial/billing fields.
+
+Historical applications:
+- provenance decides identity;
+- generate readable slug from name;
+- if slug is occupied by a different provenance source, append `-<first 8 hex chars of product_record.id>` rather than silently merging;
+- preserve historical name/code/status/ownership claim under `metadata.historical_catalog`;
+- create no classification, lifecycle event, or relationship.
+
+- [ ] **Step 4: Run GREEN**
+
+Run:
+
+`node --test --experimental-strip-types tests/unit/portfolio-registry-backfill-source.test.mjs tests/unit/products-source.test.mjs tests/unit/portfolio-registry-schema-source.test.mjs tests/unit/portfolio-registry-operations-source.test.mjs`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit Task 3**
+- [ ] **Step 5: Commit**
 
 ```bash
-git add supabase/migrations/20260927094500_add_portfolio_registry_v1.sql tests/unit/portfolio-registry-source.test.mjs
-git commit -m "feat: govern portfolio promotion and retirement"
+git add supabase/migrations/20260927095000_backfill_portfolio_registry_baseline.sql tests/unit/portfolio-registry-backfill-source.test.mjs
+git commit -m "feat: backfill portfolio registry baseline"
 ```
 
-### Task 4: Product Lab Portfolio Linkage
+### Task 4: Link Product Lab Evidence to Portfolio Items
 
 **Files:**
-- Create: `src/lib/portfolioRegistry.ts`
+- Create: `tests/unit/product-lab-portfolio-source.test.mjs`
 - Modify: `src/components/ProductLab.tsx`
-- Modify: `src/app/globals.css`
-- Modify: `tests/unit/ui-ux-source.test.mjs`
 
 **Interfaces:**
-- `src/lib/portfolioRegistry.ts` exports:
-  - `PortfolioItemKind`
-  - `PortfolioClassification`
-  - `PortfolioLifecycleState`
-  - `PortfolioRegistryItem`
-  - `portfolioKindLabel(kind)`
-  - `portfolioClassificationLabel(value|null)`
-  - `portfolioLifecycleLabel(state)`
+- Consumes `portfolio_registry_view`.
 - Product Lab `Surface` gains `portfolio_item_id:string|null`.
-- Product Lab reads `portfolio_registry_view` for selectable items.
+- New UI option type: `PortfolioItemOption={id:string;slug:string;name:string;item_kind:string;review_state:string;current_lifecycle:string|null}`.
+- Product Lab public props remain unchanged.
 
-- [ ] **Step 1: Add failing source tests**
+- [ ] **Step 1: Write failing Product Lab contract**
 
 Assert Product Lab:
 - selects `portfolio_item_id`;
-- keeps existing surfaces valid when null;
-- loads same-project Portfolio Registry items;
-- allows operator to choose an optional item when registering a new surface;
-- writes `portfolio_item_id` with the new surface;
-- displays linked item kind/classification without implying product promotion;
-- still requires immutable build identity exactly as current behavior requires.
+- reads project `portfolio_registry_view`;
+- has optional accessible `Portfolio item` selector;
+- writes `portfolio_item_id:selectedPortfolioItemId||null` on surface creation;
+- shows linked item name/kind/review state;
+- renders legacy null links;
+- states that a production surface is runtime evidence, not promotion authority;
+- never calls `promote_product_candidate_v1`.
 
-Run and verify FAIL.
-
-- [ ] **Step 2: Add shared Portfolio Registry types/labels**
-
-Implement the exact exports above in `src/lib/portfolioRegistry.ts`. Keep them pure; no Supabase calls.
-
-- [ ] **Step 3: Extend Product Lab surface form**
-
-Load permitted registry items from `portfolio_registry_view`.
-
-Add an optional `Portfolio item` selector with `Unlinked / project-only surface` as the default.
-
-Include `portfolio_item_id` in surface creation and list/detail displays.
-
-Do not retroactively auto-link existing surfaces.
-
-- [ ] **Step 4: Add minimal responsive styles**
-
-Add only the selectors needed for the new Product Lab portfolio field/badge, preserving current mobile containment.
-
-- [ ] **Step 5: Run unit and type checks**
+- [ ] **Step 2: Run RED**
 
 Run:
 
-`node --test --experimental-strip-types tests/unit/ui-ux-source.test.mjs tests/unit/portfolio-registry-source.test.mjs`
+`node --test --experimental-strip-types tests/unit/product-lab-portfolio-source.test.mjs`
+
+Expected: FAIL.
+
+- [ ] **Step 3: Add portfolio context to Product Lab**
+
+Load portfolio options, add optional selector in Surface Admin, write the nullable id, and show linked context beside selected surface metadata.
+
+Preserve immutable build requirement, production confirmation, test-case versioning, run snapshots, realtime subscriptions, and all existing Product Lab behavior.
+
+No classification/promotion actions belong in Product Lab.
+
+- [ ] **Step 4: Run GREEN + TypeScript**
+
+Run:
+
+`node --test --experimental-strip-types tests/unit/product-lab-portfolio-source.test.mjs`
 
 Run:
 
@@ -408,191 +366,194 @@ Run:
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit Task 4**
+- [ ] **Step 5: Commit**
 
 ```bash
-git add src/lib/portfolioRegistry.ts src/components/ProductLab.tsx src/app/globals.css tests/unit/ui-ux-source.test.mjs
-git commit -m "feat: link Product Lab surfaces to portfolio items"
+git add src/components/ProductLab.tsx tests/unit/product-lab-portfolio-source.test.mjs
+git commit -m "feat: link Product Lab to portfolio items"
 ```
 
-### Task 5: Products Workspace Portfolio Registry Read UI and URL Compatibility
+### Task 5: Portfolio Registry Read UX & Products Integration
 
 **Files:**
+- Create: `src/lib/portfolioRegistry.ts`
 - Create: `src/components/PortfolioRegistryPanel.tsx`
-- Modify: `src/components/DataNestApp.tsx`
+- Create: `tests/unit/portfolio-registry-ui-source.test.mjs`
 - Modify: `src/components/ProductsWorkspace.tsx`
+- Modify: `src/components/DataNestApp.tsx`
 - Modify: `src/app/globals.css`
 - Modify: `tests/unit/products-source.test.mjs`
-- Modify: `tests/unit/ui-ux-source.test.mjs`
 
 **Interfaces:**
-- `PortfolioRegistryPanel` props:
-  - `projectId:string`
-  - `items:PortfolioRegistryItem[]`
-  - `selectedSlug:string|null`
-  - `onSelect:(slug:string)=>void`
-  - `canOperate:boolean`
-  - `canAdmin:boolean`
-  - `onRefresh:()=>Promise<void>`
-- `ProductsWorkspace` gains `role:"owner"|"admin"|"operator"|"viewer"`, `canOperate:boolean`, and `canAdmin:boolean`.
-- Existing `product=`, `recordType=`, and `q=` query semantics remain unchanged.
-- New portfolio query state:
-  - `section=portfolio`
-  - `item=<portfolio-slug>`
+- `PortfolioRole="owner"|"admin"|"operator"|"viewer"`.
+- Export `PortfolioItemKind`, `PortfolioReviewState`, `PortfolioClassification`, `PortfolioLifecycle`, `PortfolioRelationshipType`, `PortfolioRegistryRow`.
+- Export pure helpers `portfolioKindLabel`, `portfolioClassificationLabel`, `portfolioLifecycleLabel`, `canProposePortfolio`, `canApprovePortfolio`.
+- `PortfolioRegistryPanel` props: `{projectId:string;currentUserId:string;role:PortfolioRole;historicalRonsasProductId:string|null}`.
+- `ProductsWorkspace` props become `{projectId:string;currentUserId:string;role:PortfolioRole}`.
 
-- [ ] **Step 1: Add failing Products source contracts**
+- [ ] **Step 1: Write failing UI contracts**
 
 Assert:
-- `DataNestApp` passes `membership?.role||"viewer"`, `canOperate`, and `canManageAi` to `ProductsWorkspace`;
-- Products workspace loads `portfolio_registry_view`;
-- Governed Products and Portfolio Registry are visibly separate;
-- existing `product`, `recordType`, `q` URL handling remains;
-- portfolio uses `section=portfolio&item=<slug>`;
-- portfolio selection does not overwrite `product=`;
-- RONSAS remains in governed products;
-- Portfolio Pulse still receives only `catalogProducts`;
-- Pending Review, Product Owned, Shared DataNest, Independent Product, External labels exist;
-- Portfolio Registry unavailable state does not fail the Product Catalog.
+- shared types/labels/role helpers exist;
+- panel reads `portfolio_registry_view`, classifications, relationships;
+- labels include `Pending Review`, `Owned`, `Shared DataNest`, `Independent Product`, `External`;
+- provenance and Product Lab evidence counts are visible;
+- AI suggestions in metadata are labeled non-authoritative;
+- no approval/promotion happens on load.
 
-- [ ] **Step 2: Implement isolated `PortfolioRegistryPanel` read surface**
+Extend `products-source.test.mjs` to require:
+- Governed Products and Portfolio Registry modes;
+- existing `product|recordType|q` handling remains;
+- RONSAS canonical name and billing-off label remain;
+- Portfolio Pulse still receives only governed `catalogProducts`.
 
-Render:
-- registry counts by kind/review state;
-- searchable item list;
-- separate badges for kind, classification, lifecycle;
-- selected item detail;
-- provenance;
-- active relationship summary;
-- Product Lab evidence count;
-- historical RONSAS association as provenance text, not ownership.
-
-Do not add another top-level navigation item.
-
-- [ ] **Step 3: Integrate role and registry state into Products workspace**
-
-Pass role authority from `DataNestApp` to `ProductsWorkspace`.
-
-Load the view independently from current product queries so failure can render:
-
-`Portfolio Registry temporarily unavailable.`
-
-while current governed products remain usable.
-
-Preserve current product selection, catalog search/filter, Legal Eagle, and Portfolio Pulse.
-
-- [ ] **Step 4: Implement backward-compatible deep links**
-
-Parse and maintain:
-- current product URL parameters unchanged;
-- `section=portfolio`;
-- `item=<slug>`.
-
-A retired item must remain addressable if returned by the view.
-
-- [ ] **Step 5: Add responsive styles**
-
-Add Portfolio Registry layout styles to `globals.css`, including a 390px mobile layout with no horizontal page overflow.
-
-- [ ] **Step 6: Run unit and build checks**
+- [ ] **Step 2: Run RED**
 
 Run:
 
-`npm test`
+`node --test --experimental-strip-types tests/unit/portfolio-registry-ui-source.test.mjs tests/unit/products-source.test.mjs`
+
+Expected: FAIL for missing registry UI.
+
+- [ ] **Step 3: Implement shared types and read-only registry panel**
+
+Create `portfolioRegistry.ts` as presentation/types only.
+
+Create `PortfolioRegistryPanel.tsx` with project-scoped load, search/filter, detail, provenance, lifecycle/classification state, Product Lab evidence summary, active relationship summary, and `item=<slug>` URL selection.
+
+Pending-review copy must say: `Architectural ownership has not yet been approved.`
+
+Errors in registry loading must remain local and not break Governed Products.
+
+- [ ] **Step 4: Integrate second Products mode and RONSAS Composition**
+
+Use:
+- default/absent section => Governed Products;
+- `section=portfolio` => Portfolio Registry.
+
+Switching modes preserves current `product`, `recordType`, and `q` values; returning to products removes only `section` and `item`.
+
+Inside RONSAS detail add Composition groups:
+- Owned: active `product_owned` targeting RONSAS;
+- Shared: active shared classification plus RONSAS `uses|depends_on`;
+- External: active external classification plus RONSAS integration/use;
+- Pending Review: historical RONSAS provenance with no approved classification.
+
+Never render pending historical apps as Owned.
+
+Modify `DataNestApp` to pass user id and membership role.
+
+- [ ] **Step 5: Add focused responsive styles**
+
+Reuse existing panel/button/input/badge primitives where possible. Add only registry/mode/composition/detail classes and mobile stacking.
+
+- [ ] **Step 6: Run GREEN + build checks**
+
+Run:
+
+`node --test --experimental-strip-types tests/unit/portfolio-registry-ui-source.test.mjs tests/unit/products-source.test.mjs tests/unit/product-lab-portfolio-source.test.mjs`
 
 Run:
 
 `npm run check`
 
-Run:
-
-`npm run build`
-
 Expected: PASS.
 
-- [ ] **Step 7: Commit Task 5**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add src/components/PortfolioRegistryPanel.tsx src/components/DataNestApp.tsx src/components/ProductsWorkspace.tsx src/app/globals.css tests/unit/products-source.test.mjs tests/unit/ui-ux-source.test.mjs
-git commit -m "feat: add Portfolio Registry read experience"
+git add src/lib/portfolioRegistry.ts src/components/PortfolioRegistryPanel.tsx src/components/ProductsWorkspace.tsx src/components/DataNestApp.tsx src/app/globals.css tests/unit/portfolio-registry-ui-source.test.mjs tests/unit/products-source.test.mjs
+git commit -m "feat: add portfolio registry workspace"
 ```
 
-### Task 6: Governed Portfolio Actions in the Products Workspace
+### Task 6: Governed Portfolio Actions, Browser Coverage & Architecture Record
 
 **Files:**
 - Modify: `src/components/PortfolioRegistryPanel.tsx`
-- Modify: `src/components/ProductsWorkspace.tsx`
-- Modify: `src/app/globals.css`
-- Modify: `tests/unit/products-source.test.mjs`
-- Modify: `tests/unit/ui-ux-source.test.mjs`
+- Modify: `src/components/ProductsWorkspace.tsx` only if refresh/composition routing requires it
+- Create: `tests/browser/portfolio-registry.spec.ts`
+- Modify: `tests/browser/products.spec.ts` only for fixture compatibility
+- Modify: `docs/ARCHITECTURE.md`
 
 **Interfaces:**
-- Consumes Task 2/3 RPCs and Task 5 role props.
-- Produces user actions:
-  - create Portfolio Item for operator/admin/owner;
-  - propose classification;
-  - approve/reject pending classification for admin/owner;
-  - propose relationship;
-  - approve/reject pending relationship for admin/owner;
-  - propose lifecycle transition;
-  - approve/reject pending lifecycle event for admin/owner;
-  - promote eligible candidate for admin/owner;
-  - deprecate/retire item for admin/owner.
-- Browser code never writes classification/relationship/lifecycle tables directly.
+- Consumes Task 2 RPCs and Task 5 role helpers.
+- React must not directly insert/update/delete portfolio history tables.
 
-- [ ] **Step 1: Add failing source tests for governed actions**
+- [ ] **Step 1: Write failing browser coverage**
+
+Create a fixture with:
+- RONSAS active independent governed product;
+- Sync Vision `pending_review` with historical RONSAS provenance containing an old ownership claim;
+- one shared capability used by RONSAS;
+- one external capability integrated by RONSAS;
+- one Product Candidate with linked Product Lab evidence including a production surface;
+- one deprecated and one retired item.
 
 Assert:
-- direct browser `.insert()` / `.update()` against `portfolio_classifications`, `portfolio_relationships`, and `portfolio_lifecycle_events` is absent;
-- proposal buttons invoke the exact Task 2 RPC names;
-- approval buttons invoke the exact Task 2 approval RPC names;
-- promotion invokes `promote_product_candidate`;
-- deprecation/retirement invoke their Task 3 RPCs;
-- viewers see no mutation controls;
-- operators can create items/propose but cannot approve/promote/retire;
-- owner/admin controls are gated by `canAdmin`;
-- each successful mutation calls `onRefresh()`;
-- RPC errors stay local to Portfolio Registry and do not clear the governed Product Catalog.
+1. `?view=products&section=portfolio&item=sync-vision` shows Pending Review and the exact pending-review explanation, not Owned.
+2. Governed Products still shows RONSAS canonical full name, `FREE PROMOTION · BILLING OFF`, and Portfolio Pulse product count based only on governed products.
+3. RONSAS Composition separates Shared/External/Pending Review.
+4. Candidate remains a candidate even when its Product Lab surface environment is `production`.
+5. 390x844 has no document horizontal overflow.
+6. Existing legacy product URL still behaves as existing `products.spec.ts` requires.
+7. Viewer/operator/owner role fixtures expose only the permitted actions.
+8. Retirement RPC error for critical dependants leaves displayed lifecycle unchanged.
 
-Run and verify FAIL.
+Run:
 
-- [ ] **Step 2: Add operator Portfolio Item creation**
+`npm run test:browser -- tests/browser/portfolio-registry.spec.ts`
 
-Use direct `portfolio_items` insert under existing RLS only for initial registry identity creation.
+Expected: FAIL because governed controls are not implemented.
 
-Require:
-- non-empty name;
-- explicit item kind;
-- project-scoped slug generated from user input and editable before submit;
-- default review state `pending_review`;
-- no automatic linked product or ownership.
+- [ ] **Step 2: Add operator proposal controls**
 
-After insert, refresh and select the new item.
+For `owner|admin|operator`:
+- create item -> `create_portfolio_item_v1`;
+- propose classification -> `propose_portfolio_classification_v1`;
+- propose relationship -> `propose_portfolio_relationship_v1`;
+- propose lifecycle -> `propose_portfolio_lifecycle_transition_v1`.
 
-- [ ] **Step 3: Add classification and relationship proposal/approval UI**
+Require rationale for proposals. Reload registry state after successful RPC. Do not expose approval buttons to operator/viewer.
 
-For `canOperate`, render proposal forms against the selected item.
+- [ ] **Step 3: Add owner/admin approval and lifecycle controls**
 
-For `canAdmin`, render pending decision cards with Approve and Reject actions.
+For `owner|admin` only:
+- approve classification;
+- approve relationship;
+- approve lifecycle;
+- deprecate;
+- retire.
 
-Use the Task 2 RPCs only. Show rationale/evidence reference in the review card.
+Retirement confirmation must state that history is preserved and database dependency guards are authoritative.
 
-- [ ] **Step 4: Add lifecycle and candidate promotion UI**
+RPC failures remain local and do not hide or mutate the item in UI.
 
-Operators may propose lifecycle transitions.
+- [ ] **Step 4: Add Product Candidate promotion review**
 
-Owners/admins may approve lifecycle events and, for a `product_candidate` in lifecycle `candidate`, open a Promotion Packet form containing the Task 3 required product/evidence fields and an exact linked Product Lab surface/build.
+Promotion form collects:
+- category;
+- mission;
+- operating model;
+- primary runtime;
+- evidence reference;
+- exact Promotion Packet keys from Task 2.
 
-Promotion success refreshes both portfolio and governed product queries without changing billing.
+Show `FREE PROMOTION · BILLING OFF` before confirmation. Expose no billing input.
 
-- [ ] **Step 5: Add deprecation and retirement UI**
+Call `promote_product_candidate_v1`; on success refresh both registry and governed-product queries.
 
-Owners/admins can:
-- deprecate with reason/evidence;
-- retire with reason, optional replacement item, and evidence.
+- [ ] **Step 5: Update architecture record**
 
-Surface fail-closed database errors such as critical dependants or active production surface without hiding the item or losing history.
+After implementation exists, add a concise Portfolio Registry section to `docs/ARCHITECTURE.md` stating:
+- Product Registry remains governed-product identity authority;
+- Portfolio Registry is architectural classification/lifecycle/relationship authority;
+- historical RONSAS app placement is provenance, not ownership;
+- Product Lab provides versioned evidence but does not promote products;
+- billing-off remains unchanged.
 
-- [ ] **Step 6: Run unit/type/build checks**
+Do not claim Phase C-H target concepts are implemented.
+
+- [ ] **Step 6: Run full Phase B verification**
 
 Run:
 
@@ -606,115 +567,63 @@ Run:
 
 `npm run build`
 
-Expected: PASS.
+Run:
 
-- [ ] **Step 7: Commit Task 6**
+`npm run test:browser -- tests/browser/products.spec.ts tests/browser/portfolio-registry.spec.ts`
+
+If repository PR verification runs all Playwright tests, also run:
+
+`npm run test:browser`
+
+Expected: all pass.
+
+- [ ] **Step 7: Inspect scope/migration ordering**
+
+Run:
+
+`git diff --check <PHASE_B_BASE>...HEAD`
+
+Run:
+
+`git diff --name-only <PHASE_B_BASE>...HEAD`
+
+Expected migration order:
+1. `20260927093000_add_portfolio_registry_foundations.sql`
+2. `20260927094000_add_portfolio_registry_governed_operations.sql`
+3. `20260927095000_backfill_portfolio_registry_baseline.sql`
+
+No unrelated billing, DataNest AI learning, Sparks, deployment-target, RONSAS runtime, Cloud-Nest, Supository, ILM, or Resource Fabric changes.
+
+- [ ] **Step 8: Commit**
 
 ```bash
-git add src/components/PortfolioRegistryPanel.tsx src/components/ProductsWorkspace.tsx src/app/globals.css tests/unit/products-source.test.mjs tests/unit/ui-ux-source.test.mjs
-git commit -m "feat: add governed portfolio review actions"
+git add src/components/PortfolioRegistryPanel.tsx src/components/ProductsWorkspace.tsx tests/browser/portfolio-registry.spec.ts tests/browser/products.spec.ts docs/ARCHITECTURE.md
+git commit -m "feat: complete governed portfolio lifecycle"
 ```
 
-### Task 7: Browser Regression and Release Verification
+## Final Branch Review
 
-**Files:**
-- Modify: `tests/browser/products.spec.ts`
-- Modify: `tests/unit/portfolio-registry-source.test.mjs`
+After all tasks:
 
-**Interfaces:**
-- Consumes all Phase B schema/UI interfaces.
-- Produces release evidence only; no new runtime interface.
-
-- [ ] **Step 1: Extend browser fixtures**
-
-Add fixture responses for:
-- `portfolio_registry_view`;
-- one RONSAS governed-product item;
-- at least two historical applications in `pending_review`;
-- one shared capability;
-- one external capability;
-- one deprecated/retired item;
-- Product Lab optional linkage where relevant.
-
-- [ ] **Step 2: Add browser assertions for Phase B**
-
-Test:
-- existing `?view=products&product=ronsas&recordType=risk&q=runner` path still works;
-- canonical RONSAS full name remains visible;
-- `FREE PROMOTION · BILLING OFF` remains visible;
-- Portfolio Pulse governed-product count is not inflated by portfolio items;
-- Portfolio Registry opens through `section=portfolio`;
-- historical apps visibly say `PENDING REVIEW`;
-- shared/external classifications render distinctly;
-- `item=sync-vision` deep link resolves without changing the current governed product identity;
-- 390x844 viewport has no page-level horizontal overflow.
-
-- [ ] **Step 3: Add final migration-scope assertions**
-
-Assert Phase B migration does not:
-- enable billing;
-- delete `products` or `product_records`;
-- alter RONSAS parent authority;
-- auto-classify historical applications as product-owned;
-- introduce Cloud-Nest/Supository/ILM schema.
-
-- [ ] **Step 4: Run full verification**
-
-Run:
-
-`npm test`
-
-Expected: all unit tests pass.
-
-Run:
-
-`npm run check`
-
-Expected: no TypeScript errors.
-
-Run:
-
-`npm run build`
-
-Expected: production build succeeds.
-
-Run:
-
-`npm run test:browser -- tests/browser/products.spec.ts`
-
-Expected: all Products/Portfolio browser tests pass.
-
-- [ ] **Step 5: Inspect implementation scope**
-
-Run:
-
-`git diff --check <phase-b-base>..HEAD`
-
-Expected: no whitespace errors.
-
-Run:
-
-`git diff --name-only <phase-b-base>..HEAD`
-
-Expected changes are limited to the migration, Portfolio Registry library/component, Products/Product Lab UI, CSS, and specified tests/documentation. No unrelated billing, DataNest AI, Sparks, RONSAS integration, hosting, or Phase C-H files.
-
-- [ ] **Step 6: Commit Task 7**
-
-```bash
-git add tests/browser/products.spec.ts tests/unit/portfolio-registry-source.test.mjs
-git commit -m "test: verify Phase B portfolio compatibility"
-```
+- verify no migration rewrites earlier historical migrations;
+- verify authenticated clients cannot directly mutate portfolio history tables;
+- verify all portfolio writes emit audit events;
+- verify historical RONSAS ownership claims remain provenance-only;
+- verify pending applications do not inflate Portfolio Pulse product count;
+- verify Product Lab production remains evidence only;
+- verify candidate promotion cannot accept/enable billing;
+- verify retirement dependency guard exists at database authority, not only UI;
+- verify legacy product URLs still pass;
+- run all Task 6 verification commands with fresh results before PR merge.
 
 ## Plan Self-Review
 
-**Spec coverage:** Tasks 1-3 cover identity, classification, relationship, lifecycle, backfill, atomic promotion, deprecation, and retirement. Task 4 covers Product Lab linkage. Task 5 covers read UX and URL compatibility. Task 6 covers governed review/write UX. Task 7 covers regression, fail-closed scope, and release verification.
+**Spec coverage:** Tasks 1-6 cover identity, classification, relationship graph, lifecycle history, RLS, governed write paths, audit events, atomic promotion, deprecation/retirement, Product Lab linkage, RONSAS/historical-app backfill, read model, Products/Portfolio UX, URLs, and compatibility. Physical repository/runtime consolidation remains correctly excluded.
 
-**Step scan:** Each task has one independently reviewable result and its own RED/GREEN or verification cycle. No task introduces Phase C-H infrastructure.
+**Step scan:** Each task has one reviewable deliverable: schema, governed operations, backfill, Product Lab linkage, registry read UX, then governed actions/integration. No task asks the implementer to invent schema/RPC/type names.
 
-**Type consistency:** Database names and TypeScript names are fixed once and reused: `portfolio_items`, `portfolio_classifications`, `portfolio_relationships`, `portfolio_lifecycle_events`, `portfolio_registry_view`, and `product_surfaces.portfolio_item_id`.
+**Type consistency:** UI types use Task 1 view fields and Task 2 RPC names. `PortfolioRole` matches existing membership roles. Product Lab adds only nullable `portfolio_item_id`.
 
-**Review Focus:** Historical ambiguity is pinned in Tasks 1/7; promotion atomicity in Task 3; relationship integrity in Task 2; retirement guards in Task 3; backward compatibility in Tasks 5/7.
+**Review Focus:** historical ownership is pinned in Task 3 and browser Task 6; lifecycle/runtime separation in Tasks 4/6; atomic promotion in Task 2; critical dependency retirement in Task 2/6; compatibility in Tasks 5/6.
 
-**Postgres review:** The plan explicitly requires FK indexes, project-scoped RLS, invoker-security views, explicit authenticated authorization in security-definer RPCs, and short transactional write paths with no external calls.
-
-**Proportion:** The plan implements only the approved Phase B spec. It deliberately avoids building the later Resource Fabric, Trust Manifest, ILM, or commercial systems.
+**Proportion:** This is one six-task vertical plan for one coherent Phase B subsystem. It deliberately excludes Phase C-H and physical application/repository consolidation.
