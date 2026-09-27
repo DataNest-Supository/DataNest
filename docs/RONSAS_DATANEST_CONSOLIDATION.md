@@ -13,10 +13,10 @@ RONSAS is a DataNest Product. All RONSAS application source, runtime configurati
 | Creative Studio | `resonance36912-cell/rons-creative-studio-sovereign-source` | `apps/ronsas/creative-studio` | Imported from `c7e0ac7ab341369ed26483eac3df4e83c1de6b6d`; exact source tree `17bc265d00ddd7413046a1f8c567925fa7ba9e21` (297 blobs) |
 | SyncVision | `resonance36912-cell/rons-sync-vision-sovereign-source` | `apps/ronsas/syncvision` | Structurally imported from `e224152bee53fb2a07837fe4838f59dd8e679d43` (501 files); **migration gate remains open** because four large binary assets are currently zero-byte placeholders |
 | YouTube Optimizer | `resonance36912-cell/rons-youtube-optimizer-sovereign-source` | `apps/ronsas/youtube-optimizer` | Imported: 236 files |
-| Career Compass | No executable source located in connected GitHub/Dropbox history | `apps/ronsas/career-compass` | Source recovery exhausted; only a historical logo and design-document mention were found |
-| SovereignForge | No executable source located in connected GitHub/Dropbox history | `apps/ronsas/sovereign-forge` | Source recovery exhausted; governance protocol documents only |
-| LyricSync Studio | No executable source located in connected GitHub/Dropbox history | `apps/ronsas/lyricsync-studio` | Source recovery exhausted; no source/branch/repository hits |
-| Scene Song Spark | No executable source located in connected GitHub/Dropbox history | `apps/ronsas/scene-song-spark` | Source recovery exhausted; no source/branch/repository hits |
+| Career Compass | Historical executable source unavailable | `apps/ronsas/career-compass` | Reconstructed as DataNest-native application; validation pending |
+| SovereignForge | Historical executable source unavailable | `apps/ronsas/sovereign-forge` | Reconstructed as DataNest-native application; validation pending |
+| LyricSync Studio | Historical executable source unavailable | `apps/ronsas/lyricsync-studio` | Reconstructed as DataNest-native application; validation pending |
+| Scene Song Spark | Historical executable source unavailable | `apps/ronsas/scene-song-spark` | Reconstructed as DataNest-native application; validation pending |
 | RONS Control Center / Open Nova operations | Historical RONSAS control-plane sources | `ops/ronsas/ealiophin` plus app-local runtime source | Reconciled into DataNest-native start/status/stop, supervisor, and optional SyncVision MuseTalk controls |
 
 ## SyncVision integrity gate
@@ -53,7 +53,18 @@ Historical runner-recovery scripts were not copied wholesale because they are ha
 
 ## Source-recovery conclusion
 
-Connected GitHub repositories, RONSAS branches/commit history, and the Dropbox RONS audit mirror were searched for the four unresolved applications. No executable source was found. Career Compass yielded only a logo and a documentation-only theme commit; SovereignForge yielded governance protocol documents; LyricSync Studio and Scene Song Spark yielded no executable-source hits. Recreating any of these applications would therefore be **new DataNest development**, not source migration, and must not be mislabeled as recovered source.
+Connected GitHub repositories, RONSAS branches/commit history, and the Dropbox RONS audit mirror were searched for the four unresolved applications. No executable source was found. They have therefore been reconstructed as **new DataNest-native development**, not mislabeled as recovered source. Career Compass provides a local 30/60/90-day career-planning workflow; SovereignForge generates governed DataNest project manifests; LyricSync Studio produces deterministic LRC timing; Scene Song Spark creates timed scene sequences. All four are self-contained, billing-free, and governed by the same DataNest control plane.
+
+## Reconstructed DataNest-native applications
+
+The following applications are new DataNest development because their historical executable source could not be recovered:
+
+- `apps/ronsas/career-compass` — Career Compass, port 3501
+- `apps/ronsas/sovereign-forge` — SovereignForge, port 3601
+- `apps/ronsas/lyricsync-studio` — LyricSync Studio, port 3701
+- `apps/ronsas/scene-song-spark` — Scene Song Spark, port 3801
+
+Each package contains local logic, tests, a deterministic build, and a DataNest-controlled preview server. They are registered as required web applications in `ops/ronsas/ealiophin/RONSAS-MODULES.json`.
 
 ## DataNest application validation
 
@@ -82,3 +93,8 @@ This proves the imported application source is executable from DataNest. SyncVis
 5. Historical CI, diagnostics, runner-recovery branches, and duplicated deployment experiments are evidence only unless still required by the DataNest runtime.
 6. Each imported application must build and test from its DataNest path before its historical repository is treated as retired.
 7. External services may remain dependencies, but repository/source authority and release control must originate in DataNest.
+
+
+### Reconstruction validation pending
+
+PR validation is extended to Career Compass, SovereignForge, LyricSync Studio, and Scene Song Spark. Their status becomes certified only after the new DataNest PR workflow run passes.

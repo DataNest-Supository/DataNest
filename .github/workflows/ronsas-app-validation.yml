@@ -41,6 +41,18 @@ jobs:
           - name: SyncVision
             path: apps/ronsas/syncvision
             verify: npm run typecheck && npm test && npm run build
+          - name: Career Compass
+            path: apps/ronsas/career-compass
+            verify: npm test && npm run build
+          - name: SovereignForge
+            path: apps/ronsas/sovereign-forge
+            verify: npm test && npm run build
+          - name: LyricSync Studio
+            path: apps/ronsas/lyricsync-studio
+            verify: npm test && npm run build
+          - name: Scene Song Spark
+            path: apps/ronsas/scene-song-spark
+            verify: npm test && npm run build
     defaults:
       run:
         working-directory: ${{ matrix.path }}
