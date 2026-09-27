@@ -15,7 +15,7 @@ import ResourceFabricPanel from "@/components/ResourceFabricPanel";
 import type { ExecutionAuthorityRole } from "@/lib/executionAuthority";
 import { useSessionDraftState } from "@/lib/sessionDraft";
 import { useSingleFlight } from "@/lib/singleFlight";
-import { PENDING_MUTATION_EVENT, clearPendingMutation, getOrCreatePendingMutation, loadPendingMutation, type PendingMutationIntent } from "@/lib/pendingMutation";
+import { PENDING_MUTATION_EVENT, classifyPendingMutationAge, clearPendingMutation, getOrCreatePendingMutation, loadPendingMutation, markPendingMutationVerification, type PendingMutationAge, type PendingMutationIntent, type PendingMutationVerification } from "@/lib/pendingMutation";
 import { reconcileServerMutation, type MutationReconciliationState } from "@/lib/mutationReconciliation";
 
 type Project = { id:string; slug:string; name:string; description:string|null; status:string; created_at:string };
@@ -81,6 +81,9 @@ type MutationRecoveryItem = {
   label:string;
   detail:string;
   startedAt:string;
+  age:PendingMutationAge;
+  verificationState:PendingMutationVerification;
+  lastCheckedAt:string|null;
 };
 
 const PAGE_SIZE = 20;
@@ -454,7 +457,13 @@ export default function DataNestApp({session}:{session:Session}) {
     for(const descriptor of pendingRecoveryDescriptors){
       const intent=loadPendingMutation(descriptor.scope);
       if(!intent||intent.kind!==descriptor.kind)continue;
-      next.push({...descriptor,startedAt:intent.startedAt});
+      next.push({
+        ...descriptor,
+        startedAt:intent.startedAt,
+        age:classifyPendingMutationAge(intent.startedAt),
+        verificationState:intent.verificationState,
+        lastCheckedAt:intent.lastCheckedAt
+      });
     }
     next.sort((a,b)=>a.startedAt.localeCompare(b.startedAt));
     setPendingRecoveries(next);
@@ -856,10 +865,12 @@ export default function DataNestApp({session}:{session:Session}) {
   useEffect(()=>{
     syncPendingRecoveries();
     const sync=()=>syncPendingRecoveries();
+    const ageTimer=window.setInterval(sync,60000);
     window.addEventListener(PENDING_MUTATION_EVENT,sync);
     window.addEventListener("pageshow",sync);
     window.addEventListener("focus",sync);
     return()=>{
+      window.clearInterval(ageTimer);
       window.removeEventListener(PENDING_MUTATION_EVENT,sync);
       window.removeEventListener("pageshow",sync);
       window.removeEventListener("focus",sync);
@@ -1110,7 +1121,16 @@ export default function DataNestApp({session}:{session:Session}) {
     setMobileOpen(false);
   }
 
-  async function signOut(){ await getSupabase()?.auth.signOut(); }
+  async function signOut(){
+    if(pendingRecoveries.length>0){
+      const noun=pendingRecoveries.length===1?"operation":"operations";
+      const confirmed=window.confirm(
+        pendingRecoveries.length+" unresolved "+noun+" will remain preserved in this browser session and will reappear only when this same account returns. Sign out without resolving "+(pendingRecoveries.length===1?"it":"them")+" now?"
+      );
+      if(!confirmed)return;
+    }
+    await getSupabase()?.auth.signOut();
+  }
 
   async function copyWorkspaceLink(){
     const shareUrl=new URL(window.location.href);
@@ -1419,13 +1439,18 @@ export default function DataNestApp({session}:{session:Session}) {
             <span className="badge warn">{pendingRecoveries.length} OPEN</span>
           </div>
           <div className="mutationRecoveryList">
-            {pendingRecoveries.map(item=><article className="mutationRecoveryItem" key={item.scope}>
+            {pendingRecoveries.map(item=><article className={"mutationRecoveryItem "+item.age} key={item.scope}>
               <div>
-                <strong>{item.label}</strong>
-                <p>{item.detail}</p>
-                <small>Started {formatDate(item.startedAt)} · request identity preserved</small>
+                <div className="mutationRecoveryIdentity">
+                  <strong>{item.label}</strong>
+                  <span className={"badge "+(item.verificationState==="confirmed_absent"?"good":item.age==="stale"?"bad":"warn")}>
+                    {item.verificationState==="confirmed_absent"?"SAFE RETRY":item.age==="stale"?"STALE":item.age==="aging"?"AGING":"PENDING"}
+                  </span>
+                </div>
+                <p>{item.verificationState==="confirmed_absent"?"Server state confirmed no record for the preserved request. Resume the original retry or edit it into new intent.":item.detail}</p>
+                <small>Started {formatDate(item.startedAt)} · request identity preserved{item.lastCheckedAt?" · checked "+formatDate(item.lastCheckedAt):""}</small>
               </div>
-              <button className="secondaryButton compact" type="button" onClick={()=>openPendingRecovery(item)}>Review &amp; reconcile →</button>
+              <button className="secondaryButton compact" type="button" onClick={()=>openPendingRecovery(item)}>{item.verificationState==="confirmed_absent"?"Resume safe retry →":"Review &amp; reconcile →"}</button>
             </article>)}
           </div>
         </section>}
@@ -1643,14 +1668,15 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
 
   function clearUnifiIntentForEdit(){
     if(reconciliationLocked)return false;
-    clearPendingMutation(requestScope);
-    setReconciliationState("idle");
-    return true;
+    const cleared=clearPendingMutation(requestScope,"confirmed_absent_new_intent");
+    if(cleared)setReconciliationState("idle");
+    return cleared||!loadPendingMutation(requestScope);
   }
 
   async function reconcileUnifiIntent(intent:PendingMutationIntent<UnifiPendingPayload>,announce:boolean){
     const supabase=getSupabase();
     if(!supabase){
+      markPendingMutationVerification(requestScope,"unconfirmed");
       setReconciliationState("pending");
       if(announce)setError("UNIFI submission is awaiting authoritative confirmation. Connectivity is unavailable, so do not create a second request yet.");
       return {state:"pending" as const,value:null,error:new Error("Supabase unavailable")};
@@ -1669,17 +1695,19 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
     });
 
     if(result.state==="confirmed"&&result.value){
-      clearPendingMutation(requestScope);
+      clearPendingMutation(requestScope,"confirmed");
       setTitle("");setDescription("");setPriority(50);setCapability("chat");setTests(true);setArtifact(true);
       setReconciliationState("confirmed");
       setError("");
       setNotice("Recovered confirmed JOB-"+String(result.value.job_number).padStart(5,"0")+" from authoritative server state.");
       await reload();
     }else if(result.state==="not_recorded"){
+      markPendingMutationVerification(requestScope,"confirmed_absent");
       setReconciliationState("not_recorded");
       restoreIntentPayload(intent);
       if(announce)setNotice("Previous UNIFI submission was not recorded. The original manifest is restored and can be retried safely.");
     }else{
+      markPendingMutationVerification(requestScope,"unconfirmed");
       setReconciliationState("pending");
       restoreIntentPayload(intent);
       if(announce)setError("UNIFI submission outcome is still unconfirmed. Its request identity is preserved; recheck server state before retrying.");
@@ -1732,7 +1760,7 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
         if(error) throw error;
         const row=Array.isArray(data)?data[0]:data;
         const number=Number((row as Record<string,unknown>|null)?.job_number||0);
-        clearPendingMutation(requestScope);
+        clearPendingMutation(requestScope,"confirmed");
         setReconciliationState("confirmed");
         setTitle("");setDescription("");setPriority(50);setCapability("chat");setTests(true);setArtifact(true);
         setNotice("JOB-"+String(number||"?").padStart(5,"0")+" created transactionally by UNIFI.");

@@ -3,7 +3,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 import { useSingleFlight } from "@/lib/singleFlight";
-import { clearPendingMutation, getOrCreatePendingMutation, loadPendingMutation, type PendingMutationIntent } from "@/lib/pendingMutation";
+import { clearPendingMutation, getOrCreatePendingMutation, loadPendingMutation, markPendingMutationVerification, type PendingMutationIntent } from "@/lib/pendingMutation";
 import { reconcileServerMutation, type MutationReconciliationState } from "@/lib/mutationReconciliation";
 
 type Balance={account_id:string;account_type:"project"|"platform"|"locked";project_id:string|null;balance:number};
@@ -121,14 +121,15 @@ export default function SparksWorkspace({
 
   function clearRedemptionIntentForEdit(){
     if(redemptionLocked)return false;
-    clearPendingMutation(redemptionRequestScope);
-    setRedemptionReconciliation("idle");
-    return true;
+    const cleared=clearPendingMutation(redemptionRequestScope,"confirmed_absent_new_intent");
+    if(cleared)setRedemptionReconciliation("idle");
+    return cleared||!loadPendingMutation(redemptionRequestScope);
   }
 
   async function reconcileRedemptionIntent(intent:PendingMutationIntent<SparkRedemptionPendingPayload>,announce:boolean){
     const supabase=getSupabase();
     if(!supabase){
+      markPendingMutationVerification(redemptionRequestScope,"unconfirmed");
       setRedemptionReconciliation("pending");
       if(announce)setError("Spark reservation is awaiting authoritative confirmation. Connectivity is unavailable, so do not issue a second request.");
       return {state:"pending" as const,value:null,error:new Error("Supabase unavailable")};
@@ -146,17 +147,19 @@ export default function SparksWorkspace({
     });
 
     if(result.state==="confirmed"&&result.value){
-      clearPendingMutation(redemptionRequestScope);
+      clearPendingMutation(redemptionRequestScope,"confirmed");
       setRedemptionReconciliation("confirmed");
       setQuantity("1");setRequestNote("");
       setError("");
       setNotice("Recovered confirmed Spark reservation "+result.value.trace_key+" from authoritative server state.");
       await load();
     }else if(result.state==="not_recorded"){
+      markPendingMutationVerification(redemptionRequestScope,"confirmed_absent");
       setRedemptionReconciliation("not_recorded");
       restoreRedemptionIntent(intent);
       if(announce)setNotice("Previous Spark reservation was not recorded. The original request is restored and can be retried safely.");
     }else{
+      markPendingMutationVerification(redemptionRequestScope,"unconfirmed");
       setRedemptionReconciliation("pending");
       restoreRedemptionIntent(intent);
       if(announce)setError("Spark reservation outcome is still unconfirmed. Its request identity is preserved; recheck server state before retrying.");
@@ -228,7 +231,7 @@ export default function SparksWorkspace({
           target_note:payload.note
         });
         if(error)throw error;
-        clearPendingMutation(redemptionRequestScope);
+        clearPendingMutation(redemptionRequestScope,"confirmed");
         setRedemptionReconciliation("confirmed");
         setQuantity("1");setRequestNote("");
         setNotice("Sparks reserved. They remain locked until the service is fulfilled or the request is cancelled.");

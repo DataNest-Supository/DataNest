@@ -1248,8 +1248,18 @@ test("UNIFI reconciles pending, not-recorded, and confirmed-after-error outcomes
 
   const pendingAfterAmbiguity=await page.evaluate(()=>Object.entries(sessionStorage).filter(([key])=>key.startsWith("datanest.pendingMutation.unifi-job:")));
   expect(pendingAfterAmbiguity.length).toBe(1);
+  await expect(page.getByRole("region",{name:"Unresolved operations"})).toContainText("UNIFI Job Manifest");
+  await expect(page.getByRole("button",{name:"1 unresolved operation"})).toBeVisible();
 
-  await page.getByRole("button",{name:"Recheck server state"}).click();
+  const projectNav=page.getByRole("navigation",{name:"Project workspaces"});
+  await projectNav.getByRole("button",{name:"TranScheduler"}).click();
+  await expect(page.getByRole("heading",{name:"TranScheduler"})).toBeVisible();
+  const recoveryCenter=page.getByRole("region",{name:"Unresolved operations"});
+  await expect(recoveryCenter).toContainText("UNIFI Job Manifest");
+  await expect(recoveryCenter).toContainText("request identity preserved");
+
+  await recoveryCenter.getByRole("button",{name:"Review & reconcile →"}).click();
+  await expect(page.getByRole("heading",{name:"Job Manifest Planner"})).toBeVisible();
   await expect(page.getByText(/previous request was not recorded/i)).toBeVisible();
   await expect(page.getByRole("button",{name:"Create Job Manifest"})).toBeEnabled();
   await expect(page.getByLabel("Job title")).toHaveValue("Reconciled manifest");
@@ -1257,10 +1267,11 @@ test("UNIFI reconciles pending, not-recorded, and confirmed-after-error outcomes
   await form.evaluate(node=>node.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true})));
   await expect.poll(()=>createCalls).toBe(2);
 
-  const projectNav=page.getByRole("navigation",{name:"Project workspaces"});
   await projectNav.getByRole("button",{name:"TranScheduler"}).click();
   await expect(page.getByRole("heading",{name:"TranScheduler"})).toBeVisible();
   await expect(page.getByText("Recovered confirmed JOB-00042 from authoritative server state.",{exact:true})).toBeVisible();
+  await expect(page.getByRole("region",{name:"Unresolved operations"})).toHaveCount(0);
+  await expect(page.getByRole("button",{name:/unresolved operation/})).toHaveCount(0);
 
   expect(requestKeys[1]).toBe(requestKeys[0]);
   expect(reconciliationCalls).toBeGreaterThanOrEqual(3);
@@ -1381,4 +1392,99 @@ test("Spark reservation reconciliation reuses one request identity and recovers 
 
   const storedAfterSuccess=await page.evaluate(()=>Object.keys(sessionStorage).filter(key=>key.startsWith("datanest.pendingMutation.sparks-redemption:")));
   expect(storedAfterSuccess).toEqual([]);
+});
+
+
+test("stale recovery stays preserved and user-scoped across account transitions", async ({ page }) => {
+  const projectId = "00000000-0000-4000-8000-000000000010";
+  const userId = "00000000-0000-4000-8000-000000000001";
+  const otherUserId = "00000000-0000-4000-8000-000000000099";
+  const stamp = "2026-09-27T08:00:00Z";
+
+  await page.route("**/runtime-config.js", route => route.fulfill({
+    contentType:"application/javascript",
+    body:"window.__DATANEST_CONFIG__={supabaseUrl:'https://fixture.supabase.co',supabasePublishableKey:'fixture-key',authoritative:true}"
+  }));
+
+  await page.addInitScript(({projectId,userId,otherUserId}) => {
+    const encode = (data: unknown) => btoa(JSON.stringify(data)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+    const auth = (id:string) => ({
+      access_token:`${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:id,exp:4102444800,role:"authenticated"})}.fixture`,
+      refresh_token:"fixture", token_type:"bearer", expires_at:4102444800,
+      user:{id,aud:"authenticated",role:"authenticated",email:id===userId?"fixture@example.invalid":"other@example.invalid"}
+    });
+    if(!localStorage.getItem("sb-fixture-auth-token")){
+      localStorage.setItem("sb-fixture-auth-token", JSON.stringify(auth(userId)));
+    }
+
+    const staleStartedAt=new Date(Date.now()-2*60*60*1000).toISOString();
+    const firstKey="datanest.pendingMutation.unifi-job:"+projectId+":"+userId;
+    if(!sessionStorage.getItem(firstKey)){
+      sessionStorage.setItem(firstKey,JSON.stringify({
+        kind:"unifi_job",
+        requestKey:"50000000-0000-4000-8000-000000000001",
+        payload:{title:"Stale manifest",description:null,priority:50,capability:"chat",tests:true,artifact:true},
+        startedAt:staleStartedAt,
+        verificationState:"unconfirmed",
+        lastCheckedAt:staleStartedAt
+      }));
+    }
+    const secondKey="datanest.pendingMutation.sparks-redemption:"+projectId+":"+otherUserId;
+    if(!sessionStorage.getItem(secondKey)){
+      sessionStorage.setItem(secondKey,JSON.stringify({
+        kind:"spark_redemption",
+        requestKey:"50000000-0000-4000-8000-000000000099",
+        payload:{serviceId:"20000000-0000-4000-8000-000000000001",quantity:1,note:null},
+        startedAt:staleStartedAt,
+        verificationState:"unconfirmed",
+        lastCheckedAt:staleStartedAt
+      }));
+    }
+  }, {projectId,userId,otherUserId});
+
+  await page.route("https://fixture.supabase.co/**", route => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+    let body:unknown = [];
+    const headers:Record<string,string> = {"Content-Type":"application/json"};
+
+    if(path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE",created_at:stamp};
+    if(path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"operator",status:"active"};
+    if(path.endsWith("/get_project_dashboard_summary")) body = {total_jobs:0,active_jobs:0,running_jobs:0,blocked_jobs:0,available_capabilities:0,registered_capabilities:0};
+    if(path.endsWith("/jobs")) headers["Content-Range"]="*/0";
+
+    return route.fulfill({status:200,headers,body:JSON.stringify(body)});
+  });
+
+  await page.goto(appPath+"?view=scheduler");
+  await expect(page.getByRole("heading",{name:"TranScheduler"})).toBeVisible();
+
+  let recovery=page.getByRole("region",{name:"Unresolved operations"});
+  await expect(recovery).toContainText("UNIFI Job Manifest");
+  await expect(recovery).toContainText("STALE");
+  await expect(recovery).not.toContainText("Spark reservation");
+  await expect(page.getByRole("button",{name:"1 unresolved operation"})).toBeVisible();
+
+  const preservedBeforeSwitch=await page.evaluate(()=>Object.keys(sessionStorage).filter(key=>key.startsWith("datanest.pendingMutation.")));
+  expect(preservedBeforeSwitch).toHaveLength(2);
+
+  await page.evaluate(({userId,otherUserId})=>{
+    const encode = (data: unknown) => btoa(JSON.stringify(data)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+    localStorage.setItem("sb-fixture-auth-token", JSON.stringify({
+      access_token:`${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:otherUserId,exp:4102444800,role:"authenticated"})}.fixture`,
+      refresh_token:"fixture", token_type:"bearer", expires_at:4102444800,
+      user:{id:otherUserId,aud:"authenticated",role:"authenticated",email:"other@example.invalid"}
+    }));
+  }, {userId,otherUserId});
+  await page.reload();
+  await expect(page.getByRole("heading",{name:"TranScheduler"})).toBeVisible();
+
+  recovery=page.getByRole("region",{name:"Unresolved operations"});
+  await expect(recovery).toContainText("Spark reservation");
+  await expect(recovery).toContainText("STALE");
+  await expect(recovery).not.toContainText("UNIFI Job Manifest");
+  await expect(page.getByRole("button",{name:"1 unresolved operation"})).toBeVisible();
+
+  const preservedAfterSwitch=await page.evaluate(()=>Object.keys(sessionStorage).filter(key=>key.startsWith("datanest.pendingMutation.")));
+  expect(preservedAfterSwitch).toHaveLength(2);
 });

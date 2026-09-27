@@ -431,6 +431,41 @@ A confirmed row clears the pending intent and submitted notes/evidence. A confir
 
 Editing test notes or evidence after a confirmed absence is treated as new intent and clears the old pending request identity. Product surface creation and test-case creation remain single-flight only because those tables do not yet expose an equivalent client request identity; they must not be promoted to authoritative reconciliation by heuristic matching.
 
+### Global recovery center
+
+The application shell surfaces unresolved deterministic mutations outside their originating workspace. The recovery center is derived only from the active project and authenticated user scopes for:
+- UNIFI Job Manifest creation;
+- Sparks reservation;
+- Product Lab test evidence.
+
+It displays the workflow label, start time, and the fact that the request identity is preserved. It does not expose the stored mutation payload globally. Selecting **Review & reconcile** opens the owning workspace, where the workflow-specific authoritative reconciliation logic runs.
+
+The pending-mutation journal emits a same-tab change event whenever an intent is created or cleared. The shell subscribes to that event plus page-focus/page-show restoration, so an operation that resolves after its form unmounts disappears from the recovery center without requiring a reload.
+
+A global recovery item means the browser session still has unresolved continuity metadata; it is not itself proof that the server mutation failed or succeeded. Replacement work must not be issued until the owning workflow establishes authoritative state.
+
+### Stale recovery lifecycle
+
+Recovery age is an attention signal, never a cleanup signal:
+- **recent**: less than 15 minutes old;
+- **aging**: 15–60 minutes old;
+- **stale**: at least 60 minutes old.
+
+No age threshold deletes a pending intent or converts an unknown server outcome into a failure. Stale items remain visible with their original request identity until authoritative reconciliation resolves them.
+
+Each pending intent also records its latest verification state:
+- `unverified`: no deterministic read-back has completed yet;
+- `unconfirmed`: reconciliation itself could not establish server truth;
+- `confirmed_absent`: the authoritative read completed and found no server record for that request identity.
+
+Only two cleanup paths are permitted:
+1. confirmed server success, which clears the pending intent; or
+2. explicit new intent after `confirmed_absent`, which clears the old identity before the edited request is created.
+
+Form edits cannot clear an `unverified` or `unconfirmed` intent. This prevents an old ambiguous request from being silently replaced with a new transaction identity.
+
+Pending scopes include both project ID and authenticated user ID. Signing out does not clear unresolved intents: the user is warned that they remain preserved in the current browser session. Another account using the same tab cannot see those recovery items because its shell derives only that account's project/user scopes. If the original account returns during the same browser session, its unresolved items reappear.
+
 ### Retry ownership
 
 The application disables library-level PostgREST automatic retries through the Supabase client configuration. Mutation retry/reconciliation therefore remains explicit in DataNest rather than being silently repeated underneath the single-flight layer.

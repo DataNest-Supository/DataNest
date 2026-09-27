@@ -2,12 +2,20 @@
 
 const PENDING_MUTATION_PREFIX="datanest.pendingMutation.";
 export const PENDING_MUTATION_EVENT="datanest:pending-mutation-change";
+export const PENDING_MUTATION_AGING_MS=15*60*1000;
+export const PENDING_MUTATION_STALE_MS=60*60*1000;
+
+export type PendingMutationVerification="unverified"|"unconfirmed"|"confirmed_absent";
+export type PendingMutationAge="recent"|"aging"|"stale";
+export type PendingMutationClearReason="confirmed"|"confirmed_absent_new_intent";
 
 export type PendingMutationIntent<T extends Record<string,unknown>=Record<string,unknown>>={
   kind:string;
   requestKey:string;
   payload:T;
   startedAt:string;
+  verificationState:PendingMutationVerification;
+  lastCheckedAt:string|null;
 };
 
 function storageKey(scope:string){
@@ -25,13 +33,38 @@ function notifyPendingMutationChange(scope:string){
 function validIntent(value:unknown):value is PendingMutationIntent{
   if(!value||typeof value!=="object")return false;
   const item=value as Record<string,unknown>;
+  const verification=item.verificationState;
   return typeof item.kind==="string"
     &&typeof item.requestKey==="string"
     &&item.requestKey.length>0
     &&typeof item.startedAt==="string"
     &&Boolean(item.payload)
     &&typeof item.payload==="object"
-    &&!Array.isArray(item.payload);
+    &&!Array.isArray(item.payload)
+    &&(
+      verification===undefined
+      ||verification==="unverified"
+      ||verification==="unconfirmed"
+      ||verification==="confirmed_absent"
+    )
+    &&(item.lastCheckedAt===undefined||item.lastCheckedAt===null||typeof item.lastCheckedAt==="string");
+}
+
+function normalizeIntent<T extends Record<string,unknown>>(value:PendingMutationIntent<T>):PendingMutationIntent<T>{
+  return {
+    ...value,
+    verificationState:value.verificationState||"unverified",
+    lastCheckedAt:value.lastCheckedAt||null
+  };
+}
+
+export function classifyPendingMutationAge(startedAt:string,nowMs=Date.now()):PendingMutationAge{
+  const startedMs=Date.parse(startedAt);
+  if(!Number.isFinite(startedMs))return "stale";
+  const age=Math.max(0,nowMs-startedMs);
+  if(age>=PENDING_MUTATION_STALE_MS)return "stale";
+  if(age>=PENDING_MUTATION_AGING_MS)return "aging";
+  return "recent";
 }
 
 export function loadPendingMutation<T extends Record<string,unknown>>(scope:string):PendingMutationIntent<T>|null{
@@ -43,7 +76,7 @@ export function loadPendingMutation<T extends Record<string,unknown>>(scope:stri
       window.sessionStorage.removeItem(storageKey(scope));
       return null;
     }
-    return parsed as PendingMutationIntent<T>;
+    return normalizeIntent(parsed as PendingMutationIntent<T>);
   }catch{
     try{window.sessionStorage.removeItem(storageKey(scope));}catch{}
     return null;
@@ -62,7 +95,9 @@ export function getOrCreatePendingMutation<T extends Record<string,unknown>>(
     kind,
     requestKey:crypto.randomUUID(),
     payload,
-    startedAt:new Date().toISOString()
+    startedAt:new Date().toISOString(),
+    verificationState:"unverified",
+    lastCheckedAt:null
   };
   try{
     window.sessionStorage.setItem(storageKey(scope),JSON.stringify(next));
@@ -73,13 +108,34 @@ export function getOrCreatePendingMutation<T extends Record<string,unknown>>(
   return next;
 }
 
-export function clearPendingMutation(scope:string){
-  let changed=false;
+export function markPendingMutationVerification(scope:string,state:Exclude<PendingMutationVerification,"unverified">){
+  const existing=loadPendingMutation(scope);
+  if(!existing)return null;
+  const next:PendingMutationIntent={
+    ...existing,
+    verificationState:state,
+    lastCheckedAt:new Date().toISOString()
+  };
   try{
-    changed=window.sessionStorage.getItem(storageKey(scope))!==null;
-    window.sessionStorage.removeItem(storageKey(scope));
+    window.sessionStorage.setItem(storageKey(scope),JSON.stringify(next));
+    notifyPendingMutationChange(scope);
   }catch{}
-  if(changed)notifyPendingMutationChange(scope);
+  return next;
+}
+
+export function clearPendingMutation(scope:string,reason:PendingMutationClearReason){
+  const existing=loadPendingMutation(scope);
+  if(!existing)return false;
+  if(reason==="confirmed_absent_new_intent"&&existing.verificationState!=="confirmed_absent"){
+    return false;
+  }
+  try{
+    window.sessionStorage.removeItem(storageKey(scope));
+  }catch{
+    return false;
+  }
+  notifyPendingMutationChange(scope);
+  return true;
 }
 
 export function pendingMutationStorageKey(scope:string){

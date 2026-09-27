@@ -459,6 +459,10 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .mutationRecoveryHead p:not(.eyebrow){margin:0;max-width:760px;color:#aebfce;font-size:10px;line-height:1.55}
 .mutationRecoveryList{display:grid;gap:8px}
 .mutationRecoveryItem{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:11px 12px;border:1px solid rgba(255,255,255,.07);border-radius:10px;background:rgba(3,12,21,.36)}
+.mutationRecoveryItem.aging{border-color:rgba(242,199,120,.22)}
+.mutationRecoveryItem.stale{border-color:rgba(242,139,157,.28);background:rgba(242,139,157,.035)}
+.mutationRecoveryIdentity{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mutationRecoveryIdentity .badge{font-size:8px}
 .mutationRecoveryItem strong{display:block;font-size:11px;color:#f7e1b6}
 .mutationRecoveryItem p{margin:4px 0;color:#aebfce;font-size:10px;line-height:1.45}
 .mutationRecoveryItem small{color:var(--muted);font-size:9px}
