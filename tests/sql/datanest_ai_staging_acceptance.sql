@@ -48,13 +48,129 @@ begin
   end if;
 end $$;
 
-do $$
+do $
 begin
   if has_table_privilege('authenticated','public.ai_intake_events','INSERT')
      or has_table_privilege('anon','public.ai_intake_events','SELECT') then
     raise exception 'browser roles must not have direct staging-table privileges';
   end if;
-end $$;
+end $;
+
+
+do $
+begin
+  if not has_table_privilege('service_role','public.ai_intake_events','INSERT') then
+    raise exception 'service_role must retain append-only INSERT access to ai_intake_events';
+  end if;
+
+  if has_table_privilege('service_role','public.ai_intake_events','UPDATE')
+     or has_table_privilege('service_role','public.ai_intake_events','DELETE')
+     or has_table_privilege('service_role','public.ai_intake_events','TRUNCATE') then
+    raise exception 'service_role must not mutate or truncate ai_intake_events';
+  end if;
+end $;
+
+
+begin;
+
+create temporary table pg_temp.datanest_intake_append_only_fixture (
+  project_id uuid not null,
+  job_id uuid not null,
+  user_id uuid not null,
+  session_id uuid not null
+) on commit drop;
+
+create temporary table pg_temp.datanest_intake_append_only_inserted (
+  id uuid not null
+) on commit drop;
+
+insert into pg_temp.datanest_intake_append_only_fixture(
+  project_id,job_id,user_id,session_id
+)
+values(
+  gen_random_uuid(),gen_random_uuid(),gen_random_uuid(),gen_random_uuid()
+);
+
+insert into public.ai_sessions(
+  id,project_id,job_id,user_id,client_session_id
+)
+select
+  session_id,project_id,job_id,user_id,gen_random_uuid()
+from pg_temp.datanest_intake_append_only_fixture;
+
+create function pg_temp.assert_datanest_intake_mutations_denied(target_event uuid)
+returns void
+language plpgsql
+security invoker
+set search_path=public,pg_temp
+as $
+begin
+  begin
+    update public.ai_intake_events
+       set metadata=metadata
+     where id=target_event;
+    raise exception 'service_role UPDATE unexpectedly succeeded';
+  exception
+    when insufficient_privilege then null;
+  end;
+
+  begin
+    delete from public.ai_intake_events
+     where id=target_event;
+    raise exception 'service_role DELETE unexpectedly succeeded';
+  exception
+    when insufficient_privilege then null;
+  end;
+
+  begin
+    execute 'truncate table public.ai_intake_events';
+    raise exception 'service_role TRUNCATE unexpectedly succeeded';
+  exception
+    when insufficient_privilege then null;
+  end;
+end
+$;
+
+grant select on pg_temp.datanest_intake_append_only_fixture to service_role;
+grant insert,select on pg_temp.datanest_intake_append_only_inserted to service_role;
+grant execute on function pg_temp.assert_datanest_intake_mutations_denied(uuid) to service_role;
+
+set local role service_role;
+
+with inserted_event as (
+  insert into public.ai_intake_events(
+    trace_id,
+    project_id,
+    job_id,
+    session_id,
+    source_type,
+    source_user_id,
+    content,
+    content_hash,
+    metadata
+  )
+  select
+    'DN-APPEND-ONLY-'||gen_random_uuid()::text,
+    project_id,
+    job_id,
+    session_id,
+    'human',
+    user_id,
+    'append-only acceptance fixture',
+    repeat('a',64),
+    '{"test_fixture":true}'::jsonb
+  from pg_temp.datanest_intake_append_only_fixture
+  returning id
+)
+insert into pg_temp.datanest_intake_append_only_inserted(id)
+select id from inserted_event;
+
+select pg_temp.assert_datanest_intake_mutations_denied(id)
+from pg_temp.datanest_intake_append_only_inserted;
+
+reset role;
+
+rollback;
 
 
 do $$
