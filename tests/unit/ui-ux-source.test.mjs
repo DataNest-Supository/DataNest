@@ -435,7 +435,11 @@ test("workspace presentation state is URL-addressable without exposing active Jo
 });
 
 
-test("shared workspace links clamp stale pages and strip release cache-busters when copied", () => {
+test("shared workspace links clamp stale pages only with exact counts and strip release cache-busters when copied", () => {
+  assert.match(appSource, /else if\(count===null\)\{\s*setJobs/);
+  assert.match(appSource, /else if\(count===null\)\{\s*setRuns/);
+  assert.match(appSource, /else if\(count===null\)\{\s*setCheckpoints/);
+  assert.match(appSource, /else if\(count===null\)\{\s*setEvents/);
   assert.match(appSource, /const lastPage=Math\.max\(0,Math\.ceil\(total\/PAGE_SIZE\)-1\)/);
   assert.match(appSource, /if\(page>lastPage\)\{\s*setJobPage\(lastPage\)/);
   assert.match(appSource, /if\(page>lastPage\)\{\s*setRunPage\(lastPage\)/);
