@@ -162,7 +162,8 @@ export default function CollaborationVisual({
   }
 
   return <div className={"aiICoreStage "+styles.productsHeroVisual} aria-label={ariaLabel} data-hero-ecosystem="ronsas">
-    <div className={styles.valueNetwork} aria-label="Resonance DataNest value network">\n      <span className={styles.aiCorePulse} data-hero-signal="ai-core" aria-hidden="true"/>
+    <div className={styles.valueNetwork} aria-label="Resonance DataNest value network">
+      <span className={styles.aiCorePulse} data-hero-signal="ai-core" aria-hidden="true"/>
       <span className={styles.valueSignal+" "+styles.aiSignal} data-signal="ai" aria-hidden="true"/>
       <span className={styles.valueSignal+" "+styles.memorySignal} data-signal="memory" aria-hidden="true"/>
       <span className={styles.valueSignal+" "+styles.collaborationSignal} data-signal="collaboration" aria-hidden="true"/>
@@ -187,7 +188,8 @@ export default function CollaborationVisual({
     <div className={styles.portfolioOrbitShell} aria-hidden="true">
       <span className={styles.portfolioOrbitRing+" "+styles.portfolioRingOuter}/>
       <span className={styles.portfolioOrbitRing+" "+styles.portfolioRingInner}/>
-      <span className={styles.portfolioSignalSweep}/>\n      <span className={styles.ecosystemPulse} data-hero-signal="ecosystem-sweep"/>
+      <span className={styles.portfolioSignalSweep}/>
+      <span className={styles.ecosystemPulse} data-hero-signal="ecosystem-sweep"/>
       <span className={styles.portfolioSignalDot+" "+styles.dotOne}/>
       <span className={styles.portfolioSignalDot+" "+styles.dotTwo}/>
       <span className={styles.portfolioSignalDot+" "+styles.dotThree}/>
