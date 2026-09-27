@@ -21,10 +21,13 @@ const authoritySource = fs.readFileSync(path.join(repoRoot, "src/components/Exec
 const resourceFabricSource = fs.readFileSync(path.join(repoRoot, "src/components/ResourceFabricPanel.tsx"), "utf8");
 const singleFlightSource = fs.readFileSync(path.join(repoRoot, "src/lib/singleFlight.ts"), "utf8");
 const pendingMutationSource = fs.readFileSync(path.join(repoRoot, "src/lib/pendingMutation.ts"), "utf8");
+const durableRecoverySource = fs.readFileSync(path.join(repoRoot, "src/lib/durableRecovery.ts"), "utf8");
 const mutationReconciliationSource = fs.readFileSync(path.join(repoRoot, "src/lib/mutationReconciliation.ts"), "utf8");
 const supabaseSource = fs.readFileSync(path.join(repoRoot, "src/lib/supabase.ts"), "utf8");
 const unifiIdempotencyMigrationSource = fs.readFileSync(path.join(repoRoot, "supabase/migrations/20260927180402_add_unifi_idempotent_manifest_v2.sql"), "utf8");
 const productLabEvidenceMigrationSource = fs.readFileSync(path.join(repoRoot, "supabase/migrations/20260924145008_version_product_lab_evidence_and_dedupe_test_credit.sql"), "utf8");
+const durableRecoveryMigrationSource = fs.readFileSync(path.join(repoRoot, "supabase/migrations/20260927202758_add_durable_mutation_recovery_ledger.sql"), "utf8");
+const durableRecoveryHardeningSource = fs.readFileSync(path.join(repoRoot, "supabase/migrations/20260927203127_harden_durable_mutation_recovery_idempotency.sql"), "utf8");
 const cssSource = fs.readFileSync(path.join(repoRoot, "src/app/globals.css"), "utf8");
 
 test("mobile navigation keeps refresh and release controls reachable", () => {
@@ -546,6 +549,9 @@ test("pending mutation journal preserves identity, lifecycle state, and same-tab
   assert.match(pendingMutationSource, /PENDING_MUTATION_STALE_MS=60\*60\*1000/);
   assert.match(pendingMutationSource, /verificationState:"unverified"/);
   assert.match(pendingMutationSource, /lastCheckedAt:null/);
+  assert.match(pendingMutationSource, /durable:false/);
+  assert.match(pendingMutationSource, /restorePendingMutation/);
+  assert.match(pendingMutationSource, /markPendingMutationDurable/);
   assert.match(pendingMutationSource, /requestKey:crypto\.randomUUID\(\)/);
   assert.match(pendingMutationSource, /window\.sessionStorage\.setItem\(storageKey\(scope\),JSON\.stringify\(next\)\)/);
   assert.match(pendingMutationSource, /window\.dispatchEvent\(new CustomEvent\(PENDING_MUTATION_EVENT,\{detail:\{scope\}\}\)\)/);
@@ -607,35 +613,73 @@ test("Product Lab mutation feedback remains visible after workspace navigation",
   assert.doesNotMatch(productLabSource, /const \[error,setError\]=useState/);
 });
 
-test("global recovery center scopes, ages, and preserves unresolved operations across account transitions", () => {
+test("global recovery center scopes, hydrates, ages, and preserves unresolved operations across account transitions", () => {
   assert.match(appSource, /const suffix=project\.id\+":"\+session\.user\.id/);
   assert.match(appSource, /scope:"unifi-job:"\+suffix/);
   assert.match(appSource, /scope:"sparks-redemption:"\+suffix/);
   assert.match(appSource, /scope:"productlab-test-run:"\+suffix/);
+  assert.match(appSource, /listDurableRecoveries\(project\.id\)/);
+  assert.match(appSource, /restorePendingMutation\(descriptor\.scope,durableRecoveryToPendingIntent\(serverRecovery\)\)/);
+  assert.match(appSource, /const \[recoveryHydrated,setRecoveryHydrated\]=useState\(false\)/);
+  assert.match(appSource, /view==="sparks"&&recoveryHydrated/);
+  assert.match(appSource, /view==="productlab"&&recoveryHydrated/);
+  assert.match(appSource, /view==="unifi"&&recoveryHydrated/);
   assert.match(appSource, /classifyPendingMutationAge\(intent\.startedAt\)/);
-  assert.match(appSource, /window\.setInterval\(sync,60000\)/);
-  assert.match(appSource, /window\.addEventListener\(PENDING_MUTATION_EVENT,sync\)/);
+  assert.match(appSource, /window\.setInterval\(durableSync,60000\)/);
+  assert.match(appSource, /window\.addEventListener\(PENDING_MUTATION_EVENT,localSync\)/);
   assert.match(appSource, /aria-label="Unresolved operations"/);
   assert.match(appSource, /AUTHORITATIVE RECOVERY/);
+  assert.match(appSource, /durable ledger/);
   assert.match(appSource, /SAFE RETRY/);
   assert.match(appSource, /STALE/);
   assert.match(appSource, /Review &amp; reconcile →/);
   assert.match(appSource, /request identity preserved/);
   assert.match(appSource, /openPendingRecovery\(item\)/);
-  assert.match(appSource, /will remain preserved in this browser session and will reappear only when this same account returns/);
-  assert.doesNotMatch(appSource, /signOut\(\)[\s\S]{0,180}clearPendingMutation/);
+  assert.match(appSource, /remain preserved in this browser session and, when durably registered, in the recovery ledger/);
+  assert.doesNotMatch(appSource, /signOut\(\)[\s\S]{0,220}clearPendingMutation/);
   assert.match(cssSource, /\.mutationRecoveryItem\.stale\{/);
   assert.match(cssSource, /\.mutationRecoveryTopButton\{/);
 });
 
 
-test("deterministic reconciliation marks verification state before lifecycle cleanup", () => {
-  assert.match(appSource, /markPendingMutationVerification\(requestScope,"confirmed_absent"\)/);
-  assert.match(appSource, /markPendingMutationVerification\(requestScope,"unconfirmed"\)/);
-  assert.match(appSource, /clearPendingMutation\(requestScope,"confirmed"\)/);
-  assert.match(appSource, /clearPendingMutation\(requestScope,"confirmed_absent_new_intent"\)/);
-  assert.match(sparksSource, /markPendingMutationVerification\(redemptionRequestScope,"confirmed_absent"\)/);
-  assert.match(sparksSource, /markPendingMutationVerification\(redemptionRequestScope,"unconfirmed"\)/);
-  assert.match(productLabSource, /markPendingMutationVerification\(testRunRequestScope,"confirmed_absent"\)/);
-  assert.match(productLabSource, /markPendingMutationVerification\(testRunRequestScope,"unconfirmed"\)/);
+test("deterministic reconciliation persists continuity before writes and finalizes durable state before cleanup", () => {
+  assert.match(appSource, /registerDurableRecovery\(project\.id,requestScope,intent\)/);
+  assert.match(appSource, /markPendingMutationDurable\(requestScope\)/);
+  assert.match(appSource, /resolveDurableRecovery\(project\.id,requestScope,intent\.requestKey,"confirmed"\)/);
+  assert.match(appSource, /markDurableRecoveryVerification\(project\.id,requestScope,intent\.requestKey,"confirmed_absent"\)/);
+  assert.match(appSource, /resolveDurableRecovery\(project\.id,requestScope,pending\.requestKey,"superseded_after_absence"\)/);
+  assert.match(sparksSource, /registerDurableRecovery\(projectId,redemptionRequestScope,intent\)/);
+  assert.match(sparksSource, /markPendingMutationDurable\(redemptionRequestScope\)/);
+  assert.match(sparksSource, /resolveDurableRecovery\(projectId,redemptionRequestScope,intent\.requestKey,"confirmed"\)/);
+  assert.match(productLabSource, /registerDurableRecovery\(projectId,testRunRequestScope,intent\)/);
+  assert.match(productLabSource, /markPendingMutationDurable\(testRunRequestScope\)/);
+  assert.match(productLabSource, /resolveDurableRecovery\(projectId,testRunRequestScope,intent\.requestKey,"confirmed"\)/);
+  assert.match(productLabSource, /Use Change evidence before creating different intent/);
+});
+
+
+test("durable recovery database contract is user scoped, invoker based, and non-destructive", () => {
+  assert.match(durableRecoveryMigrationSource, /create schema if not exists recovery/);
+  assert.match(durableRecoveryMigrationSource, /create table if not exists recovery\.mutation_recovery_ledger/);
+  assert.match(durableRecoveryMigrationSource, /alter table recovery\.mutation_recovery_ledger enable row level security/);
+  assert.match(durableRecoveryMigrationSource, /create unique index if not exists mutation_recovery_one_active_scope_uidx/);
+  assert.match(durableRecoveryMigrationSource, /where resolved_at is null/);
+  assert.match(durableRecoveryMigrationSource, /create policy mutation_recovery_select_own/);
+  assert.match(durableRecoveryMigrationSource, /create policy mutation_recovery_insert_own/);
+  assert.match(durableRecoveryMigrationSource, /create policy mutation_recovery_update_own/);
+  assert.match(durableRecoveryMigrationSource, /security invoker/);
+  assert.match(durableRecoveryMigrationSource, /revoke delete,truncate,references,trigger/);
+  assert.doesNotMatch(durableRecoveryMigrationSource, /security definer/i);
+  assert.match(durableRecoveryHardeningSource, /if exact_row\.resolved_at is not null/);
+  assert.match(durableRecoveryHardeningSource, /'active',false/);
+  assert.match(durableRecoveryHardeningSource, /already finalized with a different resolution/);
+});
+
+test("durable recovery client uses only governed recovery RPCs", () => {
+  assert.match(durableRecoverySource, /list_mutation_recoveries_v1/);
+  assert.match(durableRecoverySource, /register_mutation_recovery_v1/);
+  assert.match(durableRecoverySource, /mark_mutation_recovery_verification_v1/);
+  assert.match(durableRecoverySource, /resolve_mutation_recovery_v1/);
+  assert.match(durableRecoverySource, /durable:true/);
+  assert.doesNotMatch(durableRecoverySource, /\.from\("mutation_recovery_ledger"\)/);
 });
