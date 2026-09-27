@@ -232,7 +232,7 @@ export default function ProductLab({
         {surfaces.length>0&&<label>Surface<select value={selectedSurfaceId} onChange={e=>setSelectedSurfaceId(e.target.value)}>{surfaces.map(s=><option key={s.id} value={s.id}>{s.name} · {s.environment} · {shortCommit(s.build_commit)}</option>)}</select></label>}
         {selected?<div className="productFrameShell">
           <iframe key={previewKey} className="productFrame" src={selected.url} title={selected.name} sandbox="allow-scripts allow-forms allow-popups allow-same-origin" referrerPolicy="no-referrer"/>
-        </div>:<div className="emptyState"><div>▣</div><h3>No preview configured</h3><p>An operator can register a versioned preview, staging, or production URL.</p></div>}
+        </div>:<div className="emptyState"><div>▣</div><h3>No preview configured</h3><p>{canOperate?"Register an immutable preview, staging, or production surface to begin versioned validation.":"An operator can register a versioned preview, staging, or production URL."}</p>{canOperate&&<button className="primaryButton compact" type="button" onClick={()=>document.getElementById("product-surface-admin")?.scrollIntoView({behavior:"smooth",block:"start"})}>Register product surface</button>}</div>}
       </div>
 
       <div className="panel">
@@ -246,7 +246,7 @@ export default function ProductLab({
       </div>
     </section>
 
-    {canOperate&&<section className="panel">
+    {canOperate&&<section className="panel" id="product-surface-admin">
       <div className="panelHead"><div><p className="eyebrow">SURFACE ADMIN</p><h3>Add versioned product display</h3></div></div>
       <form className="surfaceForm productSurfaceForm" onSubmit={addSurface}>
         <label>Name<input value={surfaceName} onChange={e=>setSurfaceName(e.target.value)} required/></label>

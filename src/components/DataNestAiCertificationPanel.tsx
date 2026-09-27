@@ -40,6 +40,20 @@ type Props={
 
 const gateOrder=["AUDIT","VERIFY","VALIDATE","STRESS_TEST"] as const;
 
+function normalizeWorkspaceResponse(data:unknown,fallbackRole:"owner"|"admin"):WorkspaceResponse{
+  const record=data&&typeof data==="object"&&!Array.isArray(data)
+    ?data as Record<string,unknown>
+    :{};
+  const responseRole=record.role==="owner"||record.role==="admin"
+    ?record.role
+    :fallbackRole;
+  return {
+    role:responseRole,
+    candidates:Array.isArray(record.candidates)?record.candidates as Candidate[]:[],
+    validationRuns:Array.isArray(record.validationRuns)?record.validationRuns as ValidationRun[]:[]
+  };
+}
+
 export default function DataNestAiCertificationPanel({
   projectId,role,onChanged,setNotice,setError
 }:Props){
@@ -56,7 +70,8 @@ export default function DataNestAiCertificationPanel({
       body:{action:"workspace",projectId}
     });
     if(error){setError(error.message);return;}
-    setWorkspace(data as WorkspaceResponse);
+    const fallbackRole:"owner"|"admin"=role==="owner"?"owner":"admin";
+    setWorkspace(normalizeWorkspaceResponse(data,fallbackRole));
   },[canReview,projectId,setError]);
 
   useEffect(()=>{void load()},[load]);
@@ -186,7 +201,7 @@ export default function DataNestAiCertificationPanel({
         </article>;
       })}
 
-      {workspace&&!workspace.candidates.length&&<div className="emptyState">
+      {workspace&&workspace.candidates.length===0&&<div className="emptyState">
         <div>◇</div>
         <h3>No learning candidates yet</h3>
         <p>Repeated staged evidence will create candidates for governed review.</p>

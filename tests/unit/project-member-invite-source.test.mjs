@@ -18,11 +18,12 @@ const pages=fs.readFileSync(
   "utf8"
 );
 
-test("project-member invite gateway uses recovery for existing accounts",()=>{
-  assert.match(source,/let delivery: \"invite\" \| \"recovery\"\s*=\s*\"invite\"/);
-  assert.match(source,/delivery\s*=\s*\"recovery\"[\s\S]{0,500}resetPasswordForEmail/);
+test("project-member invite gateway resends unconfirmed invites and uses recovery for confirmed accounts",()=>{
+  assert.match(source,/let delivery: \"invite\" \| \"reinvite\" \| \"recovery\"\s*=\s*\"invite\"/);
+  assert.match(source,/admin\.getUserById/);
+  assert.match(source,/!existingAuthUser\?\.email_confirmed_at[\s\S]{0,700}delivery\s*=\s*\"reinvite\"[\s\S]{0,700}admin\.inviteUserByEmail/);
+  assert.match(source,/else if \(invitedUserId\)[\s\S]{0,500}delivery\s*=\s*\"recovery\"[\s\S]{0,500}resetPasswordForEmail/);
   assert.doesNotMatch(source,/signInWithOtp/);
-  assert.match(source,/admin\.inviteUserByEmail/);
 });
 
 test("project-member invite gateway keeps the canonical Pages redirect",()=>{
@@ -41,6 +42,6 @@ test("project-member invite gateway requires authenticated callers and bounded r
 
 test("project-member invite function remains JWT-protected and Pages-aligned",()=>{
   assert.match(config,/\[functions\.send-project-member-invite\][\s\S]*verify_jwt\s*=\s*true/);
-  assert.match(pages,/DATANEST_EDGE_PROJECT_INVITES: send-project-member-invite@2/);
-  assert.match(pages,/projectInvitations.*send-project-member-invite@2/);
+  assert.match(pages,/DATANEST_EDGE_PROJECT_INVITES: send-project-member-invite@3/);
+  assert.match(pages,/projectInvitations.*send-project-member-invite@3/);
 });

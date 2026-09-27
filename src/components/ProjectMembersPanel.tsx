@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 
 type Member={
@@ -26,6 +26,8 @@ type Invitation={
   revoked_at:string|null;
 };
 
+type InviteState="idle"|"sending"|"sent"|"failed";
+
 type Workspace={
   members:Member[];
   invitations:Invitation[];
@@ -41,8 +43,20 @@ function date(value:string|null){
   return new Intl.DateTimeFormat(undefined,{month:"short",day:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}).format(new Date(value));
 }
 function label(value:string){return value.replaceAll("_"," ");}
-function normalizeEmail(value:string){return value.trim().toLowerCase();}
-function shortId(value:string){return value.length>12?value.slice(0,8)+"…"+value.slice(-4):value;}
+
+async function inviteErrorMessage(error:unknown){
+  const fallback=error instanceof Error?error.message:"Unable to send project-member invitation.";
+  if(!error||typeof error!=="object"||!("context" in error))return fallback;
+  const context=(error as {context?:Response}).context;
+  if(!context||typeof context.clone!=="function")return fallback;
+  try{
+    const payload=await context.clone().json() as {error?:unknown};
+    if(payload?.error)return String(payload.error);
+  }catch{
+    // Fall back to the client error when the Edge response has no JSON body.
+  }
+  return fallback;
+}
 
 export default function ProjectMembersPanel({
   projectId,setNotice,setError
@@ -56,6 +70,8 @@ export default function ProjectMembersPanel({
   const [busy,setBusy]=useState(false);
   const [email,setEmail]=useState("");
   const [role,setRole]=useState<"admin"|"operator"|"viewer">("viewer");
+  const [inviteState,setInviteState]=useState<InviteState>("idle");
+  const [inviteFeedback,setInviteFeedback]=useState("");
 
   const load=useCallback(async()=>{
     const supabase=getSupabase();if(!supabase)return;
@@ -68,55 +84,41 @@ export default function ProjectMembersPanel({
 
   useEffect(()=>{void load();},[load]);
 
-  const normalizedEmail=normalizeEmail(email);
-  const matchingMember=useMemo(
-    ()=>workspace?.members.find(member=>normalizeEmail(member.email||"")===normalizedEmail)||null,
-    [workspace,normalizedEmail]
-  );
-  const matchingPendingInvite=useMemo(
-    ()=>workspace?.invitations.find(invite=>invite.status==="invited"&&normalizeEmail(invite.email)===normalizedEmail)||null,
-    [workspace,normalizedEmail]
-  );
-  const memberAlreadyActive=matchingMember?.status==="active";
-  const pending=workspace?.invitations.filter(item=>item.status==="invited")||[];
-
-  async function deliverInvite(targetEmail:string,targetRole:"admin"|"operator"|"viewer",clearAfter:boolean){
+  async function sendInvite(event:FormEvent){
+    event.preventDefault();
     const supabase=getSupabase();
-    if(!supabase||!workspace?.can_invite)return;
+    if(!supabase||!workspace?.can_invite||!email.trim())return;
 
-    setBusy(true);setError("");
+    const targetEmail=email.trim().toLowerCase();
+    setBusy(true);
+    setInviteState("sending");
+    setInviteFeedback("Sending invitation to "+targetEmail+"…");
+    setError("");
     try{
       const {data,error}=await supabase.functions.invoke("send-project-member-invite",{
-        body:{projectId,email:normalizeEmail(targetEmail),role:targetRole}
+        body:{projectId,email:targetEmail,role}
       });
       if(error)throw error;
       const payload=(data||{}) as Record<string,unknown>;
       const delivery=String(payload.delivery||"invite");
-      if(clearAfter)setEmail("");
-      setNotice(
-        delivery==="recovery"
-          ?"Access email queued for the existing DataNest account. Voting remains disabled until that person signs in and accepts."
-          :"Project invitation email queued. Voting remains disabled until that person authenticates and accepts."
-      );
+      const feedback=delivery==="recovery"
+        ?"Invite sent to "+targetEmail+". The confirmed account will receive a secure recovery link. Voting remains disabled until that person signs in and accepts project access."
+        :delivery==="reinvite"
+          ?"Invitation resent to "+targetEmail+". The unconfirmed account will receive a fresh project invite. Voting remains disabled until that person authenticates and accepts project access."
+          :"Invite sent to "+targetEmail+". Voting remains disabled until that person authenticates and accepts project access.";
+      setEmail("");
+      setInviteState("sent");
+      setInviteFeedback(feedback);
+      setNotice(feedback);
       await load();
     }catch(inviteError){
-      setError(inviteError instanceof Error?inviteError.message:"Unable to send project-member invitation.");
+      const feedback=await inviteErrorMessage(inviteError);
+      setInviteState("failed");
+      setInviteFeedback("Invite failed. "+feedback);
+      setError(feedback);
     }finally{
       setBusy(false);
     }
-  }
-
-  async function sendInvite(event:FormEvent){
-    event.preventDefault();
-    if(!normalizedEmail||memberAlreadyActive){
-      if(memberAlreadyActive)setNotice("This email is already an active project member. No duplicate invitation is required.");
-      return;
-    }
-    await deliverInvite(normalizedEmail,role,true);
-  }
-
-  async function resendInvite(invite:Invitation){
-    await deliverInvite(invite.email,invite.role,false);
   }
 
   async function revokeInvite(id:string){
@@ -137,7 +139,9 @@ export default function ProjectMembersPanel({
   if(loading)return <section className="panel"><p className="muted">Loading project membership…</p></section>;
   if(!workspace)return <section className="panel"><p className="muted">Project membership workspace is unavailable.</p></section>;
 
-  return <section className="panel membershipPanel">
+  const pending=workspace.invitations.filter(item=>item.status==="invited");
+
+  return <section className="panel">
     <div className="panelHead">
       <div><p className="eyebrow">FORMAL MEMBERSHIP</p><h3>Project members + governance voters</h3></div>
       <span className="countPill">{workspace.active_formal_voter_count} ACTIVE VOTER{workspace.active_formal_voter_count===1?"":"S"}</span>
@@ -145,76 +149,84 @@ export default function ProjectMembersPanel({
 
     <p className="muted">Only authenticated members with <b>active</b> project membership can cast formal governance votes. Sending an invitation never creates an independent vote by itself.</p>
 
-    {workspace.can_invite&&<form className="projectInviteForm" onSubmit={sendInvite}>
-      <div className="projectInviteFields">
-        <label>Invite email
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={event=>setEmail(event.target.value)}
-            placeholder="reviewer@example.com"
-            aria-describedby="project-invite-context"
-          />
-        </label>
-        <label>Project role
-          <select value={role} onChange={event=>setRole(event.target.value as "admin"|"operator"|"viewer")}>
-            <option value="viewer">Viewer · vote + read</option>
-            <option value="operator">Operator · vote + operations</option>
-            {workspace.can_invite_admin&&<option value="admin">Admin · vote + administration</option>}
-          </select>
-        </label>
-        <button className="primaryButton projectInviteAction" disabled={busy||!normalizedEmail||Boolean(memberAlreadyActive)}>
-          {busy?"Sending…":memberAlreadyActive?"Already active":matchingPendingInvite?"Resend project invite":"Send project invite"}
-        </button>
+    {workspace.can_invite&&<form className="settingsGrid" onSubmit={sendInvite}>
+      <label>Invite email
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={event=>{
+            setEmail(event.target.value);
+            if(inviteState!=="idle"){setInviteState("idle");setInviteFeedback("");}
+          }}
+          placeholder="reviewer@example.com"
+        />
+      </label>
+      <label>Project role
+        <select value={role} onChange={event=>{
+          setRole(event.target.value as "admin"|"operator"|"viewer");
+          if(inviteState!=="idle"){setInviteState("idle");setInviteFeedback("");}
+        }}>
+          <option value="viewer">Viewer · formal vote + read access</option>
+          <option value="operator">Operator · formal vote + operational access</option>
+          {workspace.can_invite_admin&&<option value="admin">Admin · formal vote + administration</option>}
+        </select>
+      </label>
+      <div>
+        <p className="muted">For independent protocol review, <b>Viewer</b> is sufficient unless the person also needs operational or administrative authority.</p>
       </div>
-
-      <div
-        id="project-invite-context"
-        className={"inviteContext "+(memberAlreadyActive?"good":matchingPendingInvite?"warn":"neutral")}
-        aria-live="polite"
-      >
-        {memberAlreadyActive
-          ?<><b>Already a member.</b> {matchingMember?.email} is active as {matchingMember?.role}; DataNest will not send a duplicate invitation.</>
-          :matchingPendingInvite
-            ?<><b>Invitation already pending.</b> Resending replaces the pending link and refreshes its expiry. Current expiry: {date(matchingPendingInvite.expires_at)}.</>
-            :<><b>Invite lifecycle.</b> Viewer is sufficient for independent protocol review. Membership becomes voting-eligible only after the matching account signs in and accepts.</>}
+      <div className="inviteActionCell">
+        <button
+          className={"primaryButton inviteSubmitButton "+inviteState}
+          disabled={busy||!email.trim()}
+          aria-describedby="project-invite-feedback"
+        >
+          <span className="inviteButtonContent">
+            <span className="inviteButtonIcon" aria-hidden="true">
+              {inviteState==="sent"?"✓":inviteState==="failed"?"!":inviteState==="sending"?"":"↗"}
+            </span>
+            <span>{inviteState==="sending"?"Sending invite…":inviteState==="sent"?"Invite sent":inviteState==="failed"?"Invite failed · Retry":"Send project invite"}</span>
+          </span>
+        </button>
+        <div
+          id="project-invite-feedback"
+          className={"inviteFeedback "+inviteState}
+          role={inviteState==="failed"?"alert":"status"}
+          aria-live="polite"
+        >{inviteFeedback}</div>
       </div>
     </form>}
 
-    <div className="dataTable membershipTable">
+    <div className="dataTable">
       <div className="dataRow headerRow"><span>Member</span><span>Role</span><span>Status</span><span>Formal vote</span><span>Updated</span></div>
       {workspace.members.map(member=><div className="dataRow" key={member.user_id}>
-        <div className="membershipIdentity" data-label="Member"><b>{member.email||"Authenticated member"}</b><small title={member.user_id}>ID {shortId(member.user_id)}</small></div>
-        <span data-label="Role"><span className="badge neutral">{member.role}</span></span>
-        <span data-label="Status"><span className={"badge "+(member.status==="active"?"good":"bad")}>{label(member.status)}</span></span>
-        <span data-label="Formal vote">{member.formal_voting_eligible?"Eligible":"Not eligible"}</span>
-        <span data-label="Updated">{date(member.updated_at)}</span>
+        <div><b>{member.email||member.user_id}</b><small>{member.user_id}</small></div>
+        <span>{member.role}</span>
+        <span>{label(member.status)}</span>
+        <span>{member.formal_voting_eligible?"eligible":"not eligible"}</span>
+        <span>{date(member.updated_at)}</span>
       </div>)}
     </div>
 
     {workspace.can_invite&&<>
-      <div className="panelHead membershipSectionHead">
+      <div className="panelHead">
         <div><p className="eyebrow">INVITATIONS</p><h3>Pending + historical</h3></div>
         <span className="countPill">{pending.length} PENDING</span>
       </div>
-      {workspace.invitations.length?<div className="dataTable membershipTable invitationTable">
+      {workspace.invitations.length?<div className="dataTable">
         <div className="dataRow headerRow"><span>Invitee</span><span>Role</span><span>Status</span><span>Expiry</span><span>Action</span></div>
         {workspace.invitations.map(invite=><div className="dataRow" key={invite.id}>
-          <div className="membershipIdentity" data-label="Invitee"><b>{invite.email}</b><small title={invite.id}>Invite {shortId(invite.id)}</small></div>
-          <span data-label="Role"><span className="badge neutral">{invite.role}</span></span>
-          <span data-label="Status"><span className={"badge "+(invite.status==="invited"?"live":"neutral")}>{label(invite.status)}</span></span>
-          <span data-label="Expiry">{date(invite.expires_at)}</span>
-          <span className="inviteRowActions" data-label="Action">{invite.status==="invited"
-            ?<>
-              <button className="textButton" type="button" disabled={busy} onClick={()=>void resendInvite(invite)}>Resend</button>
-              <button className="textButton dangerTextButton" type="button" disabled={busy} onClick={()=>void revokeInvite(invite.id)}>Revoke</button>
-            </>
+          <div><b>{invite.email}</b><small>{invite.id}</small></div>
+          <span>{invite.role}</span>
+          <span>{label(invite.status)}</span>
+          <span>{date(invite.expires_at)}</span>
+          <span>{invite.status==="invited"
+            ?<button className="textButton" disabled={busy} onClick={()=>void revokeInvite(invite.id)}>Revoke</button>
             :"—"}</span>
         </div>)}
       </div>:<p className="muted">No project-member invitations have been issued yet.</p>}
     </>}
 
-    <p className="muted membershipFootnote">Invite boundaries: no self-invite, no owner invitation, admin invitations require the owner, and acceptance requires the matching authenticated account.</p>
+    <p className="muted">Invite boundaries: no self-invite, no owner invitation, admin invitations require the owner, and acceptance requires the matching authenticated account.</p>
   </section>;
 }

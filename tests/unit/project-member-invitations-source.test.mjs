@@ -77,23 +77,40 @@ test("project invite Edge Function requires JWT and service-role mediation",()=>
   assert.match(edge,/service_register_project_member_invite_v1/);
   assert.match(edge,/service_resolve_project_invite_user_v1/);
   assert.match(edge,/inviteUserByEmail/);
+  assert.match(edge,/admin\.getUserById/);
+  assert.match(edge,/email_confirmed_at/);
   assert.match(edge,/resetPasswordForEmail/);
   assert.doesNotMatch(edge,/signInWithOtp/);
 });
 
 
-test("project membership UI distinguishes active members from pending invites",()=>{
-  assert.match(panel,/Already a member/);
+test("project invite action reports sending, success and failure inline",()=>{
+  assert.match(panel,/type InviteState="idle"\|"sending"\|"sent"\|"failed"/);
+  assert.match(panel,/Sending invite…/);
+  assert.match(panel,/Invite sent/);
+  assert.match(panel,/Invite failed · Retry/);
+  assert.match(panel,/aria-live="polite"/);
+  assert.match(panel,/delivery==="recovery"/);
+  assert.doesNotMatch(panel,/delivery==="magic-link"/);
+});
+
+test("project membership UI blocks active duplicates and distinguishes pending resend",()=>{
+  assert.match(panel,/useMemo/);
+  assert.match(panel,/normalizeEmail/);
+  assert.match(panel,/matchingMember/);
+  assert.match(panel,/matchingPendingInvite/);
+  assert.match(panel,/memberAlreadyActive/);
   assert.match(panel,/Already active/);
   assert.match(panel,/Invitation already pending/);
   assert.match(panel,/Resend project invite/);
   assert.match(panel,/resendInvite/);
-  assert.match(panel,/memberAlreadyActive/);
 });
 
-test("project membership UI keeps identifiers secondary and responsive",()=>{
+test("project membership UI keeps compact responsive row metadata",()=>{
   assert.match(panel,/shortId/);
   assert.match(panel,/membershipIdentity/);
-  assert.match(panel,/inviteContext/);
-  assert.match(panel,/projectInviteFields/);
+  assert.match(panel,/data-label="Member"/);
+  assert.match(panel,/data-label="Invitee"/);
+  assert.match(panel,/data-label="Action"/);
 });
+

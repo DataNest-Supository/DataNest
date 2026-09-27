@@ -1,0 +1,73 @@
+/* Entry experience: system fonts, CSS artwork, no additional image or chart library. */
+.authLanding { display: flex; flex-direction: column; align-items: stretch; padding: 0 clamp(20px, 5vw, 80px); min-height: 100svh; }
+.landingHeader, .landingFooter { width: 100%; max-width: 1320px; margin-inline: auto; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.landingHeader { min-height: 100px; border-bottom: 1px solid var(--line); }
+.landingBrand { display: flex; gap: 12px; align-items: center; text-decoration: none; font-size: 10px; letter-spacing: .18em; color: #b9b2d2; }
+.landingBrand b { display: block; color: var(--text); font-size: 19px; letter-spacing: -.04em; margin-top: 3px; }
+.landingMonogram { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid #7dcde3; border-radius: 14px; color: #b9f6ff; font-size: 26px; font-weight: 800; background: linear-gradient(140deg, #22344c, #261442); }
+.motionControl { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: #140c26; color: #c9c3dc; font-size: 12px; cursor: pointer; }
+.motionControl[aria-pressed="true"] { border-color: var(--cyan); color: var(--cyan); }
+.motionControl span { font-size: 15px; }
+.landingLayout { width: 100%; max-width: 1320px; margin: auto; padding-block: 52px; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(340px, .85fr); align-items: center; gap: clamp(40px, 6vw, 100px); }
+.landingStory { min-width: 0; }
+.landingStory h2 { font-size: clamp(54px, 6vw, 84px); line-height: 1.02; letter-spacing: -.06em; margin: 0; }
+.landingStory h2 span { background: linear-gradient(110deg, #8bebff 10%, #ba9dff 60%, #ff86db); background-clip: text; -webkit-background-clip: text; color: transparent; }
+.landingLede { max-width: 51ch; color: #b9b5cc; font-size: 16px; line-height: 1.75; margin: 24px 0 0; }
+.landingStory .aiICoreStage { min-height: 300px; max-width: 570px; margin: 8px auto 18px; isolation: isolate; }
+.landingStory .orbitOuter { width: 280px; height: 280px; }
+.landingStory .orbitMiddle { width: 220px; height: 220px; }
+.landingStory .humanCore { left: 9%; }
+.landingStory .aiCore { right: 9%; }
+.landingStory .coreNode { width: 126px; height: 126px; }
+.landingSteps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.landingSteps li { padding-top: 16px; border-top: 1px solid #584371; }
+.landingSteps span { color: #b49be2; font-size: 11px; font-variant-numeric: tabular-nums; }
+.landingSteps b, .landingSteps small { display: block; }
+.landingSteps b { margin: 9px 0 5px; font-size: 14px; }
+.landingSteps small { font-size: 11px; color: #b4acc5; }
+.landingSignIn { width: 100%; padding: clamp(24px, 3vw, 42px); border-color: #58476c; background: linear-gradient(150deg, #19112b, #0e0a1d 70%); backdrop-filter: none; }
+.landingSignIn h1 { font-size: clamp(26px, 2.5vw, 36px); }
+.landingSignIn .brandMark { width: 44px; height: 44px; font-size: 14px; }
+.landingSignIn .lede { font-size: 14px; color: #b6b0ca; }
+.landingSignIn .authForm label { font-size: 13px; color: #d6cfe6; }
+.landingSignIn input { font-size: 16px; min-height: 48px; }
+.landingSignIn button { min-height: 48px; font-size: 13px; }
+.landingSignIn .securityNote { font-size: 12px; line-height: 1.7; color: #aaa3bd; }
+.landingSignIn .authMessage { font-size: 13px; }
+.landingFooter { padding-block: 22px; border-top: 1px solid var(--line); font-size: 11px; color: #a8a0bc; }
+.skipLink { position: fixed; z-index: 100; top: 10px; left: 10px; padding: 12px 18px; border-radius: 8px; color: #060b14; background: var(--cyan); transform: translateY(-160%); }
+.skipLink:focus { transform: translateY(0); }
+.pulseGridLine { stroke: #7f95b5; stroke-opacity: .22; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.pulseAxis { color: #b3bfd5; grid-template-columns: repeat(7, minmax(0, 1fr)); padding-inline: 1%; }
+.pulseAxis b { display: block; font-size: 12px; color: #e2f8ff; margin-bottom: 5px; }
+.aiIGraphNote { color: #abb4cb; font-size: 12px; line-height: 1.6; }
+.aiILiveBadge { color: #b6c9d6; line-height: 1.7; text-align: right; }
+.aiITextButton { min-height: 44px; font-size: 12px; }
+.aiIStatsGrid strong { font-variant-numeric: tabular-nums; }
+html[data-motion-paused="true"] *, html[data-motion-paused="true"] *::before, html[data-motion-paused="true"] *::after { animation-play-state: paused !important; transition: none !important; scroll-behavior: auto !important; }
+@media (max-width: 900px) {
+  .landingLayout { grid-template-columns: minmax(0, 1fr) minmax(300px, .9fr); gap: 30px; }
+  .landingStory h2 { font-size: 58px; }
+  .landingStory .aiICoreStage { transform: scale(.82); margin-inline: -28px; }
+}
+@media (max-width: 700px) {
+  .landingHeader { min-height: 80px; }
+  .landingBrand { font-size: 8px; gap: 8px; }
+  .landingBrand b { font-size: 17px; }
+  .landingMonogram { width: 36px; height: 36px; font-size: 22px; }
+  .motionControl { font-size: 11px; padding-inline: 9px; }
+  .landingLayout { grid-template-columns: minmax(0, 1fr); padding-block: 30px; gap: 26px; }
+  .landingStory h2 { font-size: clamp(44px, 10vw, 64px); }
+  .landingLede { font-size: 14px; margin-top: 16px; }
+  .landingStory .aiICoreStage, .landingSteps { display: none; }
+  .landingSignIn { max-width: 480px; justify-self: center; }
+  .landingFooter { flex-wrap: wrap; gap: 8px; font-size: 10px; }
+  .aiIStatsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .aiIStatsGrid article { padding: 15px; }
+  .aiIStatsGrid strong { font-size: 28px; }
+  .aiICardHead { flex-wrap: wrap; gap: 8px; }
+  .aiIGraphCard { padding: 20px 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .landingStory *, .landingStory *::before, .landingStory *::after { animation: none !important; }
+}

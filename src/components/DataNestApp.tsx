@@ -4,41 +4,45 @@ import dynamic from "next/dynamic";
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
+import { DATANEST_LOGO_SRC } from "@/lib/brand";
+import { workflowPhaseForView, workflowPhases } from "@/lib/workflowPhases";
 import JobInviteForm from "@/components/JobInviteForm";
 import ResonanceHome from "@/components/ResonanceHome";
+import MotionControl from "@/components/MotionControl";
 
 type Project = { id:string; slug:string; name:string; description:string|null; status:string; created_at:string };
 type Tool = { id:string; tool_key:string; name:string; role:string; enabled:boolean; config:Record<string,unknown> };
-type Job = { id:string; job_number:number; title:string; description:string|null; priority:number; status:string; required_capabilities:string[]; acceptance:Record<string,unknown>; created_at:string; updated_at:string };
+type Job = { id:string; job_number:number; title:string; description:string|null; priority:number; status:string; required_capabilities:string[]; acceptance:Record<string,unknown>; created_at:string; updated_at:string; deadline:string|null };
 type Capability = { id:string; account_key:string; connector_kind:string; capability:string; state:string; observed_at:string|null; next_check_at:string|null; confidence:number|null; concurrency_limit:number; running:number; metadata:Record<string,unknown> };
 type Run = { id:string; job_id:string; run_number:number; connector_kind:string; status:string; started_at:string; completed_at:string|null; error_category:string|null };
 type Checkpoint = { id:string; job_id:string; completed:string[]; remaining:string[]; resume_instruction:string|null; created_at:string };
 type AuditEvent = { id:number; job_id:string|null; event_type:string; actor:string; payload:Record<string,unknown>; created_at:string };
 type Policy = { id:string; policy_key:string; value:Record<string,unknown> };
 type ProjectMember = { project_id:string; user_id:string; role:"owner"|"admin"|"operator"|"viewer"; status:string };
-type ViewKey = "overview"|"stakeholder"|"sparks"|"governance"|"thinktank"|"ai"|"productlab"|"unifi"|"scheduler"|"runs"|"checkpoints"|"audit"|"transparency"|"settings";
+type ViewKey = "overview"|"stakeholder"|"sparks"|"governance"|"products"|"thinktank"|"ai"|"productlab"|"unifi"|"scheduler"|"runs"|"checkpoints"|"audit"|"transparency"|"settings";
 type HealthState = { state:"checking"|"online"|"degraded"|"offline"; checkedAt:string|null; message:string };
 type Summary = { total:number; active:number; running:number; blocked:number; available:number; registered:number };
 type ActiveDataNestAiSession = { jobId:string; sessionId:string|null };
 
 const PAGE_SIZE = 20;
 const finalStates = new Set(["COMPLETED","FAILED","CANCELLED"]);
-const jobColumns = "id,job_number,title,description,priority,status,required_capabilities,acceptance,created_at,updated_at";
+const jobColumns = "id,job_number,title,description,priority,status,required_capabilities,acceptance,created_at,updated_at,deadline";
 
 const nav:Array<{key:ViewKey;label:string;group:string;glyph:string}> = [
-  {key:"overview",label:"AI & I",group:"Project",glyph:"◎"},
-  {key:"stakeholder",label:"Stakeholder",group:"Project",glyph:"✦"},
-  {key:"sparks",label:"Sparks",group:"Project",glyph:"✧"},
-  {key:"governance",label:"Governance",group:"Project",glyph:"◆"},
-  {key:"thinktank",label:"Think Tanks",group:"Research",glyph:"◈"},
-  {key:"ai",label:"DataNest AI",group:"Research",glyph:"⌬"},
-  {key:"productlab",label:"Product Lab",group:"Research",glyph:"▣"},
-  {key:"unifi",label:"UNIFI Planner",group:"Tools",glyph:"◇"},
-  {key:"scheduler",label:"TranScheduler",group:"Tools",glyph:"⌁"},
-  {key:"runs",label:"Runs",group:"Operations",glyph:"▶"},
-  {key:"checkpoints",label:"Checkpoints",group:"Continuity",glyph:"◆"},
-  {key:"audit",label:"Audit",group:"Continuity",glyph:"≡"},
-  {key:"transparency",label:"Transparency",group:"Continuity",glyph:"◎"},
+  {key:"overview",label:"AI & I",group:"Core",glyph:"◎"},
+  {key:"ai",label:"DataNest AI",group:"Core",glyph:"✦"},
+  {key:"stakeholder",label:"Stakeholder",group:"Discover",glyph:"◌"},
+  {key:"sparks",label:"Sparks",group:"Discover",glyph:"✧"},
+  {key:"thinktank",label:"Think Tanks",group:"Discover",glyph:"◈"},
+  {key:"governance",label:"Governance",group:"Govern & Build",glyph:"◆"},
+  {key:"products",label:"Products",group:"Govern & Build",glyph:"◉"},
+  {key:"productlab",label:"Product Lab",group:"Govern & Build",glyph:"▣"},
+  {key:"unifi",label:"UNIFI Planner",group:"Execute",glyph:"◇"},
+  {key:"scheduler",label:"TranScheduler",group:"Execute",glyph:"⌁"},
+  {key:"runs",label:"Runs",group:"Execute",glyph:"▶"},
+  {key:"checkpoints",label:"Checkpoints",group:"Verify",glyph:"↺"},
+  {key:"audit",label:"Audit",group:"Verify",glyph:"≡"},
+  {key:"transparency",label:"Transparency",group:"Verify",glyph:"◎"},
   {key:"settings",label:"Settings",group:"System",glyph:"⚙"}
 ];
 
@@ -49,16 +53,111 @@ const viewDescriptions:Record<ViewKey,string> = {
   stakeholder:"Capture stakeholder input and review contribution context.",
   sparks:"Develop raw ideas into traceable project inputs.",
   governance:"Review sovereign governance controls and decisions.",
+  products:"Inspect governed Resonance products, their architecture, controls, evidence, risks and promotion branches.",
   thinktank:"Coordinate structured research and collaborative thinking.",
   ai:"Work with governed DataNest AI memory and project context.",
   productlab:"Test and review product surfaces before release.",
   unifi:"Plan complete, traceable Job Manifests before execution.",
-  scheduler:"Route prepared work through capability-aware scheduling.",
+  scheduler:"Manage project work in queue or Gantt chart context with live capability-aware scheduling.",
   runs:"Review execution history and connector outcomes.",
   checkpoints:"Resume project work from durable continuation points.",
   audit:"Inspect immutable operational events and traceability.",
   transparency:"Review published audit methodology, evidence, and findings.",
   settings:"Manage project, tool, AI administration, and scheduler policy."
+};
+
+type WorkspaceTaskGuide = { start:string; complete:string; evidence:string };
+
+const workspaceTaskGuides:Partial<Record<ViewKey,WorkspaceTaskGuide>> = {
+  ai:{start:"Select the Job Manifest that owns the work, then continue in the development chat.",complete:"The Job has an actionable AI output or durable memory worth certifying.",evidence:"Job-scoped session, event trail and certified memory."},
+  stakeholder:{start:"Review stakeholder state and recent contribution events before changing preferences or review decisions.",complete:"Contribution context and participation preferences reflect the stakeholder's current intent.",evidence:"Profile state, contribution events and review signals."},
+  sparks:{start:"Capture or inspect the idea or approved utility exchange that should become project input.",complete:"The contribution or service is recorded with enough context to move into structured thinking.",evidence:"Traceable contribution, ledger and service records."},
+  thinktank:{start:"Choose a Think Tank, open a thread, then discuss, ask or propose a governed decision.",complete:"The discussion has produced a decision, action item or reviewed learning candidate.",evidence:"Messages, decisions, actions and institutional-memory candidates."},
+  governance:{start:"Begin with a protocol draft or formal proposal; ratify only after the required support and vote.",complete:"The decision is recorded, ratified where applicable, or moved into a visible dispute path.",evidence:"Proposal, votes, decision register, protocol version and dispute history."},
+  products:{start:"Choose the governed product and inspect its architecture, controls, evidence and risks before promotion.",complete:"The product state or promotion branch is supported by current evidence.",evidence:"Product architecture, linked controls, evidence and promotion history."},
+  productlab:{start:"Select or register an immutable product surface before creating and running test cases.",complete:"Validation results are tied to the exact test-case version and product build.",evidence:"Versioned test runs, build identity and optional evidence links."},
+  unifi:{start:"Describe the outcome, acceptance conditions and required capabilities in one complete Job Manifest.",complete:"The Job is ready for governed scheduling without hidden execution assumptions.",evidence:"Job Manifest, acceptance criteria, capabilities, priority and deadline."},
+  scheduler:{start:"Review queue state and capability constraints, then move the right Job into execution.",complete:"The Job is running, intentionally queued, or visibly blocked with a reason.",evidence:"Job status, capability match and scheduling state."},
+  runs:{start:"Open the run that belongs to the Job you are investigating and read its outcome before retrying work.",complete:"The connector outcome, timing and failure category are understood.",evidence:"Run number, connector, timestamps, status and error category."},
+  checkpoints:{start:"Locate the most recent durable checkpoint for the Job before resuming work.",complete:"Completed work, remaining work and the resume instruction are unambiguous.",evidence:"Checkpoint snapshot with completed, remaining and resume fields."},
+  audit:{start:"Read the event trail around the Job, decision or operation you need to explain.",complete:"You can reconstruct who did what, when, and with which payload.",evidence:"Immutable event type, actor, payload and timestamp."},
+  transparency:{start:"Review the published audit library and findings before drawing conclusions about system state.",complete:"The finding, supporting evidence and reported backlog are traceable to published artifacts.",evidence:"Commit-pinned audit documents, findings and backlog records."},
+  settings:{start:"Change only the policy, tool or administrative control required for the current operating need.",complete:"Configuration matches the intended governance and access model.",evidence:"Persisted policies, tool state and administrative configuration."}
+};
+
+const workflowNext:Partial<Record<ViewKey,ViewKey>> = {
+  overview:"ai",
+  ai:"unifi",
+  stakeholder:"sparks",
+  sparks:"thinktank",
+  thinktank:"governance",
+  governance:"products",
+  products:"productlab",
+  productlab:"unifi",
+  unifi:"scheduler",
+  scheduler:"runs",
+  runs:"checkpoints",
+  checkpoints:"audit",
+  audit:"transparency",
+  transparency:"overview"
+};
+
+type WorkflowRecommendation = { key:ViewKey|null; reason:string; adaptive:boolean };
+
+function resolveWorkflowRecommendation(
+  view:ViewKey,
+  summary:Summary,
+  runCount:number,
+  checkpointCount:number
+):WorkflowRecommendation{
+  const fallback=workflowNext[view]||null;
+  const defaultReason=fallback ? viewDescriptions[fallback] : viewDescriptions[view];
+
+  if(view==="overview"){
+    if(summary.blocked>0)return {key:"scheduler",reason:`${summary.blocked} blocked ${summary.blocked===1?"Job needs":"Jobs need"} scheduling attention.`,adaptive:true};
+    if(summary.running>0)return {key:"runs",reason:`${summary.running} running ${summary.running===1?"Job is":"Jobs are"} ready for execution monitoring.`,adaptive:true};
+    if(summary.total===0)return {key:"ai",reason:"No Jobs exist yet; shape the next governed outcome with DataNest AI.",adaptive:true};
+  }
+
+  if(view==="ai"){
+    if(summary.blocked>0)return {key:"scheduler",reason:"Blocked work is waiting for scheduling or capability attention.",adaptive:true};
+    if(summary.running>0)return {key:"runs",reason:"Active execution is underway; inspect live and completed run outcomes.",adaptive:true};
+    if(summary.total===0)return {key:"unifi",reason:"Turn the clarified intent into a complete Job Manifest.",adaptive:true};
+  }
+
+  if(view==="unifi"&&summary.blocked>0){
+    return {key:"scheduler",reason:"Blocked Jobs need scheduling and capability review before execution can continue.",adaptive:true};
+  }
+
+  if(view==="scheduler"){
+    if(summary.running>0)return {key:"runs",reason:"Execution is active; move forward to run-level outcomes and connector evidence.",adaptive:true};
+    if(summary.blocked>0)return {key:"unifi",reason:"No Job is running and blocked work may need manifest or capability adjustments.",adaptive:true};
+  }
+
+  if(view==="runs"&&runCount===0&&summary.active>0){
+    return {key:"scheduler",reason:"There is active work but no run history yet; confirm scheduling state first.",adaptive:true};
+  }
+
+  if(view==="checkpoints"&&checkpointCount===0&&summary.running>0){
+    return {key:"runs",reason:"No durable checkpoint is available yet; monitor the active run before resuming from evidence.",adaptive:true};
+  }
+
+  return {key:fallback,reason:defaultReason,adaptive:false};
+}
+
+const workflowPrevious:Partial<Record<ViewKey,ViewKey>> = {
+  ai:"overview",
+  sparks:"stakeholder",
+  thinktank:"sparks",
+  governance:"thinktank",
+  products:"governance",
+  productlab:"products",
+  unifi:"productlab",
+  scheduler:"unifi",
+  runs:"scheduler",
+  checkpoints:"runs",
+  audit:"checkpoints",
+  transparency:"audit"
 };
 
 const StakeholderWorkspace = dynamic(() => import("@/components/StakeholderWorkspace"), {
@@ -91,6 +190,11 @@ const AiOperationsDashboard = dynamic(() => import("@/components/AiOperationsDas
   loading: () => <section className="panel"><p className="muted">Loading AI administration…</p></section>
 });
 
+const ProductsWorkspace = dynamic(() => import("@/components/ProductsWorkspace"), {
+  ssr: false,
+  loading: () => <section className="panel"><p className="muted">Loading Resonance products…</p></section>
+});
+
 const ProductLab = dynamic(() => import("@/components/ProductLab"), {
   ssr: false,
   loading: () => <section className="panel"><p className="muted">Loading Product Lab…</p></section>
@@ -105,9 +209,14 @@ const ExternalAiSidebar = dynamic(() => import("@/components/ExternalAiSidebar")
   ssr: false
 });
 
+const RonsasIntegrationPanel = dynamic(() => import("@/components/RonsasIntegrationPanel"), {
+  ssr: false,
+  loading: () => <section className="panel fullWidth"><p className="muted">Loading RONSAS cloud integration…</p></section>
+});
+
 function formatDate(value:string|null) {
   if (!value) return "—";
-  return new Intl.DateTimeFormat(undefined,{month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(value));
+  return new Intl.DateTimeFormat(undefined,{month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"UTC",timeZoneName:"short"}).format(new Date(value));
 }
 function jobCode(job:Job) { return "JOB-" + String(job.job_number).padStart(5,"0"); }
 function tone(value:string) {
@@ -126,6 +235,8 @@ function pageRange(page:number) {
 export default function DataNestApp({session}:{session:Session}) {
   const [view,setView]=useState<ViewKey>("overview");
   const [viewReady,setViewReady]=useState(false);
+  const workspaceTitleRef=useRef<HTMLHeadingElement|null>(null);
+  const previousViewRef=useRef<ViewKey>("overview");
   const [mobileOpen,setMobileOpen]=useState(false);
   const [commandOpen,setCommandOpen]=useState(false);
   const [commandQuery,setCommandQuery]=useState("");
@@ -389,6 +500,16 @@ export default function DataNestApp({session}:{session:Session}) {
     window.scrollTo({top:0,left:0,behavior:"auto"});
   },[view,viewReady]);
   useEffect(()=>{
+    if(!viewReady)return;
+    if(previousViewRef.current===view)return;
+    previousViewRef.current=view;
+    const frame=window.requestAnimationFrame(()=>{
+      workspaceTitleRef.current?.focus({preventScroll:true});
+      window.scrollTo({top:0,left:0,behavior:"instant"});
+    });
+    return()=>window.cancelAnimationFrame(frame);
+  },[view,viewReady]);
+  useEffect(()=>{
     if(!mobileOpen)return;
     const closeOnEscape=(event:KeyboardEvent)=>{
       if(event.key==="Escape")setMobileOpen(false);
@@ -447,12 +568,12 @@ export default function DataNestApp({session}:{session:Session}) {
     setMobileOpen(false);
   }
 
-  function closeCommandPalette(){
+  function closeCommandPalette(restoreFocus=true){
     setCommandOpen(false);
     setCommandQuery("");
     setCommandActiveIndex(-1);
     window.setTimeout(()=>{
-      commandReturnFocusRef.current?.focus();
+      if(restoreFocus)commandReturnFocusRef.current?.focus();
       commandReturnFocusRef.current=null;
     },0);
   }
@@ -497,7 +618,7 @@ export default function DataNestApp({session}:{session:Session}) {
 
   function chooseCommandView(nextView:ViewKey){
     setView(nextView);
-    closeCommandPalette();
+    closeCommandPalette(nextView===view);
     setMobileOpen(false);
   }
 
@@ -561,8 +682,16 @@ export default function DataNestApp({session}:{session:Session}) {
   }
 
   const jobLookup=useMemo(()=>new Map([...recentJobs,...jobs].map(job=>[job.id,job])),[recentJobs,jobs]);
-  const currentLabel=nav.find(item=>item.key===view)?.label||"Overview";
+  const currentNavItem=nav.find(item=>item.key===view);
+  const currentLabel=currentNavItem?.label||"Overview";
   const currentDescription=viewDescriptions[view];
+  const currentGroup=currentNavItem?.group||"Core";
+  const currentPhase=workflowPhaseForView(view);
+  const workflowRecommendation=resolveWorkflowRecommendation(view,summary,runCount,checkpointCount);
+  const nextViewKey=workflowRecommendation.key;
+  const previousViewKey=workflowPrevious[view]||null;
+  const nextViewItem=nextViewKey ? nav.find(item=>item.key===nextViewKey)||null : null;
+  const previousViewItem=previousViewKey ? nav.find(item=>item.key===previousViewKey)||null : null;
   const groups=Array.from(new Set(nav.map(item=>item.group)));
   const healthLabel=health.state==="checking"
     ? "Checking control plane"
@@ -576,19 +705,20 @@ export default function DataNestApp({session}:{session:Session}) {
     className={"appFrame "+(aiSidebarOpen?"aiDockOpen ":"")+(companionReserve>0?"companionRailReserved":"")}
     style={companionReserve>0?({"--companion-reserve":companionReserve+"px"} as CSSProperties):undefined}
   >
+    <a className="skipLink" href="#workspace-title" onClick={event=>{event.preventDefault();workspaceTitleRef.current?.focus();}}>Skip to workspace</a>
     <aside id="datanest-navigation" aria-label="DataNest navigation" className={"sidebar "+(mobileOpen?"open":"")}>
       <div className="sidebarTop">
-        <div className="logo" aria-label="The Resonance App Dev"><img src="data:image/webp;base64,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" alt="The Resonance App Dev"/></div>
-        <div><p className="eyebrow">RESONANCE</p><b>DataNest</b></div>
+        <div className="logo" aria-label="Resonance AppDev"><img src={DATANEST_LOGO_SRC} alt="Resonance AppDev"/></div>
+        <div><p className="eyebrow">RESONANCE APPDEV</p><b>DataNest</b></div>
         <button className="closeMenu" onClick={()=>setMobileOpen(false)} aria-label="Close menu" aria-controls="datanest-navigation">×</button>
       </div>
       <div className="projectPill"><span className="liveDot"/><div><small>PROJECT</small><strong>{project?.name||"Resonance DataNest"}</strong></div></div>
       <nav className="navStack" aria-label="Project workspaces">
-        {groups.map(group=><details className="navGroup navDisclosure" key={group+String(nav.some(item=>item.group===group&&item.key===view))} open={group==="Project"||nav.some(item=>item.group===group&&item.key===view)}>
+        {groups.map(group=><details className="navGroup navDisclosure" key={group+String(nav.some(item=>item.group===group&&item.key===view))} open={group==="Core"||nav.some(item=>item.group===group&&item.key===view)}>
           <summary>{group}</summary>
           {nav.filter(item=>item.group===group).map(item=><button
             key={item.key}
-            className={view===item.key?"active":""}
+            className={(view===item.key?"active ":"")+(item.key==="ai"?"aiHeroNav":"")}
             aria-label={item.label}
             aria-current={view===item.key?"page":undefined}
             onClick={()=>{setView(item.key);setMobileOpen(false);}}
@@ -622,7 +752,7 @@ export default function DataNestApp({session}:{session:Session}) {
     </aside>
     {mobileOpen&&<button className="scrim" onClick={()=>setMobileOpen(false)} aria-label="Close navigation"/>}
 
-    {commandOpen&&<div className="commandPaletteBackdrop" onMouseDown={closeCommandPalette}>
+    {commandOpen&&<div className="commandPaletteBackdrop" onMouseDown={()=>closeCommandPalette()}>
       <section
         className="commandPalette"
         role="dialog"
@@ -633,7 +763,7 @@ export default function DataNestApp({session}:{session:Session}) {
       >
         <div className="commandPaletteHeader">
           <div><p className="eyebrow">QUICK SWITCH</p><h2>Go to a DataNest workspace</h2></div>
-          <button className="iconButton" type="button" onClick={closeCommandPalette} aria-label="Close quick switch">×</button>
+          <button className="iconButton" type="button" onClick={()=>closeCommandPalette()} aria-label="Close quick switch">×</button>
         </div>
         <label className="commandSearch">
           <span className="srOnly">Search DataNest workspaces</span>
@@ -674,7 +804,11 @@ export default function DataNestApp({session}:{session:Session}) {
     <main className="mainPane">
       <header className="topbar">
         <button className="menuButton" onClick={()=>setMobileOpen(true)} aria-label="Open menu" aria-controls="datanest-navigation" aria-expanded={mobileOpen}>☰</button>
-        <div className="topbarTitle"><p className="eyebrow">RESONANCE DATANEST</p><h1>{currentLabel}</h1><p className="topbarContext">{currentDescription}</p></div>
+        <div className="topbarTitle">
+          <p className="eyebrow">RESONANCE DATANEST · {currentGroup.toUpperCase()}</p>
+          <h1 id="workspace-title" ref={workspaceTitleRef} tabIndex={-1}>{currentLabel}</h1>
+          <p className="topbarContext">{currentDescription}</p>
+        </div>
         <div className="topActions">
           <button
             className="secondaryButton compact quickSwitchButton"
@@ -702,6 +836,7 @@ export default function DataNestApp({session}:{session:Session}) {
           }}>
             <summary className="secondaryButton compact">Options</summary>
             <div className="workspaceOptionsMenu">
+              <MotionControl/>
           <button
             className="secondaryButton compact releaseAction"
             type="button"
@@ -720,26 +855,66 @@ export default function DataNestApp({session}:{session:Session}) {
       </header>
 
       <div className="contentPane">
+        {view!=="overview"&&<nav className="workspaceWayfinding" aria-label="Workspace location">
+          <button type="button" onClick={()=>setView("overview")}>← AI &amp; I home</button>
+          <span aria-hidden="true">/</span><span aria-current="page">{currentLabel}</span>
+        </nav>}
+        {view!=="overview"&&view!=="settings"&&<nav className="workflowPhaseRail" aria-label="DataNest lifecycle phases">
+          <div className="workflowPhaseSteps">
+            {workflowPhases.map((phase,index)=>{
+              const active=phase.id===currentPhase;
+              return <button
+                key={phase.id}
+                type="button"
+                className={active?"active":""}
+                aria-current={active?"step":undefined}
+                aria-label={active?phase.label+" phase · current": "Go to "+phase.label+" phase"}
+                onClick={()=>setView((active?view:phase.destination) as ViewKey)}
+              ><span>{"0"+(index+1)}</span><b>{phase.label}</b></button>;
+            })}
+          </div>
+          <button className={"workflowPhaseAi "+(view==="ai"?"active":"")} type="button" aria-current={view==="ai"?"page":undefined} onClick={()=>setView("ai")}><span aria-hidden="true">✦</span><b>AI CORE</b><small>cross-phase</small></button>
+        </nav>}
         <div aria-live="polite">
           {notice&&<div className="notice goodNotice">{notice}</div>}
           {error&&<div className="notice errorNotice" role="alert">{error}</div>}
         </div>
         {(loadingCore||loadingView)&&<div className="loadingBar" aria-label="Loading DataNest data"><span/></div>}
 
+        {!loadingCore&&workspaceTaskGuides[view]&&<section className="workspaceTaskGuide" aria-label={currentLabel+" task guide"}>
+          <div><span>START HERE</span><p>{workspaceTaskGuides[view]?.start}</p></div>
+          <div><span>COMPLETE WHEN</span><p>{workspaceTaskGuides[view]?.complete}</p></div>
+          <div><span>EVIDENCE</span><p>{workspaceTaskGuides[view]?.evidence}</p></div>
+        </section>}
+
+        <div key={view} className="viewStage workspaceArrival">
         {!loadingCore&&project&&view==="overview"&&<ResonanceHome project={project} jobs={recentJobs} counts={summary} canOperate={canOperate} onNavigate={setView}/>}
         {!loadingCore&&project&&view==="stakeholder"&&<StakeholderWorkspace projectId={project.id} currentUserId={session.user.id} canReview={canManageAi}/>}
         {!loadingCore&&project&&view==="sparks"&&<SparksWorkspace projectId={project.id} currentUserId={session.user.id} canOperate={canOperate} canManage={canManageAi} setNotice={setNotice} setError={setError}/>}
         {!loadingCore&&project&&view==="governance"&&<GovernanceWorkspace projectId={project.id} currentUserId={session.user.id} canManage={canManageAi} setNotice={setNotice} setError={setError}/>}
+        {!loadingCore&&project&&view==="products"&&<ProductsWorkspace projectId={project.id}/>}
         {!loadingCore&&project&&view==="thinktank"&&<ThinkTankWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} canReview={canManageAi} setNotice={setNotice} setError={setError}/>}
-        {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError} onActiveSessionChange={setActiveDataNestAiSession}/>}
+        {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace key={project.id+":"+session.user.id} projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError} onActiveSessionChange={setActiveDataNestAiSession}/>}
         {!loadingCore&&project&&view==="productlab"&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate}/>}
         {!loadingCore&&project&&view==="unifi"&&<UnifiPlanner project={project} jobs={jobs} capabilities={capabilities} reload={async()=>{await loadJobsPage(jobPage);await loadSummary(project.id);await loadRecentJobs(project.id);}} setNotice={setNotice} setError={setError} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage}/>}
-        {!loadingCore&&view==="scheduler"&&<Scheduler jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage}/>}
-        {!loadingCore&&view==="runs"&&<Runs runs={runs} jobLookup={jobLookup} page={runPage} total={runCount} onPage={setRunPage}/>}
-        {!loadingCore&&view==="checkpoints"&&<Checkpoints checkpoints={checkpoints} jobLookup={jobLookup} page={checkpointPage} total={checkpointCount} onPage={setCheckpointPage}/>}
-        {!loadingCore&&view==="audit"&&<Audit events={events} jobLookup={jobLookup} page={eventPage} total={eventCount} onPage={setEventPage}/>}
+        {!loadingCore&&view==="scheduler"&&<Scheduler projectName={project?.name||"Resonance DataNest"} projectSlug={project?.slug||"resonance-datanest"} jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} onNavigate={setView}/>}
+        {!loadingCore&&view==="runs"&&<Runs runs={runs} jobLookup={jobLookup} page={runPage} total={runCount} onPage={setRunPage} onNavigate={setView}/>}
+        {!loadingCore&&view==="checkpoints"&&<Checkpoints checkpoints={checkpoints} jobLookup={jobLookup} page={checkpointPage} total={checkpointCount} onPage={setCheckpointPage} onNavigate={setView}/>}
+        {!loadingCore&&view==="audit"&&<Audit events={events} jobLookup={jobLookup} page={eventPage} total={eventCount} onPage={setEventPage} onNavigate={setView}/>}
         {!loadingCore&&view==="transparency"&&<TransparencyWorkspace/>}
-        {!loadingCore&&view==="settings"&&<Settings project={project} tools={tools} policies={policies} membership={membership} currentUserId={session.user.id} canManageAi={canManageAi}/>} 
+        {!loadingCore&&view==="settings"&&<Settings project={project} tools={tools} policies={policies} membership={membership} currentUserId={session.user.id} canManageAi={canManageAi}/>}
+        </div>
+        {!loadingCore&&project&&(previousViewItem||nextViewItem)&&<nav className="workflowContinuation" aria-label="Workspace progression">
+          <div className="workflowContinuationCopy">
+            <div className="workflowContinuationMeta"><p className="eyebrow">WORKFLOW CONTINUITY</p><span className={"workflowMode "+(workflowRecommendation.adaptive?"adaptive":"lifecycle")}>{workflowRecommendation.adaptive?"STATE-AWARE":"LIFECYCLE"}</span></div>
+            <strong>{currentGroup} · {currentLabel}</strong>
+            <small>{nextViewItem ? "Suggested next: "+nextViewItem.label+" · "+workflowRecommendation.reason : currentDescription}</small>
+          </div>
+          <div className="workflowContinuationActions">
+            {previousViewItem&&<button className="secondaryButton compact" type="button" onClick={()=>setView(previousViewItem.key)}>← {previousViewItem.label}</button>}
+            {nextViewItem&&<button className="primaryButton compact" type="button" onClick={()=>setView(nextViewItem.key)}>Continue · {nextViewItem.label} →</button>}
+          </div>
+        </nav>}
       </div>
     </main>
 
@@ -757,6 +932,7 @@ export default function DataNestApp({session}:{session:Session}) {
 
 function Overview({project,tools,jobs,counts,setView,canOperate}:{project:Project;tools:Tool[];jobs:Job[];counts:Summary;setView:(v:ViewKey)=>void;canOperate:boolean}) {
   const workspaces:Array<{key:ViewKey;label:string;description:string;glyph:string}> = [
+    {key:"products",label:"Products",description:"Inspect governed products, linked architecture, controls, evidence and specialist experiences.",glyph:"◉"},
     {key:"ai",label:"DataNest AI",description:"Governed project memory and AI collaboration.",glyph:"⌬"},
     {key:"unifi",label:"UNIFI Planner",description:"Prepare complete, traceable Job Manifests.",glyph:"◇"},
     {key:"scheduler",label:"TranScheduler",description:"Route work through capability-aware scheduling.",glyph:"⌁"},
@@ -884,23 +1060,98 @@ function UnifiPlanner({project,jobs,capabilities,reload,setNotice,setError,canOp
   </section>;
 }
 
-function Scheduler({jobs,capabilities,onStatus,canOperate,page,total,onPage}:{jobs:Job[];capabilities:Capability[];onStatus:(j:Job,s:string)=>Promise<void>;canOperate:boolean;page:number;total:number;onPage:(p:number)=>void}) {
+function ganttTime(value:string|null|undefined) {
+  if(!value)return null;
+  const parsed=Date.parse(value);
+  return Number.isFinite(parsed)?parsed:null;
+}
+
+function formatGanttTick(value:number,span:number) {
+  const day=24*60*60*1000;
+  const options:Intl.DateTimeFormatOptions=span<=3*day
+    ? {month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false,timeZone:"UTC"}
+    : span<=120*day
+      ? {month:"short",day:"2-digit",timeZone:"UTC"}
+      : {month:"short",year:"numeric",timeZone:"UTC"};
+  return new Intl.DateTimeFormat(undefined,options).format(new Date(value));
+}
+
+function Scheduler({projectName,projectSlug,jobs,capabilities,onStatus,canOperate,page,total,onPage,onNavigate}:{projectName:string;projectSlug:string;jobs:Job[];capabilities:Capability[];onStatus:(j:Job,s:string)=>Promise<void>;canOperate:boolean;page:number;total:number;onPage:(p:number)=>void;onNavigate:(v:ViewKey)=>void}) {
   const [filter,setFilter]=useState("ALL");
+  const [viewMode,setViewMode]=useState<"queue"|"gantt">("gantt");
+  const [sortMode,setSortMode]=useState<"priority"|"deadline"|"recent">("priority");
   const filterOptions=["ALL","PLANNED","READY","QUEUED","RUNNING","MANUAL_ACTION","BLOCKED","COMPLETED"];
   const visible=filter==="ALL"?jobs:jobs.filter(item=>item.status===filter);
+  const orderedVisible=[...visible].sort((left,right)=>{
+    if(sortMode==="deadline"){
+      const leftDeadline=ganttTime(left.deadline);
+      const rightDeadline=ganttTime(right.deadline);
+      if(leftDeadline!==null||rightDeadline!==null){
+        if(leftDeadline===null)return 1;
+        if(rightDeadline===null)return -1;
+        if(leftDeadline!==rightDeadline)return leftDeadline-rightDeadline;
+      }
+      return right.priority-left.priority||left.job_number-right.job_number;
+    }
+    if(sortMode==="recent"){
+      return (ganttTime(right.updated_at)??0)-(ganttTime(left.updated_at)??0)||right.priority-left.priority;
+    }
+    return right.priority-left.priority||left.job_number-right.job_number;
+  });
+  const activeCount=visible.filter(item=>!finalStates.has(item.status)).length;
+  const deadlineCount=visible.filter(item=>Boolean(item.deadline)).length;
+
   return <>
-    <section className="schedulerHero"><div><p className="eyebrow">TRANSCHEDULER</p><h2>Capability-aware execution queue</h2><p>Dependencies, availability, concurrency, policy and human controls determine when work may execute.</p></div><div className="schedulerPulse"><span>{capabilities.filter(item=>item.state==="AVAILABLE").length}</span><small>available resources</small></div></section>
+    <section className="schedulerHero">
+      <div>
+        <p className="eyebrow">TRANSCHEDULER · GANTT CHART VIEWER</p>
+        <div className="schedulerProjectIdentity"><span>PROJECT</span><b>{projectName}</b><small>{projectSlug}</small></div>
+        <h2>Capability-aware project scheduler</h2>
+        <p>Switch between the operational queue and a Universal Time Gantt timeline. Jobs stay grouped under their project identity, with a priority-scale gradient from maintenance to critical for faster visual planning.</p>
+      </div>
+      <div className="schedulerPulse"><span>{capabilities.filter(item=>item.state==="AVAILABLE").length}</span><small>available resources</small></div>
+    </section>
     <section className="panel">
+      <div className="schedulerContextBar">
+        <div className="schedulerContextControls">
+          <div className="schedulerViewSwitch" role="group" aria-label="TranScheduler view">
+            <button type="button" className={viewMode==="queue"?"active":""} aria-pressed={viewMode==="queue"} onClick={()=>setViewMode("queue")}>Queue</button>
+            <button type="button" className={viewMode==="gantt"?"active":""} aria-pressed={viewMode==="gantt"} onClick={()=>setViewMode("gantt")}>Gantt chart</button>
+          </div>
+          <label className="schedulerSortControl">Sort
+            <select aria-label="Sort project jobs" value={sortMode} onChange={event=>setSortMode(event.target.value as "priority"|"deadline"|"recent")}>
+              <option value="priority">Priority scale</option>
+              <option value="deadline">Nearest deadline</option>
+              <option value="recent">Recently updated</option>
+            </select>
+          </label>
+        </div>
+        <div className="schedulerContextStats" aria-label="Current scheduler context">
+          <span>{projectName}</span>
+          <span>{total+" project jobs"}</span>
+          <span>{visible.length+" shown"}</span>
+          <span>{activeCount+" active"}</span>
+          <span>{deadlineCount+" deadlines"}</span>
+        </div>
+      </div>
       <label className="schedulerFilterMobile">Status filter
         <select aria-label="Status filter" value={filter} onChange={event=>setFilter(event.target.value)}>
           {filterOptions.map(item=><option key={item} value={item}>{item.replace("_"," ")}</option>)}
         </select>
       </label>
       <div className="filterBar schedulerFilterDesktop">{filterOptions.map(item=><button key={item} className={filter===item?"active":""} onClick={()=>setFilter(item)}>{item.replace("_"," ")}</button>)}</div>
-      <div className="schedulerTable"><div className="schedulerRow headerRow"><span>Job</span><span>Priority</span><span>Capability</span><span>Status</span><span>Controls</span></div>
-        {visible.map(job=><div className="schedulerRow" key={job.id}>
+
+      {!orderedVisible.length?<div className="schedulerEmptyState"><EmptyState
+        title={total===0?"No project jobs yet":"No jobs match this filter"}
+        text={total===0?"Create a complete Job Manifest in UNIFI before scheduling execution.":"Clear the current status filter to return to the project queue."}
+        actionLabel={total===0?"Open UNIFI Planner":"Show all jobs"}
+        onAction={()=>{if(total===0)onNavigate("unifi");else setFilter("ALL");}}
+      /></div>:viewMode==="queue"?<div className="schedulerProjectGroup">
+        <ProjectGroupHeader projectName={projectName} projectSlug={projectSlug} jobs={orderedVisible}/>
+        <div className="schedulerTable"><div className="schedulerRow headerRow"><span>Job</span><span>Priority</span><span>Capability</span><span>Status</span><span>Controls</span></div>
+        {orderedVisible.map(job=><div className="schedulerRow" key={job.id}>
           <div data-label="Job"><b>{jobCode(job)}</b><small>{job.title}</small></div>
-          <span data-label="Priority">{"P"+job.priority}</span>
+          <span data-label="Priority" className="schedulerPriorityCell"><b>{"P"+job.priority}</b><PriorityScale value={job.priority}/></span>
           <span data-label="Capability">{job.required_capabilities?.join(", ")||"chat"}</span>
           <span data-label="Status"><Badge value={job.status}/></span>
           <div className="rowActions" data-label="Controls">
@@ -911,13 +1162,153 @@ function Scheduler({jobs,capabilities,onStatus,canOperate,page,total,onPage}:{jo
             </> : <span className="muted">Read only</span>}
           </div>
         </div>)}
-      </div>
+      </div></div>:<SchedulerGantt projectName={projectName} projectSlug={projectSlug} jobs={orderedVisible} onStatus={onStatus} canOperate={canOperate}/>}
       <Pagination page={page} total={total} onPage={onPage}/>
     </section>
   </>;
 }
 
-function Runs({runs,jobLookup,page,total,onPage}:{runs:Run[];jobLookup:Map<string,Job>;page:number;total:number;onPage:(p:number)=>void}) {
+function priorityBand(value:number) {
+  if(value>=80)return "Critical";
+  if(value>=60)return "High";
+  if(value>=30)return "Standard";
+  return "Maintenance";
+}
+
+function PriorityScale({value}:{value:number}) {
+  const safe=Math.max(0,Math.min(100,value));
+  const band=priorityBand(safe);
+  return <span className="priorityScaleMeter" aria-label={"Priority "+safe+" of 100 · "+band} title={"Priority P"+safe+" · "+band}>
+    <span className="priorityScaleGradient" aria-hidden="true"/>
+    <i className="priorityScaleMarker" style={{left:String(safe)+"%"}} aria-hidden="true"/>
+  </span>;
+}
+
+function ProjectGroupHeader({projectName,projectSlug,jobs}:{projectName:string;projectSlug:string;jobs:Job[]}) {
+  const active=jobs.filter(job=>!finalStates.has(job.status)).length;
+  const completed=jobs.filter(job=>job.status==="COMPLETED").length;
+  const highest=jobs.length?Math.max(...jobs.map(job=>job.priority)):0;
+  const bands=[
+    {label:"Maintenance",count:jobs.filter(job=>job.priority<30).length},
+    {label:"Standard",count:jobs.filter(job=>job.priority>=30&&job.priority<60).length},
+    {label:"High",count:jobs.filter(job=>job.priority>=60&&job.priority<80).length},
+    {label:"Critical",count:jobs.filter(job=>job.priority>=80).length}
+  ];
+  return <div className="schedulerProjectGroupHead">
+    <div className="schedulerProjectGroupTitle">
+      <span className="schedulerProjectGroupGlyph" aria-hidden="true">◆</span>
+      <div><small>PROJECT</small><b>{projectName}</b><span>{projectSlug}</span></div>
+    </div>
+    <div className="schedulerProjectGroupSummary">
+      <span>{jobs.length+" jobs"}</span><span>{active+" active"}</span><span>{completed+" complete"}</span><span>{"Peak P"+highest}</span>
+    </div>
+    <div className="schedulerPriorityStack">
+      <div className="schedulerPriorityLegend" aria-label="Job priority scale">
+        <span>Maintenance</span><i aria-hidden="true"/><span>Critical</span>
+      </div>
+      <div className="schedulerPriorityBands" aria-label="Priority distribution">
+        {bands.map(item=><span key={item.label}><b>{item.count}</b>{item.label}</span>)}
+      </div>
+    </div>
+  </div>;
+}
+
+function SchedulerGantt({projectName,projectSlug,jobs,onStatus,canOperate}:{projectName:string;projectSlug:string;jobs:Job[];onStatus:(j:Job,s:string)=>Promise<void>;canOperate:boolean}) {
+  if(!jobs.length)return <div className="ganttEmpty"><EmptyState title="No jobs in this Gantt view" text="Change the status filter or add work in UNIFI."/></div>;
+
+  const now=Date.now();
+  const minute=60*1000;
+  const starts=jobs.map(job=>ganttTime(job.created_at)??now);
+  const ends=jobs.map((job,index)=>{
+    const deadline=ganttTime(job.deadline);
+    const updated=ganttTime(job.updated_at)??starts[index];
+    const lifecycleEnd=finalStates.has(job.status)?updated:Math.max(updated,now);
+    return Math.max(starts[index]+minute,deadline??lifecycleEnd);
+  });
+  const rawStart=Math.min(...starts);
+  const rawEnd=Math.max(now,...ends);
+  const rawSpan=Math.max(rawEnd-rawStart,6*60*minute);
+  const padding=Math.max(rawSpan*.055,30*minute);
+  const rangeStart=rawStart-padding;
+  const rangeEnd=rawEnd+padding;
+  const span=rangeEnd-rangeStart;
+  const tickCount=6;
+  const ticks=Array.from({length:tickCount},(_,index)=>rangeStart+(span*index)/(tickCount-1));
+  const nowPosition=Math.max(0,Math.min(100,((now-rangeStart)/span)*100));
+
+  return <div className="ganttViewer">
+    <div className="ganttViewerHead">
+      <div><p className="eyebrow">PROJECT TIMELINE</p><h3>{projectName}</h3><p>Lifecycle and deadline context for this project. The priority gradient runs from maintenance to critical, while timeline bars continue to use recorded job timestamps only.</p></div>
+      <div className="ganttLegend" aria-label="Gantt chart legend">
+        <span><i className="deadline"/>Deadline target</span>
+        <span><i className="lifecycle"/>Lifecycle window</span>
+        <span><i className="now"/>Now</span>
+      </div>
+    </div>
+    <div className="ganttViewport">
+      <div className="ganttCanvas">
+        <ProjectGroupHeader projectName={projectName} projectSlug={projectSlug} jobs={jobs}/>
+        <div className="ganttAxisRow">
+          <div className="ganttAxisLabel"><b>{projectName}</b><small>Universal Time · current queue page</small></div>
+          <div className="ganttTimeline ganttTimelineAxis">
+            {ticks.map((tick,index)=>{
+              const position=(index/(tickCount-1))*100;
+              const transform=index===0?"none":index===tickCount-1?"translateX(-100%)":"translateX(-50%)";
+              return <span className="ganttTickLabel" key={tick} style={{left:String(position)+"%",transform}}>{formatGanttTick(tick,span)}</span>;
+            })}
+          </div>
+        </div>
+        {jobs.map((job,index)=>{
+          const start=starts[index];
+          const end=ends[index];
+          const left=Math.max(0,Math.min(100,((start-rangeStart)/span)*100));
+          const right=Math.max(left,Math.min(100,((end-rangeStart)/span)*100));
+          const width=Math.max(1.4,right-left);
+          const deadline=ganttTime(job.deadline);
+          const deadlinePosition=deadline===null?null:Math.max(0,Math.min(100,((deadline-rangeStart)/span)*100));
+          const endText=job.deadline
+            ? "Target "+formatDate(job.deadline)
+            : finalStates.has(job.status)
+              ? "Closed "+formatDate(job.updated_at)
+              : "Active through now · no deadline";
+
+          return <article className="ganttRow" key={job.id}>
+            <div className="ganttJobLabel">
+              <div className="ganttJobTitle">
+                <div><b>{jobCode(job)}</b><small title={job.title}>{job.title}</small></div>
+                <Badge value={job.status}/>
+              </div>
+              <div className="ganttMeta">
+                <span className="ganttPriorityMeta"><b>{"P"+job.priority}</b><PriorityScale value={job.priority}/></span>
+                <span>{job.required_capabilities?.join(", ")||"chat"}</span>
+                <span>{endText}</span>
+              </div>
+              <div className="rowActions ganttRowActions">
+                {canOperate ? <>
+                  {!finalStates.has(job.status)&&job.status!=="PAUSED"&&<button onClick={()=>void onStatus(job,"PAUSED")}>Pause</button>}
+                  {job.status==="PAUSED"&&<button onClick={()=>void onStatus(job,"READY")}>Resume</button>}
+                  {!finalStates.has(job.status)&&<button onClick={()=>void onStatus(job,"CANCELLED")}>Cancel</button>}
+                </> : <span className="muted">Read only</span>}
+              </div>
+            </div>
+            <div className="ganttTimeline ganttTrack">
+              {ticks.map((tick,tickIndex)=><span className="ganttGridLine" key={tick} style={{left:String((tickIndex/(tickCount-1))*100)+"%"}} aria-hidden="true"/>)}
+              <span className="ganttNowLine" style={{left:String(nowPosition)+"%"}} aria-hidden="true"/>
+              <div
+                className={"ganttBar "+tone(job.status)+(job.deadline?" deadlineBound":" lifecycleBound")}
+                style={{left:String(left)+"%",width:String(width)+"%"}}
+                title={jobCode(job)+" · "+job.title+" · "+endText}
+              ><span>{jobCode(job)}</span></div>
+              {deadlinePosition!==null&&<span className="ganttDeadlineMarker" style={{left:String(deadlinePosition)+"%"}} aria-hidden="true"/>}
+            </div>
+          </article>;
+        })}
+      </div>
+    </div>
+  </div>;
+}
+
+function Runs({runs,jobLookup,page,total,onPage,onNavigate}:{runs:Run[];jobLookup:Map<string,Job>;page:number;total:number;onPage:(p:number)=>void;onNavigate:(v:ViewKey)=>void}) {
   return <section className="panel"><div className="panelHead"><div><p className="eyebrow">EXECUTION HISTORY</p><h2>Runs</h2></div><span className="countPill">{total}</span></div>
     {runs.length?<div className="dataTable"><div className="dataRow headerRow"><span>Run</span><span>Job</span><span>Connector</span><span>Status</span><span>Started</span></div>
       {runs.map(run=>{const job=jobLookup.get(run.job_id);return <div className="dataRow" key={run.id}>
@@ -927,19 +1318,19 @@ function Runs({runs,jobLookup,page,total,onPage}:{runs:Run[];jobLookup:Map<strin
         <span data-label="Status"><Badge value={run.status}/></span>
         <span data-label="Started">{formatDate(run.started_at)}</span>
       </div>;})}
-    </div>:<EmptyState title="No execution runs yet" text="Runs will appear when TranScheduler dispatches jobs."/>}
+    </div>:<EmptyState title="No execution runs yet" text="Runs appear after TranScheduler dispatches governed Jobs." actionLabel="Open TranScheduler" onAction={()=>onNavigate("scheduler")}/>}
     <Pagination page={page} total={total} onPage={onPage}/>
   </section>;
 }
 
-function Checkpoints({checkpoints,jobLookup,page,total,onPage}:{checkpoints:Checkpoint[];jobLookup:Map<string,Job>;page:number;total:number;onPage:(p:number)=>void}) {
-  return <><section className="checkpointGrid">{checkpoints.map(checkpoint=>{const job=jobLookup.get(checkpoint.job_id);return <article className="checkpointCard" key={checkpoint.id}><div className="rowBetween"><div><p className="eyebrow">CHECKPOINT</p><h3>{job?jobCode(job):checkpoint.job_id.slice(0,8)}</h3></div><small>{formatDate(checkpoint.created_at)}</small></div><h4>{job?.title||"Project continuation"}</h4><div className="checkpointColumns"><div><b>Completed</b>{checkpoint.completed?.map(item=><span key={item}>{"✓ "+item}</span>)}</div><div><b>Remaining</b>{checkpoint.remaining?.map(item=><span key={item}>{"→ "+item}</span>)}</div></div>{checkpoint.resume_instruction&&<div className="resumeBox"><b>Resume</b>{checkpoint.resume_instruction}</div>}</article>;})}</section><Pagination page={page} total={total} onPage={onPage}/></>;
+function Checkpoints({checkpoints,jobLookup,page,total,onPage,onNavigate}:{checkpoints:Checkpoint[];jobLookup:Map<string,Job>;page:number;total:number;onPage:(p:number)=>void;onNavigate:(v:ViewKey)=>void}) {
+  return <>{checkpoints.length?<section className="checkpointGrid">{checkpoints.map(checkpoint=>{const job=jobLookup.get(checkpoint.job_id);return <article className="checkpointCard" key={checkpoint.id}><div className="rowBetween"><div><p className="eyebrow">CHECKPOINT</p><h3>{job?jobCode(job):checkpoint.job_id.slice(0,8)}</h3></div><small>{formatDate(checkpoint.created_at)}</small></div><h4>{job?.title||"Project continuation"}</h4><div className="checkpointColumns"><div><b>Completed</b>{checkpoint.completed?.map(item=><span key={item}>{"✓ "+item}</span>)}</div><div><b>Remaining</b>{checkpoint.remaining?.map(item=><span key={item}>{"→ "+item}</span>)}</div></div>{checkpoint.resume_instruction&&<div className="resumeBox"><b>Resume</b>{checkpoint.resume_instruction}</div>}</article>;})}</section>:<EmptyState title="No checkpoints yet" text="Durable continuation points appear after executable work records resumable state." actionLabel="Open Runs" onAction={()=>onNavigate("runs")}/>}<Pagination page={page} total={total} onPage={onPage}/></>;
 }
 
-function Audit({events,jobLookup,page,total,onPage}:{events:AuditEvent[];jobLookup:Map<string,Job>;page:number;total:number;onPage:(p:number)=>void}) {
-  return <section className="panel"><div className="panelHead"><div><p className="eyebrow">IMMUTABLE HISTORY</p><h2>Audit trail</h2></div><span className="countPill">{total}</span></div><div className="timeline">
+function Audit({events,jobLookup,page,total,onPage,onNavigate}:{events:AuditEvent[];jobLookup:Map<string,Job>;page:number;total:number;onPage:(p:number)=>void;onNavigate:(v:ViewKey)=>void}) {
+  return <section className="panel"><div className="panelHead"><div><p className="eyebrow">IMMUTABLE HISTORY</p><h2>Audit trail</h2></div><span className="countPill">{total}</span></div>{events.length?<div className="timeline">
     {events.map(event=><div className="timelineItem" key={event.id}><div className="timelineDot"/><div><div className="rowBetween"><b>{event.event_type.replaceAll("_"," ")}</b><small>{formatDate(event.created_at)}</small></div><p>{(event.job_id&&jobLookup.get(event.job_id)?jobCode(jobLookup.get(event.job_id)!)+" · ":"")+event.actor}</p><code>{JSON.stringify(event.payload)}</code></div></div>)}
-  </div><Pagination page={page} total={total} onPage={onPage}/></section>;
+  </div>:<EmptyState title="No audit events yet" text="Governed project actions will appear here as immutable operational evidence." actionLabel="Open Checkpoints" onAction={()=>onNavigate("checkpoints")}/>}<Pagination page={page} total={total} onPage={onPage}/></section>;
 }
 
 function Settings({
@@ -955,6 +1346,7 @@ function Settings({
   return <section className="settingsGrid">
     <div className="panel"><p className="eyebrow">PROJECT</p><h3>{project?.name||"Resonance DataNest"}</h3><dl className="settingsList"><div><dt>Slug</dt><dd>{project?.slug||"resonance-datanest"}</dd></div><div><dt>Status</dt><dd><Badge value={project?.status||"ACTIVE"}/></dd></div><div><dt>Access role</dt><dd><Badge value={(membership?.role||"viewer").toUpperCase()}/></dd></div><div><dt>GitHub</dt><dd>DataNest-Supository/DataNest</dd></div><div><dt>Supabase</dt><dd>sgqdmfgjbprsoqsmgigi</dd></div><div><dt>Hosting</dt><dd>Provider-agnostic</dd></div><div><dt>Production host</dt><dd>GitHub Pages</dd></div></dl></div>
     <div className="panel"><p className="eyebrow">TOOLS</p><h3>Tool registry</h3>{tools.map(tool=><div className="settingRow" key={tool.id}><div><b>{tool.name}</b><small>{tool.role}</small></div><Badge value={tool.enabled?"ACTIVE":"DISABLED"}/></div>)}</div>
+    <RonsasIntegrationPanel/>
     {project&&<div className="fullWidth" aria-label="AI Administration">
       <AiOperationsDashboard projectId={project.id} currentUserId={currentUserId} canManageAi={canManageAi}/>
     </div>}
@@ -979,4 +1371,5 @@ function Pagination({page,total,onPage}:{page:number;total:number;onPage:(p:numb
 }
 
 function Badge({value}:{value:string}) { return <span className={"badge "+tone(value)}>{value.replaceAll("_"," ")}</span>; }
-function EmptyState({title,text}:{title:string;text:string}) { return <div className="emptyState"><div>◇</div><h3>{title}</h3><p>{text}</p></div>; }
+function EmptyState({title,text,actionLabel,onAction}:{title:string;text:string;actionLabel?:string;onAction?:()=>void}) { return <div className="emptyState"><div>◇</div><h3>{title}</h3><p>{text}</p>{actionLabel&&onAction&&<button className="secondaryButton compact emptyStateAction" type="button" onClick={onAction}>{actionLabel}</button>}</div>; }
+

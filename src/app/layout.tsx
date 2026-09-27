@@ -1,5 +1,5 @@
 import "./globals.css";
-import "./membership.css";
+import "./entry.css";
 import type { ReactNode } from "react";
 
 export const metadata = {

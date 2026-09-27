@@ -1,9 +1,12 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import CollaborationVisual from "./CollaborationVisual";
+import MotionControl from "./MotionControl";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
+import { DATANEST_LOGO_SRC } from "@/lib/brand";
 
 const DataNestApp = dynamic(() => import("@/components/DataNestApp"), {
   ssr: false,
@@ -25,6 +28,15 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
       window.setTimeout(() => reject(new Error("Authentication service did not respond in time.")), timeoutMs);
     })
   ]);
+}
+
+function AuthBrand() {
+  return (
+    <div className="authBrand" aria-label="Resonance DataNest brand">
+      <span className="authLogo" aria-hidden="true"><img src={DATANEST_LOGO_SRC} alt="" /></span>
+      <span className="authBrandCopy"><small>RESONANCE</small><strong>DataNest</strong></span>
+    </div>
+  );
 }
 
 export default function AuthGate() {
@@ -171,8 +183,7 @@ export default function AuthGate() {
     return (
       <main className="authShell" role="status" aria-live="polite" aria-busy="true">
         <section className="authCard">
-          <div className="brandMark">RD</div>
-          <p className="eyebrow">RESONANCE APPDEV</p>
+          <AuthBrand />
           <h1>Resonance DataNest</h1>
           <div className="bootRow">
             <div className="bootPulse" aria-hidden="true" />
@@ -190,8 +201,7 @@ export default function AuthGate() {
     return (
       <main className="authShell">
         <section className="authCard" role="alert">
-          <div className="brandMark">RD</div>
-          <p className="eyebrow">RESONANCE APPDEV</p>
+          <AuthBrand />
           <h1>Resonance DataNest</h1>
           <p className="lede">{startupMessage}</p>
           <div className="setupBox">
@@ -208,8 +218,7 @@ export default function AuthGate() {
     return (
       <main className="authShell">
         <section className="authCard" role="alert">
-          <div className="brandMark">RD</div>
-          <p className="eyebrow">RESONANCE APPDEV</p>
+          <AuthBrand />
           <h1>Connection problem</h1>
           <p className="lede">{startupMessage || "DataNest could not reach the authentication service."}</p>
           <button className="primaryButton" type="button" onClick={() => void initialize()}>
@@ -225,8 +234,7 @@ export default function AuthGate() {
     return (
       <main className="authShell">
         <section className="authCard">
-          <div className="brandMark">RD</div>
-          <p className="eyebrow">RESONANCE APPDEV</p>
+          <AuthBrand />
           <h1>Create your DataNest password</h1>
           <p className="lede">Your invitation has been accepted. Set a password to use normal email-and-password sign-in.</p>
           <form onSubmit={submitNewPassword} className="authForm" aria-busy={busy}>
@@ -251,17 +259,35 @@ export default function AuthGate() {
   }
 
   return (
-    <main className="authShell">
-      <section className="authCard">
-        <div className="brandMark">RD</div>
-        <p className="eyebrow">RESONANCE APPDEV</p>
-        <h1>Resonance DataNest</h1>
-        <p className="lede">Plan projects, collaborate with DataNest AI, and review traceable work in one workspace.</p>
+    <main className="authShell authLanding">
+      <a className="skipLink" href="#sign-in-email">Skip to sign in</a>
+      <header className="landingHeader">
+        <a className="landingBrand" href="#" aria-label="Resonance DataNest home"><span className="landingLogo" aria-hidden="true"><img src={DATANEST_LOGO_SRC} alt="" /></span><span className="landingBrandText"><small>RESONANCE</small><b>DataNest</b></span></a>
+        <MotionControl/>
+      </header>
+      <div className="landingLayout">
+      <section className="landingStory" aria-labelledby="landing-title">
+        <p className="aiIEyebrow">AI &amp; I · A SHARED WORKSPACE</p>
+        <h2 id="landing-title">Your intent.<br/><span>Amplified.</span></h2>
+        <p className="landingLede">Bring human direction and AI intelligence together. Turn ideas into governed work, with a clear path from first spark to execution.</p>
+        <CollaborationVisual/>
+        <ol className="landingSteps" aria-label="The Resonance workflow">
+          <li><span>01</span><b>Spark</b><small>Capture intent</small></li>
+          <li><span>02</span><b>Think</b><small>Explore with AI</small></li>
+          <li><span>03</span><b>Govern</b><small>Review decisions</small></li>
+          <li><span>04</span><b>Execute</b><small>Track the work</small></li>
+        </ol>
+      </section>
+      <section className="authCard landingSignIn" aria-labelledby="sign-in-title">
+        <AuthBrand />
+        <h1 id="sign-in-title">Resonance DataNest</h1>
+        <p className="lede">Welcome to your workspace. Sign in to continue.</p>
 
         <form onSubmit={signIn} className="authForm" aria-busy={busy}>
           <label>
             Email
             <input
+              id="sign-in-email"
               type="email"
               required
               autoComplete="email"
@@ -294,6 +320,8 @@ export default function AuthGate() {
         </div>
         <p className="securityNote">Sign in with your authorized account. Need access? Ask your project administrator for an invitation.</p>
       </section>
+      </div>
+      <footer className="landingFooter"><span>Human direction. Governed intelligence.</span><span>Project access by invitation</span></footer>
     </main>
   );
 }
