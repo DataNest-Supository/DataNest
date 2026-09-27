@@ -87,8 +87,8 @@ test("Products reads the governed product catalog from Supabase",()=>{
 });
 
 test("governed product catalog schema is versioned with project-scoped RLS",()=>{
-  assert.match(productMigration,/create table if not exists public\.products/);
-  assert.match(productMigration,/create table if not exists public\.product_records/);
+  assert.match(productMigration,/create table public\.products/);
+  assert.match(productMigration,/create table public\.product_records/);
   assert.match(productMigration,/alter table public\.products enable row level security/);
   assert.match(productMigration,/private\.has_project_role\(project_id/);
   assert.match(productMigration,/private\.is_project_member\(project_id\)/);
