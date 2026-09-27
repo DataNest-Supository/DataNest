@@ -55,4 +55,8 @@ test("staging acceptance proves service-role insert and mutation denial transact
   assert.match(acceptance,/set\s+local\s+role\s+service_role/i);
   assert.match(acceptance,/insert\s+into\s+public\.ai_intake_events/i);
   assert.match(acceptance,/rollback/i);
+  assert.doesNotMatch(acceptance,/\bdo \$\s*\n/i);
+  assert.doesNotMatch(acceptance,/\bas \$\s*\n/i);
+  assert.match(acceptance,/\bdo \$datanest\$\s*\nbegin[\s\S]*service_role must retain append-only INSERT access/i);
+  assert.match(acceptance,/create function pg_temp\.assert_datanest_intake_mutations_denied[\s\S]*\bas \$datanest\$\s*\nbegin/i);
 });
