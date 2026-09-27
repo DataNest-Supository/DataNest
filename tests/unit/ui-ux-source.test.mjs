@@ -20,7 +20,10 @@ const projectMembersSource = fs.readFileSync(path.join(repoRoot, "src/components
 const authoritySource = fs.readFileSync(path.join(repoRoot, "src/components/ExecutionAuthorityPanel.tsx"), "utf8");
 const resourceFabricSource = fs.readFileSync(path.join(repoRoot, "src/components/ResourceFabricPanel.tsx"), "utf8");
 const singleFlightSource = fs.readFileSync(path.join(repoRoot, "src/lib/singleFlight.ts"), "utf8");
-const sessionRequestKeySource = fs.readFileSync(path.join(repoRoot, "src/lib/sessionRequestKey.ts"), "utf8");
+const pendingMutationSource = fs.readFileSync(path.join(repoRoot, "src/lib/pendingMutation.ts"), "utf8");
+const mutationReconciliationSource = fs.readFileSync(path.join(repoRoot, "src/lib/mutationReconciliation.ts"), "utf8");
+const supabaseSource = fs.readFileSync(path.join(repoRoot, "src/lib/supabase.ts"), "utf8");
+const unifiIdempotencyMigrationSource = fs.readFileSync(path.join(repoRoot, "supabase/migrations/20260927180402_add_unifi_idempotent_manifest_v2.sql"), "utf8");
 const cssSource = fs.readFileSync(path.join(repoRoot, "src/app/globals.css"), "utf8");
 
 test("mobile navigation keeps refresh and release controls reachable", () => {
@@ -535,17 +538,42 @@ test("mutation-heavy workspaces use the shared single-flight boundary", () => {
   assert.match(resourceFabricSource, /useSingleFlight\(\)/);
 });
 
-test("Spark reservation retries reuse a session-stable request identity until success", () => {
-  assert.match(sessionRequestKeySource, /const SESSION_REQUEST_PREFIX="datanest\.requestKey\."/);
-  assert.match(sessionRequestKeySource, /window\.sessionStorage\.getItem\(key\)/);
-  assert.match(sessionRequestKeySource, /window\.sessionStorage\.setItem\(key,value\)/);
-  assert.match(sparksSource, /getOrCreateSessionRequestKey\(requestScope\)/);
-  assert.match(sparksSource, /target_request_key:requestKey/);
-  assert.match(sparksSource, /clearSessionRequestKey\(requestScope\)/);
-  assert.match(sparksSource, /function clearCurrentRedemptionRequestKey\(\)/);
-  assert.match(sparksSource, /onChange=\{e=>\{clearCurrentRedemptionRequestKey\(\);setQuantity/);
-  assert.match(sparksSource, /onChange=\{e=>\{clearCurrentRedemptionRequestKey\(\);setRequestNote/);
-  assert.match(sparksSource, /Retry keeps the same request key to avoid a duplicate reservation/);
+test("pending mutation journal preserves request identity and payload for authoritative reconciliation", () => {
+  assert.match(pendingMutationSource, /const PENDING_MUTATION_PREFIX="datanest\.pendingMutation\."/);
+  assert.match(pendingMutationSource, /requestKey:crypto\.randomUUID\(\)/);
+  assert.match(pendingMutationSource, /window\.sessionStorage\.setItem\(storageKey\(scope\),JSON\.stringify\(next\)\)/);
+  assert.match(pendingMutationSource, /existing&&existing\.kind===kind&&JSON\.stringify\(existing\.payload\)===JSON\.stringify\(payload\)/);
+  assert.match(mutationReconciliationSource, /state:"confirmed"/);
+  assert.match(mutationReconciliationSource, /state:"not_recorded"/);
+  assert.match(mutationReconciliationSource, /state:"pending"/);
+});
+
+test("UNIFI manifest creation has a server idempotency key and reconciles ambiguous outcomes", () => {
+  assert.match(unifiIdempotencyMigrationSource, /add column if not exists client_request_id uuid/);
+  assert.match(unifiIdempotencyMigrationSource, /create unique index if not exists jobs_project_client_request_id_uidx/);
+  assert.match(unifiIdempotencyMigrationSource, /create or replace function public\.create_job_manifest_v2/);
+  assert.match(unifiIdempotencyMigrationSource, /where project_id=target_project\s+and client_request_id=target_request_key/);
+  assert.match(unifiIdempotencyMigrationSource, /Client request key already exists for a different UNIFI Job Manifest payload/);
+  assert.match(appSource, /create_job_manifest_v2/);
+  assert.match(appSource, /target_request_key:intent\.requestKey/);
+  assert.match(appSource, /\.eq\("client_request_id",intent\.requestKey\)/);
+  assert.match(appSource, /Previous UNIFI submission was not recorded/);
+  assert.match(appSource, /UNIFI submission outcome is still unconfirmed/);
+  assert.match(appSource, /Recheck server state/);
+});
+
+test("Spark reservations reconcile against authoritative request-key state", () => {
+  assert.match(sparksSource, /getOrCreatePendingMutation\(redemptionRequestScope,"spark_redemption",payload\)/);
+  assert.match(sparksSource, /target_request_key:intent\.requestKey/);
+  assert.match(sparksSource, /\.eq\("request_key",intent\.requestKey\)/);
+  assert.match(sparksSource, /Recovered confirmed Spark reservation/);
+  assert.match(sparksSource, /Previous Spark reservation was not recorded/);
+  assert.match(sparksSource, /Spark reservation outcome is still unconfirmed/);
+  assert.match(sparksSource, /disabled=\{redemptionLocked\}/);
+});
+
+test("PostgREST automatic retries are disabled so mutation reconciliation remains explicit", () => {
+  assert.match(supabaseSource, /db:\s*\{\s*retry:\s*false\s*\}/);
 });
 
 test("Product Lab mutation feedback remains visible after workspace navigation", () => {
