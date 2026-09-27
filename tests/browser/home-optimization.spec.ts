@@ -879,3 +879,84 @@ test("active evidence locator crosses paginated Runs, Checkpoints, and Audit", a
 
   expect(mutations).toEqual([]);
 });
+
+
+test("shared operational deep links clamp stale pages and copy canonical state", async ({ page }) => {
+  const projectId = "00000000-0000-4000-8000-000000000010";
+  const userId = "00000000-0000-4000-8000-000000000001";
+  const stamp = "2026-09-27T08:00:00Z";
+  const jobs = Array.from({length:21},(_,index)=>({
+    id:"00000000-0000-4000-8000-"+String(index+1).padStart(12,"0"),
+    job_number:index+1,
+    title:"Shared-link Job "+String(index+1),
+    description:null,
+    priority:100-index,
+    status:index===20?"READY":"QUEUED",
+    required_capabilities:["chat"],
+    acceptance:{},
+    created_at:stamp,
+    updated_at:stamp,
+    deadline:null
+  }));
+
+  await page.route("**/runtime-config.js", route => route.fulfill({
+    contentType:"application/javascript",
+    body:"window.__DATANEST_CONFIG__={supabaseUrl:'https://fixture.supabase.co',supabasePublishableKey:'fixture-key',authoritative:true}"
+  }));
+  await page.addInitScript(({userId}) => {
+    const encode = (data: unknown) => btoa(JSON.stringify(data)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+    localStorage.setItem("sb-fixture-auth-token", JSON.stringify({
+      access_token:`${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:userId,exp:4102444800,role:"authenticated"})}.fixture`,
+      refresh_token:"fixture", token_type:"bearer", expires_at:4102444800,
+      user:{id:userId,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid"}
+    }));
+    Object.defineProperty(navigator,"clipboard",{
+      configurable:true,
+      value:{writeText:async(value:string)=>{(window as unknown as {__copiedWorkspaceUrl?:string}).__copiedWorkspaceUrl=value;}}
+    });
+  }, {userId});
+
+  await page.route("https://fixture.supabase.co/**", route => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const path = url.pathname;
+    let body:unknown = [];
+    const headers:Record<string,string> = {"Content-Type":"application/json"};
+
+    if(path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE",created_at:stamp};
+    if(path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"viewer",status:"active"};
+    if(path.endsWith("/get_project_dashboard_summary")) body = {total_jobs:21,active_jobs:21,running_jobs:0,blocked_jobs:0,available_capabilities:0,registered_capabilities:0};
+    if(path.endsWith("/jobs")){
+      const offset=Number(url.searchParams.get("offset")||"0");
+      const limit=Number(url.searchParams.get("limit")||"20");
+      const selected=jobs.slice(offset,Math.min(offset+limit,jobs.length));
+      body=selected;
+      headers["Content-Range"]=selected.length ? offset+"-"+String(offset+selected.length-1)+"/21" : "*/21";
+    }
+
+    return route.fulfill({status:200,headers,body:JSON.stringify(body)});
+  });
+
+  await page.goto(appPath+"?view=scheduler&page=99&mode=broken&filter=UNKNOWN&sort=bad&release=cache-test&_reload=123");
+
+  await expect(page.getByRole("heading",{name:"TranScheduler"})).toBeVisible();
+  await expect(page.getByLabel("Pagination")).toContainText("Page 2 of 2");
+  await expect(page.getByText("Shared-link Job 21",{exact:true})).toBeVisible();
+  await expect(page).toHaveURL(/view=scheduler/);
+  await expect(page).toHaveURL(/page=2/);
+  await expect(page).not.toHaveURL(/mode=/);
+  await expect(page).not.toHaveURL(/filter=/);
+  await expect(page).not.toHaveURL(/sort=/);
+
+  await page.getByText("Options",{exact:true}).click();
+  await page.getByRole("button",{name:"Copy view link"}).click();
+  await expect(page.getByText("Workspace view link copied.",{exact:true})).toBeVisible();
+
+  const copied = await page.evaluate(() => (window as unknown as {__copiedWorkspaceUrl?:string}).__copiedWorkspaceUrl || "");
+  expect(copied).toContain("view=scheduler");
+  expect(copied).toContain("page=2");
+  expect(copied).not.toContain("release=");
+  expect(copied).not.toContain("_reload=");
+  expect(copied).not.toMatch(/job(?:Id|_id)=/i);
+  expect(copied).not.toMatch(/session(?:Id|_id)=/i);
+});

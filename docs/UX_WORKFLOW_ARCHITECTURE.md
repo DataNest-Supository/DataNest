@@ -319,3 +319,16 @@ Default values are omitted from the URL to keep deep links compact. Invalid valu
 Workspace changes still create browser-history entries through `?view=`. Local presentation changes replace the current entry, which means navigating away and then using Back restores the latest operational page/subview for that workspace without creating noisy history entries for every filter click.
 
 Active Job identifiers, AI session identifiers, authority state and other governed/private context are never written to URL parameters. Active Work Context remains authenticated session state.
+
+
+## Shareable operational deep links
+
+Workspace URLs are intended to be safe, reproducible presentation links.
+
+When a shared paginated URL points beyond the current dataset, DataNest uses the exact returned count to move the local workspace to the last available page and canonicalizes the URL rather than leaving the user on an empty stale page. This applies to UNIFI, TranScheduler, Runs, Checkpoints and Audit.
+
+Malformed Scheduler `mode`, `filter` and `sort` values fall back to their safe defaults and are removed from the canonical URL.
+
+**Copy view link** is available from workspace actions on desktop and mobile. It copies the canonical current presentation URL while removing release/cache-busting parameters such as `release` and `_reload`.
+
+The copied link contains presentation state only. Active Job identity, DataNest AI session identity, authority state and other authenticated governed context are never added to the URL.

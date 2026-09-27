@@ -666,8 +666,14 @@ export default function DataNestApp({session}:{session:Session}) {
       .range(from,to);
     if(queryError) setError(queryError.message);
     else {
-      setJobs((data||[]) as Job[]);
-      setJobCount(count||0);
+      const total=count||0;
+      const lastPage=Math.max(0,Math.ceil(total/PAGE_SIZE)-1);
+      setJobCount(total);
+      if(page>lastPage){
+        setJobPage(lastPage);
+        if(total>0)setNotice("Shared Job view adjusted to the last available page.");
+        else setJobs([]);
+      }else setJobs((data||[]) as Job[]);
     }
     setLoadingView(false);
   },[project]);
@@ -683,7 +689,16 @@ export default function DataNestApp({session}:{session:Session}) {
       .order("started_at",{ascending:false})
       .range(from,to);
     if(queryError) setError(queryError.message);
-    else { setRuns((data||[]) as Run[]); setRunCount(count||0); }
+    else {
+      const total=count||0;
+      const lastPage=Math.max(0,Math.ceil(total/PAGE_SIZE)-1);
+      setRunCount(total);
+      if(page>lastPage){
+        setRunPage(lastPage);
+        if(total>0)setNotice("Shared Runs view adjusted to the last available page.");
+        else setRuns([]);
+      }else setRuns((data||[]) as Run[]);
+    }
     setLoadingView(false);
   },[]);
 
@@ -698,7 +713,16 @@ export default function DataNestApp({session}:{session:Session}) {
       .order("created_at",{ascending:false})
       .range(from,to);
     if(queryError) setError(queryError.message);
-    else { setCheckpoints((data||[]) as Checkpoint[]); setCheckpointCount(count||0); }
+    else {
+      const total=count||0;
+      const lastPage=Math.max(0,Math.ceil(total/PAGE_SIZE)-1);
+      setCheckpointCount(total);
+      if(page>lastPage){
+        setCheckpointPage(lastPage);
+        if(total>0)setNotice("Shared Checkpoints view adjusted to the last available page.");
+        else setCheckpoints([]);
+      }else setCheckpoints((data||[]) as Checkpoint[]);
+    }
     setLoadingView(false);
   },[]);
 
@@ -715,7 +739,16 @@ export default function DataNestApp({session}:{session:Session}) {
       .order("created_at",{ascending:false})
       .range(from,to);
     if(queryError) setError(queryError.message);
-    else { setEvents((data||[]) as AuditEvent[]); setEventCount(count||0); }
+    else {
+      const total=count||0;
+      const lastPage=Math.max(0,Math.ceil(total/PAGE_SIZE)-1);
+      setEventCount(total);
+      if(page>lastPage){
+        setEventPage(lastPage);
+        if(total>0)setNotice("Shared Audit view adjusted to the last available page.");
+        else setEvents([]);
+      }else setEvents((data||[]) as AuditEvent[]);
+    }
     setLoadingView(false);
   },[project]);
 
@@ -981,6 +1014,29 @@ export default function DataNestApp({session}:{session:Session}) {
 
   async function signOut(){ await getSupabase()?.auth.signOut(); }
 
+  async function copyWorkspaceLink(){
+    const shareUrl=new URL(window.location.href);
+    shareUrl.searchParams.delete("release");
+    shareUrl.searchParams.delete("_reload");
+    shareUrl.hash="";
+    try{
+      await navigator.clipboard.writeText(shareUrl.toString());
+      setNotice("Workspace view link copied.");
+    }catch{
+      const input=document.createElement("textarea");
+      input.value=shareUrl.toString();
+      input.setAttribute("readonly","");
+      input.style.position="fixed";
+      input.style.opacity="0";
+      document.body.appendChild(input);
+      input.select();
+      const copied=document.execCommand("copy");
+      input.remove();
+      if(copied)setNotice("Workspace view link copied.");
+      else setError("Could not copy the workspace link.");
+    }
+  }
+
   async function reloadLatestVersion(){
     if(reloadingLatest)return;
     setReloadingLatest(true);
@@ -1105,6 +1161,11 @@ export default function DataNestApp({session}:{session:Session}) {
           <button
             className="secondaryButton compact"
             type="button"
+            onClick={()=>void copyWorkspaceLink()}
+          >Copy view link</button>
+          <button
+            className="secondaryButton compact"
+            type="button"
             disabled={reloadingLatest}
             onClick={()=>void reloadLatestVersion()}
           >{reloadingLatest?"Reloading…":"Reload latest"}</button>
@@ -1199,6 +1260,12 @@ export default function DataNestApp({session}:{session:Session}) {
             <summary className="secondaryButton compact">Options</summary>
             <div className="workspaceOptionsMenu">
               <MotionControl/>
+          <button
+            className="secondaryButton compact"
+            type="button"
+            onClick={()=>void copyWorkspaceLink()}
+            title="Copy a canonical deep link to this workspace presentation state."
+          >Copy view link</button>
           <button
             className="secondaryButton compact releaseAction"
             type="button"

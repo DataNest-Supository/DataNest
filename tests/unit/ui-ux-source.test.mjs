@@ -433,3 +433,19 @@ test("workspace presentation state is URL-addressable without exposing active Jo
   assert.doesNotMatch(appSource, /searchParams\.set\("job(?:Id|_id)"/i);
   assert.doesNotMatch(appSource, /searchParams\.set\("session(?:Id|_id)"/i);
 });
+
+
+test("shared workspace links clamp stale pages and strip release cache-busters when copied", () => {
+  assert.match(appSource, /const lastPage=Math\.max\(0,Math\.ceil\(total\/PAGE_SIZE\)-1\)/);
+  assert.match(appSource, /if\(page>lastPage\)\{\s*setJobPage\(lastPage\)/);
+  assert.match(appSource, /if\(page>lastPage\)\{\s*setRunPage\(lastPage\)/);
+  assert.match(appSource, /if\(page>lastPage\)\{\s*setCheckpointPage\(lastPage\)/);
+  assert.match(appSource, /if\(page>lastPage\)\{\s*setEventPage\(lastPage\)/);
+  assert.match(appSource, /async function copyWorkspaceLink\(\)/);
+  assert.match(appSource, /shareUrl\.searchParams\.delete\("release"\)/);
+  assert.match(appSource, /shareUrl\.searchParams\.delete\("_reload"\)/);
+  assert.match(appSource, /navigator\.clipboard\.writeText\(shareUrl\.toString\(\)\)/);
+  assert.match(appSource, />Copy view link<\/button>/);
+  assert.doesNotMatch(appSource, /shareUrl\.searchParams\.set\("job(?:Id|_id)"/i);
+  assert.doesNotMatch(appSource, /shareUrl\.searchParams\.set\("session(?:Id|_id)"/i);
+});
