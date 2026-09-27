@@ -138,7 +138,7 @@ test("certification workspace orders validation runs oldest to newest for latest
 
 test("embedded DataNest AI turns finalize usage requests", () => {
   const gateway=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-chat/index.ts"),"utf8");
-  const migration=fs.readFileSync(path.join(root,"supabase/migrations/20260924230000_datanest_ai_production.sql"),"utf8");
+  const migration=fs.readFileSync(path.join(root,"supabase/migrations/20260924230805_datanest_ai_production.sql"),"utf8");
   assert.match(migration,/target_status not in \('succeeded','failed','unknown','denied','embedded'\)/);
   assert.match(
     gateway,
