@@ -34,6 +34,9 @@ export function getSupabase(): SupabaseClient | null {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true
+    },
+    db: {
+      retry: false
     }
   });
 
