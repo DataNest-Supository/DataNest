@@ -472,7 +472,9 @@ test("AI & I keeps DataNest AI at the core while governed products stay product 
   await page.goto(appPath);
 
   const visual=page.locator(".resonanceHome .aiICoreStage");
+  await expect(visual).toHaveAttribute("data-hero-ecosystem","ronsas");
   await expect(visual.getByText("DataNest AI",{exact:true})).toBeVisible();
+  await expect(visual.getByText("Resonance Open Nova Sovereign Application Suite",{exact:true})).toBeVisible();
   await expect(visual.locator("b").filter({hasText:/^RONSAS$/})).toBeVisible();
   await expect(visual.getByText("Aurum Naturals",{exact:true})).toBeVisible();
   await expect(visual.getByText("9 applications",{exact:true})).toBeVisible();
@@ -487,6 +489,11 @@ test("AI & I keeps DataNest AI at the core while governed products stay product 
 
   const network=visual.getByLabel("Resonance DataNest value network");
   await expect(network).toBeVisible();
+  await expect(network.locator('[data-value="sovereign-app-suite"]')).toContainText("Sovereign App Suite");
+  const aiCorePulse=visual.locator('[data-hero-signal="ai-core"]');
+  const ecosystemSweep=visual.locator('[data-hero-signal="ecosystem-sweep"]');
+  expect(await aiCorePulse.evaluate(el=>getComputedStyle(el).animationName)).toContain("portfolioAiPulse");
+  expect(await ecosystemSweep.evaluate(el=>getComputedStyle(el).animationName)).toContain("portfolioEcosystemPulse");
   for(const label of ["Governed AI","Certified Memory","Traceable Collaboration","Sovereign App Suite"]){
     await expect(network.getByText(label,{exact:true})).toBeVisible();
   }
@@ -502,6 +509,8 @@ test("AI & I keeps DataNest AI at the core while governed products stay product 
 
   await page.emulateMedia({reducedMotion:"reduce"});
   expect(await network.locator("[data-signal='ai']").evaluate(el=>getComputedStyle(el).animationName)).toBe("none");
+  expect(await aiCorePulse.evaluate(el=>getComputedStyle(el).animationName)).toBe("none");
+  expect(await ecosystemSweep.evaluate(el=>getComputedStyle(el).animationName)).toBe("none");
 
   await ronsasNode.click();
   await expect(page).toHaveURL(/view=products/);
