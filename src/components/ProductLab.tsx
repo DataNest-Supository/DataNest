@@ -4,6 +4,8 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 import { useSessionDraftState } from "@/lib/sessionDraft";
 import { useSingleFlight } from "@/lib/singleFlight";
+import { clearPendingMutation, getOrCreatePendingMutation, loadPendingMutation, type PendingMutationIntent } from "@/lib/pendingMutation";
+import { reconcileServerMutation, type MutationReconciliationState } from "@/lib/mutationReconciliation";
 
 type Surface={
   id:string;project_id:string;name:string;url:string;environment:string;status:string;
@@ -21,6 +23,13 @@ type TestRun={
   request_id:string|null;test_case_version:number|null;surface_url_snapshot:string|null;
   environment_snapshot:string|null;build_commit:string|null;release_id:string|null;
   browser_user_agent:string|null;viewport:Record<string,unknown>;created_at:string
+};
+type ProductTestRunPendingPayload={
+  testCaseId:string;
+  surfaceId:string;
+  result:"pass"|"fail"|"blocked";
+  notes:string|null;
+  evidenceUrl:string|null;
 };
 
 function formatDate(value:string|null){
@@ -67,6 +76,9 @@ export default function ProductLab({
   ].some(item=>item.hasStoredDraft);
 
   const {activeAction,busy,run:runSingleFlight}=useSingleFlight();
+  const [testRunReconciliation,setTestRunReconciliation]=useState<MutationReconciliationState|"idle"|"checking">("idle");
+  const testRunRequestScope="productlab-test-run:"+projectId+":"+currentUserId;
+  const testRunLocked=testRunReconciliation==="pending"||testRunReconciliation==="checking";
   const [realtime,setRealtime]=useState("connecting");
 
   const load=useCallback(async()=>{
@@ -175,9 +187,74 @@ export default function ProductLab({
     }).catch(()=>{});
   }
 
+  function restoreTestRunIntent(intent:PendingMutationIntent<ProductTestRunPendingPayload>){
+    setSelectedSurfaceId(intent.payload.surfaceId);
+    setRunNotes(current=>({...current,[intent.payload.testCaseId]:intent.payload.notes||""}));
+    setEvidenceUrls(current=>({...current,[intent.payload.testCaseId]:intent.payload.evidenceUrl||""}));
+  }
+
+  function clearTestRunIntentForEdit(){
+    if(testRunLocked)return false;
+    clearPendingMutation(testRunRequestScope);
+    setTestRunReconciliation("idle");
+    return true;
+  }
+
+  async function reconcileTestRunIntent(intent:PendingMutationIntent<ProductTestRunPendingPayload>,announce:boolean){
+    const supabase=getSupabase();
+    if(!supabase){
+      setTestRunReconciliation("pending");
+      if(announce)setError("Product Lab test evidence is awaiting authoritative confirmation. Connectivity is unavailable, so do not record a second result yet.");
+      return {state:"pending" as const,value:null,error:new Error("Supabase unavailable")};
+    }
+
+    setTestRunReconciliation("checking");
+    const result=await reconcileServerMutation(async()=>{
+      const {data,error}=await supabase.from("product_test_runs")
+        .select("id,request_id,test_case_id,result,created_at")
+        .eq("tester_user_id",currentUserId)
+        .eq("request_id",intent.requestKey)
+        .limit(1);
+      if(error)throw error;
+      const row=Array.isArray(data)?data[0]:null;
+      return row ? row as {id:string;request_id:string;test_case_id:string;result:string;created_at:string} : null;
+    });
+
+    if(result.state==="confirmed"&&result.value){
+      clearPendingMutation(testRunRequestScope);
+      setTestRunReconciliation("confirmed");
+      setRunNotes(current=>{const next={...current};delete next[intent.payload.testCaseId];return next;});
+      setEvidenceUrls(current=>{const next={...current};delete next[intent.payload.testCaseId];return next;});
+      setError("");
+      setNotice("Recovered confirmed Product Lab test evidence from authoritative server state.");
+      await load();
+    }else if(result.state==="not_recorded"){
+      setTestRunReconciliation("not_recorded");
+      restoreTestRunIntent(intent);
+      if(announce)setNotice("Previous Product Lab test result was not recorded. The original evidence is restored and can be retried safely.");
+    }else{
+      setTestRunReconciliation("pending");
+      restoreTestRunIntent(intent);
+      if(announce)setError("Product Lab test result is still unconfirmed. Its request identity is preserved; recheck server state before retrying.");
+    }
+    return result;
+  }
+
+  useEffect(()=>{
+    const reconcilePending=()=>{
+      const pending=loadPendingMutation<ProductTestRunPendingPayload>(testRunRequestScope);
+      if(!pending||pending.kind!=="product_test_run")return;
+      restoreTestRunIntent(pending);
+      void reconcileTestRunIntent(pending,true);
+    };
+    reconcilePending();
+    window.addEventListener("online",reconcilePending);
+    return()=>window.removeEventListener("online",reconcilePending);
+  },[testRunRequestScope]);
+
   async function recordRun(testCase:TestCase,result:"pass"|"fail"|"blocked"){
     const supabase=getSupabase();
-    if(!supabase)return;
+    if(!supabase||testRunLocked)return;
 
     const surface=surfaces.find(s=>s.id===(testCase.surface_id||selectedSurfaceId));
     if(!surface){setError("A versioned product surface is required for this test.");return;}
@@ -189,36 +266,55 @@ export default function ProductLab({
       if(!confirmed)return;
     }
 
+    const payload:ProductTestRunPendingPayload={
+      testCaseId:testCase.id,
+      surfaceId:surface.id,
+      result,
+      notes:runNotes[testCase.id]?.trim()||null,
+      evidenceUrl:evidenceUrls[testCase.id]?.trim()||null
+    };
+    const intent=getOrCreatePendingMutation(testRunRequestScope,"product_test_run",payload);
+
     await runSingleFlight("record-test:"+testCase.id,async()=>{
       setNotice("Recording Product Lab test evidence…");
       setError("");
-      const requestId=crypto.randomUUID();
       const viewport={
         width:window.innerWidth,
         height:window.innerHeight,
         devicePixelRatio:window.devicePixelRatio
       };
 
-      const {error:insertError}=await supabase.from("product_test_runs").insert({
-        project_id:projectId,
-        surface_id:surface.id,
-        test_case_id:testCase.id,
-        tester_user_id:currentUserId,
-        result,
-        notes:runNotes[testCase.id]?.trim()||null,
-        evidence_url:evidenceUrls[testCase.id]?.trim()||null,
-        request_id:requestId,
-        browser_user_agent:navigator.userAgent,
-        viewport
-      });
+      try{
+        const {error:insertError}=await supabase.from("product_test_runs").insert({
+          project_id:projectId,
+          surface_id:payload.surfaceId,
+          test_case_id:payload.testCaseId,
+          tester_user_id:currentUserId,
+          result:payload.result,
+          notes:payload.notes,
+          evidence_url:payload.evidenceUrl,
+          request_id:intent.requestKey,
+          browser_user_agent:navigator.userAgent,
+          viewport
+        });
+        if(insertError)throw insertError;
 
-      if(insertError){setError(insertError.message);throw insertError;}
-
-      setRunNotes(current=>{const next={...current};delete next[testCase.id];return next;});
-      setEvidenceUrls(current=>{const next={...current};delete next[testCase.id];return next;});
-      setNotice("Test evidence recorded for "+shortCommit(surface.build_commit)+". Test evidence is recorded once per tester/test-version/build.");
-      await load();
-    }).catch(()=>{});
+        clearPendingMutation(testRunRequestScope);
+        setTestRunReconciliation("confirmed");
+        setRunNotes(current=>{const next={...current};delete next[testCase.id];return next;});
+        setEvidenceUrls(current=>{const next={...current};delete next[testCase.id];return next;});
+        setNotice("Test evidence recorded for "+shortCommit(surface.build_commit)+". Test evidence is recorded once per tester/test-version/build.");
+        await load();
+      }catch(actionError){
+        const reconciled=await reconcileTestRunIntent(intent,false);
+        if(reconciled.state==="confirmed")return;
+        if(reconciled.state==="not_recorded"){
+          setError((actionError instanceof Error?actionError.message:"Unable to record Product Lab test evidence.")+" Server state confirms the result was not recorded; retry is safe.");
+          return;
+        }
+        setError("Product Lab test result is ambiguous. Evidence is locked to its original request identity until authoritative reconciliation succeeds.");
+      }
+    });
   }
 
   function latestRun(caseId:string){
@@ -234,6 +330,8 @@ export default function ProductLab({
     </section>
 
     {activeAction&&<p className="muted" role="status">Product Lab action in progress · duplicate submissions are blocked until this request finishes.</p>}
+    {testRunReconciliation==="pending"&&<div className="notice errorNotice" role="status"><b>Test result awaiting confirmation.</b> Do not record another result. <button type="button" className="textButton" onClick={()=>{const pending=loadPendingMutation<ProductTestRunPendingPayload>(testRunRequestScope);if(pending)void reconcileTestRunIntent(pending,true);}}>Recheck server state</button></div>}
+    {testRunReconciliation==="not_recorded"&&<div className="notice goodNotice" role="status">Server state confirms the previous test result was not recorded. Retrying reuses the same request identity.</div>}
 
     <section className="metricGrid">
       <article className="metricCard"><span>Surfaces</span><strong>{surfaces.length}</strong><small>Versioned preview/staging/production</small></article>
@@ -299,12 +397,12 @@ export default function ProductLab({
           <div className="rowBetween"><div><p className="eyebrow">TEST CASE v{tc.version}</p><h3>{tc.title}</h3></div>{latest&&<span className={"badge "+(latest.result==="pass"?"good":latest.result==="fail"?"bad":"warn")}>{latest.result.toUpperCase()}</span>}</div>
           {tc.description&&<p className="muted">{tc.description}</p>}
           <div className="resumeBox"><b>Expected</b>{tc.expected_result}</div>
-          <label>Test notes<textarea rows={3} value={runNotes[tc.id]||""} onChange={e=>setRunNotes(current=>({...current,[tc.id]:e.target.value}))}/></label>
-          <label>Evidence URL<input type="url" value={evidenceUrls[tc.id]||""} onChange={e=>setEvidenceUrls(current=>({...current,[tc.id]:e.target.value}))} placeholder="Optional screenshot, artifact, issue or recording"/></label>
+          <label>Test notes<textarea disabled={testRunLocked} rows={3} value={runNotes[tc.id]||""} onChange={e=>{if(clearTestRunIntentForEdit())setRunNotes(current=>({...current,[tc.id]:e.target.value}));}}/></label>
+          <label>Evidence URL<input disabled={testRunLocked} type="url" value={evidenceUrls[tc.id]||""} onChange={e=>{if(clearTestRunIntentForEdit())setEvidenceUrls(current=>({...current,[tc.id]:e.target.value}));}} placeholder="Optional screenshot, artifact, issue or recording"/></label>
           <div className="testActions">
-            <button className="primaryButton compact" type="button" disabled={busy} onClick={()=>void recordRun(tc,"pass")}>Pass</button>
-            <button className="secondaryButton compact" type="button" disabled={busy} onClick={()=>void recordRun(tc,"fail")}>Fail</button>
-            <button className="secondaryButton compact" type="button" disabled={busy} onClick={()=>void recordRun(tc,"blocked")}>Blocked</button>
+            <button className="primaryButton compact" type="button" disabled={busy||testRunLocked} onClick={()=>void recordRun(tc,"pass")}>Pass</button>
+            <button className="secondaryButton compact" type="button" disabled={busy||testRunLocked} onClick={()=>void recordRun(tc,"fail")}>Fail</button>
+            <button className="secondaryButton compact" type="button" disabled={busy||testRunLocked} onClick={()=>void recordRun(tc,"blocked")}>Blocked</button>
           </div>
           {latest&&<div className="testEvidence">
             <small>Latest: {formatDate(latest.created_at)} · test v{latest.test_case_version||tc.version} · build {shortCommit(latest.build_commit)}</small>
