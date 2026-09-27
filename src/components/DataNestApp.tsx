@@ -1858,7 +1858,7 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
           }
           return;
         }
-        markPendingMutationDurable(requestScope);
+        markPendingMutationDurable(requestScope,{attemptCount:durable.attemptCount,lastAttemptAt:durable.lastAttemptAt});
         const {data,error}=await supabase.rpc("create_job_manifest_v2",{
           target_project:project.id,
           target_request_key:intent.requestKey,
