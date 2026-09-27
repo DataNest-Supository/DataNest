@@ -88,3 +88,11 @@ test("Trust Policy receives current actor for independent-review safeguards",()=
   assert.match(panel,/independent review/i);
 });
 
+test("self-authored trust activation is pre-disabled in the review UI",()=>{
+  const panel=fs.readFileSync(panelPath,"utf8");
+  const disabled=(panel.match(/disabled=\{busy\|\|text\(item\.created_by\)===currentUserId\}/g)||[]).length;
+  assert.ok(disabled>=2,"Trust Manifest and Provider Trust Profile activation must both pre-disable self-review");
+  assert.match(panel,/self-authored Trust Manifest/i);
+  assert.match(panel,/self-authored Provider Trust Profile/i);
+});
+
