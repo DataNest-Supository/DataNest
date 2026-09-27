@@ -86,6 +86,13 @@ export function evaluateSupabaseProject(project, config = {}) {
   return checks;
 }
 
+export function getStrictBlockers(supabase) {
+  return [
+    ...(supabase?.globalChecks || []),
+    ...(supabase?.projects || []).flatMap((p) => p.checks || []),
+  ].filter((c) => c.level === "blocker");
+}
+
 function parseArgs(argv) {
   const out = { apply:false, strict:false, config:"branch-cleaner.config.json", reportDir:"artifacts/branch-cleaner", staleDays:null };
   for (let i = 0; i < argv.length; i++) {
@@ -355,6 +362,7 @@ function markdown(r) {
     "",
     "- Deleted: " + (r.apply.deleted.join(", ") || "none"),
     "- Delete failures: " + r.apply.failed.length,
+    "- Apply skipped: " + (r.apply.skipped ? (r.apply.reason || "yes") : "no"),
     "",
     "Branch-Cleaner reports evidence; it does not convert deletion, an advisor result, or a published audit into certification."
   );
@@ -391,9 +399,18 @@ async function main() {
     }
   }
 
+  const strictBlockers = getStrictBlockers(supabase);
   const apply = a.apply
-    ? await applyDeletes(repo, token, github.branches)
-    : { deleted:[], failed:[] };
+    ? (a.strict && strictBlockers.length
+      ? {
+          deleted:[],
+          failed:[],
+          skipped:true,
+          reason:"strict_control_plane_blockers",
+          blockerCount:strictBlockers.length,
+        }
+      : await applyDeletes(repo, token, github.branches))
+    : { deleted:[], failed:[], skipped:false };
 
   const report = {
     schemaVersion:1,
@@ -412,12 +429,7 @@ async function main() {
   await writeFile(path.join(a.reportDir, "branch-cleaner-report.md"), markdown(report));
   process.stdout.write(markdown(report));
 
-  const blockers = [
-    ...(supabase.globalChecks || []),
-    ...(supabase.projects || []).flatMap((p) => p.checks || [])
-  ].filter((c) => c.level === "blocker").length;
-
-  if (a.strict && (blockers || apply.failed.length)) process.exitCode = 2;
+  if (a.strict && (strictBlockers.length || apply.failed.length)) process.exitCode = 2;
 }
 
 if (process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url) {
