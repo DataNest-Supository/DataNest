@@ -352,6 +352,7 @@
   animation-delay:-3.4s;
 }
 .ronsasValueNode{
+  width:146px;
   left:calc(50% - var(--network-x));
   top:calc(50% + var(--network-y));
   transform:translate(-50%,-50%);
@@ -433,6 +434,7 @@
 @container datanest-main (max-width:620px){
   .valueNetwork{--network-x:102px;--network-y:96px}
   .valueNode{width:96px;min-height:44px;padding:7px 8px}
+  .ronsasValueNode{width:104px}
   .valueNode b{font-size:8px}
   .valueNode span{display:none}
   .intelligenceHalo{width:190px;height:190px}
@@ -440,6 +442,7 @@
 @media(max-width:470px){
   .valueNetwork{--network-x:86px;--network-y:82px}
   .valueNode{width:82px;min-height:40px;padding:6px 7px}
+  .ronsasValueNode{width:88px}
   .valueNode b{font-size:7px}
   .valueNode small{font-size:5px}
   .intelligenceHalo{width:170px;height:170px}
@@ -447,7 +450,7 @@
 
 @media(prefers-reduced-motion:reduce){
   .portfolioRingOuter,.portfolioRingInner,.portfolioSignalSweep,.portfolioSignalDot,.portfolioProductCard,.portfolioCore,.portfolioCore::before,
-  .intelligenceHalo,.valueNode,.valueSignal{
+  .intelligenceHalo,.valueNode,.valueSignal,.aiCorePulse,.ecosystemPulse{
     animation:none!important;
   }
 }
