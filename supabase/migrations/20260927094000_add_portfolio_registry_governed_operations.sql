@@ -315,6 +315,45 @@ begin
 end;
 $$;
 
+
+create or replace function public.reject_portfolio_classification_v1(
+  target_classification_id uuid,
+  target_reason text
+) returns uuid
+language plpgsql
+security definer
+set search_path=public,private,auth
+as $
+declare
+  caller uuid := auth.uid();
+  proposal public.portfolio_classifications%rowtype;
+begin
+  if caller is null then raise insufficient_privilege using message='Authentication is required.'; end if;
+  select * into proposal from public.portfolio_classifications
+  where id=target_classification_id for update;
+  if not found then raise exception 'Portfolio classification proposal not found.'; end if;
+  if not private.has_project_role(proposal.project_id,array['owner','admin']) then
+    raise insufficient_privilege using message='Owner or admin access is required.';
+  end if;
+  if proposal.status<>'proposed' then raise exception 'Only proposed classifications may be rejected.'; end if;
+  if nullif(btrim(coalesce(target_reason,'')),'') is null then raise exception 'Rejection reason is required.'; end if;
+
+  update public.portfolio_classifications
+  set status='rejected'
+  where id=proposal.id;
+
+  perform private.record_portfolio_event(
+    proposal.project_id,'PORTFOLIO_CLASSIFICATION_REJECTED',caller,
+    jsonb_build_object(
+      'classification_id',proposal.id,
+      'portfolio_item_id',proposal.portfolio_item_id,
+      'reason',btrim(target_reason)
+    )
+  );
+  return proposal.id;
+end;
+$;
+
 create or replace function public.propose_portfolio_relationship_v1(
   target_source_item uuid,
   target_target_item uuid,
@@ -434,6 +473,46 @@ begin
 end;
 $$;
 
+
+create or replace function public.reject_portfolio_relationship_v1(
+  target_relationship_id uuid,
+  target_reason text
+) returns uuid
+language plpgsql
+security definer
+set search_path=public,private,auth
+as $
+declare
+  caller uuid := auth.uid();
+  proposal public.portfolio_relationships%rowtype;
+begin
+  if caller is null then raise insufficient_privilege using message='Authentication is required.'; end if;
+  select * into proposal from public.portfolio_relationships
+  where id=target_relationship_id for update;
+  if not found then raise exception 'Portfolio relationship proposal not found.'; end if;
+  if not private.has_project_role(proposal.project_id,array['owner','admin']) then
+    raise insufficient_privilege using message='Owner or admin access is required.';
+  end if;
+  if proposal.status<>'proposed' then raise exception 'Only proposed relationships may be rejected.'; end if;
+  if nullif(btrim(coalesce(target_reason,'')),'') is null then raise exception 'Rejection reason is required.'; end if;
+
+  update public.portfolio_relationships
+  set status='rejected'
+  where id=proposal.id;
+
+  perform private.record_portfolio_event(
+    proposal.project_id,'PORTFOLIO_RELATIONSHIP_REJECTED',caller,
+    jsonb_build_object(
+      'relationship_id',proposal.id,
+      'source_item_id',proposal.source_item_id,
+      'target_item_id',proposal.target_item_id,
+      'reason',btrim(target_reason)
+    )
+  );
+  return proposal.id;
+end;
+$;
+
 create or replace function public.propose_portfolio_lifecycle_transition_v1(
   target_item uuid,
   target_to_state text,
@@ -542,6 +621,45 @@ begin
   return event_row.id;
 end;
 $$;
+
+
+create or replace function public.reject_portfolio_lifecycle_transition_v1(
+  target_event_id uuid,
+  target_reason text
+) returns uuid
+language plpgsql
+security definer
+set search_path=public,private,auth
+as $
+declare
+  caller uuid := auth.uid();
+  event_row public.portfolio_lifecycle_events%rowtype;
+begin
+  if caller is null then raise insufficient_privilege using message='Authentication is required.'; end if;
+  select * into event_row from public.portfolio_lifecycle_events
+  where id=target_event_id for update;
+  if not found then raise exception 'Portfolio lifecycle proposal not found.'; end if;
+  if not private.has_project_role(event_row.project_id,array['owner','admin']) then
+    raise insufficient_privilege using message='Owner or admin access is required.';
+  end if;
+  if event_row.status<>'proposed' then raise exception 'Only proposed lifecycle events may be rejected.'; end if;
+  if nullif(btrim(coalesce(target_reason,'')),'') is null then raise exception 'Rejection reason is required.'; end if;
+
+  update public.portfolio_lifecycle_events
+  set status='rejected'
+  where id=event_row.id;
+
+  perform private.record_portfolio_event(
+    event_row.project_id,'PORTFOLIO_LIFECYCLE_REJECTED',caller,
+    jsonb_build_object(
+      'lifecycle_event_id',event_row.id,
+      'portfolio_item_id',event_row.portfolio_item_id,
+      'reason',btrim(target_reason)
+    )
+  );
+  return event_row.id;
+end;
+$;
 
 create or replace function public.promote_product_candidate_v1(
   target_item uuid,
@@ -762,10 +880,13 @@ $$;
 revoke all on function public.create_portfolio_item_v1(uuid,text,text,text,text,text,text,jsonb) from public;
 revoke all on function public.propose_portfolio_classification_v1(uuid,text,uuid,text,text) from public;
 revoke all on function public.approve_portfolio_classification_v1(uuid) from public;
+revoke all on function public.reject_portfolio_classification_v1(uuid,text) from public;
 revoke all on function public.propose_portfolio_relationship_v1(uuid,uuid,text,text,text,text) from public;
 revoke all on function public.approve_portfolio_relationship_v1(uuid) from public;
+revoke all on function public.reject_portfolio_relationship_v1(uuid,text) from public;
 revoke all on function public.propose_portfolio_lifecycle_transition_v1(uuid,text,text,text) from public;
 revoke all on function public.approve_portfolio_lifecycle_transition_v1(uuid) from public;
+revoke all on function public.reject_portfolio_lifecycle_transition_v1(uuid,text) from public;
 revoke all on function public.promote_product_candidate_v1(uuid,text,text,text,text,jsonb,text) from public;
 revoke all on function public.deprecate_portfolio_item_v1(uuid,text,text) from public;
 revoke all on function public.retire_portfolio_item_v1(uuid,text,text) from public;
@@ -773,10 +894,13 @@ revoke all on function public.retire_portfolio_item_v1(uuid,text,text) from publ
 grant execute on function public.create_portfolio_item_v1(uuid,text,text,text,text,text,text,jsonb) to authenticated, service_role;
 grant execute on function public.propose_portfolio_classification_v1(uuid,text,uuid,text,text) to authenticated, service_role;
 grant execute on function public.approve_portfolio_classification_v1(uuid) to authenticated, service_role;
+grant execute on function public.reject_portfolio_classification_v1(uuid,text) to authenticated, service_role;
 grant execute on function public.propose_portfolio_relationship_v1(uuid,uuid,text,text,text,text) to authenticated, service_role;
 grant execute on function public.approve_portfolio_relationship_v1(uuid) to authenticated, service_role;
+grant execute on function public.reject_portfolio_relationship_v1(uuid,text) to authenticated, service_role;
 grant execute on function public.propose_portfolio_lifecycle_transition_v1(uuid,text,text,text) to authenticated, service_role;
 grant execute on function public.approve_portfolio_lifecycle_transition_v1(uuid) to authenticated, service_role;
+grant execute on function public.reject_portfolio_lifecycle_transition_v1(uuid,text) to authenticated, service_role;
 grant execute on function public.promote_product_candidate_v1(uuid,text,text,text,text,jsonb,text) to authenticated, service_role;
 grant execute on function public.deprecate_portfolio_item_v1(uuid,text,text) to authenticated, service_role;
 grant execute on function public.retire_portfolio_item_v1(uuid,text,text) to authenticated, service_role;
