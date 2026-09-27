@@ -15,7 +15,7 @@ It combines the operational lessons already captured in DataNest's GitHub/Supaba
 
 ## Safety model
 
-A branch is never a delete candidate when it is the base/protected branch, has an open PR, has unique commits, or GitHub comparison is unresolved.
+A branch is never a delete candidate when it is the base/protected branch, has an open PR, has unique commits, GitHub comparison is unresolved, or branch recency cannot be established.
 
 A branch may become a delete candidate only when:
 
@@ -66,7 +66,7 @@ Use **Actions → Branch-Cleaner → Run workflow**.
 
 - `apply=false` is the review-first path.
 - `apply=true` enables deletion of only `delete_candidate` branches.
-- add a repository secret named `SUPABASE_ACCESS_TOKEN` if Supabase inspection should run in CI.
+- add a repository secret named `SUPABASE_ACCESS_TOKEN`; strict cleanup fails closed when Supabase verification is unavailable.
 - use a narrowly scoped Supabase token; do not expose service-role keys or database passwords.
 
 ## Tests
