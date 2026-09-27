@@ -66,7 +66,7 @@ test("active history constraints preserve a single active decision while retaini
   assert.match(source,/create unique index data_policy_bindings_one_active_subject_uidx[\s\S]*where status='active'/i);
   assert.match(source,/create unique index trust_manifests_one_active_project_uidx[\s\S]*where status='active'[\s\S]*scope_type='project'/i);
   assert.match(source,/create unique index trust_manifests_one_active_product_uidx[\s\S]*where status='active'[\s\S]*scope_type='product'/i);
-  assert.match(source,/create unique index provider_trust_profiles_one_active_uidx[\s\S]*where status='active'/i);
+  assert.match(source,/create unique index provider_trust_profiles_one_current_uidx[\s\S]*where status in \('active','restricted','suspended'\)/i);
   assert.match(source,/supersedes_binding_id uuid/i);
   assert.match(source,/supersedes_manifest_id uuid/i);
   assert.match(source,/supersedes_profile_id uuid/i);
