@@ -80,7 +80,10 @@ test("authority documentation keeps target-state concepts honest and Sparks alig
   assert.match(architecture,/job_start/);
   assert.match(architecture,/report-only/i);
   assert.match(architecture,/exact-action approval/i);
-  assert.match(architecture,/## Resource and Capability Fabric/);\n  assert.match(architecture,/## Intelligence Fabric and ILM-1/);\n  assert.match(architecture,/ILM-1[\s\S]{0,220}not a trained proprietary foundation model/i);\n  assert.match(architecture,/Cloud-Nest[\s\S]{0,220}target-state \/ not yet live/i);
+  assert.match(architecture,/## Resource and Capability Fabric/);
+  assert.match(architecture,/## Intelligence Fabric and ILM-1/);
+  assert.match(architecture,/ILM-1[\s\S]{0,220}not a trained proprietary foundation model/i);
+  assert.match(architecture,/Cloud-Nest[\s\S]{0,220}target-state \/ not yet live/i);
   assert.match(architecture,/does not add a generic destructive, legal, financial, ownership or constitutional executor/i);
   assert.match(architecture,/does not invent a currency\/pricing unit/i);
 
