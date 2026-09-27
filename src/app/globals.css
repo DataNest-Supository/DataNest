@@ -4494,8 +4494,44 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
 .activeWorkContextIdentity strong{flex:0 0 auto;font-size:11px;color:#dffaff;letter-spacing:.04em}
 .activeWorkContextIdentity span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#aebdd0;font-size:11px}
 .activeWorkContextHint{display:block;margin-top:4px;color:#71889d;font-size:8px;line-height:1.35}
-.activeWorkContextState{display:flex;align-items:center;gap:8px;white-space:nowrap}
-.activeWorkContextState small{color:#72879a;font-size:8px;letter-spacing:.06em;text-transform:uppercase}
+.activeWorkContextState{display:grid;gap:5px;justify-items:start;min-width:0}
+.activeWorkContextStatusLine{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.activeWorkContextStatusLine small{color:#72879a;font-size:8px;letter-spacing:.06em;text-transform:uppercase}
+.activeWorkContextEvidence{
+  display:grid;
+  gap:2px;
+  min-width:0;
+  max-width:240px;
+  padding:5px 7px;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:9px;
+  background:rgba(255,255,255,.02)
+}
+.activeWorkContextEvidence span{
+  font-size:7px;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase
+}
+.activeWorkContextEvidence small{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#73889d;
+  font-size:8px;
+  line-height:1.3
+}
+.activeWorkContextEvidence.visible{
+  border-color:rgba(89,226,174,.22);
+  background:rgba(89,226,174,.045)
+}
+.activeWorkContextEvidence.visible span{color:#8debc8}
+.activeWorkContextEvidence.not-visible{
+  border-color:rgba(245,185,80,.2);
+  background:rgba(245,185,80,.04)
+}
+.activeWorkContextEvidence.not-visible span{color:#e8c47a}
+.activeWorkContextEvidence.context span{color:#89dff3}
 .activeWorkContextActions{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap}
 .activeWorkContextPrimary{white-space:nowrap}
 .activeWorkContextClear{color:#7f8fa1}
@@ -4507,7 +4543,9 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
   .activeWorkContext{grid-template-columns:1fr;gap:9px;padding:12px}
   .activeWorkContextIdentity>div{align-items:flex-start;flex-direction:column;gap:3px}
   .activeWorkContextIdentity span{white-space:normal}
-  .activeWorkContextState{justify-content:flex-start}
+  .activeWorkContextState{justify-items:start}
+  .activeWorkContextEvidence{max-width:100%;width:100%}
+  .activeWorkContextEvidence small{white-space:normal}
   .activeWorkContextActions{grid-column:auto;display:grid;grid-template-columns:1fr 1fr}
   .activeWorkContextActions>*{width:100%;min-width:0}
   .activeWorkContextActions .activeWorkContextClear{grid-column:1/-1}

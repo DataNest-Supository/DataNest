@@ -226,6 +226,7 @@ function isActiveWorkContext(value:unknown):value is ActiveDataNestAiSession {
   return typeof item.jobId==="string"&&typeof item.jobNumber==="number"&&typeof item.title==="string"&&typeof item.status==="string"&&(typeof item.sessionId==="string"||item.sessionId===null);
 }
 type ActiveContextAction = { key:ViewKey; label:string; detail:string };
+type ActiveContextEvidence = { state:"visible"|"not-visible"|"context"; label:string; detail:string };
 function activeContextActionForView(view:ViewKey):ActiveContextAction {
   if(view==="productlab")return {key:"unifi",label:"Plan active Job in UNIFI",detail:"Turn validated product work into a complete Job Manifest."};
   if(view==="unifi")return {key:"scheduler",label:"Schedule active Job",detail:"Carry this Job into capability-aware execution planning."};
@@ -234,6 +235,40 @@ function activeContextActionForView(view:ViewKey):ActiveContextAction {
   if(view==="checkpoints")return {key:"audit",label:"Trace active Job audit",detail:"Follow this Job into immutable operational history."};
   if(view==="audit")return {key:"transparency",label:"Review transparency evidence",detail:"Move from internal traceability to published evidence context."};
   return {key:"ai",label:"Return active Job to AI",detail:"Keep the active Job attached to its governed AI collaboration context."};
+}
+function activeContextEvidenceForView(
+  view:ViewKey,
+  activeJobId:string,
+  jobs:Job[],
+  runs:Run[],
+  checkpoints:Checkpoint[],
+  events:AuditEvent[]
+):ActiveContextEvidence {
+  if(view==="unifi"||view==="scheduler"){
+    const count=jobs.filter(item=>item.id===activeJobId).length;
+    return count>0
+      ? {state:"visible",label:"Job evidence visible",detail:`On this page: ${count} matching Job ${count===1?"record":"records"}.`}
+      : {state:"not-visible",label:"Job evidence not visible",detail:"No matching Job record is loaded on this page."};
+  }
+  if(view==="runs"){
+    const count=runs.filter(item=>item.job_id===activeJobId).length;
+    return count>0
+      ? {state:"visible",label:"Run evidence visible",detail:`On this page: ${count} matching ${count===1?"run":"runs"}.`}
+      : {state:"not-visible",label:"Run evidence not visible",detail:"No matching run is loaded on this page."};
+  }
+  if(view==="checkpoints"){
+    const count=checkpoints.filter(item=>item.job_id===activeJobId).length;
+    return count>0
+      ? {state:"visible",label:"Checkpoint evidence visible",detail:`On this page: ${count} matching ${count===1?"checkpoint":"checkpoints"}.`}
+      : {state:"not-visible",label:"Checkpoint evidence not visible",detail:"No matching checkpoint is loaded on this page."};
+  }
+  if(view==="audit"){
+    const count=events.filter(item=>item.job_id===activeJobId).length;
+    return count>0
+      ? {state:"visible",label:"Audit evidence visible",detail:`On this page: ${count} matching audit ${count===1?"event":"events"}.`}
+      : {state:"not-visible",label:"Audit evidence not visible",detail:"No matching audit event is loaded on this page."};
+  }
+  return {state:"context",label:"Context linked",detail:"This workspace does not expose active-Job evidence in the shell."};
 }
 function tone(value:string) {
   const v=value.toLowerCase();
@@ -740,6 +775,9 @@ export default function DataNestApp({session}:{session:Session}) {
   const currentGroup=currentNavItem?.group||"Core";
   const currentPhase=workflowPhaseForView(view);
   const activeContextAction=activeContextActionForView(view);
+  const activeContextEvidence=activeDataNestAiSession
+    ? activeContextEvidenceForView(view,activeDataNestAiSession.jobId,jobs,runs,checkpoints,events)
+    : null;
   const workflowRecommendation=resolveWorkflowRecommendation(view,summary,runCount,checkpointCount);
   const nextViewKey=workflowRecommendation.key;
   const previousViewKey=workflowPrevious[view]||null;
@@ -935,8 +973,14 @@ export default function DataNestApp({session}:{session:Session}) {
             <small className="activeWorkContextHint">{activeContextAction.detail}</small>
           </div>
           <div className="activeWorkContextState">
-            <span className={"badge "+tone(activeDataNestAiSession.status)}>{activeDataNestAiSession.status.replaceAll("_"," ")}</span>
-            <small>{activeDataNestAiSession.sessionId?"AI session linked":"Job context linked"}</small>
+            <div className="activeWorkContextStatusLine">
+              <span className={"badge "+tone(activeDataNestAiSession.status)}>{activeDataNestAiSession.status.replaceAll("_"," ")}</span>
+              <small>{activeDataNestAiSession.sessionId?"AI session linked":"Job context linked"}</small>
+            </div>
+            {activeContextEvidence&&<div className={"activeWorkContextEvidence "+activeContextEvidence.state} aria-label="Visible evidence signal">
+              <span>{activeContextEvidence.label}</span>
+              <small>{activeContextEvidence.detail}</small>
+            </div>}
           </div>
           <div className="activeWorkContextActions">
             <button className="primaryButton compact activeWorkContextPrimary" type="button" onClick={()=>setView(activeContextAction.key)}>{activeContextAction.label}</button>

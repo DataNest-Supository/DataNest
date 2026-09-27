@@ -309,3 +309,18 @@ test("active work context exposes safe page-specific continuation actions", () =
   assert.match(cssSource, /\.activeWorkContextHint\{/);
   assert.match(cssSource, /\.activeWorkContextPrimary\{/);
 });
+
+
+test("active Job evidence signal is explicitly page-scoped and non-authoritative", () => {
+  assert.match(appSource, /type ActiveContextEvidence = \{ state:"visible"\|"not-visible"\|"context"; label:string; detail:string \}/);
+  assert.match(appSource, /function activeContextEvidenceForView/);
+  assert.match(appSource, /On this page:/);
+  assert.match(appSource, /No matching Job record is loaded on this page/);
+  assert.match(appSource, /No matching run is loaded on this page/);
+  assert.match(appSource, /No matching checkpoint is loaded on this page/);
+  assert.match(appSource, /No matching audit event is loaded on this page/);
+  assert.match(appSource, /aria-label="Visible evidence signal"/);
+  assert.match(cssSource, /\.activeWorkContextEvidence\.visible/);
+  assert.match(cssSource, /\.activeWorkContextEvidence\.not-visible/);
+  assert.doesNotMatch(appSource, /activeContextEvidence[\s\S]{0,300}?complete/i);
+});

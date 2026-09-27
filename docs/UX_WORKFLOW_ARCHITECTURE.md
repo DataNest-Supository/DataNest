@@ -161,3 +161,18 @@ The Active Work Context strip is actionable, not only descriptive. Its primary a
 The strip also keeps a secondary Return to DataNest AI action whenever the primary action leads elsewhere.
 
 These actions do not mutate Job state, create execution records, or write governance evidence. They only preserve orientation and reduce navigation search cost around the already-selected Job.
+
+
+## Page-scoped evidence confidence
+
+Active Work Context shows a small evidence-confidence signal derived only from records currently loaded in the workspace.
+
+Examples:
+- UNIFI / TranScheduler: matching Job record visible on this page
+- Runs: matching run records visible on this page
+- Checkpoints: matching checkpoint records visible on this page
+- Audit: matching audit events visible on this page
+
+The signal deliberately uses language such as `On this page` and `not visible`. It does not claim that a Job is complete, verified, absent from the project, or ready for promotion. Pagination and unloaded data remain outside the signal's authority.
+
+This is an orientation aid, not governed state. It performs no writes and must not be used as a substitute for authoritative completion, audit, or governance decisions.
