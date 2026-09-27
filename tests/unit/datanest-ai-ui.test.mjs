@@ -46,6 +46,7 @@ test("DataNest command center keeps navigation compact and gives the AI task gui
   assert.match(app,/className="workspaceTaskGuideAction"/);
   assert.match(app,/>Select Job Manifest <span aria-hidden="true">→<\/span><\/button>/);
   assert.match(app,/document\.getElementById\("datanest-ai-active-job"\)/);
+  assert.match(app,/if\(!target\)\{\s*setView\("unifi"\);\s*return;\s*\}/s);
 
   assert.match(css,/\/\* Command-center navigation density \*\//);
   assert.match(css,/\.appFrame\{[^}]*grid-template-columns:252px minmax\(0,1fr\)/s);
