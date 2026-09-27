@@ -148,6 +148,10 @@ Deno.serve(async(request:Request)=>{
     if(jobError||!job)return json({error:"Job collaboration access is required."},403,origin);
 
     const contentHash=await sha256Text(content);
+    const traceKey=String(
+      (session.context_snapshot as Record<string,unknown>|null)?.trace_key||""
+    )||"DN-AI-"+crypto.randomUUID();
+
     let learningPolicy:Record<string,unknown>={
       outcome:"review_required",
       reason_code:"policy_evaluation_unavailable",
@@ -215,10 +219,6 @@ Deno.serve(async(request:Request)=>{
         idempotent:true
       },200,origin);
     }
-
-    const traceKey=String(
-      (session.context_snapshot as Record<string,unknown>|null)?.trace_key||""
-    )||"DN-AI-"+crypto.randomUUID();
 
     const stagingSession=await ensureCompanionSession({
       staging,
