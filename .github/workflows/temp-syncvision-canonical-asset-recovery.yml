@@ -1,0 +1,104 @@
+name: Temporary SyncVision canonical asset recovery
+
+on:
+  push:
+    branches:
+      - migrate/ronsas-applications-into-datanest-20260927
+
+permissions:
+  contents: write
+
+jobs:
+  recover:
+    if: ${{ !contains(github.event.head_commit.message, '[asset-recovery]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Recover and verify canonical SyncVision assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://resonance-syncvision.ashleyuys.chatgpt.site"
+          tmp="${RUNNER_TEMP}/syncvision-assets"
+          mkdir -p "$tmp"
+
+          verify() {
+            local file="$1"
+            local expected_size="$2"
+            local expected_blob="$3"
+            local actual_size actual_blob
+            actual_size="$(wc -c < "$file" | tr -d ' ')"
+            actual_blob="$(git hash-object "$file")"
+            test "$actual_size" = "$expected_size" || {
+              echo "size mismatch for $file: expected $expected_size got $actual_size" >&2
+              return 1
+            }
+            test "$actual_blob" = "$expected_blob" || {
+              echo "blob mismatch for $file: expected $expected_blob got $actual_blob" >&2
+              return 1
+            }
+          }
+
+          fetch() {
+            curl --fail --location --retry 3 --retry-delay 2 \
+              --connect-timeout 20 --max-time 240 "$1" -o "$2"
+          }
+
+          fetch "$base/og-v2.png" "$tmp/og-v2.png"
+          verify "$tmp/og-v2.png" 1746155 168eacf216ea00e37667ec583f04697f7d64bf24
+
+          fetch "$base/og-v3.png" "$tmp/og-v3.png"
+          verify "$tmp/og-v3.png" 1620052 3c8e3f5283049b4fc805abfa84365ef30cc2d4f9
+
+          logo_ok=0
+          for url in \
+            "$base/assets/resonance-app-dev-logo-DrTt_beP.png" \
+            "$base/resonance-app-dev-logo.png"
+          do
+            if fetch "$url" "$tmp/logo-candidate.png" 2>/dev/null && \
+               verify "$tmp/logo-candidate.png" 1833523 7fe2a0ca3b270c0f09321b29c7f0fc83d3766778
+            then
+              cp "$tmp/logo-candidate.png" "$tmp/resonance-app-dev-logo.png"
+              logo_ok=1
+              break
+            fi
+          done
+          test "$logo_ok" = "1" || {
+            echo "canonical Resonance AppDev logo could not be recovered from the public deployment" >&2
+            exit 1
+          }
+
+          fetch "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.wasm" "$tmp/ffmpeg-core.wasm"
+          verify "$tmp/ffmpeg-core.wasm" 32129114 8988d43ccefd178a8ab9a1f79f284d01a16dd32f
+
+          install -D "$tmp/ffmpeg-core.wasm" \
+            apps/ronsas/syncvision/public/ffmpeg-core/ffmpeg-core.wasm
+          install -D "$tmp/og-v2.png" \
+            apps/ronsas/syncvision/public/og-v2.png
+          install -D "$tmp/og-v3.png" \
+            apps/ronsas/syncvision/public/og-v3.png
+          install -D "$tmp/resonance-app-dev-logo.png" \
+            apps/ronsas/syncvision/src/assets/resonance-app-dev-logo.png
+
+          node scripts/validate-ronsas-imports.mjs
+
+      - name: Commit verified canonical assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "DataNest migration bot"
+          git config user.email "resonance.36912@gmail.com"
+          git add \
+            apps/ronsas/syncvision/public/ffmpeg-core/ffmpeg-core.wasm \
+            apps/ronsas/syncvision/public/og-v2.png \
+            apps/ronsas/syncvision/public/og-v3.png \
+            apps/ronsas/syncvision/src/assets/resonance-app-dev-logo.png
+          if git diff --cached --quiet; then
+            echo "Canonical assets already present."
+            exit 0
+          fi
+          git commit -m "fix(ronsas): restore canonical SyncVision binary assets [asset-recovery]"
+          git push origin HEAD:migrate/ronsas-applications-into-datanest-20260927
