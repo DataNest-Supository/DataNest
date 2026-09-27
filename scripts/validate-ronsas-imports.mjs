@@ -10,6 +10,15 @@ const required = [
   "apps/ronsas/creative-studio/package-lock.json",
   "apps/ronsas/syncvision/package.json",
   "apps/ronsas/syncvision/package-lock.json",
+  "apps/ronsas/syncvision/scripts/vendor-ffmpeg-core.mjs",
+  "apps/ronsas/career-compass/package.json",
+  "apps/ronsas/career-compass/package-lock.json",
+  "apps/ronsas/sovereign-forge/package.json",
+  "apps/ronsas/sovereign-forge/package-lock.json",
+  "apps/ronsas/lyricsync-studio/package.json",
+  "apps/ronsas/lyricsync-studio/package-lock.json",
+  "apps/ronsas/scene-song-spark/package.json",
+  "apps/ronsas/scene-song-spark/package-lock.json",
   "apps/ronsas/youtube-optimizer/package.json",
   "apps/ronsas/youtube-optimizer/bun.lock",
   "apps/ronsas/sovereign-backend/requirements-dev.txt",
@@ -30,11 +39,16 @@ const controlRequired = [
   "ops/ronsas/ealiophin/README.md",
 ];
 
-const criticalAssets = new Map([
-  ["apps/ronsas/syncvision/public/ffmpeg-core/ffmpeg-core.wasm", 32129114],
-  ["apps/ronsas/syncvision/public/og-v2.png", 1746155],
-  ["apps/ronsas/syncvision/public/og-v3.png", 1620052],
-  ["apps/ronsas/syncvision/src/assets/resonance-app-dev-logo.png", 1833523],
+const syncVisionCore = {
+  "version": "0.12.10",
+  "resolved": "https://registry.npmjs.org/@ffmpeg/core/-/core-0.12.10.tgz",
+  "integrity": "sha512-dzNplnn2Nxle2c2i2rrDhqcB19q9cglCkWnoMTDN9Q9l3PvdjZWd1HfSPjCNWc/p8Q3CT+Es9fWOR0UhAeYQZA=="
+};
+
+const syncVisionFallbackAssets = new Map([
+  ["apps/ronsas/syncvision/public/og-v2.png", 89407],
+  ["apps/ronsas/syncvision/public/og-v3.png", 89407],
+  ["apps/ronsas/syncvision/src/assets/resonance-app-dev-logo.png", 632680],
 ]);
 
 const failures = [];
@@ -50,15 +64,37 @@ for (const rel of [...required, ...controlRequired]) {
   }
 }
 
-for (const [rel, expectedSize] of criticalAssets) {
+for (const [rel, expectedSize] of syncVisionFallbackAssets) {
   const path = resolve(root, rel);
   if (!existsSync(path)) {
-    failures.push(`missing critical SyncVision asset: ${rel}`);
+    failures.push(`missing governed SyncVision fallback asset: ${rel}`);
     continue;
   }
   const actual = statSync(path).size;
   if (actual !== expectedSize) {
-    failures.push(`SyncVision asset size mismatch: ${rel} expected ${expectedSize} bytes, got ${actual}`);
+    failures.push(`SyncVision fallback asset size mismatch: ${rel} expected ${expectedSize} bytes, got ${actual}`);
+  }
+}
+
+const syncVisionPackagePath = resolve(root, "apps/ronsas/syncvision/package.json");
+const syncVisionLockPath = resolve(root, "apps/ronsas/syncvision/package-lock.json");
+const syncVisionVendorPath = resolve(root, "apps/ronsas/syncvision/scripts/vendor-ffmpeg-core.mjs");
+if (existsSync(syncVisionPackagePath) && existsSync(syncVisionLockPath) && existsSync(syncVisionVendorPath)) {
+  try {
+    const pkg = JSON.parse(readFileSync(syncVisionPackagePath, "utf8"));
+    const lock = JSON.parse(readFileSync(syncVisionLockPath, "utf8"));
+    const locked = lock.packages?.["node_modules/@ffmpeg/core"];
+    if (pkg.dependencies?.["@ffmpeg/core"] !== syncVisionCore.version) failures.push("SyncVision must pin @ffmpeg/core 0.12.10");
+    if (pkg.scripts?.["vendor:ffmpeg-core"] !== "node scripts/vendor-ffmpeg-core.mjs") failures.push("SyncVision FFmpeg vendor script is not canonical");
+    if (pkg.scripts?.prebuild !== "npm run vendor:ffmpeg-core" || pkg.scripts?.predev !== "npm run vendor:ffmpeg-core") failures.push("SyncVision must vendor FFmpeg before build and dev");
+    if (lock.packages?.[""]?.dependencies?.["@ffmpeg/core"] !== syncVisionCore.version) failures.push("SyncVision lock root does not pin @ffmpeg/core 0.12.10");
+    if (!locked || locked.version !== syncVisionCore.version || locked.resolved !== syncVisionCore.resolved || locked.integrity !== syncVisionCore.integrity) failures.push("SyncVision @ffmpeg/core lock integrity does not match the governed package");
+    const vendor = readFileSync(syncVisionVendorPath, "utf8");
+    for (const token of ["node_modules", "@ffmpeg", "core", "dist", "esm", "ffmpeg-core.js", "ffmpeg-core.wasm", "public", "ffmpeg-core"]) {
+      if (!vendor.includes(token)) failures.push(`SyncVision vendor script missing token: ${token}`);
+    }
+  } catch (error) {
+    failures.push(`invalid SyncVision FFmpeg vendoring contract: ${error.message}`);
   }
 }
 
@@ -66,6 +102,10 @@ for (const rel of [
   "apps/ronsas/epublisher/package.json",
   "apps/ronsas/creative-studio/package.json",
   "apps/ronsas/syncvision/package.json",
+  "apps/ronsas/career-compass/package.json",
+  "apps/ronsas/sovereign-forge/package.json",
+  "apps/ronsas/lyricsync-studio/package.json",
+  "apps/ronsas/scene-song-spark/package.json",
   "apps/ronsas/youtube-optimizer/package.json",
   "ops/ronsas/ealiophin/RONSAS-MODULES.json",
   "ops/ronsas/ealiophin/rons-control.example.json",
@@ -101,6 +141,10 @@ if (existsSync(registryPath)) {
       ["creative-studio", "apps/ronsas/creative-studio"],
       ["syncvision", "apps/ronsas/syncvision"],
       ["youtube-optimizer", "apps/ronsas/youtube-optimizer"],
+      ["career-compass", "apps/ronsas/career-compass"],
+      ["sovereign-forge", "apps/ronsas/sovereign-forge"],
+      ["lyricsync-studio", "apps/ronsas/lyricsync-studio"],
+      ["scene-song-spark", "apps/ronsas/scene-song-spark"],
       ["sovereign-backend", "apps/ronsas/sovereign-backend"],
     ]);
     for (const [id, expectedSource] of expectedSources) {

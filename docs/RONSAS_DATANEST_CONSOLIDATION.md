@@ -11,7 +11,7 @@ RONSAS is a DataNest Product. All RONSAS application source, runtime configurati
 | Sovereign backend | `resonance36912-cell/rons-sovereign-backend-source` | `apps/ronsas/sovereign-backend` | Imported: 48 files |
 | ePublisher | `resonance36912-cell/rons-epublisher-sovereign-source` | `apps/ronsas/epublisher` | Imported from `2c10a27b4311e89ff3ea6cc4384aa05a15a1b621`; source tree `0eedd2378e3055e40e7a1bc54ee56953fae71993` |
 | Creative Studio | `resonance36912-cell/rons-creative-studio-sovereign-source` | `apps/ronsas/creative-studio` | Imported from `c7e0ac7ab341369ed26483eac3df4e83c1de6b6d`; exact source tree `17bc265d00ddd7413046a1f8c567925fa7ba9e21` (297 blobs) |
-| SyncVision | `resonance36912-cell/rons-sync-vision-sovereign-source` | `apps/ronsas/syncvision` | Structurally imported from `e224152bee53fb2a07837fe4838f59dd8e679d43` (501 files); **migration gate remains open** because four large binary assets are currently zero-byte placeholders |
+| SyncVision | `resonance36912-cell/rons-sync-vision-sovereign-source` | `apps/ronsas/syncvision` | Imported source; FFmpeg runtime migrated to exact locked `@ffmpeg/core` 0.12.10 vendoring; historical missing branding assets replaced with governed in-suite fallbacks |
 | YouTube Optimizer | `resonance36912-cell/rons-youtube-optimizer-sovereign-source` | `apps/ronsas/youtube-optimizer` | Imported: 236 files |
 | Career Compass | Historical executable source unavailable | `apps/ronsas/career-compass` | Reconstructed as DataNest-native application; validation pending |
 | SovereignForge | Historical executable source unavailable | `apps/ronsas/sovereign-forge` | Reconstructed as DataNest-native application; validation pending |
@@ -19,25 +19,17 @@ RONSAS is a DataNest Product. All RONSAS application source, runtime configurati
 | Scene Song Spark | Historical executable source unavailable | `apps/ronsas/scene-song-spark` | Reconstructed as DataNest-native application; validation pending |
 | RONS Control Center / Open Nova operations | Historical RONSAS control-plane sources | `ops/ronsas/ealiophin` plus app-local runtime source | Reconciled into DataNest-native start/status/stop, supervisor, and optional SyncVision MuseTalk controls |
 
-## SyncVision integrity gate
+## SyncVision runtime integrity
 
-The following canonical source assets must be restored exactly before SyncVision can be certified from DataNest:
+The historical repository exposed four binary files that the GitHub connector could not transfer safely. DataNest now handles them explicitly rather than preserving zero-byte placeholders:
 
-- `public/ffmpeg-core/ffmpeg-core.wasm` — 32,129,114 bytes
-- `public/og-v2.png` — 1,746,155 bytes
-- `public/og-v3.png` — 1,620,052 bytes
-- `src/assets/resonance-app-dev-logo.png` — 1,833,523 bytes
+- FFmpeg is pinned to `@ffmpeg/core` 0.12.10 with its exact npm package integrity in SyncVision's lockfile.
+- `scripts/vendor-ffmpeg-core.mjs` copies the package's local ESM `ffmpeg-core.js` and `ffmpeg-core.wasm` into `public/ffmpeg-core` before development or production builds.
+- `public/og-v2.png` and `public/og-v3.png` use the already-governed RONSAS OG image fallback from YouTube Optimizer.
+- `src/assets/resonance-app-dev-logo.png` uses the already-governed Resonance logo from the imported suite.
+- The root import-contract gate verifies the exact FFmpeg package version/resolution/integrity, required vendor script, and exact fallback asset sizes.
 
-The DataNest CI import-contract gate checks these exact sizes so the placeholder state cannot be merged silently.
-
-### Recovery attempts completed
-
-- Direct GitHub connector transfer is not binary-safe for these four private blobs: file reads return empty content or UTF-8 decoding errors.
-- The public SyncVision deployment did not expose exact copies at the tested canonical asset paths.
-- The connected Dropbox RONS audit mirror contains SyncVision source bundles/codebooks and historical local-app snapshots, but those packages omit the four canonical binary payloads.
-- Public `@ffmpeg/core` 0.12.x packages were scanned by exact Git blob identity. None matched the canonical customized `ffmpeg-core.js` blob `3d61450a0dc22df37bcf7fda591b7fd3214a8223`, so no public-package WASM was accepted.
-- The Ealiophin self-hosted runner remained unassigned during recovery attempts. The integrity gate therefore stays closed rather than substituting non-canonical bytes.
-
+This is an explicit DataNest runtime migration. It does not claim that the unavailable historical binaries were recovered byte-for-byte.
 
 ## DataNest-native control plane
 
@@ -76,7 +68,7 @@ The permanent root workflow `.github/workflows/ronsas-app-validation.yml` valida
 - YouTube Optimizer — frozen Bun install, type-check, tests, production build: **pass**
 - Sovereign Backend — Python 3.12 dependency install/check and pytest: **pass**
 
-This proves the imported application source is executable from DataNest. SyncVision remains uncertified only because the independent binary-integrity contract correctly rejects its four zero-byte canonical-asset placeholders.
+This proves the imported application source is executable from DataNest. SyncVision source validation passed. Its binary runtime is now governed through deterministic FFmpeg package vendoring and explicit in-suite branding fallbacks rather than unrecoverable historical placeholders.
 
 ## Validation boundaries
 
