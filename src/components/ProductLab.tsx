@@ -286,14 +286,19 @@ export default function ProductLab({
   async function recordRun(testCase:TestCase,result:"pass"|"fail"|"blocked"){
     const supabase=getSupabase();
     if(!supabase||testRunLocked)return;
-    const existingIntent=loadPendingMutation<ProductTestRunPendingPayload>(testRunRequestScope);
-    if(testRunReconciliation==="not_recorded"&&existingIntent&&existingIntent.payload.result!==result){
-      setError("The restored test result is locked to "+existingIntent.payload.result+". Use Change evidence before selecting a different result.");
-      return;
-    }
 
     const surface=surfaces.find(s=>s.id===(testCase.surface_id||selectedSurfaceId));
     if(!surface){setError("A versioned product surface is required for this test.");return;}
+
+    const existingIntent=loadPendingMutation<ProductTestRunPendingPayload>(testRunRequestScope);
+    if(testRunReconciliation==="not_recorded"&&existingIntent&&(
+      existingIntent.payload.testCaseId!==testCase.id
+      ||existingIntent.payload.surfaceId!==surface.id
+      ||existingIntent.payload.result!==result
+    )){
+      setError("The restored Product Lab result is locked to its original test case, surface and result. Use Change evidence before creating different intent.");
+      return;
+    }
 
     if(surface.environment==="production"){
       const confirmed=window.confirm(
