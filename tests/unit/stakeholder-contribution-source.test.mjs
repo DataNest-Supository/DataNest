@@ -61,7 +61,7 @@ test("external AI import propagates the authoritative staged session to DataNest
 
 test("Stakeholder workspace hotfix removes ambiguous model_version references",()=>{
   const hotfix=readFileSync(
-    new URL("../../supabase/migrations/20260925040000_fix_contribution_workspace_model_version_ambiguity.sql", import.meta.url),
+    new URL("../../supabase/migrations/20260925020254_fix_contribution_workspace_model_version_ambiguity.sql", import.meta.url),
     "utf8"
   );
   assert.match(hotfix,/active_scoring_model_version text/);
