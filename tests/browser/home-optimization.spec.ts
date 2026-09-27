@@ -576,7 +576,7 @@ test("active work context survives handoffs and focuses related operational evid
   await expect(context.getByText("Persistent context fixture",{exact:true})).toBeVisible();
   await expect(context.getByText("AI session linked",{exact:true})).toBeVisible();
   await expect(context.getByRole("status",{name:"Visible evidence signal"})).toContainText("Job evidence visible");
-  await expect(context.getByRole("status",{name:"Visible evidence signal"})).toContainText("On this page: 1 matching Job record.");
+  await expect(context.getByRole("status",{name:"Visible evidence signal"})).toContainText("On this page: 1 matching prepared Job record.");
   await expect(context.getByRole("navigation",{name:"Active Job journey"}).getByRole("button",{name:"Plan · current Job view"})).toBeVisible();
   await context.getByRole("button",{name:/Jump to visible evidence/}).click();
   await expect(page.locator(".manifestCard[data-active-context='true']")).toBeFocused();
