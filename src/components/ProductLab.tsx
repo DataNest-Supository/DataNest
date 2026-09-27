@@ -97,7 +97,7 @@ export default function ProductLab({
     setRuns((r.data||[]) as TestRun[]);
     const next=(s.data||[]) as Surface[];
     setSelectedSurfaceId(current=>current||next[0]?.id||"");
-  },[projectId]);
+  },[projectId,setError]);
 
   useEffect(()=>{void load()},[load]);
 
