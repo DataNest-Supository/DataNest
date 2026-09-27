@@ -50,7 +50,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\\\/$/, "") || undefined}>
+        <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, "") || undefined}>
           <AuthProvider>
             <HubRedirect />
             <AuthErrorHashWatcher />
