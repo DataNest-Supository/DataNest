@@ -1413,7 +1413,9 @@ test("stale recovery stays preserved and user-scoped across account transitions"
       refresh_token:"fixture", token_type:"bearer", expires_at:4102444800,
       user:{id,aud:"authenticated",role:"authenticated",email:id===userId?"fixture@example.invalid":"other@example.invalid"}
     });
-    localStorage.setItem("sb-fixture-auth-token", JSON.stringify(auth(userId)));
+    if(!localStorage.getItem("sb-fixture-auth-token")){
+      localStorage.setItem("sb-fixture-auth-token", JSON.stringify(auth(userId)));
+    }
 
     const staleStartedAt=new Date(Date.now()-2*60*60*1000).toISOString();
     sessionStorage.setItem("datanest.pendingMutation.unifi-job:"+projectId+":"+userId,JSON.stringify({
