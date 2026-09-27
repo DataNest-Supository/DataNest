@@ -75,9 +75,16 @@ export default function GovernanceWorkspace({
 
   useEffect(()=>{
     const sync=()=>{
-      const requested=new URL(window.location.href).searchParams.get("section");
-      setSection(requested==="trust"?"trust":requested==="authority"?"authority":"sovereign");
+      const url=new URL(window.location.href);
+      const requested=url.searchParams.get("section");
+      const next=requested==="trust"?"trust":requested==="authority"?"authority":"sovereign";
+      if(requested&&requested!=="trust"&&requested!=="authority"){
+        url.searchParams.delete("section");
+        window.history.replaceState(window.history.state,"",url.toString());
+      }
+      setSection(next);
     };
+    sync();
     window.addEventListener("popstate",sync);
     return ()=>window.removeEventListener("popstate",sync);
   },[]);
