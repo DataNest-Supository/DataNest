@@ -190,7 +190,7 @@ Deno.serve(async(request:Request)=>{
     if(session.staging_event_id){
       const {data:linkedEvent,error:linkedEventError}=await staging
         .from("ai_intake_events")
-        .select("id,trace_id,content_hash,session_id,external_ai_session_id,metadata")
+        .select("id,trace_id,content_hash,session_id,external_ai_session_id")
         .eq("id",String(session.staging_event_id))
         .maybeSingle();
       if(linkedEventError)throw linkedEventError;
@@ -200,16 +200,6 @@ Deno.serve(async(request:Request)=>{
       if(!replayContentMatches(String(linkedEvent.content_hash||""),contentHash)){
         return json({error:"This external AI session is already staged with different content."},409,origin);
       }
-      const {error:restampError}=await staging
-        .from("ai_intake_events")
-        .update({metadata:policyMetadata(
-          typeof linkedEvent.metadata==="object"&&linkedEvent.metadata!==null
-            ?linkedEvent.metadata as Record<string,unknown>
-            :{}
-        )})
-        .eq("id",String(linkedEvent.id))
-        .eq("project_id",String(session.project_id));
-      if(restampError)throw restampError;
       return json({
         eventId:String(linkedEvent.id),
         traceId:String(linkedEvent.trace_id||session.staging_trace_id||""),
@@ -231,7 +221,7 @@ Deno.serve(async(request:Request)=>{
 
     const {data:existing,error:existingError}=await staging
       .from("ai_intake_events")
-      .select("id,trace_id,content_hash,session_id,metadata")
+      .select("id,trace_id,content_hash,session_id")
       .eq("source_type","ai_companion")
       .eq("external_ai_session_id",String(session.id))
       .limit(1)
@@ -267,17 +257,6 @@ Deno.serve(async(request:Request)=>{
         .single();
       if(createError||!created)throw createError||new Error("Unable to stage external AI evidence.");
       staged=created as Record<string,unknown>;
-    }else{
-      const {error:stampError}=await staging
-        .from("ai_intake_events")
-        .update({metadata:policyMetadata(
-          typeof staged.metadata==="object"&&staged.metadata!==null
-            ?staged.metadata as Record<string,unknown>
-            :{}
-        )})
-        .eq("id",String(staged.id))
-        .eq("project_id",String(session.project_id));
-      if(stampError)throw stampError;
     }
 
     const {data:linked,error:linkError}=await userClient.rpc(
