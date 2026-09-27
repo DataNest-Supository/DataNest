@@ -42,7 +42,7 @@ function scopeUrlToWorkspace(url:URL,view:ViewKey){
     url.searchParams.delete("filter");
     url.searchParams.delete("sort");
   }
-  if(view!=="governance")url.searchParams.delete("section");
+  if(view!=="governance"&&view!=="products")url.searchParams.delete("section");
   return url;
 }
 function urlPageIndex(url:URL){
@@ -865,7 +865,7 @@ export default function DataNestApp({session}:{session:Session}) {
     if(url.searchParams.get("view")!==expectedView)return;
 
     operationalUrlStateKeys.forEach(key=>url.searchParams.delete(key));
-    if(view!=="governance")url.searchParams.delete("section");
+    if(view!=="governance"&&view!=="products")url.searchParams.delete("section");
     const page=view==="unifi"||view==="scheduler"
       ? jobPage
       : view==="runs"
