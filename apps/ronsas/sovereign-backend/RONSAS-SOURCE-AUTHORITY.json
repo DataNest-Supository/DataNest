@@ -1,11 +1,9 @@
 {
   "schema": "ronsas.source-authority.v1",
   "component": "sovereign-backend",
-  "repository": "https://github.com/resonance36912-cell/rons-sovereign-backend-source",
-  "visibility": "private",
+  "repository": "https://github.com/DataNest-Supository/DataNest",
   "default_branch": "main",
-  "control_repository": "https://github.com/resonance36912-cell/RONSAS",
-  "local_path": "%USERPROFILE%\\Resonance\\OpenNova\\sources\\rons-sovereign-backend-source",
+  "control_repository": "https://github.com/DataNest-Supository/DataNest",
   "baseline_source": "ResonanceAppDev_ZeroCredit_v1.5.8",
   "promotion": "review-branch-ci-merge-build-canary-promote",
   "excludes": [
@@ -16,5 +14,10 @@
     "container state",
     "logs",
     "caches"
-  ]
+  ],
+  "source_path": "apps/ronsas/sovereign-backend",
+  "authority_state": "active",
+  "historical_authority": "evidence-only",
+  "historical_repository": "https://github.com/resonance36912-cell/rons-sovereign-backend-source",
+  "historical_control_repository": "https://github.com/resonance36912-cell/RONSAS"
 }

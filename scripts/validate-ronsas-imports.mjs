@@ -212,6 +212,42 @@ for (const [rel, forbidden] of [
   }
 }
 
+
+const sourceAuthorities = new Map([
+  ["apps/ronsas/epublisher/RONSAS-SOURCE-AUTHORITY.json", "apps/ronsas/epublisher"],
+  ["apps/ronsas/creative-studio/RONSAS-SOURCE-AUTHORITY.json", "apps/ronsas/creative-studio"],
+  ["apps/ronsas/syncvision/RONSAS-SOURCE-AUTHORITY.json", "apps/ronsas/syncvision"],
+  ["apps/ronsas/youtube-optimizer/RONSAS-SOURCE-AUTHORITY.json", "apps/ronsas/youtube-optimizer"],
+  ["apps/ronsas/sovereign-backend/RONSAS-SOURCE-AUTHORITY.json", "apps/ronsas/sovereign-backend"],
+]);
+for (const [rel, expectedSource] of sourceAuthorities) {
+  const path = resolve(root, rel);
+  if (!existsSync(path)) {
+    failures.push(`missing RONSAS source-authority file: ${rel}`);
+    continue;
+  }
+  try {
+    const authority = JSON.parse(readFileSync(path, "utf8").replace(/^\\uFEFF/, ""));
+    if (authority.repository !== "https://github.com/DataNest-Supository/DataNest") {
+      failures.push(`RONSAS source authority is not DataNest in ${rel}: ${authority.repository}`);
+    }
+    if (authority.ronsas_repository && authority.ronsas_repository !== "https://github.com/DataNest-Supository/DataNest") {
+      failures.push(`RONSAS control authority is stale in ${rel}: ${authority.ronsas_repository}`);
+    }
+    if (authority.control_repository && authority.control_repository !== "https://github.com/DataNest-Supository/DataNest") {
+      failures.push(`RONSAS control authority is stale in ${rel}: ${authority.control_repository}`);
+    }
+    if (authority.source_path !== expectedSource) {
+      failures.push(`RONSAS source path mismatch in ${rel}: expected ${expectedSource}, got ${authority.source_path}`);
+    }
+    if (authority.authority_state !== "active" || authority.historical_authority !== "evidence-only") {
+      failures.push(`RONSAS authority state is not active/evidence-only in ${rel}`);
+    }
+  } catch (error) {
+    failures.push(`invalid RONSAS source-authority JSON in ${rel}: ${error.message}`);
+  }
+}
+
 if (failures.length) {
   console.error("RONSAS import/control contract validation failed:");
   for (const failure of failures) console.error(`- ${failure}`);
