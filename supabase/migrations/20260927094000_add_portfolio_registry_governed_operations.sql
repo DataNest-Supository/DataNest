@@ -323,7 +323,7 @@ create or replace function public.reject_portfolio_classification_v1(
 language plpgsql
 security definer
 set search_path=public,private,auth
-as $
+as $portfolio_reject$
 declare
   caller uuid := auth.uid();
   proposal public.portfolio_classifications%rowtype;
@@ -352,7 +352,7 @@ begin
   );
   return proposal.id;
 end;
-$;
+$portfolio_reject$;
 
 create or replace function public.propose_portfolio_relationship_v1(
   target_source_item uuid,
@@ -481,7 +481,7 @@ create or replace function public.reject_portfolio_relationship_v1(
 language plpgsql
 security definer
 set search_path=public,private,auth
-as $
+as $portfolio_reject$
 declare
   caller uuid := auth.uid();
   proposal public.portfolio_relationships%rowtype;
@@ -511,7 +511,7 @@ begin
   );
   return proposal.id;
 end;
-$;
+$portfolio_reject$;
 
 create or replace function public.propose_portfolio_lifecycle_transition_v1(
   target_item uuid,
@@ -630,7 +630,7 @@ create or replace function public.reject_portfolio_lifecycle_transition_v1(
 language plpgsql
 security definer
 set search_path=public,private,auth
-as $
+as $portfolio_reject$
 declare
   caller uuid := auth.uid();
   event_row public.portfolio_lifecycle_events%rowtype;
@@ -659,7 +659,7 @@ begin
   );
   return event_row.id;
 end;
-$;
+$portfolio_reject$;
 
 create or replace function public.promote_product_candidate_v1(
   target_item uuid,
