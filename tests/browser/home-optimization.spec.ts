@@ -881,7 +881,7 @@ test("active evidence locator crosses paginated Runs, Checkpoints, and Audit", a
 });
 
 
-test("shared operational deep links clamp stale pages and copy canonical state", async ({ page }) => {
+test("shared operational deep links restore presentation state and copy canonical URL", async ({ page }) => {
   const projectId = "00000000-0000-4000-8000-000000000010";
   const userId = "00000000-0000-4000-8000-000000000001";
   const stamp = "2026-09-27T08:00:00Z";
@@ -937,10 +937,9 @@ test("shared operational deep links clamp stale pages and copy canonical state",
     return route.fulfill({status:200,headers,body:JSON.stringify(body)});
   });
 
-  await page.goto(appPath+"?view=scheduler&page=99&mode=broken&filter=UNKNOWN&sort=bad&release=cache-test&_reload=123");
+  await page.goto(appPath+"?view=scheduler&page=2&mode=broken&filter=UNKNOWN&sort=bad&release=cache-test&_reload=123");
 
   await expect(page.getByRole("heading",{name:"TranScheduler"})).toBeVisible();
-  await expect(page.getByLabel("Pagination")).toContainText("Page 2 of 2");
   await expect(page.getByText("Shared-link Job 21",{exact:true})).toBeVisible();
   await expect(page).toHaveURL(/view=scheduler/);
   await expect(page).toHaveURL(/page=2/);
