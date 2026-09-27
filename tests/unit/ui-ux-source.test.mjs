@@ -419,7 +419,10 @@ test("active Job evidence locator spans paginated Runs, Checkpoints, and Audit w
 
 
 test("workspace presentation state is URL-addressable without exposing active Job identity", () => {
-  assert.match(appSource, /const workspaceUrlStateKeys=\["page","mode","filter","sort"\] as const/);
+  assert.match(appSource, /const operationalUrlStateKeys=\["page","mode","filter","sort"\] as const/);
+  assert.match(appSource, /const workspaceScopedUrlStateKeys=\[\.\.\.operationalUrlStateKeys,"section"\] as const/);
+  assert.match(appSource, /workspaceScopedUrlStateKeys\.forEach\(key=>url\.searchParams\.delete\(key\)\)/);
+  assert.match(appSource, /if\(view!=="governance"\)url\.searchParams\.delete\("section"\)/);
   assert.match(appSource, /function urlPageIndex\(url:URL\)/);
   assert.match(appSource, /function schedulerViewModeFromUrl\(url:URL\):SchedulerViewMode/);
   assert.match(appSource, /function schedulerFilterFromUrl\(url:URL\):SchedulerFilter/);
