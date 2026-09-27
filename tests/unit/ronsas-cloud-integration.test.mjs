@@ -32,7 +32,7 @@ test("RONSAS integration is cloud-only and non-blocking",()=>{
   assert.match(edge,/localInteractionRequired: false/);
   assert.match(edge,/independent: true/);
   assert.match(edge,/Local RONSAS origins are not permitted/);
-  assert.match(edge,/controlRepository: "resonance36912-cell\/RONSAS"/);
+  assert.match(edge,/controlRepository: "DataNest-Supository\/DataNest"/);
   assert.match(edge,/hubRepository: "resonance36912-cell\/resonance-hub"/);
   assert.doesNotMatch(edge,/http:\/\/127\.0\.0\.1|http:\/\/localhost/);
 });
