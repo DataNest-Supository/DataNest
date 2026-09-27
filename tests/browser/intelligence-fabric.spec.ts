@@ -158,8 +158,8 @@ test("route evaluation and capability evidence are visible but read-only",async(
   await setup(page,"owner");
   await page.goto(appPath+"?view=ai");
 
-  await expect(page.getByText("Fixture Model",{exact:true})).toBeVisible();
-  await expect(page.getByText("Route Provenance",{exact:true})).toBeVisible();
+  await expect(page.getByText("fixture-model",{exact:true})).toBeVisible();
+  await expect(page.getByText("route-provenance",{exact:true})).toBeVisible();
   await expect(page.getByText("Route Result",{exact:true})).toBeVisible();
   await expect(page.getByText("Supported",{exact:true})).toBeVisible();
   await expect(page.getByRole("button",{name:/Mark healthy|Set healthy|Update health|Record evaluation/i})).toHaveCount(0);
