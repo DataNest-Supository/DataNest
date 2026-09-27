@@ -5,6 +5,45 @@ import type { PendingMutationIntent, PendingMutationVerification } from "@/lib/p
 
 export type DurableRecoveryResolution="confirmed"|"superseded_after_absence";
 
+export type DurableRecoveryDiagnosticItem={
+  id:string;
+  mutationKind:string;
+  requestSuffix:string;
+  startedAt:string;
+  ageSeconds:number;
+  verificationState:PendingMutationVerification;
+  lastCheckedAt:string|null;
+  attemptCount:number;
+  lastAttemptAt:string;
+};
+
+export type DurableRecoveryResolutionItem={
+  id:string;
+  mutationKind:string;
+  requestSuffix:string;
+  resolution:DurableRecoveryResolution;
+  startedAt:string;
+  resolvedAt:string;
+  elapsedSeconds:number;
+  attemptCount:number;
+};
+
+export type DurableRecoveryDiagnostics={
+  generatedAt:string;
+  unresolvedTotal:number;
+  unverifiedTotal:number;
+  unconfirmedTotal:number;
+  safeRetryTotal:number;
+  recentTotal:number;
+  agingTotal:number;
+  staleTotal:number;
+  maxAttemptCount:number;
+  oldestStartedAt:string|null;
+  resolved24h:number;
+  items:DurableRecoveryDiagnosticItem[];
+  recentResolutions:DurableRecoveryResolutionItem[];
+};
+
 export type DurableRecoveryRecord<T extends Record<string,unknown>=Record<string,unknown>>={
   id:string;
   projectId:string;
@@ -33,17 +72,33 @@ function stringValue(value:unknown,label:string){
   return value;
 }
 
-function normalizeRecord<T extends Record<string,unknown>>(value:unknown):DurableRecoveryRecord<T>{
-  const row=objectValue(value);
-  const payload=objectValue(row.payload) as T;
-  const verification=String(row.verification_state||"unverified");
+function numberValue(value:unknown,label:string){
+  const parsed=Number(value);
+  if(!Number.isFinite(parsed)||parsed<0)throw new Error("Durable recovery "+label+" is invalid.");
+  return parsed;
+}
+
+function verificationValue(value:unknown){
+  const verification=String(value||"unverified");
   if(!["unverified","unconfirmed","confirmed_absent"].includes(verification)){
     throw new Error("Durable recovery verification state is invalid.");
   }
-  const resolution=row.resolution===null||row.resolution===undefined?null:String(row.resolution);
-  if(resolution!==null&&!["confirmed","superseded_after_absence"].includes(resolution)){
+  return verification as PendingMutationVerification;
+}
+
+function resolutionValue(value:unknown){
+  const resolution=String(value||"");
+  if(!["confirmed","superseded_after_absence"].includes(resolution)){
     throw new Error("Durable recovery resolution is invalid.");
   }
+  return resolution as DurableRecoveryResolution;
+}
+
+function normalizeRecord<T extends Record<string,unknown>>(value:unknown):DurableRecoveryRecord<T>{
+  const row=objectValue(value);
+  const payload=objectValue(row.payload) as T;
+  const verification=verificationValue(row.verification_state);
+  const resolution=row.resolution===null||row.resolution===undefined?null:resolutionValue(row.resolution);
   return {
     id:stringValue(row.id,"id"),
     projectId:stringValue(row.project_id,"project"),
@@ -55,7 +110,7 @@ function normalizeRecord<T extends Record<string,unknown>>(value:unknown):Durabl
     startedAt:stringValue(row.started_at,"start time"),
     verificationState:verification as PendingMutationVerification,
     lastCheckedAt:typeof row.last_checked_at==="string"?row.last_checked_at:null,
-    attemptCount:Number(row.attempt_count||0),
+    attemptCount:numberValue(row.attempt_count||0,"attempt count"),
     lastAttemptAt:stringValue(row.last_attempt_at,"last attempt"),
     active:row.active===undefined?row.resolved_at==null:Boolean(row.active),
     resolvedAt:typeof row.resolved_at==="string"?row.resolved_at:null,
@@ -70,6 +125,56 @@ export async function listDurableRecoveries(projectId:string){
   if(error)throw error;
   if(!Array.isArray(data))throw new Error("Durable recovery ledger returned an invalid list.");
   return data.map(item=>normalizeRecord(item));
+}
+
+export async function getDurableRecoveryDiagnostics(projectId:string):Promise<DurableRecoveryDiagnostics>{
+  const supabase=getSupabase();
+  if(!supabase)throw new Error("Durable recovery diagnostics are unavailable.");
+  const {data,error}=await supabase.rpc("get_mutation_recovery_diagnostics_v1",{target_project:projectId});
+  if(error)throw error;
+  const row=objectValue(data);
+  const itemsRaw=Array.isArray(row.items)?row.items:[];
+  const recentRaw=Array.isArray(row.recent_resolutions)?row.recent_resolutions:[];
+  return {
+    generatedAt:stringValue(row.generated_at,"diagnostic generation time"),
+    unresolvedTotal:numberValue(row.unresolved_total||0,"unresolved count"),
+    unverifiedTotal:numberValue(row.unverified_total||0,"unverified count"),
+    unconfirmedTotal:numberValue(row.unconfirmed_total||0,"unconfirmed count"),
+    safeRetryTotal:numberValue(row.safe_retry_total||0,"safe retry count"),
+    recentTotal:numberValue(row.recent_total||0,"recent count"),
+    agingTotal:numberValue(row.aging_total||0,"aging count"),
+    staleTotal:numberValue(row.stale_total||0,"stale count"),
+    maxAttemptCount:numberValue(row.max_attempt_count||0,"maximum attempt count"),
+    oldestStartedAt:typeof row.oldest_started_at==="string"?row.oldest_started_at:null,
+    resolved24h:numberValue(row.resolved_24h||0,"24 hour resolution count"),
+    items:itemsRaw.map(value=>{
+      const item=objectValue(value);
+      return {
+        id:stringValue(item.id,"diagnostic id"),
+        mutationKind:stringValue(item.mutation_kind,"diagnostic kind"),
+        requestSuffix:stringValue(item.request_suffix,"diagnostic request suffix"),
+        startedAt:stringValue(item.started_at,"diagnostic start time"),
+        ageSeconds:numberValue(item.age_seconds||0,"diagnostic age"),
+        verificationState:verificationValue(item.verification_state),
+        lastCheckedAt:typeof item.last_checked_at==="string"?item.last_checked_at:null,
+        attemptCount:numberValue(item.attempt_count||0,"diagnostic attempt count"),
+        lastAttemptAt:stringValue(item.last_attempt_at,"diagnostic last attempt")
+      };
+    }),
+    recentResolutions:recentRaw.map(value=>{
+      const item=objectValue(value);
+      return {
+        id:stringValue(item.id,"resolution id"),
+        mutationKind:stringValue(item.mutation_kind,"resolution kind"),
+        requestSuffix:stringValue(item.request_suffix,"resolution request suffix"),
+        resolution:resolutionValue(item.resolution),
+        startedAt:stringValue(item.started_at,"resolution start time"),
+        resolvedAt:stringValue(item.resolved_at,"resolution time"),
+        elapsedSeconds:numberValue(item.elapsed_seconds||0,"resolution elapsed time"),
+        attemptCount:numberValue(item.attempt_count||0,"resolution attempt count")
+      };
+    })
+  };
 }
 
 export async function registerDurableRecovery<T extends Record<string,unknown>>(
@@ -135,6 +240,8 @@ export function durableRecoveryToPendingIntent<T extends Record<string,unknown>>
     startedAt:record.startedAt,
     verificationState:record.verificationState,
     lastCheckedAt:record.lastCheckedAt,
-    durable:true
+    durable:true,
+    attemptCount:record.attemptCount,
+    lastAttemptAt:record.lastAttemptAt
   };
 }

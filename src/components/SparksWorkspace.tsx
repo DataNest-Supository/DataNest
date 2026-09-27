@@ -264,7 +264,7 @@ export default function SparksWorkspace({
           }
           return;
         }
-        markPendingMutationDurable(redemptionRequestScope);
+        markPendingMutationDurable(redemptionRequestScope,{attemptCount:durable.attemptCount,lastAttemptAt:durable.lastAttemptAt});
         const {error}=await supabase.rpc("request_spark_redemption_v1",{
           target_service:payload.serviceId,
           target_quantity:payload.quantity,

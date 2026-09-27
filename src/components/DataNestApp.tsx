@@ -12,6 +12,7 @@ import ResonanceHome from "@/components/ResonanceHome";
 import MotionControl from "@/components/MotionControl";
 import ExecutionAuthorityPanel from "@/components/ExecutionAuthorityPanel";
 import ResourceFabricPanel from "@/components/ResourceFabricPanel";
+import RecoveryDiagnosticsPanel from "@/components/RecoveryDiagnosticsPanel";
 import type { ExecutionAuthorityRole } from "@/lib/executionAuthority";
 import { useSessionDraftState } from "@/lib/sessionDraft";
 import { useSingleFlight } from "@/lib/singleFlight";
@@ -88,6 +89,8 @@ type MutationRecoveryItem = MutationRecoveryDescriptor & {
   verificationState:PendingMutationVerification;
   lastCheckedAt:string|null;
   durable:boolean;
+  attemptCount:number;
+  lastAttemptAt:string|null;
 };
 
 const PAGE_SIZE = 20;
@@ -416,6 +419,8 @@ export default function DataNestApp({session}:{session:Session}) {
   const [pendingRecoveries,setPendingRecoveries]=useState<MutationRecoveryItem[]>([]);
   const [recoveryHydrated,setRecoveryHydrated]=useState(false);
   const [recoveryLedgerError,setRecoveryLedgerError]=useState("");
+  const [recoveryLastSyncedAt,setRecoveryLastSyncedAt]=useState<string|null>(null);
+  const [recoverySyncing,setRecoverySyncing]=useState(false);
   const recoverySyncingRef=useRef(false);
   const [health,setHealth]=useState<HealthState>({state:"checking",checkedAt:null,message:"Checking control plane…"});
   const [reloadingLatest,setReloadingLatest]=useState(false);
@@ -470,7 +475,9 @@ export default function DataNestApp({session}:{session:Session}) {
         age:classifyPendingMutationAge(intent.startedAt),
         verificationState:intent.verificationState,
         lastCheckedAt:intent.lastCheckedAt,
-        durable:intent.durable
+        durable:intent.durable,
+        attemptCount:intent.attemptCount,
+        lastAttemptAt:intent.lastAttemptAt
       });
     }
     next.sort((a,b)=>a.startedAt.localeCompare(b.startedAt));
@@ -481,6 +488,7 @@ export default function DataNestApp({session}:{session:Session}) {
     if(!project)return;
     if(recoverySyncingRef.current)return;
     recoverySyncingRef.current=true;
+    setRecoverySyncing(true);
     try{
       const serverRecoveries=await listDurableRecoveries(project.id);
       const serverByScope=new Map(serverRecoveries.map(item=>[item.scope,item]));
@@ -507,11 +515,13 @@ export default function DataNestApp({session}:{session:Session}) {
       }
       setRecoveryLedgerError("");
       setRecoveryHydrated(true);
+      setRecoveryLastSyncedAt(new Date().toISOString());
       syncPendingRecoveries();
     }catch(syncError){
       setRecoveryLedgerError(syncError instanceof Error?syncError.message:"Unable to synchronize the durable recovery ledger.");
     }finally{
       recoverySyncingRef.current=false;
+      setRecoverySyncing(false);
     }
   },[project,pendingRecoveryDescriptors,syncPendingRecoveries]);
 
@@ -911,6 +921,7 @@ export default function DataNestApp({session}:{session:Session}) {
   useEffect(()=>{
     setRecoveryHydrated(false);
     setRecoveryLedgerError("");
+    setRecoveryLastSyncedAt(null);
   },[project?.id,session.user.id]);
   useEffect(()=>{
     syncPendingRecoveries();
@@ -1503,7 +1514,7 @@ export default function DataNestApp({session}:{session:Session}) {
                   </span>
                 </div>
                 <p>{item.verificationState==="confirmed_absent"?"Server state confirmed no record for the preserved request. Resume the original retry or edit it into new intent.":item.detail}</p>
-                <small>Started {formatDate(item.startedAt)} · request identity preserved · {item.durable?"durable ledger":"session continuity"}{item.lastCheckedAt?" · checked "+formatDate(item.lastCheckedAt):""}</small>
+                <small>Started {formatDate(item.startedAt)} · request identity preserved · {item.durable?"durable ledger":"session continuity"} · {item.attemptCount} attempt{item.attemptCount===1?"":"s"}{item.lastAttemptAt?" · last attempt "+formatDate(item.lastAttemptAt):""}{item.lastCheckedAt?" · checked "+formatDate(item.lastCheckedAt):""}</small>
               </div>
               <button className="secondaryButton compact" type="button" onClick={()=>openPendingRecovery(item)}>{item.verificationState==="confirmed_absent"?"Resume safe retry →":"Review &amp; reconcile →"}</button>
             </article>)}
@@ -1601,7 +1612,7 @@ export default function DataNestApp({session}:{session:Session}) {
         {!loadingCore&&view==="checkpoints"&&<Checkpoints checkpoints={checkpoints} jobLookup={jobLookup} page={checkpointPage} total={checkpointCount} onPage={setCheckpointPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
         {!loadingCore&&view==="audit"&&<Audit events={events} jobLookup={jobLookup} page={eventPage} total={eventCount} onPage={setEventPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
         {!loadingCore&&view==="transparency"&&<TransparencyWorkspace/>}
-        {!loadingCore&&view==="settings"&&<Settings project={project} tools={tools} policies={policies} membership={membership} currentUserId={session.user.id} canManageAi={canManageAi}/>}
+        {!loadingCore&&view==="settings"&&<Settings project={project} tools={tools} policies={policies} membership={membership} currentUserId={session.user.id} canManageAi={canManageAi} recoveryHydrated={recoveryHydrated} recoveryLedgerError={recoveryLedgerError} recoveryLastSyncedAt={recoveryLastSyncedAt} recoverySyncing={recoverySyncing} synchronizeDurableRecoveries={synchronizeDurableRecoveries}/>} 
         </div>
         {!loadingCore&&project&&(previousViewItem||nextViewItem)&&<nav className="workflowContinuation" aria-label="Workspace progression">
           <div className="workflowContinuationCopy">
@@ -1847,7 +1858,7 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
           }
           return;
         }
-        markPendingMutationDurable(requestScope);
+        markPendingMutationDurable(requestScope,{attemptCount:durable.attemptCount,lastAttemptAt:durable.lastAttemptAt});
         const {data,error}=await supabase.rpc("create_job_manifest_v2",{
           target_project:project.id,
           target_request_key:intent.requestKey,
@@ -2230,7 +2241,8 @@ function Audit({events,jobLookup,page,total,onPage,onNavigate,activeJobId}:{even
 }
 
 function Settings({
-  project,tools,policies,membership,currentUserId,canManageAi
+  project,tools,policies,membership,currentUserId,canManageAi,
+  recoveryHydrated,recoveryLedgerError,recoveryLastSyncedAt,recoverySyncing,synchronizeDurableRecoveries
 }:{
   project:Project|null;
   tools:Tool[];
@@ -2238,11 +2250,17 @@ function Settings({
   membership:ProjectMember|null;
   currentUserId:string;
   canManageAi:boolean;
+  recoveryHydrated:boolean;
+  recoveryLedgerError:string;
+  recoveryLastSyncedAt:string|null;
+  recoverySyncing:boolean;
+  synchronizeDurableRecoveries:()=>Promise<void>;
 }) {
   return <section className="settingsGrid">
     <div className="panel"><p className="eyebrow">PROJECT</p><h3>{project?.name||"Resonance DataNest"}</h3><dl className="settingsList"><div><dt>Slug</dt><dd>{project?.slug||"resonance-datanest"}</dd></div><div><dt>Status</dt><dd><Badge value={project?.status||"ACTIVE"}/></dd></div><div><dt>Access role</dt><dd><Badge value={(membership?.role||"viewer").toUpperCase()}/></dd></div><div><dt>GitHub</dt><dd>DataNest-Supository/DataNest</dd></div><div><dt>Supabase</dt><dd>sgqdmfgjbprsoqsmgigi</dd></div><div><dt>Hosting</dt><dd>Provider-agnostic</dd></div><div><dt>Production host</dt><dd>GitHub Pages</dd></div></dl></div>
     <div className="panel"><p className="eyebrow">TOOLS</p><h3>Tool registry</h3>{tools.map(tool=><div className="settingRow" key={tool.id}><div><b>{tool.name}</b><small>{tool.role}</small></div><Badge value={tool.enabled?"ACTIVE":"DISABLED"}/></div>)}</div>
     <RonsasIntegrationPanel/>
+    {project&&<RecoveryDiagnosticsPanel projectId={project.id} hydrated={recoveryHydrated} ledgerError={recoveryLedgerError} lastSyncedAt={recoveryLastSyncedAt} syncing={recoverySyncing} onSync={synchronizeDurableRecoveries}/>}
     {project&&<div className="fullWidth" aria-label="AI Administration">
       <AiOperationsDashboard projectId={project.id} currentUserId={currentUserId} canManageAi={canManageAi}/>
     </div>}
