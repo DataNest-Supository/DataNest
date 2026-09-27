@@ -271,7 +271,7 @@ export default function GovernanceWorkspace({
     <button type="button" role="tab" aria-selected={section==="trust"} className={section==="trust"?"active":""} onClick={()=>selectSection("trust")}>Trust & Data Policy</button>
   </div>;
 
-  if(section==="trust")return <div>{governanceModeTabs}<TrustPolicyPanel projectId={projectId} role={role} setNotice={setNotice} setError={setError}/></div>;
+  if(section==="trust")return <div>{governanceModeTabs}<TrustPolicyPanel projectId={projectId} currentUserId={currentUserId} role={role} setNotice={setNotice} setError={setError}/></div>;
   if(loading)return <section className="panel"><p className="muted">Loading Sovereign Governance…</p></section>;
   if(!workspace)return <section className="panel"><p className="muted">Governance workspace is unavailable.</p></section>;
 
