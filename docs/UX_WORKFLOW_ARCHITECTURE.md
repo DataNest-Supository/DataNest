@@ -490,6 +490,21 @@ Durable finalization precedes local cleanup:
 
 Resolved ledger rows are retained as history. Registering an identity already finalized on another session returns its resolved state instead of reopening it. This is how multi-device convergence is distinguished from a new transaction.
 
+### Recovery observability
+
+Recovery observability is intentionally read-only. The `get_mutation_recovery_diagnostics_v1` RPC runs as `SECURITY INVOKER`, requires active project membership, and is limited by the same user-scoped RLS as the durable ledger. It returns operational metadata only:
+- unresolved identity count;
+- age bands (recent, aging, stale);
+- verification state counts;
+- registration attempt counts and last-attempt timestamps;
+- safe-retry count after authoritative absence;
+- resolutions completed in the last 24 hours;
+- the ten most recent continuity resolutions.
+
+Diagnostics never return stored mutation payloads or full request identities. Request references are shortened to an eight-character suffix for correlation. The Settings surface also reports the browser shell's latest successful ledger synchronization time and any synchronization error.
+
+These signals are observability, not mutation authority. A stale identity, repeated registration attempts, or an unconfirmed state may require attention but never proves that the underlying domain write succeeded or failed. The diagnostics surface therefore exposes only **Sync recovery ledger** and navigation back to the owning recovery flow. It deliberately provides no replay, force-delete, manual-success, or force-resolution control.
+
 ### Retry ownership
 
 The application disables library-level PostgREST automatic retries through the Supabase client configuration. Mutation retry/reconciliation therefore remains explicit in DataNest rather than being silently repeated underneath the single-flight layer.
