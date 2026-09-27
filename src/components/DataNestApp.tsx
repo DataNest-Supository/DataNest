@@ -15,7 +15,8 @@ import ResourceFabricPanel from "@/components/ResourceFabricPanel";
 import type { ExecutionAuthorityRole } from "@/lib/executionAuthority";
 import { useSessionDraftState } from "@/lib/sessionDraft";
 import { useSingleFlight } from "@/lib/singleFlight";
-import { PENDING_MUTATION_EVENT, classifyPendingMutationAge, clearPendingMutation, getOrCreatePendingMutation, loadPendingMutation, markPendingMutationVerification, type PendingMutationAge, type PendingMutationIntent, type PendingMutationVerification } from "@/lib/pendingMutation";
+import { PENDING_MUTATION_EVENT, classifyPendingMutationAge, clearPendingMutation, getOrCreatePendingMutation, loadPendingMutation, markPendingMutationDurable, markPendingMutationVerification, restorePendingMutation, type PendingMutationAge, type PendingMutationIntent, type PendingMutationVerification } from "@/lib/pendingMutation";
+import { durableRecoveryToPendingIntent, listDurableRecoveries, markDurableRecoveryVerification, registerDurableRecovery, resolveDurableRecovery } from "@/lib/durableRecovery";
 import { reconcileServerMutation, type MutationReconciliationState } from "@/lib/mutationReconciliation";
 
 type Project = { id:string; slug:string; name:string; description:string|null; status:string; created_at:string };
@@ -42,7 +43,7 @@ function scopeUrlToWorkspace(url:URL,view:ViewKey){
     url.searchParams.delete("filter");
     url.searchParams.delete("sort");
   }
-  if(view!=="governance")url.searchParams.delete("section");
+  if(view!=="governance"&&view!=="products")url.searchParams.delete("section");
   return url;
 }
 function urlPageIndex(url:URL){
@@ -74,16 +75,19 @@ type JobExecutionAuthorityState = {
   decision_reason_code?:string|null;
   readiness?:string|null;
 };
-type MutationRecoveryItem = {
+type MutationRecoveryDescriptor = {
   scope:string;
   kind:string;
   view:ViewKey;
   label:string;
   detail:string;
+};
+type MutationRecoveryItem = MutationRecoveryDescriptor & {
   startedAt:string;
   age:PendingMutationAge;
   verificationState:PendingMutationVerification;
   lastCheckedAt:string|null;
+  durable:boolean;
 };
 
 const PAGE_SIZE = 20;
@@ -410,6 +414,9 @@ export default function DataNestApp({session}:{session:Session}) {
   const [notice,setNotice]=useState("");
   const [error,setError]=useState("");
   const [pendingRecoveries,setPendingRecoveries]=useState<MutationRecoveryItem[]>([]);
+  const [recoveryHydrated,setRecoveryHydrated]=useState(false);
+  const [recoveryLedgerError,setRecoveryLedgerError]=useState("");
+  const recoverySyncingRef=useRef(false);
   const [health,setHealth]=useState<HealthState>({state:"checking",checkedAt:null,message:"Checking control plane…"});
   const [reloadingLatest,setReloadingLatest]=useState(false);
   const [locatingActiveJob,setLocatingActiveJob]=useState(false);
@@ -421,7 +428,7 @@ export default function DataNestApp({session}:{session:Session}) {
   const canManageAi=membership ? ["owner","admin"].includes(membership.role) : false;
 
   const pendingRecoveryDescriptors=useMemo(()=>{
-    if(!project)return [] as Array<Omit<MutationRecoveryItem,"startedAt">>;
+    if(!project)return [] as MutationRecoveryDescriptor[];
     const suffix=project.id+":"+session.user.id;
     return [
       {
@@ -462,12 +469,38 @@ export default function DataNestApp({session}:{session:Session}) {
         startedAt:intent.startedAt,
         age:classifyPendingMutationAge(intent.startedAt),
         verificationState:intent.verificationState,
-        lastCheckedAt:intent.lastCheckedAt
+        lastCheckedAt:intent.lastCheckedAt,
+        durable:intent.durable
       });
     }
     next.sort((a,b)=>a.startedAt.localeCompare(b.startedAt));
     setPendingRecoveries(next);
   },[project,pendingRecoveryDescriptors]);
+
+  const synchronizeDurableRecoveries=useCallback(async()=>{
+    if(!project)return;
+    if(recoverySyncingRef.current)return;
+    recoverySyncingRef.current=true;
+    try{
+      const serverRecoveries=await listDurableRecoveries(project.id);
+      for(const serverRecovery of serverRecoveries){
+        const descriptor=pendingRecoveryDescriptors.find(item=>item.scope===serverRecovery.scope&&item.kind===serverRecovery.mutationKind);
+        if(!descriptor)continue;
+        const local=loadPendingMutation(descriptor.scope);
+        if(local&&local.requestKey!==serverRecovery.requestKey){
+          throw new Error("Durable recovery conflict detected for "+descriptor.label+". Review this account on the device that created the other unresolved identity.");
+        }
+        restorePendingMutation(descriptor.scope,durableRecoveryToPendingIntent(serverRecovery));
+      }
+      setRecoveryLedgerError("");
+      setRecoveryHydrated(true);
+      syncPendingRecoveries();
+    }catch(syncError){
+      setRecoveryLedgerError(syncError instanceof Error?syncError.message:"Unable to synchronize the durable recovery ledger.");
+    }finally{
+      recoverySyncingRef.current=false;
+    }
+  },[project,pendingRecoveryDescriptors,syncPendingRecoveries]);
 
   const openPendingRecovery=useCallback((item:MutationRecoveryItem)=>{
     setView(item.view);
@@ -863,19 +896,28 @@ export default function DataNestApp({session}:{session:Session}) {
 
   useEffect(()=>{ void loadCore(); },[loadCore]);
   useEffect(()=>{
+    setRecoveryHydrated(false);
+    setRecoveryLedgerError("");
+  },[project?.id,session.user.id]);
+  useEffect(()=>{
     syncPendingRecoveries();
-    const sync=()=>syncPendingRecoveries();
-    const ageTimer=window.setInterval(sync,60000);
-    window.addEventListener(PENDING_MUTATION_EVENT,sync);
-    window.addEventListener("pageshow",sync);
-    window.addEventListener("focus",sync);
+    if(project)void synchronizeDurableRecoveries();
+    const localSync=()=>syncPendingRecoveries();
+    const durableSync=()=>{
+      syncPendingRecoveries();
+      if(project)void synchronizeDurableRecoveries();
+    };
+    const ageTimer=window.setInterval(durableSync,60000);
+    window.addEventListener(PENDING_MUTATION_EVENT,localSync);
+    window.addEventListener("pageshow",durableSync);
+    window.addEventListener("focus",durableSync);
     return()=>{
       window.clearInterval(ageTimer);
-      window.removeEventListener(PENDING_MUTATION_EVENT,sync);
-      window.removeEventListener("pageshow",sync);
-      window.removeEventListener("focus",sync);
+      window.removeEventListener(PENDING_MUTATION_EVENT,localSync);
+      window.removeEventListener("pageshow",durableSync);
+      window.removeEventListener("focus",durableSync);
     };
-  },[syncPendingRecoveries]);
+  },[project,syncPendingRecoveries,synchronizeDurableRecoveries]);
   useEffect(()=>{
     if(!project){
       setActiveDataNestAiSession(null);
@@ -949,7 +991,7 @@ export default function DataNestApp({session}:{session:Session}) {
     if(url.searchParams.get("view")!==expectedView)return;
 
     operationalUrlStateKeys.forEach(key=>url.searchParams.delete(key));
-    if(view!=="governance")url.searchParams.delete("section");
+    if(view!=="governance"&&view!=="products")url.searchParams.delete("section");
     const page=view==="unifi"||view==="scheduler"
       ? jobPage
       : view==="runs"
@@ -1125,7 +1167,7 @@ export default function DataNestApp({session}:{session:Session}) {
     if(pendingRecoveries.length>0){
       const noun=pendingRecoveries.length===1?"operation":"operations";
       const confirmed=window.confirm(
-        pendingRecoveries.length+" unresolved "+noun+" will remain preserved in this browser session and will reappear only when this same account returns. Sign out without resolving "+(pendingRecoveries.length===1?"it":"them")+" now?"
+        pendingRecoveries.length+" unresolved "+noun+" will remain preserved in this browser session and, when durably registered, in the recovery ledger. They remain scoped to this account and will reappear when it returns. Sign out without resolving "+(pendingRecoveries.length===1?"it":"them")+" now?"
       );
       if(!confirmed)return;
     }
@@ -1434,7 +1476,7 @@ export default function DataNestApp({session}:{session:Session}) {
             <div>
               <p className="eyebrow">AUTHORITATIVE RECOVERY</p>
               <h2>{pendingRecoveries.length===1?"1 unresolved operation":pendingRecoveries.length+" unresolved operations"}</h2>
-              <p>These requests have preserved identities but are not yet finalized in this browser session. Review server state before issuing replacement work.</p>
+              <p>These requests have preserved identities and are not yet finalized. Durable entries can recover across tabs and devices; authoritative mutation state still decides the outcome.</p>
             </div>
             <span className="badge warn">{pendingRecoveries.length} OPEN</span>
           </div>
@@ -1448,7 +1490,7 @@ export default function DataNestApp({session}:{session:Session}) {
                   </span>
                 </div>
                 <p>{item.verificationState==="confirmed_absent"?"Server state confirmed no record for the preserved request. Resume the original retry or edit it into new intent.":item.detail}</p>
-                <small>Started {formatDate(item.startedAt)} · request identity preserved{item.lastCheckedAt?" · checked "+formatDate(item.lastCheckedAt):""}</small>
+                <small>Started {formatDate(item.startedAt)} · request identity preserved · {item.durable?"durable ledger":"session continuity"}{item.lastCheckedAt?" · checked "+formatDate(item.lastCheckedAt):""}</small>
               </div>
               <button className="secondaryButton compact" type="button" onClick={()=>openPendingRecovery(item)}>{item.verificationState==="confirmed_absent"?"Resume safe retry →":"Review &amp; reconcile →"}</button>
             </article>)}
@@ -1528,13 +1570,19 @@ export default function DataNestApp({session}:{session:Session}) {
         <div key={view} className="viewStage workspaceArrival">
         {!loadingCore&&project&&view==="overview"&&<ResonanceHome project={project} jobs={recentJobs} counts={summary} canOperate={canOperate} onNavigate={setView}/>}
         {!loadingCore&&project&&view==="stakeholder"&&<StakeholderWorkspace projectId={project.id} currentUserId={session.user.id} canReview={canManageAi}/>}
-        {!loadingCore&&project&&view==="sparks"&&<SparksWorkspace projectId={project.id} currentUserId={session.user.id} canOperate={canOperate} canManage={canManageAi} setNotice={setNotice} setError={setError}/>}
+        {!loadingCore&&project&&["sparks","productlab","unifi"].includes(view)&&!recoveryHydrated&&<section className="panel" role="status" aria-live="polite">
+          <p className="eyebrow">DURABLE RECOVERY</p>
+          <h2>Synchronizing mutation continuity</h2>
+          <p className="muted">{recoveryLedgerError||"Checking this account for unresolved server-backed request identities before enabling mutation controls."}</p>
+          {recoveryLedgerError&&<button className="secondaryButton compact" type="button" onClick={()=>void synchronizeDurableRecoveries()}>Retry recovery sync</button>}
+        </section>}
+        {!loadingCore&&project&&view==="sparks"&&recoveryHydrated&&<SparksWorkspace projectId={project.id} currentUserId={session.user.id} canOperate={canOperate} canManage={canManageAi} setNotice={setNotice} setError={setError}/>}
         {!loadingCore&&project&&view==="governance"&&<GovernanceWorkspace projectId={project.id} currentUserId={session.user.id} role={membership?.role||"viewer"} canManage={canManageAi} setNotice={setNotice} setError={setError}/>} 
         {!loadingCore&&project&&view==="products"&&<ProductsWorkspace projectId={project.id} currentUserId={session.user.id} role={membership?.role||"viewer"}/>}
         {!loadingCore&&project&&view==="thinktank"&&<ThinkTankWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} canReview={canManageAi} setNotice={setNotice} setError={setError}/>}
         {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace key={project.id+":"+session.user.id} projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError} preferredJobId={activeDataNestAiSession?.jobId||null} onActiveSessionChange={updateActiveWorkContext}/>}
-        {!loadingCore&&project&&view==="productlab"&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate} setNotice={setNotice} setError={setError}/>}
-        {!loadingCore&&project&&view==="unifi"&&<UnifiPlanner project={project} currentUserId={session.user.id} jobs={jobs} capabilities={capabilities} reload={async()=>{await loadJobsPage(jobPage);await loadSummary(project.id);await loadRecentJobs(project.id);}} setNotice={setNotice} setError={setError} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} activeJobId={activeDataNestAiSession?.jobId||null}/>}
+        {!loadingCore&&project&&view==="productlab"&&recoveryHydrated&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate} setNotice={setNotice} setError={setError}/>}
+        {!loadingCore&&project&&view==="unifi"&&recoveryHydrated&&<UnifiPlanner project={project} currentUserId={session.user.id} jobs={jobs} capabilities={capabilities} reload={async()=>{await loadJobsPage(jobPage);await loadSummary(project.id);await loadRecentJobs(project.id);}} setNotice={setNotice} setError={setError} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} activeJobId={activeDataNestAiSession?.jobId||null}/>}
         {!loadingCore&&view==="scheduler"&&project&&<Scheduler projectId={project.id} projectName={project?.name||"Resonance DataNest"} projectSlug={project?.slug||"resonance-datanest"} currentUserId={session.user.id} role={membership?.role||"viewer"} jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null} setNotice={setNotice} setError={setError} filter={schedulerFilter} viewMode={schedulerViewMode} sortMode={schedulerSortMode} onFilter={setSchedulerFilter} onViewMode={setSchedulerViewMode} onSortMode={setSchedulerSortMode}/>} 
         {!loadingCore&&view==="runs"&&<Runs runs={runs} jobLookup={jobLookup} page={runPage} total={runCount} onPage={setRunPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
         {!loadingCore&&view==="checkpoints"&&<Checkpoints checkpoints={checkpoints} jobLookup={jobLookup} page={checkpointPage} total={checkpointCount} onPage={setCheckpointPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
@@ -1656,6 +1704,7 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
   const hasSessionDraft=[titleDraft,descriptionDraft,priorityDraft,capabilityDraft,testsDraft,artifactDraft].some(item=>item.hasStoredDraft);
   const known=Array.from(new Set(["chat",...capabilities.map(item=>item.capability)]));
   const reconciliationLocked=reconciliationState==="pending"||reconciliationState==="checking";
+  const intentEditLocked=reconciliationLocked||reconciliationState==="not_recorded";
 
   function restoreIntentPayload(intent:PendingMutationIntent<UnifiPendingPayload>){
     setTitle(intent.payload.title);
@@ -1666,11 +1715,18 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
     setArtifact(intent.payload.artifact);
   }
 
-  function clearUnifiIntentForEdit(){
-    if(reconciliationLocked)return false;
-    const cleared=clearPendingMutation(requestScope,"confirmed_absent_new_intent");
-    if(cleared)setReconciliationState("idle");
-    return cleared||!loadPendingMutation(requestScope);
+  async function startNewUnifiIntent(){
+    const pending=loadPendingMutation<UnifiPendingPayload>(requestScope);
+    if(!pending||pending.verificationState!=="confirmed_absent")return;
+    setError("");
+    try{
+      await resolveDurableRecovery(project.id,requestScope,pending.requestKey,"superseded_after_absence");
+      clearPendingMutation(requestScope,"confirmed_absent_new_intent");
+      setReconciliationState("idle");
+      setNotice("The previous request was closed after authoritative absence. You can edit this manifest as new intent.");
+    }catch(intentError){
+      setError(intentError instanceof Error?intentError.message:"Unable to close the previous durable recovery identity.");
+    }
   }
 
   async function reconcileUnifiIntent(intent:PendingMutationIntent<UnifiPendingPayload>,announce:boolean){
@@ -1695,6 +1751,15 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
     });
 
     if(result.state==="confirmed"&&result.value){
+      try{
+        await resolveDurableRecovery(project.id,requestScope,intent.requestKey,"confirmed");
+      }catch(ledgerError){
+        markPendingMutationVerification(requestScope,"unconfirmed");
+        setReconciliationState("pending");
+        restoreIntentPayload(intent);
+        if(announce)setError("JOB-"+String(result.value.job_number).padStart(5,"0")+" is confirmed, but durable recovery finalization failed. Recheck to finish continuity cleanup.");
+        return {state:"pending" as const,value:null,error:ledgerError instanceof Error?ledgerError:new Error("Durable recovery finalization failed.")};
+      }
       clearPendingMutation(requestScope,"confirmed");
       setTitle("");setDescription("");setPriority(50);setCapability("chat");setTests(true);setArtifact(true);
       setReconciliationState("confirmed");
@@ -1702,11 +1767,21 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
       setNotice("Recovered confirmed JOB-"+String(result.value.job_number).padStart(5,"0")+" from authoritative server state.");
       await reload();
     }else if(result.state==="not_recorded"){
+      try{
+        await markDurableRecoveryVerification(project.id,requestScope,intent.requestKey,"confirmed_absent");
+      }catch(ledgerError){
+        markPendingMutationVerification(requestScope,"unconfirmed");
+        setReconciliationState("pending");
+        restoreIntentPayload(intent);
+        setError("Server state confirms no UNIFI manifest was recorded, but the durable recovery ledger could not record that verification. Recheck before retrying.");
+        return {state:"pending" as const,value:null,error:ledgerError instanceof Error?ledgerError:new Error("Durable recovery verification failed.")};
+      }
       markPendingMutationVerification(requestScope,"confirmed_absent");
       setReconciliationState("not_recorded");
       restoreIntentPayload(intent);
       if(announce)setNotice("Previous UNIFI submission was not recorded. The original manifest is restored and can be retried safely.");
     }else{
+      try{await markDurableRecoveryVerification(project.id,requestScope,intent.requestKey,"unconfirmed");}catch{}
       markPendingMutationVerification(requestScope,"unconfirmed");
       setReconciliationState("pending");
       restoreIntentPayload(intent);
@@ -1747,6 +1822,19 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
       setNotice("Creating Job Manifest…");
       setError("");
       try {
+        const durable=await registerDurableRecovery(project.id,requestScope,intent);
+        if(!durable.active){
+          clearPendingMutation(requestScope,"durable_resolved");
+          setReconciliationState(durable.resolution==="confirmed"?"confirmed":"idle");
+          if(durable.resolution==="confirmed"){
+            setNotice("This UNIFI request identity was already finalized on another session. Reloading authoritative Job state.");
+            await reload();
+          }else{
+            setNotice("This recovery identity was already superseded after confirmed absence. Submit the edited manifest as new intent.");
+          }
+          return;
+        }
+        markPendingMutationDurable(requestScope);
         const {data,error}=await supabase.rpc("create_job_manifest_v2",{
           target_project:project.id,
           target_request_key:intent.requestKey,
@@ -1760,6 +1848,7 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
         if(error) throw error;
         const row=Array.isArray(data)?data[0]:data;
         const number=Number((row as Record<string,unknown>|null)?.job_number||0);
+        await resolveDurableRecovery(project.id,requestScope,intent.requestKey,"confirmed");
         clearPendingMutation(requestScope,"confirmed");
         setReconciliationState("confirmed");
         setTitle("");setDescription("");setPriority(50);setCapability("chat");setTests(true);setArtifact(true);
@@ -1782,16 +1871,16 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
     <div className="panel stickyPanel"><p className="eyebrow">UNIFI</p><h2>Job Manifest Planner</h2><p className="muted">Prepare work completely before consuming scarce execution capacity.</p>
       {hasSessionDraft&&<p className="muted" role="status">Browser-session draft active · unfinished inputs are restored after workspace navigation or reload.</p>}
       {reconciliationState==="pending"&&<div className="notice errorNotice" role="status"><b>Submission awaiting confirmation.</b> Do not create a second manifest. Recheck authoritative server state first. <button type="button" className="textButton" onClick={()=>{const pending=loadPendingMutation<UnifiPendingPayload>(requestScope);if(pending)void reconcileUnifiIntent(pending,true);}}>Recheck server state</button></div>}
-      {reconciliationState==="not_recorded"&&<div className="notice goodNotice" role="status">Server state confirms the previous request was not recorded. Retrying this restored manifest reuses the same request identity.</div>}
+      {reconciliationState==="not_recorded"&&<div className="notice goodNotice" role="status">Server state confirms the previous request was not recorded. Retrying this restored manifest reuses the same request identity. <button type="button" className="textButton" onClick={()=>void startNewUnifiIntent()}>Change manifest</button></div>}
       {!canOperate&&<div className="notice errorNotice">Viewer access is read-only. Ask a DataNest owner or admin for operator access to create jobs.</div>}
       <form className="plannerForm" onSubmit={createJob} aria-busy={saving||reconciliationState==="checking"} data-active-action={activeAction||undefined}>
-        <label>Job title<input disabled={reconciliationLocked} value={title} onChange={event=>{if(clearUnifiIntentForEdit())setTitle(event.target.value);}} required placeholder="e.g. Validate production deployment"/></label>
-        <label>Objective / context<textarea disabled={reconciliationLocked} value={description} onChange={event=>{if(clearUnifiIntentForEdit())setDescription(event.target.value);}} rows={6} placeholder="What must be done, constraints, expected output…"/></label>
+        <label>Job title<input disabled={intentEditLocked} value={title} onChange={event=>setTitle(event.target.value)} required placeholder="e.g. Validate production deployment"/></label>
+        <label>Objective / context<textarea disabled={intentEditLocked} value={description} onChange={event=>setDescription(event.target.value)} rows={6} placeholder="What must be done, constraints, expected output…"/></label>
         <div className="fieldRow">
-          <label>Priority<select disabled={reconciliationLocked} value={priority} onChange={event=>{if(clearUnifiIntentForEdit())setPriority(Number(event.target.value));}}><option value={100}>100 · Critical</option><option value={80}>80 · High</option><option value={50}>50 · Normal</option><option value={20}>20 · Background</option><option value={5}>5 · Maintenance</option></select></label>
-          <label>Required capability<select disabled={reconciliationLocked} value={capability} onChange={event=>{if(clearUnifiIntentForEdit())setCapability(event.target.value);}}>{known.map(item=><option key={item}>{item}</option>)}</select></label>
+          <label>Priority<select disabled={intentEditLocked} value={priority} onChange={event=>setPriority(Number(event.target.value))}><option value={100}>100 · Critical</option><option value={80}>80 · High</option><option value={50}>50 · Normal</option><option value={20}>20 · Background</option><option value={5}>5 · Maintenance</option></select></label>
+          <label>Required capability<select disabled={intentEditLocked} value={capability} onChange={event=>setCapability(event.target.value)}>{known.map(item=><option key={item}>{item}</option>)}</select></label>
         </div>
-        <div className="checkRow"><label><input disabled={reconciliationLocked} type="checkbox" checked={tests} onChange={event=>{if(clearUnifiIntentForEdit())setTests(event.target.checked);}}/> Tests required</label><label><input disabled={reconciliationLocked} type="checkbox" checked={artifact} onChange={event=>{if(clearUnifiIntentForEdit())setArtifact(event.target.checked);}}/> Artifact required</label></div>
+        <div className="checkRow"><label><input disabled={intentEditLocked} type="checkbox" checked={tests} onChange={event=>setTests(event.target.checked)}/> Tests required</label><label><input disabled={intentEditLocked} type="checkbox" checked={artifact} onChange={event=>setArtifact(event.target.checked)}/> Artifact required</label></div>
         <button className="primaryButton" disabled={saving||reconciliationLocked||!canOperate}>{saving?"Creating…":reconciliationState==="checking"?"Checking server state…":"Create Job Manifest"}</button>
       </form>
     </div>

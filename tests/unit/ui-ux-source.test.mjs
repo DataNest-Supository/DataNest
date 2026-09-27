@@ -444,7 +444,7 @@ test("workspace presentation state is URL-addressable without exposing active Jo
   assert.match(appSource, /function schedulerSortModeFromUrl\(url:URL\):SchedulerSortMode/);
   assert.match(appSource, /workspaceScopedUrlStateKeys\.forEach\(key=>url\.searchParams\.delete\(key\)\)/);
   assert.match(appSource, /operationalUrlStateKeys\.forEach\(key=>url\.searchParams\.delete\(key\)\)/);
-  assert.match(appSource, /if\(view!=="governance"\)url\.searchParams\.delete\("section"\)/);
+  assert.match(appSource, /if\(view!=="governance"&&view!=="products"\)url\.searchParams\.delete\("section"\)/);
   assert.match(appSource, /if\(page>0\)url\.searchParams\.set\("page",String\(page\+1\)\)/);
   assert.match(appSource, /if\(schedulerViewMode!=="gantt"\)url\.searchParams\.set\("mode",schedulerViewMode\)/);
   assert.match(appSource, /if\(schedulerFilter!=="ALL"\)url\.searchParams\.set\("filter",schedulerFilter\)/);

@@ -3,7 +3,8 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 import { useSingleFlight } from "@/lib/singleFlight";
-import { clearPendingMutation, getOrCreatePendingMutation, loadPendingMutation, markPendingMutationVerification, type PendingMutationIntent } from "@/lib/pendingMutation";
+import { clearPendingMutation, getOrCreatePendingMutation, loadPendingMutation, markPendingMutationDurable, markPendingMutationVerification, type PendingMutationIntent } from "@/lib/pendingMutation";
+import { markDurableRecoveryVerification, registerDurableRecovery, resolveDurableRecovery } from "@/lib/durableRecovery";
 import { reconcileServerMutation, type MutationReconciliationState } from "@/lib/mutationReconciliation";
 
 type Balance={account_id:string;account_type:"project"|"platform"|"locked";project_id:string|null;balance:number};
@@ -112,6 +113,7 @@ export default function SparksWorkspace({
   );
 
   const redemptionLocked=redemptionReconciliation==="pending"||redemptionReconciliation==="checking";
+  const redemptionEditLocked=redemptionLocked||redemptionReconciliation==="not_recorded";
 
   function restoreRedemptionIntent(intent:PendingMutationIntent<SparkRedemptionPendingPayload>){
     setSelectedServiceId(intent.payload.serviceId);
@@ -119,11 +121,18 @@ export default function SparksWorkspace({
     setRequestNote(intent.payload.note||"");
   }
 
-  function clearRedemptionIntentForEdit(){
-    if(redemptionLocked)return false;
-    const cleared=clearPendingMutation(redemptionRequestScope,"confirmed_absent_new_intent");
-    if(cleared)setRedemptionReconciliation("idle");
-    return cleared||!loadPendingMutation(redemptionRequestScope);
+  async function startNewRedemptionIntent(){
+    const pending=loadPendingMutation<SparkRedemptionPendingPayload>(redemptionRequestScope);
+    if(!pending||pending.verificationState!=="confirmed_absent")return;
+    setError("");
+    try{
+      await resolveDurableRecovery(projectId,redemptionRequestScope,pending.requestKey,"superseded_after_absence");
+      clearPendingMutation(redemptionRequestScope,"confirmed_absent_new_intent");
+      setRedemptionReconciliation("idle");
+      setNotice("The previous reservation request was closed after authoritative absence. You can edit it as new intent.");
+    }catch(intentError){
+      setError(intentError instanceof Error?intentError.message:"Unable to close the previous durable Spark recovery identity.");
+    }
   }
 
   async function reconcileRedemptionIntent(intent:PendingMutationIntent<SparkRedemptionPendingPayload>,announce:boolean){
@@ -147,6 +156,15 @@ export default function SparksWorkspace({
     });
 
     if(result.state==="confirmed"&&result.value){
+      try{
+        await resolveDurableRecovery(projectId,redemptionRequestScope,intent.requestKey,"confirmed");
+      }catch(ledgerError){
+        markPendingMutationVerification(redemptionRequestScope,"unconfirmed");
+        setRedemptionReconciliation("pending");
+        restoreRedemptionIntent(intent);
+        setError("Spark reservation "+result.value.trace_key+" is confirmed, but durable recovery finalization failed. Recheck to finish continuity cleanup.");
+        return {state:"pending" as const,value:null,error:ledgerError instanceof Error?ledgerError:new Error("Durable recovery finalization failed.")};
+      }
       clearPendingMutation(redemptionRequestScope,"confirmed");
       setRedemptionReconciliation("confirmed");
       setQuantity("1");setRequestNote("");
@@ -154,11 +172,21 @@ export default function SparksWorkspace({
       setNotice("Recovered confirmed Spark reservation "+result.value.trace_key+" from authoritative server state.");
       await load();
     }else if(result.state==="not_recorded"){
+      try{
+        await markDurableRecoveryVerification(projectId,redemptionRequestScope,intent.requestKey,"confirmed_absent");
+      }catch(ledgerError){
+        markPendingMutationVerification(redemptionRequestScope,"unconfirmed");
+        setRedemptionReconciliation("pending");
+        restoreRedemptionIntent(intent);
+        setError("Server state confirms no Spark reservation was recorded, but the durable recovery ledger could not record that verification. Recheck before retrying.");
+        return {state:"pending" as const,value:null,error:ledgerError instanceof Error?ledgerError:new Error("Durable recovery verification failed.")};
+      }
       markPendingMutationVerification(redemptionRequestScope,"confirmed_absent");
       setRedemptionReconciliation("not_recorded");
       restoreRedemptionIntent(intent);
       if(announce)setNotice("Previous Spark reservation was not recorded. The original request is restored and can be retried safely.");
     }else{
+      try{await markDurableRecoveryVerification(projectId,redemptionRequestScope,intent.requestKey,"unconfirmed");}catch{}
       markPendingMutationVerification(redemptionRequestScope,"unconfirmed");
       setRedemptionReconciliation("pending");
       restoreRedemptionIntent(intent);
@@ -224,6 +252,19 @@ export default function SparksWorkspace({
     await runSingleFlight("request-redemption",async()=>{
       setBusy(true);setError("");setNotice("Reserving Sparks for the selected service…");
       try{
+        const durable=await registerDurableRecovery(projectId,redemptionRequestScope,intent);
+        if(!durable.active){
+          clearPendingMutation(redemptionRequestScope,"durable_resolved");
+          setRedemptionReconciliation(durable.resolution==="confirmed"?"confirmed":"idle");
+          if(durable.resolution==="confirmed"){
+            setNotice("This Spark request identity was already finalized on another session. Reloading authoritative reservation state.");
+            await load();
+          }else{
+            setNotice("This recovery identity was already superseded after confirmed absence. Submit the edited request as new intent.");
+          }
+          return;
+        }
+        markPendingMutationDurable(redemptionRequestScope);
         const {error}=await supabase.rpc("request_spark_redemption_v1",{
           target_service:payload.serviceId,
           target_quantity:payload.quantity,
@@ -231,6 +272,7 @@ export default function SparksWorkspace({
           target_note:payload.note
         });
         if(error)throw error;
+        await resolveDurableRecovery(projectId,redemptionRequestScope,intent.requestKey,"confirmed");
         clearPendingMutation(redemptionRequestScope,"confirmed");
         setRedemptionReconciliation("confirmed");
         setQuantity("1");setRequestNote("");
@@ -297,7 +339,7 @@ export default function SparksWorkspace({
   return <div>
     {activeAction&&<p className="muted" role="status">Spark action in progress · duplicate submissions are blocked until the request finishes.</p>}
     {redemptionReconciliation==="pending"&&<div className="notice errorNotice" role="status"><b>Reservation awaiting confirmation.</b> Do not issue another reservation. <button type="button" className="textButton" onClick={()=>{const pending=loadPendingMutation<SparkRedemptionPendingPayload>(redemptionRequestScope);if(pending)void reconcileRedemptionIntent(pending,true);}}>Recheck server state</button></div>}
-    {redemptionReconciliation==="not_recorded"&&<div className="notice goodNotice" role="status">Server state confirms the previous reservation was not recorded. Retrying reuses the same request identity.</div>}
+    {redemptionReconciliation==="not_recorded"&&<div className="notice goodNotice" role="status">Server state confirms the previous reservation was not recorded. Retrying reuses the same request identity. <button type="button" className="textButton" onClick={()=>void startNewRedemptionIntent()}>Change request</button></div>}
     <section className="heroPanel">
       <div>
         <p className="eyebrow">SPARKS · INTERNAL UTILITY</p>
@@ -353,11 +395,11 @@ export default function SparksWorkspace({
     <section className="panel">
       <div className="panelHead"><div><p className="eyebrow">REDEEM</p><h3>Approved project services</h3></div><span className="countPill">{workspace.services.length}</span></div>
       {workspace.services.length?<form onSubmit={requestRedemption} className="settingsGrid">
-        <label>Service<select disabled={redemptionLocked} value={selectedServiceId} onChange={e=>{if(clearRedemptionIntentForEdit())setSelectedServiceId(e.target.value);}}>
+        <label>Service<select disabled={redemptionEditLocked} value={selectedServiceId} onChange={e=>setSelectedServiceId(e.target.value)}>
           {workspace.services.map(service=><option key={service.id} value={service.id}>{service.name+" · "+fmt(service.spark_price)+" Sparks"}</option>)}
         </select></label>
-        <label>Quantity<input disabled={redemptionLocked} type="number" min="1" max="100" value={quantity} onChange={e=>{if(clearRedemptionIntentForEdit())setQuantity(e.target.value);}}/></label>
-        <label>Request note<input disabled={redemptionLocked} value={requestNote} onChange={e=>{if(clearRedemptionIntentForEdit())setRequestNote(e.target.value);}} placeholder="Optional context for fulfillment"/></label>
+        <label>Quantity<input disabled={redemptionEditLocked} type="number" min="1" max="100" value={quantity} onChange={e=>setQuantity(e.target.value)}/></label>
+        <label>Request note<input disabled={redemptionEditLocked} value={requestNote} onChange={e=>setRequestNote(e.target.value)} placeholder="Optional context for fulfillment"/></label>
         <div>
           <p className="muted">{selectedService?.description||"Approved internal Resonance service."}</p>
           {selectedService?.terms&&<small>{selectedService.terms}</small>}
