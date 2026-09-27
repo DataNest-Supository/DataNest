@@ -50,7 +50,7 @@ test("portfolio registry schema pins the approved identity, lifecycle, relations
   }
 
   assert.match(sql,/private\.is_project_stakeholder\(project_id\)[\s\S]*private\.is_project_member\(project_id\)/i);
-  assert.doesNotMatch(sql,/grant\s+(?:select\s*,\s*)?(?:insert|update|delete)[\s\S]*on table public\.portfolio_(?:items|classifications|relationships|lifecycle_events)[\s\S]*to authenticated/i);
+  assert.doesNotMatch(sql,/grant\s+[^;]*(?:insert|update|delete)[^;]*on table public\.portfolio_(?:items|classifications|relationships|lifecycle_events)[^;]*to authenticated/i);
   assert.match(sql,/grant select on table public\.portfolio_items to authenticated/i);
   assert.match(sql,/grant select on table public\.portfolio_classifications to authenticated/i);
   assert.match(sql,/grant select on table public\.portfolio_relationships to authenticated/i);
