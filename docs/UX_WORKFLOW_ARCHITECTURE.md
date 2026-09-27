@@ -431,6 +431,19 @@ A confirmed row clears the pending intent and submitted notes/evidence. A confir
 
 Editing test notes or evidence after a confirmed absence is treated as new intent and clears the old pending request identity. Product surface creation and test-case creation remain single-flight only because those tables do not yet expose an equivalent client request identity; they must not be promoted to authoritative reconciliation by heuristic matching.
 
+### Global recovery center
+
+The application shell surfaces unresolved deterministic mutations outside their originating workspace. The recovery center is derived only from the active project and authenticated user scopes for:
+- UNIFI Job Manifest creation;
+- Sparks reservation;
+- Product Lab test evidence.
+
+It displays the workflow label, start time, and the fact that the request identity is preserved. It does not expose the stored mutation payload globally. Selecting **Review & reconcile** opens the owning workspace, where the workflow-specific authoritative reconciliation logic runs.
+
+The pending-mutation journal emits a same-tab change event whenever an intent is created or cleared. The shell subscribes to that event plus page-focus/page-show restoration, so an operation that resolves after its form unmounts disappears from the recovery center without requiring a reload.
+
+A global recovery item means the browser session still has unresolved continuity metadata; it is not itself proof that the server mutation failed or succeeded. Replacement work must not be issued until the owning workflow establishes authoritative state.
+
 ### Retry ownership
 
 The application disables library-level PostgREST automatic retries through the Supabase client configuration. Mutation retry/reconciliation therefore remains explicit in DataNest rather than being silently repeated underneath the single-flight layer.
