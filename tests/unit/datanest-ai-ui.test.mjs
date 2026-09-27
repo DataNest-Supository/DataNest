@@ -48,3 +48,17 @@ test("DataNest shell keeps navigation compact and the active workspace cyan-led 
   assert.match(css,/\.navGroup button\s*\{[^}]*padding:9px 10px/s);
   assert.match(css,/\.navGroup button\.active\s*\{[^}]*box-shadow:inset 2px 0 0 var\(--cyan\)/s);
 });
+
+
+test("DataNest AI task guide moves directly into Job context with an empty-state UNIFI fallback",()=>{
+  const app=read("src/components/DataNestApp.tsx");
+  const css=read("src/app/datanest-ai-optimized.css");
+
+  assert.match(app,/className="workspaceTaskGuideAction"/);
+  assert.match(app,/>Select Job Manifest <span aria-hidden="true">→<\/span><\/button>/);
+  assert.match(app,/document\.getElementById\("datanest-ai-active-job"\)/);
+  assert.match(app,/if\(!target\)\{\s*setView\("unifi"\);\s*return;\s*\}/s);
+  assert.match(app,/prefers-reduced-motion: reduce/);
+  assert.match(css,/\.workspaceTaskGuideAction\s*\{/);
+  assert.match(css,/\.workspaceTaskGuideAction:focus-visible/);
+});
