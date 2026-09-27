@@ -42,6 +42,7 @@
 - Create `supabase/migrations/20260927094500_add_portfolio_registry_v1.sql` — schema, indexes, RLS, read view, backfill, and governed RPCs.
 - Create `src/lib/portfolioRegistry.ts` — shared TypeScript types, labels, and pure formatting helpers.
 - Create `src/components/PortfolioRegistryPanel.tsx` — portfolio read/review UI isolated from the existing product catalog.
+- Modify `src/components/DataNestApp.tsx` — pass current project role authority into Products workspace.
 - Modify `src/components/ProductsWorkspace.tsx` — load Portfolio Registry state, preserve current Product Catalog behavior, and host the new panel/deep link.
 - Modify `src/components/ProductLab.tsx` — optional Portfolio Item association for surfaces.
 - Modify `src/app/globals.css` — Portfolio Registry and Product Lab linkage styles/mobile containment.
@@ -414,10 +415,11 @@ git add src/lib/portfolioRegistry.ts src/components/ProductLab.tsx src/app/globa
 git commit -m "feat: link Product Lab surfaces to portfolio items"
 ```
 
-### Task 5: Products Workspace Portfolio Registry UI and URL Compatibility
+### Task 5: Products Workspace Portfolio Registry Read UI and URL Compatibility
 
 **Files:**
 - Create: `src/components/PortfolioRegistryPanel.tsx`
+- Modify: `src/components/DataNestApp.tsx`
 - Modify: `src/components/ProductsWorkspace.tsx`
 - Modify: `src/app/globals.css`
 - Modify: `tests/unit/products-source.test.mjs`
@@ -431,6 +433,8 @@ git commit -m "feat: link Product Lab surfaces to portfolio items"
   - `onSelect:(slug:string)=>void`
   - `canOperate:boolean`
   - `canAdmin:boolean`
+  - `onRefresh:()=>Promise<void>`
+- `ProductsWorkspace` gains `role:"owner"|"admin"|"operator"|"viewer"`, `canOperate:boolean`, and `canAdmin:boolean`.
 - Existing `product=`, `recordType=`, and `q=` query semantics remain unchanged.
 - New portfolio query state:
   - `section=portfolio`
@@ -439,6 +443,7 @@ git commit -m "feat: link Product Lab surfaces to portfolio items"
 - [ ] **Step 1: Add failing Products source contracts**
 
 Assert:
+- `DataNestApp` passes `membership?.role||"viewer"`, `canOperate`, and `canManageAi` to `ProductsWorkspace`;
 - Products workspace loads `portfolio_registry_view`;
 - Governed Products and Portfolio Registry are visibly separate;
 - existing `product`, `recordType`, `q` URL handling remains;
@@ -449,7 +454,7 @@ Assert:
 - Pending Review, Product Owned, Shared DataNest, Independent Product, External labels exist;
 - Portfolio Registry unavailable state does not fail the Product Catalog.
 
-- [ ] **Step 2: Implement isolated `PortfolioRegistryPanel`**
+- [ ] **Step 2: Implement isolated `PortfolioRegistryPanel` read surface**
 
 Render:
 - registry counts by kind/review state;
@@ -461,9 +466,11 @@ Render:
 - Product Lab evidence count;
 - historical RONSAS association as provenance text, not ownership.
 
-First release write UX may expose proposal actions only if the current component already has role information available; otherwise keep the panel read-focused and leave mutation controls to a follow-up task within the same implementation branch only if role plumbing is already present. Do not add new top-level navigation.
+Do not add another top-level navigation item.
 
-- [ ] **Step 3: Integrate panel into Products workspace**
+- [ ] **Step 3: Integrate role and registry state into Products workspace**
+
+Pass role authority from `DataNestApp` to `ProductsWorkspace`.
 
 Load the view independently from current product queries so failure can render:
 
@@ -505,11 +512,110 @@ Expected: PASS.
 - [ ] **Step 7: Commit Task 5**
 
 ```bash
-git add src/components/PortfolioRegistryPanel.tsx src/components/ProductsWorkspace.tsx src/app/globals.css tests/unit/products-source.test.mjs tests/unit/ui-ux-source.test.mjs
-git commit -m "feat: add Portfolio Registry to Products workspace"
+git add src/components/PortfolioRegistryPanel.tsx src/components/DataNestApp.tsx src/components/ProductsWorkspace.tsx src/app/globals.css tests/unit/products-source.test.mjs tests/unit/ui-ux-source.test.mjs
+git commit -m "feat: add Portfolio Registry read experience"
 ```
 
-### Task 6: Browser Regression and Release Verification
+### Task 6: Governed Portfolio Actions in the Products Workspace
+
+**Files:**
+- Modify: `src/components/PortfolioRegistryPanel.tsx`
+- Modify: `src/components/ProductsWorkspace.tsx`
+- Modify: `src/app/globals.css`
+- Modify: `tests/unit/products-source.test.mjs`
+- Modify: `tests/unit/ui-ux-source.test.mjs`
+
+**Interfaces:**
+- Consumes Task 2/3 RPCs and Task 5 role props.
+- Produces user actions:
+  - create Portfolio Item for operator/admin/owner;
+  - propose classification;
+  - approve/reject pending classification for admin/owner;
+  - propose relationship;
+  - approve/reject pending relationship for admin/owner;
+  - propose lifecycle transition;
+  - approve/reject pending lifecycle event for admin/owner;
+  - promote eligible candidate for admin/owner;
+  - deprecate/retire item for admin/owner.
+- Browser code never writes classification/relationship/lifecycle tables directly.
+
+- [ ] **Step 1: Add failing source tests for governed actions**
+
+Assert:
+- direct browser `.insert()` / `.update()` against `portfolio_classifications`, `portfolio_relationships`, and `portfolio_lifecycle_events` is absent;
+- proposal buttons invoke the exact Task 2 RPC names;
+- approval buttons invoke the exact Task 2 approval RPC names;
+- promotion invokes `promote_product_candidate`;
+- deprecation/retirement invoke their Task 3 RPCs;
+- viewers see no mutation controls;
+- operators can create items/propose but cannot approve/promote/retire;
+- owner/admin controls are gated by `canAdmin`;
+- each successful mutation calls `onRefresh()`;
+- RPC errors stay local to Portfolio Registry and do not clear the governed Product Catalog.
+
+Run and verify FAIL.
+
+- [ ] **Step 2: Add operator Portfolio Item creation**
+
+Use direct `portfolio_items` insert under existing RLS only for initial registry identity creation.
+
+Require:
+- non-empty name;
+- explicit item kind;
+- project-scoped slug generated from user input and editable before submit;
+- default review state `pending_review`;
+- no automatic linked product or ownership.
+
+After insert, refresh and select the new item.
+
+- [ ] **Step 3: Add classification and relationship proposal/approval UI**
+
+For `canOperate`, render proposal forms against the selected item.
+
+For `canAdmin`, render pending decision cards with Approve and Reject actions.
+
+Use the Task 2 RPCs only. Show rationale/evidence reference in the review card.
+
+- [ ] **Step 4: Add lifecycle and candidate promotion UI**
+
+Operators may propose lifecycle transitions.
+
+Owners/admins may approve lifecycle events and, for a `product_candidate` in lifecycle `candidate`, open a Promotion Packet form containing the Task 3 required product/evidence fields and an exact linked Product Lab surface/build.
+
+Promotion success refreshes both portfolio and governed product queries without changing billing.
+
+- [ ] **Step 5: Add deprecation and retirement UI**
+
+Owners/admins can:
+- deprecate with reason/evidence;
+- retire with reason, optional replacement item, and evidence.
+
+Surface fail-closed database errors such as critical dependants or active production surface without hiding the item or losing history.
+
+- [ ] **Step 6: Run unit/type/build checks**
+
+Run:
+
+`npm test`
+
+Run:
+
+`npm run check`
+
+Run:
+
+`npm run build`
+
+Expected: PASS.
+
+- [ ] **Step 7: Commit Task 6**
+
+```bash
+git add src/components/PortfolioRegistryPanel.tsx src/components/ProductsWorkspace.tsx src/app/globals.css tests/unit/products-source.test.mjs tests/unit/ui-ux-source.test.mjs
+git commit -m "feat: add governed portfolio review actions"
+```
+
+### Task 7: Browser Regression and Release Verification
 
 **Files:**
 - Modify: `tests/browser/products.spec.ts`
@@ -592,7 +698,7 @@ Run:
 
 Expected changes are limited to the migration, Portfolio Registry library/component, Products/Product Lab UI, CSS, and specified tests/documentation. No unrelated billing, DataNest AI, Sparks, RONSAS integration, hosting, or Phase C-H files.
 
-- [ ] **Step 6: Commit Task 6**
+- [ ] **Step 6: Commit Task 7**
 
 ```bash
 git add tests/browser/products.spec.ts tests/unit/portfolio-registry-source.test.mjs
@@ -601,13 +707,13 @@ git commit -m "test: verify Phase B portfolio compatibility"
 
 ## Plan Self-Review
 
-**Spec coverage:** Tasks 1-3 cover identity, classification, relationship, lifecycle, backfill, atomic promotion, deprecation, and retirement. Task 4 covers Product Lab linkage. Task 5 covers Products/Portfolio UX and URL compatibility. Task 6 covers regression, fail-closed scope, and release verification.
+**Spec coverage:** Tasks 1-3 cover identity, classification, relationship, lifecycle, backfill, atomic promotion, deprecation, and retirement. Task 4 covers Product Lab linkage. Task 5 covers read UX and URL compatibility. Task 6 covers governed review/write UX. Task 7 covers regression, fail-closed scope, and release verification.
 
 **Step scan:** Each task has one independently reviewable result and its own RED/GREEN or verification cycle. No task introduces Phase C-H infrastructure.
 
 **Type consistency:** Database names and TypeScript names are fixed once and reused: `portfolio_items`, `portfolio_classifications`, `portfolio_relationships`, `portfolio_lifecycle_events`, `portfolio_registry_view`, and `product_surfaces.portfolio_item_id`.
 
-**Review Focus:** Historical ambiguity is pinned in Tasks 1/6; promotion atomicity in Task 3; relationship integrity in Task 2; retirement guards in Task 3; backward compatibility in Tasks 5/6.
+**Review Focus:** Historical ambiguity is pinned in Tasks 1/7; promotion atomicity in Task 3; relationship integrity in Task 2; retirement guards in Task 3; backward compatibility in Tasks 5/7.
 
 **Postgres review:** The plan explicitly requires FK indexes, project-scoped RLS, invoker-security views, explicit authenticated authorization in security-definer RPCs, and short transactional write paths with no external calls.
 
