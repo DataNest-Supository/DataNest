@@ -325,7 +325,7 @@ Active Job identifiers, AI session identifiers, authority state and other govern
 
 Workspace URLs are intended to be safe, reproducible presentation links.
 
-When a shared paginated URL points beyond the current dataset, DataNest uses the exact returned count to move the local workspace to the last available page and canonicalizes the URL rather than leaving the user on an empty stale page. This applies to UNIFI, TranScheduler, Runs, Checkpoints and Audit.
+When a shared paginated URL points beyond the current dataset **and an exact count is available**, DataNest moves the local workspace to the last available page and canonicalizes the URL rather than leaving the user on an empty stale page. This applies to UNIFI, TranScheduler, Runs, Checkpoints and Audit. If the backend does not return an exact count, DataNest preserves the requested page instead of incorrectly treating the dataset as empty.
 
 Malformed Scheduler `mode`, `filter` and `sort` values fall back to their safe defaults and are removed from the canonical URL.
 
