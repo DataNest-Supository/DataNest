@@ -1258,7 +1258,9 @@ test("UNIFI reconciles pending, not-recorded, and confirmed-after-error outcomes
   await expect(recoveryCenter).toContainText("UNIFI Job Manifest");
   await expect(recoveryCenter).toContainText("request identity preserved");
 
-  await recoveryCenter.getByRole("button",{name:"Review & reconcile →"}).click();
+  const recoveryAction=recoveryCenter.locator(".mutationRecoveryItem button");
+  await expect(recoveryAction).toHaveCount(1);
+  await recoveryAction.click();
   await expect(page.getByRole("heading",{name:"Job Manifest Planner"})).toBeVisible();
   await expect(page.getByText(/previous request was not recorded/i)).toBeVisible();
   await expect(page.getByRole("button",{name:"Create Job Manifest"})).toBeEnabled();
