@@ -613,8 +613,8 @@ test("global recovery center scopes, ages, and preserves unresolved operations a
   assert.match(appSource, /scope:"sparks-redemption:"\+suffix/);
   assert.match(appSource, /scope:"productlab-test-run:"\+suffix/);
   assert.match(appSource, /classifyPendingMutationAge\(intent\.startedAt\)/);
-  assert.match(appSource, /window\.setInterval\(sync,60000\)/);
-  assert.match(appSource, /window\.addEventListener\(PENDING_MUTATION_EVENT,sync\)/);
+  assert.match(appSource, /window\.setInterval\(durableSync,60000\)/);
+  assert.match(appSource, /window\.addEventListener\(PENDING_MUTATION_EVENT,localSync\)/);
   assert.match(appSource, /aria-label="Unresolved operations"/);
   assert.match(appSource, /AUTHORITATIVE RECOVERY/);
   assert.match(appSource, /SAFE RETRY/);
