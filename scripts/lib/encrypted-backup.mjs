@@ -45,8 +45,9 @@ export function decryptBackup(encrypted,keyInput){
   }
   const iv=Buffer.from(envelope.iv,"base64");
   const tag=Buffer.from(envelope.tag,"base64");
+  if(tag.length!==16)throw new Error("Backup authentication tag must be exactly 16 bytes.");
   const ciphertext=Buffer.from(envelope.ciphertext,"base64");
-  const decipher=createDecipheriv("aes-256-gcm",key,iv);
+  const decipher=createDecipheriv("aes-256-gcm",key,iv,{authTagLength:16});
   decipher.setAuthTag(tag);
   return Buffer.concat([decipher.update(ciphertext),decipher.final()]);
 }
