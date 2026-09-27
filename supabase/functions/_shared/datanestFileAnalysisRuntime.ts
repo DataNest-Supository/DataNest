@@ -189,6 +189,10 @@ async function stageDocumentEvidence(input:{
 }){
   const eventIds:string[]=[];
   let propositionIndex=0;
+  const learningPolicyOutcome=String(input.submission.learning_policy_outcome||"review_required");
+  const learningReuseState=String(input.submission.learning_reuse_state||"runtime_only");
+  const learningEligible=
+    learningPolicyOutcome==="allow"&&learningReuseState==="project_learning_eligible";
 
   for(const proposition of input.propositions){
     propositionIndex++;
@@ -215,8 +219,14 @@ async function stageDocumentEvidence(input:{
         content_hash:await sha256Text(proposition.text),
         metadata:{
           trust_state:"uncertified",
-          learning_eligible:true,
-          reuse_state:"project_learning_eligible",
+          learning_eligible:learningEligible,
+          reuse_state:learningReuseState,
+          learning_policy_outcome:learningPolicyOutcome,
+          learning_policy_reason_code:String(input.submission.learning_policy_reason_code||"policy_unresolved"),
+          learning_policy_version:String(input.submission.learning_policy_version||"unresolved"),
+          learning_decision_record_id:input.submission.learning_decision_record_id
+            ?String(input.submission.learning_decision_record_id)
+            :null,
           submission_id:input.submission.id,
           file_sha256:group.fileHash,
           independence_key:"file-sha256:"+group.fileHash,
