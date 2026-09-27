@@ -14,6 +14,7 @@ const sessionDraftSource = fs.readFileSync(path.join(repoRoot, "src/lib/sessionD
 const governanceSource = fs.readFileSync(path.join(repoRoot, "src/components/GovernanceWorkspace.tsx"), "utf8");
 const thinkTankSource = fs.readFileSync(path.join(repoRoot, "src/components/ThinkTankWorkspace.tsx"), "utf8");
 const productLabSource = fs.readFileSync(path.join(repoRoot, "src/components/ProductLab.tsx"), "utf8");
+const authGateSource = fs.readFileSync(path.join(repoRoot, "src/components/AuthGate.tsx"), "utf8");
 const cssSource = fs.readFileSync(path.join(repoRoot, "src/app/globals.css"), "utf8");
 
 test("mobile navigation keeps refresh and release controls reachable", () => {
@@ -495,4 +496,12 @@ test("authored workflow drafts are user-and-project scoped on high-value workspa
 test("Think Tank message drafts are isolated per selected thread", () => {
   assert.match(thinkTankSource, /draftPrefix\+"message:"\+selectedThreadId/);
   assert.match(thinkTankSource, /draftPrefix\+"thread:"\+selectedChannelId\+":title"/);
+});
+
+
+test("authentication credentials are excluded from browser-session draft persistence", () => {
+  assert.match(authGateSource, /const \[password, setPassword\] = useState\("")/);
+  assert.match(authGateSource, /const \[newPassword, setNewPasswordValue\] = useState\("")/);
+  assert.match(authGateSource, /const \[confirmPassword, setConfirmPassword\] = useState\("")/);
+  assert.doesNotMatch(authGateSource, /useSessionDraftState|sessionDraft|sessionStorage\.setItem/);
 });
