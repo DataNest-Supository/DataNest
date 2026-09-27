@@ -20,7 +20,7 @@ test("DataNest AI command center prioritizes active work above decorative hero c
   assert.match(workspace,/aria-label="DataNest AI operational status"/);
 
   assert.match(app,/workspaceTaskGuide "+\(view==="ai"\?" aiCommandGuide":""\)/);
-  assert.match(app,/aria-label="Select active Job Manifest"/);
+  assert.match(workspace,/aria-label="Select active Job Manifest"/);
 
   assert.match(layout,/import "\.\/datanest-ai-optimized\.css";/);
   assert.match(css,/\.datanestAiHeroV2\s*\{[^}]*min-height:340px/s);
