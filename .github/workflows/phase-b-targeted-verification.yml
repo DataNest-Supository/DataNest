@@ -1,0 +1,61 @@
+name: Phase B targeted verification
+
+on:
+  push:
+    branches:
+      - "feature/datanest-phase-b-portfolio-registry"
+
+permissions:
+  contents: read
+
+jobs:
+  source-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node --test --experimental-strip-types tests/unit/portfolio-registry-operations-source.test.mjs
+
+  browser-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CI: "true"
+      DATANEST_STATIC_EXPORT: "true"
+      NEXT_PUBLIC_BASE_PATH: "/DataNest"
+      NEXT_PUBLIC_SUPABASE_URL: "https://sgqdmfgjbprsoqsmgigi.supabase.co"
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_yIf5HFKNNteed4HdYCS2Vw_4TB-4LvB"
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: node scripts/write-runtime-config.mjs public/runtime-config.js
+        env:
+          SUPABASE_URL: "https://sgqdmfgjbprsoqsmgigi.supabase.co"
+          SUPABASE_PUBLISHABLE_KEY: "sb_publishable_yIf5HFKNNteed4HdYCS2Vw_4TB-4LvB"
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: |
+          rm -rf .preview
+          mkdir -p .preview/DataNest
+          cp -R out/. .preview/DataNest/
+          python3 -m http.server 4173 --directory .preview >/tmp/phase-b-preview.log 2>&1 &
+          for attempt in {1..30}; do
+            curl --fail --silent http://127.0.0.1:4173/DataNest/ >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/phase-b-preview.log
+          exit 1
+      - run: npx playwright test tests/browser/portfolio-registry.spec.ts
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
+          DATANEST_APP_PATH: /DataNest/
