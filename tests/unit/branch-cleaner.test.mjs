@@ -4,6 +4,9 @@ import {
   classifyBranch,
   evaluateSupabaseProject,
   extractAuditIds,
+  getStrictBlockers,
+  migrationNameFromFile,
+  compareMigrationParity,
   normalizeBranchFamily,
 } from "../../scripts/branch-cleaner.mjs";
 
@@ -61,4 +64,74 @@ test("compare uncertainty can never become a delete candidate", () => {
   const result = classifyBranch({ name:"fix/unknown", updatedAt:"2026-01-01T00:00:00Z", compare:{ status:"unknown", ahead_by:null } }, config, now);
   assert.equal(result.decision, "keep");
   assert.equal(result.reason, "active_or_unresolved");
+});
+
+test("strict blockers are resolved before destructive apply", () => {
+  const blockers = getStrictBlockers({
+    globalChecks: [],
+    projects: [{
+      checks: [{
+        level:"blocker",
+        code:"supabase_branch_failure",
+        detail:"main: MIGRATIONS_FAILED",
+      }],
+    }],
+  });
+  assert.equal(blockers.length, 1);
+  assert.equal(blockers[0].code, "supabase_branch_failure");
+});
+
+test("migration parity reports missing and version-drifted history", () => {
+  assert.equal(
+    migrationNameFromFile("20260924230000_datanest_ai_production.sql"),
+    "datanest_ai_production"
+  );
+  const parity = compareMigrationParity(
+    [
+      "20260924230000_datanest_ai_production.sql",
+      "external_ai_companion_mode.sql",
+      "20260926061000_governed_product_catalog.sql",
+    ],
+    [
+      { version:"20260924230805", name:"datanest_ai_production" },
+      { version:"20260924163640", name:"external_ai_companion_mode" },
+      { version:"20260926055810", name:"add_governed_product_catalog" },
+      { version:"20260924111936", name:"bootstrap_resonance_datanest_control_plane" },
+    ]
+  );
+  assert.deepEqual(parity.liveOnly, [
+    "add_governed_product_catalog",
+    "bootstrap_resonance_datanest_control_plane",
+  ]);
+  assert.deepEqual(parity.repoOnly, ["governed_product_catalog"]);
+  assert.equal(parity.versionMismatches.length, 2);
+  assert.deepEqual(
+    parity.versionMismatches.map((item) => item.name).sort(),
+    ["datanest_ai_production", "external_ai_companion_mode"]
+  );
+});
+
+test("unknown branch recency can never become a delete candidate", () => {
+  const result = classifyBranch({
+    name:"fix/unknown-recency",
+    updatedAt:null,
+    compare:{ ahead_by:0, behind_by:12, status:"behind" },
+  }, config, now);
+  assert.equal(result.decision, "keep");
+  assert.equal(result.reason, "active_or_unresolved");
+  assert.equal(Number.isNaN(result.ageDays), true);
+});
+
+test("missing Supabase verification is a strict blocker", () => {
+  const blockers = getStrictBlockers({
+    skipped:true,
+    projects:[],
+    globalChecks:[{
+      level:"blocker",
+      code:"supabase_audit_unavailable",
+      detail:"Supabase verification is required before strict destructive cleanup.",
+    }],
+  });
+  assert.equal(blockers.length, 1);
+  assert.equal(blockers[0].code, "supabase_audit_unavailable");
 });

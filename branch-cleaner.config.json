@@ -3,10 +3,23 @@
   "baseBranch": "main",
   "staleDays": 14,
   "minDeleteAgeDays": 7,
-  "protectedPatterns": ["^main$", "^production$", "^release/"],
+  "protectedPatterns": [
+    "^main$",
+    "^production$",
+    "^release/"
+  ],
   "supabaseProjects": [
-    {"ref":"sgqdmfgjbprsoqsmgigi","role":"application_authority","expectedGitBranch":"main"},
-    {"ref":"qchttpcyqlqnhvahprhz","role":"ai_staging_audit"}
+    {
+      "ref": "sgqdmfgjbprsoqsmgigi",
+      "role": "application_authority",
+      "expectedGitBranch": "main",
+      "migrationSourceDir": "supabase/migrations",
+      "enforceMigrationParity": true
+    },
+    {
+      "ref": "qchttpcyqlqnhvahprhz",
+      "role": "ai_staging_audit"
+    }
   ],
   "auditSources": [
     "public/transparency/audits/index.json",

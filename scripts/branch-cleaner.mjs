@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createHash } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { pathToFileURL } from "node:url";
@@ -26,7 +26,7 @@ export function extractAuditIds(text) {
 }
 
 const ageDays = (date, now = new Date()) =>
-  date ? Math.max(0, (now - new Date(date)) / 86400000) : Infinity;
+  date ? Math.max(0, (now - new Date(date)) / 86400000) : Number.NaN;
 const matches = (value, patterns = []) =>
   patterns.some((p) => new RegExp(p).test(value));
 
@@ -42,11 +42,11 @@ export function classifyBranch(branch, config, now = new Date()) {
     return { decision:"keep", reason:"protected", ageDays:age, ahead, behind, status };
   if (branch.openPr)
     return { decision:"keep", reason:"open_pr", ageDays:age, ahead, behind, status };
-  if (ahead === 0 && status !== "unknown" && age >= config.minDeleteAgeDays)
+  if (ahead === 0 && status !== "unknown" && Number.isFinite(age) && age >= config.minDeleteAgeDays)
     return { decision:"delete_candidate", reason:branch.mergedPr ? "merged_no_unique_commits" : "no_unique_commits", ageDays:age, ahead, behind, status };
   if (branch.mergedPr && ahead != null && ahead > 0)
     return { decision:"review", reason:"post_merge_unique_commits", ageDays:age, ahead, behind, status };
-  if (age >= config.staleDays && ahead != null && ahead > 0)
+  if (Number.isFinite(age) && age >= config.staleDays && ahead != null && ahead > 0)
     return { decision:"review", reason:"stale_unique_work", ageDays:age, ahead, behind, status };
   if (branch.familyHasNewerSibling)
     return { decision:"review", reason:"possible_superseded_variant", ageDays:age, ahead, behind, status };
@@ -84,6 +84,56 @@ export function evaluateSupabaseProject(project, config = {}) {
       });
   }
   return checks;
+}
+
+export function getStrictBlockers(supabase) {
+  return [
+    ...(supabase?.globalChecks || []),
+    ...(supabase?.projects || []).flatMap((p) => p.checks || []),
+  ].filter((c) => c.level === "blocker");
+}
+
+export function migrationNameFromFile(file) {
+  return String(file || "")
+    .replace(/\.sql$/i, "")
+    .replace(/^\d{14}_/, "");
+}
+
+export function compareMigrationParity(repoFiles = [], liveMigrations = []) {
+  const repoEntries = repoFiles
+    .filter((file) => String(file).endsWith(".sql"))
+    .map((file) => ({
+      file,
+      version:(String(file).match(/^(\d{14})_/) || [])[1] || null,
+      name:migrationNameFromFile(file),
+    }));
+  const liveEntries = liveMigrations
+    .filter((m) => m?.name)
+    .map((m) => ({ version:String(m.version || ""), name:String(m.name) }));
+
+  const repoNames = new Set(repoEntries.map((m) => m.name));
+  const liveNames = new Set(liveEntries.map((m) => m.name));
+  const repoVersionsByName = new Map(repoEntries.map((m) => [m.name, m.version]));
+  const liveVersionsByName = new Map(liveEntries.map((m) => [m.name, m.version]));
+
+  return {
+    repoCount:repoEntries.length,
+    liveCount:liveEntries.length,
+    repoOnly:[...repoNames].filter((name) => !liveNames.has(name)).sort(),
+    liveOnly:[...liveNames].filter((name) => !repoNames.has(name)).sort(),
+    versionMismatches:[...repoNames]
+      .filter((name) => liveNames.has(name))
+      .filter((name) => {
+        const repoVersion = repoVersionsByName.get(name);
+        const liveVersion = liveVersionsByName.get(name);
+        return liveVersion && repoVersion !== liveVersion;
+      })
+      .map((name) => ({
+        name,
+        repoVersion:repoVersionsByName.get(name),
+        liveVersion:liveVersionsByName.get(name),
+      })),
+  };
 }
 
 function parseArgs(argv) {
@@ -249,7 +299,16 @@ const advisorList = (data) =>
 
 async function supabaseAudit(config, token) {
   if (!token)
-    return { skipped:true, reason:"SUPABASE_ACCESS_TOKEN not set", projects:[], globalChecks:[] };
+    return {
+      skipped:true,
+      reason:"SUPABASE_ACCESS_TOKEN not set",
+      projects:[],
+      globalChecks:[{
+        level:"blocker",
+        code:"supabase_audit_unavailable",
+        detail:"Supabase verification is required before strict destructive cleanup.",
+      }],
+    };
 
   const projects = [];
   for (const entry of config.supabaseProjects || []) {
@@ -258,7 +317,10 @@ async function supabaseAudit(config, token) {
       ["project", "/v1/projects/" + entry.ref],
       ["branches", "/v1/projects/" + entry.ref + "/branches"],
       ["securityAdvisors", "/v1/projects/" + entry.ref + "/advisors/security"],
-      ["performanceAdvisors", "/v1/projects/" + entry.ref + "/advisors/performance"]
+      ["performanceAdvisors", "/v1/projects/" + entry.ref + "/advisors/performance"],
+      ...(entry.migrationSourceDir
+        ? [["migrations", "/v1/projects/" + entry.ref + "/database/migrations"]]
+        : [])
     ];
     await Promise.all(calls.map(async ([key, endpoint]) => {
       try { p[key] = await sb(endpoint, token); }
@@ -267,7 +329,59 @@ async function supabaseAudit(config, token) {
     p.branches = Array.isArray(p.branches) ? p.branches : p.branches?.branches || [];
     p.securityAdvisors = advisorList(p.securityAdvisors);
     p.performanceAdvisors = advisorList(p.performanceAdvisors);
+    p.migrations = Array.isArray(p.migrations) ? p.migrations : p.migrations?.migrations || [];
     p.checks = evaluateSupabaseProject(p, entry);
+
+    if (entry.migrationSourceDir) {
+      try {
+        if (p.errors.some((error) => error.key === "migrations")) {
+          throw new Error("Supabase migration history could not be retrieved");
+        }
+        const repoFiles = await readdir(entry.migrationSourceDir);
+        p.migrationParity = compareMigrationParity(repoFiles, p.migrations);
+        if (entry.enforceMigrationParity &&
+            (p.migrationParity.repoOnly.length ||
+             p.migrationParity.liveOnly.length ||
+             p.migrationParity.versionMismatches.length)) {
+          p.checks.push({
+            level:"blocker",
+            code:"migration_history_drift",
+            detail:"Git migration history does not reproduce live migration history: " +
+              p.migrationParity.repoCount + " repo files vs " +
+              p.migrationParity.liveCount + " applied migrations; " +
+              p.migrationParity.liveOnly.length + " live-only, " +
+              p.migrationParity.repoOnly.length + " repo-only, " +
+              p.migrationParity.versionMismatches.length + " version mismatches",
+          });
+        }
+      } catch (error) {
+        p.errors.push({
+          key:"migrationParity",
+          status:null,
+          message:error.message,
+        });
+        if (entry.enforceMigrationParity) {
+          p.checks.push({
+            level:"blocker",
+            code:"migration_parity_unresolved",
+            detail:"Could not verify migration parity from " + entry.migrationSourceDir,
+          });
+        }
+      }
+    }
+
+    const requiredFailures = p.errors.filter((error) =>
+      ["project", "branches", "securityAdvisors", "migrations"].includes(error.key)
+    );
+    if (requiredFailures.length) {
+      p.checks.push({
+        level:"blocker",
+        code:"supabase_audit_incomplete",
+        detail:"Required Supabase checks failed: " +
+          requiredFailures.map((error) => error.key).join(", "),
+      });
+    }
+
     projects.push(p);
   }
 
@@ -345,6 +459,15 @@ function markdown(r) {
         "- Security advisors: " + p.securityAdvisors.length,
         "- Performance advisors: " + p.performanceAdvisors.length
       );
+      if (p.migrationParity) {
+        lines.push(
+          "- Migration parity: repo=" + p.migrationParity.repoCount +
+            ", live=" + p.migrationParity.liveCount +
+            ", live-only=" + p.migrationParity.liveOnly.length +
+            ", repo-only=" + p.migrationParity.repoOnly.length +
+            ", version-mismatches=" + p.migrationParity.versionMismatches.length
+        );
+      }
       for (const c of p.checks) lines.push("- " + c.level + " " + c.code + ": " + c.detail);
       for (const e of p.errors) lines.push("- warning " + e.key + ": " + (e.status || "error") + " " + e.message);
       lines.push("");
@@ -355,6 +478,7 @@ function markdown(r) {
     "",
     "- Deleted: " + (r.apply.deleted.join(", ") || "none"),
     "- Delete failures: " + r.apply.failed.length,
+    "- Apply skipped: " + (r.apply.skipped ? (r.apply.reason || "yes") : "no"),
     "",
     "Branch-Cleaner reports evidence; it does not convert deletion, an advisor result, or a published audit into certification."
   );
@@ -391,9 +515,18 @@ async function main() {
     }
   }
 
+  const strictBlockers = getStrictBlockers(supabase);
   const apply = a.apply
-    ? await applyDeletes(repo, token, github.branches)
-    : { deleted:[], failed:[] };
+    ? (strictBlockers.length
+      ? {
+          deleted:[],
+          failed:[],
+          skipped:true,
+          reason:"control_plane_blockers",
+          blockerCount:strictBlockers.length,
+        }
+      : await applyDeletes(repo, token, github.branches))
+    : { deleted:[], failed:[], skipped:false };
 
   const report = {
     schemaVersion:1,
@@ -412,12 +545,7 @@ async function main() {
   await writeFile(path.join(a.reportDir, "branch-cleaner-report.md"), markdown(report));
   process.stdout.write(markdown(report));
 
-  const blockers = [
-    ...(supabase.globalChecks || []),
-    ...(supabase.projects || []).flatMap((p) => p.checks || [])
-  ].filter((c) => c.level === "blocker").length;
-
-  if (a.strict && (blockers || apply.failed.length)) process.exitCode = 2;
+  if (a.strict && (strictBlockers.length || apply.failed.length)) process.exitCode = 2;
 }
 
 if (process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url) {
