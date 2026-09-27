@@ -16,6 +16,8 @@ export function useSessionDraftState<T>(
 ):[T,Dispatch<SetStateAction<T>>,SessionDraftMeta]{
   const storageKey=SESSION_DRAFT_PREFIX+key;
   const initialRef=useRef(initialValue);
+  const valueRef=useRef(initialValue);
+  const mountedRef=useRef(true);
   const [value,setValue]=useState<T>(initialValue);
   const [hydratedKey,setHydratedKey]=useState<string|null>(null);
   const [hasStoredDraft,setHasStoredDraft]=useState(false);
@@ -25,48 +27,67 @@ export function useSessionDraftState<T>(
   },[initialValue]);
 
   useEffect(()=>{
+    mountedRef.current=true;
+    return()=>{mountedRef.current=false;};
+  },[]);
+
+  const persistValue=useCallback((nextValue:T)=>{
+    try{
+      const current=JSON.stringify(nextValue);
+      const baseline=JSON.stringify(initialRef.current);
+      if(current===baseline){
+        window.sessionStorage.removeItem(storageKey);
+        return false;
+      }
+      window.sessionStorage.setItem(storageKey,current);
+      return true;
+    }catch{
+      return false;
+    }
+  },[storageKey]);
+
+  const setDraftValue=useCallback<Dispatch<SetStateAction<T>>>((nextAction)=>{
+    const previous=valueRef.current;
+    const nextValue=typeof nextAction==="function"
+      ? (nextAction as (previous:T)=>T)(previous)
+      : nextAction;
+    valueRef.current=nextValue;
+    const stored=persistValue(nextValue);
+    if(mountedRef.current){
+      setValue(nextValue);
+      setHasStoredDraft(stored);
+    }
+  },[persistValue]);
+
+  useEffect(()=>{
     setHydratedKey(null);
+    let nextValue=initialRef.current;
     let restored=false;
     try{
       const raw=window.sessionStorage.getItem(storageKey);
       if(raw!==null){
-        setValue(JSON.parse(raw) as T);
+        nextValue=JSON.parse(raw) as T;
         restored=true;
-      }else{
-        setValue(initialRef.current);
       }
     }catch{
       try{window.sessionStorage.removeItem(storageKey);}catch{}
-      setValue(initialRef.current);
     }
+    valueRef.current=nextValue;
+    setValue(nextValue);
     setHasStoredDraft(restored);
     setHydratedKey(storageKey);
   },[storageKey]);
 
-  useEffect(()=>{
-    if(hydratedKey!==storageKey)return;
-    try{
-      const current=JSON.stringify(value);
-      const baseline=JSON.stringify(initialRef.current);
-      if(current===baseline){
-        window.sessionStorage.removeItem(storageKey);
-        setHasStoredDraft(false);
-      }else{
-        window.sessionStorage.setItem(storageKey,current);
-        setHasStoredDraft(true);
-      }
-    }catch{
-      // Session draft persistence is a resilience aid; form editing must keep working if storage is unavailable.
-    }
-  },[hydratedKey,storageKey,value]);
-
   const discardStoredDraft=useCallback(()=>{
     try{window.sessionStorage.removeItem(storageKey);}catch{}
-    setValue(initialRef.current);
-    setHasStoredDraft(false);
+    valueRef.current=initialRef.current;
+    if(mountedRef.current){
+      setValue(initialRef.current);
+      setHasStoredDraft(false);
+    }
   },[storageKey]);
 
-  return [value,setValue,{
+  return [value,setDraftValue,{
     hydrated:hydratedKey===storageKey,
     hasStoredDraft,
     discardStoredDraft
