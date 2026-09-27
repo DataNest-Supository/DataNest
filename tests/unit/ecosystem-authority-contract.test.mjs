@@ -44,3 +44,29 @@ test("Sparks workspace guidance consumes canonical internal-utility copy",()=>{
     assert.match(app,new RegExp(symbol));
   }
 });
+
+
+test("authority documentation keeps target-state concepts honest and Sparks aligned",()=>{
+  const readme=fs.readFileSync(path.join(root,"README.md"),"utf8");
+  const architecture=fs.readFileSync(path.join(root,"docs/ARCHITECTURE.md"),"utf8");
+  const ux=fs.readFileSync(path.join(root,"docs/UX_WORKFLOW_ARCHITECTURE.md"),"utf8");
+
+  for(const source of [readme,architecture]){
+    assert.match(source,/DataNest[\s\S]{0,120}(parent platform|control plane)/i);
+    assert.match(source,/RONSAS[\s\S]{0,160}governed product/i);
+    assert.match(source,/Cloud-Nest/);
+    assert.match(source,/Supository/);
+    assert.match(source,/\bILM\b/);
+    assert.match(source,/(target-state|not yet live)/i);
+    assert.doesNotMatch(source,/Cloud-Nest[^\n]{0,100}\b(live|implemented)\b/i);
+    assert.doesNotMatch(source,/Supository[^\n]{0,100}\b(live|implemented)\b/i);
+    assert.doesNotMatch(source,/\bILM\b[^\n]{0,100}\b(live|implemented)\b/i);
+  }
+
+  assert.match(ux,/Sparks — earned contribution utility for approved project services\./);
+  assert.doesNotMatch(ux,/Sparks — capture intent and raw ideas\./);
+
+  assert.match(readme,/https:\/\/datanest-supository\.github\.io\/DataNest\//);
+  assert.match(readme,/GitHub Pages.*current public delivery target/i);
+  assert.match(readme,/Supabase/i);
+});
