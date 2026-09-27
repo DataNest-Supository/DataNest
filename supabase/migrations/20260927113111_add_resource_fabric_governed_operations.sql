@@ -128,38 +128,141 @@ begin
   return jsonb_build_object(
     'resources',coalesce((
       select jsonb_agg(
-        to_jsonb(r)
-        ||jsonb_build_object(
-          'binding_id',b.id,
-          'binding_status',b.status,
-          'resource_alias',b.resource_alias,
-          'allowed_capabilities',b.allowed_capabilities
+        jsonb_build_object(
+          'binding',jsonb_build_object(
+            'id',b.id,
+            'status',b.status,
+            'resource_alias',b.resource_alias,
+            'allowed_capabilities',b.allowed_capabilities,
+            'approved_at',b.approved_at,
+            'updated_at',b.updated_at
+          ),
+          'resource',jsonb_build_object(
+            'id',r.id,
+            'resource_key',r.resource_key,
+            'resource_kind',r.resource_kind,
+            'display_name',r.display_name,
+            'owner_kind',r.owner_kind,
+            'owner_user_id',r.owner_user_id,
+            'owner_label',r.owner_label,
+            'trust_level',r.trust_level,
+            'location_class',r.location_class,
+            'region_hint',r.region_hint,
+            'supported_visibility_classes',r.supported_visibility_classes,
+            'cost_profile',r.cost_profile,
+            'limits',r.limits,
+            'health_status',r.health_status,
+            'health_summary',r.health_summary,
+            'enabled',r.enabled,
+            'last_seen_at',r.last_seen_at,
+            'metadata',r.metadata,
+            'created_at',r.created_at,
+            'updated_at',r.updated_at
+          ),
+          'capabilities',coalesce((
+            select jsonb_agg(
+              jsonb_build_object(
+                'id',c.id,
+                'account_key',c.account_key,
+                'connector_kind',c.connector_kind,
+                'capability',c.capability,
+                'state',c.state,
+                'observed_at',c.observed_at,
+                'next_check_at',c.next_check_at,
+                'confidence',c.confidence,
+                'concurrency_limit',c.concurrency_limit,
+                'running',c.running,
+                'enabled',c.enabled,
+                'metadata',c.metadata
+              )
+              order by c.capability,c.account_key
+            )
+            from public.capabilities c
+            where c.project_id=target_project
+              and c.resource_id=r.id
+          ),'[]'::jsonb),
+          'latest_health',(
+            select jsonb_build_object(
+              'id',h.id,
+              'health_status',h.health_status,
+              'observed_availability',h.observed_availability,
+              'source_kind',h.source_kind,
+              'source_key',h.source_key,
+              'metrics',h.metrics,
+              'evidence_reference',h.evidence_reference,
+              'trace_id',h.trace_id,
+              'observed_at',h.observed_at
+            )
+            from public.resource_health_observations h
+            where h.project_id=target_project
+              and h.resource_id=r.id
+            order by h.observed_at desc,h.created_at desc
+            limit 1
+          ),
+          'recent_health',coalesce((
+            select jsonb_agg(to_jsonb(recent) order by recent.observed_at desc)
+            from (
+              select
+                h.id,h.health_status,h.observed_availability,h.source_kind,h.source_key,
+                h.metrics,h.evidence_reference,h.trace_id,h.observed_at
+              from public.resource_health_observations h
+              where h.project_id=target_project
+                and h.resource_id=r.id
+              order by h.observed_at desc,h.created_at desc
+              limit 5
+            ) recent
+          ),'[]'::jsonb),
+          'sovereign_node_policy',(
+            select jsonb_build_object(
+              'id',p.id,
+              'version',p.version,
+              'status',p.status,
+              'allowed_capabilities',p.allowed_capabilities,
+              'resource_ceiling',p.resource_ceiling,
+              'schedule_policy',p.schedule_policy,
+              'allowed_visibility_classes',p.allowed_visibility_classes,
+              'data_scope',p.data_scope,
+              'prohibited_operations',p.prohibited_operations,
+              'network_policy',p.network_policy,
+              'interactive_remote_control',p.interactive_remote_control,
+              'approved_at',p.approved_at,
+              'created_at',p.created_at
+            )
+            from public.sovereign_node_policies p
+            where p.project_id=target_project
+              and p.resource_id=r.id
+            order by
+              case p.status when 'active' then 0 when 'draft' then 1 when 'suspended' then 2 else 3 end,
+              p.version desc
+            limit 1
+          )
         )
-        order by r.resource_kind,r.display_name
+        order by
+          case b.status when 'active' then 0 when 'proposed' then 1 when 'suspended' then 2 else 3 end,
+          r.resource_kind,r.display_name
       )
       from public.resource_project_bindings b
       join public.resource_registry r on r.id=b.resource_id
       where b.project_id=target_project
     ),'[]'::jsonb),
-    'capabilities',coalesce((
-      select jsonb_agg(to_jsonb(c) order by c.account_key,c.capability)
+    'unbound_capabilities',coalesce((
+      select jsonb_agg(
+        jsonb_build_object(
+          'id',c.id,
+          'account_key',c.account_key,
+          'connector_kind',c.connector_kind,
+          'capability',c.capability,
+          'state',c.state,
+          'enabled',c.enabled,
+          'running',c.running,
+          'concurrency_limit',c.concurrency_limit,
+          'observed_at',c.observed_at
+        )
+        order by c.capability,c.account_key
+      )
       from public.capabilities c
       where c.project_id=target_project
-    ),'[]'::jsonb),
-    'health_observations',coalesce((
-      select jsonb_agg(to_jsonb(h) order by h.observed_at desc)
-      from (
-        select *
-        from public.resource_health_observations
-        where project_id=target_project
-        order by observed_at desc
-        limit 100
-      ) h
-    ),'[]'::jsonb),
-    'sovereign_policies',coalesce((
-      select jsonb_agg(to_jsonb(p) order by p.created_at desc)
-      from public.sovereign_node_policies p
-      where p.project_id=target_project
+        and c.resource_id is null
     ),'[]'::jsonb),
     'caller_role',caller_role,
     'can_manage',caller_role in ('owner','admin'),
@@ -167,6 +270,7 @@ begin
       'registration_is_remote_control',false,
       'resource_match_is_reservation',false,
       'resource_match_is_capability_lease',false,
+      'local_node_is_required',false,
       'health_is_client_mutable',false,
       'phase_c_trust_remains_independent',true,
       'phase_d_authority_remains_independent',true
