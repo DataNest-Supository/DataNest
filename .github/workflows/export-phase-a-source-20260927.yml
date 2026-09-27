@@ -1,0 +1,56 @@
+name: Export exact DataNest Phase A source
+
+on:
+  push:
+    branches:
+      - "ops/export-phase-a-source-20260927"
+    paths:
+      - ".github/workflows/export-phase-a-source-20260927.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact merged DataNest source
+        uses: actions/checkout@v4
+        with:
+          ref: 694bf7bf0127810cfe1403d72d501ae16f230da9
+          fetch-depth: 0
+
+      - name: Build exact source archive and evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          commit="694bf7bf0127810cfe1403d72d501ae16f230da9"
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$commit"
+          git archive --format=zip --prefix="DataNest-694bf7bf/" -o "DataNest-main-694bf7bf-full-source.zip" "$commit"
+          sha256sum "DataNest-main-694bf7bf-full-source.zip" > "DataNest-main-694bf7bf-full-source.zip.sha256"
+          cat > "DataNest-main-694bf7bf-manifest.json" <<EOF
+          {
+            "schema": "datanest-source-export/v1",
+            "repository": "DataNest-Supository/DataNest",
+            "branch": "main",
+            "pullRequest": 132,
+            "mergeCommit": "$commit",
+            "purpose": "Exact full-source physical mirror for Ealiophin Dropbox",
+            "generatedBy": "GitHub Actions"
+          }
+          EOF
+          unzip -t "DataNest-main-694bf7bf-full-source.zip"
+          test -s "DataNest-main-694bf7bf-full-source.zip"
+
+      - name: Upload exact source package
+        uses: actions/upload-artifact@v4
+        with:
+          name: datanest-main-694bf7bf-full-source
+          path: |
+            DataNest-main-694bf7bf-full-source.zip
+            DataNest-main-694bf7bf-full-source.zip.sha256
+            DataNest-main-694bf7bf-manifest.json
+          if-no-files-found: error
+          retention-days: 30
