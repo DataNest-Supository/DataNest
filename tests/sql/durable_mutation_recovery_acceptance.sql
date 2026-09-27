@@ -74,7 +74,8 @@ begin
         'register_mutation_recovery_v1',
         'mark_mutation_recovery_verification_v1',
         'resolve_mutation_recovery_v1',
-        'list_mutation_recoveries_v1'
+        'list_mutation_recoveries_v1',
+        'get_mutation_recovery_diagnostics_v1'
       )
   loop
     if fn.prosecdef then
@@ -110,4 +111,16 @@ begin
   ) then
     raise exception 'Durable recovery idempotency migration history is missing.';
   end if;
-end $$;
+
+  if not exists(
+    select 1 from supabase_migrations.schema_migrations
+    where version='20260927213827'
+      and name='add_mutation_recovery_observability'
+  ) then
+    raise exception 'Durable recovery observability migration history is missing.';
+  end if;
+
+  if pg_get_functiondef('public.get_mutation_recovery_diagnostics_v1(uuid)'::regprocedure) ilike '%''payload''%' then
+    raise exception 'Recovery diagnostics must not expose mutation payloads.';
+  end if;
+end $;
