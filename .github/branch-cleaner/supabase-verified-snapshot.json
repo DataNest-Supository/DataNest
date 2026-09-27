@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-27T05:26:00Z",
-  "expiresAt": "2026-09-27T06:56:00Z",
+  "generatedAt": "2026-09-27T05:42:00Z",
+  "expiresAt": "2026-09-27T06:42:00Z",
   "source": "Supabase MCP control-plane verification",
   "projects": [
     {
@@ -9,18 +9,9 @@
       "project": {
         "id": "sgqdmfgjbprsoqsmgigi",
         "ref": "sgqdmfgjbprsoqsmgigi",
-        "organization_id": "zvpylxfvtmjrwobnbijf",
-        "organization_slug": "zvpylxfvtmjrwobnbijf",
         "name": "DataNest Supository",
         "region": "eu-central-1",
-        "status": "ACTIVE_HEALTHY",
-        "database": {
-          "host": "db.sgqdmfgjbprsoqsmgigi.supabase.co",
-          "version": "17.6.1.166",
-          "postgres_engine": "17",
-          "release_channel": "ga"
-        },
-        "created_at": "2026-09-24T09:33:37.005075Z"
+        "status": "ACTIVE_HEALTHY"
       },
       "branches": [
         {
@@ -29,12 +20,7 @@
           "project_ref": "sgqdmfgjbprsoqsmgigi",
           "is_default": true,
           "git_branch": "main",
-          "persistent": false,
           "status": "FUNCTIONS_DEPLOYED",
-          "created_at": "2026-09-24T10:29:46.497086+00:00",
-          "updated_at": "2026-09-24T10:29:46.497086+00:00",
-          "parent_project_ref": "sgqdmfgjbprsoqsmgigi",
-          "with_data": false,
           "preview_project_status": "ACTIVE_HEALTHY"
         }
       ],
@@ -278,18 +264,9 @@
       "project": {
         "id": "qchttpcyqlqnhvahprhz",
         "ref": "qchttpcyqlqnhvahprhz",
-        "organization_id": "zvpylxfvtmjrwobnbijf",
-        "organization_slug": "zvpylxfvtmjrwobnbijf",
         "name": "DataNest AI Staging",
         "region": "eu-central-1",
-        "status": "ACTIVE_HEALTHY",
-        "database": {
-          "host": "db.qchttpcyqlqnhvahprhz.supabase.co",
-          "version": "17.6.1.166",
-          "postgres_engine": "17",
-          "release_channel": "ga"
-        },
-        "created_at": "2026-09-24T18:01:22.220909Z"
+        "status": "ACTIVE_HEALTHY"
       },
       "branches": [],
       "securityAdvisors": [
