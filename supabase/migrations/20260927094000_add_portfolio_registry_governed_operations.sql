@@ -176,6 +176,9 @@ begin
   if target_kind not in ('governed_product','product_candidate','application','module','capability','external_capability') then
     raise exception 'Unsupported portfolio item kind.';
   end if;
+  if target_kind='governed_product' then
+    raise exception 'Governed product identity belongs to the Product Registry and must be created through the promotion workflow.';
+  end if;
   if target_lifecycle is not null and target_lifecycle not in ('concept','experiment','validating','candidate','active','maintained','deprecated','retired') then
     raise exception 'Unsupported portfolio lifecycle.';
   end if;
@@ -680,6 +683,7 @@ declare
   product_id uuid := gen_random_uuid();
   lifecycle_id uuid := gen_random_uuid();
   decision_id uuid := gen_random_uuid();
+  authoritative_lab_evidence jsonb;
 begin
   if caller is null then raise insufficient_privilege using message='Authentication is required.'; end if;
 
@@ -713,19 +717,35 @@ begin
     raise exception 'Candidate requires an active independent_datanest_product classification.';
   end if;
 
-  if not exists(
-    select 1
-    from public.product_surfaces s
-    where s.portfolio_item_id=item.id
-      and s.project_id=item.project_id
-      and s.build_commit is not null
-      and nullif(btrim(s.build_commit),'') is not null
-      and exists(
-        select 1 from public.product_test_runs tr
-        where tr.surface_id=s.id and tr.project_id=item.project_id
+  select coalesce(
+    jsonb_agg(
+      jsonb_build_object(
+        'surface_id',s.id,
+        'build_commit',s.build_commit,
+        'release_id',s.release_id,
+        'test_run_id',tr.id,
+        'test_case_id',tr.test_case_id,
+        'test_case_version',tr.test_case_version,
+        'result',tr.result,
+        'evidence_url',tr.evidence_url
       )
-  ) then
-    raise exception 'Candidate requires linked versioned Product Lab evidence.';
+      order by tr.created_at,tr.id
+    ),
+    '[]'::jsonb
+  )
+  into authoritative_lab_evidence
+  from public.product_surfaces s
+  join public.product_test_runs tr
+    on tr.surface_id=s.id
+   and tr.project_id=item.project_id
+   and tr.build_commit=s.build_commit
+  where s.portfolio_item_id=item.id
+    and s.project_id=item.project_id
+    and s.build_commit is not null
+    and nullif(btrim(s.build_commit),'') is not null;
+
+  if jsonb_array_length(authoritative_lab_evidence)=0 then
+    raise exception 'Candidate requires linked exact-build Product Lab evidence.';
   end if;
 
   insert into public.products(
@@ -736,7 +756,12 @@ begin
     product_id,item.project_id,item.slug,item.name,item.name,btrim(target_category),'active',
     btrim(target_mission),btrim(target_operating_model),btrim(target_primary_runtime),
     'free promotion / no billing until pricing is established',false,current_date,
-    jsonb_build_object('portfolio_item_id',item.id,'promotion_evidence_reference',btrim(target_evidence_reference))
+    jsonb_build_object(
+      'portfolio_item_id',item.id,
+      'promotion_evidence_reference',btrim(target_evidence_reference),
+      'authoritative_product_lab_evidence',authoritative_lab_evidence,
+      'promotion_approved_by',caller
+    )
   );
 
   insert into public.portfolio_lifecycle_events(
@@ -766,6 +791,7 @@ begin
     jsonb_build_object(
       'portfolio_item_id',item.id,
       'promotion_packet',target_promotion_packet,
+      'authoritative_product_lab_evidence',authoritative_lab_evidence,
       'evidence_reference',btrim(target_evidence_reference),
       'approved_by',caller,
       'billing_enabled',false
@@ -774,7 +800,14 @@ begin
 
   perform private.record_portfolio_event(
     item.project_id,'PORTFOLIO_PRODUCT_PROMOTED',caller,
-    jsonb_build_object('portfolio_item_id',item.id,'product_id',product_id,'lifecycle_event_id',lifecycle_id,'decision_record_id',decision_id,'billing_enabled',false)
+    jsonb_build_object(
+      'portfolio_item_id',item.id,
+      'product_id',product_id,
+      'lifecycle_event_id',lifecycle_id,
+      'decision_record_id',decision_id,
+      'billing_enabled',false,
+      'authoritative_product_lab_evidence',authoritative_lab_evidence
+    )
   );
   return product_id;
 end;
