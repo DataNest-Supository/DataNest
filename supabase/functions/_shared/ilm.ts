@@ -124,6 +124,7 @@ export async function resolveIlm1Route(
   deps:ResolveIlm1RouteDeps,
   input:ResolveIlm1RouteInput
 ):Promise<Ilm1RouteResult>{
+  let effectiveVisibilityClass=input.visibilityClass;
   if(!input.profile.allowedPurposes.includes(input.purpose)){
     const recorded=await deps.recordRouteDecision({
       projectId:input.projectId,
@@ -165,7 +166,7 @@ export async function resolveIlm1Route(
   const certifiedMemoryIds=memory.map(item=>item.id).filter(Boolean);
 
   const policy=await deps.evaluateDataPolicy({...input,certifiedMemoryIds});
-  const effectiveVisibilityClass=String(
+  effectiveVisibilityClass=String(
     policy.evidence?.visibility_class||input.visibilityClass
   );
   if(policy.outcome==="deny"){
