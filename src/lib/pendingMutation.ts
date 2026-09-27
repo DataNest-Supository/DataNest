@@ -17,6 +17,8 @@ export type PendingMutationIntent<T extends Record<string,unknown>=Record<string
   verificationState:PendingMutationVerification;
   lastCheckedAt:string|null;
   durable:boolean;
+  attemptCount:number;
+  lastAttemptAt:string|null;
 };
 
 function storageKey(scope:string){
@@ -49,7 +51,9 @@ function validIntent(value:unknown):value is PendingMutationIntent{
       ||verification==="confirmed_absent"
     )
     &&(item.lastCheckedAt===undefined||item.lastCheckedAt===null||typeof item.lastCheckedAt==="string")
-    &&(item.durable===undefined||typeof item.durable==="boolean");
+    &&(item.durable===undefined||typeof item.durable==="boolean")
+    &&(item.attemptCount===undefined||(typeof item.attemptCount==="number"&&Number.isInteger(item.attemptCount)&&item.attemptCount>=0))
+    &&(item.lastAttemptAt===undefined||item.lastAttemptAt===null||typeof item.lastAttemptAt==="string");
 }
 
 function normalizeIntent<T extends Record<string,unknown>>(value:PendingMutationIntent<T>):PendingMutationIntent<T>{
@@ -57,7 +61,9 @@ function normalizeIntent<T extends Record<string,unknown>>(value:PendingMutation
     ...value,
     verificationState:value.verificationState||"unverified",
     lastCheckedAt:value.lastCheckedAt||null,
-    durable:value.durable===true
+    durable:value.durable===true,
+    attemptCount:Number.isInteger(value.attemptCount)&&value.attemptCount>=0?value.attemptCount:0,
+    lastAttemptAt:value.lastAttemptAt||null
   };
 }
 
@@ -101,7 +107,9 @@ export function getOrCreatePendingMutation<T extends Record<string,unknown>>(
     startedAt:new Date().toISOString(),
     verificationState:"unverified",
     lastCheckedAt:null,
-    durable:false
+    durable:false,
+    attemptCount:0,
+    lastAttemptAt:null
   };
   try{
     window.sessionStorage.setItem(storageKey(scope),JSON.stringify(next));
@@ -126,11 +134,18 @@ export function restorePendingMutation<T extends Record<string,unknown>>(
   return next;
 }
 
-export function markPendingMutationDurable(scope:string){
+export function markPendingMutationDurable(
+  scope:string,
+  telemetry?:{attemptCount?:number;lastAttemptAt?:string|null}
+){
   const existing=loadPendingMutation(scope);
   if(!existing)return null;
-  if(existing.durable)return existing;
-  const next:PendingMutationIntent={...existing,durable:true};
+  const attemptCount=Number.isInteger(telemetry?.attemptCount)&&Number(telemetry?.attemptCount)>=0
+    ? Number(telemetry?.attemptCount)
+    : existing.attemptCount;
+  const lastAttemptAt=telemetry?.lastAttemptAt===undefined?existing.lastAttemptAt:telemetry.lastAttemptAt;
+  const next:PendingMutationIntent={...existing,durable:true,attemptCount,lastAttemptAt:lastAttemptAt||null};
+  if(JSON.stringify(existing)===JSON.stringify(next))return existing;
   return restorePendingMutation(scope,next);
 }
 
