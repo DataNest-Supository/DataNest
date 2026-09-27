@@ -34,7 +34,7 @@ jobs:
         include:
           - name: ePublisher
             path: apps/ronsas/epublisher
-            verify: npm test && npm run build:types && npm run build
+            verify: npm test && npm run build:types && npm run build -- --base=/DataNest/apps/epublisher/
           - name: Creative Studio
             path: apps/ronsas/creative-studio
             verify: npm test && npm run build
