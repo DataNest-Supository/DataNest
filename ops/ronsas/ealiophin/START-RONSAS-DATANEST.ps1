@@ -26,6 +26,23 @@ $LogRoot = Join-Path $RuntimeRoot 'logs'
 $StatePath = Join-Path $RuntimeRoot 'ronsas-state.json'
 New-Item -ItemType Directory -Force -Path $LogRoot | Out-Null
 
+$priorState = $null
+if (Test-Path -LiteralPath $StatePath -PathType Leaf) {
+    try {
+        $candidate = Get-Content -Raw -LiteralPath $StatePath | ConvertFrom-Json
+        if ([string]$candidate.schema -eq 'datanest.ronsas.runtime-state.v1' -and [string]$candidate.repository -eq 'DataNest-Supository/DataNest') {
+            $priorState = $candidate
+        }
+    } catch {
+        Write-Warning "[RONSAS] Existing runtime state could not be parsed; ownership will be rebuilt conservatively."
+    }
+}
+
+function Get-PriorOwnedEntry([string]$Id) {
+    if ($null -eq $priorState) { return $null }
+    return @($priorState.processes | Where-Object { [string]$_.id -eq $Id -and [bool]$_.owned -and $_.pid } | Select-Object -First 1)[0]
+}
+
 function Test-Health([string]$Uri) {
     try {
         $response = Invoke-WebRequest -UseBasicParsing -Uri $Uri -TimeoutSec 4
@@ -68,12 +85,25 @@ foreach ($module in @($Registry.modules | Where-Object { $_.kind -eq 'web-app' }
 
     if (Test-Health ([string]$module.health)) {
         Write-Host "[RONSAS] $($module.displayName) already healthy at $($module.health)." -ForegroundColor Green
-        $state.processes += [ordered]@{
-            id = [string]$module.id
-            pid = $null
-            owned = $false
-            source = [string]$module.source
-            health = [string]$module.health
+        $prior = Get-PriorOwnedEntry ([string]$module.id)
+        if ($prior) {
+            $state.processes += [ordered]@{
+                id = [string]$module.id
+                pid = [int]$prior.pid
+                owned = $true
+                source = [string]$module.source
+                health = [string]$module.health
+                launcher = [string]$prior.launcher
+                startedAtUtc = [string]$prior.startedAtUtc
+            }
+        } else {
+            $state.processes += [ordered]@{
+                id = [string]$module.id
+                pid = $null
+                owned = $false
+                source = [string]$module.source
+                health = [string]$module.health
+            }
         }
         continue
     }
@@ -140,12 +170,25 @@ foreach ($module in @($Registry.modules | Where-Object { $_.kind -eq 'python-ser
 
     if (Test-Health ([string]$module.health)) {
         Write-Host "[RONSAS] $($module.displayName) already healthy at $($module.health)." -ForegroundColor Green
-        $state.processes += [ordered]@{
-            id = [string]$module.id
-            pid = $null
-            owned = $false
-            source = [string]$module.source
-            health = [string]$module.health
+        $prior = Get-PriorOwnedEntry ([string]$module.id)
+        if ($prior) {
+            $state.processes += [ordered]@{
+                id = [string]$module.id
+                pid = [int]$prior.pid
+                owned = $true
+                source = [string]$module.source
+                health = [string]$module.health
+                launcher = [string]$prior.launcher
+                startedAtUtc = [string]$prior.startedAtUtc
+            }
+        } else {
+            $state.processes += [ordered]@{
+                id = [string]$module.id
+                pid = $null
+                owned = $false
+                source = [string]$module.source
+                health = [string]$module.health
+            }
         }
         continue
     }
