@@ -161,24 +161,24 @@ export default function CollaborationVisual({
     </div>;
   }
 
-  return <div className={"aiICoreStage "+styles.productsHeroVisual} aria-label={ariaLabel}>
-    <div className={styles.valueNetwork} aria-label="Resonance DataNest value network">
+  return <div className={"aiICoreStage "+styles.productsHeroVisual} aria-label={ariaLabel} data-hero-ecosystem="ronsas">
+    <div className={styles.valueNetwork} aria-label="Resonance DataNest value network">\n      <span className={styles.aiCorePulse} data-hero-signal="ai-core" aria-hidden="true"/>
       <span className={styles.valueSignal+" "+styles.aiSignal} data-signal="ai" aria-hidden="true"/>
       <span className={styles.valueSignal+" "+styles.memorySignal} data-signal="memory" aria-hidden="true"/>
       <span className={styles.valueSignal+" "+styles.collaborationSignal} data-signal="collaboration" aria-hidden="true"/>
       <span className={styles.valueSignal+" "+styles.ronsasSignal} data-signal="ronsas" aria-hidden="true"/>
 
-      <div className={styles.valueNode+" "+styles.aiValueNode}>
+      <div className={styles.valueNode+" "+styles.aiValueNode} data-value="governed-ai">
         <small>AI</small><b>Governed AI</b><span>Intent → intelligence</span>
       </div>
-      <div className={styles.valueNode+" "+styles.memoryValueNode}>
+      <div className={styles.valueNode+" "+styles.memoryValueNode} data-value="certified-memory">
         <small>MEMORY</small><b>Certified Memory</b><span>Validated learning</span>
       </div>
-      <div className={styles.valueNode+" "+styles.collaborationValueNode}>
+      <div className={styles.valueNode+" "+styles.collaborationValueNode} data-value="traceable-collaboration">
         <small>TRACE</small><b>Traceable Collaboration</b><span>Human + AI provenance</span>
       </div>
-      <div className={styles.valueNode+" "+styles.ronsasValueNode}>
-        <small>RONSAS</small><b>Sovereign App Suite</b><span>Governed product ecosystem</span>
+      <div className={styles.valueNode+" "+styles.ronsasValueNode} data-value="sovereign-app-suite">
+        <small>RONSAS</small><b>Sovereign App Suite</b><span>Resonance Open Nova Sovereign Application Suite</span>
       </div>
 
       <span className={styles.intelligenceHalo} aria-hidden="true"/>
@@ -187,7 +187,7 @@ export default function CollaborationVisual({
     <div className={styles.portfolioOrbitShell} aria-hidden="true">
       <span className={styles.portfolioOrbitRing+" "+styles.portfolioRingOuter}/>
       <span className={styles.portfolioOrbitRing+" "+styles.portfolioRingInner}/>
-      <span className={styles.portfolioSignalSweep}/>
+      <span className={styles.portfolioSignalSweep}/>\n      <span className={styles.ecosystemPulse} data-hero-signal="ecosystem-sweep"/>
       <span className={styles.portfolioSignalDot+" "+styles.dotOne}/>
       <span className={styles.portfolioSignalDot+" "+styles.dotTwo}/>
       <span className={styles.portfolioSignalDot+" "+styles.dotThree}/>
