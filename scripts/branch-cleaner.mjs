@@ -297,8 +297,100 @@ const advisorList = (data) =>
   Array.isArray(data?.lints) ? data.lints :
   Array.isArray(data?.advisors) ? data.advisors : [];
 
+
+async function supabaseAuditFromEvidence(config) {
+  const file = config.supabaseEvidenceFile;
+  if (!file) return null;
+  try {
+    const evidence = JSON.parse(await readFile(file, "utf8"));
+    if (evidence.schemaVersion !== 1) throw new Error("Unsupported Supabase evidence schema");
+    const generatedAt = Date.parse(evidence.generatedAt);
+    const expiresAt = Date.parse(evidence.expiresAt);
+    const now = Date.now();
+    const maxAgeMs = Number(config.supabaseEvidenceMaxAgeMinutes || 30) * 60000;
+    if (!Number.isFinite(generatedAt) || !Number.isFinite(expiresAt))
+      throw new Error("Supabase evidence timestamps are invalid");
+    if (generatedAt - now > 300000)
+      throw new Error("Supabase evidence is dated too far in the future");
+    if (now - generatedAt > maxAgeMs)
+      throw new Error("Supabase evidence is older than the configured maximum age");
+    if (now > expiresAt)
+      throw new Error("Supabase evidence has expired");
+
+    const expectedRefs = (config.supabaseProjects || []).map((entry) => entry.ref).sort();
+    const evidenceRefs = (evidence.projects || []).map((entry) => entry.ref).sort();
+    if (JSON.stringify(expectedRefs) !== JSON.stringify(evidenceRefs))
+      throw new Error("Supabase evidence project refs do not match configured authorities");
+
+    const projects = [];
+    for (const entry of config.supabaseProjects || []) {
+      const snapshot = evidence.projects.find((project) => project.ref === entry.ref);
+      if (!snapshot?.project?.status)
+        throw new Error("Supabase evidence is incomplete for " + entry.ref);
+
+      const p = {
+        ref:entry.ref,
+        role:entry.role,
+        errors:[],
+        project:snapshot.project,
+        branches:Array.isArray(snapshot.branches) ? snapshot.branches : [],
+        securityAdvisors:Array.isArray(snapshot.securityAdvisors) ? snapshot.securityAdvisors : [],
+        performanceAdvisors:[],
+        migrations:Array.isArray(snapshot.migrations) ? snapshot.migrations : [],
+      };
+      p.checks = evaluateSupabaseProject(p, entry);
+
+      if (entry.migrationSourceDir) {
+        const repoFiles = await readdir(entry.migrationSourceDir);
+        p.migrationParity = compareMigrationParity(repoFiles, p.migrations);
+        if (entry.enforceMigrationParity &&
+            (p.migrationParity.repoOnly.length ||
+             p.migrationParity.liveOnly.length ||
+             p.migrationParity.versionMismatches.length)) {
+          p.checks.push({
+            level:"blocker",
+            code:"migration_history_drift",
+            detail:"Git migration history does not reproduce verified migration history: " +
+              p.migrationParity.repoCount + " repo files vs " +
+              p.migrationParity.liveCount + " applied migrations; " +
+              p.migrationParity.liveOnly.length + " live-only, " +
+              p.migrationParity.repoOnly.length + " repo-only, " +
+              p.migrationParity.versionMismatches.length + " version mismatches",
+          });
+        }
+      }
+      projects.push(p);
+    }
+
+    return {
+      skipped:false,
+      projects,
+      globalChecks:[],
+      evidence:{
+        path:file,
+        source:evidence.source || "verified snapshot",
+        generatedAt:evidence.generatedAt,
+        expiresAt:evidence.expiresAt,
+      },
+    };
+  } catch (error) {
+    return {
+      skipped:true,
+      reason:"Verified Supabase evidence unavailable: " + error.message,
+      projects:[],
+      globalChecks:[{
+        level:"blocker",
+        code:"supabase_evidence_invalid",
+        detail:"Fresh verified Supabase evidence is required before strict destructive cleanup.",
+      }],
+    };
+  }
+}
+
 async function supabaseAudit(config, token) {
-  if (!token)
+  if (!token) {
+    const evidence = await supabaseAuditFromEvidence(config);
+    if (evidence) return evidence;
     return {
       skipped:true,
       reason:"SUPABASE_ACCESS_TOKEN not set",
@@ -309,6 +401,7 @@ async function supabaseAudit(config, token) {
         detail:"Supabase verification is required before strict destructive cleanup.",
       }],
     };
+  }
 
   const projects = [];
   for (const entry of config.supabaseProjects || []) {

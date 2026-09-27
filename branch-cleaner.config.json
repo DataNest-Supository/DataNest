@@ -38,5 +38,7 @@
     "do-not-export-secrets-or-raw-ai-memory",
     "prefer-project-scoped-authenticated-controls-and-explicit-grants",
     "preserve-audit-and-certification-lineage"
-  ]
+  ],
+  "supabaseEvidenceFile": ".github/branch-cleaner/supabase-verified-snapshot.json",
+  "supabaseEvidenceMaxAgeMinutes": 90
 }
