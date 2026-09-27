@@ -46,7 +46,8 @@ test("Products exposes governed product and portfolio registry modes without red
   assert.match(products,/Governed Products/);
   assert.match(products,/Portfolio Registry/);
   assert.match(products,/searchParams\.get\("section"\)/);
-  const panel=fs.readFileSync(panelPath,"utf8");\n  assert.match(panel,/searchParams\\.get\\("item"\\)/);
+  const panel=fs.readFileSync(panelPath,"utf8");
+  assert.match(panel,/searchParams\.get\("item"\)/);
   assert.match(products,/PortfolioRegistryPanel/);
   assert.match(products,/ResonancePortfolioPulse products=\{catalogProducts\}/);
   assert.match(products,/FREE_PROMOTION_LABEL/);
