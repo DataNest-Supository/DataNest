@@ -9,20 +9,25 @@ const home=fs.readFileSync(path.join(root,"src/components/ResonanceHome.tsx"),"u
 const visual=fs.readFileSync(path.join(root,"src/components/CollaborationVisual.tsx"),"utf8");
 const css=fs.readFileSync(path.join(root,"src/components/CollaborationVisual.module.css"),"utf8");
 
-test("AI & I hero keeps DataNest AI at the core and renders application-aware governed product nodes",()=>{
-  assert.match(home,/<CollaborationVisual[\s\S]*projectId={project\.id}/);
-  assert.match(home,/onOpenProducts={\(target\?:ProductHeroTarget\)=>/);
+test("AI & I hero keeps DataNest AI at the core and renders governed products as product nodes",()=>{
+  assert.match(home,/CollaborationVisual projectId={project\.id}/);
+  assert.match(home,/onOpenProducts={\(\)=>onNavigate\("products"\)}/);
   assert.match(visual,/from\("products"\)/);
   assert.match(visual,/from\("product_records"\)/);
   assert.match(visual,/\.eq\("record_type","application"\)/);
   assert.match(visual,/MAX_ORBIT_PRODUCTS=9/);
   assert.match(visual,/const orbitProducts=useMemo/);
   assert.match(visual,/applicationCounts/);
-  assert.match(visual,/applicationByProduct/);
+  assert.match(visual,/id,slug,name,full_name,lifecycle_status/);
+  assert.match(visual,/id,product_id,name,status,sort_order,payload/);
+  assert.match(visual,/ProductHeroTarget/);
   assert.match(visual,/recordType:"application"/);
   assert.match(visual,/q:primaryApplication\?\.name\|\|undefined/);
   assert.match(visual,/portfolioProductDomain/);
-  assert.match(visual,/portfolioProductState/);
+  assert.match(visual,/portfolioProductApplication/);
+  assert.match(home,/url\.searchParams\.set\("product",target\.product\)/);
+  assert.match(home,/url\.searchParams\.set\("recordType",target\.recordType\)/);
+  assert.match(home,/url\.searchParams\.set\("q",target\.q\)/);
   assert.match(visual,/DATANEST CORE/);
   assert.match(visual,/DataNest AI/);
   assert.match(visual,/Shared intelligence/);
@@ -33,8 +38,6 @@ test("AI & I hero keeps DataNest AI at the core and renders application-aware go
 
 test("product hero animation is responsive and respects reduced motion",()=>{
   assert.match(css,/\.portfolioProductCard/);
-  assert.match(css,/\.portfolioProductDomain/);
-  assert.match(css,/\.portfolioProductState/);
   assert.match(css,/@keyframes portfolioSweep/);
   assert.match(css,/@container datanest-main \(max-width:620px\)/);
   assert.match(css,/@media\(prefers-reduced-motion:reduce\)[\s\S]*\.portfolioRingOuter/);
@@ -46,13 +49,4 @@ test("value network has one subordinate styling authority",()=>{
   assert.equal(authorityBlocks.length,1);
   assert.match(authorityBlocks[0],/z-index:2/);
   assert.match(css,/@media\(max-width:470px\)\{[\s\S]*?\.valueNetwork\{--network-x:86px;--network-y:82px\}/);
-});
-
-
-test("product hero deep-links a governed product into its Applications view",()=>{
-  assert.match(home,/url\.searchParams\.set\("product",target\.product\)/);
-  assert.match(home,/url\.searchParams\.set\("recordType",target\.recordType\)/);
-  assert.match(home,/url\.searchParams\.set\("q",target\.q\)/);
-  assert.match(home,/window\.history\.replaceState/);
-  assert.match(home,/onNavigate\("products"\)/);
 });
