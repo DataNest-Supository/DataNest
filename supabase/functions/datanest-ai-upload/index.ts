@@ -135,6 +135,7 @@ function wakeFileWorker(stagingUrl:string,stagingKey:string){
 async function createSubmission(input:{
   body:Record<string,unknown>;
   userClient:AnyClient;
+  serviceClient:AnyClient;
   staging:AnyClient;
   userId:string;
 }){
@@ -175,6 +176,32 @@ async function createSubmission(input:{
     }
   }else{
     traceId="DN-FILE-"+crypto.randomUUID();
+
+    const {data:learningPolicyData,error:learningPolicyError}=await input.serviceClient.rpc(
+      "service_evaluate_data_policy_v1",{
+        target_project:authorization.projectId,
+        target_actor_user:input.userId,
+        target_subject_type:"job",
+        target_purpose:"project_learning",
+        target_requested_operation:"reuse",
+        target_trace_id:traceId,
+        target_subject_id:jobId,
+        target_subject_reference:null,
+        target_provider_connection:null,
+        target_provider_key:null,
+        target_hard_learning_exclusion:false
+      }
+    );
+    if(learningPolicyError)throw learningPolicyError;
+    const learningPolicy=(learningPolicyData||{}) as Record<string,unknown>;
+    const learningPolicyOutcome=String(learningPolicy.outcome||"review_required");
+    const learningPolicyReasonCode=String(learningPolicy.reason_code||"policy_unresolved");
+    const learningReuseState=String(learningPolicy.reuse_state||"runtime_only");
+    const learningPolicyVersion=String(learningPolicy.policy_version||"unresolved");
+    const learningDecisionRecordId=learningPolicy.decision_record_id
+      ?String(learningPolicy.decision_record_id)
+      :null;
+
     const {data:memory,error:memoryError}=await input.userClient.rpc("get_certified_memory_context",{
       target_project:authorization.projectId,
       target_job:jobId,
@@ -219,6 +246,11 @@ async function createSubmission(input:{
         certified_memory_ids:certifiedMemoryIds,
         certified_memory_snapshot:certifiedMemorySnapshot,
         frozen_session_event_ids:frozenSessionEventIds,
+        learning_policy_outcome:learningPolicyOutcome,
+        learning_policy_reason_code:learningPolicyReasonCode,
+        learning_reuse_state:learningReuseState,
+        learning_policy_version:learningPolicyVersion,
+        learning_decision_record_id:learningDecisionRecordId,
         status:"UPLOADING",
         file_count:files.length
       })
@@ -289,6 +321,7 @@ Deno.serve(async(request:Request)=>{
       global:{headers:{Authorization:authorizationHeader}},
       auth:{persistSession:false,autoRefreshToken:false}
     });
+    const serviceClient=createClient(supabaseUrl,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
     const staging=createClient(stagingEnv.url,stagingEnv.key,{auth:{persistSession:false,autoRefreshToken:false}});
     const {data:userData,error:userError}=await userClient.auth.getUser();
     if(userError||!userData.user)return json({error:"Authentication is required."},401,origin);
@@ -297,7 +330,7 @@ Deno.serve(async(request:Request)=>{
     const action=String(body.action||"");
 
     if(action==="create_submission"){
-      return json(await createSubmission({body,userClient,staging,userId}),200,origin);
+      return json(await createSubmission({body,userClient,serviceClient,staging,userId}),200,origin);
     }
 
     const jobId=String(body.jobId||"").trim();
