@@ -1155,11 +1155,15 @@ test("UNIFI browser-session draft survives workspace navigation and reload", asy
 });
 
 
-test("UNIFI single-flight blocks same-tick duplicate submit and unlocks retry after failure", async ({ page }) => {
+test("UNIFI reconciles pending, not-recorded, and confirmed-after-error outcomes without duplicate manifests", async ({ page }) => {
   const projectId = "00000000-0000-4000-8000-000000000010";
   const userId = "00000000-0000-4000-8000-000000000001";
+  const jobId = "30000000-0000-4000-8000-000000000042";
   const stamp = "2026-09-27T08:00:00Z";
   let createCalls = 0;
+  let reconciliationCalls = 0;
+  let serverRecorded = false;
+  const requestKeys:string[] = [];
 
   await page.route("**/runtime-config.js", route => route.fulfill({
     contentType:"application/javascript",
@@ -1183,22 +1187,39 @@ test("UNIFI single-flight blocks same-tick duplicate submit and unlocks retry af
     if(path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE",created_at:stamp};
     if(path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"operator",status:"active"};
     if(path.endsWith("/get_project_dashboard_summary")) body = {total_jobs:0,active_jobs:0,running_jobs:0,blocked_jobs:0,available_capabilities:0,registered_capabilities:0};
-    if(path.endsWith("/jobs")) headers["Content-Range"]="*/0";
 
-    if(path.endsWith("/create_job_manifest")){
-      createCalls += 1;
-      await new Promise(resolve=>setTimeout(resolve,120));
-      if(createCalls===1){
-        return route.fulfill({
-          status:400,
-          headers,
-          body:JSON.stringify({code:"PGRST999",message:"Temporary fixture failure",details:null,hint:null})
-        });
+    if(path.endsWith("/jobs")){
+      if(url.searchParams.has("client_request_id")){
+        reconciliationCalls += 1;
+        if(reconciliationCalls===1){
+          return route.fulfill({
+            status:503,
+            headers,
+            body:JSON.stringify({code:"PGRST999",message:"Reconciliation temporarily unavailable",details:null,hint:null})
+          });
+        }
+        const selected=serverRecorded?[{id:jobId,job_number:42,status:"PLANNED"}]:[];
+        headers["Content-Range"]=selected.length?"0-0/1":"*/0";
+        return route.fulfill({status:200,headers,body:JSON.stringify(selected)});
       }
+      headers["Content-Range"]="*/0";
+    }
+
+    if(path.endsWith("/create_job_manifest_v2")){
+      createCalls += 1;
+      const payload=route.request().postDataJSON() as {target_request_key?:string};
+      requestKeys.push(String(payload.target_request_key||""));
+      await new Promise(resolve=>setTimeout(resolve,120));
+      if(createCalls===2)serverRecorded=true;
       return route.fulfill({
-        status:200,
+        status:400,
         headers,
-        body:JSON.stringify([{job_number:42,status:"PLANNED"}])
+        body:JSON.stringify({
+          code:"PGRST999",
+          message:createCalls===1?"Temporary fixture failure":"Response lost after authoritative commit",
+          details:null,
+          hint:null
+        })
       });
     }
 
@@ -1207,7 +1228,7 @@ test("UNIFI single-flight blocks same-tick duplicate submit and unlocks retry af
 
   await page.goto(appPath+"?view=unifi");
   await expect(page.getByRole("heading",{name:"Job Manifest Planner"})).toBeVisible();
-  await page.getByLabel("Job title").fill("Single-flight manifest");
+  await page.getByLabel("Job title").fill("Reconciled manifest");
 
   const form=page.locator("form.plannerForm");
   await form.evaluate(node=>{
@@ -1215,32 +1236,51 @@ test("UNIFI single-flight blocks same-tick duplicate submit and unlocks retry af
     node.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true}));
   });
 
-  await expect(page.getByRole("alert")).toContainText("Temporary fixture failure");
+  await expect(page.getByText(/Submission awaiting confirmation/)).toBeVisible();
   expect(createCalls).toBe(1);
-  await expect(page.getByLabel("Job title")).toHaveValue("Single-flight manifest");
+  expect(requestKeys[0]).toBeTruthy();
+  await expect(page.getByRole("button",{name:"Create Job Manifest"})).toBeDisabled();
+
+  const pendingAfterAmbiguity=await page.evaluate(()=>Object.entries(sessionStorage).filter(([key])=>key.startsWith("datanest.pendingMutation.unifi-job:")));
+  expect(pendingAfterAmbiguity.length).toBe(1);
+
+  await page.getByRole("button",{name:"Recheck server state"}).click();
+  await expect(page.getByText(/previous request was not recorded/i)).toBeVisible();
+  await expect(page.getByRole("button",{name:"Create Job Manifest"})).toBeEnabled();
+  await expect(page.getByLabel("Job title")).toHaveValue("Reconciled manifest");
 
   await form.evaluate(node=>node.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true})));
+  await expect.poll(()=>createCalls).toBe(2);
+
   const projectNav=page.getByRole("navigation",{name:"Project workspaces"});
   await projectNav.getByRole("button",{name:"TranScheduler"}).click();
   await expect(page.getByRole("heading",{name:"TranScheduler"})).toBeVisible();
-  await expect(page.getByText("JOB-00042 created transactionally by UNIFI.",{exact:true})).toBeVisible();
-  expect(createCalls).toBe(2);
+  await expect(page.getByText("Recovered confirmed JOB-00042 from authoritative server state.",{exact:true})).toBeVisible();
+
+  expect(requestKeys[1]).toBe(requestKeys[0]);
+  expect(reconciliationCalls).toBeGreaterThanOrEqual(3);
 
   await projectNav.getByRole("button",{name:"UNIFI Planner"}).click();
   await expect(page.getByRole("heading",{name:"Job Manifest Planner"})).toBeVisible();
   await expect(page.getByLabel("Job title")).toHaveValue("");
+
+  const staleIntentKeys=await page.evaluate(()=>Object.keys(sessionStorage).filter(key=>key.startsWith("datanest.pendingMutation.unifi-job:")));
+  expect(staleIntentKeys).toEqual([]);
   const staleDraftKeys=await page.evaluate(()=>Object.keys(sessionStorage).filter(key=>key.includes("datanest.sessionDraft.unifi:")));
   expect(staleDraftKeys).toEqual([]);
 });
 
 
-test("Spark reservation retry reuses the same session request key after an ambiguous failure", async ({ page }) => {
+test("Spark reservation reconciliation reuses one request identity and recovers an authoritative commit", async ({ page }) => {
   const projectId = "00000000-0000-4000-8000-000000000010";
   const userId = "00000000-0000-4000-8000-000000000001";
   const serviceId = "20000000-0000-4000-8000-000000000001";
+  const redemptionId = "40000000-0000-4000-8000-000000000001";
+  const traceKey = "DN-SPARK-REDEEM-FIXTURE";
   const stamp = "2026-09-27T08:00:00Z";
   const requestKeys:string[] = [];
   let redemptionCalls = 0;
+  let serverRecorded = false;
 
   await page.route("**/runtime-config.js", route => route.fulfill({
     contentType:"application/javascript",
@@ -1265,6 +1305,7 @@ test("Spark reservation retry reuses the same session request key after an ambig
     if(path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"operator",status:"active"};
     if(path.endsWith("/get_project_dashboard_summary")) body = {total_jobs:0,active_jobs:0,running_jobs:0,blocked_jobs:0,available_capabilities:0,registered_capabilities:0};
     if(path.endsWith("/jobs")) headers["Content-Range"]="*/0";
+
     if(path.endsWith("/get_sparks_workspace_v1")) body = {
       policy:{policy_version:"fixture-v1"},
       balances:[
@@ -1275,7 +1316,11 @@ test("Spark reservation retry reuses the same session request key after an ambig
         id:serviceId,service_key:"fixture-review",service_version:1,name:"Fixture review",description:"Fixture service",
         spark_price:25,status:"active",fulfillment_mode:"manual",terms:null,terms_version:"v1"
       }],
-      redemptions:[],
+      redemptions:serverRecorded?[{
+        id:redemptionId,trace_key:traceKey,user_id:userId,service_id:serviceId,service_key:"fixture-review",
+        service_version:1,service_name:"Fixture review",quantity:1,unit_spark_price:25,total_sparks:25,
+        status:"held",request_note:null,resolution_note:null,requested_at:stamp,resolved_at:null
+      }]:[],
       ledger:[],
       metrics:{lifetime_contribution_awards:500,lifetime_service_spend:0},
       can_operate:true,
@@ -1283,19 +1328,28 @@ test("Spark reservation retry reuses the same session request key after an ambig
       boundaries:{cash_purchase_enabled:false,cash_redemption_enabled:false,p2p_transfer_enabled:false,external_transfer_enabled:false,secondary_market_enabled:false}
     };
 
+    if(path.endsWith("/spark_redemptions")){
+      const selected=serverRecorded?[{id:redemptionId,trace_key:traceKey,status:"held",service_id:serviceId,quantity:1}]:[];
+      headers["Content-Range"]=selected.length?"0-0/1":"*/0";
+      return route.fulfill({status:200,headers,body:JSON.stringify(selected)});
+    }
+
     if(path.endsWith("/request_spark_redemption_v1")){
       redemptionCalls += 1;
       const payload=route.request().postDataJSON() as {target_request_key?:string};
       requestKeys.push(String(payload.target_request_key||""));
       await new Promise(resolve=>setTimeout(resolve,80));
-      if(redemptionCalls===1){
-        return route.fulfill({
-          status:400,
-          headers,
-          body:JSON.stringify({code:"PGRST999",message:"Ambiguous fixture failure",details:null,hint:null})
-        });
-      }
-      return route.fulfill({status:200,headers,body:JSON.stringify({status:"held"})});
+      if(redemptionCalls===2)serverRecorded=true;
+      return route.fulfill({
+        status:400,
+        headers,
+        body:JSON.stringify({
+          code:"PGRST999",
+          message:redemptionCalls===1?"Temporary fixture failure":"Response lost after Spark reservation commit",
+          details:null,
+          hint:null
+        })
+      });
     }
 
     return route.fulfill({status:200,headers,body:JSON.stringify(body)});
@@ -1306,19 +1360,20 @@ test("Spark reservation retry reuses the same session request key after an ambig
 
   const reserve=page.getByRole("button",{name:/Reserve 25 Sparks/});
   await reserve.click();
-  await expect(page.getByRole("alert")).toContainText("Retry keeps the same request key");
+  await expect(page.getByRole("alert")).toContainText("Server state confirms the reservation was not recorded");
   expect(redemptionCalls).toBe(1);
   expect(requestKeys[0]).toBeTruthy();
 
-  const storedAfterFailure=await page.evaluate(()=>Object.entries(sessionStorage).filter(([key])=>key.startsWith("datanest.requestKey.sparks-redemption:")));
-  expect(storedAfterFailure.length).toBe(1);
-  expect(storedAfterFailure[0][1]).toBe(requestKeys[0]);
+  const pendingAfterFailure=await page.evaluate(()=>Object.entries(sessionStorage).filter(([key])=>key.startsWith("datanest.pendingMutation.sparks-redemption:")));
+  expect(pendingAfterFailure.length).toBe(1);
+  const storedIntent=JSON.parse(pendingAfterFailure[0][1]) as {requestKey:string};
+  expect(storedIntent.requestKey).toBe(requestKeys[0]);
 
   await reserve.click();
-  await expect(page.getByText("Sparks reserved. They remain locked until the service is fulfilled or the request is cancelled.",{exact:true})).toBeVisible();
+  await expect(page.getByText("Recovered confirmed Spark reservation "+traceKey+" from authoritative server state.",{exact:true})).toBeVisible();
   expect(redemptionCalls).toBe(2);
   expect(requestKeys[1]).toBe(requestKeys[0]);
 
-  const storedAfterSuccess=await page.evaluate(()=>Object.keys(sessionStorage).filter(key=>key.startsWith("datanest.requestKey.sparks-redemption:")));
+  const storedAfterSuccess=await page.evaluate(()=>Object.keys(sessionStorage).filter(key=>key.startsWith("datanest.pendingMutation.sparks-redemption:")));
   expect(storedAfterSuccess).toEqual([]);
 });
