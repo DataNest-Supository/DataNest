@@ -508,6 +508,13 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
     window.setTimeout(()=>setCatalogShareNotice(""),3000);
   }
 
+  const catalogProductsForPulse=useMemo(()=>catalogProducts.map(product=>{
+    const lifecycle=governedProductLifecycle(product,portfolioItems);
+    return lifecycle===product.lifecycle_status
+      ?product
+      :{...product,lifecycle_status:lifecycle};
+  }),[catalogProducts,portfolioItems]);
+
   const recordsByProduct=useMemo(()=>{
     const map=new Map<string,CatalogRecord[]>();
     for(const record of catalogRecords){
@@ -532,7 +539,7 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
         onGovernedProductsChanged={()=>setCatalogRefreshToken(value=>value+1)}
       />
       :<>
-    <ResonancePortfolioPulse products={catalogProducts} records={catalogRecords} loading={catalogLoading}/>
+    <ResonancePortfolioPulse products={catalogProductsForPulse} records={catalogRecords} loading={catalogLoading}/>
     <section className="catalogStage" aria-labelledby="governed-catalog-title">
       <div className="catalogStageHead">
         <div>
