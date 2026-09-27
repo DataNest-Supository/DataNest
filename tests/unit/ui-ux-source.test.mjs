@@ -15,6 +15,12 @@ const governanceSource = fs.readFileSync(path.join(repoRoot, "src/components/Gov
 const thinkTankSource = fs.readFileSync(path.join(repoRoot, "src/components/ThinkTankWorkspace.tsx"), "utf8");
 const productLabSource = fs.readFileSync(path.join(repoRoot, "src/components/ProductLab.tsx"), "utf8");
 const authGateSource = fs.readFileSync(path.join(repoRoot, "src/components/AuthGate.tsx"), "utf8");
+const sparksSource = fs.readFileSync(path.join(repoRoot, "src/components/SparksWorkspace.tsx"), "utf8");
+const projectMembersSource = fs.readFileSync(path.join(repoRoot, "src/components/ProjectMembersPanel.tsx"), "utf8");
+const authoritySource = fs.readFileSync(path.join(repoRoot, "src/components/ExecutionAuthorityPanel.tsx"), "utf8");
+const resourceFabricSource = fs.readFileSync(path.join(repoRoot, "src/components/ResourceFabricPanel.tsx"), "utf8");
+const singleFlightSource = fs.readFileSync(path.join(repoRoot, "src/lib/singleFlight.ts"), "utf8");
+const sessionRequestKeySource = fs.readFileSync(path.join(repoRoot, "src/lib/sessionRequestKey.ts"), "utf8");
 const cssSource = fs.readFileSync(path.join(repoRoot, "src/app/globals.css"), "utf8");
 
 test("mobile navigation keeps refresh and release controls reachable", () => {
@@ -504,4 +510,41 @@ test("authentication credentials are excluded from browser-session draft persist
   assert.match(authGateSource, /const \[newPassword, setNewPasswordValue\] = useState\("")/);
   assert.match(authGateSource, /const \[confirmPassword, setConfirmPassword\] = useState\("")/);
   assert.doesNotMatch(authGateSource, /useSessionDraftState|sessionDraft|sessionStorage\.setItem/);
+});
+
+
+test("single-flight actions lock synchronously, release in finally, and protect page unload", () => {
+  assert.match(singleFlightSource, /if\(activeRef\.current!==null\)return \{started:false\}/);
+  assert.match(singleFlightSource, /activeRef\.current=key/);
+  assert.match(singleFlightSource, /finally\{\s*activeRef\.current=null/);
+  assert.match(singleFlightSource, /addEventListener\("beforeunload",protectInFlightRequest\)/);
+  assert.match(singleFlightSource, /removeEventListener\("beforeunload",protectInFlightRequest\)/);
+});
+
+test("mutation-heavy workspaces use the shared single-flight boundary", () => {
+  assert.match(appSource, /useSingleFlight\(\)/);
+  assert.match(productLabSource, /useSingleFlight\(\)/);
+  assert.match(governanceSource, /useSingleFlight\(\)/);
+  assert.match(thinkTankSource, /useSingleFlight\(\)/);
+  assert.match(sparksSource, /useSingleFlight\(\)/);
+  assert.match(projectMembersSource, /useSingleFlight\(\)/);
+  assert.match(authoritySource, /useSingleFlight\(\)/);
+  assert.match(resourceFabricSource, /useSingleFlight\(\)/);
+});
+
+test("Spark reservation retries reuse a session-stable request identity until success", () => {
+  assert.match(sessionRequestKeySource, /const SESSION_REQUEST_PREFIX="datanest\.requestKey\."/);
+  assert.match(sessionRequestKeySource, /window\.sessionStorage\.getItem\(key\)/);
+  assert.match(sessionRequestKeySource, /window\.sessionStorage\.setItem\(key,value\)/);
+  assert.match(sparksSource, /getOrCreateSessionRequestKey\(requestScope\)/);
+  assert.match(sparksSource, /target_request_key:requestKey/);
+  assert.match(sparksSource, /clearSessionRequestKey\(requestScope\)/);
+  assert.match(sparksSource, /Retry keeps the same request key to avoid a duplicate reservation/);
+});
+
+test("Product Lab mutation feedback remains visible after workspace navigation", () => {
+  assert.match(appSource, /<ProductLab[^>]*setNotice=\{setNotice\} setError=\{setError\}/);
+  assert.match(productLabSource, /Product Lab action in progress/);
+  assert.doesNotMatch(productLabSource, /const \[notice,setNotice\]=useState/);
+  assert.doesNotMatch(productLabSource, /const \[error,setError\]=useState/);
 });
