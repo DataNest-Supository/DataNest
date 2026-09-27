@@ -188,6 +188,7 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
   const [catalogUrlReady,setCatalogUrlReady]=useState(false);
   const [catalogDetailsOpen,setCatalogDetailsOpen]=useState(false);
   const [catalogShareNotice,setCatalogShareNotice]=useState("");
+  const [catalogRefreshToken,setCatalogRefreshToken]=useState(0);
   const [productsSection,setProductsSection]=useState<"products"|"portfolio">("products");
   const [portfolioItems,setPortfolioItems]=useState<PortfolioRegistryRow[]>([]);
   const [portfolioRelationships,setPortfolioRelationships]=useState<PortfolioRelationshipRow[]>([]);
@@ -428,7 +429,7 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
     }).finally(()=>{if(active)setCatalogLoading(false);});
 
     return()=>{active=false;};
-  },[projectId]);
+  },[projectId,catalogRefreshToken]);
 
   useEffect(()=>{
     if(!catalogProducts.length)return;
@@ -523,6 +524,7 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
         currentUserId={currentUserId}
         role={role}
         historicalRonsasProductId={catalogProducts.find(product=>product.slug==="ronsas")?.id||null}
+        onGovernedProductsChanged={()=>setCatalogRefreshToken(value=>value+1)}
       />
       :<>
     <ResonancePortfolioPulse products={catalogProducts} records={catalogRecords} loading={catalogLoading}/>
