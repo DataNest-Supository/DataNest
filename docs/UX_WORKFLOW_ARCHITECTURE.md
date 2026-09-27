@@ -14,7 +14,7 @@ Reduce cognitive load across DataNest without removing specialist workspaces or 
 
 ### Discover
 - Stakeholder — capture stakeholder context.
-- Sparks — capture intent and raw ideas.
+- Sparks — earned contribution utility for approved project services.
 - Think Tanks — expand and structure research.
 
 ### Govern & Build

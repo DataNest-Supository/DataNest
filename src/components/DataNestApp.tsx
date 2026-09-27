@@ -5,6 +5,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useRef, useState, type CSSP
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
 import { DATANEST_LOGO_SRC } from "@/lib/brand";
+import { SPARKS_TASK_COMPLETE, SPARKS_TASK_EVIDENCE, SPARKS_TASK_START, SPARKS_WORKSPACE_DESCRIPTION } from "@/lib/ecosystemAuthority";
 import { workflowPhaseForView, workflowPhases } from "@/lib/workflowPhases";
 import JobInviteForm from "@/components/JobInviteForm";
 import ResonanceHome from "@/components/ResonanceHome";
@@ -51,7 +52,7 @@ const viewKeys = new Set<ViewKey>(nav.map(item=>item.key));
 const viewDescriptions:Record<ViewKey,string> = {
   overview:"Human intent and governed AI collaboration at a glance.",
   stakeholder:"Capture stakeholder input and review contribution context.",
-  sparks:"Develop raw ideas into traceable project inputs.",
+  sparks:SPARKS_WORKSPACE_DESCRIPTION,
   governance:"Review sovereign governance controls and decisions.",
   products:"Inspect governed Resonance products, their architecture, controls, evidence, risks and promotion branches.",
   thinktank:"Coordinate structured research and collaborative thinking.",
@@ -71,7 +72,7 @@ type WorkspaceTaskGuide = { start:string; complete:string; evidence:string };
 const workspaceTaskGuides:Partial<Record<ViewKey,WorkspaceTaskGuide>> = {
   ai:{start:"Select the Job Manifest that owns the work, then continue in the development chat.",complete:"The Job has an actionable AI output or durable memory worth certifying.",evidence:"Job-scoped session, event trail and certified memory."},
   stakeholder:{start:"Review stakeholder state and recent contribution events before changing preferences or review decisions.",complete:"Contribution context and participation preferences reflect the stakeholder's current intent.",evidence:"Profile state, contribution events and review signals."},
-  sparks:{start:"Capture or inspect the idea or approved utility exchange that should become project input.",complete:"The contribution or service is recorded with enough context to move into structured thinking.",evidence:"Traceable contribution, ledger and service records."},
+  sparks:{start:SPARKS_TASK_START,complete:SPARKS_TASK_COMPLETE,evidence:SPARKS_TASK_EVIDENCE},
   thinktank:{start:"Choose a Think Tank, open a thread, then discuss, ask or propose a governed decision.",complete:"The discussion has produced a decision, action item or reviewed learning candidate.",evidence:"Messages, decisions, actions and institutional-memory candidates."},
   governance:{start:"Begin with a protocol draft or formal proposal; ratify only after the required support and vote.",complete:"The decision is recorded, ratified where applicable, or moved into a visible dispute path.",evidence:"Proposal, votes, decision register, protocol version and dispute history."},
   products:{start:"Choose the governed product and inspect its architecture, controls, evidence and risks before promotion.",complete:"The product state or promotion branch is supported by current evidence.",evidence:"Product architecture, linked controls, evidence and promotion history."},

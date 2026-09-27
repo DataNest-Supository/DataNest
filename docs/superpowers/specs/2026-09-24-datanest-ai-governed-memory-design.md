@@ -10,6 +10,14 @@
 
 Supabase Branching is unavailable on the current plan. The approved staging trust boundary is therefore implemented as a **dedicated Supabase project** named `DataNest AI Staging` (project ref `qchttpcyqlqnhvahprhz`) in the same Supabase organization and region as production. This amendment preserves the functional design: separate database/API/Auth credentials, isolated raw evidence, server-only cross-environment access, explicit certification/promotion, independent retention/recovery, and no raw runtime data merge into production. Any earlier reference in this document to a dedicated Supabase staging project is superseded by this dedicated staging project. Git feature-branch isolation remains unchanged.
 
+## Retention Supersession Amendment — 2026-09-27
+
+The earlier blanket requirement to retain all raw human and AI inputs indefinitely is superseded by **policy-driven retention**. Current target policy determines retention from data **classification**, **declared purpose**, governance requirements, and applicable **legal or contractual obligations**.
+
+Selected audit, certification, and provenance evidence may remain long-lived where its governing policy requires that history. This amendment **does not authorize deletion**, anonymization, migration, or mutation of **existing records** by itself.
+
+Any retention enforcement, cleanup, archival, anonymization, or deletion of existing data requires a separate reviewed implementation plan, explicit authority, and verification evidence. The original language below remains in this historical design record so the evolution of the policy is attributable rather than silently rewritten.
+
 
 ## 1. Purpose
 
