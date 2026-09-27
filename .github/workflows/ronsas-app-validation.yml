@@ -7,6 +7,8 @@ on:
       - "apps/ronsas/**"
       - "ops/ronsas/**"
       - "scripts/validate-ronsas-imports.mjs"
+      - "scripts/build-ronsas-pages.mjs"
+      - "src/lib/ronsasApps.ts"
       - ".github/workflows/ronsas-app-validation.yml"
   push:
     branches: [main]
@@ -14,6 +16,8 @@ on:
       - "apps/ronsas/**"
       - "ops/ronsas/**"
       - "scripts/validate-ronsas-imports.mjs"
+      - "scripts/build-ronsas-pages.mjs"
+      - "src/lib/ronsasApps.ts"
       - ".github/workflows/ronsas-app-validation.yml"
   workflow_dispatch:
 
@@ -37,10 +41,10 @@ jobs:
             verify: npm test && npm run build:types && npm run build -- --base=/DataNest/apps/epublisher/
           - name: Creative Studio
             path: apps/ronsas/creative-studio
-            verify: npm test && npm run build
+            verify: npm test && npm run build -- --base=/DataNest/apps/creative-studio/
           - name: SyncVision
             path: apps/ronsas/syncvision
-            verify: npm run typecheck && npm test && npm run build
+            verify: npm run typecheck && npm test && npm run build -- --base=/DataNest/apps/syncvision/
           - name: Career Compass
             path: apps/ronsas/career-compass
             verify: npm test && npm run build
