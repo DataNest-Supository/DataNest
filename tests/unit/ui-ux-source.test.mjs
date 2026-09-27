@@ -419,11 +419,15 @@ test("active Job evidence locator spans paginated Runs, Checkpoints, and Audit w
 
 
 test("workspace presentation state is URL-addressable without exposing active Job identity", () => {
-  assert.match(appSource, /const workspaceUrlStateKeys=\["page","mode","filter","sort"\] as const/);
+  assert.match(appSource, /const operationalUrlStateKeys=\["page","mode","filter","sort"\] as const/);
+  assert.match(appSource, /const workspaceScopedUrlStateKeys=\[\.\.\.operationalUrlStateKeys,"section"\] as const/);
   assert.match(appSource, /function urlPageIndex\(url:URL\)/);
   assert.match(appSource, /function schedulerViewModeFromUrl\(url:URL\):SchedulerViewMode/);
   assert.match(appSource, /function schedulerFilterFromUrl\(url:URL\):SchedulerFilter/);
   assert.match(appSource, /function schedulerSortModeFromUrl\(url:URL\):SchedulerSortMode/);
+  assert.match(appSource, /workspaceScopedUrlStateKeys\.forEach\(key=>url\.searchParams\.delete\(key\)\)/);
+  assert.match(appSource, /operationalUrlStateKeys\.forEach\(key=>url\.searchParams\.delete\(key\)\)/);
+  assert.match(appSource, /if\(view!=="governance"\)url\.searchParams\.delete\("section"\)/);
   assert.match(appSource, /if\(page>0\)url\.searchParams\.set\("page",String\(page\+1\)\)/);
   assert.match(appSource, /if\(schedulerViewMode!=="gantt"\)url\.searchParams\.set\("mode",schedulerViewMode\)/);
   assert.match(appSource, /if\(schedulerFilter!=="ALL"\)url\.searchParams\.set\("filter",schedulerFilter\)/);
@@ -432,6 +436,13 @@ test("workspace presentation state is URL-addressable without exposing active Jo
   assert.match(appSource, /filter=\{schedulerFilter\} viewMode=\{schedulerViewMode\} sortMode=\{schedulerSortMode\}/);
   assert.doesNotMatch(appSource, /searchParams\.set\("job(?:Id|_id)"/i);
   assert.doesNotMatch(appSource, /searchParams\.set\("session(?:Id|_id)"/i);
+});
+
+
+test("copied workspace links remove presentation state owned by other workspaces", () => {
+  assert.match(appSource, /if\(view!=="governance"\)shareUrl\.searchParams\.delete\("section"\)/);
+  assert.match(appSource, /if\(!\["unifi","scheduler","runs","checkpoints","audit"\]\.includes\(view\)\)shareUrl\.searchParams\.delete\("page"\)/);
+  assert.match(appSource, /if\(view!=="scheduler"\)\{\s*shareUrl\.searchParams\.delete\("mode"\);\s*shareUrl\.searchParams\.delete\("filter"\);\s*shareUrl\.searchParams\.delete\("sort"\)/);
 });
 
 
