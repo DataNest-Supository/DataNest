@@ -104,6 +104,9 @@ test("migration parity reports missing and version-drifted history", () => {
     "bootstrap_resonance_datanest_control_plane",
   ]);
   assert.deepEqual(parity.repoOnly, ["governed_product_catalog"]);
-  assert.equal(parity.versionMismatches.length, 1);
-  assert.equal(parity.versionMismatches[0].name, "datanest_ai_production");
+  assert.equal(parity.versionMismatches.length, 2);
+  assert.deepEqual(
+    parity.versionMismatches.map((item) => item.name).sort(),
+    ["datanest_ai_production", "external_ai_companion_mode"]
+  );
 });
