@@ -181,8 +181,8 @@ export default function IntelligenceFabricPanel({
             <div className="manifestMeta">
               <span>{txt(route.purpose)||"purpose —"}</span>
               <span>{txt(route.requested_capability)||"capability —"}</span>
-              {route.provider_key&&<span>{txt(route.provider_key)}</span>}
-              {route.model_label&&<span>{txt(route.model_label)}</span>}
+              {Boolean(route.provider_key)&&<span>{txt(route.provider_key)}</span>}
+              {Boolean(route.model_label)&&<span>{txt(route.model_label)}</span>}
             </div>
             <p className="muted">{arr(route.reason_codes).map(intelligenceLabel).join(" · ")||"No reason codes recorded."}</p>
           </article>)}
