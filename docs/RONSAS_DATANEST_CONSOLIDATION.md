@@ -8,11 +8,11 @@ RONSAS is a DataNest Product. All RONSAS application source, runtime configurati
 
 | Application / component | Historical source | DataNest target | Status |
 | --- | --- | --- | --- |
-| Sovereign backend | `resonance36912-cell/rons-sovereign-backend-source` | `apps/ronsas/sovereign-backend` | Imported on migration branch |
+| Sovereign backend | `resonance36912-cell/rons-sovereign-backend-source` | `apps/ronsas/sovereign-backend` | Imported: 48 files |
 | ePublisher | `resonance36912-cell/rons-epublisher-sovereign-source` | `apps/ronsas/epublisher` | Pending import |
 | Creative Studio | `resonance36912-cell/rons-creative-studio-sovereign-source` | `apps/ronsas/creative-studio` | Pending import |
 | SyncVision | `resonance36912-cell/rons-sync-vision-sovereign-source` | `apps/ronsas/syncvision` | Pending import |
-| YouTube Optimizer | `resonance36912-cell/rons-youtube-optimizer-sovereign-source` | `apps/ronsas/youtube-optimizer` | Pending import |
+| YouTube Optimizer | `resonance36912-cell/rons-youtube-optimizer-sovereign-source` | `apps/ronsas/youtube-optimizer` | Imported: 236 files |
 | Career Compass | No canonical GitHub source repository located | `apps/ronsas/career-compass` | Source recovery required |
 | SovereignForge | No canonical GitHub source repository located | `apps/ronsas/sovereign-forge` | Source recovery required |
 | LyricSync Studio | No canonical GitHub source repository located | `apps/ronsas/lyricsync-studio` | Source recovery required |
