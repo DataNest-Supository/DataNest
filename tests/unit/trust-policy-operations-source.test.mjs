@@ -60,7 +60,7 @@ test("activation supersedes prior active history instead of overwriting it",()=>
   const source=sql(); if(!source)return;
   assert.match(source,/update public\.data_policy_bindings[\s\S]*status='superseded'/i);
   assert.match(source,/update public\.trust_manifests[\s\S]*status='superseded'/i);
-  assert.match(source,/update public\.provider_trust_profiles[\s\S]*status='restricted'/i);
+  assert.match(source,/update public\.provider_trust_profiles[\s\S]*status='retired'/i);
   assert.match(source,/update public\.retention_policies[\s\S]*status='superseded'/i);
 });
 
@@ -144,5 +144,10 @@ test("governed operation signatures match the approved Phase C contract",()=>{
   assert.match(source,/propose_retention_policy_v1\([\s\S]*target_default_disposition_intent text,[\s\S]*target_requires_lineage_review boolean,[\s\S]*target_authority_basis text default null,[\s\S]*target_evidence_reference text default null/i);
   assert.match(source,/resolve_retention_review_v1\(\s*target_review uuid,\s*target_status text,\s*target_reason text,\s*target_evidence_reference text default null\s*\)/i);
   assert.match(source,/get_trust_policy_workspace_v1\(target_project uuid\) returns jsonb/i);
+});
+
+test("retention decision evidence links to governed retention policy",()=>{
+  const retention=fs.readFileSync(path.join(root,"supabase/migrations/20260927114000_add_retention_policy_foundations.sql"),"utf8");
+  assert.match(retention,/alter table public\.data_policy_decisions[\s\S]*foreign key \(retention_policy_id\)[\s\S]*references public\.retention_policies\(id\)/i);
 });
 
