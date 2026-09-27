@@ -5,8 +5,10 @@ import { getSupabase } from "@/lib/supabase";
 
 type Surface={
   id:string;project_id:string;name:string;url:string;environment:string;status:string;
-  description:string|null;build_commit:string|null;release_id:string|null;build_label:string|null;updated_at:string
+  description:string|null;build_commit:string|null;release_id:string|null;build_label:string|null;
+  portfolio_item_id:string|null;updated_at:string
 };
+type PortfolioItemOption={id:string;slug:string;name:string;item_kind:string;review_state:string;current_lifecycle:string|null};
 type TestCase={
   id:string;project_id:string;surface_id:string|null;title:string;description:string|null;
   expected_result:string;status:string;version:number;created_by:string;created_at:string
@@ -36,6 +38,7 @@ export default function ProductLab({
   canOperate:boolean;
 }){
   const [surfaces,setSurfaces]=useState<Surface[]>([]);
+  const [portfolioItems,setPortfolioItems]=useState<PortfolioItemOption[]>([]);
   const [cases,setCases]=useState<TestCase[]>([]);
   const [runs,setRuns]=useState<TestRun[]>([]);
   const [selectedSurfaceId,setSelectedSurfaceId]=useState("");
@@ -46,6 +49,7 @@ export default function ProductLab({
   const [surfaceEnv,setSurfaceEnv]=useState("preview");
   const [surfaceBuild,setSurfaceBuild]=useState("");
   const [surfaceRelease,setSurfaceRelease]=useState("");
+  const [selectedPortfolioItemId,setSelectedPortfolioItemId]=useState("");
 
   const [caseTitle,setCaseTitle]=useState("");
   const [caseExpected,setCaseExpected]=useState("");
@@ -61,22 +65,26 @@ export default function ProductLab({
     const supabase=getSupabase();
     if(!supabase)return;
 
-    const [s,c,r]=await Promise.all([
+    const [s,c,r,p]=await Promise.all([
       supabase.from("product_surfaces")
-        .select("id,project_id,name,url,environment,status,description,build_commit,release_id,build_label,updated_at")
+        .select("id,project_id,name,url,environment,status,description,build_commit,release_id,build_label,portfolio_item_id,updated_at")
         .eq("project_id",projectId).neq("status","archived").order("updated_at",{ascending:false}),
       supabase.from("product_test_cases")
         .select("id,project_id,surface_id,title,description,expected_result,status,version,created_by,created_at")
         .eq("project_id",projectId).eq("status","active").order("created_at",{ascending:false}),
       supabase.from("product_test_runs")
         .select("id,project_id,job_id,surface_id,test_case_id,tester_user_id,result,notes,evidence_url,request_id,test_case_version,surface_url_snapshot,environment_snapshot,build_commit,release_id,browser_user_agent,viewport,created_at")
-        .eq("project_id",projectId).order("created_at",{ascending:false}).limit(150)
+        .eq("project_id",projectId).order("created_at",{ascending:false}).limit(150),
+      supabase.from("portfolio_registry_view")
+        .select("id,slug,name,item_kind,review_state,current_lifecycle")
+        .eq("project_id",projectId).order("name",{ascending:true})
     ]);
 
-    const first=s.error||c.error||r.error;
+    const first=s.error||c.error||r.error||p.error;
     if(first){setError(first.message);return;}
 
     setSurfaces((s.data||[]) as Surface[]);
+    setPortfolioItems((p.data||[]) as PortfolioItemOption[]);
     setCases((c.data||[]) as TestCase[]);
     setRuns((r.data||[]) as TestRun[]);
     const next=(s.data||[]) as Surface[];
@@ -98,6 +106,9 @@ export default function ProductLab({
   },[projectId,load]);
 
   const selected=surfaces.find(s=>s.id===selectedSurfaceId)||null;
+  const linkedPortfolioItem=selected?.portfolio_item_id
+    ? portfolioItems.find(item=>item.id===selected.portfolio_item_id)||null
+    : null;
   const visibleCases=cases.filter(c=>c.surface_id===selectedSurfaceId);
   const metrics=useMemo(()=>{
     const relevant=runs.filter(r=>!selectedSurfaceId||r.surface_id===selectedSurfaceId);
@@ -119,11 +130,12 @@ export default function ProductLab({
       project_id:projectId,name:surfaceName.trim(),url:surfaceUrl.trim(),environment:surfaceEnv,
       status:"active",build_commit:surfaceBuild.trim(),release_id:surfaceRelease.trim()||null,
       build_label:surfaceRelease.trim()||shortCommit(surfaceBuild.trim()),
+      portfolio_item_id:selectedPortfolioItemId||null,
       created_by:currentUserId,updated_by:currentUserId
     }).select("id").single();
 
     if(insertError){setError(insertError.message);return;}
-    setSurfaceUrl("");setSurfaceBuild("");setSurfaceRelease("");
+    setSurfaceUrl("");setSurfaceBuild("");setSurfaceRelease("");setSelectedPortfolioItemId("");
     setNotice("Product surface added with immutable build identity.");
     await load();
     if(data?.id)setSelectedSurfaceId(data.id);
@@ -221,6 +233,7 @@ export default function ProductLab({
               <span className={selected.environment==="production"?"productionTag":""}>{selected.environment.toUpperCase()}</span>
               <span>Build {shortCommit(selected.build_commit)}</span>
               <span>Release {selected.release_id||"—"}</span>
+              {linkedPortfolioItem&&<span>{linkedPortfolioItem.name} · {linkedPortfolioItem.item_kind} · {linkedPortfolioItem.review_state}</span>}
             </div>}
           </div>
           <div className="rowActions">
@@ -228,7 +241,7 @@ export default function ProductLab({
             {selected&&<a className="secondaryButton compact linkButton" href={selected.url} target="_blank" rel="noreferrer">Open</a>}
           </div>
         </div>
-        {selected?.environment==="production"&&<div className="productionBanner">PRODUCTION SURFACE · confirm before running any potentially destructive test.</div>}
+        {selected?.environment==="production"&&<div className="productionBanner">PRODUCTION SURFACE · confirm before running any potentially destructive test. Production environment is runtime evidence, not product-promotion authority.</div>}
         {surfaces.length>0&&<label>Surface<select value={selectedSurfaceId} onChange={e=>setSelectedSurfaceId(e.target.value)}>{surfaces.map(s=><option key={s.id} value={s.id}>{s.name} · {s.environment} · {shortCommit(s.build_commit)}</option>)}</select></label>}
         {selected?<div className="productFrameShell">
           <iframe key={previewKey} className="productFrame" src={selected.url} title={selected.name} sandbox="allow-scripts allow-forms allow-popups allow-same-origin" referrerPolicy="no-referrer"/>
@@ -254,6 +267,7 @@ export default function ProductLab({
         <label>Environment<select value={surfaceEnv} onChange={e=>setSurfaceEnv(e.target.value)}><option value="preview">Preview</option><option value="staging">Staging</option><option value="production">Production</option><option value="local">Local</option></select></label>
         <label>Build commit / immutable ID<input value={surfaceBuild} onChange={e=>setSurfaceBuild(e.target.value)} placeholder="Git commit SHA" required/></label>
         <label>Release ID<input value={surfaceRelease} onChange={e=>setSurfaceRelease(e.target.value)} placeholder="Optional release/tag"/></label>
+        <label>Portfolio item<select value={selectedPortfolioItemId} onChange={e=>setSelectedPortfolioItemId(e.target.value)}><option value="">Unlinked / project-only surface</option>{portfolioItems.map(item=><option key={item.id} value={item.id}>{item.name} · {item.item_kind} · {item.review_state}</option>)}</select></label>
         <button className="primaryButton">Add surface</button>
       </form>
     </section>}
