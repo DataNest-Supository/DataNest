@@ -4566,8 +4566,6 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
 
 /* Command-center navigation density */
 @media(min-width:901px){
-  .appFrame{grid-template-columns:252px minmax(0,1fr)}
-  .appFrame.aiDockOpen{grid-template-columns:252px minmax(0,1fr) auto}
   .sidebar{padding:18px 13px 14px}
   .sidebarTop{gap:10px;padding:3px 7px 15px}
   .projectPill{padding:10px;margin:2px 2px 14px}
@@ -4577,6 +4575,13 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
     background:linear-gradient(90deg,rgba(66,231,255,.105),rgba(139,92,246,.055) 58%,transparent);
     box-shadow:inset 3px 0 0 var(--cyan),0 0 18px rgba(66,231,255,.055);
   }
+}
+@media(min-width:1181px){
+  .appFrame.aiDockOpen{grid-template-columns:252px minmax(0,1fr) auto}
+  .appFrame{grid-template-columns:252px minmax(0,1fr)}
+}
+@media(min-width:901px) and (max-width:1180px){
+  .appFrame:not(.aiDockOpen){grid-template-columns:252px minmax(0,1fr)}
 }
 .workspaceTaskGuideAction{
   display:inline-flex;
