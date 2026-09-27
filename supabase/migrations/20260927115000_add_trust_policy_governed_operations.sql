@@ -1284,15 +1284,6 @@ begin
     end if;
   end if;
 
-  -- Explicit hard boundaries remain enforced even while a manifest is report_only.
-  if reason_code in (
-    'local_only_external_denied','provider_key_mismatch','provider_profile_inactive',
-    'provider_visibility_denied','provider_purpose_denied','hard_learning_exclusion',
-    'publication_not_authorized','retention_hold_active'
-  ) then
-    enforcement_mode:='enforced';
-  end if;
-
   insert into public.data_policy_decisions(
     project_id,trace_id,actor_user_id,subject_type,subject_id,subject_reference,
     purpose,requested_operation,outcome,reason_code,effective_visibility_class,effective_reuse_state,
