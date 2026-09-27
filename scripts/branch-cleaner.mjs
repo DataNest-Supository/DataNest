@@ -26,7 +26,7 @@ export function extractAuditIds(text) {
 }
 
 const ageDays = (date, now = new Date()) =>
-  date ? Math.max(0, (now - new Date(date)) / 86400000) : Infinity;
+  date ? Math.max(0, (now - new Date(date)) / 86400000) : Number.NaN;
 const matches = (value, patterns = []) =>
   patterns.some((p) => new RegExp(p).test(value));
 
@@ -42,11 +42,11 @@ export function classifyBranch(branch, config, now = new Date()) {
     return { decision:"keep", reason:"protected", ageDays:age, ahead, behind, status };
   if (branch.openPr)
     return { decision:"keep", reason:"open_pr", ageDays:age, ahead, behind, status };
-  if (ahead === 0 && status !== "unknown" && age >= config.minDeleteAgeDays)
+  if (ahead === 0 && status !== "unknown" && Number.isFinite(age) && age >= config.minDeleteAgeDays)
     return { decision:"delete_candidate", reason:branch.mergedPr ? "merged_no_unique_commits" : "no_unique_commits", ageDays:age, ahead, behind, status };
   if (branch.mergedPr && ahead != null && ahead > 0)
     return { decision:"review", reason:"post_merge_unique_commits", ageDays:age, ahead, behind, status };
-  if (age >= config.staleDays && ahead != null && ahead > 0)
+  if (Number.isFinite(age) && age >= config.staleDays && ahead != null && ahead > 0)
     return { decision:"review", reason:"stale_unique_work", ageDays:age, ahead, behind, status };
   if (branch.familyHasNewerSibling)
     return { decision:"review", reason:"possible_superseded_variant", ageDays:age, ahead, behind, status };
@@ -299,7 +299,16 @@ const advisorList = (data) =>
 
 async function supabaseAudit(config, token) {
   if (!token)
-    return { skipped:true, reason:"SUPABASE_ACCESS_TOKEN not set", projects:[], globalChecks:[] };
+    return {
+      skipped:true,
+      reason:"SUPABASE_ACCESS_TOKEN not set",
+      projects:[],
+      globalChecks:[{
+        level:"blocker",
+        code:"supabase_audit_unavailable",
+        detail:"Supabase verification is required before strict destructive cleanup.",
+      }],
+    };
 
   const projects = [];
   for (const entry of config.supabaseProjects || []) {
@@ -359,6 +368,18 @@ async function supabaseAudit(config, token) {
           });
         }
       }
+    }
+
+    const requiredFailures = p.errors.filter((error) =>
+      ["project", "branches", "securityAdvisors", "migrations"].includes(error.key)
+    );
+    if (requiredFailures.length) {
+      p.checks.push({
+        level:"blocker",
+        code:"supabase_audit_incomplete",
+        detail:"Required Supabase checks failed: " +
+          requiredFailures.map((error) => error.key).join(", "),
+      });
     }
 
     projects.push(p);
