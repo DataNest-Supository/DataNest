@@ -79,6 +79,11 @@ async function setup(page:Page,role:"viewer"|"operator"|"owner"){
     if(path.endsWith("/project_members"))body={project_id:projectId,user_id:userId,role,status:"active"};
     if(path.endsWith("/get_project_dashboard_summary"))body={total_jobs:0,active_jobs:0,running_jobs:0,blocked_jobs:0,available_capabilities:0,registered_capabilities:0};
     if(path.endsWith("/rpc/get_trust_policy_workspace_v1"))body=trustWorkspace(role);
+    if(path.endsWith("/rpc/get_project_membership_workspace_v1"))body={
+      members:[],invitations:[],active_formal_voter_count:0,
+      can_invite:false,can_invite_admin:false,caller_role:role,
+      boundaries:{self_invite:false,owner_invite:false,invitation_creates_vote:false}
+    };
     if(path.endsWith("/rpc/get_governance_workspace_v1"))body={
       ratified_protocol:null,draft_protocols:[],proposals:[],decisions:[],disputes:[],
       can_manage:role==="owner",can_vote:role!=="viewer",member_role:role,
@@ -114,7 +119,7 @@ test("viewer sees trust state but no mutation controls",async({page})=>{
   await expect(page.getByText("Project Restricted",{exact:true}).first()).toBeVisible();
   await expect(page.getByText("Runtime Only",{exact:true}).first()).toBeVisible();
   await expect(page.getByText("fixture-provider",{exact:true})).toBeVisible();
-  await expect(page.getByText("Suspended",{exact:true})).toBeVisible();
+  await expect(page.getByText("suspended",{exact:true})).toBeVisible();
   await expect(page.getByText("Planned / target state",{exact:true})).toBeVisible();
   await expect(page.getByText("Create Trust Manifest draft",{exact:true})).toHaveCount(0);
   await expect(page.getByRole("button",{name:"Approve",exact:true})).toHaveCount(0);
@@ -135,7 +140,7 @@ test("operator can propose but cannot activate high-impact policy",async({page})
 test("owner can review governed policy but blocked retention stays non-destructive",async({page})=>{
   await setup(page,"owner");
   await page.goto(appPath+"?view=governance&section=trust");
-  await expect(page.getByRole("button",{name:"Approve",exact:true})).toBeVisible();
+  await expect(page.getByRole("button",{name:"Approve",exact:true}).first()).toBeVisible();
   await expect(page.getByRole("button",{name:"Activate",exact:true}).first()).toBeVisible();
   await expect(page.getByText("Owner / admin",{exact:true}).first()).toBeVisible();
   await expect(page.getByRole("button",{name:"Approve future disposition"})).toBeDisabled();
