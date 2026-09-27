@@ -332,3 +332,19 @@ Malformed Scheduler `mode`, `filter` and `sort` values fall back to their safe d
 **Copy view link** is available from workspace actions on desktop and mobile. It copies the canonical current presentation URL while removing release/cache-busting parameters such as `release` and `_reload`.
 
 The copied link contains presentation state only. Active Job identity, DataNest AI session identity, authority state and other authenticated governed context are never added to the URL.
+
+Workspace-specific presentation parameters are scoped to the workspace that owns them. Operational paging/mode/filter/sort state is cleared when users navigate to another workspace, while Governance alone retains its `section` parameter. Invalid Governance section values canonicalize to Sovereign Governance and are removed from the URL. Copying a view link also strips presentation parameters that do not belong to the active workspace, preventing stale cross-workspace state from leaking into shared links.
+
+## Browser-history restoration
+
+Browser Back/Forward restores the presentation state recorded for the history entry being revisited rather than borrowing parameters from the workspace the user is leaving.
+
+History restoration applies workspace scoping before presentation state is read:
+- UNIFI, TranScheduler, Runs, Checkpoints and Audit may restore their own `page`;
+- only TranScheduler may restore `mode`, `filter` and `sort`;
+- only Governance may restore `section`;
+- foreign presentation parameters are removed from the restored entry immediately.
+
+Local presentation changes continue to replace the current history entry. Workspace navigation creates a new entry. This allows a user to move from a configured TranScheduler view to a paginated Runs view, navigate elsewhere, and then use Back/Forward to recover each view independently without stale parameter resurrection.
+
+The same workspace-scoping primitive is used for copied view links so browser restoration and link sharing follow one canonical ownership contract.
