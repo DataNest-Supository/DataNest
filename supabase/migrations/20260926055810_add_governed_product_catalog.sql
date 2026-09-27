@@ -1,8 +1,4 @@
--- Governed product catalog for Resonance DataNest.
--- Idempotent so it can be reconciled safely with environments where the catalog
--- was introduced operationally before the migration was committed to source.
-
-create table if not exists public.products (
+create table public.products (
   id uuid primary key,
   project_id uuid not null references public.projects(id) on delete cascade,
   slug text not null,
@@ -26,11 +22,8 @@ create table if not exists public.products (
   constraint products_name_nonempty check (length(btrim(name)) between 1 and 180),
   constraint products_project_slug_key unique (project_id, slug)
 );
-
-create index if not exists products_project_status_idx
-  on public.products(project_id, lifecycle_status);
-
-create table if not exists public.product_records (
+create index products_project_status_idx on public.products(project_id, lifecycle_status);
+create table public.product_records (
   id uuid primary key,
   project_id uuid not null references public.projects(id) on delete cascade,
   product_id uuid not null references public.products(id) on delete cascade,
@@ -44,79 +37,35 @@ create table if not exists public.product_records (
   updated_at timestamptz not null default now(),
   constraint product_records_type_nonempty check (length(btrim(record_type)) between 1 and 80)
 );
-
-create index if not exists product_records_product_type_idx
-  on public.product_records(product_id, record_type, sort_order);
-create index if not exists product_records_project_type_idx
-  on public.product_records(project_id, record_type);
-
+create index product_records_product_type_idx on public.product_records(product_id, record_type, sort_order);
+create index product_records_project_type_idx on public.product_records(project_id, record_type);
 alter table public.products enable row level security;
 alter table public.product_records enable row level security;
-
 grant select, insert, update, delete on table public.products to authenticated;
 grant select, insert, update, delete on table public.product_records to authenticated;
 grant select, insert, update, delete on table public.products to service_role;
 grant select, insert, update, delete on table public.product_records to service_role;
-
-drop policy if exists products_select on public.products;
-create policy products_select on public.products
-  for select to authenticated
+create policy products_select on public.products for select to authenticated
   using (private.is_project_stakeholder(project_id) or private.is_project_member(project_id));
-
-drop policy if exists products_insert on public.products;
-create policy products_insert on public.products
-  for insert to authenticated
+create policy products_insert on public.products for insert to authenticated
   with check (private.has_project_role(project_id, array['owner','admin','operator']::text[]));
-
-drop policy if exists products_update on public.products;
-create policy products_update on public.products
-  for update to authenticated
+create policy products_update on public.products for update to authenticated
   using (private.has_project_role(project_id, array['owner','admin','operator']::text[]))
   with check (private.has_project_role(project_id, array['owner','admin','operator']::text[]));
-
-drop policy if exists products_delete on public.products;
-create policy products_delete on public.products
-  for delete to authenticated
+create policy products_delete on public.products for delete to authenticated
   using (private.has_project_role(project_id, array['owner','admin']::text[]));
-
-drop policy if exists product_records_select on public.product_records;
-create policy product_records_select on public.product_records
-  for select to authenticated
+create policy product_records_select on public.product_records for select to authenticated
   using (private.is_project_stakeholder(project_id) or private.is_project_member(project_id));
-
-drop policy if exists product_records_insert on public.product_records;
-create policy product_records_insert on public.product_records
-  for insert to authenticated
+create policy product_records_insert on public.product_records for insert to authenticated
   with check (
     private.has_project_role(project_id, array['owner','admin','operator']::text[])
-    and exists (
-      select 1
-      from public.products p
-      where p.id=product_id
-        and p.project_id=product_records.project_id
-    )
+    and exists (select 1 from public.products p where p.id=product_id and p.project_id=product_records.project_id)
   );
-
-drop policy if exists product_records_update on public.product_records;
-create policy product_records_update on public.product_records
-  for update to authenticated
+create policy product_records_update on public.product_records for update to authenticated
   using (private.has_project_role(project_id, array['owner','admin','operator']::text[]))
   with check (
     private.has_project_role(project_id, array['owner','admin','operator']::text[])
-    and exists (
-      select 1
-      from public.products p
-      where p.id=product_id
-        and p.project_id=product_records.project_id
-    )
+    and exists (select 1 from public.products p where p.id=product_id and p.project_id=product_records.project_id)
   );
-
-drop policy if exists product_records_delete on public.product_records;
-create policy product_records_delete on public.product_records
-  for delete to authenticated
+create policy product_records_delete on public.product_records for delete to authenticated
   using (private.has_project_role(project_id, array['owner','admin']::text[]));
-
-comment on table public.products is
-  'Project-scoped governed product catalog. One product owns its traceable child records.';
-comment on table public.product_records is
-  'Typed governed child records for products: apps, components, controls, risks, roadmap, evidence, decisions and branches.';
