@@ -32,6 +32,12 @@ test("private helpers validate identity, sponsorship, autonomy, breakers, ceilin
   }
 });
 
+test("operator proposals stop at A3 and A4 proposal requires owner/admin",()=>{
+  const source=sql();
+  assert.match(source,/target_autonomy_level='A4'[\s\S]*caller_role not in \('owner','admin'\)/i);
+  assert.match(source,/A4 proposal requires owner or admin authority/i);
+});
+
 test("A3 is independently approved and A4 generic automation is denied",()=>{
   const source=sql();
   assert.match(source,/autonomy_level='A3'[\s\S]*array\['owner','admin'\]/i);
