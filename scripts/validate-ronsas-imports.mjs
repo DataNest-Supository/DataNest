@@ -17,6 +17,8 @@ const required = [
   "ops/ronsas/ealiophin/START-SYNCVISION-MUSETALK.ps1",
   "ops/ronsas/ealiophin/RONSAS-MODULES.json",
   "ops/ronsas/ealiophin/START-RONSAS-DATANEST.ps1",
+  "ops/ronsas/ealiophin/INSTALL-RONSAS-SUPERVISOR.ps1",
+  "ops/ronsas/ealiophin/RONSAS-SUPERVISOR.ps1",
 ];
 
 const controlRequired = [
