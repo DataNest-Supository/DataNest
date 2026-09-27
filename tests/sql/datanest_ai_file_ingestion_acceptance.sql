@@ -56,6 +56,23 @@ begin
     raise exception 'frozen certified memory snapshot column missing';
   end if;
 
+
+  if (
+    select count(*)
+    from information_schema.columns
+    where table_schema='public'
+      and table_name='ai_file_submissions'
+      and column_name in (
+        'learning_policy_outcome',
+        'learning_policy_reason_code',
+        'learning_reuse_state',
+        'learning_policy_version',
+        'learning_decision_record_id'
+      )
+  ) <> 5 then
+    raise exception 'frozen file-learning policy snapshot columns missing';
+  end if;
+
   if not exists (
     select 1 from pg_constraint c
     join pg_class rel on rel.oid=c.conrelid
