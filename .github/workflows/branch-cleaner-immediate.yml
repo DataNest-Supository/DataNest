@@ -1,0 +1,110 @@
+name: Immediate Safe Branch Cleanup
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/branch-cleaner-immediate.yml"
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  cleanup:
+    if: ${{ github.event.head_commit.message == 'Run immediate safe branch cleanup' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Re-fetch all branches
+        run: git fetch origin "+refs/heads/*:refs/remotes/origin/*" --prune
+
+      - name: Revalidate and delete allowlisted zero-unique branches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          OWNER="${REPO%%/*}"
+          mkdir -p artifacts/branch-cleaner
+          REPORT="artifacts/branch-cleaner/immediate-cleanup.md"
+          {
+            echo "# Immediate safe branch cleanup"
+            echo
+            echo "Main SHA: ${GITHUB_SHA}"
+            echo
+          } > "$REPORT"
+
+          candidates=(
+            "feat/resonance-value-consolidation-v2-20260926"
+            "feature/ai-companion-trace-handoff"
+            "feature/datanest-ai-governed-memory"
+            "feature/datanest-product-hierarchy-managed-execution"
+            "feature/products-hero-live-metadata"
+            "fix/ai-workspace-recovery-20260926"
+            "fix/companion-geometry-forward-port-20260926"
+            "fix/datanest-staging-routing-current-main-20260925"
+            "fix/products-share-link-duplicate"
+            "fix/supabase-edge-function-deploy-20260927"
+            "hotfix/pages-production-smoke-scope"
+            "integrate/datanest-hierarchy-ronsas-value-network"
+            "optimize/datanest-learning-seals-v2"
+            "refactor/ai-operations-into-settings"
+            "refactor/remove-capacity-capabilities-ui"
+            "test/project-invite-feedback-browser-20260926"
+            "ux/streamline-workspace-shell-20260925"
+          )
+
+          deleted=0
+          skipped=0
+          for branch in "${candidates[@]}"; do
+            if ! git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+              echo "- SKIP `$branch`: branch no longer exists" | tee -a "$REPORT"
+              skipped=$((skipped+1))
+              continue
+            fi
+
+            encoded=$(python3 -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=""))' "$branch")
+            protected=$(gh api "repos/$REPO/branches/$encoded" --jq '.protected')
+            if [ "$protected" = "true" ]; then
+              echo "- SKIP `$branch`: protected" | tee -a "$REPORT"
+              skipped=$((skipped+1))
+              continue
+            fi
+
+            open_prs=$(gh api -X GET "repos/$REPO/pulls" -f state=open -f head="$OWNER:$branch" --jq 'length')
+            if [ "$open_prs" != "0" ]; then
+              echo "- SKIP `$branch`: open PR exists" | tee -a "$REPORT"
+              skipped=$((skipped+1))
+              continue
+            fi
+
+            ahead=$(git rev-list --count "origin/main..origin/$branch")
+            if [ "$ahead" != "0" ]; then
+              echo "- SKIP `$branch`: $ahead unique commit(s)" | tee -a "$REPORT"
+              skipped=$((skipped+1))
+              continue
+            fi
+
+            git push origin --delete "$branch"
+            echo "- DELETED `$branch`: zero unique commits, no open PR, unprotected" | tee -a "$REPORT"
+            deleted=$((deleted+1))
+          done
+
+          {
+            echo
+            echo "Deleted: $deleted"
+            echo "Skipped: $skipped"
+          } | tee -a "$REPORT"
+
+      - name: Upload cleanup evidence
+        if: always()
+        uses: actions/upload-artifact@v6.0.0
+        with:
+          name: immediate-branch-cleanup
+          path: artifacts/branch-cleaner/
+          if-no-files-found: error
