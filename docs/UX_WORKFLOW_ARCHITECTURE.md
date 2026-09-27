@@ -348,3 +348,24 @@ History restoration applies workspace scoping before presentation state is read:
 Local presentation changes continue to replace the current history entry. Workspace navigation creates a new entry. This allows a user to move from a configured TranScheduler view to a paginated Runs view, navigate elsewhere, and then use Back/Forward to recover each view independently without stale parameter resurrection.
 
 The same workspace-scoping primitive is used for copied view links so browser restoration and link sharing follow one canonical ownership contract.
+
+## Browser-session draft resilience
+
+Authored but unsubmitted work is preserved in browser `sessionStorage` for selected high-value workflows so users can move between workspaces, use browser history, or reload without silently losing text they are still composing.
+
+Current protected draft surfaces:
+- UNIFI Job Manifest authoring;
+- Sovereign Governance protocol, proposal, dispute and resolution text;
+- Think Tank channel descriptions, per-channel thread titles and per-thread message drafts;
+- Product Lab surface/test/evidence authoring.
+
+Draft keys are scoped by project and authenticated user. Think Tank thread/message drafts add their current channel or thread identifier so content does not bleed across discussions.
+
+Draft persistence is intentionally browser-session local:
+- it is not governed project state;
+- it is not written to URLs;
+- it is not shared with other users;
+- values return to their baseline and the stored entry is removed when a form is successfully submitted or the user manually clears the field;
+- closing the browser session may discard the draft.
+
+Credential, password, token and secret fields are excluded from this persistence pattern. Draft storage is a continuity aid only and must not become an alternate store for authoritative project records or sensitive authentication material.
