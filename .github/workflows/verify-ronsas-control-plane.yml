@@ -1,0 +1,74 @@
+name: Verify DataNest RONSAS control plane
+
+on:
+  push:
+    branches:
+      - migrate/ronsas-applications-into-datanest-20260927
+    paths:
+      - ".github/workflows/verify-ronsas-control-plane.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+
+      - name: Verify DataNest-only RONSAS authority
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from "node:fs";
+          const registry = JSON.parse(readFileSync("ops/ronsas/ealiophin/RONSAS-MODULES.json", "utf8"));
+          if (registry.schema !== "datanest.ronsas.module-registry.v2") throw new Error("unexpected registry schema");
+          if (registry.repository !== "DataNest-Supository/DataNest") throw new Error("unexpected repository authority");
+          if (registry.policy?.singleRepositoryAuthority !== true) throw new Error("single repository authority is not enforced");
+          if (registry.policy?.billingState !== "free-promotion" || registry.policy?.paidCheckoutActive !== false) {
+            throw new Error("free-promotion/no-paid-checkout policy is not enforced");
+          }
+          const expected = new Map([
+            ["epublisher","apps/ronsas/epublisher"],
+            ["creative-studio","apps/ronsas/creative-studio"],
+            ["syncvision","apps/ronsas/syncvision"],
+            ["youtube-optimizer","apps/ronsas/youtube-optimizer"],
+            ["sovereign-backend","apps/ronsas/sovereign-backend"],
+          ]);
+          for (const [id, source] of expected) {
+            const module = registry.modules.find((item) => item.id === id);
+            if (!module || module.source !== source) throw new Error(`bad source authority for ${id}`);
+          }
+          NODE
+
+          if grep -R -n -E 'resonance36912-cell/RONSAS|rons-sovereign-codebase|Resonance\\OpenNova'             ops/ronsas/ealiophin/RONSAS-MODULES.json             ops/ronsas/ealiophin/START-RONSAS-DATANEST.ps1             ops/ronsas/ealiophin/STATUS-RONSAS-DATANEST.ps1             ops/ronsas/ealiophin/STOP-RONSAS-DATANEST.ps1             ops/ronsas/ealiophin/rons-control.example.json; then
+            echo "Retired runtime authority detected in active DataNest RONSAS control files." >&2
+            exit 1
+          fi
+
+      - name: Parse DataNest RONSAS PowerShell
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $files = @(
+            'ops/ronsas/ealiophin/START-RONSAS-DATANEST.ps1',
+            'ops/ronsas/ealiophin/STATUS-RONSAS-DATANEST.ps1',
+            'ops/ronsas/ealiophin/STOP-RONSAS-DATANEST.ps1'
+          )
+          foreach ($file in $files) {
+            $tokens = $null
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path $file),
+              [ref]$tokens,
+              [ref]$errors
+            )
+            if ($errors.Count -gt 0) {
+              $errors | ForEach-Object { Write-Error "$file: $($_.Message)" }
+              throw "PowerShell syntax validation failed: $file"
+            }
+            Write-Host "PowerShell syntax valid: $file"
+          }
