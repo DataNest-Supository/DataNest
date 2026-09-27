@@ -13,10 +13,10 @@ RONSAS is a DataNest Product. All RONSAS application source, runtime configurati
 | Creative Studio | `resonance36912-cell/rons-creative-studio-sovereign-source` | `apps/ronsas/creative-studio` | Imported from `c7e0ac7ab341369ed26483eac3df4e83c1de6b6d`; exact source tree `17bc265d00ddd7413046a1f8c567925fa7ba9e21` (297 blobs) |
 | SyncVision | `resonance36912-cell/rons-sync-vision-sovereign-source` | `apps/ronsas/syncvision` | Imported source; FFmpeg runtime migrated to exact locked `@ffmpeg/core` 0.12.10 vendoring; historical missing branding assets replaced with governed in-suite fallbacks |
 | YouTube Optimizer | `resonance36912-cell/rons-youtube-optimizer-sovereign-source` | `apps/ronsas/youtube-optimizer` | Imported: 236 files |
-| Career Compass | Historical executable source unavailable | `apps/ronsas/career-compass` | Reconstructed as DataNest-native application; validation pending |
-| SovereignForge | Historical executable source unavailable | `apps/ronsas/sovereign-forge` | Reconstructed as DataNest-native application; validation pending |
-| LyricSync Studio | Historical executable source unavailable | `apps/ronsas/lyricsync-studio` | Reconstructed as DataNest-native application; validation pending |
-| Scene Song Spark | Historical executable source unavailable | `apps/ronsas/scene-song-spark` | Reconstructed as DataNest-native application; validation pending |
+| Career Compass | Historical executable source unavailable | `apps/ronsas/career-compass` | Reconstructed as DataNest-native application; validated from DataNest source |
+| SovereignForge | Historical executable source unavailable | `apps/ronsas/sovereign-forge` | Reconstructed as DataNest-native application; validated from DataNest source |
+| LyricSync Studio | Historical executable source unavailable | `apps/ronsas/lyricsync-studio` | Reconstructed as DataNest-native application; validated from DataNest source |
+| Scene Song Spark | Historical executable source unavailable | `apps/ronsas/scene-song-spark` | Reconstructed as DataNest-native application; validated from DataNest source |
 | RONS Control Center / Open Nova operations | Historical RONSAS control-plane sources | `ops/ronsas/ealiophin` plus app-local runtime source | Reconciled into DataNest-native start/status/stop, supervisor, and optional SyncVision MuseTalk controls |
 
 ## SyncVision runtime integrity
@@ -87,6 +87,8 @@ This proves the imported application source is executable from DataNest. SyncVis
 7. External services may remain dependencies, but repository/source authority and release control must originate in DataNest.
 
 
-### Reconstruction validation pending
+### Reconstruction validation
 
-PR validation is extended to Career Compass, SovereignForge, LyricSync Studio, and Scene Song Spark. Their status becomes certified only after the new DataNest PR workflow run passes.
+RONSAS Application Validation run `36355180181` passed all nine DataNest application/component jobs on cleaned migration head `8674bc20b964f654d2b4829c6e4ebf09965ba30e`, including Career Compass, SovereignForge, LyricSync Studio, and Scene Song Spark.
+
+The same cleaned head also passed root CI run `36355180189`, PR Verification run `36355180156` (611 unit tests and 61 Playwright browser tests), and DataNest AI Certification run `36355180231`.
