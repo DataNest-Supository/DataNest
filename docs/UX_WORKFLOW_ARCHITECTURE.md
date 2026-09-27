@@ -188,6 +188,19 @@ The DataNest AI START HERE guidance includes a direct **Select Job Manifest** ac
 
 The action changes navigation/focus only. It does not select a Job automatically, create a Job, or mutate governed state.
 
+## Governance membership invite lifecycle
+
+Governance membership controls are state-aware so invite actions match the project record already visible to the user.
+
+- Entering an email that already belongs to an active project member disables duplicate invitation delivery and explains the existing role.
+- Entering an email with a pending invitation changes the primary action to **Resend project invite** and preserves the pending invite's governed role.
+- Pending invitation rows expose explicit Resend and Revoke actions while historical rows remain read-only.
+- Member and invitation identifiers use compact display forms, while the complete identifier remains available as metadata.
+- At mobile widths, membership rows become labeled, self-contained cards rather than forcing horizontal scrolling.
+
+These controls do not change governance eligibility. Formal voting still requires the authenticated account to accept project access and hold active membership.
+
+
 
 ## Active Job journey rail
 

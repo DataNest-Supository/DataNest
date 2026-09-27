@@ -396,3 +396,120 @@ test("public Transparency index publishes the audit return without sign in",asyn
   await expect(page.locator("body")).toContainText("RESONANCE DATANEST / RONSAS - EXTERNAL AUDIT RETURN");
   await expect(page.locator("body")).toContainText("AUD-014");
 });
+
+
+test("project membership blocks active duplicates and resends a pending invitation",async({page})=>{
+  await signIn(page);
+
+  const activeEmail="active-member@example.invalid";
+  const pendingEmail="pending-member@example.invalid";
+  const workspace={
+    members:[{
+      user_id:"11111111-1111-4111-8111-111111111111",
+      email:activeEmail,
+      role:"viewer",
+      status:"active",
+      created_at:"2026-09-26T12:00:00Z",
+      updated_at:"2026-09-26T12:00:00Z",
+      formal_voting_eligible:true
+    }],
+    invitations:[{
+      id:"22222222-2222-4222-8222-222222222222",
+      user_id:"33333333-3333-4333-8333-333333333333",
+      email:pendingEmail,
+      role:"operator",
+      status:"invited",
+      invited_by:"11111111-1111-4111-8111-111111111111",
+      invited_at:"2026-09-26T12:00:00Z",
+      expires_at:"2026-10-03T12:00:00Z",
+      accepted_at:null,
+      revoked_at:null
+    }],
+    active_formal_voter_count:1,
+    can_invite:true,
+    can_invite_admin:true,
+    caller_role:"owner",
+    boundaries:{}
+  };
+
+  await page.route("**/rest/v1/rpc/get_project_membership_workspace_v1",async route=>{
+    await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(workspace)});
+  });
+
+  let inviteCalls=0;
+  await page.route("**/functions/v1/send-project-member-invite",async route=>{
+    inviteCalls++;
+    await new Promise(resolve=>setTimeout(resolve,180));
+    await route.fulfill({
+      status:200,
+      contentType:"application/json",
+      body:JSON.stringify({
+        ok:true,
+        delivery:"reinvite",
+        invitation:{id:"22222222-2222-4222-8222-222222222222"},
+        formalVotingEligible:false,
+        acceptanceRequired:true
+      })
+    });
+  });
+
+  await openWorkspace(page,"Governance");
+  await page.getByText("Project members and invitations",{exact:true}).click();
+
+  const emailInput=page.getByLabel("Invite email");
+  await emailInput.fill(activeEmail);
+  const activeButton=page.getByRole("button",{name:"Already active"});
+  await expect(activeButton).toBeDisabled();
+  await expect(page.locator("#project-invite-context")).toContainText("Already a member");
+  expect(inviteCalls).toBe(0);
+
+  await emailInput.fill(pendingEmail);
+  const resend=page.getByRole("button",{name:"Resend project invite"});
+  await expect(resend).toBeEnabled();
+  await expect(page.locator("#project-invite-context")).toContainText("Invitation already pending");
+
+  await resend.click();
+  await expect(page.getByRole("button",{name:"Sending invite…"})).toBeVisible();
+  await expect(page.getByRole("button",{name:"Invite sent"})).toBeVisible();
+  await expect(page.locator("#project-invite-feedback")).toContainText("Invitation resent to "+pendingEmail);
+  await expect(emailInput).toHaveValue(pendingEmail);
+  expect(inviteCalls).toBe(1);
+});
+
+test("project membership rows remain readable without horizontal overflow on mobile",async({page})=>{
+  await signIn(page);
+  await page.setViewportSize({width:390,height:844});
+
+  await page.route("**/rest/v1/rpc/get_project_membership_workspace_v1",async route=>{
+    await route.fulfill({
+      status:200,
+      contentType:"application/json",
+      body:JSON.stringify({
+        members:[{
+          user_id:"11111111-1111-4111-8111-111111111111",
+          email:"active-member@example.invalid",
+          role:"viewer",
+          status:"active",
+          created_at:"2026-09-26T12:00:00Z",
+          updated_at:"2026-09-26T12:00:00Z",
+          formal_voting_eligible:true
+        }],
+        invitations:[],
+        active_formal_voter_count:1,
+        can_invite:true,
+        can_invite_admin:true,
+        caller_role:"owner",
+        boundaries:{}
+      })
+    });
+  });
+
+  await openWorkspace(page,"Governance");
+  await page.getByText("Project members and invitations",{exact:true}).click();
+
+  const table=page.locator(".membershipTable").first();
+  await expect(table).toBeVisible();
+  const overflow=await table.evaluate(element=>element.scrollWidth-element.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(1);
+  await expect(table.locator('[data-label="Member"]')).toContainText("ID 11111111…1111");
+});
