@@ -15,7 +15,7 @@ import ResourceFabricPanel from "@/components/ResourceFabricPanel";
 import type { ExecutionAuthorityRole } from "@/lib/executionAuthority";
 import { useSessionDraftState } from "@/lib/sessionDraft";
 import { useSingleFlight } from "@/lib/singleFlight";
-import { clearPendingMutation, getOrCreatePendingMutation, loadPendingMutation, type PendingMutationIntent } from "@/lib/pendingMutation";
+import { PENDING_MUTATION_EVENT, clearPendingMutation, getOrCreatePendingMutation, loadPendingMutation, type PendingMutationIntent } from "@/lib/pendingMutation";
 import { reconcileServerMutation, type MutationReconciliationState } from "@/lib/mutationReconciliation";
 
 type Project = { id:string; slug:string; name:string; description:string|null; status:string; created_at:string };
@@ -73,6 +73,14 @@ type JobExecutionAuthorityState = {
   decision_outcome?:string|null;
   decision_reason_code?:string|null;
   readiness?:string|null;
+};
+type MutationRecoveryItem = {
+  scope:string;
+  kind:string;
+  view:ViewKey;
+  label:string;
+  detail:string;
+  startedAt:string;
 };
 
 const PAGE_SIZE = 20;
@@ -398,6 +406,7 @@ export default function DataNestApp({session}:{session:Session}) {
   const [loadingView,setLoadingView]=useState(false);
   const [notice,setNotice]=useState("");
   const [error,setError]=useState("");
+  const [pendingRecoveries,setPendingRecoveries]=useState<MutationRecoveryItem[]>([]);
   const [health,setHealth]=useState<HealthState>({state:"checking",checkedAt:null,message:"Checking control plane…"});
   const [reloadingLatest,setReloadingLatest]=useState(false);
   const [locatingActiveJob,setLocatingActiveJob]=useState(false);
@@ -407,6 +416,58 @@ export default function DataNestApp({session}:{session:Session}) {
 
   const canOperate=membership ? ["owner","admin","operator"].includes(membership.role) : false;
   const canManageAi=membership ? ["owner","admin"].includes(membership.role) : false;
+
+  const pendingRecoveryDescriptors=useMemo(()=>{
+    if(!project)return [] as Array<Omit<MutationRecoveryItem,"startedAt">>;
+    const suffix=project.id+":"+session.user.id;
+    return [
+      {
+        scope:"unifi-job:"+suffix,
+        kind:"unifi_job",
+        view:"unifi" as ViewKey,
+        label:"UNIFI Job Manifest",
+        detail:"Execution-planning submission needs authoritative resolution."
+      },
+      {
+        scope:"sparks-redemption:"+suffix,
+        kind:"spark_redemption",
+        view:"sparks" as ViewKey,
+        label:"Spark reservation",
+        detail:"Reservation outcome needs authoritative resolution."
+      },
+      {
+        scope:"productlab-test-run:"+suffix,
+        kind:"product_test_run",
+        view:"productlab" as ViewKey,
+        label:"Product Lab test evidence",
+        detail:"Versioned test evidence needs authoritative resolution."
+      }
+    ];
+  },[project?.id,session.user.id]);
+
+  const syncPendingRecoveries=useCallback(()=>{
+    if(!project){
+      setPendingRecoveries([]);
+      return;
+    }
+    const next:MutationRecoveryItem[]=[];
+    for(const descriptor of pendingRecoveryDescriptors){
+      const intent=loadPendingMutation(descriptor.scope);
+      if(!intent||intent.kind!==descriptor.kind)continue;
+      next.push({...descriptor,startedAt:intent.startedAt});
+    }
+    next.sort((a,b)=>a.startedAt.localeCompare(b.startedAt));
+    setPendingRecoveries(next);
+  },[project,pendingRecoveryDescriptors]);
+
+  const openPendingRecovery=useCallback((item:MutationRecoveryItem)=>{
+    setView(item.view);
+    setMobileOpen(false);
+    setNotice("Opening "+item.label+" for authoritative reconciliation.");
+    window.requestAnimationFrame(()=>{
+      document.getElementById("mutation-recovery-center")?.scrollIntoView({behavior:"auto",block:"start"});
+    });
+  },[]);
 
   const updateActiveWorkContext=useCallback((next:ActiveDataNestAiSession|null)=>{
     setActiveDataNestAiSession(next);
@@ -792,6 +853,18 @@ export default function DataNestApp({session}:{session:Session}) {
   },[project]);
 
   useEffect(()=>{ void loadCore(); },[loadCore]);
+  useEffect(()=>{
+    syncPendingRecoveries();
+    const sync=()=>syncPendingRecoveries();
+    window.addEventListener(PENDING_MUTATION_EVENT,sync);
+    window.addEventListener("pageshow",sync);
+    window.addEventListener("focus",sync);
+    return()=>{
+      window.removeEventListener(PENDING_MUTATION_EVENT,sync);
+      window.removeEventListener("pageshow",sync);
+      window.removeEventListener("focus",sync);
+    };
+  },[syncPendingRecoveries]);
   useEffect(()=>{
     if(!project){
       setActiveDataNestAiSession(null);
@@ -1259,6 +1332,12 @@ export default function DataNestApp({session}:{session:Session}) {
           <p className="topbarContext">{currentDescription}</p>
         </div>
         <div className="topActions">
+          {pendingRecoveries.length>0&&<button
+            className="secondaryButton compact mutationRecoveryTopButton"
+            type="button"
+            aria-label={pendingRecoveries.length+" unresolved operation"+(pendingRecoveries.length===1?"":"s")}
+            onClick={()=>document.getElementById("mutation-recovery-center")?.scrollIntoView({behavior:"smooth",block:"start"})}
+          >Recovery <span>{pendingRecoveries.length}</span></button>}
           <button
             className="secondaryButton compact quickSwitchButton"
             type="button"
@@ -1330,6 +1409,26 @@ export default function DataNestApp({session}:{session:Session}) {
           </div>
           <button className={"workflowPhaseAi "+(view==="ai"?"active":"")} type="button" aria-current={view==="ai"?"page":undefined} onClick={()=>setView("ai")}><span aria-hidden="true">✦</span><b>AI CORE</b><small>cross-phase</small></button>
         </nav>}
+        {pendingRecoveries.length>0&&<section id="mutation-recovery-center" className="mutationRecoveryCenter" aria-label="Unresolved operations" aria-live="polite">
+          <div className="mutationRecoveryHead">
+            <div>
+              <p className="eyebrow">AUTHORITATIVE RECOVERY</p>
+              <h2>{pendingRecoveries.length===1?"1 unresolved operation":pendingRecoveries.length+" unresolved operations"}</h2>
+              <p>These requests have preserved identities but are not yet finalized in this browser session. Review server state before issuing replacement work.</p>
+            </div>
+            <span className="badge warn">{pendingRecoveries.length} OPEN</span>
+          </div>
+          <div className="mutationRecoveryList">
+            {pendingRecoveries.map(item=><article className="mutationRecoveryItem" key={item.scope}>
+              <div>
+                <strong>{item.label}</strong>
+                <p>{item.detail}</p>
+                <small>Started {formatDate(item.startedAt)} · request identity preserved</small>
+              </div>
+              <button className="secondaryButton compact" type="button" onClick={()=>openPendingRecovery(item)}>Review &amp; reconcile →</button>
+            </article>)}
+          </div>
+        </section>}
         {activeDataNestAiSession&&project&&view!=="overview"&&view!=="ai"&&view!=="settings"&&<section className="activeWorkContext" aria-label="Active work context">
           <div className="activeWorkContextIdentity">
             <p className="eyebrow">ACTIVE WORK CONTEXT</p>
