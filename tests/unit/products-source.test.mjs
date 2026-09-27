@@ -100,6 +100,7 @@ test("RONSAS import snapshot remains complete and preserves commercial governanc
   const product=rows.find(row=>row.record_type==="product");
   assert.ok(product);
   assert.equal(product.slug,"ronsas");
+  assert.equal(product.full_name,"Resonance Open Nova Sovereign Application Suite");
   assert.equal(product.billing_enabled,false);
   assert.equal(product.commercial_mode,"free promotion / no billing until pricing is established");
   assert.equal(product.parent_platform,"Resonance DataNest");
