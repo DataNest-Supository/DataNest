@@ -453,7 +453,7 @@ test("AI & I keeps DataNest AI at the core while governed products stay product 
     name:"RONSAS App "+String(index+1),
     status:"active",
     sort_order:index+1,
-    payload:{}
+    payload:index===0?{domain:"creative",description:"Primary governed creative application"}:{}
   }));
 
   await page.route("https://fixture.supabase.co/**", route => {
@@ -477,6 +477,11 @@ test("AI & I keeps DataNest AI at the core while governed products stay product 
   await expect(visual.getByText("Aurum Naturals",{exact:true})).toBeVisible();
   await expect(visual.getByText("9 applications",{exact:true})).toBeVisible();
   await expect(visual.getByText("0 applications",{exact:true})).toBeVisible();
+  const ronsasNode=visual.getByRole("button",{name:"Open RONSAS applications in Products"});
+  await expect(ronsasNode).toBeVisible();
+  await expect(ronsasNode.getByText("creative",{exact:true})).toBeVisible();
+  await expect(ronsasNode.getByText("RONSAS App 1",{exact:true})).toBeVisible();
+  await expect(ronsasNode.getByText("active",{exact:true})).toBeVisible();
   await expect(visual.getByText("GOVERNED PRODUCT",{exact:true})).toHaveCount(0);
   await expect(visual).toHaveAttribute("aria-label",/DataNest AI core.*RONSAS, 9 applications.*Aurum Naturals, 0 applications/);
 
@@ -498,6 +503,9 @@ test("AI & I keeps DataNest AI at the core while governed products stay product 
   await page.emulateMedia({reducedMotion:"reduce"});
   expect(await network.locator("[data-signal='ai']").evaluate(el=>getComputedStyle(el).animationName)).toBe("none");
 
-  await visual.getByRole("button",{name:"Open Products"}).click();
+  await ronsasNode.click();
   await expect(page).toHaveURL(/view=products/);
+  await expect(page).toHaveURL(/product=ronsas/);
+  await expect(page).toHaveURL(/recordType=application/);
+  await expect(page).toHaveURL(/q=RONSAS(\+|%20)App(\+|%20)1/);
 });

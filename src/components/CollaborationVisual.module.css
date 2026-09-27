@@ -57,13 +57,17 @@
   z-index:3;
 }
 .portfolioProductCard{
-  width:clamp(104px,10vw,138px);
-  min-height:68px;
+  width:clamp(112px,10vw,142px);
+  min-height:88px;
   padding:10px 11px;
   transform:translate(-50%,-50%);
   display:grid;
   align-content:center;
-  gap:2px;
+  gap:3px;
+  appearance:none;
+  text-align:left;
+  font:inherit;
+  cursor:pointer;
   border:1px solid rgba(86,231,255,.20);
   border-radius:13px;
   background:
@@ -73,11 +77,38 @@
   backdrop-filter:blur(12px);
   animation:portfolioCardFloat 4.8s ease-in-out infinite;
 }
-.portfolioProductCard span{
+.portfolioProductCard:hover,
+.portfolioProductCard:focus-visible{
+  border-color:rgba(86,231,255,.52);
+  background:
+    radial-gradient(circle at 18% 12%,rgba(86,231,255,.14),transparent 36%),
+    linear-gradient(145deg,rgba(27,15,58,.96),rgba(7,10,30,.98));
+  box-shadow:0 18px 42px rgba(0,0,0,.32),0 0 30px rgba(86,231,255,.08);
+}
+.portfolioProductTopline{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:6px;
+}
+.portfolioProductIndex{
   color:#6ceaff;
   font-size:7px;
+  font-style:normal;
   font-weight:950;
   letter-spacing:.13em;
+}
+.portfolioProductDomain{
+  overflow:hidden;
+  max-width:70px;
+  color:#b9a7ff;
+  font-size:6px;
+  font-style:normal;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-overflow:ellipsis;
+  text-transform:uppercase;
+  white-space:nowrap;
 }
 .portfolioProductCard b{
   overflow-wrap:anywhere;
@@ -92,6 +123,29 @@
   line-height:1.25;
   text-overflow:ellipsis;
   white-space:normal;
+}
+.portfolioProductApplication{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:5px;
+  align-items:center;
+  min-width:0;
+}
+.portfolioProductApplication>span{
+  overflow:hidden;
+  color:#86dfea;
+  font-size:6px;
+  font-weight:800;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.portfolioProductApplication>em{
+  color:#7fcfae;
+  font-size:5.5px;
+  font-style:normal;
+  font-weight:900;
+  letter-spacing:.05em;
+  text-transform:uppercase;
 }
 .portfolioCore{
   position:relative;
@@ -186,7 +240,7 @@
 }
 @container datanest-main (max-width:620px){
   .productsHeroVisual{min-height:340px!important}
-  .portfolioProductCard{width:116px;min-height:64px;padding:9px}
+  .portfolioProductCard{width:116px;min-height:78px;padding:9px}
   .portfolioCore{width:154px;min-height:154px}
   .portfolioCore strong{font-size:18px}
 }
@@ -194,7 +248,8 @@
   .productsHeroVisual{min-height:310px!important}
   .portfolioProductCard{width:108px}
   .portfolioProductCard b{font-size:9px}
-  .portfolioProductCard small{display:none}
+  .portfolioProductApplication{display:none}
+  .portfolioProductDomain{max-width:60px}
   .portfolioCore{width:144px;min-height:144px}
 }
 
