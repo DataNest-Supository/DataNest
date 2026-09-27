@@ -53,7 +53,8 @@ test("Legal Eagle remains a hard non-learning mode",()=>{
   const source=fs.readFileSync(aiPath,"utf8");
   assert.match(source,/const learningEligible=!legalMode/);
   assert.match(source,/product_mode:legalMode\?"legal_eagle":"datanest_ai"/);
-  assert.match(source,/learning_requested:learningEligible/);\n  assert.match(source,/learning_eligible:finalLearningEligible/);
+  assert.match(source,/learning_requested:learningEligible/);
+  assert.match(source,/learning_eligible:finalLearningEligible/);
   assert.match(source,/target_hard_learning_exclusion:!learningEligible/);
 });
 
