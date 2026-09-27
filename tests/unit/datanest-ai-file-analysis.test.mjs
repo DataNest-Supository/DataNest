@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 const analysis=await import("../../supabase/functions/_shared/datanestFileAnalysis.ts");
 const trends=await import("../../supabase/functions/_shared/datanestAiTrends.ts");
+const learning=await import("../../supabase/functions/_shared/datanestAiLearning.ts");
 
 function chunk(input={}){
   return {
@@ -187,4 +188,35 @@ test("analysis prompt treats document text as untrusted and uses frozen memory",
   assert.match(prompt,/frozen certified memory/i);
   assert.match(prompt,/Certified baseline/);
   assert.match(prompt,/Earlier session context/);
+});
+
+
+test("shared learning excludes evidence without governed project-learning eligibility",async()=>{
+  const makeClient=(metadata)=>({
+    from(table){
+      assert.equal(table,"ai_intake_events");
+      const query={
+        select(){return query;},
+        eq(){return query;},
+        in(){return query;},
+        order(){return query;},
+        limit(){return Promise.resolve({data:[{
+          id:"event-1",content:"Governed file evidence.",job_id:"job-1",session_id:"session-1",
+          source_type:"document_evidence",source_user_id:"user-1",metadata
+        }],error:null});}
+      };
+      return query;
+    }
+  });
+
+  const missing=await learning.updateTrendCandidate({
+    staging:makeClient({}),projectId:"project-1",inputEventId:"event-1",policyVersion:"test-policy"
+  });
+  assert.equal(missing.evidenceCount,0);
+
+  const runtimeOnly=await learning.updateTrendCandidate({
+    staging:makeClient({learning_eligible:true,reuse_state:"runtime_only"}),
+    projectId:"project-1",inputEventId:"event-1",policyVersion:"test-policy"
+  });
+  assert.equal(runtimeOnly.evidenceCount,0);
 });
