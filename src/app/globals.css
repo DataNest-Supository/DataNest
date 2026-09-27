@@ -4543,6 +4543,64 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
 .activeWorkContextActions{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap}
 .activeWorkContextPrimary{white-space:nowrap}
 .activeWorkContextClear{color:#7f8fa1}
+.activeWorkContextJourney{
+  grid-column:1/-1;
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  align-items:center;
+  gap:8px 12px;
+  min-width:0;
+  padding-top:8px;
+  border-top:1px solid rgba(255,255,255,.055)
+}
+.activeWorkContextJourneyHeader{display:grid;gap:1px;min-width:96px}
+.activeWorkContextJourneyHeader span{color:#87dff3;font-size:7px;font-weight:900;letter-spacing:.12em}
+.activeWorkContextJourneyHeader small{color:#5f7488;font-size:7px;line-height:1.25;white-space:nowrap}
+.activeWorkContextJourneySteps{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:5px;
+  min-width:0
+}
+.activeWorkContextJourneySteps button{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  align-items:center;
+  gap:5px;
+  min-width:0;
+  min-height:30px;
+  padding:5px 7px;
+  border:1px solid rgba(255,255,255,.065);
+  border-radius:8px;
+  background:rgba(255,255,255,.018);
+  color:#71869a;
+  text-align:left;
+  cursor:pointer
+}
+.activeWorkContextJourneySteps button:hover{
+  border-color:rgba(66,231,255,.24);
+  color:#bcecf5
+}
+.activeWorkContextJourneySteps button>span{
+  color:#587087;
+  font-size:6px;
+  font-weight:900;
+  letter-spacing:.08em
+}
+.activeWorkContextJourneySteps button>b{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:7px;
+  letter-spacing:.035em
+}
+.activeWorkContextJourneySteps button.active{
+  border-color:rgba(66,231,255,.35);
+  background:linear-gradient(135deg,rgba(66,231,255,.085),rgba(139,92,246,.045));
+  color:#dffaff;
+  box-shadow:inset 0 0 0 1px rgba(66,231,255,.04)
+}
+.activeWorkContextJourneySteps button.active>span{color:#7de9f8}
 @media(max-width:980px){
   .activeWorkContext{grid-template-columns:minmax(0,1fr) auto}
   .activeWorkContextActions{grid-column:1/-1;justify-content:flex-start}
@@ -4557,6 +4615,13 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
   .activeWorkContextActions{grid-column:auto;display:grid;grid-template-columns:1fr 1fr}
   .activeWorkContextActions>*{width:100%;min-width:0}
   .activeWorkContextActions .activeWorkContextClear{grid-column:1/-1}
+  .activeWorkContextJourney{grid-template-columns:1fr;gap:6px;padding-top:9px}
+  .activeWorkContextJourneyHeader{grid-template-columns:auto minmax(0,1fr);align-items:baseline;gap:7px;min-width:0}
+  .activeWorkContextJourneyHeader small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .activeWorkContextJourneySteps{gap:4px}
+  .activeWorkContextJourneySteps button{display:flex;justify-content:center;gap:3px;min-height:32px;padding:5px 3px;text-align:center}
+  .activeWorkContextJourneySteps button>b{font-size:6.5px}
+  .activeWorkContextJourneySteps button>span{font-size:5.5px}
 }
 
 
@@ -4609,6 +4674,39 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
   .checkpointCard.contextMatch,
   .timelineItem.contextMatch{box-shadow:inset 2px 0 0 rgba(66,231,255,.68)}
   .contextMatchTag{font-size:6px!important}
+}
+
+/* Project membership status-aware controls */
+.membershipPanel{overflow:hidden}
+.projectInviteForm{display:grid;gap:12px;margin:16px 0 22px}
+.projectInviteFields{display:grid;grid-template-columns:minmax(240px,1.35fr) minmax(220px,.95fr) minmax(180px,.7fr);gap:10px;align-items:end}
+.projectInviteFields label{display:grid;gap:6px;color:#b7cadb;font-size:11px;font-weight:700}
+.projectInviteAction{min-width:0}
+.inviteContext{padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-size:11px;line-height:1.55;color:var(--muted);background:rgba(255,255,255,.018)}
+.inviteContext b{color:var(--text)}
+.inviteContext.good{border-color:rgba(124,226,162,.2);background:rgba(124,226,162,.06);color:#b7d9c3}
+.inviteContext.warn{border-color:rgba(242,199,120,.22);background:rgba(242,199,120,.06);color:#d8c495}
+.membershipIdentity{min-width:0}
+.membershipIdentity b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.membershipIdentity small{display:block;margin-top:3px;color:#627d96;font-size:9px;letter-spacing:.02em}
+.membershipTable .dataRow{grid-template-columns:minmax(220px,1.55fr) minmax(90px,.65fr) minmax(90px,.65fr) minmax(100px,.65fr) minmax(130px,.85fr)}
+.inviteRowActions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.dangerTextButton{color:var(--red)}
+@media(max-width:1180px){
+  .projectInviteFields{grid-template-columns:1fr 1fr}
+  .projectInviteAction{grid-column:1/-1}
+}
+@media(max-width:900px){
+  .projectInviteFields{grid-template-columns:1fr}
+  .projectInviteAction{grid-column:auto}
+}
+@media(max-width:720px){
+  .membershipPanel{padding:16px}
+  .membershipTable .dataRow{grid-template-columns:1fr 1fr}
+  .membershipTable .dataRow>[data-label="Member"],
+  .membershipTable .dataRow>[data-label="Invitee"],
+  .membershipTable .dataRow>[data-label="Action"]{grid-column:1/-1}
+  .membershipIdentity b{white-space:normal;overflow-wrap:anywhere}
 }
 
 
@@ -4712,7 +4810,6 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
 .resourceFabricWorkspace input,.resourceFabricWorkspace select,.resourceFabricWorkspace textarea{min-width:0;max-width:100%}
 @container datanest-main (max-width:860px){.resourceFabricBoundary{grid-template-columns:1fr}.resourceFabricActionGrid{grid-template-columns:1fr}}
 @media(max-width:520px){.resourceFabricCards{grid-template-columns:1fr}.resourceCapabilityRow,.resourceHealthRow{grid-template-columns:1fr}}
-
 
 /* Phase F · Intelligence Fabric */
 .intelligenceFabricWorkspace{display:grid;gap:14px;min-width:0}

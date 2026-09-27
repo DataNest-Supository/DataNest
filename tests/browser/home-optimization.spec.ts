@@ -577,6 +577,7 @@ test("active work context survives handoffs and focuses related operational evid
   await expect(context.getByText("AI session linked",{exact:true})).toBeVisible();
   await expect(context.getByRole("status",{name:"Visible evidence signal"})).toContainText("Job evidence visible");
   await expect(context.getByRole("status",{name:"Visible evidence signal"})).toContainText("On this page: 1 matching Job record.");
+  await expect(context.getByRole("navigation",{name:"Active Job journey"}).getByRole("button",{name:"Plan · current Job view"})).toBeVisible();
 
   await expect(context.getByText("Carry this Job into capability-aware execution planning.",{exact:true})).toBeVisible();
   await context.getByRole("button",{name:"Schedule active Job"}).click();
@@ -586,6 +587,7 @@ test("active work context survives handoffs and focuses related operational evid
   await expect(page.locator(".ganttRow[data-active-context='true']").getByText("ACTIVE CONTEXT",{exact:true})).toBeVisible();
   await expect(page.getByText("Other visible project work",{exact:true})).toBeVisible();
   await expect(page.getByRole("region",{name:"Active work context"}).getByRole("status",{name:"Visible evidence signal"})).toContainText("On this page: 1 matching Job record.");
+  await expect(page.getByRole("navigation",{name:"Active Job journey"}).getByRole("button",{name:"Schedule · current Job view"})).toBeVisible();
 
   await page.reload();
   await expect(page.getByRole("region",{name:"Active work context"})).toBeVisible();
@@ -599,21 +601,25 @@ test("active work context survives handoffs and focuses related operational evid
   await expect(page.locator(".dataRow:not(.headerRow)")).toHaveCount(2);
   await expect(page.locator(".dataRow[data-active-context='true']")).toHaveCount(1);
   await expect(page.getByRole("region",{name:"Active work context"}).getByRole("status",{name:"Visible evidence signal"})).toContainText("On this page: 1 matching run.");
+  const jobJourney = page.getByRole("navigation",{name:"Active Job journey"});
+  await expect(jobJourney.getByRole("button",{name:"Run · current Job view"})).toBeVisible();
 
-  await page.goto(appPath+"?view=checkpoints");
+  await jobJourney.getByRole("button",{name:"Open Checkpoint for active Job"}).click();
   await expect(page).toHaveURL(/\?view=checkpoints/);
   await expect(page.getByRole("region",{name:"Active work context"})).toBeVisible();
   await expect(page.locator(".checkpointCard")).toHaveCount(2);
   await expect(page.locator(".checkpointCard[data-active-context='true']")).toHaveCount(1);
   await expect(page.getByRole("region",{name:"Active work context"}).getByRole("status",{name:"Visible evidence signal"})).toContainText("On this page: 1 matching checkpoint.");
+  await expect(page.getByRole("navigation",{name:"Active Job journey"}).getByRole("button",{name:"Checkpoint · current Job view"})).toBeVisible();
 
-  await page.goto(appPath+"?view=audit");
+  await page.getByRole("navigation",{name:"Active Job journey"}).getByRole("button",{name:"Open Audit for active Job"}).click();
   await expect(page).toHaveURL(/\?view=audit/);
   await expect(page.getByRole("region",{name:"Active work context"})).toBeVisible();
   await expect(page.locator(".timelineItem")).toHaveCount(2);
   await expect(page.locator(".timelineItem[data-active-context='true']")).toHaveCount(1);
   await expect(page.getByText("other-work",{exact:false})).toBeVisible();
   await expect(page.getByRole("region",{name:"Active work context"}).getByRole("status",{name:"Visible evidence signal"})).toContainText("On this page: 1 matching audit event.");
+  await expect(page.getByRole("navigation",{name:"Active Job journey"}).getByRole("button",{name:"Audit · current Job view"})).toBeVisible();
   await expect(page.getByRole("region",{name:"Active work context"}).getByRole("button",{name:"Review transparency evidence"})).toBeVisible();
 
   await page.getByRole("button",{name:"Clear context"}).click();

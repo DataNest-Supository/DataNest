@@ -232,6 +232,13 @@ function isActiveWorkContext(value:unknown):value is ActiveDataNestAiSession {
 }
 type ActiveContextAction = { key:ViewKey; label:string; detail:string };
 type ActiveContextEvidence = { state:"visible"|"not-visible"|"context"; label:string; detail:string };
+const activeJobJourneySteps:Array<{key:ViewKey;label:string;detail:string}> = [
+  {key:"unifi",label:"Plan",detail:"Open the active Job Manifest in UNIFI planning."},
+  {key:"scheduler",label:"Schedule",detail:"Review capability-aware scheduling for the active Job."},
+  {key:"runs",label:"Run",detail:"Inspect execution outcomes associated with the active Job."},
+  {key:"checkpoints",label:"Checkpoint",detail:"Review durable continuation evidence for the active Job."},
+  {key:"audit",label:"Audit",detail:"Trace immutable events associated with the active Job."}
+];
 function activeContextActionForView(view:ViewKey):ActiveContextAction {
   if(view==="productlab")return {key:"unifi",label:"Plan active Job in UNIFI",detail:"Turn validated product work into a complete Job Manifest."};
   if(view==="unifi")return {key:"scheduler",label:"Schedule active Job",detail:"Carry this Job into capability-aware execution planning."};
@@ -780,6 +787,7 @@ export default function DataNestApp({session}:{session:Session}) {
   const currentGroup=currentNavItem?.group||"Core";
   const currentPhase=workflowPhaseForView(view);
   const activeContextAction=activeContextActionForView(view);
+  const activeJobJourneyCurrent=activeJobJourneySteps.some(step=>step.key===view)?view:null;
   const activeContextEvidence=activeDataNestAiSession
     ? activeContextEvidenceForView(view,activeDataNestAiSession.jobId,jobs,runs,checkpoints,events)
     : null;
@@ -992,6 +1000,23 @@ export default function DataNestApp({session}:{session:Session}) {
             {activeContextAction.key!=="ai"&&<button className="secondaryButton compact" type="button" onClick={()=>setView("ai")}>Return to DataNest AI</button>}
             <button className="ghostButton compact activeWorkContextClear" type="button" onClick={clearActiveWorkContext}>Clear context</button>
           </div>
+          <nav className="activeWorkContextJourney" aria-label="Active Job journey">
+            <div className="activeWorkContextJourneyHeader"><span>JOB JOURNEY</span><small>Location only · not completion state</small></div>
+            <div className="activeWorkContextJourneySteps">
+              {activeJobJourneySteps.map((step,index)=>{
+                const current=activeJobJourneyCurrent===step.key;
+                return <button
+                  key={step.key}
+                  type="button"
+                  className={current?"active":""}
+                  aria-current={current?"step":undefined}
+                  aria-label={current?step.label+" · current Job view":"Open "+step.label+" for active Job"}
+                  title={step.detail}
+                  onClick={()=>setView(step.key)}
+                ><span>{"0"+(index+1)}</span><b>{step.label}</b></button>;
+              })}
+            </div>
+          </nav>
         </section>}
         <div aria-live="polite">
           {notice&&<div className="notice goodNotice">{notice}</div>}

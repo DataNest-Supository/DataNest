@@ -328,3 +328,24 @@ test("active Job evidence signal is explicitly page-scoped and non-authoritative
   const evidenceHelperSource = appSource.slice(helperStart,helperEnd);
   assert.doesNotMatch(evidenceHelperSource, /\bcomplete(?:d|ion)?\b/i);
 });
+
+
+test("active Job journey rail shows location without claiming completion", () => {
+  assert.match(appSource, /const activeJobJourneySteps:Array<\{key:ViewKey;label:string;detail:string\}>/);
+  assert.match(appSource, /key:"unifi",label:"Plan"/);
+  assert.match(appSource, /key:"scheduler",label:"Schedule"/);
+  assert.match(appSource, /key:"runs",label:"Run"/);
+  assert.match(appSource, /key:"checkpoints",label:"Checkpoint"/);
+  assert.match(appSource, /key:"audit",label:"Audit"/);
+  assert.match(appSource, /aria-label="Active Job journey"/);
+  assert.match(appSource, /Location only · not completion state/);
+  assert.match(appSource, /aria-current=\{current\?"step":undefined\}/);
+  assert.match(appSource, /onClick=\{\(\)=>setView\(step\.key\)\}/);
+  assert.match(cssSource, /\.activeWorkContextJourney\{/);
+  assert.match(cssSource, /\.activeWorkContextJourneySteps button\.active/);
+  const journeyStart = appSource.indexOf("const activeJobJourneySteps");
+  const journeyEnd = appSource.indexOf("function activeContextActionForView", journeyStart);
+  assert.ok(journeyStart>=0&&journeyEnd>journeyStart);
+  const journeySource = appSource.slice(journeyStart,journeyEnd);
+  assert.doesNotMatch(journeySource, /status|completed|verified|passed/i);
+});
