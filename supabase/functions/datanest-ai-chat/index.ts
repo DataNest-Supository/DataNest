@@ -611,9 +611,7 @@ Deno.serve(async(request:Request)=>{
     const reuseState=legalMode
       ?"session_context"
       :(requestedReuseState||"project_learning_eligible");
-    const policyPurpose=legalMode
-      ?"legal_assistance"
-      :(String(body.policyPurpose||"").trim().slice(0,160)||"datanest_ai");
+    const policyPurpose=legalMode?"user_requested_analysis":"job_execution";
     const learningEligible=!legalMode&&reuseState==="project_learning_eligible";
 
     const job=await loadAuthorizedJob(userClient,jobId);
@@ -666,6 +664,7 @@ Deno.serve(async(request:Request)=>{
     let provisionalIds:string[]=[];
     let requestStatus="pending";
     let activeRequestId="";
+    let stagedInputTraceId="";
     let trendAnalysis:{status:"not_applicable"|"recorded"|"failed";candidateId?:string|null;trendKey?:string|null;evidenceCount?:number;error?:string}={status:"not_applicable"};
 
     const result=await executeChatTurn({
@@ -727,9 +726,10 @@ Deno.serve(async(request:Request)=>{
           .select("id,trace_id,session_id")
           .single();
         if(error||!data)throw error||new Error("Unable to stage DataNest AI input.");
+        stagedInputTraceId=String(data.trace_id);
         return {
           id:String(data.id),
-          traceId:String(data.trace_id),
+          traceId:stagedInputTraceId,
           sessionId:String(data.session_id)
         };
       },
@@ -798,25 +798,28 @@ Deno.serve(async(request:Request)=>{
 
         if(connectionData){
           const connection=connectionData as ProviderConnection;
-          const {data:trustData,error:trustError}=await userClient.rpc(
-            "evaluate_provider_policy_v1",{
+          const {data:phaseCPolicyData,error:phaseCPolicyError}=await serviceClient.rpc(
+            "service_evaluate_data_policy_v1",{
               target_project:job.project_id,
-              target_provider_key:connection.provider,
-              target_visibility_class:visibilityClass,
-              target_purpose:policyPurpose,
-              target_reuse_state:reuseState
+              target_subject_type:"ai_event",
+              target_purpose:"external_provider_processing",
+              target_operation:"process",
+              target_subject_id:null,
+              target_subject_reference:stagedInputTraceId,
+              target_provider_connection:connection.id,
+              target_hard_learning_exclusion:!learningEligible
             }
           );
-          if(trustError)throw trustError;
-          const trust=(trustData||{}) as Record<string,unknown>;
+          if(phaseCPolicyError)throw phaseCPolicyError;
+          const phaseCPolicy=(phaseCPolicyData||{}) as Record<string,unknown>;
 
-          if(!Boolean(trust.permitted)){
+          if(String(phaseCPolicy.outcome||"deny")!=="allow"){
             requestStatus="denied";
             await finishUsageRequest(serviceClient,{
               requestId:activeRequestId,
               target_status:"denied",
               errorCategory:"provider_trust_policy_denied",
-              errorMessage:"Provider Trust Profile blocked external routing: "+String(trust.reason||"policy denied")
+              errorMessage:"Provider Trust Profile blocked external routing: "+String(phaseCPolicy.reason_code||"policy_denied")
             });
           }else{
             const {data:authz,error:authzError}=await serviceClient.rpc(
@@ -940,11 +943,26 @@ Deno.serve(async(request:Request)=>{
           });
         if(error)throw error;
 
-        if(legalMode){
-          trendAnalysis={status:"not_applicable"};
-          return;
-        }
         try{
+          const {data:learningPolicyData,error:learningPolicyError}=await serviceClient.rpc(
+            "service_evaluate_data_policy_v1",{
+              target_project:job.project_id,
+              target_subject_type:"ai_event",
+              target_purpose:"project_learning",
+              target_operation:"reuse",
+              target_subject_id:null,
+              target_subject_reference:String(inputEvent.traceId||stagedInputTraceId),
+              target_provider_connection:null,
+              target_hard_learning_exclusion:!learningEligible
+            }
+          );
+          if(learningPolicyError)throw learningPolicyError;
+          const learningPolicy=(learningPolicyData||{}) as Record<string,unknown>;
+          if(String(learningPolicy.outcome||"deny")!=="allow"){
+            trendAnalysis={status:"not_applicable"};
+            return;
+          }
+
           const trend=await updateTrendCandidate({
             staging:stagingClient,
             projectId:job.project_id,
