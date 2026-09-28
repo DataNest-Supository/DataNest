@@ -39,7 +39,8 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
         delivery:{
           canonicalName:"reson8.datanest.life",
           brandedUrl:"https://reson8.datanest.life/",
-          brandedState:"reserved",
+          brandedState:"wire-ready",
+          wire:{source:"https://reson8.datanest.life/",target:"https://reson8.life/",mode:"redirect",applicationLayer:"ready",networkState:"dns-pending"},
           provider:"GitHub Pages",
           operationalUrl:"https://datanest-supository.github.io/DataNest/",
           publicDelivery:{ok:true,status:200,latencyMs:42,origin:"https://datanest-supository.github.io"},
