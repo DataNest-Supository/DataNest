@@ -1,9 +1,14 @@
 -- Performance hardening for live impact scoring.
-create index if not exists ai_intake_events_project_user_time_idx
-  on public.ai_intake_events(project_id, source_user_id, created_at desc);
-
-create index if not exists ai_candidate_evidence_event_candidate_idx
-  on public.ai_candidate_evidence(event_id, candidate_id);
+do $
+begin
+  if to_regclass('public.ai_intake_events') is not null then
+    execute 'create index if not exists ai_intake_events_project_user_time_idx on public.ai_intake_events(project_id, source_user_id, created_at desc)';
+  end if;
+  if to_regclass('public.ai_candidate_evidence') is not null then
+    execute 'create index if not exists ai_candidate_evidence_event_candidate_idx on public.ai_candidate_evidence(event_id, candidate_id)';
+  end if;
+end;
+$;
 
 create or replace function private.get_project_impact_dashboard_base_v1(target_project uuid)
 returns jsonb
@@ -14,6 +19,27 @@ as $fn$
 declare is_admin boolean; result jsonb;
 begin
   if auth.uid() is null then raise exception 'Authentication required'; end if;
+  if to_regclass('public.ai_intake_events') is null
+     or to_regclass('public.ai_candidate_evidence') is null
+     or to_regclass('public.ai_learning_candidates') is null then
+    return jsonb_build_object(
+      'status','unavailable',
+      'reason','governed_ai_staging_relations_unavailable',
+      'scoring_version','impact-quality-stage-v1',
+      'summary',jsonb_build_object(
+        'input_count',0,
+        'avg_quality',0,
+        'avg_acceptance',0,
+        'avg_impact',0,
+        'total_points',0,
+        'certified_inputs',0,
+        'rejected_inputs',0
+      ),
+      'areas','[]'::jsonb,
+      'stages','[]'::jsonb,
+      'inputs','[]'::jsonb
+    );
+  end if;
   if not private.has_project_role(target_project,array['owner','admin','operator','viewer']) then raise exception 'Project access denied'; end if;
   is_admin:=private.has_project_role(target_project,array['owner','admin']);
   with candidate_stage as (
