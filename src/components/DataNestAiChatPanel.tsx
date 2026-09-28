@@ -185,7 +185,7 @@ export default function DataNestAiChatPanel({
       id:requestId+"-human",
       trace_id:"DN-AI-pending",
       source_type:"human",
-      source_provider:"pending",
+      source_provider:null,
       content:message,
       created_at:new Date().toISOString()
     });
