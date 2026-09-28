@@ -44,6 +44,17 @@ test("DataNest AI keeps the animated hero while compressing duplicated workspace
   assert.match(css,/\.aiCommandGuide\s*\{/);
 });
 
+test("DataNest AI formatting pass keeps readable type, consistent surfaces and mobile controls",()=>{
+  const css=read("src/app/datanest-ai-optimized.css");
+
+  assert.match(css,/final UI\/UX formatting pass/);
+  assert.match(css,/\.datanestAiWorkspace\s*\{[^}]*width:min\(100%,1180px\)[^}]*gap:16px/s);
+  assert.match(css,/\.datanestAiChatStage\s*\{[^}]*width:min\(100%,980px\)/s);
+  assert.match(css,/\.datanestAiCommandConsole \.datanestAiComposer textarea\s*\{[^}]*font-size:14px[^}]*line-height:1\.5/s);
+  assert.match(css,/\.datanestAiCommandSummaryCompact\s*\{[^}]*width:min\(100%,980px\)/s);
+  assert.match(css,/@media\(max-width:620px\)[\s\S]*?\.datanestAiCommandButton\s*\{[^}]*width:100%/s);
+});
+
 test("DataNest AI command center keeps responsive and reduced-motion safeguards",()=>{
   const css=read("src/app/datanest-ai-optimized.css");
 
