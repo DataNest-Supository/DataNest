@@ -25,7 +25,7 @@ Static health marker:
 
 GitHub Pages is the **current public delivery target** for the DataNest-managed production path. Supabase supplies the governed auth, database, storage and backend-function services.
 
-Standalone Node/Docker runtimes continue to expose the server health endpoint at `/api/health`, but they are local development, recovery, controlled-test and continuity paths rather than the canonical production authority.
+Standalone Node/Docker runtimes continue to expose the server health endpoint at `/api/health`, but local machines are development, controlled-test, and specialized execution surfaces only. They are not backup hosts or continuity authorities. Dropbox `/DataNest-AI-Backups` is the governed backup-artifact host.
 
 ## Canonical stack
 
@@ -39,9 +39,11 @@ Standalone Node/Docker runtimes continue to expose the server health endpoint at
 - Current public delivery target: **GitHub Pages**
 - Canonical production route: **DataNest-managed public delivery: GitHub Pages + Supabase**
 - Hosting model: **replaceable delivery infrastructure**
+- Backup-artifact host: **Dropbox · `/DataNest-AI-Backups`**
+- Local PC backup hosting: **disabled**
 - Optional future delivery target: **Vercel**
 
-GitHub and Supabase remain the required source/CI and backend authorities. Hosting is replaceable delivery infrastructure, not system authority.
+GitHub and Supabase remain the required source/CI and backend authorities. Dropbox is continuity storage for governed release and recovery artifacts; it is not the request-serving production web runtime. Hosting remains replaceable delivery infrastructure, not system authority.
 
 ## Target-state architecture concepts
 
@@ -60,6 +62,8 @@ DataNest integrates with **RONSAS (Resonance Open Nova Sovereign Application Sui
 
 - RONSAS is governed through DataNest; it is not the parent platform or DataNest AI authority.
 - No local workstation, loopback service, desktop launcher, or Ealiophin interaction is required by the DataNest web control plane.
+- Ealiophin, Spider, Weed, and other local PCs are not backup hosts or continuity authorities.
+- Dropbox `/DataNest-AI-Backups` is the governed backup-artifact host.
 - The integration is cloud-only and rejects localhost, loopback, and `.local` origins.
 - RONSAS health is non-blocking: DataNest remains usable when the public RONSAS Hub is unavailable.
 - Resonance AppDev source authority is explicit: `resonance36912-cell/RONSAS` is the control-source repository and `resonance36912-cell/resonance-hub` is the public Hub source.
@@ -80,9 +84,9 @@ SUPABASE_URL=https://sgqdmfgjbprsoqsmgigi.supabase.co
 SUPABASE_PUBLISHABLE_KEY=<publishable key>
 ```
 
-The GitHub Pages workflow generates the public Supabase configuration into `runtime-config.js`. Local/recovery Node and container runtimes consume the same public variables.
+The GitHub Pages workflow generates the public Supabase configuration into `runtime-config.js`. Local development and controlled-test Node/container runtimes consume the same public variables.
 
-## Local development, recovery, and continuity
+## Local development and controlled testing
 
 Local development:
 
@@ -92,20 +96,26 @@ npm install
 npm run dev
 ```
 
-Legacy Windows/Node recovery or controlled-test launcher:
+Legacy Windows/Node controlled-test launcher:
 
 ```powershell
 $env:SUPABASE_PUBLISHABLE_KEY="<publishable key>"
 .\scripts\start-production.ps1
 ```
 
-Local Docker recovery, controlled test or offline continuity:
+Local Docker controlled test:
 
 ```bash
 docker compose up --build -d
 ```
 
-These paths do not replace the DataNest-managed production route. See `docs/DEPLOYMENT.md` for the authority and delivery model.
+These paths do not replace the DataNest-managed production route and are not backup hosts.
+
+## Backup and continuity artifacts
+
+Dropbox `/DataNest-AI-Backups` is the governed backup-artifact host for DataNest and RONSAS continuity material. Existing governed ZIP, PGP, manifest, and GitHub Pages release artifacts are stored there. Dropbox is used for backup/recovery storage, not as the public web-serving origin; the operational web fallback remains the canonical GitHub Pages release.
+
+See `docs/DEPLOYMENT.md` for the authority and delivery model.
 
 ## Validation
 
