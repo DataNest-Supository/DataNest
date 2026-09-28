@@ -1532,7 +1532,7 @@ export default function DataNestApp({session}:{session:Session}) {
           <button type="button" onClick={()=>setView("overview")}>← AI &amp; I home</button>
           <span aria-hidden="true">/</span><span aria-current="page">{currentLabel}</span>
         </nav>}
-        {view!=="overview"&&view!=="settings"&&<nav className="workflowPhaseRail" aria-label="DataNest lifecycle phases">
+        {view!=="overview"&&view!=="settings"&&<nav className={"workflowPhaseRail "+(view==="ai"?"aiViewPhaseRail":"")} aria-label="DataNest lifecycle phases">
           <div className="workflowPhaseSteps">
             {workflowPhases.map((phase,index)=>{
               const active=phase.id===currentPhase;
@@ -1621,7 +1621,7 @@ export default function DataNestApp({session}:{session:Session}) {
         </div>
         {(loadingCore||loadingView)&&<div className="loadingBar" aria-label="Loading DataNest data"><span/></div>}
 
-        {!loadingCore&&workspaceTaskGuides[view]&&<section className={"workspaceTaskGuide "+(view==="ai"?" aiCommandGuide":"")} aria-label={currentLabel+" task guide"}>
+        {!loadingCore&&view!=="ai"&&workspaceTaskGuides[view]&&<section className="workspaceTaskGuide" aria-label={currentLabel+" task guide"}>
           <div>
             <span>START HERE</span>
             <p>{workspaceTaskGuides[view]?.start}</p>
