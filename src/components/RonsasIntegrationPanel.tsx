@@ -49,11 +49,11 @@ export default function RonsasIntegrationPanel() {
 
   const status = state.status;
   const hubState = status?.hub.ok ? "ONLINE" : state.kind === "checking" ? "CHECKING" : "DEGRADED";
-  const ingressState = status?.delivery.ingress.ok
+  const deliveryState = status?.delivery.publicDelivery.ok
     ? "LIVE"
     : state.kind === "checking"
       ? "CHECKING"
-      : "FALLBACK";
+      : "DEGRADED";
   const hubListingState = status?.delivery.hubRegistration.listed
     ? "LISTED"
     : state.kind === "checking"
@@ -80,8 +80,9 @@ export default function RonsasIntegrationPanel() {
         <div><dt>DataNest authority</dt><dd>Managed · required</dd></div>
         <div><dt>Commercial mode</dt><dd>{status?.billingState || "free-promotion"}</dd></div>
         <div><dt>RONSAS Hub</dt><dd>{hubState}{status?.hub.status ? ` · HTTP ${status.hub.status}` : ""}{status?.authority.publicHub&&<> · <a className="catalogRecordLaunch" href={status.authority.publicHub} target="_blank" rel="noreferrer" aria-label="Open RONSAS from integration settings">Open RONSAS ↗</a></>}</dd></div>
-        <div><dt>DataNest ingress</dt><dd>{ingressState}{status?.delivery.ingress.status ? ` · HTTP ${status.delivery.ingress.status}` : ""}</dd></div>
+        <div><dt>Public delivery</dt><dd>{deliveryState}{status?.delivery.publicDelivery.status ? ` · HTTP ${status.delivery.publicDelivery.status}` : ""} · {status?.delivery.provider || "GitHub Pages"}</dd></div>
         <div><dt>Operational URL</dt><dd>{status?.delivery.operationalUrl ? <a className="catalogRecordLaunch" href={status.delivery.operationalUrl} target="_blank" rel="noreferrer" aria-label="Open operational DataNest delivery URL">Open DataNest ↗</a> : "—"}</dd></div>
+        <div><dt>Railway required</dt><dd>NO</dd></div>
         <div><dt>Hub listing</dt><dd>{hubListingState}{status?.delivery.hubRegistration.status ? ` · HTTP ${status.delivery.hubRegistration.status}` : ""}</dd></div>
         <div><dt>Backup host</dt><dd>{status?.delivery.backupHost ? `${status.delivery.backupHost.provider} · ${status.delivery.backupHost.path} · artifact recovery` : "Dropbox · /DataNest-AI-Backups · artifact recovery"}</dd></div>
         <div><dt>Local PC backup hosting</dt><dd>DISABLED</dd></div>
