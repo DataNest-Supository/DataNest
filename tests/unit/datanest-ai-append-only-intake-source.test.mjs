@@ -1,4 +1,5 @@
-// Current-main convergence guard.\nimport test from "node:test";
+// Current-main convergence guard.
+import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
