@@ -19,8 +19,10 @@ import { chronologicalFromNewestFirst } from "../_shared/datanestAiContinuity.ts
 import { updateTrendCandidate } from "../_shared/datanestAiLearning.ts";
 import {
   buildDevelopmentCommandPrompt,
+  buildLegalEaglePrompt,
   formatDualAdvocacyResponse,
   parseCompleteDualAdvocacyResponse,
+  parseDualAdvocacyResponse,
   type DualAdvocacyResponse
 } from "../_shared/dualAdvocacy.ts";
 
@@ -980,6 +982,7 @@ Deno.serve(async(request:Request)=>{
               product_mode:legalMode?"legal_eagle":"datanest_ai",
               jurisdiction:legalMode?jurisdiction:null,
               legal_task:legalMode?legalTask:null,
+              dual_advocacy:legalMode||developmentMode,
               requested_learning_eligible:learningEligible,
               learning_eligible:finalLearningEligible,
               visibility_class:visibilityClass,
@@ -1075,22 +1078,31 @@ Deno.serve(async(request:Request)=>{
             "Keep this legal conversation scoped to the current Job/session. It is not eligible for automatic project-wide learning."
           );
         }
-        const governedPrompt=developmentMode
-          ?buildDevelopmentCommandPrompt({
+        const governedPrompt=legalMode
+          ?buildLegalEaglePrompt({
+              jurisdiction,
+              legalTask,
               job,
-              workingMemory:[
-                ...certifiedMemory.map(item=>"[CERTIFIED BASELINE] "+String(item.normalized_knowledge||"")),
-                ...developmentMemory.map(item=>"[WORKING MEMORY] "+item)
-              ],
+              certifiedMemory:certifiedMemory.map(item=>String(item.normalized_knowledge||"")),
+              matterEvidence:events.map(item=>item.content),
               userMessage:message
             })
-          :buildGovernedPrompt({
-              governance:governanceRules.join("\n"),
-              certifiedMemory:certifiedMemory.map(item=>String(item.normalized_knowledge||"")),
-              job,
-              uncertifiedEvidence:events.map(item=>item.content),
-              userMessage:message
-            });
+          :developmentMode
+            ?buildDevelopmentCommandPrompt({
+                job,
+                workingMemory:[
+                  ...certifiedMemory.map(item=>"[CERTIFIED BASELINE] "+String(item.normalized_knowledge||"")),
+                  ...developmentMemory.map(item=>"[WORKING MEMORY] "+item)
+                ],
+                userMessage:message
+              })
+            :buildGovernedPrompt({
+                governance:governanceRules.join("\n"),
+                certifiedMemory:certifiedMemory.map(item=>String(item.normalized_knowledge||"")),
+                job,
+                uncertifiedEvidence:events.map(item=>item.content),
+                userMessage:message
+              });
 
         const ilm=await resolveActiveIlmRoute({
           serviceClient,
@@ -1177,7 +1189,11 @@ Deno.serve(async(request:Request)=>{
                 });
                 requestStatus="succeeded";
                 developmentDual=developmentMode?parseCompleteDualAdvocacyResponse(ext.content):null;
-                const content=developmentDual?formatDualAdvocacyResponse(developmentDual):ext.content;
+                const content=legalMode
+                  ?formatDualAdvocacyResponse(parseDualAdvocacyResponse(ext.content))
+                  :developmentDual
+                    ?formatDualAdvocacyResponse(developmentDual)
+                    :ext.content;
                 if(developmentMode){
                   developmentProviderLabel=connection.label;
                   developmentModelLabel=connection.model;
@@ -1325,7 +1341,11 @@ Deno.serve(async(request:Request)=>{
                   });
                   requestStatus="succeeded";
                   developmentDual=developmentMode?parseCompleteDualAdvocacyResponse(ext.content):null;
-                  const content=developmentDual?formatDualAdvocacyResponse(developmentDual):ext.content;
+                  const content=legalMode
+                    ?formatDualAdvocacyResponse(parseDualAdvocacyResponse(ext.content))
+                    :developmentDual
+                      ?formatDualAdvocacyResponse(developmentDual)
+                      :ext.content;
                 if(developmentMode){
                   developmentProviderLabel=connection.label;
                   developmentModelLabel=connection.model;
@@ -1517,6 +1537,7 @@ Deno.serve(async(request:Request)=>{
       requestStatus,
       trendAnalysis,
       productMode:legalMode?"legal_eagle":null,
+      dualAdvocacy:legalMode||developmentMode,
       jurisdiction:legalMode?jurisdiction:null,
       learningEligible,
       visibilityClass,
