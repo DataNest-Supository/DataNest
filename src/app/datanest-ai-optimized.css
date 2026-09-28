@@ -607,3 +607,84 @@
   .aiViewPhaseRail .workflowPhaseSteps button{min-height:36px}
   .aiViewPhaseRail .workflowPhaseAi{min-height:34px}
 }
+
+
+/* 2026-09-28 collapsible AI core overview */
+/* Keep the visual intelligence-core explanation available without forcing a large
+   decorative block into the primary work path. */
+.datanestAiOverviewDisclosure{
+  order:50;
+  min-width:0;
+  border:1px solid rgba(132,87,255,.18);
+  border-radius:13px;
+  background:linear-gradient(145deg,rgba(14,9,34,.62),rgba(7,13,29,.72));
+  overflow:hidden;
+}
+.datanestAiOverviewDisclosure>summary{
+  min-height:46px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:10px 13px;
+  cursor:pointer;
+  list-style:none;
+  color:#dbe7f2;
+}
+.datanestAiOverviewDisclosure>summary::-webkit-details-marker{display:none}
+.datanestAiOverviewDisclosure>summary::after{
+  content:"⌄";
+  color:#84dff0;
+  font-size:14px;
+  transition:transform .16s ease;
+}
+.datanestAiOverviewDisclosure[open]>summary::after{transform:rotate(180deg)}
+.datanestAiOverviewDisclosure>summary>span:first-child{
+  min-width:0;
+  display:grid;
+  gap:2px;
+  margin-right:auto;
+}
+.datanestAiOverviewDisclosure>summary b{
+  font-size:10px;
+  letter-spacing:.04em;
+}
+.datanestAiOverviewDisclosure>summary small{
+  overflow:hidden;
+  color:#738da3;
+  font-size:8px;
+  line-height:1.35;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.datanestAiOverviewStatus{
+  flex:0 0 auto;
+  padding:5px 7px;
+  border:1px solid rgba(66,231,255,.14);
+  border-radius:999px;
+  background:rgba(66,231,255,.045);
+  color:#9deefa;
+  font:850 7px/1 ui-monospace,SFMono-Regular,Consolas,monospace;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+}
+.datanestAiOverviewDisclosure>summary:hover{
+  background:rgba(66,231,255,.025);
+}
+.datanestAiOverviewDisclosure>summary:focus-visible{
+  outline:2px solid #a6e6ed;
+  outline-offset:-3px;
+}
+.datanestAiOverviewDisclosure .datanestAiHeroV2{
+  order:initial;
+  margin:0;
+  border-width:1px 0 0;
+  border-radius:0;
+  box-shadow:none;
+}
+
+@media(max-width:620px){
+  .datanestAiOverviewDisclosure>summary{gap:9px;padding:9px 11px}
+  .datanestAiOverviewDisclosure>summary small{display:none}
+  .datanestAiOverviewStatus{font-size:6px}
+}
