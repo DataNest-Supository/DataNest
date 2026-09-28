@@ -1,0 +1,123 @@
+name: Reson8 Root Domain Readiness
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reson8-root-domain-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  root-domain:
+    name: Build and verify reson8.life root deployment
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      CI: "true"
+      DATANEST_STATIC_EXPORT: "true"
+      DATANEST_PUBLIC_ORIGIN: "https://reson8.life"
+      DATANEST_DELIVERY_TARGET: "lovable-domain"
+      NEXT_PUBLIC_BASE_PATH: ""
+      NEXT_PUBLIC_SUPABASE_URL: "https://sgqdmfgjbprsoqsmgigi.supabase.co"
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_yIf5HFKNNteed4HdYCS2Vw_4TB-4LvB"
+
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Run TypeScript check
+        run: npm run check
+
+      - name: Write runtime configuration
+        run: node scripts/write-runtime-config.mjs public/runtime-config.js
+        env:
+          SUPABASE_URL: "https://sgqdmfgjbprsoqsmgigi.supabase.co"
+          SUPABASE_PUBLISHABLE_KEY: "sb_publishable_yIf5HFKNNteed4HdYCS2Vw_4TB-4LvB"
+
+      - name: Write domain release manifest
+        env:
+          DATANEST_RELEASE_SHA: ${{ github.sha }}
+          DATANEST_DB_RELEASE: add-mutation-recovery-observability
+          DATANEST_BASELINE_RELEASE: reload-latest-v1
+          DATANEST_BASELINE_SHA: 592149b0898f6703b28e9fa33e73bd0799cae3fd
+          DATANEST_EDGE_AI: datanest-ai-chat@2
+          DATANEST_EDGE_INTAKE: datanest-ai-intake@1
+          DATANEST_EDGE_CERTIFICATION: datanest-ai-certification@1
+          DATANEST_EDGE_PROVIDER: manage-ai-provider-v2@1
+          DATANEST_EDGE_INVITES: send-job-invite@1
+          DATANEST_EDGE_PROJECT_INVITES: send-project-member-invite@3
+          DATANEST_EDGE_RONSAS_STATUS: ronsas-status@1
+        run: node scripts/write-release-manifest.mjs public/release-manifest.json
+
+      - name: Build root-domain DataNest
+        run: npm run build
+
+      - name: Build root-domain RONSAS bundle
+        run: node scripts/build-ronsas-pages.mjs
+
+      - name: Verify root-domain artifact contract
+        run: node scripts/verify-reson8-domain-build.mjs
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start root-domain preview
+        run: |
+          python3 -m http.server 4173 --directory out > /tmp/reson8-preview.log 2>&1 &
+          echo $! > /tmp/reson8-preview.pid
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4173/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/reson8-preview.log
+          exit 1
+
+      - name: Run full root-domain browser verification
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
+          DATANEST_APP_PATH: /
+        run: >
+          npx playwright test
+          tests/browser/auth.smoke.spec.ts
+          tests/browser/home-optimization.spec.ts
+          tests/browser/products.spec.ts
+          tests/browser/portfolio-registry.spec.ts
+          tests/browser/trust-policy.spec.ts
+          tests/browser/execution-authority.spec.ts
+          tests/browser/resource-fabric.spec.ts
+          tests/browser/intelligence-fabric.spec.ts
+          tests/browser/datanest-ai-layout.spec.ts
+          tests/browser/datanest-ai-recovery.spec.ts
+          tests/browser/transcheduler-project-gantt.spec.ts
+
+      - name: Collect root-domain preview log on failure
+        if: failure()
+        run: |
+          mkdir -p test-results
+          cp /tmp/reson8-preview.log test-results/reson8-preview-server.log || true
+
+      - name: Upload root-domain failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: reson8-root-domain-failure-${{ github.run_id }}
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
