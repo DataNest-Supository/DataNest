@@ -21,5 +21,15 @@
       "name": "datanest.reson8.life",
       "target": "r3sevmpy.up.railway.app"
     }
+  },
+  "operationalUrl": "https://datanest-supository.github.io/DataNest/",
+  "hubRegistration": {
+    "state": "pending",
+    "issue": "https://github.com/resonance36912-cell/resonance-hub/issues/136",
+    "statusEndpoint": "https://reson8.life/api/public/app-status/health"
+  },
+  "readiness": {
+    "contract": "ronsas-status@1",
+    "authenticated": true
   }
 }
