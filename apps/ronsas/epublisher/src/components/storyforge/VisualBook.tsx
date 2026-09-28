@@ -830,7 +830,15 @@ export function VisualBook() {
         setTranslating(true);
         const langLabel = LANG_NAMES[targetLang] || targetLang;
         try {
-          const response = await fetch("http://127.0.0.1:7866/v1/translate", {
+          // The sovereign translator is loopback-only. Build the fixed 127.0.0.1
+          // endpoint explicitly so no user-controlled host can escape the local machine.
+          const localTranslationUrl = new URL("/v1/translate", window.location.href);
+          localTranslationUrl.protocol = "http:";
+          localTranslationUrl.hostname = "127.0.0.1";
+          localTranslationUrl.port = "7866";
+          localTranslationUrl.username = "";
+          localTranslationUrl.password = "";
+          const response = await fetch(localTranslationUrl, {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ chapters: chapters.map((ch) => ({ title: ch.title, body: ch.body })), targetLanguage: langLabel }),
           });

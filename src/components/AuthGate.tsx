@@ -33,9 +33,9 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
 
 function AuthBrand() {
   return (
-    <div className="authBrand" aria-label="reson8.datanest.life brand">
+    <div className="authBrand" aria-label="Resonance Data Nest brand">
       <span className="authLogo" aria-hidden="true"><img src={DATANEST_LOGO_SRC} alt="" /></span>
-      <span className="authBrandCopy"><small>RESON8</small><strong>datanest.life</strong></span>
+      <span className="authBrandCopy"><strong>Resonance Data Nest</strong></span>
     </div>
   );
 }
@@ -263,7 +263,7 @@ export default function AuthGate() {
     <main className="authShell authLanding">
       <a className="skipLink" href="#sign-in-email">Skip to sign in</a>
       <header className="landingHeader">
-        <a className="landingBrand" href="#" aria-label="reson8.datanest.life home"><span className="landingLogo" aria-hidden="true"><img src={DATANEST_LOGO_SRC} alt="" /></span><span className="landingBrandText"><small>RESON8</small><b>datanest.life</b></span></a>
+        <a className="landingBrand" href="#" aria-label="Resonance Data Nest home"><span className="landingLogo" aria-hidden="true"><img src={DATANEST_LOGO_SRC} alt="" /></span><span className="landingBrandText"><b>Resonance Data Nest</b></span></a>
         <div className="landingHeaderActions"><a className="landingHubLink" href={RESON8_HUB_URL} target="_blank" rel="noreferrer">Reson8 Hub <span aria-hidden="true">↗</span></a><MotionControl/></div>
       </header>
       <div className="landingLayout">

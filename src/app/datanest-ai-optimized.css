@@ -802,3 +802,419 @@
   .datanestAiAdvancedBody{padding:9px}
 }
 
+
+
+/* 2026-09-28 final UI/UX formatting pass */
+/* A single spacing, type and surface rhythm for the Hero, command console and
+   compact context controls. Keep the experience dense enough for work without
+   making labels or controls feel miniature. */
+.datanestAiWorkspace{
+  --dn-ai-radius-lg:18px;
+  --dn-ai-radius-md:13px;
+  --dn-ai-radius-sm:10px;
+  --dn-ai-text:12px;
+  --dn-ai-text-small:10px;
+  --dn-ai-label:9px;
+  --dn-ai-border:rgba(114,225,255,.14);
+  width:min(100%,1180px);
+  margin-inline:auto;
+  gap:16px;
+  padding-bottom:18px;
+}
+
+.datanestAiHeroV2{
+  min-height:320px;
+  gap:clamp(20px,2.5vw,36px);
+  padding:clamp(22px,2.6vw,32px);
+  border-radius:var(--dn-ai-radius-lg);
+  border-color:rgba(132,87,255,.34);
+  box-shadow:0 18px 48px rgba(0,0,0,.22),0 0 24px rgba(109,72,255,.04),inset 0 1px rgba(255,255,255,.035);
+}
+.datanestAiHeroV2 h2{
+  margin:10px 0 4px;
+  font-size:clamp(42px,4vw,60px);
+  line-height:.96;
+  letter-spacing:-.035em;
+}
+.datanestAiHeroV2 h3{
+  max-width:500px;
+  margin-top:9px;
+  font-size:clamp(17px,1.55vw,22px);
+  line-height:1.28;
+}
+.datanestAiHeroV2 .datanestAiHeroCopy>p{
+  max-width:56ch;
+  margin-top:11px;
+  font-size:12px;
+  line-height:1.55;
+}
+.datanestAiHeroBadge{
+  font-size:9px;
+  letter-spacing:.11em;
+}
+.datanestAiHeroActionsCompact{
+  gap:8px;
+  margin-top:15px;
+}
+.datanestAiHeroActionsCompact .secondaryButton,
+.datanestAiHeroActionsCompact .textButton{
+  min-height:36px;
+  font-size:10px;
+}
+.datanestAiHeroVisual{min-height:278px}
+.datanestAiFloatCard{
+  width:min(168px,35%);
+  padding:9px 10px;
+  border-radius:11px;
+  box-shadow:0 9px 22px rgba(0,0,0,.18),inset 0 1px rgba(255,255,255,.03);
+}
+.datanestAiFloatCard b{font-size:9px}
+.datanestAiFloatCard small{
+  font-size:7.5px;
+  line-height:1.35;
+}
+.datanestAiCoreStage{width:min(232px,48%)}
+.datanestAiHudHeader,
+.datanestAiPipelineLabel{font-size:8px}
+
+.datanestAiChatStage{
+  width:min(100%,980px);
+  justify-self:center;
+  scroll-margin-top:104px;
+}
+.datanestAiChatPanel{
+  overflow:hidden;
+  border-radius:var(--dn-ai-radius-lg);
+  border-color:rgba(91,229,255,.22);
+  background:
+    radial-gradient(circle at 100% 0,rgba(111,77,255,.06),transparent 30%),
+    linear-gradient(180deg,rgba(9,12,30,.94),rgba(6,10,24,.96));
+  box-shadow:0 16px 42px rgba(0,0,0,.2),inset 0 1px rgba(255,255,255,.035);
+}
+.datanestAiConsoleHead{
+  gap:14px;
+  padding:16px 18px 13px;
+}
+.datanestAiConsoleIdentity{gap:12px}
+.datanestAiConsoleGlyph{
+  width:42px;
+  height:42px;
+  border-radius:12px;
+  font-size:15px;
+}
+.datanestAiConsoleIdentity .eyebrow{
+  font-size:8px;
+  letter-spacing:.12em;
+}
+.datanestAiConsoleIdentity h3{
+  margin:3px 0 3px;
+  font-size:clamp(18px,1.8cqi,24px);
+  line-height:1.08;
+  letter-spacing:.015em;
+}
+.datanestAiConsoleIdentity small{
+  display:block;
+  max-width:66ch;
+  font-size:10px;
+  line-height:1.45;
+}
+.datanestAiConsoleStatus{
+  gap:5px;
+}
+.datanestAiConsoleStatus>span,
+.datanestAiConsoleCommandJump{
+  min-height:25px;
+  font-size:7.5px;
+  letter-spacing:.055em;
+}
+.datanestAiConsoleGuardrail{
+  gap:8px;
+  margin:8px 18px 0;
+  padding:8px 10px;
+  border-radius:10px;
+}
+.datanestAiConsoleGuardrail p{
+  margin:0;
+  font-size:9.5px;
+  line-height:1.45;
+}
+.datanestAiQuickCommands{
+  gap:8px;
+  margin:9px 18px 0;
+}
+.datanestAiQuickCommandsLabel span{font-size:8px}
+.datanestAiQuickCommandsLabel small{font-size:8.5px}
+.datanestAiQuickCommandRail{gap:6px}
+.datanestAiQuickCommand{
+  min-height:32px;
+  padding:6px 9px;
+  border-radius:9px;
+  font-size:9.5px;
+}
+.datanestAiCommandConsole .datanestAiComposer{
+  margin:10px 18px 11px;
+  padding:14px;
+  border-radius:14px;
+  box-shadow:0 10px 26px rgba(0,0,0,.13),inset 0 1px rgba(255,255,255,.025);
+}
+.datanestAiComposerContext{
+  gap:6px;
+  margin-bottom:9px;
+}
+.datanestAiComposerContext>span,
+.datanestAiComposerContext>b,
+.datanestAiComposerContext>small,
+.datanestAiClearDraft{
+  font-size:8px;
+}
+.datanestAiComposerLabel{
+  margin-bottom:7px;
+}
+.datanestAiComposerLabel b{font-size:11px}
+.datanestAiComposerLabel small{font-size:8.5px}
+.datanestAiCommandConsole .datanestAiComposer textarea{
+  min-height:104px;
+  padding:13px 14px;
+  border-radius:11px;
+  font-size:14px;
+  line-height:1.5;
+}
+.datanestAiComposerFooter{
+  gap:12px;
+  margin-top:9px;
+}
+.datanestAiComposerFooter .muted{
+  max-width:68ch;
+  font-size:9px;
+  line-height:1.4;
+}
+.datanestAiCommandButton{
+  min-height:38px;
+  padding-inline:14px;
+  font-size:10.5px;
+}
+.datanestAiCommandConsole .datanestAiTranscript{
+  max-height:500px;
+  margin:0 18px 18px;
+  padding:12px 2px 2px 0;
+}
+.datanestAiTurn{
+  padding:13px 14px;
+  border-radius:12px;
+}
+.datanestAiTurnIdentity b{font-size:10.5px}
+.datanestAiTurnIdentity small{font-size:8.5px}
+.datanestAiTurn p{
+  margin-top:9px;
+  font-size:12px;
+  line-height:1.55;
+}
+.datanestAiReasoningCopy b{font-size:11px}
+.datanestAiReasoningCopy>span{font-size:9.5px;line-height:1.45}
+.datanestAiConsoleEmpty{
+  min-height:132px!important;
+  padding:18px;
+}
+.datanestAiConsoleEmpty h3{font-size:16px}
+.datanestAiConsoleEmpty p{
+  max-width:58ch;
+  font-size:10.5px;
+  line-height:1.5;
+}
+
+.datanestAiCommandSummaryCompact{
+  width:min(100%,980px);
+  justify-self:center;
+  grid-template-columns:minmax(0,1.08fr) minmax(260px,.92fr) auto;
+  gap:12px;
+  padding:13px 14px;
+  border-radius:var(--dn-ai-radius-md);
+  border-color:var(--dn-ai-border);
+  box-shadow:0 10px 26px rgba(0,0,0,.12),inset 0 1px rgba(255,255,255,.025);
+}
+.datanestAiCommandObjective small,
+.datanestAiCommandContext>label{
+  margin-bottom:4px;
+  font-size:var(--dn-ai-label);
+  letter-spacing:.11em;
+}
+.datanestAiCommandObjective strong{
+  font-size:14.5px;
+  line-height:1.25;
+}
+.datanestAiCommandObjective p{
+  margin-top:4px;
+  font-size:10.5px;
+  line-height:1.45;
+}
+.datanestAiCommandContext{gap:6px}
+.datanestAiCommandContext>select{
+  min-height:37px;
+  padding:7px 10px;
+  border-radius:9px;
+  font-size:10.5px;
+}
+.datanestAiContextSignals{gap:5px}
+.datanestAiContextSignal,
+.datanestAiContextSignalButton{
+  min-height:23px;
+  padding:4px 7px;
+  font-size:7.5px;
+}
+.datanestAiCommandActions{
+  gap:7px;
+}
+.datanestAiCommandActions .primaryButton,
+.datanestAiCommandActions .secondaryButton{
+  min-height:36px;
+  padding:8px 11px;
+  border-radius:9px;
+  font-size:10px;
+}
+
+.datanestAiContextDetails,
+.datanestAiAdvancedDisclosure{
+  width:min(100%,980px);
+  justify-self:center;
+  border-radius:var(--dn-ai-radius-md);
+  border-color:rgba(132,87,255,.13);
+  box-shadow:none;
+}
+.datanestAiContextDetails>summary,
+.datanestAiAdvancedDisclosure>summary{
+  min-height:46px;
+  gap:10px;
+  padding:10px 12px;
+}
+.datanestAiContextDetails>summary b,
+.datanestAiAdvancedDisclosure>summary b{
+  font-size:10.5px;
+}
+.datanestAiContextDetails>summary small,
+.datanestAiAdvancedDisclosure>summary small{
+  font-size:8.5px;
+  line-height:1.35;
+}
+.datanestAiContextDetailsMeta i,
+.datanestAiDisclosureStatus{
+  padding:4px 7px;
+  font-size:7.5px;
+}
+.datanestAiContextDetailsBody{
+  gap:11px;
+  padding:0 12px 13px;
+}
+.datanestAiContextDetailsBody>p{
+  font-size:10.5px;
+  line-height:1.5;
+}
+.datanestAiAdvancedBody{
+  gap:14px;
+  padding:12px;
+}
+.datanestAiFootnote{
+  width:min(100%,980px);
+  justify-self:center;
+  opacity:.48;
+}
+.datanestAiFootnote small{font-size:8px}
+
+@media(max-width:900px){
+  .datanestAiWorkspace{gap:14px}
+  .datanestAiHeroV2{
+    min-height:0;
+    padding:22px;
+  }
+  .datanestAiHeroVisual{min-height:260px}
+  .datanestAiCommandSummaryCompact{grid-template-columns:1fr}
+  .datanestAiCommandSummaryCompact .datanestAiCommandActions{grid-column:auto}
+  .datanestAiConsoleHead{
+    align-items:flex-start;
+    padding:15px 16px 12px;
+  }
+  .datanestAiQuickCommands,
+  .datanestAiConsoleGuardrail{margin-left:16px;margin-right:16px}
+  .datanestAiCommandConsole .datanestAiComposer{margin-left:16px;margin-right:16px}
+  .datanestAiCommandConsole .datanestAiTranscript{margin-left:16px;margin-right:16px}
+}
+
+@media(max-width:620px){
+  .datanestAiWorkspace{
+    gap:11px;
+    padding-bottom:12px;
+  }
+  .datanestAiHeroV2{
+    padding:17px;
+    border-radius:14px;
+  }
+  .datanestAiHeroV2 h2{font-size:clamp(34px,11vw,46px)}
+  .datanestAiHeroV2 h3{font-size:17px}
+  .datanestAiHeroV2 .datanestAiHeroCopy>p{font-size:10.5px}
+  .datanestAiHeroVisual{min-height:236px}
+  .datanestAiFloatCard{
+    width:min(150px,43%);
+    padding:7px 8px;
+  }
+  .datanestAiFloatCard small:last-child{display:none}
+  .datanestAiCoreStage{width:min(205px,55%)}
+  .datanestAiChatPanel{border-radius:14px}
+  .datanestAiConsoleHead{padding:13px 13px 10px}
+  .datanestAiConsoleGlyph{width:38px;height:38px}
+  .datanestAiConsoleIdentity h3{font-size:17px}
+  .datanestAiConsoleIdentity small{font-size:9px}
+  .datanestAiConsoleGuardrail,
+  .datanestAiQuickCommands{margin-left:12px;margin-right:12px}
+  .datanestAiQuickCommandsLabel small{display:none}
+  .datanestAiCommandConsole .datanestAiComposer{
+    margin:9px 12px 10px;
+    padding:12px;
+  }
+  .datanestAiCommandConsole .datanestAiComposer textarea{
+    min-height:96px;
+    font-size:13px;
+  }
+  .datanestAiComposerFooter{
+    align-items:stretch;
+    flex-direction:column;
+  }
+  .datanestAiCommandButton{
+    width:100%;
+    justify-content:center;
+  }
+  .datanestAiCommandConsole .datanestAiTranscript{
+    max-height:440px;
+    margin-left:12px;
+    margin-right:12px;
+    margin-bottom:14px;
+  }
+  .datanestAiCommandSummaryCompact{padding:12px}
+  .datanestAiCommandActions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+  .datanestAiCommandActions .primaryButton,
+  .datanestAiCommandActions .secondaryButton{
+    width:100%;
+    justify-content:center;
+  }
+  .datanestAiContextDetails>summary,
+  .datanestAiAdvancedDisclosure>summary{padding:9px 10px}
+  .datanestAiContextDetails>summary small,
+  .datanestAiAdvancedDisclosure>summary small{max-width:190px}
+}
+
+@media(max-width:390px){
+  .datanestAiHeroVisual{min-height:220px}
+  .datanestAiFloatCard{width:min(142px,45%)}
+  .datanestAiCommandActions{grid-template-columns:1fr}
+  .datanestAiConsoleStatus>span:nth-of-type(3){display:none}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .datanestAiHeroV2,
+  .datanestAiChatPanel,
+  .datanestAiQuickCommand,
+  .datanestAiCommandSummaryCompact,
+  .datanestAiContextDetails,
+  .datanestAiAdvancedDisclosure{transition:none!important}
+}
