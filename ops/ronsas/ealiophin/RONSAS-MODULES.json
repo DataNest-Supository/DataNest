@@ -6,14 +6,23 @@
   "authority": {
     "sourceRoot": ".",
     "controlRoot": "ops/ronsas/ealiophin",
-    "runtimeRoot": "%LOCALAPPDATA%\\Resonance\\DataNest-RONSAS"
+    "runtimeRoot": "%LOCALAPPDATA%\\Resonance\\DataNest-RONSAS",
+    "backupHost": {
+      "provider": "Dropbox",
+      "path": "/DataNest-AI-Backups",
+      "role": "artifact-recovery",
+      "servesApplication": false
+    }
   },
   "policy": {
     "singleRepositoryAuthority": true,
     "localFirst": true,
     "standaloneRepositories": "evidence-only",
     "billingState": "free-promotion",
-    "paidCheckoutActive": false
+    "paidCheckoutActive": false,
+    "localPcBackupHosting": false,
+    "backupProvider": "dropbox",
+    "backupPath": "/DataNest-AI-Backups"
   },
   "modules": [
     {
