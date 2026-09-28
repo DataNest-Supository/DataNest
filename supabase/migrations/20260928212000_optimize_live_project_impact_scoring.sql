@@ -1,14 +1,7 @@
 -- Performance hardening for live impact scoring.
-do $
-begin
-  if to_regclass('public.ai_intake_events') is not null then
-    execute 'create index if not exists ai_intake_events_project_user_time_idx on public.ai_intake_events(project_id, source_user_id, created_at desc)';
-  end if;
-  if to_regclass('public.ai_candidate_evidence') is not null then
-    execute 'create index if not exists ai_candidate_evidence_event_candidate_idx on public.ai_candidate_evidence(event_id, candidate_id)';
-  end if;
-end;
-$;
+-- Optional staging indexes are intentionally deferred because the governed AI staging
+-- relations are not present in every DataNest database. The function below fails
+-- closed to an explicit unavailable state when those relations are absent.
 
 create or replace function private.get_project_impact_dashboard_base_v1(target_project uuid)
 returns jsonb
