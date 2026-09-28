@@ -1,0 +1,14 @@
+{
+  "contract": "reson8-app@1",
+  "key": "datanest",
+  "name": "Resonance DataNest",
+  "publicUrl": "https://datanest.reson8.life/",
+  "hubUrl": "https://reson8.life/",
+  "sourceRepository": "DataNest-Supository/DataNest",
+  "sourceBranch": "main",
+  "authority": "DataNest",
+  "access": "invitation",
+  "status": "live",
+  "billing": "none",
+  "runtimeConfigAuthority": "https://datanest-supository.github.io/DataNest/runtime-config.js"
+}
