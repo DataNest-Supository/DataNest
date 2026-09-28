@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 const appPath = process.env.DATANEST_APP_PATH || "/";
 
-test("DataNest AI keeps the Hero above a centered live command console", async ({ page }) => {
+test("DataNest AI keeps a centered chat-first command console with an optional AI Core overview", async ({ page }) => {
   const projectId = "00000000-0000-4000-8000-000000000010";
   const userId = "00000000-0000-4000-8000-000000000001";
   const otherUserId = "00000000-0000-4000-8000-000000000002";
@@ -84,7 +84,13 @@ test("DataNest AI keeps the Hero above a centered live command console", async (
   await expect(page.getByRole("heading",{name:"DataNest AI",exact:true}).first()).toBeVisible();
   await expect(page.getByRole("heading",{name:"Development command channel",exact:true})).toBeVisible();
   await expect(page.getByText("AI CORE LINKED",{exact:true})).toBeVisible();
+  const aiCoreOverview=page.getByText("AI Core overview",{exact:true});
+  await expect(aiCoreOverview).toBeVisible();
+  await expect(page.getByText("Hosted CI · Cloud browser",{exact:true})).toBeHidden();
+  await aiCoreOverview.click();
   await expect(page.getByText("Hosted CI · Cloud browser",{exact:true})).toBeVisible();
+  await aiCoreOverview.click();
+  await expect(page.getByText("Hosted CI · Cloud browser",{exact:true})).toBeHidden();
   await expect(page.getByText(/Remote desktop/i)).toHaveCount(0);
   await expect(page.getByText("Current Job Context",{exact:true})).toBeVisible();
   await expect(page.getByText("AI Hero Layout Fixture",{exact:true}).first()).toBeVisible();
@@ -173,16 +179,16 @@ test("DataNest AI keeps the Hero above a centered live command console", async (
     };
     return {
       workspace:rect(".datanestAiWorkspace"),
-      hero:rect(".datanestAiHeroV2"),
       chat:rect(".datanestAiChatStage"),
+      overview:rect(".datanestAiOverviewDisclosure"),
       context:rect(".datanestAiContextRail"),
       scrollWidth:document.documentElement.scrollWidth,
       viewportWidth:innerWidth
     };
   });
 
-  expect(layout.chat.y).toBeGreaterThanOrEqual(layout.hero.bottom-2);
-  expect(layout.context.y).toBeGreaterThanOrEqual(layout.chat.bottom-2);
+  expect(layout.overview.y).toBeGreaterThanOrEqual(layout.chat.bottom-2);
+  expect(layout.context.y).toBeGreaterThanOrEqual(layout.overview.bottom-2);
   expect(layout.chat.width).toBeLessThanOrEqual(982);
   expect(Math.abs(layout.chat.center-layout.workspace.center)).toBeLessThanOrEqual(2);
   expect(layout.scrollWidth).toBeLessThanOrEqual(layout.viewportWidth);
