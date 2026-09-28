@@ -264,7 +264,7 @@ export default function AuthGate() {
       <a className="skipLink" href="#sign-in-email">Skip to sign in</a>
       <header className="landingHeader">
         <a className="landingBrand" href="#" aria-label="Resonance Data Nest home"><span className="landingLogo" aria-hidden="true"><img src={DATANEST_LOGO_SRC} alt="" /></span><span className="landingBrandText"><b>Resonance Data Nest</b></span></a>
-        <div className="landingHeaderActions"><a className="landingHubLink" href={RESON8_HUB_URL} target="_blank" rel="noreferrer">Reson8 Hub <span aria-hidden="true">↗</span></a><MotionControl/></div>
+        <div className="landingHeaderActions"><a className="landingHubLink" href={RESON8_HUB_URL} target="_blank" rel="noreferrer">Reson8 Hub <span aria-hidden="true">↗</span></a><a className="landingHubLink" href="./transparency">Public Audit Library <span aria-hidden="true">↗</span></a><MotionControl/></div>
       </header>
       <div className="landingLayout">
       <section className="landingStory" aria-labelledby="landing-title">
