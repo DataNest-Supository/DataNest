@@ -567,3 +567,43 @@
   .datanestAiCommandObjective p,
   .datanestAiCommandEvidence span{white-space:normal}
 }
+
+
+/* 2026-09-28 AI workspace chrome reduction */
+/* DataNest AI already exposes completion/evidence in its command summary, so the
+   generic task guide is omitted in this view and the lifecycle rail becomes compact. */
+.aiViewPhaseRail{
+  gap:6px;
+  margin:-8px 0 10px;
+}
+.aiViewPhaseRail .workflowPhaseSteps{
+  gap:4px;
+}
+.aiViewPhaseRail .workflowPhaseSteps button,
+.aiViewPhaseRail .workflowPhaseAi{
+  min-height:34px;
+  border-radius:9px;
+}
+.aiViewPhaseRail .workflowPhaseSteps button{
+  gap:6px;
+  padding:5px 8px;
+}
+.aiViewPhaseRail .workflowPhaseSteps button>span{
+  font-size:7px;
+}
+.aiViewPhaseRail .workflowPhaseSteps button>b{
+  font-size:9px;
+}
+.aiViewPhaseRail .workflowPhaseAi{
+  flex-basis:104px;
+  padding:5px 8px;
+}
+.aiViewPhaseRail .workflowPhaseAi>span{font-size:12px}
+.aiViewPhaseRail .workflowPhaseAi>b{font-size:8px}
+.aiViewPhaseRail .workflowPhaseAi>small{font-size:6px}
+
+@media(max-width:520px){
+  .aiViewPhaseRail{margin-top:-2px;margin-bottom:9px}
+  .aiViewPhaseRail .workflowPhaseSteps button{min-height:36px}
+  .aiViewPhaseRail .workflowPhaseAi{min-height:34px}
+}
