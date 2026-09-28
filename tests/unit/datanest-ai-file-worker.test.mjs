@@ -8,6 +8,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
 const worker=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-file-worker/index.ts"),"utf8");
 const upload=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-upload/index.ts"),"utf8");
 const config=fs.readFileSync(path.join(root,"supabase/config.toml"),"utf8");
+const deploymentWorkflow=fs.readFileSync(path.join(root,".github/workflows/datanest-ai-file-worker-deploy.yml"),"utf8");
 const queueMigration=fs.readFileSync(
   path.join(root,"supabase/staging-migrations/20260925193503_datanest_ai_file_worker_queue_contract.sql"),
   "utf8"
@@ -21,8 +22,10 @@ const analysisRuntime=fs.readFileSync(
   "utf8"
 );
 
-test("worker is gateway-public but internally service authenticated",()=>{
-  assert.match(config,/\[functions\.datanest-ai-file-worker\][\s\S]*verify_jwt\s*=\s*false/);
+test("worker stays out of batch deploy while preserving internal service authentication",()=>{
+  assert.doesNotMatch(config,/\[functions\.datanest-ai-file-worker\]/);
+  assert.match(deploymentWorkflow,/--no-verify-jwt/);
+  assert.match(deploymentWorkflow,/--use-docker/);
   assert.match(worker,/x-datanest-worker-auth/);
   assert.match(worker,/request\.headers\.get\("x-datanest-worker-auth"\)!==serviceKey/);
   assert.match(worker,/Worker authorization required/);
