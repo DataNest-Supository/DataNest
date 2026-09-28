@@ -1178,7 +1178,7 @@ Deno.serve(async(request:Request)=>{
                 requestStatus="succeeded";
                 const content=developmentMode
                   ?formatDualAdvocacyResponse(
-                      developmentDual=parseDualAdvocacyResponse(ext.content)
+                      developmentDual=parseCompleteDualAdvocacyResponse(ext.content)
                     )
                   :ext.content;
                 if(developmentMode){
