@@ -358,3 +358,34 @@
   .datanestAiJobPicker small{grid-column:auto}
   .datanestAiComposer textarea{min-height:104px}
 }
+
+
+/* 2026-09-28 command-first console */
+/* The command field is the primary action. Show it before conversation history so a
+   user can type immediately without scrolling through prior turns. */
+.datanestAiCommandConsole{display:grid}
+.datanestAiConsoleHead{order:10}
+.datanestAiConsoleGuardrail{order:20}
+.datanestAiQuickCommands{order:30}
+.datanestAiCommandConsole .datanestAiComposer{
+  order:40;
+  margin-top:14px;
+  border-color:rgba(91,230,255,.24);
+  box-shadow:
+    0 14px 36px rgba(0,0,0,.16),
+    0 0 24px rgba(66,231,255,.035),
+    inset 0 1px rgba(255,255,255,.03);
+}
+.datanestAiCommandConsole .datanestAiTranscript{
+  order:50;
+  margin-top:0;
+  margin-bottom:22px;
+  padding-top:14px;
+  border-top:1px solid rgba(95,223,255,.08);
+}
+.datanestAiCommandConsole .datanestAiTranscript:empty{display:none}
+
+@container datanest-main (max-width:700px){
+  .datanestAiCommandConsole .datanestAiComposer{margin-top:12px}
+  .datanestAiCommandConsole .datanestAiTranscript{margin-bottom:18px}
+}
