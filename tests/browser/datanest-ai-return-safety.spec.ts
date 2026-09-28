@@ -24,8 +24,9 @@ async function openWorkspace(page:import("@playwright/test").Page,label:string){
 
 async function openAiSidebar(page:import("@playwright/test").Page){
   await openWorkspace(page,"DataNest AI");
-  await expect(page.getByText("DataNest AI E2E Job",{exact:true}).first()).toBeVisible();
-  await page.getByText("DataNest AI E2E Job",{exact:true}).first().click();
+  const activeJob=page.getByLabel("Active Job context",{exact:true});
+  await expect(activeJob).toBeVisible();
+  await expect(activeJob.locator("option:checked")).toContainText("DataNest AI E2E Job");
   const assistant=page.getByRole("button",{name:"AI assistant",exact:true});
   await expect(assistant).toBeVisible();
   await assistant.click();
