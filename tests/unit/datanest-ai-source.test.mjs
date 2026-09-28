@@ -16,7 +16,8 @@ test("navigation exposes DataNest AI and not the R&D Dashboard", () => {
 test("DataNest AI workspace exposes chat, current job, certified memory and certification", () => {
   const source=fs.readFileSync(path.join(root,"src/components/DataNestAiWorkspace.tsx"),"utf8");
   assert.match(source,/DataNest AI/);
-  assert.match(source,/Current Job Context/);
+  assert.match(source,/Active Job context/);
+  assert.match(source,/Job details/);
   assert.match(source,/Certified Memory/);
   assert.match(source,/Learning & Certification/);
 });
