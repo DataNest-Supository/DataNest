@@ -69,6 +69,11 @@ test("DataNest AI removes the duplicate task guide while keeping Job-first chat 
   assert.match(workspace,/className="datanestAiChatStage"/);
   assert.match(workspace,/Focus chat/);
   assert.match(css,/\.datanestAiJobPicker\s*\{/);
-  assert.match(css,/\.datanestAiCommandConsole \.datanestAiComposer\s*\{[^}]*order:40/s);
+  const chatPanel=read("src/components/DataNestAiChatPanel.tsx");
+  const composerIndex=chatPanel.indexOf('className="datanestAiComposer"');
+  const transcriptIndex=chatPanel.indexOf('className="datanestAiTranscript"');
+  assert.ok(composerIndex>=0&&transcriptIndex>=0&&composerIndex<transcriptIndex,
+    "composer DOM must precede transcript without CSS order overrides");
+  assert.doesNotMatch(css,/\.datanestAiCommandConsole \.datanestAiComposer\s*\{[^}]*order:/s);
   assert.match(css,/\.datanestAiOverviewDisclosure\s*\{/);
 });
