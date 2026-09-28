@@ -143,6 +143,7 @@ test("viewer and operator cannot mutate ILM profiles or service evidence",async(
   for(const role of ["viewer","operator"] as const){
     await setup(page,role);
     await page.goto(appPath+"?view=ai");
+    await openGovernanceTools(page);
     await expect(page.locator("summary").filter({hasText:"Version ILM-1 profile"})).toHaveCount(0);
     await expect(page.getByRole("button",{name:/record route|record evaluation|mark supported|mark unsupported/i})).toHaveCount(0);
     await expect(page.getByText("Provider Model",{exact:true})).toBeVisible();
@@ -178,6 +179,7 @@ test("mobile Intelligence Fabric has no horizontal page overflow",async({page})=
   await setup(page,"owner");
   await page.setViewportSize({width:390,height:844});
   await page.goto(appPath+"?view=ai");
+  await openGovernanceTools(page);
   await expect(page.getByRole("heading",{name:"Governed intelligence composition",exact:true})).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
