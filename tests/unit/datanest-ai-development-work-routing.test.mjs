@@ -9,6 +9,7 @@ const chat=fs.readFileSync(path.join(root,"src/components/DataNestAiChatPanel.ts
 const edge=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-chat/index.ts"),"utf8");
 const impact=fs.readFileSync(path.join(root,"supabase/migrations/20260928220000_reconcile_production_impact_scoring_governed.sql"),"utf8");
 const intake=fs.readFileSync(path.join(root,"supabase/migrations/20260928223500_add_development_work_contribution_intake.sql"),"utf8");
+const runtimeFix=fs.readFileSync(path.join(root,"supabase/migrations/20260929224000_fix_development_command_runtime_access.sql"),"utf8");
 
 const sections=[
   ["ui_ux","UI & UX"],["frontend","Frontend"],["backend","Backend"],["data","Data"],["ai","AI"],
@@ -53,4 +54,17 @@ test("production impact scoring groups governed contributions by routed impact a
   assert.ok(impact.includes("l.metadata->>'impact_area'"));
   assert.ok(impact.includes("'raw_activity_never_awards_points',true"));
   assert.ok(impact.includes("'source','public.contribution_ledger'"));
+});
+
+
+test("Development Command production runtime fix restores service-role memory access and avoids ambiguous contribution ids",()=>{
+  assert.ok(runtimeFix.includes("grant select, insert, update"));
+  assert.ok(runtimeFix.includes("on table public.development_command_working_memory"));
+  assert.ok(runtimeFix.includes("on table public.development_command_turns"));
+  assert.ok(runtimeFix.includes("to service_role"));
+  assert.ok(runtimeFix.includes("v_contribution_id uuid"));
+  assert.ok(runtimeFix.includes("returning id into v_contribution_id"));
+  assert.ok(runtimeFix.includes("values(\n    v_contribution_id,"));
+  assert.ok(runtimeFix.includes("where id=v_contribution_id"));
+  assert.ok(runtimeFix.includes("return v_contribution_id"));
 });
