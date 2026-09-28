@@ -163,11 +163,11 @@ const isPrivateEnvironmentKey = (key) => {
 
 const environment = {};
 for (const key of SAFE_KEYS) if (env[key] !== undefined) environment[key] = env[key];
-const secretsPresence = {};
-const secretKeys = Object.keys(env)
+const privateEnvironmentPresence = {};
+const privateEnvironmentKeys = Object.keys(env)
   .filter(isPrivateEnvironmentKey)
   .sort();
-for (const key of secretKeys) secretsPresence[key] = env[key] ? "set" : "unset";
+for (const key of privateEnvironmentKeys) privateEnvironmentPresence[key] = env[key] ? "set" : "unset";
 
 const manifest = {
   schema: "diagnostics-manifest/v1",
