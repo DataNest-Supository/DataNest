@@ -269,6 +269,24 @@ test("TranScheduler groups jobs under the project identity with a priority gradi
 });
 
 
+test("DataNest AI chat renders the submitted turn immediately and uses Enter to send", () => {
+  const chat=fs.readFileSync(path.join(root,"src/components/DataNestAiChatPanel.tsx"),"utf8");
+  assert.match(chat,/setOptimisticTurn\(\{/);
+  assert.match(chat,/source_type:"human"/);
+  assert.match(chat,/setDraft\(""\)/);
+  assert.match(chat,/event\.key==="Enter"&&!event\.shiftKey/);
+  assert.match(chat,/Shift\+Enter for a new line/);
+  assert.match(chat,/clientTimeZone:Intl\.DateTimeFormat\(\)\.resolvedOptions\(\)\.timeZone/);
+});
+
+test("embedded DataNest AI responds directly to basic conversational utility prompts", () => {
+  const gateway=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-chat/index.ts"),"utf8");
+  assert.match(gateway,/Today is \$\{date\}/);
+  assert.match(gateway,/The current time is \$\{time\}/);
+  assert.match(gateway,/DataNest AI is online in \$\{code\}/);
+  assert.match(gateway,/clientTimeZone/);
+});
+
 test("DataNest AI surfaces the returned assistant turn before refreshing the governed session", () => {
   const chat=fs.readFileSync(path.join(root,"src/components/DataNestAiChatPanel.tsx"),"utf8");
   const workspace=fs.readFileSync(path.join(root,"src/components/DataNestAiWorkspace.tsx"),"utf8");

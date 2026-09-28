@@ -102,7 +102,7 @@ test("Phase D enforced denial prevents provider authorization and falls back to 
   const phaseDGuard=source.indexOf("phaseDAuthorityEnforced");
   const providerAuth=source.indexOf('"service_authorize_ai_request"',phaseDGuard);
   assert.ok(providerAuth>phaseDGuard);
-  assert.match(source,/embeddedResponse\(job,message,productMode,jurisdiction\)/);
+  assert.match(source,/embeddedResponse\(job,message,productMode,jurisdiction,clientTimeZone\)/);
 });
 
 test("Phase D report-only never bypasses the existing provider authorization decision",()=>{

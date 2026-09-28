@@ -45,7 +45,7 @@ test("report-only external findings do not override existing provider authorizat
   assert.match(source,/String\(phaseCPolicy\.outcome\|\|"deny"\)!=="allow"/);
   assert.match(source,/provider_trust_policy_denied/);
   assert.match(source,/service_authorize_ai_request/);
-  assert.match(source,/embeddedResponse\(job,message,productMode,jurisdiction\)/);
+  assert.match(source,/embeddedResponse\(job,message,productMode,jurisdiction,clientTimeZone\)/);
 });
 
 test("project learning is fail closed regardless of report-only rollout and stamps decision evidence before trends",()=>{

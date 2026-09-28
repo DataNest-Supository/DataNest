@@ -443,22 +443,60 @@ function embeddedResponse(
   job:JobContext,
   message:string,
   productMode:string,
-  jurisdiction:string
+  jurisdiction:string,
+  clientTimeZone:string
 ){
   const code="JOB-"+String(job.job_number||0).padStart(5,"0");
   if(productMode==="legal_eagle"){
     return [
-      `Legal Eagle recorded this legal-assistance request for ${code} · ${job.title}.`,
+      `Legal Eagle received your request for ${code} · ${job.title}.`,
       `Jurisdiction supplied: ${jurisdiction}.`,
-      "A governed external AI provider is not currently available for substantive reasoning, so Legal Eagle has not generated a legal analysis.",
-      "You can still use this matter workspace to organize facts and questions. Verify legal rights, deadlines, procedures and strategy with a qualified lawyer in the relevant jurisdiction.",
-      `Current request: “${message.slice(0,500)}”`
+      "A governed external AI provider is not currently available for substantive legal reasoning in this route.",
+      "You can still use this matter workspace to organize facts and questions. Verify legal rights, deadlines, procedures and strategy with a qualified lawyer in the relevant jurisdiction."
     ].join("\n\n");
   }
+
+  const normalized=message.trim().toLowerCase().replace(/[^a-z0-9\s?'’-]/g,"");
+  const now=new Date();
+  let timeZone=clientTimeZone||"UTC";
+  try{
+    new Intl.DateTimeFormat("en",{timeZone}).format(now);
+  }catch{
+    timeZone="UTC";
+  }
+
+  if(/^(hi|hello|hey|good morning|good afternoon|good evening)\b/.test(normalized)){
+    return `Hello. DataNest AI is online in ${code} · ${job.title}. What would you like to work on?`;
+  }
+
+  if(
+    /\b(what('?s| is) (the )?date|today'?s date|what day is it|current date)\b/.test(normalized)
+  ){
+    const date=new Intl.DateTimeFormat("en-ZA",{
+      weekday:"long",year:"numeric",month:"long",day:"numeric",timeZone
+    }).format(now);
+    return `Today is ${date} (${timeZone}).`;
+  }
+
+  if(/\b(what('?s| is) (the )?time|current time|time now)\b/.test(normalized)){
+    const time=new Intl.DateTimeFormat("en-ZA",{
+      hour:"2-digit",minute:"2-digit",second:"2-digit",timeZone,timeZoneName:"short"
+    }).format(now);
+    return `The current time is ${time}.`;
+  }
+
+  if(/\b(what (job|context)|current job|which job)\b/.test(normalized)){
+    return `You are working in ${code} · ${job.title}.${job.description?" "+job.description:""}`;
+  }
+
+  if(/^(help|what can you do|commands?)\??$/.test(normalized)){
+    return "I can work with the active Job context, analyze and plan work, help debug implementation, compare approaches, and preserve this session as governed evidence. Substantive generative reasoning requires an approved AI provider route.";
+  }
+
   return [
-    `DataNest AI recorded this request as uncertified evidence for ${code} · ${job.title}.`,
-    "It is available to this Job/session immediately but will not become project-wide memory until the governed certification pipeline passes.",
-    `Current request: “${message.slice(0,500)}”`
+    "I received your message and kept it in this active Job/session.",
+    "A governed AI provider is not currently available for substantive generative reasoning in this route, so I will not pretend a canned acknowledgement is a full answer.",
+    "You can still ask me for the current date/time, active Job context, or help; connect/approve an AI provider route for general conversational reasoning."
   ].join("\n\n");
 }
 
@@ -530,6 +568,9 @@ Deno.serve(async(request:Request)=>{
     const action=String(body.action||"chat");
     const jobId=String(body.jobId||"");
     if(!jobId)return json({error:"jobId is required."},400,origin);
+    const clientTimeZone=typeof body.clientTimeZone==="string"
+      ?body.clientTimeZone.trim().slice(0,120)
+      :"";
 
     const productMode=String(body.productMode||"").trim();
     if(productMode&&productMode!=="legal_eagle"){
@@ -1005,7 +1046,7 @@ Deno.serve(async(request:Request)=>{
         }
 
         return {
-          content:embeddedResponse(job,message,productMode,jurisdiction),
+          content:embeddedResponse(job,message,productMode,jurisdiction,clientTimeZone),
           providerMode:"embedded",
           providerLabel:null,
           inputTokens:0,
