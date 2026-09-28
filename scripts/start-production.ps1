@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-Write-Warning "Legacy local/recovery launcher only. Canonical production is DataNest-managed."
+Write-Warning "Legacy local/controlled-test launcher only. Backup continuity is Dropbox-managed; canonical production is DataNest-managed."
 
 if (-not $env:SUPABASE_URL) {
   $env:SUPABASE_URL = "https://sgqdmfgjbprsoqsmgigi.supabase.co"
