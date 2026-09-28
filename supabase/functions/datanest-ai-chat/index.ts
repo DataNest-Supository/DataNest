@@ -322,17 +322,13 @@ async function resolveActiveIlmRoute(input:{
       };
     },
     resolveProviderConnection:async(routeInput)=>{
-      const {data:connectionData,error:connectionError}=await input.serviceClient.rpc(
-        "service_get_ai_provider_connection_v2",{
-          target_project:input.job.project_id,
-          target_user:input.userId,
-          target_connection:input.requestedConnection
-        }
-      );
-      if(connectionError)throw connectionError;
-      if(!connectionData)return null;
-
-      const connection=connectionData as ProviderConnection;
+      const connection=await resolveConfiguredProviderConnection({
+        serviceClient:input.serviceClient,
+        projectId:input.job.project_id,
+        userId:input.userId,
+        requestedConnection:input.requestedConnection
+      });
+      if(!connection)return null;
       const providerKey=connection.provider.toLowerCase()+":"+connection.endpoint_host.toLowerCase();
       const {data:providerPolicyData,error:providerPolicyError}=await input.serviceClient.rpc(
         "service_evaluate_data_policy_v1",{
@@ -413,6 +409,63 @@ async function resolveActiveIlmRoute(input:{
   return {route,connection:selectedConnection,phaseCDecisionRecordId:selectedPhaseCDecisionRecordId};
 }
 
+
+async function resolveConfiguredProviderConnection(input:{
+  serviceClient:AnyClient;
+  projectId:string;
+  userId:string;
+  requestedConnection:string|null;
+}):Promise<ProviderConnection|null>{
+  const load=async()=>{
+    const {data,error}=await input.serviceClient.rpc(
+      "service_get_ai_provider_connection_v2",{
+        target_project:input.projectId,
+        target_user:input.userId,
+        target_connection:input.requestedConnection
+      }
+    );
+    if(error)throw error;
+    return data?data as ProviderConnection:null;
+  };
+
+  const existing=await load();
+  if(existing||input.requestedConnection)return existing;
+
+  const apiBaseUrl=(Deno.env.get("DATANEST_SHARED_AI_BASE_URL")||"").trim();
+  const endpointHost=(Deno.env.get("DATANEST_SHARED_AI_HOST")||"").trim().toLowerCase();
+  const model=(Deno.env.get("DATANEST_SHARED_AI_MODEL")||"").trim();
+  const secret=(Deno.env.get("DATANEST_SHARED_AI_SECRET")||"").trim();
+  const label=(Deno.env.get("DATANEST_SHARED_AI_LABEL")||"DataNest Sovereign AI").trim();
+
+  if(!apiBaseUrl||!endpointHost||!model||!secret)return null;
+
+  const url=new URL(apiBaseUrl);
+  if(
+    url.protocol!=="https:" ||
+    url.hostname.toLowerCase()!==endpointHost ||
+    url.username ||
+    url.password ||
+    (url.port&&url.port!=="443")
+  ){
+    throw new Error("configured_shared_provider_endpoint_rejected");
+  }
+
+  const {error:upsertError}=await input.serviceClient.rpc(
+    "service_upsert_ai_provider_connection_v2",{
+      target_project:input.projectId,
+      target_user:input.userId,
+      target_provider:"openai_compatible",
+      target_label:label,
+      target_api_base_url:apiBaseUrl,
+      target_endpoint_host:endpointHost,
+      target_model:model,
+      target_secret:secret
+    }
+  );
+  if(upsertError)throw upsertError;
+
+  return await load();
+}
 
 async function finishUsageRequest(
   client:AnyClient,
@@ -936,17 +989,14 @@ Deno.serve(async(request:Request)=>{
             });
           }
         }else{
-          const {data:connectionData,error:connectionError}=await serviceClient.rpc(
-            "service_get_ai_provider_connection_v2",{
-              target_project:job.project_id,
-              target_user:user.id,
-              target_connection:requestedConnection
-            }
-          );
-          if(connectionError)throw connectionError;
+          const connection=await resolveConfiguredProviderConnection({
+            serviceClient,
+            projectId:job.project_id,
+            userId:user.id,
+            requestedConnection
+          });
   
-          if(connectionData){
-            const connection=connectionData as ProviderConnection;
+          if(connection){
             const providerKey=connection.provider.toLowerCase()+":"+connection.endpoint_host.toLowerCase();
             const {data:phaseCPolicyData,error:phaseCPolicyError}=await serviceClient.rpc(
               "service_evaluate_data_policy_v1",{
