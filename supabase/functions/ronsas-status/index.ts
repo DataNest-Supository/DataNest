@@ -4,6 +4,8 @@ import { withSupabase } from "npm:@supabase/server@1.8.0";
 const CONTRACT = "ronsas-status@1";
 const HUB_ORIGIN = "https://reson8.life/";
 const HUB_STATUS_PATH = "/api/public/app-status/health";
+const DATANEST_CANONICAL_NAME = "reson8.datanest.life";
+const DATANEST_BRANDED_URL = "https://reson8.datanest.life/";
 const DATANEST_PUBLIC_ORIGIN = "https://datanest-supository.github.io/DataNest/";
 const DATANEST_HEALTH_PATH = "/DataNest/health.json";
 const DATANEST_BACKUP_PROVIDER = "Dropbox";
@@ -164,9 +166,13 @@ export default {
         },
         hub,
         delivery: {
+          canonicalName: DATANEST_CANONICAL_NAME,
+          brandedUrl: DATANEST_BRANDED_URL,
+          brandedState: "reserved",
           provider: "GitHub Pages",
           operationalUrl: publicUrl.toString(),
           publicDelivery,
+          railwayRequired: false,
           hubRegistration,
           backupHost: {
             provider: DATANEST_BACKUP_PROVIDER,
