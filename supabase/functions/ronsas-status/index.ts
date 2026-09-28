@@ -3,6 +3,9 @@ import { withSupabase } from "npm:@supabase/server@1.8.0";
 
 const CONTRACT = "ronsas-status@1";
 const HUB_ORIGIN = "https://reson8.life/";
+const HUB_STATUS_PATH = "/api/public/app-status/health";
+const DATANEST_BRANDED_ORIGIN = "https://datanest.reson8.life/";
+const DATANEST_FALLBACK_ORIGIN = "https://datanest-supository.github.io/DataNest/";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -14,12 +17,12 @@ function json(body: unknown, status = 200) {
   });
 }
 
-function assertCloudOnlyOrigin(value: string) {
+function assertHttpsHost(value: string, allowedHosts: string[], label: string) {
   const url = new URL(value);
   const host = url.hostname.toLowerCase();
 
   if (url.protocol !== "https:") {
-    throw new Error("RONSAS Hub must use HTTPS.");
+    throw new Error(`${label} must use HTTPS.`);
   }
 
   if (
@@ -28,11 +31,11 @@ function assertCloudOnlyOrigin(value: string) {
     host === "::1" ||
     host.endsWith(".local")
   ) {
-    throw new Error("Local RONSAS origins are not permitted.");
+    throw new Error(`Local ${label} origins are not permitted.`);
   }
 
-  if (host !== "reson8.life" && host !== "www.reson8.life") {
-    throw new Error("RONSAS Hub origin is outside the AppDev authority allowlist.");
+  if (!allowedHosts.includes(host)) {
+    throw new Error(`${label} origin is outside the AppDev authority allowlist.`);
   }
 
   return url;
@@ -66,7 +69,56 @@ async function probe(url: URL) {
       status: null,
       latencyMs: Date.now() - startedAt,
       origin: url.origin,
-      error: error instanceof Error ? error.message : "RONSAS Hub probe failed.",
+      error: error instanceof Error ? error.message : "Cloud probe failed.",
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function probeHubRegistration(hubUrl: URL) {
+  const url = new URL(HUB_STATUS_PATH, hubUrl);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 6000);
+  const startedAt = Date.now();
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "Resonance-DataNest-RONSAS/1",
+      },
+      signal: controller.signal,
+    });
+
+    let listed = false;
+    if (response.ok) {
+      const payload = (await response.json()) as { ecosystem?: unknown };
+      if (Array.isArray(payload.ecosystem)) {
+        listed = payload.ecosystem.some((entry) => {
+          if (!entry || typeof entry !== "object") return false;
+          return (entry as { key?: unknown }).key === "datanest";
+        });
+      }
+    }
+
+    return {
+      ok: response.ok,
+      status: response.status,
+      latencyMs: Date.now() - startedAt,
+      endpoint: url.toString(),
+      listed,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      status: null,
+      latencyMs: Date.now() - startedAt,
+      endpoint: url.toString(),
+      listed: false,
+      error: error instanceof Error ? error.message : "RONSAS Hub registry probe failed.",
     };
   } finally {
     clearTimeout(timeout);
@@ -76,8 +128,27 @@ async function probe(url: URL) {
 export default {
   fetch: withSupabase({ auth: "user" }, async () => {
     try {
-      const hubUrl = assertCloudOnlyOrigin(HUB_ORIGIN);
-      const hub = await probe(hubUrl);
+      const hubUrl = assertHttpsHost(
+        HUB_ORIGIN,
+        ["reson8.life", "www.reson8.life"],
+        "RONSAS Hub",
+      );
+      const brandedUrl = assertHttpsHost(
+        DATANEST_BRANDED_ORIGIN,
+        ["datanest.reson8.life"],
+        "DataNest ingress",
+      );
+      const fallbackUrl = assertHttpsHost(
+        DATANEST_FALLBACK_ORIGIN,
+        ["datanest-supository.github.io"],
+        "DataNest fallback",
+      );
+
+      const [hub, hubRegistration, ingress] = await Promise.all([
+        probe(hubUrl),
+        probeHubRegistration(hubUrl),
+        probe(new URL("/health", brandedUrl)),
+      ]);
 
       return json({
         contract: CONTRACT,
@@ -95,6 +166,13 @@ export default {
           publicHub: HUB_ORIGIN,
         },
         hub,
+        delivery: {
+          brandedUrl: brandedUrl.toString(),
+          fallbackUrl: fallbackUrl.toString(),
+          operationalUrl: ingress.ok ? brandedUrl.toString() : fallbackUrl.toString(),
+          ingress,
+          hubRegistration,
+        },
       });
     } catch (error) {
       return json(
@@ -102,9 +180,9 @@ export default {
           contract: CONTRACT,
           checkedAt: new Date().toISOString(),
           mode: "cloud",
-        runtimeMode: "local-first",
-        managedByDataNest: true,
-        billingState: "free-promotion",
+          runtimeMode: "local-first",
+          managedByDataNest: true,
+          billingState: "free-promotion",
           independent: false,
           localInteractionRequired: false,
           error: error instanceof Error ? error.message : "RONSAS integration failed.",
