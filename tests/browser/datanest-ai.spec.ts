@@ -156,9 +156,7 @@ test("mobile TranScheduler avoids horizontal table scrolling",async({page})=>{
   await signIn(page);
   await page.setViewportSize({width:390,height:844});
 
-  await page.getByRole("button",{name:"Open menu"}).click();
-  await page.getByRole("navigation",{name:"Project workspaces"}).getByText("Execute",{exact:true}).click();
-  await page.getByRole("button",{name:"TranScheduler",exact:true}).click();
+  await openWorkspace(page,"TranScheduler");
   await expect(page).toHaveURL(/(?:\?|&)view=scheduler(?:&|$)/);
   await page.getByRole("button",{name:"Queue",exact:true}).click();
 
@@ -186,9 +184,7 @@ test("mobile TranScheduler status filter uses a compact select",async({page})=>{
   await signIn(page);
   await page.setViewportSize({width:390,height:844});
 
-  await page.getByRole("button",{name:"Open menu"}).click();
-  await page.getByRole("navigation",{name:"Project workspaces"}).getByText("Execute",{exact:true}).click();
-  await page.getByRole("button",{name:"TranScheduler",exact:true}).click();
+  await openWorkspace(page,"TranScheduler");
   await page.getByRole("button",{name:"Queue",exact:true}).click();
 
   const statusFilter=page.getByLabel("Status filter");
