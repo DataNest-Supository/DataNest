@@ -1,0 +1,33 @@
+/* Keep the Resonance Data Nest sidebar wordmark fully visible beside the logo. */
+.sidebarTop{
+  gap:10px;
+}
+.sidebarTop .logo,
+.sidebarTop .closeMenu{
+  flex:0 0 auto;
+}
+.sidebarTop>div:nth-child(2){
+  flex:1 1 auto;
+  min-width:0;
+  overflow:visible;
+}
+.sidebarTop>div:nth-child(2)>b{
+  display:block;
+  max-width:100%;
+  white-space:normal;
+  overflow:visible;
+  text-overflow:clip;
+  overflow-wrap:normal;
+  word-break:keep-all;
+  font-size:14px;
+  line-height:1.08;
+}
+
+@media (max-width:1180px){
+  .sidebarTop>div:nth-child(2)>b{font-size:13.5px}
+}
+
+@media (max-width:620px){
+  .sidebarTop{gap:8px}
+  .sidebarTop>div:nth-child(2)>b{font-size:13px}
+}
