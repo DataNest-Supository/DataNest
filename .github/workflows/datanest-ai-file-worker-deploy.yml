@@ -1,0 +1,50 @@
+name: DataNest File Worker Deploy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: datanest-ai-file-worker-production
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.7
+      - name: Validate worker bundle source
+        run: deno check --config supabase/functions/datanest-ai-file-worker/deno.json supabase/functions/datanest-ai-file-worker/index.ts
+
+  deploy:
+    needs: validate
+    runs-on: ubuntu-24.04
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: sgqdmfgjbprsoqsmgigi
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2.1.1
+        with:
+          version: latest
+      - name: Require Supabase deployment credential
+        shell: bash
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN" || {
+            echo "SUPABASE_ACCESS_TOKEN is required to deploy datanest-ai-file-worker."
+            exit 1
+          }
+      - name: Deploy locally bundled file worker
+        shell: bash
+        run: |
+          supabase functions deploy datanest-ai-file-worker \
+            --project-ref "$SUPABASE_PROJECT_ID" \
+            --no-verify-jwt \
+            --use-docker
