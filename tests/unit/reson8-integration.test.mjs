@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 
 const binding=readFileSync(new URL("../../src/lib/reson8.ts",import.meta.url),"utf8");
 const layout=readFileSync(new URL("../../src/app/layout.tsx",import.meta.url),"utf8");
+const forceHttps=readFileSync(new URL("../../public/force-https.js",import.meta.url),"utf8");
 const reson8Wire=readFileSync(new URL("../../public/reson8-wire.js",import.meta.url),"utf8");
 const auth=readFileSync(new URL("../../src/components/AuthGate.tsx",import.meta.url),"utf8");
 const shell=readFileSync(new URL("../../src/components/DataNestApp.tsx",import.meta.url),"utf8");
@@ -42,7 +43,12 @@ test("DataNest keeps a visible navigation path to the Reson8 Hub",()=>{
 });
 
 test("DataNest runtime config stays local and no branded hostname redirect is loaded",()=>{
+  assert.match(layout,/const forceHttpsSource=basePath \+ "\/force-https\.js"/);
   assert.match(layout,/const runtimeConfigSource=basePath \+ "\/runtime-config\.js"/);
+  assert.match(layout,/<script src=\{forceHttpsSource\} \/>/);
+  assert.match(forceHttps,/window\.location\.protocol === "http:"/);
+  assert.match(forceHttps,/window\.location\.hostname === "datanest-supository\.github\.io"/);
+  assert.match(forceHttps,/window\.location\.replace/);
   assert.doesNotMatch(layout,/reson8WireSource/);
   assert.doesNotMatch(layout,/reson8-wire\.js/);
   assert.doesNotMatch(reson8Wire,/window\.location\.replace/);

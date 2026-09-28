@@ -8,7 +8,6 @@ declare const Deno:{
 
 const allowedOrigins=new Set([
   "https://datanest-supository.github.io",
-  "https://datanest.reson8.life",
   "http://localhost:3000",
   "http://127.0.0.1:3000",
   "http://localhost:4173",
