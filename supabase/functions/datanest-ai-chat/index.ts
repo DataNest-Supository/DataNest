@@ -37,6 +37,18 @@ const visibilityClasses=new Set([
 const rawReuseStates=new Set([
   "runtime_only","session_context","project_learning_eligible"
 ]);
+const developmentWorkExpertise=new Map([
+  ["ui_ux",{label:"UI & UX",verificationTrack:"ui_ux"}],
+  ["frontend",{label:"Frontend",verificationTrack:"frontend"}],
+  ["backend",{label:"Backend",verificationTrack:"backend"}],
+  ["data",{label:"Data",verificationTrack:"data"}],
+  ["ai",{label:"AI",verificationTrack:"ai"}],
+  ["testing",{label:"Testing",verificationTrack:"testing"}],
+  ["security",{label:"Security",verificationTrack:"security"}],
+  ["infrastructure",{label:"Infrastructure",verificationTrack:"infrastructure"}],
+  ["documentation",{label:"Documentation",verificationTrack:"documentation"}],
+  ["product_planning",{label:"Product Planning",verificationTrack:"product_planning"}]
+] as const);
 
 type AnyClient=SupabaseClient<any>;
 
@@ -67,6 +79,7 @@ type StagedEvent={
   client_request_id:string|null;
   content:string;
   created_at:string;
+  metadata:Record<string,unknown>|null;
 };
 
 function cors(origin:string|null){
@@ -160,7 +173,7 @@ async function loadSessionEvents(input:{
 }):Promise<StagedEvent[]>{
   const {data,error}=await input.staging
     .from("ai_intake_events")
-    .select("id,trace_id,project_id,job_id,session_id,source_type,source_user_id,source_provider,parent_event_id,client_request_id,content,created_at")
+    .select("id,trace_id,project_id,job_id,session_id,source_type,source_user_id,source_provider,parent_event_id,client_request_id,content,created_at,metadata")
     .eq("project_id",input.projectId)
     .eq("job_id",input.jobId)
     .eq("session_id",input.sessionId)
@@ -708,6 +721,14 @@ Deno.serve(async(request:Request)=>{
 
     if(action!=="chat")return json({error:"Unsupported DataNest AI action."},400,origin);
 
+    const requestedExpertiseSection=String(body.expertiseSection||"").trim();
+    const expertise=requestedExpertiseSection
+      ?developmentWorkExpertise.get(requestedExpertiseSection as typeof developmentWorkExpertise extends Map<infer K,unknown>?K:never)||null
+      :null;
+    if(requestedExpertiseSection&&!expertise){
+      return json({error:"Unsupported Development Work expertise section."},400,origin);
+    }
+
     const message=String(body.message||"").trim();
     const clientRequestId=String(body.clientRequestId||"");
     if(!message||!clientRequestId){
@@ -819,7 +840,13 @@ Deno.serve(async(request:Request)=>{
               effective_reuse_state:learningPolicy.reuse_state,
               purpose:policyPurpose,
               policy_version:learningPolicy.policy_version||policyVersion,
-              decision_record_id:learningPolicy.decision_record_id
+              decision_record_id:learningPolicy.decision_record_id,
+              category:expertise?"development_work":null,
+              impact_area:expertise?.label||null,
+              expertise_section:requestedExpertiseSection||null,
+              expertise_label:expertise?.label||null,
+              verification_track:expertise?.verificationTrack||null,
+              routing_version:expertise?"development-work-expertise-v1":null
             }
           })
           .select("id,trace_id,session_id")
@@ -1256,7 +1283,10 @@ Deno.serve(async(request:Request)=>{
       learningEligible,
       visibilityClass,
       reuseState,
-      policyPurpose
+      policyPurpose,
+      expertiseSection:requestedExpertiseSection||null,
+      impactArea:expertise?.label||null,
+      verificationTrack:expertise?.verificationTrack||null
     },200,origin);
   }catch(error){
     const message=error instanceof Error?error.message:"Unable to process DataNest AI request.";
