@@ -10,6 +10,7 @@ export type DataNestAiEvent = {
   source_provider:string|null;
   content:string;
   created_at:string;
+  metadata?:Record<string,unknown>|null;
 };
 
 type Props = {
@@ -52,6 +53,20 @@ function writeSessionDraft(draftScope:string,jobId:string,value:string){
     // Session storage can be unavailable in restricted browser contexts.
   }
 }
+
+type ExpertiseKey="ui_ux"|"frontend"|"backend"|"data"|"ai"|"testing"|"security"|"infrastructure"|"documentation"|"product_planning";
+const developmentWorkSections:Array<{key:ExpertiseKey;label:string;verificationTrack:string;description:string}>=[
+  {key:"ui_ux",label:"UI & UX",verificationTrack:"ui_ux",description:"Interface structure, interaction design, accessibility and visual hierarchy."},
+  {key:"frontend",label:"Frontend",verificationTrack:"frontend",description:"Client application behavior, components, state and browser integration."},
+  {key:"backend",label:"Backend",verificationTrack:"backend",description:"Services, APIs, business logic, permissions and server-side behavior."},
+  {key:"data",label:"Data",verificationTrack:"data",description:"Schemas, migrations, queries, integrity, lineage and data quality."},
+  {key:"ai",label:"AI",verificationTrack:"ai",description:"Models, prompts, routing, reasoning, memory and governed learning."},
+  {key:"testing",label:"Testing",verificationTrack:"testing",description:"Unit, browser, integration, stress and acceptance verification."},
+  {key:"security",label:"Security",verificationTrack:"security",description:"Authentication, authorization, policy enforcement, privacy and security gates."},
+  {key:"infrastructure",label:"Infrastructure",verificationTrack:"infrastructure",description:"CI/CD, deployment, hosting, domains, runtime and operational resilience."},
+  {key:"documentation",label:"Documentation",verificationTrack:"documentation",description:"Architecture records, guides, runbooks, evidence and change documentation."},
+  {key:"product_planning",label:"Product Planning",verificationTrack:"product_planning",description:"Requirements, scope, prioritization, acceptance criteria and product decisions."}
+];
 
 const quickCommands=[
   {
@@ -103,6 +118,7 @@ export default function DataNestAiChatPanel({
   const [busyJobs,setBusyJobs]=useState<Set<string>>(()=>new Set());
   const [optimisticTurn,setOptimisticTurn]=useState<DataNestAiEvent|null>(null);
   const [returnedTurn,setReturnedTurn]=useState<DataNestAiEvent|null>(null);
+  const [selectedExpertise,setSelectedExpertise]=useState<ExpertiseKey|"">("");
   const requestIdByJobRef=useRef<Record<string,string>>({});
   const draftByJobRef=useRef<Record<string,string>>({});
   const draftIdentity=draftScope+":"+jobId;
@@ -119,6 +135,7 @@ export default function DataNestAiChatPanel({
     activeDraftIdentityRef.current=draftIdentity;
     setOptimisticTurn(null);
     setReturnedTurn(null);
+    setSelectedExpertise("");
     const memoryDraft=draftByJobRef.current[draftIdentity];
     const nextDraft=memoryDraft===undefined?readSessionDraft(draftScope,jobId):memoryDraft;
     draftByJobRef.current[draftIdentity]=nextDraft;
@@ -173,7 +190,8 @@ export default function DataNestAiChatPanel({
   async function send(event:FormEvent){
     event.preventDefault();
     const message=draft.trim();
-    if(!message||busy||!contextReady)return;
+    const expertise=developmentWorkSections.find(item=>item.key===selectedExpertise)||null;
+    if(!message||busy||!contextReady||!expertise)return;
     const supabase=getSupabase();
     if(!supabase)return;
 
@@ -192,7 +210,15 @@ export default function DataNestAiChatPanel({
       source_type:"human",
       source_provider:null,
       content:message,
-      created_at:new Date().toISOString()
+      created_at:new Date().toISOString(),
+      metadata:{
+        category:"development_work",
+        impact_area:expertise.label,
+        expertise_section:expertise.key,
+        expertise_label:expertise.label,
+        verification_track:expertise.verificationTrack,
+        routing_version:"development-work-expertise-v1"
+      }
     });
     draftByJobRef.current[requestDraftIdentity]="";
     writeSessionDraft(requestDraftScope,requestJobId,"");
@@ -206,6 +232,7 @@ export default function DataNestAiChatPanel({
           sessionId:requestSessionId||null,
           clientRequestId:requestId,
           message,
+          expertiseSection:expertise.key,
           clientTimeZone:Intl.DateTimeFormat().resolvedOptions().timeZone||"UTC"
         }
       });
@@ -235,8 +262,8 @@ export default function DataNestAiChatPanel({
       const candidateId=String(trend.candidateId||"");
       setNotice(
         candidateId
-          ?"DataNest AI responded and recorded this turn as UNCERTIFIED evidence. A repeated pattern was staged for governed learning review."
-          :"DataNest AI responded and recorded this turn as traceable UNCERTIFIED evidence for "+requestJobCode+"."
+          ?"DataNest AI routed this "+expertise.label+" contribution into its verification track, recorded UNCERTIFIED evidence, and staged the repeated pattern for governed learning review."
+          :"DataNest AI routed this "+expertise.label+" contribution into its verification track and recorded traceable UNCERTIFIED evidence for "+requestJobCode+"."
       );
       await onContextRefresh(nextSession);
       // Keep the returned answer until refreshed events contain its trace.
@@ -318,6 +345,34 @@ export default function DataNestAiChatPanel({
       </div>
     </div>
 
+    <section className="datanestAiExpertiseRouter" aria-label="Development Work expertise routing">
+      <div className="datanestAiExpertiseHead">
+        <div>
+          <span>DEVELOPMENT WORK · CHOOSE EXPERTISE</span>
+          <small>Select the section you are contributing to. DataNest routes the input into that verification track, trend analysis and project-impact scoring.</small>
+        </div>
+        <b>{selectedExpertise?"ROUTE LOCKED":"ROUTE REQUIRED"}</b>
+      </div>
+      <div className="datanestAiExpertiseGrid">
+        {developmentWorkSections.map(section=><button
+          key={section.key}
+          type="button"
+          className={"datanestAiExpertiseOption "+(selectedExpertise===section.key?"active":"")}
+          aria-pressed={selectedExpertise===section.key}
+          onClick={()=>setSelectedExpertise(section.key)}
+          disabled={busy}
+          title={section.description}
+        >
+          <strong>{section.label}</strong>
+          <small>{section.description}</small>
+        </button>)}
+      </div>
+      {selectedExpertise&&<p className="datanestAiExpertiseRoute">
+        <span aria-hidden="true">◇</span>
+        Routed as <b>{developmentWorkSections.find(item=>item.key===selectedExpertise)?.label}</b> · verification + trends + impact
+      </p>}
+    </section>
+
     <form className="datanestAiComposer" onSubmit={send}>
       <div
         id="datanest-ai-command-context"
@@ -356,7 +411,7 @@ export default function DataNestAiChatPanel({
           value={draft}
           onChange={event=>updateDraft(event.target.value)}
           onKeyDown={event=>{
-            if(event.key==="Enter"&&!event.shiftKey&&!event.nativeEvent.isComposing&&!busy&&contextReady&&draft.trim()){
+            if(event.key==="Enter"&&!event.shiftKey&&!event.nativeEvent.isComposing&&!busy&&contextReady&&selectedExpertise&&draft.trim()){
               event.preventDefault();
               event.currentTarget.form?.requestSubmit();
             }
@@ -365,8 +420,8 @@ export default function DataNestAiChatPanel({
         />
       </label>
       <div className="rowBetween datanestAiComposerFooter">
-        <small id="datanest-ai-composer-help" className="muted">{busy?"Your message is visible immediately while DataNest AI responds.":!contextReady?"Waiting for Job context. Your draft is preserved.":"Enter to send · Shift+Enter for a new line · active Job/session only until certified"}</small>
-        <button className="primaryButton datanestAiCommandButton" disabled={busy||!contextReady||!draft.trim()}>
+        <small id="datanest-ai-composer-help" className="muted">{busy?"Your message is visible immediately while DataNest AI responds.":!contextReady?"Waiting for Job context. Your draft is preserved.":!selectedExpertise?"Choose a Development Work expertise section before sending.":"Enter to send · Shift+Enter for a new line · routed to "+developmentWorkSections.find(item=>item.key===selectedExpertise)?.label+" verification"}</small>
+        <button className="primaryButton datanestAiCommandButton" disabled={busy||!contextReady||!selectedExpertise||!draft.trim()}>
           {busy?"DataNest AI reasoning…":"Send command"}
           <span aria-hidden="true">→</span>
         </button>
@@ -381,6 +436,7 @@ export default function DataNestAiChatPanel({
         const roleGlyph=assistant?"AI":companion?"EXT":"YOU";
         const roleLabel=assistant?"DataNest AI":companion?"AI Companion":"You";
         const pending=roleClass==="human"&&item.trace_id==="DN-AI-pending";
+        const expertiseLabel=String(item.metadata?.expertise_label||item.metadata?.impact_area||"");
         return <article className={"datanestAiTurn "+roleClass+(pending?" pending":"")} key={item.id}>
           <div className="rowBetween">
             <div className="datanestAiTurnIdentity">
@@ -395,6 +451,7 @@ export default function DataNestAiChatPanel({
           <p>{item.content}</p>
           <div className="manifestMeta">
             <span>{item.trace_id}</span>
+            {expertiseLabel&&<span>{"Development Work · "+expertiseLabel}</span>}
             {item.source_provider&&<span>{item.source_provider}</span>}
           </div>
         </article>;
