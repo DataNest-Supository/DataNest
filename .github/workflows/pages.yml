@@ -1,4 +1,4 @@
-# Deployment trigger: publish latest main branding update
+# Deployment trigger: publish live Resonance Data Nest auth branding
 name: Deploy GitHub Pages
 
 on:
