@@ -1469,7 +1469,10 @@ Deno.serve(async(request:Request)=>{
                 command:message,
                 dual:developmentDual,
                 providerLabel:developmentProviderLabel,
-                modelLabel:developmentModelLabel
+                modelLabel:developmentModelLabel,
+                expertiseSection:requestedExpertiseSection||null,
+                expertiseLabel:expertise?.label||null,
+                verificationTrack:expertise?.verificationTrack||null
               });
               workingMemoryStatus="recorded";
             }catch{
