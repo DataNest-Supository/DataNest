@@ -3818,6 +3818,24 @@ code,pre{
   box-shadow:inset -2px 0 rgba(167,106,255,.34);
 }
 
+.datanestAiCommandConsole .datanestAiTurn.human.pending{
+  border-style:dashed;
+  opacity:.9;
+}
+
+.datanestAiCommandConsole .datanestAiTurn.human .rowBetween{
+  flex-direction:row-reverse;
+}
+
+.datanestAiCommandConsole .datanestAiTurn.human .datanestAiTurnIdentity{
+  flex-direction:row-reverse;
+  text-align:right;
+}
+
+.datanestAiCommandConsole .datanestAiTurn.human .manifestMeta{
+  justify-content:flex-end;
+}
+
 .datanestAiCommandConsole .datanestAiTurn.human .datanestAiTurnGlyph{
   border-color:rgba(173,126,255,.24);
   color:#d8c9ff;
