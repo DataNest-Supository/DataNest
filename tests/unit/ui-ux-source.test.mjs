@@ -112,7 +112,8 @@ test("quick switch command palette is keyboard accessible and searchable", () =>
 });
 
 test("quick switch preserves canonical workspace navigation", () => {
-  assert.match(appSource, /onClick=\{\(\)=>chooseCommandView\(item\.key\)\}/);
+  assert.match(appSource, /onClick=\{\(\)=>chooseCommandItem\(item\)\}/);
+  assert.match(appSource, /function chooseCommandItem\(item:CommandItem\)[\s\S]*?item\.kind==="external"[\s\S]*?chooseCommandView\(item\.key\)/);
   assert.match(appSource, /function chooseCommandView\(nextView:ViewKey\)[\s\S]*?setView\(nextView\)[\s\S]*?closeCommandPalette\(nextView===view\)/);
 });
 
@@ -142,7 +143,8 @@ test("quick switch opens the first search result with Enter", () => {
   assert.match(appSource, /function handleCommandSearchKeyDown\(/);
   assert.match(appSource, /event\.key==="Enter"/);
   assert.match(appSource, /commandItems\[0\]/);
-  assert.match(appSource, /chooseCommandView\(commandItems\[0\]\.key\)/);
+  assert.match(appSource, /const selected=commandActiveIndex>0&&commandItems\[commandActiveIndex\]/);
+  assert.match(appSource, /chooseCommandItem\(selected\)/);
 });
 
 

@@ -103,6 +103,10 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
   const navRonsasLaunch=page.getByRole("link",{name:"Open RONSAS from DataNest navigation"});
   await expect(navRonsasLaunch).toBeVisible();
   await expect(navRonsasLaunch).toHaveAttribute("href","https://reson8.life/");
+  await page.keyboard.press("Control+K");
+  await page.getByRole("searchbox",{name:"Search DataNest workspaces"}).fill("ronsas");
+  await expect(page.getByRole("option",{name:"Open RONSAS application hub"})).toBeVisible();
+  await page.keyboard.press("Escape");
   const ronsasLaunch=page.getByRole("link",{name:"Open RONSAS",exact:true});
   await expect(ronsasLaunch).toBeVisible();
   await expect(ronsasLaunch).toHaveAttribute("href","https://reson8.life/");

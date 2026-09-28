@@ -117,6 +117,10 @@ const nav:Array<{key:ViewKey;label:string;group:string;glyph:string}> = [
   {key:"settings",label:"Settings",group:"System",glyph:"⚙"}
 ];
 
+type CommandItem =
+  | {kind:"view";id:ViewKey;key:ViewKey;label:string;group:string;glyph:string;description:string}
+  | {kind:"external";id:"ronsas";href:string;label:string;group:string;glyph:string;description:string};
+
 const viewKeys = new Set<ViewKey>(nav.map(item=>item.key));
 
 const viewDescriptions:Record<ViewKey,string> = {
@@ -688,14 +692,34 @@ export default function DataNestApp({session}:{session:Session}) {
     }
   },[activeDataNestAiSession,view,project,runCount,checkpointCount,eventCount,runPage,checkpointPage,eventPage]);
 
-  const commandItems=useMemo(()=>{
+  const commandItems=useMemo<CommandItem[]>(()=>{
+    const items:CommandItem[]=nav.map(item=>({
+      kind:"view",
+      id:item.key,
+      key:item.key,
+      label:item.label,
+      group:item.group,
+      glyph:item.glyph,
+      description:viewDescriptions[item.key]
+    }));
+    if(ronsasHubUrl){
+      items.push({
+        kind:"external",
+        id:"ronsas",
+        href:ronsasHubUrl,
+        label:"RONSAS",
+        group:"Applications",
+        glyph:"◉",
+        description:"Open governed RONSAS application hub."
+      });
+    }
     const query=commandQuery.trim().toLowerCase();
-    if(!query)return nav;
-    return nav.filter(item=>{
-      const haystack=[item.label,item.group,viewDescriptions[item.key]].join(" ").toLowerCase();
+    if(!query)return items;
+    return items.filter(item=>{
+      const haystack=[item.label,item.group,item.description].join(" ").toLowerCase();
       return haystack.includes(query);
     });
-  },[commandQuery]);
+  },[commandQuery,ronsasHubUrl]);
 
   const loadSummary=useCallback(async(projectId:string)=>{
     const supabase=getSupabase();
@@ -1184,12 +1208,20 @@ export default function DataNestApp({session}:{session:Session}) {
     }
     if(event.key==="Enter"&&commandQuery.trim()&&commandItems[0]){
       event.preventDefault();
-      if(commandActiveIndex>0&&commandItems[commandActiveIndex]){
-        chooseCommandView(commandItems[commandActiveIndex].key);
-      }else{
-        chooseCommandView(commandItems[0].key);
-      }
+      const selected=commandActiveIndex>0&&commandItems[commandActiveIndex]
+        ?commandItems[commandActiveIndex]
+        :commandItems[0];
+      chooseCommandItem(selected);
     }
+  }
+
+  function chooseCommandItem(item:CommandItem){
+    if(item.kind==="external"){
+      window.open(item.href,"_blank","noopener,noreferrer");
+      closeCommandPalette();
+      return;
+    }
+    chooseCommandView(item.key);
   }
 
   function chooseCommandView(nextView:ViewKey){
@@ -1410,16 +1442,19 @@ export default function DataNestApp({session}:{session:Session}) {
         </label>
         <div className="commandResults" role="listbox" aria-label="DataNest workspaces">
           {commandItems.map((item,index)=><button
-            className={"commandResult "+((commandActiveIndex===index||view===item.key)?"active":"")}
+            className={"commandResult "+((commandActiveIndex===index||(item.kind==="view"&&view===item.key))?"active":"")}
             type="button"
             role="option"
             aria-selected={commandActiveIndex===index}
-            key={item.key}
-            onClick={()=>chooseCommandView(item.key)}
+            aria-label={item.kind==="external"?"Open RONSAS application hub":undefined}
+            key={item.id}
+            onClick={()=>chooseCommandItem(item)}
           >
             <span className="commandGlyph" aria-hidden="true">{item.glyph}</span>
-            <span className="commandResultCopy"><b>{item.label}</b><small>{item.group+" · "+viewDescriptions[item.key]}</small></span>
-            {view===item.key?<span className="commandCurrent">Current</span>:<span className="workspaceArrow" aria-hidden="true">→</span>}
+            <span className="commandResultCopy"><b>{item.label}</b><small>{item.group+" · "+item.description}</small></span>
+            {item.kind==="view"&&view===item.key
+              ?<span className="commandCurrent">Current</span>
+              :<span className="workspaceArrow" aria-hidden="true">{item.kind==="external"?"↗":"→"}</span>}
           </button>)}
           {!commandItems.length&&<div className="commandEmpty">No DataNest workspace matches “{commandQuery}”.</div>}
         </div>
