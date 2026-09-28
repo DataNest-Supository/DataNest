@@ -71,8 +71,9 @@ test("authority documentation keeps target-state concepts honest and Sparks alig
   assert.match(ux,/Sparks — earned contribution utility for approved project services\./);
   assert.doesNotMatch(ux,/Sparks — capture intent and raw ideas\./);
 
+  assert.match(readme,/https:\/\/reson8\.life\//);
+  assert.match(readme,/GitHub Pages fallback during the domain cutover/i);
   assert.match(readme,/https:\/\/datanest-supository\.github\.io\/DataNest\//);
-  assert.match(readme,/GitHub Pages.*current public delivery target/i);
   assert.match(readme,/Supabase/i);
 
   assert.match(architecture,/## Authority and Execution Controls/);
