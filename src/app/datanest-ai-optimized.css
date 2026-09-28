@@ -596,46 +596,133 @@
 }
 
 
-/* 2026-09-28 collapsible AI core overview */
-/* Keep the visual intelligence-core explanation available without forcing a large
-   decorative block into the primary work path. */
-.datanestAiOverviewDisclosure{
-  min-width:0;
-  border:1px solid rgba(132,87,255,.18);
-  border-radius:13px;
-  background:linear-gradient(145deg,rgba(14,9,34,.62),rgba(7,13,29,.72));
-  overflow:hidden;
+/* 2026-09-28 streamlined AI workspace */
+/* Keep the animated Hero prominent while compressing duplicated context, status,
+   switching and governance surfaces into one working summary and two disclosures. */
+.datanestAiWorkspace{gap:14px}
+
+.datanestAiCommandSummaryCompact{
+  margin:0;
+  padding:14px 15px;
+  gap:14px;
+  grid-template-columns:minmax(0,1.08fr) minmax(260px,.92fr) auto;
 }
-.datanestAiOverviewDisclosure>summary{
-  min-height:46px;
+.datanestAiCommandSummaryCompact .datanestAiCommandObjective p{
+  display:-webkit-box;
+  overflow:hidden;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+}
+.datanestAiCommandContext{
+  min-width:0;
+  display:grid;
+  gap:7px;
+}
+.datanestAiCommandContext>label{
+  color:#7fe8ff;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+.datanestAiCommandContext>select{
+  width:100%;
+  min-height:36px;
+  padding:7px 10px;
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:10px;
+  background:rgba(4,8,22,.72);
+  color:#e9f5ff;
+  font-size:10px;
+}
+.datanestAiContextSignals{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+}
+.datanestAiContextSignal{
+  min-height:24px;
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  padding:4px 7px;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:999px;
+  background:rgba(255,255,255,.025);
+  color:#91a7ba;
+  font:850 7px/1.1 ui-monospace,SFMono-Regular,Consolas,monospace;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+}
+.datanestAiContextSignal>i{
+  width:5px;
+  height:5px;
+  border-radius:50%;
+  background:#8b9aae;
+}
+.datanestAiContextSignal.good>i{background:#65e9bb;box-shadow:0 0 7px rgba(101,233,187,.6)}
+.datanestAiContextSignal.syncing>i{background:#7fe8ff;box-shadow:0 0 7px rgba(127,232,255,.55)}
+.datanestAiContextSignal.warn>i{background:#f4c96c;box-shadow:0 0 7px rgba(244,201,108,.45)}
+.datanestAiContextSignalButton{
+  appearance:none;
+  font:850 7px/1.1 ui-monospace,SFMono-Regular,Consolas,monospace;
+  cursor:pointer;
+}
+.datanestAiContextSignalButton:hover,
+.datanestAiContextSignalButton:focus-visible{
+  border-color:rgba(66,231,255,.28);
+  color:#b8f4ff;
+}
+.datanestAiContextSignalButton:focus-visible{
+  outline:2px solid #a6e6ed;
+  outline-offset:2px;
+}
+
+.datanestAiContextDetails,
+.datanestAiAdvancedDisclosure{
+  min-width:0;
+  overflow:hidden;
+  border:1px solid rgba(132,87,255,.16);
+  border-radius:12px;
+  background:linear-gradient(145deg,rgba(13,10,31,.56),rgba(7,13,27,.66));
+}
+.datanestAiContextDetails>summary,
+.datanestAiAdvancedDisclosure>summary{
+  min-height:44px;
   display:flex;
   align-items:center;
-  justify-content:space-between;
-  gap:16px;
-  padding:10px 13px;
+  gap:12px;
+  padding:9px 12px;
   cursor:pointer;
   list-style:none;
   color:#dbe7f2;
 }
-.datanestAiOverviewDisclosure>summary::-webkit-details-marker{display:none}
-.datanestAiOverviewDisclosure>summary::after{
+.datanestAiContextDetails>summary::-webkit-details-marker,
+.datanestAiAdvancedDisclosure>summary::-webkit-details-marker{display:none}
+.datanestAiContextDetails>summary::after,
+.datanestAiAdvancedDisclosure>summary::after{
   content:"⌄";
+  flex:0 0 auto;
   color:#84dff0;
-  font-size:14px;
+  font-size:13px;
   transition:transform .16s ease;
 }
-.datanestAiOverviewDisclosure[open]>summary::after{transform:rotate(180deg)}
-.datanestAiOverviewDisclosure>summary>span:first-child{
+.datanestAiContextDetails[open]>summary::after,
+.datanestAiAdvancedDisclosure[open]>summary::after{transform:rotate(180deg)}
+.datanestAiContextDetails>summary>span:first-child,
+.datanestAiAdvancedDisclosure>summary>span:first-child{
   min-width:0;
   display:grid;
   gap:2px;
   margin-right:auto;
 }
-.datanestAiOverviewDisclosure>summary b{
+.datanestAiContextDetails>summary b,
+.datanestAiAdvancedDisclosure>summary b{
   font-size:10px;
-  letter-spacing:.04em;
+  letter-spacing:.035em;
 }
-.datanestAiOverviewDisclosure>summary small{
+.datanestAiContextDetails>summary small,
+.datanestAiAdvancedDisclosure>summary small{
   overflow:hidden;
   color:#738da3;
   font-size:8px;
@@ -643,34 +730,75 @@
   text-overflow:ellipsis;
   white-space:nowrap;
 }
-.datanestAiOverviewStatus{
-  flex:0 0 auto;
-  padding:5px 7px;
-  border:1px solid rgba(66,231,255,.14);
-  border-radius:999px;
-  background:rgba(66,231,255,.045);
-  color:#9deefa;
-  font:850 7px/1 ui-monospace,SFMono-Regular,Consolas,monospace;
-  letter-spacing:.06em;
-  text-transform:uppercase;
-}
-.datanestAiOverviewDisclosure>summary:hover{
-  background:rgba(66,231,255,.025);
-}
-.datanestAiOverviewDisclosure>summary:focus-visible{
+.datanestAiContextDetails>summary:hover,
+.datanestAiAdvancedDisclosure>summary:hover{background:rgba(66,231,255,.025)}
+.datanestAiContextDetails>summary:focus-visible,
+.datanestAiAdvancedDisclosure>summary:focus-visible{
   outline:2px solid #a6e6ed;
   outline-offset:-3px;
 }
-.datanestAiOverviewDisclosure .datanestAiHeroV2{
-  order:initial;
-  margin:0;
-  border-width:1px 0 0;
-  border-radius:0;
-  box-shadow:none;
+.datanestAiContextDetailsMeta{
+  flex:0 0 auto;
+  display:flex;
+  gap:5px;
+}
+.datanestAiContextDetailsMeta i,
+.datanestAiDisclosureStatus{
+  padding:4px 7px;
+  border:1px solid rgba(66,231,255,.12);
+  border-radius:999px;
+  background:rgba(66,231,255,.035);
+  color:#9deefa;
+  font:850 7px/1 ui-monospace,SFMono-Regular,Consolas,monospace;
+  font-style:normal;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+}
+.datanestAiContextDetailsBody{
+  display:grid;
+  gap:10px;
+  padding:0 12px 12px;
+  border-top:1px solid rgba(255,255,255,.045);
+}
+.datanestAiContextDetailsBody>p{margin:11px 0 0}
+.datanestAiContextDetailsBody .rowActions{margin-top:0}
+
+.datanestAiAdvancedBody{
+  display:grid;
+  gap:12px;
+  padding:12px;
+  border-top:1px solid rgba(255,255,255,.045);
+}
+.datanestAiAdvancedBody .datanestAiSupportGrid,
+.datanestAiAdvancedBody .datanestAiCertificationStage{margin:0}
+
+.datanestAiFootnote{
+  opacity:.58;
+  padding-top:2px;
+}
+.datanestAiFootnote small{font-size:8px}
+
+@media(max-width:1100px){
+  .datanestAiCommandSummaryCompact{
+    grid-template-columns:minmax(0,1fr) minmax(240px,.85fr);
+  }
+  .datanestAiCommandSummaryCompact .datanestAiCommandActions{
+    grid-column:1/-1;
+    justify-content:flex-start;
+  }
+}
+@media(max-width:900px){
+  .datanestAiCommandSummaryCompact{grid-template-columns:1fr}
+  .datanestAiCommandSummaryCompact .datanestAiCommandActions{grid-column:auto}
+}
+@media(max-width:620px){
+  .datanestAiWorkspace{gap:11px}
+  .datanestAiCommandSummaryCompact{padding:12px}
+  .datanestAiContextDetails>summary,
+  .datanestAiAdvancedDisclosure>summary{gap:8px;padding:9px 10px}
+  .datanestAiContextDetails>summary small,
+  .datanestAiAdvancedDisclosure>summary small{max-width:210px}
+  .datanestAiContextDetailsMeta i:nth-child(2){display:none}
+  .datanestAiAdvancedBody{padding:9px}
 }
 
-@media(max-width:620px){
-  .datanestAiOverviewDisclosure>summary{gap:9px;padding:9px 11px}
-  .datanestAiOverviewDisclosure>summary small{display:none}
-  .datanestAiOverviewStatus{font-size:6px}
-}
