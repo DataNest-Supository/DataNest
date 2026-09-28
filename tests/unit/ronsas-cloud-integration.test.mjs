@@ -12,6 +12,9 @@ const manifest=readFileSync(new URL("../../scripts/write-release-manifest.mjs",i
 
 test("RONSAS status is cloud-backed while runtime authority is DataNest local-first",()=>{
   assert.match(edge,/const HUB_ORIGIN = "https:\/\/reson8\.life\/"/);
+  assert.match(edge,/const HUB_STATUS_PATH = "\/api\/public\/app-status\/health"/);
+  assert.match(edge,/const DATANEST_BRANDED_ORIGIN = "https:\/\/datanest\.reson8\.life\/"/);
+  assert.match(edge,/const DATANEST_FALLBACK_ORIGIN = "https:\/\/datanest-supository\.github\.io\/DataNest\/"/);
   assert.match(edge,/mode: "cloud"/);
   assert.match(edge,/runtimeMode: "local-first"/);
   assert.match(edge,/managedByDataNest: true/);
@@ -22,6 +25,9 @@ test("RONSAS status is cloud-backed while runtime authority is DataNest local-fi
   assert.match(edge,/hubRepository: "DataNest-Supository\/DataNest"/);
   assert.doesNotMatch(edge,/resonance36912-cell\/RONSAS|resonance36912-cell\/resonance-hub/);
   assert.doesNotMatch(edge,/http:\/\/127\.0\.0\.1|http:\/\/localhost/);
+  assert.match(edge,/probeHubRegistration/);
+  assert.match(edge,/entry as \{ key\?: unknown \}\)\.key === "datanest"/);
+  assert.match(edge,/operationalUrl: ingress\.ok \? brandedUrl\.toString\(\) : fallbackUrl\.toString\(\)/);
 });
 
 test("DataNest exposes the governed RONSAS status contract through JWT-protected Supabase",()=>{
@@ -33,11 +39,17 @@ test("DataNest exposes the governed RONSAS status contract through JWT-protected
   assert.match(client,/status\.runtimeMode !== "local-first"/);
   assert.match(client,/status\.managedByDataNest !== true/);
   assert.match(client,/status\.independent !== false/);
+  assert.match(client,/!status\.delivery/);
+  assert.match(client,/status\.delivery\.hubRegistration\.listed/);
   assert.match(panel,/Runtime model<\/dt><dd>\{status\?\.runtimeMode \|\| "local-first"\}/);
   assert.match(panel,/DataNest authority<\/dt><dd>/);
   assert.match(panel,/DataNest-Supository\/DataNest/);
   assert.match(panel,/status\?\.authority\.publicHub/);
   assert.match(panel,/Open RONSAS ↗/);
+  assert.match(panel,/DataNest ingress<\/dt><dd>/);
+  assert.match(panel,/Operational URL<\/dt><dd>/);
+  assert.match(panel,/Hub listing<\/dt><dd>/);
+  assert.match(panel,/Open DataNest ↗/);
   assert.match(products,/getRonsasStatus/);
   assert.match(products,/status\.authority\.publicHub/);
   assert.match(products,/aria-label="Open RONSAS"/);
