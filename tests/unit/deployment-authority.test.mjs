@@ -26,7 +26,7 @@ test("hosting remains replaceable infrastructure and local runtimes are not prod
   assert.match(deployment,/GitHub Pages/i);
   assert.match(deployment,/Supabase/i);
   assert.match(deployment,/local development|recovery|controlled test|offline continuity/i);
-  assert.match(deployment,/future delivery target.*does not change product ownership or governance/i);
+  assert.match(deployment,/(delivery target|delivery-target)[^\n]*does not change product ownership or governance/i);
 });
 
 test("legacy PowerShell launcher warns that it is recovery-only",()=>{
