@@ -11,7 +11,8 @@ const launcher=read("scripts/start-production.ps1");
 
 test("DataNest-managed public delivery is canonical",()=>{
   assert.match(readme,/DataNest-managed/i);
-  assert.match(readme,/GitHub Pages.*current public delivery target/i);
+  assert.match(readme,/Owned canonical public origin: \*\*https:\/\/reson8\.life\/\*\*/i);
+  assert.match(readme,/GitHub Pages fallback during the domain cutover/i);
   assert.match(readme,/Supabase/i);
   assert.match(readme,/Local development, recovery, and continuity/i);
   assert.doesNotMatch(readme,/## Production\s+\n\s*Node\/Windows:/);
@@ -20,6 +21,8 @@ test("DataNest-managed public delivery is canonical",()=>{
 test("hosting remains replaceable infrastructure and local runtimes are not production authority",()=>{
   assert.match(deployment,/hosting is replaceable delivery infrastructure, not system authority/i);
   assert.match(deployment,/DataNest-managed/i);
+  assert.match(deployment,/https:\/\/reson8\.life\//i);
+  assert.match(deployment,/Lovable/i);
   assert.match(deployment,/GitHub Pages/i);
   assert.match(deployment,/Supabase/i);
   assert.match(deployment,/local development|recovery|controlled test|offline continuity/i);
