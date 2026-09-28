@@ -9,7 +9,7 @@
  * and the *non-secret* environment that shaped the run, so a downloaded bundle
  * can be debugged weeks later without access to the original CI run.
  *
- * Secrets are never written: env vars in SECRET_KEYS are reported as
+ * Secrets are never written: secret-like env vars are reported as
  * "set"/"unset" only, and anything unknown is omitted entirely.
  *
  * Usage: node scripts/diagnostics-manifest.mjs [outDir=diagnostics-bundle]
@@ -155,18 +155,19 @@ const SAFE_KEYS = [
   "RETENTION_VIDEOS",
   "RETENTION_LIGHTHOUSE",
 ];
-const SECRET_KEYS = [
-  "SLACK_WEBHOOK_URL",
-  "GITHUB_TOKEN",
-  "VITE_SUPABASE_PUBLISHABLE_KEY",
-  "SUPABASE_SERVICE_ROLE_KEY",
-  "LOVABLE_API_KEY",
-];
+const PRIVATE_ENV_MARKERS = new Set(["TOKEN", "SECRET", "KEY", "WEBHOOK"]);
+const isPrivateEnvironmentKey = (key) => {
+  const parts = String(key).toUpperCase().split("_").filter(Boolean);
+  return parts.some((part) => PRIVATE_ENV_MARKERS.has(part));
+};
 
 const environment = {};
 for (const key of SAFE_KEYS) if (env[key] !== undefined) environment[key] = env[key];
 const secretsPresence = {};
-for (const key of SECRET_KEYS) secretsPresence[key] = env[key] ? "set" : "unset";
+const secretKeys = Object.keys(env)
+  .filter(isPrivateEnvironmentKey)
+  .sort();
+for (const key of secretKeys) secretsPresence[key] = env[key] ? "set" : "unset";
 
 const manifest = {
   schema: "diagnostics-manifest/v1",
