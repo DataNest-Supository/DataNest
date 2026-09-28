@@ -100,6 +100,7 @@ export default function DataNestAiChatPanel({
 }:Props){
   const [draft,setDraft]=useState("");
   const [busyJobs,setBusyJobs]=useState<Set<string>>(()=>new Set());
+  const [optimisticTurn,setOptimisticTurn]=useState<DataNestAiEvent|null>(null);
   const [returnedTurn,setReturnedTurn]=useState<DataNestAiEvent|null>(null);
   const requestIdByJobRef=useRef<Record<string,string>>({});
   const draftByJobRef=useRef<Record<string,string>>({});
@@ -111,6 +112,7 @@ export default function DataNestAiChatPanel({
 
   useEffect(()=>{
     activeDraftIdentityRef.current=draftIdentity;
+    setOptimisticTurn(null);
     setReturnedTurn(null);
     const memoryDraft=draftByJobRef.current[draftIdentity];
     const nextDraft=memoryDraft===undefined?readSessionDraft(draftScope,jobId):memoryDraft;
@@ -179,6 +181,17 @@ export default function DataNestAiChatPanel({
     requestIdByJobRef.current[requestDraftIdentity]=requestId;
     setJobBusy(requestDraftIdentity,true);
     setError("");
+    setOptimisticTurn({
+      id:requestId+"-human",
+      trace_id:"DN-AI-pending",
+      source_type:"human",
+      source_provider:"pending",
+      content:message,
+      created_at:new Date().toISOString()
+    });
+    draftByJobRef.current[requestDraftIdentity]="";
+    writeSessionDraft(requestDraftScope,requestJobId,"");
+    setDraft("");
 
     try{
       const {data,error}=await supabase.functions.invoke("datanest-ai-chat",{
@@ -194,8 +207,6 @@ export default function DataNestAiChatPanel({
       const payload=(data||{}) as Record<string,unknown>;
 
       requestIdByJobRef.current[requestDraftIdentity]="";
-      draftByJobRef.current[requestDraftIdentity]="";
-      writeSessionDraft(requestDraftScope,requestJobId,"");
       if(activeDraftIdentityRef.current!==requestDraftIdentity)return;
 
       const nextSession=String(payload.sessionId||requestSessionId||"");
@@ -214,7 +225,6 @@ export default function DataNestAiChatPanel({
         });
       }
 
-      setDraft("");
       const trend=(payload.trendAnalysis||{}) as Record<string,unknown>;
       const candidateId=String(trend.candidateId||"");
       setNotice(
@@ -227,16 +237,31 @@ export default function DataNestAiChatPanel({
       // A failed refresh must not make a successful reply disappear.
     }catch(sendError){
       if(activeDraftIdentityRef.current===requestDraftIdentity){
+        setOptimisticTurn(null);
+        draftByJobRef.current[requestDraftIdentity]=message;
+        writeSessionDraft(requestDraftScope,requestJobId,message);
+        setDraft(message);
         setError(sendError instanceof Error?sendError.message:"Unable to send DataNest AI input.");
       }
     }finally{
       setJobBusy(requestDraftIdentity,false);
+      if(activeDraftIdentityRef.current===requestDraftIdentity){
+        window.setTimeout(()=>composerRef.current?.focus(),0);
+      }
     }
   }
 
-  const visibleEvents=returnedTurn&&!events.some(item=>item.trace_id===returnedTurn.trace_id)
-    ?[...events,returnedTurn]
+  const optimisticAlreadyPersisted=optimisticTurn&&events.some(item=>
+    item.source_type==="human" &&
+    item.content===optimisticTurn.content &&
+    Math.abs(new Date(item.created_at).getTime()-new Date(optimisticTurn.created_at).getTime())<60000
+  );
+  const eventsWithOptimistic=optimisticTurn&&!optimisticAlreadyPersisted
+    ?[...events,optimisticTurn]
     :events;
+  const visibleEvents=returnedTurn&&!eventsWithOptimistic.some(item=>item.trace_id===returnedTurn.trace_id)
+    ?[...eventsWithOptimistic,returnedTurn]
+    :eventsWithOptimistic;
 
   return <section className="panel datanestAiChatPanel datanestAiCommandConsole">
     <div className="datanestAiConsoleHead">
@@ -365,7 +390,7 @@ export default function DataNestAiChatPanel({
           value={draft}
           onChange={event=>updateDraft(event.target.value)}
           onKeyDown={event=>{
-            if((event.ctrlKey||event.metaKey)&&event.key==="Enter"&&!event.nativeEvent.isComposing&&!busy&&contextReady&&draft.trim()){
+            if(event.key==="Enter"&&!event.shiftKey&&!event.nativeEvent.isComposing&&!busy&&contextReady&&draft.trim()){
               event.preventDefault();
               event.currentTarget.form?.requestSubmit();
             }
@@ -374,7 +399,7 @@ export default function DataNestAiChatPanel({
         />
       </label>
       <div className="rowBetween datanestAiComposerFooter">
-        <small id="datanest-ai-composer-help" className="muted">{busy?"Your submitted draft is read-only while DataNest AI responds.":!contextReady?"Waiting for Job context. Your draft is preserved.":"Trace-first intake · active Job/session only until certified · Ctrl/⌘ + Enter to send"}</small>
+        <small id="datanest-ai-composer-help" className="muted">{busy?"Your message is visible immediately while DataNest AI responds.":!contextReady?"Waiting for Job context. Your draft is preserved.":"Enter to send · Shift+Enter for a new line · active Job/session only until certified"}</small>
         <button className="primaryButton datanestAiCommandButton" disabled={busy||!contextReady||!draft.trim()}>
           {busy?"DataNest AI reasoning…":"Send command"}
           <span aria-hidden="true">→</span>
