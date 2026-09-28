@@ -1,0 +1,12 @@
+[
+  {"slug":"career-compass","name":"Career Compass","aliases":[],"kind":"static","source":"apps/ronsas/career-compass","output":"dist","build":"simple"},
+  {"slug":"creative-studio","name":"Creative Studio","aliases":[],"kind":"static","source":"apps/ronsas/creative-studio","output":"dist","build":"vite"},
+  {"slug":"epublisher","name":"ePublisher","aliases":["Epublisher","e Publisher"],"kind":"static","source":"apps/ronsas/epublisher","output":"dist","build":"vite"},
+  {"slug":"lyricsync-studio","name":"LyricSync Studio","aliases":["Lyric Sync Studio"],"kind":"static","source":"apps/ronsas/lyricsync-studio","output":"dist","build":"simple"},
+  {"slug":"scene-song-spark","name":"Scene Song Spark","aliases":[],"kind":"static","source":"apps/ronsas/scene-song-spark","output":"dist","build":"simple"},
+  {"slug":"sovereign-forge","name":"SovereignForge","aliases":["Sovereign Forge"],"kind":"static","source":"apps/ronsas/sovereign-forge","output":"dist","build":"simple"},
+  {"slug":"syncvision","name":"Sync Vision","aliases":["SyncVision"],"kind":"static","source":"apps/ronsas/syncvision","output":"dist/client","build":"vite"},
+  {"slug":"youtube-optimizer","name":"YouTube Optimizer","aliases":[],"kind":"server","source":"apps/ronsas/youtube-optimizer"},
+  {"slug":"appdev","name":"Resonance AppDev / Reson8 ADT","aliases":["Resonance AppDev","Reson8 ADT"],"kind":"native"},
+  {"slug":"rons-control-center","name":"RONS Control Center","aliases":[],"kind":"operations"}
+]

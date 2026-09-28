@@ -80,6 +80,9 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
     if (path.endsWith("/product_records")) body = [
       {id:"00000000-0000-4000-8000-000000000301",product_id:"24f2fa75-18b8-5b45-b624-b5dab381de9e",record_type:"application",code:"APP-01",name:"RONSAS Hub",status:"active",sort_order:1,payload:{description:"Primary application hub"}},
       {id:"00000000-0000-4000-8000-000000000303",product_id:"24f2fa75-18b8-5b45-b624-b5dab381de9e",record_type:"application",code:"APP-02",name:"Sync Vision",status:"active/integration",sort_order:2,payload:{description:"Video/audio synchronization and generation workflow"}},
+      {id:"00000000-0000-4000-8000-000000000304",product_id:"24f2fa75-18b8-5b45-b624-b5dab381de9e",record_type:"application",code:"APP-03",name:"Resonance AppDev",status:"active",sort_order:3,payload:{description:"Governed development workspace"}},
+      {id:"00000000-0000-4000-8000-000000000305",product_id:"24f2fa75-18b8-5b45-b624-b5dab381de9e",record_type:"application",code:"APP-04",name:"YouTube Optimizer",status:"planned",sort_order:4,payload:{description:"Video optimization"}},
+      {id:"00000000-0000-4000-8000-000000000306",product_id:"24f2fa75-18b8-5b45-b624-b5dab381de9e",record_type:"application",code:"APP-05",name:"RONS Control Center",status:"planned",sort_order:5,payload:{description:"Cloud operations"}},
       {id:"00000000-0000-4000-8000-000000000302",product_id:"24f2fa75-18b8-5b45-b624-b5dab381de9e",record_type:"risk",code:"RSK-01",name:"Runner capacity",status:"open",sort_order:3,payload:{description:"Runner capacity requires governed monitoring."}}
     ];
     if (path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"viewer",status:"active"};
@@ -132,6 +135,14 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
   const compositionLaunch=page.getByLabel("RONSAS Composition").getByRole("link",{name:"Open Sync Vision in DataNest"});
   await expect(compositionLaunch).toBeVisible();
   await expect(compositionLaunch).toHaveAttribute("href",/\/apps\/syncvision\/$/);
+  expect(new URL(await syncVisionLaunch.getAttribute("href")||"",page.url()).origin).toBe(new URL(page.url()).origin);
+  for(const name of ["YouTube Optimizer","RONS Control Center"]){
+    const record=page.locator(".catalogRecord").filter({hasText:name});
+    await expect(record.getByText("Unavailable in DataNest",{exact:true})).toBeVisible();
+    await expect(record.getByRole("link",{name:new RegExp(`Open ${name}`)})).toHaveCount(0);
+  }
+  const appDevLaunch=page.locator(".catalogRecord").filter({hasText:"Resonance AppDev"}).getByRole("link",{name:"Open Resonance AppDev in DataNest"});
+  await expect(appDevLaunch).toHaveAttribute("href",/\?view=ai$/);
 
   await expect(page.getByRole("heading", {name:"Products that carry their architecture, evidence and decisions with them."})).toBeVisible();
   await expect(page.getByText("Product Concept Incubator", {exact:true})).toBeVisible();
@@ -200,4 +211,26 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
     "Mobile Products overflow offenders: "+JSON.stringify(overflowOffenders)
   ).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  if(process.env.DATANEST_APP_PATH){
+    const staticTab=await page.context().newPage();
+    const staticHref=await syncVisionLaunch.getAttribute("href");
+    const launchResponse=await staticTab.goto(new URL(staticHref||"",page.url()).toString());
+    expect(launchResponse?.status()).toBe(200);
+    await expect(staticTab.locator("#root")).not.toBeEmpty();
+    const nestedUrl=new URL("__unsupported_route_probe__",staticTab.url());
+    const nestedResponse=await staticTab.goto(nestedUrl.toString());
+    expect(new URL(staticTab.url()).origin).toBe(new URL(page.url()).origin);
+    if(nestedResponse?.status()===404){
+      await expect(staticTab.locator("body")).toContainText(/404|not found/i);
+    }else{
+      expect(nestedResponse?.status()).toBe(200);
+      await expect(staticTab.locator("#root")).not.toBeEmpty();
+    }
+    await staticTab.close();
+  }
+  await page.setViewportSize({width:1280,height:900});
+  await appDevLaunch.click();
+  await expect(page).toHaveURL(/\?view=ai$/);
+  await expect(page.getByRole("region",{name:"DataNest AI development command center"})).toBeVisible();
+  await expect(page.getByText("Fixture project",{exact:true}).first()).toBeVisible();
 });

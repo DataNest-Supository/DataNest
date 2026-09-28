@@ -6,7 +6,7 @@ import ResonancePortfolioPulse from "@/components/ResonancePortfolioPulse";
 import { FREE_PROMOTION_LABEL, RONSAS_FULL_NAME } from "@/lib/ecosystemAuthority";
 import PortfolioRegistryPanel from "@/components/PortfolioRegistryPanel";
 import { type PortfolioRegistryRow, type PortfolioRole } from "@/lib/portfolioRegistry";
-import { getRonsasAppLaunch } from "@/lib/ronsasApps";
+import { resolveRonsasLaunch } from "@/lib/ronsasApps";
 import { getRonsasStatus } from "@/lib/ronsas";
 
 
@@ -663,10 +663,11 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
               const external=portfolioItems.filter(item=>item.active_classification==="registered_external_capability"&&hasRelationship(item,["uses","integrates_with"]));
               const pending=portfolioItems.filter(item=>item.review_state==="pending_review"&&item.active_classification===null&&historicalParentProductId(item)===product.id);
               const names=(items:PortfolioRegistryRow[])=>items.length?items.map((item,index)=>{
-                const launch=getRonsasAppLaunch(item.name);
+                const launch=resolveRonsasLaunch(item.name,process.env.NEXT_PUBLIC_BASE_PATH||"",{});
                 return <span key={item.id}>
                   {index>0?", ":""}
-                  {launch?<a className="ronsasCompositionLaunch" href={launch.href} aria-label={`Open ${item.name} in DataNest`}>{item.name}</a>:item.name}
+                  {launch?.href?<a className="ronsasCompositionLaunch" href={launch.href} aria-label={`Open ${item.name} in DataNest`}>{item.name}</a>:item.name}
+                  {launch?.availability==="unavailable"&&<span className="ronsasLaunchUnavailable"> · Unavailable in DataNest</span>}
                 </span>;
               }):"None recorded";
               return <section className="ronsasComposition" aria-label="RONSAS Composition">
@@ -732,7 +733,9 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
                     <div className="catalogRecordGroupHead"><h4>{catalogRecordLabels[type]||type}</h4><span>{items.length}</span></div>
                     <div className="catalogRecordList">
                       {items.map(record=>{
-                        const launch=record.record_type==="application"?getRonsasAppLaunch(record.name):null;
+                        const launch=product.slug==="ronsas"&&record.record_type==="application"
+                          ?resolveRonsasLaunch(record.name,process.env.NEXT_PUBLIC_BASE_PATH||"",{})
+                          :null;
                         const ronsasHubLaunch=product.slug==="ronsas"&&record.record_type==="application"&&record.name?.trim().toLowerCase()==="ronsas hub"
                           ?ronsasHubUrl
                           :"";
@@ -746,11 +749,11 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
                               target="_blank"
                               rel="noreferrer"
                               aria-label="Open RONSAS Hub"
-                            >Open RONSAS ↗</a>:launch&&<a
+                            >Open RONSAS ↗</a>:launch?.href?<a
                               className="catalogRecordLaunch"
                               href={launch.href}
                               aria-label={`Open ${record.name||launch.name} in DataNest`}
-                            >Open in DataNest ↗</a>}
+                            >Open in DataNest ↗</a>:launch?.availability==="unavailable"&&<span className="ronsasLaunchUnavailable">Unavailable in DataNest</span>}
                           </div>
                           <p>{payloadText(record.payload,"description","rule","target_outcome","decision","summary","purpose","mitigation","location")}</p>
                         </article>;

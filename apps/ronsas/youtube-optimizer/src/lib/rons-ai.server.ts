@@ -9,18 +9,10 @@ type RonsAiResponse = {
   external_ai_used?: boolean;
 };
 
-const DEFAULT_GATEWAY = "http://127.0.0.1:58600/v1/ai/chat";
-const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "::1"]);
+import {getCloudRuntime,requireCloudCapability} from "./datanest-cloud.server";
 
 function configuredGateway(): string {
-  const raw = process.env["RONS_AI_GATEWAY_URL"]?.trim() || DEFAULT_GATEWAY;
-  const url = new URL(raw);
-  if (!['http:', 'https:'].includes(url.protocol)) throw new Error("RONS AI gateway must use HTTP(S)");
-  if (url.username || url.password) throw new Error("RONS AI gateway URL must not contain credentials");
-  if (!LOOPBACK_HOSTS.has(url.hostname) && process.env["RONS_AI_ALLOW_REMOTE"] !== "1") {
-    throw new Error("Remote RONS AI gateway is disabled");
-  }
-  return url.toString();
+  return `${requireCloudCapability(getCloudRuntime(),"ai")}/v1/ai/chat`;
 }
 export async function ronsAiChat(
   messages: readonly RonsAiMessage[],
@@ -34,7 +26,7 @@ export async function ronsAiChat(
     body: JSON.stringify({ ...(model ? { model } : {}), messages }),
   });
   if (!response.ok) {
-    if (response.status === 503) throw new Error("Sovereign AI is not available on Ealiophin");
+    if (response.status === 503) throw new Error("DataNest cloud AI is unavailable");
     throw new Error(`Sovereign AI request failed (${response.status})`);
   }
   const payload = (await response.json()) as RonsAiResponse;

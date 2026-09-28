@@ -1,31 +1,35 @@
-export type RonsasHostedApp = {
-  slug:string;
-  name:string;
-  aliases:readonly string[];
-};
+import registry from "./ronsasAppRegistry.json" with {type:"json"};
 
-export const RONSAS_HOSTED_APPS:readonly RonsasHostedApp[] = [
-  {slug:"career-compass",name:"Career Compass",aliases:[]},
-  {slug:"creative-studio",name:"Creative Studio",aliases:[]},
-  {slug:"epublisher",name:"ePublisher",aliases:["Epublisher","e Publisher"]},
-  {slug:"lyricsync-studio",name:"LyricSync Studio",aliases:["Lyric Sync Studio"]},
-  {slug:"scene-song-spark",name:"Scene Song Spark",aliases:[]},
-  {slug:"sovereign-forge",name:"SovereignForge",aliases:["Sovereign Forge"]},
-  {slug:"syncvision",name:"Sync Vision",aliases:["SyncVision"]},
-];
+export type RonsasKind = "static" | "server" | "native" | "operations";
+export type RonsasHostedApp = {slug:string;name:string;aliases:readonly string[]};
+export type RonsasLaunch = {slug:string;name:string;kind:RonsasKind;href:string|null;availability:"ready"|"unavailable"};
+type RegistryEntry = RonsasHostedApp & {kind:RonsasKind;source?:string;output?:string;build?:string};
+const entries:readonly RegistryEntry[]=registry as RegistryEntry[];
+export const RONSAS_HOSTED_APPS:readonly RonsasHostedApp[]=entries.filter(app=>app.kind==="static");
 
 function normalizeAppName(value:string){
   return value.trim().toLowerCase().replace(/[^a-z0-9]+/g,"");
 }
 
-const appByName = new Map<string,RonsasHostedApp>();
-for(const app of RONSAS_HOSTED_APPS){
+const appByName = new Map<string,RegistryEntry>();
+for(const app of entries){
   for(const candidate of [app.name,...app.aliases])appByName.set(normalizeAppName(candidate),app);
 }
 
 export function getRonsasHostedApp(name:string|null|undefined){
   if(!name)return null;
-  return appByName.get(normalizeAppName(name))||null;
+  const app=appByName.get(normalizeAppName(name));
+  return app?.kind==="static"?app:null;
+}
+
+export function resolveRonsasLaunch(name:string|null|undefined,basePath:string,availability:Record<string,boolean>):RonsasLaunch|null{
+  if(!name)return null;
+  const app=appByName.get(normalizeAppName(name));
+  if(!app)return null;
+  const base=basePath.replace(/\/+$/,"");
+  const ready=app.kind==="static"||app.kind==="native"||availability[app.slug]===true;
+  const href=!ready?null:app.kind==="native"?`${base}/?view=ai`:app.kind==="operations"?`${base}/?view=ronsasops`:`${base}/apps/${app.slug}/`;
+  return {slug:app.slug,name:app.name,kind:app.kind,href,availability:ready?"ready":"unavailable"};
 }
 
 export function getRonsasAppLaunch(name:string|null|undefined){

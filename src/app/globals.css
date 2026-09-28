@@ -4819,6 +4819,7 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
 .portfolioFacts dt,.ronsasCompositionGrid small{color:#71869a;font-size:7px;font-weight:900;text-transform:uppercase}
 .portfolioFacts dd,.ronsasCompositionGrid p{margin:4px 0 0;color:#d9e7ef;font-size:9px;overflow-wrap:anywhere}
 .ronsasCompositionLaunch{color:#baf6ff;font-weight:800;text-decoration:underline;text-decoration-color:rgba(92,230,255,.35);text-underline-offset:2px}.ronsasCompositionLaunch:hover,.ronsasCompositionLaunch:focus-visible{color:#fff;text-decoration-color:rgba(92,230,255,.9);outline:none}
+.ronsasLaunchUnavailable{color:#e8bc8a!important;font-size:10px!important;font-weight:750;line-height:1.4}
 .ronsasComposition{display:grid;gap:8px;margin:12px 0;padding:12px;border:1px solid rgba(139,92,246,.16);border-radius:12px;background:rgba(139,92,246,.035)}
 .ronsasCompositionGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
 .portfolioAiSuggestion{border-left:2px solid rgba(139,92,246,.45);padding-left:10px}

@@ -2,6 +2,7 @@ import { access, cp, mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+import registry from "../src/lib/ronsasAppRegistry.json" with {type:"json"};
 
 const repoRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
 const nextOut=path.join(repoRoot,"out");
@@ -9,15 +10,7 @@ const appsOut=path.join(nextOut,"apps");
 const configuredBase=(process.env.NEXT_PUBLIC_BASE_PATH||"").replace(/\/+$/,"");
 const npmCommand=process.platform==="win32"?"npm.cmd":"npm";
 
-const apps=[
-  {slug:"career-compass",source:"apps/ronsas/career-compass",output:"dist",kind:"simple"},
-  {slug:"creative-studio",source:"apps/ronsas/creative-studio",output:"dist",kind:"vite"},
-  {slug:"epublisher",source:"apps/ronsas/epublisher",output:"dist",kind:"vite"},
-  {slug:"lyricsync-studio",source:"apps/ronsas/lyricsync-studio",output:"dist",kind:"simple"},
-  {slug:"scene-song-spark",source:"apps/ronsas/scene-song-spark",output:"dist",kind:"simple"},
-  {slug:"sovereign-forge",source:"apps/ronsas/sovereign-forge",output:"dist",kind:"simple"},
-  {slug:"syncvision",source:"apps/ronsas/syncvision",output:"dist/client",kind:"vite"},
-];
+const apps=registry.filter(app=>app.kind==="static");
 
 function run(command,args,cwd){
   const result=spawnSync(command,args,{
@@ -38,7 +31,7 @@ for(const app of apps){
   const sourceDir=path.join(repoRoot,app.source);
   const appBase=`${configuredBase}/apps/${app.slug}/`;
 
-  if(app.kind==="vite"){
+  if(app.build==="vite"){
     run(npmCommand,["ci","--no-audit","--no-fund"],sourceDir);
     run(npmCommand,["run","build","--",`--base=${appBase}`],sourceDir);
   }else{

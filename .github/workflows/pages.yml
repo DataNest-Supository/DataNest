@@ -52,6 +52,8 @@ jobs:
       - run: npm run build
       - name: Build DataNest-hosted RONSAS apps
         run: node scripts/build-ronsas-pages.mjs
+      - name: Verify static RONSAS launch manifest and assets
+        run: node scripts/verify-ronsas-pages.mjs
       - uses: actions/upload-pages-artifact@v5.0.0
         with:
           path: ./out
@@ -106,13 +108,7 @@ jobs:
           grep -q "sb_publishable_" /tmp/runtime-config.js
           grep -q "authoritative" /tmp/runtime-config.js
       - name: Verify DataNest-hosted RONSAS apps
-        run: |
-          for app in career-compass creative-studio epublisher lyricsync-studio scene-song-spark sovereign-forge syncvision; do
-            curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors \
-              "https://datanest-supository.github.io/DataNest/apps/$app/" \
-              -o "/tmp/$app.html"
-            grep -qi "<html" "/tmp/$app.html"
-          done
+        run: node scripts/verify-ronsas-pages.mjs --live-only
       - name: Verify release manifest
         run: |
           curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors \
