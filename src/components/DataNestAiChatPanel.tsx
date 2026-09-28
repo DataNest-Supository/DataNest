@@ -313,46 +313,6 @@ export default function DataNestAiChatPanel({
       </div>
     </div>
 
-    <div className="datanestAiTranscript" role="log" aria-label="Job conversation" aria-live="polite" ref={transcriptRef}>
-      {visibleEvents.map(item=>{
-        const assistant=item.source_type==="datanest_ai";
-        const companion=item.source_type==="ai_companion";
-        const roleClass=assistant?"assistant":companion?"companion":"human";
-        const roleGlyph=assistant?"AI":companion?"EXT":"YOU";
-        const roleLabel=assistant?"DataNest AI":companion?"AI Companion":"Human development input";
-        return <article className={"datanestAiTurn "+roleClass} key={item.id}>
-          <div className="rowBetween">
-            <div className="datanestAiTurnIdentity">
-              <span className="datanestAiTurnGlyph" aria-hidden="true">{roleGlyph}</span>
-              <div>
-                <b>{roleLabel}</b>
-                <small>{jobCode+" · "+formatDate(item.created_at)}</small>
-              </div>
-            </div>
-            <span className="badge warn">UNCERTIFIED</span>
-          </div>
-          <p>{item.content}</p>
-          <div className="manifestMeta">
-            <span>{item.trace_id}</span>
-            {item.source_provider&&<span>{item.source_provider}</span>}
-          </div>
-        </article>;
-      })}
-      {busy&&<div className="datanestAiReasoningTurn" role="status" aria-live="polite">
-        <div className="datanestAiReasoningCore" aria-hidden="true">AI</div>
-        <div className="datanestAiReasoningCopy">
-          <b>DataNest AI is reasoning</b>
-          <span>Binding the command to {jobCode}, evaluating governed context, and preparing a traceable response.</span>
-          <div className="datanestAiReasoningPulse" aria-hidden="true"><i/><i/><i/><i/><i/></div>
-        </div>
-      </div>}
-      {!visibleEvents.length&&!busy&&<div className="emptyState datanestAiConsoleEmpty">
-        <div className="datanestAiConsoleEmptyCore" aria-hidden="true">AI</div>
-        <h3>{contextReady?"DataNest AI is ready":"Waiting for Job context"}</h3>
-        <p>{contextReady?"Issue a development command below. DataNest will bind it to this Job and trace the interaction before inference.":"You can prepare a draft while context loads. Sending becomes available once this Job context is ready."}</p>
-      </div>}
-    </div>
-
     <form className="datanestAiComposer" onSubmit={send}>
       <div
         id="datanest-ai-command-context"
@@ -407,5 +367,45 @@ export default function DataNestAiChatPanel({
         </button>
       </div>
     </form>
+
+    <div className="datanestAiTranscript" role="log" aria-label="Job conversation" aria-live="polite" ref={transcriptRef}>
+      {visibleEvents.map(item=>{
+        const assistant=item.source_type==="datanest_ai";
+        const companion=item.source_type==="ai_companion";
+        const roleClass=assistant?"assistant":companion?"companion":"human";
+        const roleGlyph=assistant?"AI":companion?"EXT":"YOU";
+        const roleLabel=assistant?"DataNest AI":companion?"AI Companion":"Human development input";
+        return <article className={"datanestAiTurn "+roleClass} key={item.id}>
+          <div className="rowBetween">
+            <div className="datanestAiTurnIdentity">
+              <span className="datanestAiTurnGlyph" aria-hidden="true">{roleGlyph}</span>
+              <div>
+                <b>{roleLabel}</b>
+                <small>{jobCode+" · "+formatDate(item.created_at)}</small>
+              </div>
+            </div>
+            <span className="badge warn">UNCERTIFIED</span>
+          </div>
+          <p>{item.content}</p>
+          <div className="manifestMeta">
+            <span>{item.trace_id}</span>
+            {item.source_provider&&<span>{item.source_provider}</span>}
+          </div>
+        </article>;
+      })}
+      {busy&&<div className="datanestAiReasoningTurn" role="status" aria-live="polite">
+        <div className="datanestAiReasoningCore" aria-hidden="true">AI</div>
+        <div className="datanestAiReasoningCopy">
+          <b>DataNest AI is reasoning</b>
+          <span>Binding the command to {jobCode}, evaluating governed context, and preparing a traceable response.</span>
+          <div className="datanestAiReasoningPulse" aria-hidden="true"><i/><i/><i/><i/><i/></div>
+        </div>
+      </div>}
+      {!visibleEvents.length&&!busy&&<div className="emptyState datanestAiConsoleEmpty">
+        <div className="datanestAiConsoleEmptyCore" aria-hidden="true">AI</div>
+        <h3>{contextReady?"DataNest AI is ready":"Waiting for Job context"}</h3>
+        <p>{contextReady?"Issue a development command below. DataNest will bind it to this Job and trace the interaction before inference.":"You can prepare a draft while context loads. Sending becomes available once this Job context is ready."}</p>
+      </div>}
+    </div>
   </section>;
 }
