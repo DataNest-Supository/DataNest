@@ -6,6 +6,7 @@ import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
 import { DATANEST_LOGO_SRC } from "@/lib/brand";
 import { getRonsasStatus } from "@/lib/ronsas";
+import { RESON8_HUB_URL } from "@/lib/reson8";
 import { SPARKS_TASK_COMPLETE, SPARKS_TASK_EVIDENCE, SPARKS_TASK_START, SPARKS_WORKSPACE_DESCRIPTION } from "@/lib/ecosystemAuthority";
 import { workflowPhaseForView, workflowPhases } from "@/lib/workflowPhases";
 import JobInviteForm from "@/components/JobInviteForm";
@@ -390,7 +391,7 @@ export default function DataNestApp({session}:{session:Session}) {
   const [commandOpen,setCommandOpen]=useState(false);
   const [commandQuery,setCommandQuery]=useState("");
   const [commandActiveIndex,setCommandActiveIndex]=useState(-1);
-  const [ronsasHubUrl,setRonsasHubUrl]=useState("");
+  const [ronsasHubUrl,setRonsasHubUrl]=useState(RESON8_HUB_URL);
   const commandInputRef=useRef<HTMLInputElement|null>(null);
   const commandReturnFocusRef=useRef<HTMLElement|null>(null);
   const [aiSidebarOpen,setAiSidebarOpen]=useState(false);
@@ -1102,7 +1103,7 @@ export default function DataNestApp({session}:{session:Session}) {
     void getRonsasStatus().then(status=>{
       if(active)setRonsasHubUrl(status.authority.publicHub);
     }).catch(()=>{
-      if(active)setRonsasHubUrl("");
+      if(active)setRonsasHubUrl(RESON8_HUB_URL);
     });
     return()=>{active=false;};
   },[]);
