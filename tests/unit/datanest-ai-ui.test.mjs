@@ -6,7 +6,7 @@ function read(path){
   return fs.existsSync(path)?fs.readFileSync(path,"utf8"):"";
 }
 
-test("DataNest AI command center prioritizes active work above decorative hero content",()=>{
+test("DataNest AI restores the animated hero and places active context below the command channel",()=>{
   const workspace=read("src/components/DataNestAiWorkspace.tsx");
   const app=read("src/components/DataNestApp.tsx");
   const css=read("src/app/datanest-ai-optimized.css");
@@ -19,14 +19,17 @@ test("DataNest AI command center prioritizes active work above decorative hero c
   assert.match(workspace,/className="datanestAiStatusCards"/);
   assert.match(workspace,/aria-label="DataNest AI operational status"/);
 
+  const heroIndex=workspace.indexOf('datanestAiHero datanestAiHeroV2');
+  const chatIndex=workspace.indexOf('className="datanestAiChatStage"');
   const commandIndex=workspace.indexOf('className="datanestAiCommandSummary"');
   const jobIndex=workspace.indexOf('className="panel datanestAiJobPicker"');
-  const chatIndex=workspace.indexOf('className="datanestAiChatStage"');
   const statusIndex=workspace.indexOf('className="datanestAiStatusCards"');
-  const overviewIndex=workspace.indexOf('className="datanestAiOverviewDisclosure"');
   const contextIndex=workspace.indexOf('className="datanestAiContextRail"');
-  assert.ok(commandIndex<jobIndex&&jobIndex<chatIndex&&chatIndex<statusIndex&&statusIndex<overviewIndex&&overviewIndex<contextIndex,
-    "DOM order must match the chat-first visual and keyboard-reading order");
+  assert.ok(heroIndex<chatIndex&&chatIndex<commandIndex&&commandIndex<jobIndex&&jobIndex<statusIndex&&statusIndex<contextIndex,
+    "DOM order must keep the animated hero visible and place Current Objective and Active Job context below the command channel");
+  assert.doesNotMatch(workspace,/className="datanestAiOverviewDisclosure"/);
+  assert.match(workspace,/datanestAiOrbitOne/);
+  assert.match(workspace,/datanestAiPacket packetOne/);
 
   assert.match(app,/view!==\"ai\"&&workspaceTaskGuides\[view\]/);
   assert.match(workspace,/aria-label="Select active Job Manifest"/);
