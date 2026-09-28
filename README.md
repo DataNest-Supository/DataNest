@@ -13,6 +13,12 @@ Primary free public endpoint:
 
 **https://datanest-supository.github.io/DataNest/**
 
+Reson8 ecosystem ingress:
+
+**https://datanest.reson8.life/**
+
+The Reson8 ingress is a secondary delivery surface. DataNest source authority remains `DataNest-Supository/DataNest`, and the public Supabase runtime configuration remains governed by the DataNest Pages deployment.
+
 Static health marker:
 
 **https://datanest-supository.github.io/DataNest/health.json**
