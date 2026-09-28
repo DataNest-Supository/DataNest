@@ -2,9 +2,10 @@ import "./globals.css";
 import "./entry.css";
 import "./datanest-ai-optimized.css";
 import "./datanest-ai-command-center.css";
+import "./datanest-ai-zoom.css";
 import type { ReactNode } from "react";
 
-// Keep command-center refinements last so focused UX overrides remain authoritative.
+// Keep focused DataNest AI refinements last so UX overrides remain authoritative.
 export const metadata = {
   title: "DataNest",
   description: "Plan projects, collaborate with DataNest AI, and review traceable work in one workspace."
