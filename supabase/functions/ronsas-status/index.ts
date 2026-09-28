@@ -6,6 +6,8 @@ const HUB_ORIGIN = "https://reson8.life/";
 const HUB_STATUS_PATH = "/api/public/app-status/health";
 const DATANEST_BRANDED_ORIGIN = "https://datanest.reson8.life/";
 const DATANEST_FALLBACK_ORIGIN = "https://datanest-supository.github.io/DataNest/";
+const DATANEST_BACKUP_PROVIDER = "Dropbox";
+const DATANEST_BACKUP_PATH = "/DataNest-AI-Backups";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -172,6 +174,14 @@ export default {
           operationalUrl: ingress.ok ? brandedUrl.toString() : fallbackUrl.toString(),
           ingress,
           hubRegistration,
+          backupHost: {
+            provider: DATANEST_BACKUP_PROVIDER,
+            path: DATANEST_BACKUP_PATH,
+            role: "artifact-recovery",
+            status: "active",
+            servesApplication: false,
+            localPcBackupHosting: false,
+          },
         },
       });
     } catch (error) {
