@@ -179,8 +179,23 @@ function jobCode(job:Job){
   return "JOB-"+String(job.job_number).padStart(5,"0");
 }
 
-function legalSessionKey(jobId:string){
-  return "datanest.legalEagle.session."+jobId;
+function parseLegalDualAdvocacy(content:string){
+  const angel="ANGEL'S ADVOCATE";
+  const devil="DEVIL'S ADVOCATE";
+  const synthesis="SYNTHESIS";
+  const a=content.indexOf(angel);
+  const d=content.indexOf(devil);
+  const y=content.indexOf(synthesis);
+  if(a<0||d<=a||y<=d)return null;
+  const angelsAdvocate=content.slice(a+angel.length,d).trim();
+  const devilsAdvocate=content.slice(d+devil.length,y).trim();
+  const combined=content.slice(y+synthesis.length).trim();
+  if(!angelsAdvocate||!devilsAdvocate||!combined)return null;
+  return {angelsAdvocate,devilsAdvocate,synthesis:combined};
+}
+
+function legalSessionKey(projectId:string,userId:string,jobId:string){
+  return "datanest.legalEagle.session."+projectId+"."+userId+"."+jobId;
 }
 
 export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
@@ -253,7 +268,7 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
       setNotice("");
       setError("");
       if(!selectedJobId)return;
-      const saved=window.localStorage.getItem(legalSessionKey(selectedJobId));
+      const saved=window.localStorage.getItem(legalSessionKey(projectId,currentUserId,selectedJobId));
       if(!saved)return;
       const supabase=getSupabase();
       if(!supabase)return;
@@ -264,7 +279,7 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
       if(!active)return;
       setLoadingMatter(false);
       if(contextError){
-        window.localStorage.removeItem(legalSessionKey(selectedJobId));
+        window.localStorage.removeItem(legalSessionKey(projectId,currentUserId,selectedJobId));
         return;
       }
       const payload=(data||{}) as Record<string,unknown>;
@@ -287,7 +302,7 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
   },[selectedJobId]);
 
   function newSession(){
-    if(selectedJobId)window.localStorage.removeItem(legalSessionKey(selectedJobId));
+    if(selectedJobId)window.localStorage.removeItem(legalSessionKey(projectId,currentUserId,selectedJobId));
     setSessionId("");
     setMessages([]);
     setDraft("");
@@ -341,7 +356,7 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
       const assistant=String(payload.assistant||"").trim();
       if(nextSession){
         setSessionId(nextSession);
-        window.localStorage.setItem(legalSessionKey(selectedJob.id),nextSession);
+        window.localStorage.setItem(legalSessionKey(projectId,currentUserId,selectedJob.id),nextSession);
       }
       if(assistant){
         setMessages(current=>[...current,{
@@ -355,7 +370,7 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
       setNotice(
         String(payload.providerMode||"")==="embedded"
           ?"Legal Eagle recorded the matter input, but no governed external provider was available for substantive reasoning."
-          :"Legal Eagle responded through the governed DataNest AI provider route. This legal session is excluded from automatic project-wide learning."
+          :"Legal Eagle returned Angel's Advocate, Devil's Advocate and a neutral synthesis through the governed DataNest AI provider route. This legal session is excluded from automatic project-wide learning."
       );
     }catch(sendError){
       setError(sendError instanceof Error?sendError.message:"Legal Eagle could not process this request.");
@@ -497,6 +512,14 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
     else url.searchParams.delete("q");
     window.history.replaceState(window.history.state,"",url.toString());
   },[catalogUrlReady,catalogProducts,selectedProductId,recordQuery,recordTypeFilter]);
+
+  function openLegalEagleExperience(){
+    const details=document.getElementById("legal-eagle-experience");
+    if(details instanceof HTMLDetailsElement)details.open=true;
+    window.requestAnimationFrame(()=>{
+      document.getElementById("legal-eagle-title")?.scrollIntoView({behavior:"smooth",block:"start"});
+    });
+  }
 
   async function copyCatalogViewLink(){
     const href=window.location.href;
@@ -640,6 +663,12 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
                   rel="noreferrer"
                   aria-label="Open RONSAS"
                 >Open RONSAS ↗</a>}
+                {product.slug==="legal-eagle"&&<button
+                  className="catalogRecordLaunch"
+                  type="button"
+                  onClick={openLegalEagleExperience}
+                  aria-label="Open Legal Eagle"
+                >Open Legal Eagle ↓</button>}
               </div>
             </div>
 
@@ -769,10 +798,10 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
         })}
       </div>
     </section>
-    <details className="conceptIncubator">
+    <details id="legal-eagle-experience" className="conceptIncubator">
       <summary>
-        <span><b>Product Concept Incubator</b><small>Explore governed specialist experiences that are live or incubating but not yet promoted as standalone catalog products.</small></span>
-        <span>Resonance Assistance · Legal Eagle</span>
+        <span><b>Resonance Assistance Product Experience</b><small>Open the live Legal Eagle product workspace and future governed specialist experiences.</small></span>
+        <span>Legal Eagle · Live governed beta</span>
       </summary>
       <div className="conceptIncubatorBody">
     <section className="productsHero" aria-labelledby="products-title">
@@ -802,7 +831,7 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
           <p className="eyebrow">CONCEPT 01</p>
           <h3 id="product-index-title">Resonance Assistance</h3>
         </div>
-        <span className="productStatus">PRODUCT CONCEPT</span>
+        <span className="productStatus">LIVE GOVERNED PRODUCT</span>
       </div>
 
       <div className="resonanceAssistanceCard">
@@ -826,7 +855,7 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
           <article className="assistantMiniCard active">
             <div className="assistantMiniIcon">LE</div>
             <div>
-              <small>FIRST SPECIALIST · LIVE</small>
+              <small>FIRST SPECIALIST · LIVE PRODUCT</small>
               <b>Legal Eagle</b>
               <span>Legal information + preparation</span>
             </div>
@@ -932,17 +961,33 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
                   <p>Select a DataNest Job, enter the jurisdiction, then paste your question, facts, clause or document excerpt.</p>
                 </div>
               </div>}
-              {messages.map(item=><article
-                className={"legalChatTurn "+item.role}
-                key={item.id}
-              >
-                <div className="legalChatTurnHead">
-                  <b>{item.role==="assistant"?"LEGAL EAGLE":"YOU"}</b>
-                  {item.traceId&&<span>{item.traceId}</span>}
-                </div>
-                <p>{item.content}</p>
-                {item.provider&&<small>{item.provider}</small>}
-              </article>)}
+              {messages.map(item=>{
+                const dual=item.role==="assistant"?parseLegalDualAdvocacy(item.content):null;
+                return <article
+                  className={"legalChatTurn "+item.role+(dual?" dualAdvocacy":"")}
+                  key={item.id}
+                >
+                  <div className="legalChatTurnHead">
+                    <b>{item.role==="assistant"?"LEGAL EAGLE":"YOU"}</b>
+                    {item.traceId&&<span>{item.traceId}</span>}
+                  </div>
+                  {dual?<div className="legalDualGrid">
+                    <section className="legalDualCard angel">
+                      <small>ANGEL&apos;S ADVOCATE</small>
+                      <p>{dual.angelsAdvocate}</p>
+                    </section>
+                    <section className="legalDualCard devil">
+                      <small>DEVIL&apos;S ADVOCATE</small>
+                      <p>{dual.devilsAdvocate}</p>
+                    </section>
+                    <section className="legalDualSynthesis">
+                      <small>SYNTHESIS</small>
+                      <p>{dual.synthesis}</p>
+                    </section>
+                  </div>:<p>{item.content}</p>}
+                  {item.provider&&<small>{item.provider}</small>}
+                </article>;
+              })}
             </div>
 
             <form className="legalComposer" onSubmit={send}>
