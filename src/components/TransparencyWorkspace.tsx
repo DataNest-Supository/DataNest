@@ -54,8 +54,9 @@ const invariantHighlights = [
   "Normal user UI must not silently reintroduce Capacity or Operations Capabilities."
 ];
 
-const briefPartUrls = Array.from({length:8},(_,index)=>`./transparency/audits/external-full-system-audit-brief/part-${String(index+1).padStart(2,"0")}.txt`);
-const auditReturnBase="./transparency/audits/external-full-system-audit-return-2026-09-25";
+const publicBasePath=process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+const briefPartUrls = Array.from({length:8},(_,index)=>`${publicBasePath}/transparency/audits/external-full-system-audit-brief/part-${String(index+1).padStart(2,"0")}.txt`);
+const auditReturnBase=`${publicBasePath}/transparency/audits/external-full-system-audit-return-2026-09-25`;
 const auditReturnUrl=auditReturnBase+"/report.md";
 const findingsUrl=auditReturnBase+"/findings.json";
 const backlogUrl=auditReturnBase+"/remediation-backlog.json";
@@ -196,7 +197,7 @@ export default function TransparencyWorkspace(){
             <button className="secondaryButton compact" type="button" onClick={()=>void loadFullBrief()} disabled={briefLoading}>
               {fullBrief?"Brief loaded":briefLoading?"Loading…":"Open full brief"}
             </button>
-            <a className="textButton linkButton" href="./transparency/audits/index.json">Document registry</a>
+            <a className="textButton linkButton" href={`${publicBasePath}/transparency/audits/index.json`}>Document registry</a>
           </div>
         </article>
 
