@@ -4,7 +4,7 @@ Canonical DataNest branded identity:
 
 - Name: `reson8.datanest.life`
 - Branded URL: `https://reson8.datanest.life/`
-- Current branded state: reserved
+- Current branded state: wire-ready
 - Operational delivery: `https://datanest-supository.github.io/DataNest/`
 - Repository: `DataNest-Supository/DataNest`
 - Branch: `main`
@@ -16,7 +16,7 @@ Canonical DataNest branded identity:
 
 `reson8.datanest.life` is the active canonical name in DataNest metadata and contracts. It is not coupled to Railway or any other hosting-provider record. Provider-specific metadata that cannot be deleted does not define DataNest identity, routing authority, source authority, backend authority, or backup authority.
 
-The current live application continues to be served by GitHub Pages until DNS/edge binding for the branded hostname is deliberately activated.
+The application layer is wired so that requests served on `reson8.datanest.life` immediately redirect to `https://reson8.life/`. The remaining network-layer step is DNS/edge binding for `reson8.datanest.life`; until that exists, the current live DataNest application continues to be served by GitHub Pages.
 
 ## Machine-readable binding
 
@@ -32,14 +32,14 @@ The contract publishes the canonical name and branded URL separately from the op
 reson8.datanest.life
   canonical branded identity
       ↓
-replaceable DNS / edge binding
+DNS / edge binding
       ↓
-DataNest GitHub Pages
-  current live delivery
+DataNest application-layer redirect
       ↓
-Supabase
-  governed auth, data, storage, and Edge Functions
+https://reson8.life/
 ```
+
+The redirect guard is exact-host scoped, so the normal GitHub Pages DataNest application remains operational at its existing URL.
 
 Railway is not required.
 
