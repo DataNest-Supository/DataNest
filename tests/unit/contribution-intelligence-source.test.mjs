@@ -41,7 +41,7 @@ test("progression requires independent human approval and does not grant a proje
 test("N0nymous Squad is pseudonymous, opt-in and capped at ten without authority",()=>{
   assert.match(migration,/squad_opt_in boolean not null default false/);
   assert.match(migration,/rank integer not null check \(rank between 1 and 10\)/);
-  assert.match(migration,/'N0-' \|\| upper\(substr/);
+  assert.match(migration,/'N0-'\s*\|\|\s*upper\(substr/);
   assert.match(migration,/where candidates\.squad_rank<=10/);
   assert.match(migration,/'squad_grants_admin',false/);
   assert.match(workspace,/N0NYMOUS SQUAD/);
