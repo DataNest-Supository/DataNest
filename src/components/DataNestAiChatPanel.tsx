@@ -275,7 +275,7 @@ export default function DataNestAiChatPanel({
         <div className="datanestAiConsoleGlyph" aria-hidden="true">AI</div>
         <div>
           <p className="eyebrow">DATANEST AI // LIVE CONSOLE</p>
-          <h3>Development command channel</h3>
+          <h3>DEVELOPMENT COMMAND CHANNEL</h3>
           <small>Governed reasoning with active Job context and traceable session evidence.</small>
         </div>
       </div>
