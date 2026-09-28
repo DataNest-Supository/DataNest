@@ -6,6 +6,7 @@ const HUB_ORIGIN = "https://reson8.life/";
 const HUB_STATUS_PATH = "/api/public/app-status/health";
 const DATANEST_CANONICAL_NAME = "reson8.datanest.life";
 const DATANEST_BRANDED_URL = "https://reson8.datanest.life/";
+const DATANEST_WIRE_TARGET = HUB_ORIGIN;
 const DATANEST_PUBLIC_ORIGIN = "https://datanest-supository.github.io/DataNest/";
 const DATANEST_HEALTH_PATH = "/DataNest/health.json";
 const DATANEST_BACKUP_PROVIDER = "Dropbox";
@@ -168,7 +169,14 @@ export default {
         delivery: {
           canonicalName: DATANEST_CANONICAL_NAME,
           brandedUrl: DATANEST_BRANDED_URL,
-          brandedState: "reserved",
+          brandedState: "wire-ready",
+          wire: {
+            source: DATANEST_BRANDED_URL,
+            target: DATANEST_WIRE_TARGET,
+            mode: "redirect",
+            applicationLayer: "ready",
+            networkState: "dns-pending",
+          },
           provider: "GitHub Pages",
           operationalUrl: publicUrl.toString(),
           publicDelivery,
