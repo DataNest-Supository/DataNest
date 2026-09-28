@@ -92,9 +92,9 @@ test("breaker safety automation can only tighten and never re-enable",()=>{
 
 test("canonical evaluator requires explicit consequence membership as well as autonomy rank",()=>{
   const source=sql();
-  assert.match(source,/target_consequence_class=any\(envelope\.allowed_consequence_classes\)|target_consequence_class = any\(envelope\.allowed_consequence_classes\)/i);
-  assert.match(source,/authority_autonomy_rank\(target_requested_autonomy\)/i);
-  assert.match(source,/authority_minimum_autonomy\(target_consequence_class\)/i);
+  assert.match(source,/(?:target_consequence_class|conseq)\s*=\s*any\(envelope\.allowed_consequence_classes\)/i);
+  assert.match(source,/authority_autonomy_rank\((?:target_requested_autonomy|req_auto)\)/i);
+  assert.match(source,/authority_minimum_autonomy\((?:target_consequence_class|conseq)\)/i);
   assert.match(source,/granted_autonomy/i);
 });
 
@@ -109,11 +109,11 @@ test("canonical evaluator fails closed on paused expired revoked exhausted or mi
 
 test("A4 execution requires an unexpired exact-action approval that matches the packet",()=>{
   const source=sql();
-  assert.match(source,/target_requested_autonomy='A4'|minimum_autonomy='A4'/i);
+  assert.match(source,/(?:target_requested_autonomy|req_auto)\s*=\s*'A4'|(?:minimum_autonomy|min_auto)\s*=\s*'A4'/i);
   assert.match(source,/approval_type='exact_action'/i);
-  assert.match(source,/operation_key=target_operation/i);
-  assert.match(source,/coalesce\(a\.target_reference,''\)=coalesce\(target_target_reference,''\)/i);
-  assert.match(source,/exact_evidence_identity=target_exact_evidence_identity/i);
+  assert.match(source,/a\.operation_key\s*=\s*(?:target_operation|op)/i);
+  assert.match(source,/coalesce\(a\.target_reference,''\)\s*=\s*coalesce\((?:target_target_reference|tgt_ref),''\)/i);
+  assert.match(source,/a\.exact_evidence_identity\s*=\s*(?:target_exact_evidence_identity|evidence_id)/i);
 });
 
 test("Phase C non-allow remains non-allow",()=>{
