@@ -21,6 +21,7 @@ assert.equal(
 await access(path.join(outDir,"index.html"));
 await access(path.join(outDir,"runtime-config.js"));
 await access(path.join(outDir,"release-manifest.json"));
+await access(path.join(outDir,"apps","index.html"));
 
 const home=await readFile(path.join(outDir,"index.html"),"utf8");
 assert.doesNotMatch(home,/\/DataNest\//,"Root-domain HTML must not emit the legacy /DataNest prefix.");
@@ -33,6 +34,9 @@ assert.equal(release.deliveryTarget,"lovable-domain");
 
 const manifest=JSON.parse(await readFile(path.join(outDir,"apps","manifest.json"),"utf8"));
 assert.equal(manifest.contract,"datanest-ronsas-apps@1");
+assert.equal(manifest.publicOrigin,expectedOrigin);
+assert.equal(manifest.deliveryTarget,"lovable-domain");
+assert.equal(manifest.hubPath,"/apps/");
 assert.ok(Array.isArray(manifest.apps)&&manifest.apps.length>=7);
 for(const app of manifest.apps){
   assert.equal(app.path,`/apps/${app.slug}/`);
