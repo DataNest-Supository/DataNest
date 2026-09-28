@@ -393,16 +393,16 @@ test("public Transparency index publishes the audit return without sign in",asyn
   const appPath=(process.env.DATANEST_APP_PATH||"/").replace(/\/?$/,"/");
   await page.goto(appPath+"transparency/index.html");
 
-  await expect(page.getByRole("heading",{name:"Transparency and Audit Library",exact:true})).toBeVisible();
-  await expect(page.getByText("EXTERNAL AUDIT RETURN PUBLISHED",{exact:true})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"Audit library + public accountability record",exact:true})).toBeVisible();
+  await expect(page.getByText(/EXTERNAL AUDIT RETURN · 25 SEP 2026/)).toBeVisible();
   await expect(page.getByText(/14 findings/)).toBeVisible();
   await expect(page.getByText(/not a full production certification/i)).toBeVisible();
-  await expect(page.getByRole("link",{name:"Structured findings (JSON)",exact:true})).toBeVisible();
-  await expect(page.getByRole("link",{name:"Reported remediation backlog (JSON)",exact:true})).toBeVisible();
+  await expect(page.getByRole("link",{name:"Findings JSON",exact:true})).toBeVisible();
+  await expect(page.getByRole("link",{name:"Reported backlog JSON",exact:true})).toBeVisible();
 
-  await page.getByRole("link",{name:"Exact uploaded audit return (Markdown)",exact:true}).click();
-  await expect(page.locator("body")).toContainText("RESONANCE DATANEST / RONSAS - EXTERNAL AUDIT RETURN");
-  await expect(page.locator("body")).toContainText("AUD-014");
+  await page.getByRole("button",{name:"Open full audit return",exact:true}).click();
+  await expect(page.getByLabel("Complete external audit return source artifact")).toContainText("RESONANCE DATANEST / RONSAS - EXTERNAL AUDIT RETURN");
+  await expect(page.getByLabel("Complete external audit return source artifact")).toContainText("AUD-014");
 });
 
 
