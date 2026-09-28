@@ -244,16 +244,14 @@ export default function DataNestAiWorkspace({
     input?.focus({preventScroll:true});
   }
 
-  function inspectContext(){
-    const select=document.getElementById("datanest-ai-active-job") as HTMLSelectElement|null;
-    scrollToWorkspaceNode(select);
-    select?.focus({preventScroll:true});
-  }
-
   function inspectCertifiedMemory(){
-    const memory=document.querySelector<HTMLElement>('[aria-label="Certified Memory"]');
-    scrollToWorkspaceNode(memory,"start");
-    memory?.focus?.({preventScroll:true});
+    const disclosure=document.getElementById("datanest-ai-governance-tools");
+    if(disclosure instanceof HTMLDetailsElement)disclosure.open=true;
+    window.requestAnimationFrame(()=>{
+      const memory=document.querySelector<HTMLElement>('[aria-label="Certified Memory"]');
+      scrollToWorkspaceNode(memory,"start");
+      memory?.focus?.({preventScroll:true});
+    });
   }
 
   if(!jobs.length){
@@ -399,96 +397,77 @@ export default function DataNestAiWorkspace({
       </section>
     </>}
 
-    <section className="datanestAiCommandSummary" aria-label="DataNest AI current objective">
+    <section className="datanestAiCommandSummary datanestAiCommandSummaryCompact" aria-label="DataNest AI current objective and active Job context">
       <div className="datanestAiCommandObjective">
         <small>Current objective</small>
         <strong>{selectedJob?jobCode(selectedJob)+" · "+selectedJob.title:"Select a Job Manifest"}</strong>
         <p>{selectedJob?.description||"Choose the governed Job context before continuing development work."}</p>
       </div>
-      <div className="datanestAiCommandEvidence">
-        <div><small>Completion</small><span>Actionable AI output or certifiable memory</span></div>
-        <div><small>Evidence</small><span>Session · Event trail · Certified memory</span></div>
+
+      <div className="datanestAiCommandContext">
+        {selectedJob?<>
+          <label htmlFor="datanest-ai-active-job">Active Job context</label>
+          <select id="datanest-ai-active-job" value={selectedJobId} onChange={event=>selectJob(event.target.value)}>
+            {jobs.map(job=><option key={job.id} value={job.id}>{jobCode(job)+" · "+job.title}</option>)}
+          </select>
+          <div className="datanestAiContextSignals" aria-label="Active Job signals">
+            <span className={"datanestAiContextSignal "+(contextReady?"good":loading?"syncing":"warn")}><i aria-hidden="true"/>{contextStatus}</span>
+            <span className="datanestAiContextSignal">{selectedJob.status.replaceAll("_"," ")}</span>
+            <button className="datanestAiContextSignal datanestAiContextSignalButton" type="button" onClick={inspectCertifiedMemory}>
+              {(context?.certifiedMemory?.length||0)+" certified"}
+            </button>
+          </div>
+        </>:<span className="muted">Select a Job Manifest to establish governed context.</span>}
       </div>
+
       <div className="datanestAiCommandActions">
         <button className="primaryButton" type="button" onClick={openAiWorkspace}>Focus chat <span aria-hidden="true">→</span></button>
-        <button className="secondaryButton" type="button" onClick={inspectContext}>Inspect context</button>
+        <button className="secondaryButton" type="button" disabled={loading||!selectedJob} onClick={()=>void refreshContext()}>
+          {loading?"Syncing…":"Refresh context"}
+        </button>
       </div>
     </section>
 
-    {selectedJob&&<>
-      <section className="panel datanestAiJobPicker" aria-label="Select active Job Manifest">
-        <label htmlFor="datanest-ai-active-job">Active Job context</label>
-        <select id="datanest-ai-active-job" value={selectedJobId} onChange={event=>selectJob(event.target.value)}>
-          {jobs.map(job=><option key={job.id} value={job.id}>{jobCode(job)+" · "+job.title}</option>)}
-        </select>
-        <small className="muted">Choose the Job before composing a command. Drafts stay with their Job.</small>
-      </section>
-    </>}
+    {selectedJob&&<details className="datanestAiContextDetails">
+      <summary>
+        <span>
+          <b>Job details</b>
+          <small>{jobCode(selectedJob)+" · "+selectedJob.title}</small>
+        </span>
+        <span className="datanestAiContextDetailsMeta">
+          <i>{selectedJob.status.replaceAll("_"," ")}</i>
+          <i>{"P"+selectedJob.priority}</i>
+        </span>
+      </summary>
+      <div className="datanestAiContextDetailsBody">
+        <p className="muted">{selectedJob.description||"No description supplied."}</p>
+        <div className="manifestMeta">
+          <span>{selectedJob.required_capabilities?.join(", ")||"chat"}</span>
+          <span>{"Updated "+formatDate(selectedJob.updated_at,displayTimeZone)}</span>
+          <span>{sessionId?"Session "+sessionId.slice(0,8):"Session establishing…"}</span>
+        </div>
+        <div className="rowActions">
+          <JobInviteForm
+            jobId={selectedJob.id}
+            canInvite={canOperate}
+            compact
+            onSent={message=>setNotice(message)}
+          />
+          <button className="secondaryButton compact" disabled={loading} onClick={()=>void refreshContext()}>Refresh context</button>
+          <button className="secondaryButton compact" type="button" onClick={openScheduler}>Open TranScheduler</button>
+        </div>
+      </div>
+    </details>}
 
-    <section className="datanestAiStatusCards" aria-label="DataNest AI operational status">
-      <button type="button" className="datanestAiStatusCard" onClick={inspectContext}>
-        <span className={"datanestAiStatusPulse "+(loading?"syncing":contextReady?"online":"")} aria-hidden="true"/>
-        <small>Context</small>
-        <b role="status">{contextStatus}</b>
-        <span>Inspect governed Job context</span>
-      </button>
-      <button type="button" className="datanestAiStatusCard" onClick={inspectCertifiedMemory}>
-        <span className="datanestAiStatusIcon" aria-hidden="true">◫</span>
-        <small>Certified memory</small>
-        <b>{context?.certifiedMemory?.length||0} ITEMS</b>
-        <span>Open reviewed project memory</span>
-      </button>
-      <button type="button" className="datanestAiStatusCard" onClick={inspectContext}>
-        <span className="datanestAiStatusIcon" aria-hidden="true">▰</span>
-        <small>Active context</small>
-        <b>{selectedJob?jobCode(selectedJob):"STANDBY"}</b>
-        <span>{selectedJob?.title||"Select a Job Manifest"}</span>
-      </button>
-    </section>
-
-    {selectedJob&&<>
-      <section className="datanestAiContextRail" aria-label="Active DataNest AI context">
-        <section className="panel datanestAiCurrentJob">
-          <div className="rowBetween">
-            <div>
-              <p className="eyebrow">Current Job Context</p>
-              <h2>{jobCode(selectedJob)+" · "+selectedJob.title}</h2>
-            </div>
-            <span className="badge live">{selectedJob.status.replaceAll("_"," ")}</span>
-          </div>
-          <p className="muted">{selectedJob.description||"No description supplied."}</p>
-          <div className="manifestMeta">
-            <span>{"Priority "+selectedJob.priority}</span>
-            <span>{selectedJob.required_capabilities?.join(", ")||"chat"}</span>
-            <span>{"Updated "+formatDate(selectedJob.updated_at,displayTimeZone)}</span>
-            <span>{sessionId?"Session "+sessionId.slice(0,8):"Session establishing…"}</span>
-          </div>
-          <div className="rowActions">
-            <JobInviteForm
-              jobId={selectedJob.id}
-              canInvite={canOperate}
-              compact
-              onSent={message=>setNotice(message)}
-            />
-            <button className="secondaryButton compact" disabled={loading} onClick={()=>void refreshContext()}>Refresh context</button>
-          </div>
-        </section>
-
-        <section className="datanestAiJobStrip" aria-label="Switch DataNest AI Job Context">
-          {jobs.map(job=><button
-            key={job.id}
-            className={"rndJobChip "+(job.id===selectedJobId?"active":"")}
-            aria-pressed={job.id===selectedJobId}
-            onClick={()=>selectJob(job.id)}
-          >
-            <span>{jobCode(job)}</span>
-            <b>{job.title}</b>
-            <small>{job.status+" · P"+job.priority}</small>
-          </button>)}
-        </section>
-      </section>
-
-      {context&&<>
+    {selectedJob&&context&&<details id="datanest-ai-governance-tools" className="datanestAiAdvancedDisclosure">
+      <summary>
+        <span>
+          <b>Memory &amp; governance</b>
+          <small>Certified memory, Intelligence Fabric, learning and certification.</small>
+        </span>
+        <span className="datanestAiDisclosureStatus">{(context.certifiedMemory?.length||0)+" CERTIFIED"}</span>
+      </summary>
+      <div className="datanestAiAdvancedBody">
         <section className="datanestAiSupportGrid">
           <div aria-label="Certified Memory">
             <DataNestAiMemoryPanel items={context.certifiedMemory||[]}/>
@@ -512,8 +491,9 @@ export default function DataNestAiWorkspace({
             setError={setError}
           />
         </div>
-      </>}
-    </>}
+      </div>
+    </details>}
+
     <footer className="datanestAiFootnote">
       <small>
         Signed in as {currentUserEmail} · user {currentUserId.slice(0,8)} · role {role.toUpperCase()}.
