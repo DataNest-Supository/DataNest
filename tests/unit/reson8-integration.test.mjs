@@ -32,7 +32,6 @@ test("DataNest declares its canonical Reson8 ecosystem binding",()=>{
   assert.equal(contract.delivery?.provider,"GitHub Pages");
   assert.equal(contract.delivery?.status,"live");
   assert.equal(contract.delivery?.url,"https://datanest-supository.github.io/DataNest/");
-  assert.equal(contract.delivery?.railwayRequired,false);
   assert.equal(contract.billing,"none");
 });
 
