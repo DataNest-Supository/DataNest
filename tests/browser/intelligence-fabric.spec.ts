@@ -119,10 +119,17 @@ async function setup(page:Page,role:"viewer"|"operator"|"owner"){
     return route.fulfill({headers,body:JSON.stringify(body)});
   });
 }
+async function openGovernanceTools(page:Page){
+  const disclosure=page.locator("#datanest-ai-governance-tools");
+  await expect(disclosure).toBeVisible();
+  await disclosure.locator("summary").first().click();
+  await expect(disclosure).toHaveAttribute("open","");
+}
 
 test("ILM-1 is visibly governed orchestration while Certified Memory remains separate",async({page})=>{
   await setup(page,"viewer");
   await page.goto(appPath+"?view=ai");
+  await openGovernanceTools(page);
 
   await expect(page.getByText("ILM-1 = governed orchestration, not a trained foundation model.",{exact:false})).toBeVisible();
   await expect(page.getByText("Routing ≠ authorization.",{exact:false})).toBeVisible();
@@ -145,8 +152,9 @@ test("viewer and operator cannot mutate ILM profiles or service evidence",async(
 test("owner can version the governed ILM-1 profile without credential fields",async({page})=>{
   await setup(page,"owner");
   await page.goto(appPath+"?view=ai");
+  await openGovernanceTools(page);
 
-  const profile=page.locator("details").filter({hasText:"Version ILM-1 profile · Owner / admin"});
+  const profile=page.locator("details.quietDisclosure").filter({hasText:"Version ILM-1 profile · Owner / admin"});
   await profile.locator("summary").click();
   await expect(profile.getByLabel("Profile key")).toHaveValue("ilm-1");
   await expect(profile.getByLabel(/Password|API key|Access token|Refresh token/i)).toHaveCount(0);
@@ -157,6 +165,7 @@ test("owner can version the governed ILM-1 profile without credential fields",as
 test("route evaluation and capability evidence are visible but read-only",async({page})=>{
   await setup(page,"owner");
   await page.goto(appPath+"?view=ai");
+  await openGovernanceTools(page);
 
   await expect(page.getByText("fixture-model",{exact:true})).toBeVisible();
   await expect(page.getByText("route-provenance",{exact:true})).toBeVisible();
