@@ -32,7 +32,6 @@ export type RonsasStatus = {
       origin: string;
       error?: string;
     };
-    railwayRequired: false;
     hubRegistration: {
       ok: boolean;
       status: number | null;
@@ -80,7 +79,6 @@ export async function getRonsasStatus(): Promise<RonsasStatus> {
     status.delivery.provider !== "GitHub Pages" ||
     typeof status.delivery.operationalUrl !== "string" ||
     !status.delivery.publicDelivery ||
-    status.delivery.railwayRequired !== false ||
     !status.delivery.hubRegistration ||
     typeof status.delivery.hubRegistration.listed !== "boolean" ||
     !status.delivery.backupHost ||
