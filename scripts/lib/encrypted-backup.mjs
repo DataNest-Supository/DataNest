@@ -24,7 +24,7 @@ export function parseBackupKey(value){
 export function encryptBackup(plaintext,keyInput){
   const key=parseBackupKey(keyInput);
   const iv=randomBytes(12);
-  const cipher=createCipheriv("aes-256-gcm",key,iv);
+  const cipher=createCipheriv("aes-256-gcm",key,iv,{authTagLength:16});
   const ciphertext=Buffer.concat([cipher.update(plaintext),cipher.final()]);
   const envelope={
     format:"datanest-ai-backup",
@@ -45,8 +45,9 @@ export function decryptBackup(encrypted,keyInput){
   }
   const iv=Buffer.from(envelope.iv,"base64");
   const tag=Buffer.from(envelope.tag,"base64");
+  if(tag.length!==16)throw new Error("Backup authentication tag must be exactly 16 bytes.");
   const ciphertext=Buffer.from(envelope.ciphertext,"base64");
-  const decipher=createDecipheriv("aes-256-gcm",key,iv);
+  const decipher=createDecipheriv("aes-256-gcm",key,iv,{authTagLength:16});
   decipher.setAuthTag(tag);
   return Buffer.concat([decipher.update(ciphertext),decipher.final()]);
 }
