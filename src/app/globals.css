@@ -2990,6 +2990,40 @@ code,pre{
   box-shadow:inset 2px 0 rgba(79,226,255,.42);
 }
 
+.datanestAiCommandConsole .datanestAiTurn.assistant,
+.datanestAiCommandConsole .datanestAiTurn.companion{
+  justify-self:start;
+  width:min(90%,780px);
+}
+
+.datanestAiCommandConsole .datanestAiTurn.human{
+  justify-self:end;
+  width:min(84%,720px);
+  border-color:rgba(166,113,255,.22);
+  background:
+    radial-gradient(circle at 100% 0%,rgba(255,79,220,.055),transparent 28%),
+    linear-gradient(145deg,rgba(26,13,52,.8),rgba(9,16,35,.82));
+  box-shadow:inset -2px 0 rgba(175,102,255,.38);
+}
+
+.datanestAiCommandConsole .datanestAiTurn.human.pending{
+  border-style:dashed;
+  opacity:.9;
+}
+
+.datanestAiCommandConsole .datanestAiTurn.human .rowBetween{
+  flex-direction:row-reverse;
+}
+
+.datanestAiCommandConsole .datanestAiTurn.human .datanestAiTurnIdentity{
+  flex-direction:row-reverse;
+  text-align:right;
+}
+
+.datanestAiCommandConsole .datanestAiTurn.human .manifestMeta{
+  justify-content:flex-end;
+}
+
 .datanestAiConsoleEmpty{
   min-height:220px!important;
   display:grid;
@@ -3105,6 +3139,12 @@ code,pre{
 }
 
 @container datanest-main (max-width:480px){
+  .datanestAiCommandConsole .datanestAiTurn.assistant,
+  .datanestAiCommandConsole .datanestAiTurn.companion,
+  .datanestAiCommandConsole .datanestAiTurn.human{
+    width:100%;
+  }
+
   .datanestAiConsoleIdentity{
     align-items:flex-start;
   }
