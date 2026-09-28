@@ -4,7 +4,7 @@ import "./datanest-ai-optimized.css";
 import type { ReactNode } from "react";
 
 export const metadata = {
-  title: "Resonance DataNest",
+  title: "reson8.datanest.life",
   description: "Plan projects, collaborate with DataNest AI, and review traceable work in one workspace."
 };
 
