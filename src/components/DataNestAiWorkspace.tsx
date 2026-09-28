@@ -284,12 +284,20 @@ export default function DataNestAiWorkspace({
         <div><small>Evidence</small><span>Session · Event trail · Certified memory</span></div>
       </div>
       <div className="datanestAiCommandActions">
-        <button className="primaryButton" type="button" onClick={openAiWorkspace}>Open AI workspace <span aria-hidden="true">→</span></button>
+        <button className="primaryButton" type="button" onClick={openAiWorkspace}>Focus chat <span aria-hidden="true">→</span></button>
         <button className="secondaryButton" type="button" onClick={inspectContext}>Inspect context</button>
       </div>
     </section>
 
-    <section className={"datanestAiHero datanestAiHeroV2 "+(loading?"isWorking":"isReady")} aria-label="DataNest AI development command center">
+    <details className="datanestAiOverviewDisclosure">
+      <summary>
+        <span>
+          <b>AI Core overview</b>
+          <small>Project context, tools, certified memory and governed pipeline state</small>
+        </span>
+        <span className="datanestAiOverviewStatus">{contextStatus}</span>
+      </summary>
+      <section className={"datanestAiHero datanestAiHeroV2 "+(loading?"isWorking":"isReady")} aria-label="DataNest AI development command center">
       <div className="datanestAiHeroGrid" aria-hidden="true"/>
       <div className="datanestAiHeroGlow datanestAiHeroGlowOne" aria-hidden="true"/>
       <div className="datanestAiHeroGlow datanestAiHeroGlowTwo" aria-hidden="true"/>
@@ -385,6 +393,7 @@ export default function DataNestAiWorkspace({
         </div>
       </div>
     </section>
+    </details>
 
     <section className="datanestAiStatusCards" aria-label="DataNest AI operational status">
       <button type="button" className="datanestAiStatusCard" onClick={inspectContext}>
