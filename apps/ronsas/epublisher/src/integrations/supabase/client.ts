@@ -192,10 +192,16 @@ const storage={from(bucket:string){const prefix=`${bucket}/`;return {
 };}};
 
 function svgData(title:string,subtitle="Sovereign Local"){const esc=(s:string)=>s.replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"} as any)[c]);const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#090b1a"/><stop offset="1" stop-color="#25104a"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/><circle cx="1060" cy="140" r="110" fill="#7c3aed" opacity=".32"/><text x="80" y="330" fill="white" font-family="Arial" font-size="56" font-weight="700">${esc(title.slice(0,34))}</text><text x="82" y="392" fill="#d8c8ff" font-family="Arial" font-size="28">${esc(subtitle.slice(0,60))}</text><text x="82" y="620" fill="#a78bfa" font-family="Arial" font-size="20">Resonance Open Nova Â· generated locally</text></svg>`;return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;}
+function localServiceUrl(port:number,path:string){
+  const endpoint=new URL(path,window.location.origin);
+  endpoint.hostname="127.0.0.1";
+  endpoint.port=String(port);
+  return endpoint.toString();
+}
 async function localImage(body:any){
   const prompt=String(body?.imagePrompt||body?.prompt||body?.visual_prompt||body?.description||body?.name||"Resonance ePublisher image");
   const orientation=body?.orientation||"landscape";
-  const controller=new AbortController(); const timeout=window.setTimeout(()=>controller.abort(),120_000); let response:Response; try{response=await fetch("http://127.0.0.1:7865/v1/images/generate",{method:"POST",credentials:"omit",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt,orientation,width:768,height:512}),signal:controller.signal});}catch(error){if((error as Error)?.name==="AbortError")throw new Error("Local image generation timed out after 120 seconds");throw new Error("RONS local image service is unavailable on port 7865");}finally{window.clearTimeout(timeout);}
+  const controller=new AbortController(); const timeout=window.setTimeout(()=>controller.abort(),120_000); let response:Response; try{response=await fetch(localServiceUrl(7865,"/v1/images/generate"),{method:"POST",credentials:"omit",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt,orientation,width:768,height:512}),signal:controller.signal});}catch(error){if((error as Error)?.name==="AbortError")throw new Error("Local image generation timed out after 120 seconds");throw new Error("RONS local image service is unavailable on port 7865");}finally{window.clearTimeout(timeout);}
   const payload=await response.json().catch(()=>null);
   if(!response.ok||!payload?.imageUrl) throw new Error(payload?.error||`Local image service HTTP ${response.status}`);
   return payload;
@@ -229,7 +235,7 @@ export async function invokeLocalFunction(name:string,body:any={}):Promise<any>{
       }catch(error){console.warn("Free-cloud rewrite unavailable; falling back locally:",error);}
     }
     try{
-      const response=await fetch("http://127.0.0.1:7866/v1/rewrite",{method:"POST",credentials:"omit",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:sourceText,instruction})});
+      const response=await fetch(localServiceUrl(7866,"/v1/rewrite"),{method:"POST",credentials:"omit",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:sourceText,instruction})});
       const payload=await response.json().catch(()=>null);
       if(response.ok&&payload?.text)return {rewrittenText:payload.text,provider:payload.provider||"rons-local-ollama",model:payload.model,local:true};
     }catch{}

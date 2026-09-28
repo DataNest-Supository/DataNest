@@ -270,7 +270,10 @@ export default function UploadStep({ onNext }: StepProps) {
       }
 
       // Step 2: Transcribe locally on Ealiophin. No hosted AI provider is used.
-      const transcribeUrl = "http://127.0.0.1:7864/transcribe";
+      const transcribeEndpoint = new URL("/transcribe", window.location.origin);
+      transcribeEndpoint.hostname = "127.0.0.1";
+      transcribeEndpoint.port = "7864";
+      const transcribeUrl = transcribeEndpoint.toString();
       mark("transcribe:fetch:start", { url: transcribeUrl, mode: transcribeMode });
       const fetchT0 = performance.now();
       const response = await fetch(transcribeUrl, {
