@@ -39,5 +39,12 @@
   "displayName": "reson8.datanest.life",
   "canonicalHost": "reson8.datanest.life",
   "brandedUrl": "https://reson8.datanest.life/",
-  "brandedState": "reserved"
+  "brandedState": "wire-ready",
+  "wire": {
+    "source": "https://reson8.datanest.life/",
+    "target": "https://reson8.life/",
+    "mode": "redirect",
+    "applicationLayer": "ready",
+    "networkState": "dns-pending"
+  }
 }
