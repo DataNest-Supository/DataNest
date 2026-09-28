@@ -1,4 +1,4 @@
-# Resonance DataNest
+# reson8.datanest.life
 
 **Resonance DataNest** is the Resonance AppDev parent platform and web control plane. It governs product execution intent, promotion, evidence and lifecycle state while preserving separate source, backend and delivery authorities.
 
