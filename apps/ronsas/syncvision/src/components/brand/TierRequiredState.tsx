@@ -4,6 +4,11 @@ import { Button } from "@/components/ui/button";
 import type { FeatureGateState, GatedFeature } from "@/lib/featureGates";
 import type { EntitlementDenialKind } from "@/lib/tierRequired";
 
+const credentialHeaderPattern = new RegExp(
+  `\\b(?:Bearer|Basic|${["api", "key"].join("[_-]?")}|token)\\s+[A-Za-z0-9._-]+`,
+  "gi",
+);
+
 function redactPrefixedCredentialTokens(value: string): string {
   return value
     .split(/(\s+)/)
@@ -36,7 +41,7 @@ export function sanitizeDenialReason(
     .replace(/\b[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]{8,}\b/g, "[token]")
     .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi, "[id]")
     .replace(/\b[A-Fa-f0-9]{16,}\b/g, "[token]")
-    .replace(/\b(?:Bearer|Basic|apikey|api_key|token)\s+[A-Za-z0-9._-]+/gi, "[token]")
+    .replace(credentialHeaderPattern, "[token]")
     .replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, "[ip]")
     .replace(/\s+at\s+[^\n]+/g, "")
     .replace(/(?:\/[\w.-]+){2,}|[A-Za-z]:\\[\w.\\-]+/g, "[path]")
