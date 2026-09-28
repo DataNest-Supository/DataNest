@@ -76,7 +76,7 @@ jobs:
       - name: Verify deployed Next.js shell
         run: |
           curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors \
-            https://reson8.datanest.life/ \
+            https://datanest.life/ \
             -o /tmp/datanest-home.html
           grep -q "reson8.datanest.life" /tmp/datanest-home.html
           if ! grep -q 'class="authShell"' /tmp/datanest-home.html; then
@@ -87,20 +87,20 @@ jobs:
           PAGE_ASSET=$(grep -o '/_next/static/chunks/app/page-[^"]*\.js' /tmp/datanest-home.html | head -1)
           test -n "$PAGE_ASSET"
           curl --fail --silent --show-error --location --retry 5 --retry-delay 2 --retry-all-errors \
-            "https://reson8.datanest.life$PAGE_ASSET" \
+            "https://datanest.life$PAGE_ASSET" \
             -o /tmp/datanest-page.js
           test -s /tmp/datanest-page.js
       - name: Verify static health marker
         run: |
           curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors \
-            https://reson8.datanest.life/health.json \
+            https://datanest.life/health.json \
             -o /tmp/datanest-health.json
           grep -q '"ok":true' /tmp/datanest-health.json
           grep -q '"project":"Resonance DataNest"' /tmp/datanest-health.json
       - name: Verify runtime configuration
         run: |
           curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors \
-            https://reson8.datanest.life/runtime-config.js \
+            https://datanest.life/runtime-config.js \
             -o /tmp/runtime-config.js
           grep -q "https://sgqdmfgjbprsoqsmgigi.supabase.co" /tmp/runtime-config.js
           grep -q "sb_publishable_" /tmp/runtime-config.js
@@ -109,14 +109,14 @@ jobs:
         run: |
           for app in career-compass creative-studio epublisher lyricsync-studio scene-song-spark sovereign-forge syncvision; do
             curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors \
-              "https://reson8.datanest.life/apps/$app/" \
+              "https://datanest.life/apps/$app/" \
               -o "/tmp/$app.html"
             grep -qi "<html" "/tmp/$app.html"
           done
       - name: Verify release manifest
         run: |
           curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors \
-            https://reson8.datanest.life/release-manifest.json \
+            https://datanest.life/release-manifest.json \
             -o /tmp/release-manifest.json
           grep -q "\"frontendCommit\":\"$GITHUB_SHA\"" /tmp/release-manifest.json
           grep -q "\"databaseRelease\":\"add-mutation-recovery-observability\"" /tmp/release-manifest.json
@@ -136,6 +136,6 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Run rendered browser smoke tests
         env:
-          PLAYWRIGHT_BASE_URL: https://reson8.datanest.life
+          PLAYWRIGHT_BASE_URL: https://datanest.life
           DATANEST_APP_PATH: /
         run: npx playwright test tests/browser/auth.smoke.spec.ts tests/browser/home-optimization.spec.ts tests/browser/products.spec.ts tests/browser/datanest-ai-layout.spec.ts tests/browser/transcheduler-project-gantt.spec.ts
