@@ -19,13 +19,14 @@ test("DataNest AI command center prioritizes active work above decorative hero c
   assert.match(workspace,/className="datanestAiStatusCards"/);
   assert.match(workspace,/aria-label="DataNest AI operational status"/);
 
+  assert.match(app,/view!==\"ai\"&&workspaceTaskGuides\[view\]/);
   assert.match(workspace,/aria-label="Select active Job Manifest"/);
 
   assert.match(layout,/import "\.\/datanest-ai-optimized\.css";/);
   assert.match(css,/\.datanestAiHeroV2\s*\{[^}]*min-height:340px/s);
   assert.match(css,/\.datanestAiHeroV2 h2\s*\{[^}]*font-size:clamp\(40px,4\.4vw,64px\)/s);
   assert.match(css,/\.datanestAiStatusCards\s*\{/);
-  assert.match(css,/\.aiViewPhaseRail\s*\{/);
+  assert.match(css,/\.aiCommandGuide\s*\{/);
 });
 
 test("DataNest AI command center keeps responsive and reduced-motion safeguards",()=>{
@@ -49,15 +50,16 @@ test("DataNest shell keeps navigation compact and the active workspace cyan-led 
 });
 
 
-test("DataNest AI omits the redundant task guide and uses the compact AI phase rail",()=>{
-  const workspace=read("src/components/DataNestAiWorkspace.tsx");
+test("DataNest AI removes the duplicate task guide while keeping Job-first chat controls",()=>{
   const app=read("src/components/DataNestApp.tsx");
+  const workspace=read("src/components/DataNestAiWorkspace.tsx");
   const css=read("src/app/datanest-ai-optimized.css");
 
-  assert.match(app,/className=\{"workflowPhaseRail "\+\(view==="ai"\?"aiViewPhaseRail":""\)\}/);
-  assert.match(app,/!loadingCore&&view!=="ai"&&workspaceTaskGuides\[view\]/);
-  assert.doesNotMatch(app,/className=\{"workspaceTaskGuide "\+\(view==="ai"\?" aiCommandGuide":""\)\}/);
-  assert.match(workspace,/aria-label="Select active Job Manifest"/);
-  assert.match(css,/\.aiViewPhaseRail\s*\{/);
-  assert.match(css,/\.aiViewPhaseRail \.workflowPhaseSteps\s*\{/);
+  assert.match(app,/view!==\"ai\"&&workspaceTaskGuides\[view\]/);
+  assert.match(workspace,/id="datanest-ai-active-job"/);
+  assert.match(workspace,/className="datanestAiChatStage"/);
+  assert.match(workspace,/Focus chat/);
+  assert.match(css,/\.datanestAiJobPicker\s*\{/);
+  assert.match(css,/\.datanestAiCommandConsole \.datanestAiComposer\s*\{[^}]*order:40/s);
+  assert.match(css,/\.datanestAiOverviewDisclosure\s*\{/);
 });
