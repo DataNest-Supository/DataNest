@@ -13,7 +13,9 @@ test("DataNest-managed public delivery is canonical",()=>{
   assert.match(readme,/DataNest-managed/i);
   assert.match(readme,/GitHub Pages.*current public delivery target/i);
   assert.match(readme,/Supabase/i);
-  assert.match(readme,/Local development, recovery, and continuity/i);
+  assert.match(readme,/Local development and controlled testing/i);
+  assert.match(readme,/Dropbox.*\/DataNest-AI-Backups/i);
+  assert.match(readme,/Local PC backup hosting:\s*\*\*disabled\*\*/i);
   assert.doesNotMatch(readme,/## Production\s+\n\s*Node\/Windows:/);
 });
 
@@ -22,12 +24,14 @@ test("hosting remains replaceable infrastructure and local runtimes are not prod
   assert.match(deployment,/DataNest-managed/i);
   assert.match(deployment,/GitHub Pages/i);
   assert.match(deployment,/Supabase/i);
-  assert.match(deployment,/local development|recovery|controlled test|offline continuity/i);
+  assert.match(deployment,/local development and controlled testing/i);
+  assert.match(deployment,/Dropbox.*\/DataNest-AI-Backups/i);
+  assert.match(deployment,/Local PCs are not backup hosts/i);
   assert.match(deployment,/future delivery target.*does not change product ownership or governance/i);
 });
 
-test("legacy PowerShell launcher warns that it is recovery-only",()=>{
-  assert.match(launcher,/Write-Warning\s+["']Legacy local\/recovery launcher only\. Canonical production is DataNest-managed\.["']/);
+test("legacy PowerShell launcher is controlled-test only and delegates continuity to Dropbox",()=>{
+  assert.match(launcher,/Write-Warning\s+["']Legacy local\/controlled-test launcher only\. Backup continuity is Dropbox-managed; canonical production is DataNest-managed\.["']/);
 });
 
 test("RONSAS is never described as the DataNest control plane",()=>{
