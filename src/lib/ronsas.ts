@@ -23,16 +23,16 @@ export type RonsasStatus = {
     error?: string;
   };
   delivery: {
-    brandedUrl: string;
-    fallbackUrl: string;
+    provider: "GitHub Pages";
     operationalUrl: string;
-    ingress: {
+    publicDelivery: {
       ok: boolean;
       status: number | null;
       latencyMs: number;
       origin: string;
       error?: string;
     };
+    railwayRequired: false;
     hubRegistration: {
       ok: boolean;
       status: number | null;
@@ -77,10 +77,10 @@ export async function getRonsasStatus(): Promise<RonsasStatus> {
     !status.authority ||
     !status.hub ||
     !status.delivery ||
-    typeof status.delivery.brandedUrl !== "string" ||
-    typeof status.delivery.fallbackUrl !== "string" ||
+    status.delivery.provider !== "GitHub Pages" ||
     typeof status.delivery.operationalUrl !== "string" ||
-    !status.delivery.ingress ||
+    !status.delivery.publicDelivery ||
+    status.delivery.railwayRequired !== false ||
     !status.delivery.hubRegistration ||
     typeof status.delivery.hubRegistration.listed !== "boolean" ||
     !status.delivery.backupHost ||
