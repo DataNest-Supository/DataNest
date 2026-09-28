@@ -126,41 +126,7 @@ alter table public.product_surfaces enable row level security;
 alter table public.product_test_cases enable row level security;
 alter table public.product_test_runs enable row level security;
 
-create or replace function private.is_project_stakeholder(target_project uuid)
-returns boolean
-language sql
-stable
-security definer
-set search_path = private, public, auth
-as $$
-  select exists (
-    select 1
-    from public.stakeholder_profiles sp
-    where sp.project_id=target_project
-      and sp.user_id=auth.uid()
-      and sp.status='active'
-  );
-$$;
-
-revoke all on function private.is_project_stakeholder(uuid) from public;
-grant execute on function private.is_project_stakeholder(uuid) to authenticated, service_role;
-
-insert into public.stake_policies(project_id,updated_by)
-select p.id,pm.user_id
-from public.projects p
-join public.project_members pm on pm.project_id=p.id and pm.role='owner' and pm.status='active'
-where p.slug='resonance-datanest'
-on conflict (project_id) do nothing;
-
-insert into public.stakeholder_profiles(project_id,user_id,status,origin,first_accepted_at)
-select pm.project_id,pm.user_id,'active','owner',now()
-from public.project_members pm
-join public.projects p on p.id=pm.project_id
-where p.slug='resonance-datanest' and pm.role='owner' and pm.status='active'
-on conflict (project_id,user_id) do update
-set status='active',origin='owner',updated_at=now();
-
-create or replace function private.activate_stakeholder_from_collaborator()
+create or replace function private.is_project_stakeholder(target_project uuid)returns boolean language sql stable security definer set search_path=private,public,auth as $$ select exists(select 1 from public.stakeholder_profiles sp where sp.project_id=target_project and sp.user_id=auth.uid()and sp.status='active');$$;revoke all on function private.is_project_stakeholder(uuid)from public;grant execute on function private.is_project_stakeholder(uuid)to authenticated,service_role;insert into public.stake_policies(project_id,updated_by)select p.id,pm.user_id from public.projects p join public.project_members pm on pm.project_id=p.id and pm.role='owner' and pm.status='active' where p.slug='resonance-datanest' on conflict(project_id)do nothing;insert into public.stakeholder_profiles(project_id,user_id,status,origin,first_accepted_at)select pm.project_id,pm.user_id,'active','owner',now()from public.project_members pm join public.projects p on p.id=pm.project_id where p.slug='resonance-datanest' and pm.role='owner' and pm.status='active' on conflict(project_id,user_id)do update set status='active',origin='owner',updated_at=now();create or replace function private.activate_stakeholder_from_collaborator()
 returns trigger
 language plpgsql
 security definer
