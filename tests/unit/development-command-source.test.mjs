@@ -14,8 +14,9 @@ test("Development Command is an explicit cumulative working-memory channel",()=>
   assert.match(panel,/channelMode:"development_command"/);
   assert.match(gateway,/channelMode=String\(body\.channelMode\|\|""\)\.trim\(\)/);
   assert.match(gateway,/const developmentMode=channelMode==="development_command"&&!legalMode/);
-  assert.match(gateway,/trustState:developmentMode\?"WORKING_MEMORY":"UNCERTIFIED"/);
-  assert.match(gateway,/cumulativeWorkingMemory:developmentMode/);
+  assert.match(gateway,/trustState:workingMemoryStatus==="recorded"\?"WORKING_MEMORY":"UNCERTIFIED"/);
+  assert.match(gateway,/cumulativeWorkingMemory:workingMemoryStatus==="recorded"/);
+  assert.match(gateway,/workingMemoryStatus=recordedTurn\?"recorded":"not_recorded"/);
 });
 
 test("Development Command responses expose both advocacy positions plus synthesis",()=>{
@@ -40,4 +41,6 @@ test("cumulative working memory remains separated from Certified Memory and user
   assert.match(gateway,/if\(developmentMode\)\{[\s\S]*?recordDevelopmentWorkingMemory/);
   assert.match(gateway,/target_purpose:"external_provider_processing"/);
   assert.match(gateway,/service_authorize_ai_request/);
+  assert.match(gateway,/workingMemoryStatus="skipped_incomplete_response"/);
+  assert.match(gateway,/workingMemoryStatus="failed"/);
 });

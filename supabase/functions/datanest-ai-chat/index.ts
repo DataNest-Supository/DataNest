@@ -20,7 +20,7 @@ import { updateTrendCandidate } from "../_shared/datanestAiLearning.ts";
 import {
   buildDevelopmentCommandPrompt,
   formatDualAdvocacyResponse,
-  parseDualAdvocacyResponse,
+  parseCompleteDualAdvocacyResponse,
   type DualAdvocacyResponse
 } from "../_shared/dualAdvocacy.ts";
 
@@ -841,6 +841,8 @@ Deno.serve(async(request:Request)=>{
     let finalLearningEligible=false;
     let trendAnalysis:{status:"not_applicable"|"recorded"|"failed";candidateId?:string|null;trendKey?:string|null;evidenceCount?:number;error?:string}={status:"not_applicable"};
     let developmentDual:DualAdvocacyResponse|null=null;
+    let workingMemoryStatus:"not_applicable"|"not_recorded"|"recorded"|"skipped_incomplete_response"|"failed"=
+      developmentMode?"not_recorded":"not_applicable";
     let developmentProviderLabel:string|null=null;
     let developmentModelLabel:string|null=null;
 
@@ -927,7 +929,7 @@ Deno.serve(async(request:Request)=>{
             content_hash:fingerprint,
             metadata:{
               request_id:requestId,
-              trust_state:developmentMode?"working_memory":"uncertified",
+              trust_state:"uncertified",
               channel_mode:developmentMode?"development_command":"standard",
               product_mode:legalMode?"legal_eagle":"datanest_ai",
               jurisdiction:legalMode?jurisdiction:null,
@@ -1102,11 +1104,8 @@ Deno.serve(async(request:Request)=>{
                   outputTokens:ext.outputTokens
                 });
                 requestStatus="succeeded";
-                const content=developmentMode
-                  ?formatDualAdvocacyResponse(
-                      developmentDual=parseDualAdvocacyResponse(ext.content)
-                    )
-                  :ext.content;
+                developmentDual=developmentMode?parseCompleteDualAdvocacyResponse(ext.content):null;
+                const content=developmentDual?formatDualAdvocacyResponse(developmentDual):ext.content;
                 if(developmentMode){
                   developmentProviderLabel=connection.label;
                   developmentModelLabel=connection.model;
@@ -1253,11 +1252,8 @@ Deno.serve(async(request:Request)=>{
                     outputTokens:ext.outputTokens
                   });
                   requestStatus="succeeded";
-                  const content=developmentMode
-                  ?formatDualAdvocacyResponse(
-                      developmentDual=parseDualAdvocacyResponse(ext.content)
-                    )
-                  :ext.content;
+                  developmentDual=developmentMode?parseCompleteDualAdvocacyResponse(ext.content):null;
+                  const content=developmentDual?formatDualAdvocacyResponse(developmentDual):ext.content;
                 if(developmentMode){
                   developmentProviderLabel=connection.label;
                   developmentModelLabel=connection.model;
@@ -1329,7 +1325,7 @@ Deno.serve(async(request:Request)=>{
             content:provider.content,
             content_hash:contentHash,
             metadata:{
-              trust_state:developmentMode?"working_memory":"uncertified",
+              trust_state:"uncertified",
               channel_mode:developmentMode?"development_command":"standard",
               request_status:requestStatus,
               policy_version:policyVersion,
@@ -1369,8 +1365,11 @@ Deno.serve(async(request:Request)=>{
         try{
           if(developmentMode){
             trendAnalysis={status:"not_applicable"};
-            if(developmentDual&&outputEvent.traceId){
-              await recordDevelopmentWorkingMemory({
+            if(!developmentDual||!outputEvent.traceId){
+              workingMemoryStatus="skipped_incomplete_response";
+              return;
+            }
+            await recordDevelopmentWorkingMemory({
                 serviceClient,
                 projectId:job.project_id,
                 jobId:job.id,
@@ -1383,8 +1382,8 @@ Deno.serve(async(request:Request)=>{
                 dual:developmentDual,
                 providerLabel:developmentProviderLabel,
                 modelLabel:developmentModelLabel
-              });
-            }
+            });
+            workingMemoryStatus="recorded";
             return;
           }
 
@@ -1409,6 +1408,10 @@ Deno.serve(async(request:Request)=>{
             ?{status:"recorded",...trend}
             :{status:"not_applicable",...trend};
         }catch(trendError){
+          if(developmentMode){
+            workingMemoryStatus="failed";
+            return;
+          }
           trendAnalysis={
             status:"failed",
             error:trendError instanceof Error?trendError.message:"Trend analysis failed."
@@ -1417,11 +1420,24 @@ Deno.serve(async(request:Request)=>{
       }
     },{message});
 
+    if(developmentMode&&result.idempotent){
+      const {data:recordedTurn,error:recordedTurnError}=await serviceClient
+        .from("development_command_turns")
+        .select("id")
+        .eq("project_id",job.project_id)
+        .eq("user_id",user.id)
+        .eq("client_request_id",clientRequestId)
+        .maybeSingle();
+      if(recordedTurnError)throw recordedTurnError;
+      workingMemoryStatus=recordedTurn?"recorded":"not_recorded";
+    }
+
     return json({
       ...result,
-      trustState:developmentMode?"WORKING_MEMORY":"UNCERTIFIED",
+      trustState:workingMemoryStatus==="recorded"?"WORKING_MEMORY":"UNCERTIFIED",
       channelMode:developmentMode?"development_command":null,
-      cumulativeWorkingMemory:developmentMode,
+      cumulativeWorkingMemory:workingMemoryStatus==="recorded",
+      workingMemoryStatus,
       certifiedMemoryIds,
       requestStatus,
       trendAnalysis,

@@ -249,14 +249,21 @@ export default function DataNestAiChatPanel({
 
       const trend=(payload.trendAnalysis||{}) as Record<string,unknown>;
       const candidateId=String(trend.candidateId||"");
-      const workingMemory=String(payload.trustState||"")==="WORKING_MEMORY";
+      const workingMemoryStatus=String(payload.workingMemoryStatus||"");
       setNotice(
-        workingMemory
+        workingMemoryStatus==="recorded"
           ?"DataNest AI responded through cumulative Development Command working memory for "+requestJobCode+". Certified Memory remains separate."
+          :workingMemoryStatus==="skipped_incomplete_response"
+            ?"DataNest AI responded, but the answer did not contain both advocacy positions and a synthesis, so this turn was not added to working memory."
+          :workingMemoryStatus==="failed"||workingMemoryStatus==="not_recorded"
+            ?"DataNest AI responded, but this turn was not confirmed in cumulative working memory."
           :candidateId
             ?"DataNest AI responded and recorded this turn as UNCERTIFIED evidence. A repeated pattern was staged for governed learning review."
             :"DataNest AI responded and recorded this turn as traceable UNCERTIFIED evidence for "+requestJobCode+"."
       );
+      if(workingMemoryStatus==="failed"||workingMemoryStatus==="not_recorded"){
+        setError("Working memory could not be confirmed. You can send the command again to retry.");
+      }
       await onContextRefresh(nextSession);
       // Keep the returned answer until refreshed events contain its trace.
       // A failed refresh must not make a successful reply disappear.
@@ -315,7 +322,7 @@ export default function DataNestAiChatPanel({
 
     <div className="datanestAiConsoleGuardrail">
       <span aria-hidden="true">◇</span>
-      <p>Development commands accumulate in a separate working-memory lane. Authentication, provider authorization, audit traces, and Certified Memory governance remain intact.</p>
+      <p>Complete dual-advocacy replies accumulate in a separate working-memory lane. Authentication, provider authorization, audit traces, and Certified Memory governance remain intact.</p>
     </div>
 
     <div className="datanestAiQuickCommands" aria-label="Quick DataNest AI commands">

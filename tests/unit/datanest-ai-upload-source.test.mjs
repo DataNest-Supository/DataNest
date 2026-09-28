@@ -77,6 +77,6 @@ test("submission freezes the production project-learning policy for staging anal
 
 
 test("edge validation type-checks the upload gateway and file worker",()=>{
-  assert.match(edgeValidation,/\n\s*- datanest-ai-upload\n/);
-  assert.match(edgeValidation,/\n\s*- datanest-ai-file-worker\n/);
+  assert.match(edgeValidation,/\r?\n\s*- datanest-ai-upload\r?\n/);
+  assert.match(edgeValidation,/\r?\n\s*- datanest-ai-file-worker\r?\n/);
 });
