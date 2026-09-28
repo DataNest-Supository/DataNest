@@ -71,7 +71,7 @@ test("service evaluator is service-role only, idempotent, row-locked and atomica
   assert.match(source,/for update/i);
   assert.match(source,/execution_authority_decisions[\s\S]*trace_id/i);
   assert.match(source,/used_operations=used_operations\+1/i);
-  assert.match(source,/status\s*=\s*case\s+when\s+used_operations\s*\+\s*1\s*>=\s*max_operations\s+then\s*'exhausted'\s+else\s+status\s+end/i);
+  assert.match(source,/status=case when used_operations\+1>=max_operations then\s*'exhausted' else status end/i);
   assert.match(source,/revoke all on function public\.service_authorize_execution_v1\([^;]+from public,anon,authenticated/i);
   assert.match(source,/grant execute on function public\.service_authorize_execution_v1\([^;]+to service_role/i);
 });
