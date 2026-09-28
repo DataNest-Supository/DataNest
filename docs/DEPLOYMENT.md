@@ -1,6 +1,6 @@
 # Resonance DataNest Deployment
 
-Resonance DataNest uses a **DataNest-managed** production model. DataNest owns product lifecycle and deployment intent, GitHub owns source control/history/CI/evidence, and Supabase owns auth/data/storage/backend services. **GitHub Pages is the current public delivery target.**
+Resonance DataNest uses a **DataNest-managed** production model. DataNest owns product lifecycle and deployment intent, GitHub owns source control/history/CI/evidence, and Supabase owns auth/data/storage/backend services. The owned canonical domain is **https://reson8.life/**, with Lovable currently controlling the domain binding and GitHub Pages retained as the cutover fallback.
 
 Hosting is replaceable delivery infrastructure, not system authority. Moving to another delivery target must not redefine product ownership, governance, source authority, backend authority, or the RONSAS product relationship.
 
@@ -26,16 +26,20 @@ DataNest
 GitHub / CI
   builds, verifies and records evidence
       ↓
-GitHub Pages
-  current public delivery target
+reson8.life
+  owned canonical public origin
+  Lovable-managed domain binding
       ↓
 Supabase
   governed backend services
+
+GitHub Pages
+  project-path fallback during cutover
 ```
 
-The RONSAS integration is served by the JWT-protected Supabase Edge Function `ronsas-status@1` and probes the approved AppDev public Hub over HTTPS. DataNest does not require a loopback or machine-local RONSAS service for the web control plane. A RONSAS outage degrades only that integration surface and does not stop DataNest.
+The RONSAS integration is served by the JWT-protected Supabase Edge Function `ronsas-status@1` and probes the approved DataNest-hosted Hub at `https://reson8.life/apps/` over HTTPS. DataNest does not require a loopback or machine-local RONSAS service for the web control plane. A RONSAS outage degrades only that integration surface and does not stop DataNest.
 
-A future delivery target change does not change product ownership or governance.
+The root-domain cutover procedure is defined in `docs/RESON8_DOMAIN_CUTOVER.md`. A delivery-target change does not change product ownership or governance.
 
 ## Local development, recovery, controlled test, and offline continuity
 
