@@ -24,6 +24,12 @@ test("DataNest declares its canonical Reson8 ecosystem binding",()=>{
   assert.equal(contract.hubRegistration?.statusEndpoint,"https://reson8.life/api/public/app-status/health");
   assert.equal(contract.readiness?.contract,"ronsas-status@1");
   assert.equal(contract.readiness?.authenticated,true);
+  assert.equal(contract.backupHost?.provider,"Dropbox");
+  assert.equal(contract.backupHost?.path,"/DataNest-AI-Backups");
+  assert.equal(contract.backupHost?.role,"artifact-recovery");
+  assert.equal(contract.backupHost?.status,"active");
+  assert.equal(contract.backupHost?.servesApplication,false);
+  assert.equal(contract.backupHost?.localPcBackupHosting,false);
   assert.equal(contract.ingress?.state,"dns-pending");
   assert.equal(contract.ingress?.dns?.type,"CNAME");
   assert.equal(contract.ingress?.dns?.target,"r3sevmpy.up.railway.app");
