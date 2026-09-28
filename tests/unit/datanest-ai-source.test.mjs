@@ -287,7 +287,7 @@ test("DataNest AI chat distinguishes pending human turns and localizes visible t
   assert.match(chat,/const \[displayTimeZone,setDisplayTimeZone\]=useState\("UTC"\)/);
   assert.match(chat,/resolvedOptions\(\)\.timeZone\|\|"UTC"/);
   assert.match(chat,/pending=roleClass==="human"&&item\.trace_id==="DN-AI-pending"/);
-  assert.match(chat,/pending\?"SENDING":"UNCERTIFIED"/);
+  assert.match(chat,/pending\?"SENDING":dual\?"WORKING MEMORY":"UNCERTIFIED"/);
   assert.match(workspace,/formatDate\(selectedJob\.updated_at,displayTimeZone\)/);
   assert.match(css,/\.datanestAiCommandConsole \.datanestAiTurn\.human\.pending\{/);
   assert.match(css,/flex-direction:row-reverse/);

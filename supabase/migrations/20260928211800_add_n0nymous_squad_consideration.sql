@@ -1,13 +1,27 @@
 -- N0NYMOUS SQUAD consideration layer.
 -- Adds an anonymous, evidence-based consideration signal without exposing contributor identity.
 
-alter function private.get_project_impact_dashboard_v1(uuid) rename to get_project_impact_dashboard_base_v1(uuid);
+alter function private.get_project_impact_dashboard_v1(uuid) rename to get_project_impact_dashboard_base_v1;
 revoke all on function private.get_project_impact_dashboard_base_v1(uuid) from public;
 grant execute on function private.get_project_impact_dashboard_base_v1(uuid) to authenticated;
 
 create or replace function private.get_n0nymous_squad_consideration_v1(target_project uuid)
-returns jsonb language sql security definer set search_path=public,private
+returns jsonb language plpgsql security definer set search_path=public,private
 as $fn$
+begin
+  if to_regclass('public.ai_intake_events') is null
+     or to_regclass('public.ai_candidate_evidence') is null
+     or to_regclass('public.ai_learning_candidates') is null then
+    return jsonb_build_object(
+      'status','unavailable',
+      'criteria_version','n0nymous-v1',
+      'reason','governed_ai_staging_relations_unavailable',
+      'self',jsonb_build_object('eligible_for_consideration',false),
+      'candidate_pool','[]'::jsonb
+    );
+  end if;
+
+  return (
 with candidate_stage as (
   select ce.event_id,
     max(case c.lifecycle_state
@@ -94,7 +108,9 @@ select jsonb_build_object(
   'candidate_pool',
     case when private.has_project_role(target_project,array['owner','admin'])
       then (select data from pool) else '[]'::jsonb end
-);
+)
+  );
+end;
 $fn$;
 
 revoke all on function private.get_n0nymous_squad_consideration_v1(uuid) from public, authenticated;

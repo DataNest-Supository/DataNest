@@ -71,7 +71,7 @@ test("project learning is fail closed and snapshots decision evidence before imm
 
 test("Legal Eagle remains a hard non-learning mode",()=>{
   const source=fs.readFileSync(aiPath,"utf8");
-  assert.match(source,/const learningEligible=!legalMode&&reuseState==="project_learning_eligible"/);
+  assert.match(source,/const learningEligible=!legalMode&&!developmentMode&&reuseState==="project_learning_eligible"/);
   assert.match(source,/product_mode:legalMode\?"legal_eagle":"datanest_ai"/);
   assert.match(source,/target_hard_learning_exclusion:!learningEligible/);
   assert.match(source,/if\(legalMode\)\{\s*trendAnalysis=\{status:"not_applicable"\};\s*return;/);

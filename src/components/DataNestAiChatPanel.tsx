@@ -53,6 +53,21 @@ function writeSessionDraft(draftScope:string,jobId:string,value:string){
   }
 }
 
+function parseDualAdvocacy(content:string){
+  const angel="ANGEL'S ADVOCATE";
+  const devil="DEVIL'S ADVOCATE";
+  const synthesis="SYNTHESIS";
+  const a=content.indexOf(angel);
+  const d=content.indexOf(devil);
+  const y=content.indexOf(synthesis);
+  if(a<0||d<=a||y<=d)return null;
+  const angelsAdvocate=content.slice(a+angel.length,d).trim();
+  const devilsAdvocate=content.slice(d+devil.length,y).trim();
+  const combined=content.slice(y+synthesis.length).trim();
+  if(!angelsAdvocate||!devilsAdvocate||!combined)return null;
+  return {angelsAdvocate,devilsAdvocate,synthesis:combined};
+}
+
 const quickCommands=[
   {
     label:"Continue",
@@ -206,6 +221,7 @@ export default function DataNestAiChatPanel({
           sessionId:requestSessionId||null,
           clientRequestId:requestId,
           message,
+          channelMode:"development_command",
           clientTimeZone:Intl.DateTimeFormat().resolvedOptions().timeZone||"UTC"
         }
       });
@@ -233,10 +249,13 @@ export default function DataNestAiChatPanel({
 
       const trend=(payload.trendAnalysis||{}) as Record<string,unknown>;
       const candidateId=String(trend.candidateId||"");
+      const workingMemory=String(payload.trustState||"")==="WORKING_MEMORY";
       setNotice(
-        candidateId
-          ?"DataNest AI responded and recorded this turn as UNCERTIFIED evidence. A repeated pattern was staged for governed learning review."
-          :"DataNest AI responded and recorded this turn as traceable UNCERTIFIED evidence for "+requestJobCode+"."
+        workingMemory
+          ?"DataNest AI responded through cumulative Development Command working memory for "+requestJobCode+". Certified Memory remains separate."
+          :candidateId
+            ?"DataNest AI responded and recorded this turn as UNCERTIFIED evidence. A repeated pattern was staged for governed learning review."
+            :"DataNest AI responded and recorded this turn as traceable UNCERTIFIED evidence for "+requestJobCode+"."
       );
       await onContextRefresh(nextSession);
       // Keep the returned answer until refreshed events contain its trace.
@@ -296,7 +315,7 @@ export default function DataNestAiChatPanel({
 
     <div className="datanestAiConsoleGuardrail">
       <span aria-hidden="true">◇</span>
-      <p>Human and AI Companion inputs can influence this Job immediately. Project-wide memory remains governed and requires certification.</p>
+      <p>Development commands accumulate in a separate working-memory lane. Authentication, provider authorization, audit traces, and Certified Memory governance remain intact.</p>
     </div>
 
     <div className="datanestAiQuickCommands" aria-label="Quick DataNest AI commands">
@@ -365,7 +384,7 @@ export default function DataNestAiChatPanel({
         />
       </label>
       <div className="rowBetween datanestAiComposerFooter">
-        <small id="datanest-ai-composer-help" className="muted">{busy?"Your message is visible immediately while DataNest AI responds.":!contextReady?"Waiting for Job context. Your draft is preserved.":"Enter to send · Shift+Enter for a new line · active Job/session only until certified"}</small>
+        <small id="datanest-ai-composer-help" className="muted">{busy?"Your message is visible immediately while DataNest AI responds.":!contextReady?"Waiting for Job context. Your draft is preserved.":"Enter to send · Shift+Enter for a new line · Development Command working memory accumulates separately from Certified Memory"}</small>
         <button className="primaryButton datanestAiCommandButton" disabled={busy||!contextReady||!draft.trim()}>
           {busy?"DataNest AI reasoning…":"Send command"}
           <span aria-hidden="true">→</span>
@@ -381,7 +400,8 @@ export default function DataNestAiChatPanel({
         const roleGlyph=assistant?"AI":companion?"EXT":"YOU";
         const roleLabel=assistant?"DataNest AI":companion?"AI Companion":"You";
         const pending=roleClass==="human"&&item.trace_id==="DN-AI-pending";
-        return <article className={"datanestAiTurn "+roleClass+(pending?" pending":"")} key={item.id}>
+        const dual=assistant?parseDualAdvocacy(item.content):null;
+        return <article className={"datanestAiTurn "+roleClass+(pending?" pending":"")+(dual?" dualAdvocacy":"")} key={item.id}>
           <div className="rowBetween">
             <div className="datanestAiTurnIdentity">
               <span className="datanestAiTurnGlyph" aria-hidden="true">{roleGlyph}</span>
@@ -390,9 +410,25 @@ export default function DataNestAiChatPanel({
                 <small>{jobCode+" · "+formatDate(item.created_at,displayTimeZone)}</small>
               </div>
             </div>
-            <span className={pending?"badge":"badge warn"} aria-label={pending?"Message sending":"Uncertified evidence"}>{pending?"SENDING":"UNCERTIFIED"}</span>
+            <span
+              className={pending?"badge":dual?"badge good":"badge warn"}
+              aria-label={pending?"Message sending":dual?"Cumulative Development Command working memory":"Uncertified evidence"}
+            >{pending?"SENDING":dual?"WORKING MEMORY":"UNCERTIFIED"}</span>
           </div>
-          <p>{item.content}</p>
+          {dual?<div className="datanestAiAdvocacyGrid">
+            <section className="datanestAiAdvocacyCard angel">
+              <small>ANGEL&apos;S ADVOCATE</small>
+              <p>{dual.angelsAdvocate}</p>
+            </section>
+            <section className="datanestAiAdvocacyCard devil">
+              <small>DEVIL&apos;S ADVOCATE</small>
+              <p>{dual.devilsAdvocate}</p>
+            </section>
+            <section className="datanestAiAdvocacySynthesis">
+              <small>SYNTHESIS</small>
+              <p>{dual.synthesis}</p>
+            </section>
+          </div>:<p>{item.content}</p>}
           <div className="manifestMeta">
             <span>{item.trace_id}</span>
             {item.source_provider&&<span>{item.source_provider}</span>}
@@ -403,14 +439,14 @@ export default function DataNestAiChatPanel({
         <div className="datanestAiReasoningCore" aria-hidden="true">AI</div>
         <div className="datanestAiReasoningCopy">
           <b>DataNest AI is reasoning</b>
-          <span>Binding the command to {jobCode}, evaluating governed context, and preparing a traceable response.</span>
+          <span>Binding the command to {jobCode}, loading cumulative working context, and preparing both advocacy positions.</span>
           <div className="datanestAiReasoningPulse" aria-hidden="true"><i/><i/><i/><i/><i/></div>
         </div>
       </div>}
       {!visibleEvents.length&&!busy&&<div className="emptyState datanestAiConsoleEmpty">
         <div className="datanestAiConsoleEmptyCore" aria-hidden="true">AI</div>
         <h3>{contextReady?"DataNest AI is ready":"Waiting for Job context"}</h3>
-        <p>{contextReady?"Issue a development command above. DataNest will bind it to this Job and trace the interaction before inference.":"You can prepare a draft while context loads. Sending becomes available once this Job context is ready."}</p>
+        <p>{contextReady?"Issue a development command above. DataNest will bind it to this Job and answer with Angel's Advocate, Devil's Advocate, and a synthesis.":"You can prepare a draft while context loads. Sending becomes available once this Job context is ready."}</p>
       </div>}
     </div>
   </section>;
