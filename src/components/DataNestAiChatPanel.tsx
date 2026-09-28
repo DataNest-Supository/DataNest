@@ -276,18 +276,26 @@ export default function DataNestAiChatPanel({
 
       const trend=(payload.trendAnalysis||{}) as Record<string,unknown>;
       const candidateId=String(trend.candidateId||"");
-      const workingMemory=String(payload.trustState||"")==="WORKING_MEMORY";
+      const workingMemoryStatus=String(payload.workingMemoryStatus||"");
+      const workingMemory=workingMemoryStatus==="recorded";
       const contributionTracking=(payload.contributionTracking||{}) as Record<string,unknown>;
       const contributionStatus=String(contributionTracking.status||"not_applicable");
       setNotice(
-        contributionStatus==="failed"
-          ?"DataNest AI retained this "+expertise.label+" command in cumulative working memory, but governed contribution verification intake did not stage. Impact scoring will exclude it until intake succeeds."
-          :workingMemory
-            ?"DataNest AI retained this "+expertise.label+" command in cumulative working memory and routed it into governed contribution verification and project-impact tracking for "+requestJobCode+"."
-            :candidateId
-              ?"DataNest AI routed this "+expertise.label+" contribution into governed verification and recorded a repeated trend signal."
-              :"DataNest AI routed this "+expertise.label+" contribution into governed verification with traceable evidence for "+requestJobCode+"."
+        workingMemoryStatus==="skipped_incomplete_response"
+          ?"DataNest AI responded, but the answer did not contain both advocacy positions and a synthesis, so this turn was not added to working memory."
+          :workingMemoryStatus==="failed"||workingMemoryStatus==="not_recorded"
+            ?"DataNest AI responded, but this turn was not confirmed in cumulative working memory."
+            :contributionStatus==="failed"
+              ?"DataNest AI retained this "+expertise.label+" command in cumulative working memory, but governed contribution verification intake did not stage. Impact scoring will exclude it until intake succeeds."
+              :workingMemory
+                ?"DataNest AI retained this "+expertise.label+" command in cumulative working memory and routed it into governed contribution verification and project-impact tracking for "+requestJobCode+"."
+                :candidateId
+                  ?"DataNest AI routed this "+expertise.label+" contribution into governed verification and recorded a repeated trend signal."
+                  :"DataNest AI routed this "+expertise.label+" contribution into governed verification with traceable evidence for "+requestJobCode+"."
       );
+      if(workingMemoryStatus==="failed"||workingMemoryStatus==="not_recorded"){
+        setError("Working memory could not be confirmed. You can send the command again to retry.");
+      }
       await onContextRefresh(nextSession);
       // Keep the returned answer until refreshed events contain its trace.
       // A failed refresh must not make a successful reply disappear.
@@ -346,7 +354,7 @@ export default function DataNestAiChatPanel({
 
     <div className="datanestAiConsoleGuardrail">
       <span aria-hidden="true">◇</span>
-      <p>Development commands accumulate in a separate working-memory lane. Authentication, provider authorization, audit traces, and Certified Memory governance remain intact.</p>
+      <p>Complete dual-advocacy replies accumulate in a separate working-memory lane. Authentication, provider authorization, audit traces, and Certified Memory governance remain intact.</p>
     </div>
 
     <div className="datanestAiQuickCommands" aria-label="Quick DataNest AI commands">

@@ -30,7 +30,7 @@ export function buildDevelopmentCommandPrompt(input:{
   ].join("\n\n");
 }
 
-export function parseDualAdvocacyResponse(raw:string):DualAdvocacyResponse{
+export function parseCompleteDualAdvocacyResponse(raw:string):DualAdvocacyResponse|null{
   const trimmed=raw.trim();
   const unfenced=trimmed.replace(/^\`\`\`(?:json)?\s*/i,"").replace(/\s*\`\`\`$/,"").trim();
   try{
@@ -40,8 +40,12 @@ export function parseDualAdvocacyResponse(raw:string):DualAdvocacyResponse{
     const synthesis=clean(value.synthesis);
     if(angelsAdvocate&&devilsAdvocate&&synthesis)return {angelsAdvocate,devilsAdvocate,synthesis};
   }catch{}
-  return {
-    angelsAdvocate:trimmed,
+  return null;
+}
+
+export function parseDualAdvocacyResponse(raw:string):DualAdvocacyResponse{
+  return parseCompleteDualAdvocacyResponse(raw)||{
+    angelsAdvocate:raw.trim(),
     devilsAdvocate:"A distinct opposing analysis was not returned.",
     synthesis:"Re-run the command to obtain the complete dual-advocacy response."
   };
