@@ -22,6 +22,7 @@ import {
   buildLegalEaglePrompt,
   formatDualAdvocacyResponse,
   parseCompleteDualAdvocacyResponse,
+  parseDualAdvocacyResponse,
   type DualAdvocacyResponse
 } from "../_shared/dualAdvocacy.ts";
 
@@ -1114,13 +1115,10 @@ Deno.serve(async(request:Request)=>{
                   outputTokens:ext.outputTokens
                 });
                 requestStatus="succeeded";
+                developmentDual=developmentMode?parseCompleteDualAdvocacyResponse(ext.content):null;
                 const content=legalMode
                   ?formatDualAdvocacyResponse(parseDualAdvocacyResponse(ext.content))
-                  :developmentMode
-                    ?formatDualAdvocacyResponse(
-                        developmentDual=parseCompleteDualAdvocacyResponse(ext.content)
-                      )
-                    :ext.content;
+                  :developmentDual?formatDualAdvocacyResponse(developmentDual):ext.content;
                 if(developmentMode){
                   developmentProviderLabel=connection.label;
                   developmentModelLabel=connection.model;
@@ -1267,13 +1265,10 @@ Deno.serve(async(request:Request)=>{
                     outputTokens:ext.outputTokens
                   });
                   requestStatus="succeeded";
+                  developmentDual=developmentMode?parseCompleteDualAdvocacyResponse(ext.content):null;
                   const content=legalMode
                   ?formatDualAdvocacyResponse(parseDualAdvocacyResponse(ext.content))
-                  :developmentMode
-                    ?formatDualAdvocacyResponse(
-                        developmentDual=parseDualAdvocacyResponse(ext.content)
-                      )
-                    :ext.content;
+                  :developmentDual?formatDualAdvocacyResponse(developmentDual):ext.content;
                 if(developmentMode){
                   developmentProviderLabel=connection.label;
                   developmentModelLabel=connection.model;
