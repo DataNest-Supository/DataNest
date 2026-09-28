@@ -25,7 +25,14 @@ export type RonsasStatus = {
   delivery: {
     canonicalName: "reson8.datanest.life";
     brandedUrl: "https://reson8.datanest.life/";
-    brandedState: "reserved";
+    brandedState: "wire-ready";
+    wire: {
+      source: "https://reson8.datanest.life/";
+      target: "https://reson8.life/";
+      mode: "redirect";
+      applicationLayer: "ready";
+      networkState: "dns-pending";
+    };
     provider: "GitHub Pages";
     operationalUrl: string;
     publicDelivery: {
@@ -82,7 +89,12 @@ export async function getRonsasStatus(): Promise<RonsasStatus> {
     !status.delivery ||
     status.delivery.canonicalName !== "reson8.datanest.life" ||
     status.delivery.brandedUrl !== "https://reson8.datanest.life/" ||
-    status.delivery.brandedState !== "reserved" ||
+    status.delivery.brandedState !== "wire-ready" ||
+    !status.delivery.wire ||
+    status.delivery.wire.source !== "https://reson8.datanest.life/" ||
+    status.delivery.wire.target !== "https://reson8.life/" ||
+    status.delivery.wire.mode !== "redirect" ||
+    status.delivery.wire.applicationLayer !== "ready" ||
     status.delivery.provider !== "GitHub Pages" ||
     status.delivery.railwayRequired !== false ||
     typeof status.delivery.operationalUrl !== "string" ||
