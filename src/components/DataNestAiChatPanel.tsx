@@ -25,9 +25,9 @@ type Props = {
   setError:(value:string)=>void;
 };
 
-function formatDate(value:string){
+function formatDate(value:string,timeZone:string){
   return new Intl.DateTimeFormat(undefined,{
-    month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"UTC",timeZoneName:"short"
+    month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit",timeZone,timeZoneName:"short"
   }).format(new Date(value));
 }
 
@@ -99,6 +99,7 @@ export default function DataNestAiChatPanel({
   setError
 }:Props){
   const [draft,setDraft]=useState("");
+  const [displayTimeZone,setDisplayTimeZone]=useState("UTC");
   const [busyJobs,setBusyJobs]=useState<Set<string>>(()=>new Set());
   const [optimisticTurn,setOptimisticTurn]=useState<DataNestAiEvent|null>(null);
   const [returnedTurn,setReturnedTurn]=useState<DataNestAiEvent|null>(null);
@@ -109,6 +110,10 @@ export default function DataNestAiChatPanel({
   const composerRef=useRef<HTMLTextAreaElement|null>(null);
   const transcriptRef=useRef<HTMLDivElement|null>(null);
   const busy=busyJobs.has(draftIdentity);
+
+  useEffect(()=>{
+    setDisplayTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone||"UTC");
+  },[]);
 
   useEffect(()=>{
     activeDraftIdentityRef.current=draftIdentity;
@@ -374,17 +379,18 @@ export default function DataNestAiChatPanel({
         const companion=item.source_type==="ai_companion";
         const roleClass=assistant?"assistant":companion?"companion":"human";
         const roleGlyph=assistant?"AI":companion?"EXT":"YOU";
-        const roleLabel=assistant?"DataNest AI":companion?"AI Companion":"Human development input";
-        return <article className={"datanestAiTurn "+roleClass} key={item.id}>
+        const roleLabel=assistant?"DataNest AI":companion?"AI Companion":"You";
+        const pending=roleClass==="human"&&item.trace_id==="DN-AI-pending";
+        return <article className={"datanestAiTurn "+roleClass+(pending?" pending":"")} key={item.id}>
           <div className="rowBetween">
             <div className="datanestAiTurnIdentity">
               <span className="datanestAiTurnGlyph" aria-hidden="true">{roleGlyph}</span>
               <div>
                 <b>{roleLabel}</b>
-                <small>{jobCode+" · "+formatDate(item.created_at)}</small>
+                <small>{jobCode+" · "+formatDate(item.created_at,displayTimeZone)}</small>
               </div>
             </div>
-            <span className="badge warn">UNCERTIFIED</span>
+            <span className={pending?"badge":"badge warn"} aria-label={pending?"Message sending":"Uncertified evidence"}>{pending?"SENDING":"UNCERTIFIED"}</span>
           </div>
           <p>{item.content}</p>
           <div className="manifestMeta">

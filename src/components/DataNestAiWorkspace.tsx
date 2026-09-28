@@ -48,9 +48,9 @@ function jobCode(job:Job){
   return "JOB-"+String(job.job_number).padStart(5,"0");
 }
 
-function formatDate(value:string){
+function formatDate(value:string,timeZone:string){
   return new Intl.DateTimeFormat(undefined,{
-    month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"UTC",timeZoneName:"short"
+    month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit",timeZone,timeZoneName:"short"
   }).format(new Date(value));
 }
 
@@ -67,6 +67,7 @@ export default function DataNestAiWorkspace({
   onActiveSessionChange
 }:Props){
   const [jobs,setJobs]=useState<Job[]>([]);
+  const [displayTimeZone,setDisplayTimeZone]=useState("UTC");
   const [selectedJobId,setSelectedJobId]=useState("");
   const [sessionId,setSessionId]=useState("");
   const [context,setContext]=useState<ContextResponse|null>(null);
@@ -82,6 +83,10 @@ export default function DataNestAiWorkspace({
   const sessionKey=useCallback((jobId:string)=>
     projectId+":"+currentUserId+":"+jobId
   ,[projectId,currentUserId]);
+
+  useEffect(()=>{
+    setDisplayTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone||"UTC");
+  },[]);
 
   const selectedJob=useMemo(
     ()=>jobs.find(job=>job.id===selectedJobId)||null,
@@ -461,7 +466,7 @@ export default function DataNestAiWorkspace({
           <div className="manifestMeta">
             <span>{"Priority "+selectedJob.priority}</span>
             <span>{selectedJob.required_capabilities?.join(", ")||"chat"}</span>
-            <span>{"Updated "+formatDate(selectedJob.updated_at)}</span>
+            <span>{"Updated "+formatDate(selectedJob.updated_at,displayTimeZone)}</span>
             <span>{sessionId?"Session "+sessionId.slice(0,8):"Session establishing…"}</span>
           </div>
           <div className="rowActions">
