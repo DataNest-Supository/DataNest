@@ -9,7 +9,9 @@ permissions:
   contents: read
 
 concurrency:
-  group: datanest-ai-certification-staging
+  # Isolate certification concurrency per pull request so unrelated validation cannot
+  # leave a newly queued certification run without a runner before it creates a job.
+  group: datanest-ai-certification-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: false
 
 jobs:
