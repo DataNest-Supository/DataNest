@@ -7,7 +7,7 @@ test("renders the signed-out application without uncaught browser errors", async
   page.on("pageerror", (error) => browserErrors.push(error.message));
 
   await page.goto(appPath);
-  await expect(page.getByRole("heading", { name: "reson8.datanest.life" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "DataNest" })).toBeVisible();
   await expect(page.getByLabel("Email")).toBeVisible();
   await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
   expect(browserErrors).toEqual([]);
@@ -43,7 +43,7 @@ test("failed authentication clears the busy state and reports an error", async (
 test("keeps the sign-in interface usable on a mobile viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(appPath);
-  await expect(page.getByRole("heading", { name: "reson8.datanest.life" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "DataNest" })).toBeVisible();
   await expect(page.getByLabel("Email")).toBeVisible();
   await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
 });
@@ -101,7 +101,7 @@ test("expired stored session returns to a recoverable auth state", async ({ page
 
   await page.goto(appPath);
   await expect(
-    page.getByRole("heading", { name: /reson8\.datanest\.life|Connection problem/ })
+    page.getByRole("heading", { name: /DataNest|Connection problem/ })
   ).toBeVisible();
   await expect(page.locator(".authShell")).toBeVisible();
 });
