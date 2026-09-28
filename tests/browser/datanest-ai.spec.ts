@@ -22,6 +22,17 @@ async function openWorkspace(page:import("@playwright/test").Page,label:string){
   await expect(dialog).toBeHidden();
 }
 
+async function selectPrimaryAiJob(page:import("@playwright/test").Page){
+  const activeJob=page.getByLabel("Active Job context",{exact:true});
+  await expect(activeJob).toBeVisible();
+  const primary=activeJob.locator("option").filter({hasText:/· DataNest AI E2E Job$/}).first();
+  const primaryId=await primary.getAttribute("value");
+  if(!primaryId)throw new Error("Primary DataNest AI E2E Job fixture is required.");
+  await activeJob.selectOption(primaryId);
+  await expect(activeJob).toHaveValue(primaryId);
+  await expect(activeJob.locator("option:checked")).toHaveText(/· DataNest AI E2E Job$/);
+}
+
 test("quick switch searches workspaces and navigates with Ctrl+K",async({page})=>{
   await signIn(page);
 
@@ -205,9 +216,7 @@ test("mobile TranScheduler status filter uses a compact select",async({page})=>{
 test("human input is traced and remains uncertified",async({page})=>{
   await signIn(page);
   await openWorkspace(page,"DataNest AI");
-  const activeJob=page.getByLabel("Active Job context",{exact:true});
-  await expect(activeJob).toBeVisible();
-  await expect(activeJob.locator("option:checked")).toContainText("DataNest AI E2E Job");
+  await selectPrimaryAiJob(page);
 
   const message="Keep DataNest AI trace IDs visible on every governed turn.";
   await page.getByPlaceholder(/Ask DataNest AI to analyze/i).fill(message);
@@ -216,6 +225,9 @@ test("human input is traced and remains uncertified",async({page})=>{
   await expect(page.getByText(message,{exact:true})).toBeVisible();
   await expect(page.getByText("UNCERTIFIED",{exact:true}).last()).toBeVisible();
   await expect(page.getByText(/DN-AI-/).last()).toBeVisible();
+  const governance=page.locator("#datanest-ai-governance-tools");
+  await governance.locator("summary").first().click();
+  await expect(governance).toHaveAttribute("open","");
   await expect(page.getByLabel("Certified Memory")).toBeVisible();
   await expect(page.getByLabel("Learning & Certification")).toBeVisible();
 });
@@ -223,9 +235,7 @@ test("human input is traced and remains uncertified",async({page})=>{
 test("AI Companion return becomes uncertified evidence in the selected Job",async({page})=>{
   await signIn(page);
   await openWorkspace(page,"DataNest AI");
-  const activeJob=page.getByLabel("Active Job context",{exact:true});
-  await expect(activeJob).toBeVisible();
-  await expect(activeJob.locator("option:checked")).toContainText("DataNest AI E2E Job");
+  await selectPrimaryAiJob(page);
 
   const assistant=page.getByRole("button",{name:"AI assistant",exact:true});
   await expect(assistant).toBeVisible();
