@@ -20,6 +20,9 @@ const manifest={
     ronsasStatus:process.env.DATANEST_EDGE_RONSAS_STATUS || "ronsas-status@1"
   },
   supabaseProject:"sgqdmfgjbprsoqsmgigi",
+  publicOrigin:process.env.DATANEST_PUBLIC_ORIGIN || "",
+  basePath:process.env.NEXT_PUBLIC_BASE_PATH ?? "",
+  deliveryTarget:process.env.DATANEST_DELIVERY_TARGET || "github-pages",
   generatedAt:new Date().toISOString()
 };
 mkdirSync(dirname(target),{recursive:true});
