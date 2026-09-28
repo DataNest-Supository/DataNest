@@ -35,7 +35,7 @@ This is an explicit DataNest runtime migration. It does not claim that the unava
 
 Dropbox `/DataNest-AI-Backups` is the governed backup-artifact host for DataNest/RONSAS continuity material. Local PCs are no longer backup hosts or continuity authorities. They may still run development, controlled tests, and hardware-bound optional services, but recovery artifacts and release backups are governed in Dropbox.
 
-Dropbox is backup/recovery storage rather than a production web origin. GitHub Pages remains the operational web fallback and Railway remains the branded Reson8 ingress.
+Dropbox is backup/recovery storage rather than a production web origin. GitHub Pages is the canonical public DataNest delivery target. Railway is not required by DataNest.
 
 ## DataNest-native local execution control plane
 
