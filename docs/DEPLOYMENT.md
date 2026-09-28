@@ -41,7 +41,7 @@ A future delivery target change does not change product ownership or governance.
 
 Dropbox `/DataNest-AI-Backups` is the governed backup-artifact host. Local PCs are not backup hosts and are not continuity authorities. Dropbox stores governed recovery packages, manifests, and release artifacts; it does not serve the production web application.
 
-GitHub Pages remains the operational web fallback, while Railway provides the branded Reson8 ingress.
+GitHub Pages is the operational and canonical public web delivery target. Railway is not required by DataNest. A future branded alias may be added through replaceable edge/DNS infrastructure without changing source, backend, backup, or governance authority.
 
 ## Local development and controlled testing
 
@@ -97,6 +97,6 @@ docker run --rm -p 3000:3000 \
 
 ## Replaceable delivery targets
 
-Railway, Vercel, Render, Fly.io, Azure Container Apps, AWS, a Windows/Linux VM, or another compatible target can be evaluated as future delivery infrastructure. Using one does not make it source, backend, product or governance authority.
+Vercel, Render, Fly.io, Azure Container Apps, AWS, a Windows/Linux VM, or another compatible target can be evaluated as future delivery infrastructure. Railway is not part of the current DataNest delivery path. Using any delivery provider does not make it source, backend, product or governance authority.
 
 For Supabase Auth passwordless links, add the final public application origin to the allowed redirect URLs in Supabase Auth before relying on magic-link sign-in.
