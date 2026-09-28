@@ -30,17 +30,11 @@ Only HTTPS runtime-config sources hosted by the DataNest GitHub Pages authority 
 
 ## Hosting
 
-Preferred target:
+Provisioned target:
 
-`datanest.reson8.life -> standalone DataNest deployment`
+`datanest.reson8.life -> Railway branded ingress -> canonical DataNest GitHub Pages release`
 
-The current Railway workspace is at its Free-plan resource provisioning limit, so a new DataNest service cannot be created there without either:
-
-1. freeing an existing service slot,
-2. increasing Railway capacity, or
-3. using another deployment provider.
-
-Do not repurpose a live Hub or application fallback service just to obtain a slot. Any retirement or repurposing of validation infrastructure should be an explicit infrastructure decision.
+The ingress uses the former validation-only `nova-task4-validation` service. No live Hub or application fallback service was repurposed. DataNest source/governance authority remains the DataNest repository; Railway is only the branded edge/proxy layer.
 
 ## Hub registry
 
