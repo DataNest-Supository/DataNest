@@ -14,12 +14,12 @@ test("DataNest AI command center prioritizes active work above decorative hero c
 
   assert.match(workspace,/className="datanestAiCommandSummary"/);
   assert.match(workspace,/Current objective/);
-  assert.match(workspace,/Open AI workspace/);
+  assert.match(workspace,/Focus chat/);
   assert.match(workspace,/Inspect context/);
   assert.match(workspace,/className="datanestAiStatusCards"/);
   assert.match(workspace,/aria-label="DataNest AI operational status"/);
 
-  assert.match(app,/className=\{"workspaceTaskGuide "\+\(view==="ai"\?" aiCommandGuide":""\)\}/);
+  assert.match(app,/view!==\"ai\"&&workspaceTaskGuides\[view\]/);
   assert.match(workspace,/aria-label="Select active Job Manifest"/);
 
   assert.match(layout,/import "\.\/datanest-ai-optimized\.css";/);
@@ -50,15 +50,16 @@ test("DataNest shell keeps navigation compact and the active workspace cyan-led 
 });
 
 
-test("DataNest AI task guide opens the active Job selector and falls back to UNIFI when no Job exists",()=>{
+test("DataNest AI removes the duplicate task guide while keeping Job-first chat controls",()=>{
   const app=read("src/components/DataNestApp.tsx");
+  const workspace=read("src/components/DataNestAiWorkspace.tsx");
   const css=read("src/app/datanest-ai-optimized.css");
 
-  assert.match(app,/className="workspaceTaskGuideAction"/);
-  assert.match(app,/>Select Job Manifest <span aria-hidden="true">→<\/span><\/button>/);
-  assert.match(app,/document\.getElementById\("datanest-ai-active-job"\)/);
-  assert.match(app,/if\(!target\)\{\s*setView\("unifi"\);\s*return;\s*\}/s);
-  assert.match(app,/prefers-reduced-motion: reduce/);
-  assert.match(css,/\.workspaceTaskGuideAction\s*\{/);
-  assert.match(css,/\.workspaceTaskGuideAction:focus-visible/);
+  assert.match(app,/view!==\"ai\"&&workspaceTaskGuides\[view\]/);
+  assert.match(workspace,/id="datanest-ai-active-job"/);
+  assert.match(workspace,/className="datanestAiChatStage"/);
+  assert.match(workspace,/Focus chat/);
+  assert.match(css,/\.datanestAiJobPicker\s*\{/);
+  assert.match(css,/\.datanestAiCommandConsole \.datanestAiComposer\s*\{[^}]*order:40/s);
+  assert.match(css,/\.datanestAiOverviewDisclosure\s*\{/);
 });
