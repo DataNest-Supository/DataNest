@@ -54,6 +54,9 @@ jobs:
       - name: Build production static export
         run: npm run build
 
+      - name: Bundle RONSAS apps for browser verification
+        run: node scripts/build-ronsas-pages.mjs
+
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
