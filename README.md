@@ -11,7 +11,7 @@ It combines two first-class tools:
 
 **reson8.datanest.life** is the canonical branded DataNest name.
 
-The branded hostname is intentionally independent of prior provider metadata. Until its DNS/edge binding is activated, the live operational endpoint remains GitHub Pages.
+The branded hostname is intentionally independent of prior provider metadata. Its application-layer wire is configured to redirect `https://reson8.datanest.life/` to `https://reson8.life/`. Until DNS/edge binding is activated, the live operational endpoint remains GitHub Pages.
 
 ## Live web UI
 
