@@ -48,7 +48,7 @@ test("report-only external findings do not override existing provider authorizat
   assert.match(source,/embeddedResponse\(job,message,productMode,jurisdiction,clientTimeZone\)/);
 });
 
-test("project learning is fail closed regardless of report-only rollout and stamps decision evidence before trends",()=>{
+test("project learning is fail closed and snapshots decision evidence before immutable intake trends",()=>{
   const source=fs.readFileSync(aiPath,"utf8");
   const learning=source.indexOf('target_purpose:"project_learning"');
   const stamp=source.indexOf("learning_eligible:finalLearningEligible");
@@ -60,9 +60,9 @@ test("project learning is fail closed regardless of report-only rollout and stam
   assert.match(source,/target_subject_type:"job"/);
   assert.match(source,/target_subject_id:job\.id/);
   assert.match(source,/target_requested_operation:"reuse"/);
-  assert.match(source,/target_trace_id:String\(inputEvent\.traceId\|\|stagedInputTraceId\)/);
+  assert.match(source,/target_trace_id:traceId/);
   assert.match(source,/target_hard_learning_exclusion:!learningEligible/);
-  assert.match(source,/const finalLearningEligible=learningEligible&&String\(learningPolicy\.outcome\|\|"deny"\)==="allow"/);
+  assert.match(source,/finalLearningEligible=\s*!learningPolicyErrorMessage\s*&&\s*learningEligible\s*&&\s*String\(learningPolicy\.outcome\|\|"deny"\)==="allow"/);
   assert.match(source,/decision_record_id:learningPolicy\.decision_record_id/);
   assert.match(source,/effective_reuse_state:learningPolicy\.reuse_state/);
   assert.match(source,/policy_version:learningPolicy\.policy_version\|\|policyVersion/);
