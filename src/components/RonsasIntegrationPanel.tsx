@@ -49,6 +49,16 @@ export default function RonsasIntegrationPanel() {
 
   const status = state.status;
   const hubState = status?.hub.ok ? "ONLINE" : state.kind === "checking" ? "CHECKING" : "DEGRADED";
+  const ingressState = status?.delivery.ingress.ok
+    ? "LIVE"
+    : state.kind === "checking"
+      ? "CHECKING"
+      : "FALLBACK";
+  const hubListingState = status?.delivery.hubRegistration.listed
+    ? "LISTED"
+    : state.kind === "checking"
+      ? "CHECKING"
+      : "PENDING";
 
   return (
     <div className="panel fullWidth" aria-label="RONSAS integration">
@@ -70,6 +80,9 @@ export default function RonsasIntegrationPanel() {
         <div><dt>DataNest authority</dt><dd>Managed · required</dd></div>
         <div><dt>Commercial mode</dt><dd>{status?.billingState || "free-promotion"}</dd></div>
         <div><dt>RONSAS Hub</dt><dd>{hubState}{status?.hub.status ? ` · HTTP ${status.hub.status}` : ""}{status?.authority.publicHub&&<> · <a className="catalogRecordLaunch" href={status.authority.publicHub} target="_blank" rel="noreferrer" aria-label="Open RONSAS from integration settings">Open RONSAS ↗</a></>}</dd></div>
+        <div><dt>DataNest ingress</dt><dd>{ingressState}{status?.delivery.ingress.status ? ` · HTTP ${status.delivery.ingress.status}` : ""}</dd></div>
+        <div><dt>Operational URL</dt><dd>{status?.delivery.operationalUrl ? <a className="catalogRecordLaunch" href={status.delivery.operationalUrl} target="_blank" rel="noreferrer" aria-label="Open operational DataNest delivery URL">Open DataNest ↗</a> : "—"}</dd></div>
+        <div><dt>Hub listing</dt><dd>{hubListingState}{status?.delivery.hubRegistration.status ? ` · HTTP ${status.delivery.hubRegistration.status}` : ""}</dd></div>
         <div><dt>AppDev authority</dt><dd>{status?.authority.owner || "DataNest-Supository"}</dd></div>
         <div><dt>Control source</dt><dd>{status?.authority.controlRepository || "DataNest-Supository/DataNest"}</dd></div>
         <div><dt>Hub source</dt><dd>{status?.authority.hubRepository || "DataNest-Supository/DataNest"}</dd></div>
