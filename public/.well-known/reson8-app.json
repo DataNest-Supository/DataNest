@@ -2,26 +2,15 @@
   "contract": "reson8-app@1",
   "key": "datanest",
   "name": "Resonance DataNest",
-  "publicUrl": "https://datanest.reson8.life/",
+  "publicUrl": "https://datanest-supository.github.io/DataNest/",
   "hubUrl": "https://reson8.life/",
   "sourceRepository": "DataNest-Supository/DataNest",
   "sourceBranch": "main",
   "authority": "DataNest",
   "access": "invitation",
-  "status": "provisioning",
+  "status": "live",
   "billing": "none",
   "runtimeConfigAuthority": "https://datanest-supository.github.io/DataNest/runtime-config.js",
-  "fallbackUrl": "https://datanest-supository.github.io/DataNest/",
-  "ingress": {
-    "provider": "Railway",
-    "state": "dns-pending",
-    "healthPath": "/health",
-    "dns": {
-      "type": "CNAME",
-      "name": "datanest.reson8.life",
-      "target": "r3sevmpy.up.railway.app"
-    }
-  },
   "operationalUrl": "https://datanest-supository.github.io/DataNest/",
   "hubRegistration": {
     "state": "pending",
@@ -39,5 +28,12 @@
     "status": "active",
     "servesApplication": false,
     "localPcBackupHosting": false
+  },
+  "delivery": {
+    "provider": "GitHub Pages",
+    "status": "live",
+    "url": "https://datanest-supository.github.io/DataNest/",
+    "healthUrl": "https://datanest-supository.github.io/DataNest/health.json",
+    "railwayRequired": false
   }
 }
