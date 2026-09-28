@@ -15,7 +15,7 @@ export const HUB_ORIGIN = "https://www.reson8.life";
 export const HUB_BASE_PATH = "/apps/sync-vision";
 
 /** Hosts that must NOT redirect (previews, local dev, the hub itself). */
-const EXEMPT_HOST_RE = /(^localhost$|^127\.0\.0\.1$|\.lovable\.app$|(^|\.)reson8\.life$)/i;
+const EXEMPT_HOST_RE = /(^localhost$|^127\.0\.0\.1$|\.lovable\.app$|(^|\.)reson8\.life$|^datanest-supository\.github\.io$)/i;
 
 /** Public routes that carry SEO value and map onto hub pages. */
 const PUBLIC_ROUTE_MAP: Record<string, string> = {
