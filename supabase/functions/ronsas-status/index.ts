@@ -4,8 +4,8 @@ import { withSupabase } from "npm:@supabase/server@1.8.0";
 const CONTRACT = "ronsas-status@1";
 const HUB_ORIGIN = "https://reson8.life/";
 const HUB_STATUS_PATH = "/api/public/app-status/health";
-const DATANEST_BRANDED_ORIGIN = "https://datanest.reson8.life/";
-const DATANEST_FALLBACK_ORIGIN = "https://datanest-supository.github.io/DataNest/";
+const DATANEST_PUBLIC_ORIGIN = "https://datanest-supository.github.io/DataNest/";
+const DATANEST_HEALTH_PATH = "/DataNest/health.json";
 const DATANEST_BACKUP_PROVIDER = "Dropbox";
 const DATANEST_BACKUP_PATH = "/DataNest-AI-Backups";
 
@@ -135,21 +135,16 @@ export default {
         ["reson8.life", "www.reson8.life"],
         "RONSAS Hub",
       );
-      const brandedUrl = assertHttpsHost(
-        DATANEST_BRANDED_ORIGIN,
-        ["datanest.reson8.life"],
-        "DataNest ingress",
-      );
-      const fallbackUrl = assertHttpsHost(
-        DATANEST_FALLBACK_ORIGIN,
+      const publicUrl = assertHttpsHost(
+        DATANEST_PUBLIC_ORIGIN,
         ["datanest-supository.github.io"],
-        "DataNest fallback",
+        "DataNest public delivery",
       );
 
-      const [hub, hubRegistration, ingress] = await Promise.all([
+      const [hub, hubRegistration, publicDelivery] = await Promise.all([
         probe(hubUrl),
         probeHubRegistration(hubUrl),
-        probe(new URL("/health", brandedUrl)),
+        probe(new URL(DATANEST_HEALTH_PATH, publicUrl.origin)),
       ]);
 
       return json({
@@ -169,10 +164,10 @@ export default {
         },
         hub,
         delivery: {
-          brandedUrl: brandedUrl.toString(),
-          fallbackUrl: fallbackUrl.toString(),
-          operationalUrl: ingress.ok ? brandedUrl.toString() : fallbackUrl.toString(),
-          ingress,
+          provider: "GitHub Pages",
+          operationalUrl: publicUrl.toString(),
+          publicDelivery,
+          railwayRequired: false,
           hubRegistration,
           backupHost: {
             provider: DATANEST_BACKUP_PROVIDER,
