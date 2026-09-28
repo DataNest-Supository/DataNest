@@ -284,7 +284,7 @@ export default function DataNestAiWorkspace({
         <div><small>Evidence</small><span>Session · Event trail · Certified memory</span></div>
       </div>
       <div className="datanestAiCommandActions">
-        <button className="primaryButton" type="button" onClick={openAiWorkspace}>Open AI workspace <span aria-hidden="true">→</span></button>
+        <button className="primaryButton" type="button" onClick={openAiWorkspace}>Focus chat <span aria-hidden="true">→</span></button>
         <button className="secondaryButton" type="button" onClick={inspectContext}>Inspect context</button>
       </div>
     </section>
