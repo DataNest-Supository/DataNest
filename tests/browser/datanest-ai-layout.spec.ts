@@ -91,7 +91,7 @@ test("DataNest AI keeps the animated hero and a compact command-first workspace"
   await expect(page.getByText(/Remote desktop/i)).toHaveCount(0);
   await expect(page.getByText("Job details",{exact:true})).toBeVisible();
   await expect(page.getByText("Memory & governance",{exact:true})).toBeVisible();
-  await expect(page.getByText("AI Hero Layout Fixture",{exact:true}).first()).toBeVisible();
+  await expect(page.getByText("JOB-00099 · AI Hero Layout Fixture",{exact:true}).first()).toBeVisible();
 
   for(const label of ["Continue","Analyze","Build","Debug","Plan","Compare"]){
     await expect(page.getByRole("button",{name:label,exact:true})).toBeVisible();
