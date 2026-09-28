@@ -8,7 +8,18 @@
   "sourceBranch": "main",
   "authority": "DataNest",
   "access": "invitation",
-  "status": "live",
+  "status": "provisioning",
   "billing": "none",
-  "runtimeConfigAuthority": "https://datanest-supository.github.io/DataNest/runtime-config.js"
+  "runtimeConfigAuthority": "https://datanest-supository.github.io/DataNest/runtime-config.js",
+  "fallbackUrl": "https://datanest-supository.github.io/DataNest/",
+  "ingress": {
+    "provider": "Railway",
+    "state": "dns-pending",
+    "healthPath": "/health",
+    "dns": {
+      "type": "CNAME",
+      "name": "datanest.reson8.life",
+      "target": "r3sevmpy.up.railway.app"
+    }
+  }
 }
