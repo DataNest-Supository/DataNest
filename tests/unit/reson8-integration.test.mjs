@@ -18,6 +18,12 @@ test("DataNest declares its canonical Reson8 ecosystem binding",()=>{
   assert.equal(contract.sourceRepository,"DataNest-Supository/DataNest");
   assert.equal(contract.status,"provisioning");
   assert.equal(contract.fallbackUrl,"https://datanest-supository.github.io/DataNest/");
+  assert.equal(contract.operationalUrl,"https://datanest-supository.github.io/DataNest/");
+  assert.equal(contract.hubRegistration?.state,"pending");
+  assert.equal(contract.hubRegistration?.issue,"https://github.com/resonance36912-cell/resonance-hub/issues/136");
+  assert.equal(contract.hubRegistration?.statusEndpoint,"https://reson8.life/api/public/app-status/health");
+  assert.equal(contract.readiness?.contract,"ronsas-status@1");
+  assert.equal(contract.readiness?.authenticated,true);
   assert.equal(contract.ingress?.state,"dns-pending");
   assert.equal(contract.ingress?.dns?.type,"CNAME");
   assert.equal(contract.ingress?.dns?.target,"r3sevmpy.up.railway.app");
