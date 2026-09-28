@@ -184,7 +184,7 @@ test("workflow continuity maps specialist workspaces without breaking direct nav
 
 test("page header exposes current lifecycle phase and preserves quick switching", () => {
   assert.match(appSource, /currentGroup=currentNavItem\?\.group\|\|"Core"/);
-  assert.match(appSource, /RESONANCE DATANEST · \{currentGroup\.toUpperCase\(\)\}/);
+  assert.match(appSource, /DATANEST_CANONICAL_NAME\.toUpperCase\(\)\} · \{currentGroup\.toUpperCase\(\)\}/);
   assert.match(appSource, /Ctrl\/Cmd \+ K to toggle/);
 });
 
