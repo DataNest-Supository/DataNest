@@ -45,6 +45,22 @@ const visibilityClasses=new Set([
 const rawReuseStates=new Set([
   "runtime_only","session_context","project_learning_eligible"
 ]);
+type DevelopmentWorkExpertiseKey=
+  "ui_ux"|"frontend"|"backend"|"data"|"ai"|"testing"|"security"|"infrastructure"|"documentation"|"product_planning";
+type DevelopmentWorkExpertiseRoute={label:string;verificationTrack:DevelopmentWorkExpertiseKey};
+const developmentWorkExpertise=new Map<DevelopmentWorkExpertiseKey,DevelopmentWorkExpertiseRoute>([
+  ["ui_ux",{label:"UI & UX",verificationTrack:"ui_ux"}],
+  ["frontend",{label:"Frontend",verificationTrack:"frontend"}],
+  ["backend",{label:"Backend",verificationTrack:"backend"}],
+  ["data",{label:"Data",verificationTrack:"data"}],
+  ["ai",{label:"AI",verificationTrack:"ai"}],
+  ["testing",{label:"Testing",verificationTrack:"testing"}],
+  ["security",{label:"Security",verificationTrack:"security"}],
+  ["infrastructure",{label:"Infrastructure",verificationTrack:"infrastructure"}],
+  ["documentation",{label:"Documentation",verificationTrack:"documentation"}],
+  ["product_planning",{label:"Product Planning",verificationTrack:"product_planning"}]
+]);
+
 
 type AnyClient=SupabaseClient<any>;
 
@@ -75,6 +91,7 @@ type StagedEvent={
   client_request_id:string|null;
   content:string;
   created_at:string;
+  metadata:Record<string,unknown>|null;
 };
 
 function cors(origin:string|null){
@@ -168,7 +185,7 @@ async function loadSessionEvents(input:{
 }):Promise<StagedEvent[]>{
   const {data,error}=await input.staging
     .from("ai_intake_events")
-    .select("id,trace_id,project_id,job_id,session_id,source_type,source_user_id,source_provider,parent_event_id,client_request_id,content,created_at")
+    .select("id,trace_id,project_id,job_id,session_id,source_type,source_user_id,source_provider,parent_event_id,client_request_id,content,created_at,metadata")
     .eq("project_id",input.projectId)
     .eq("job_id",input.jobId)
     .eq("session_id",input.sessionId)
@@ -239,6 +256,9 @@ async function recordDevelopmentWorkingMemory(input:{
   dual:DualAdvocacyResponse;
   providerLabel:string|null;
   modelLabel:string|null;
+  expertiseSection:string|null;
+  expertiseLabel:string|null;
+  verificationTrack:string|null;
 }){
   const commandHash=await sha256Text(input.userId+"|"+input.command);
   const synthesisHash=await sha256Text(input.userId+"|"+input.dual.synthesis);
@@ -255,7 +275,16 @@ async function recordDevelopmentWorkingMemory(input:{
         content_hash:commandHash,
         source_trace_id:input.inputTraceId,
         source_label:"development_command_channel",
-        metadata:{working_memory_scope:"development_command",origin:"human_command"},
+        metadata:{
+          working_memory_scope:"development_command",
+          origin:"human_command",
+          category:input.expertiseSection?"development_work":null,
+          impact_area:input.expertiseLabel,
+          expertise_section:input.expertiseSection,
+          expertise_label:input.expertiseLabel,
+          verification_track:input.verificationTrack,
+          routing_version:input.expertiseSection?"development-work-expertise-v1":null
+        },
         active:true,
         updated_at:now
       },
@@ -268,7 +297,16 @@ async function recordDevelopmentWorkingMemory(input:{
         content_hash:synthesisHash,
         source_trace_id:input.outputTraceId,
         source_label:"development_command_channel",
-        metadata:{working_memory_scope:"development_command",origin:"dual_advocacy_synthesis"},
+        metadata:{
+          working_memory_scope:"development_command",
+          origin:"dual_advocacy_synthesis",
+          category:input.expertiseSection?"development_work":null,
+          impact_area:input.expertiseLabel,
+          expertise_section:input.expertiseSection,
+          expertise_label:input.expertiseLabel,
+          verification_track:input.verificationTrack,
+          routing_version:input.expertiseSection?"development-work-expertise-v1":null
+        },
         active:true,
         updated_at:now
       }
@@ -814,6 +852,14 @@ Deno.serve(async(request:Request)=>{
 
     if(action!=="chat")return json({error:"Unsupported DataNest AI action."},400,origin);
 
+    const requestedExpertiseSection=String(body.expertiseSection||"").trim();
+    const expertise=requestedExpertiseSection
+      ?developmentWorkExpertise.get(requestedExpertiseSection as DevelopmentWorkExpertiseKey)||null
+      :null;
+    if(requestedExpertiseSection&&!expertise){
+      return json({error:"Unsupported Development Work expertise section."},400,origin);
+    }
+
     const message=String(body.message||"").trim();
     const clientRequestId=String(body.clientRequestId||"");
     if(!message||!clientRequestId){
@@ -846,6 +892,7 @@ Deno.serve(async(request:Request)=>{
     let workingMemoryStatus:"not_applicable"|"not_recorded"|"recorded"|"skipped_incomplete_response"|"failed"=developmentMode?"not_recorded":"not_applicable";
     let developmentProviderLabel:string|null=null;
     let developmentModelLabel:string|null=null;
+    let contributionTracking:{status:"not_applicable"|"staged"|"failed";contributionId?:string|null;error?:string}={status:"not_applicable"};
 
     const result=await executeChatTurn({
       beginRequest:async()=>{
@@ -943,13 +990,38 @@ Deno.serve(async(request:Request)=>{
               effective_reuse_state:learningPolicy.reuse_state,
               purpose:policyPurpose,
               policy_version:learningPolicy.policy_version||policyVersion,
-              decision_record_id:learningPolicy.decision_record_id
+              decision_record_id:learningPolicy.decision_record_id,
+              category:expertise?"development_work":null,
+              impact_area:expertise?.label||null,
+              expertise_section:requestedExpertiseSection||null,
+              expertise_label:expertise?.label||null,
+              verification_track:expertise?.verificationTrack||null,
+              routing_version:expertise?"development-work-expertise-v1":null
             }
           })
           .select("id,trace_id,session_id")
           .single();
         if(error||!data)throw error||new Error("Unable to stage DataNest AI input.");
         stagedInputTraceId=String(data.trace_id);
+        if(developmentMode&&expertise){
+          const {data:contributionId,error:contributionError}=await userClient.rpc(
+            "submit_development_work_contribution_v1",{
+              target_project:job.project_id,
+              target_job:job.id,
+              target_source_ref:String(data.id),
+              target_content:message,
+              target_content_hash:fingerprint,
+              target_impact_area:expertise.label,
+              target_expertise_section:requestedExpertiseSection,
+              target_verification_track:expertise.verificationTrack,
+              target_routing_version:"development-work-expertise-v1"
+            }
+          );
+          contributionTracking=contributionError
+            ?{status:"failed",error:contributionError.message||"Governed contribution intake failed."}
+            :{status:"staged",contributionId:String(contributionId||"")};
+        }
+
         return {
           id:String(data.id),
           traceId:stagedInputTraceId,
@@ -1462,7 +1534,11 @@ Deno.serve(async(request:Request)=>{
       learningEligible,
       visibilityClass,
       reuseState,
-      policyPurpose
+      policyPurpose,
+      expertiseSection:requestedExpertiseSection||null,
+      impactArea:expertise?.label||null,
+      verificationTrack:expertise?.verificationTrack||null,
+      contributionTracking
     },200,origin);
   }catch(error){
     const message=error instanceof Error?error.message:"Unable to process DataNest AI request.";
