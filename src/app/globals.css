@@ -4063,6 +4063,19 @@ code,pre{
 .legalChatTurnHead span,.legalChatTurn small{color:var(--muted);font-size:9px}
 .legalChatTurn p{margin:0;white-space:pre-wrap;line-height:1.62}
 .legalChatTurn small{display:block;margin-top:8px}
+
+.legalChatTurn.dualAdvocacy{margin-right:0}
+.legalDualGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.legalDualCard,.legalDualSynthesis{min-width:0;border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:13px 14px;background:rgba(6,6,12,.42)}
+.legalDualCard.angel{border-color:rgba(103,215,163,.21);background:linear-gradient(145deg,rgba(68,190,139,.08),rgba(6,6,12,.48))}
+.legalDualCard.devil{border-color:rgba(240,121,150,.2);background:linear-gradient(145deg,rgba(186,60,96,.08),rgba(6,6,12,.48))}
+.legalDualSynthesis{grid-column:1/-1;border-color:rgba(226,190,95,.22);background:linear-gradient(145deg,rgba(214,170,62,.07),rgba(6,6,12,.5))}
+.legalDualCard small,.legalDualSynthesis small{display:block;margin:0;color:#d8bc72;font-size:9px;font-weight:900;letter-spacing:.11em}
+.legalDualCard p,.legalDualSynthesis p{margin:8px 0 0;white-space:pre-wrap;line-height:1.62}
+@container datanest-main (max-width:760px){
+  .legalDualGrid{grid-template-columns:1fr}
+  .legalDualSynthesis{grid-column:auto}
+}
 .legalComposer{display:grid;gap:10px}
 .legalComposer textarea{resize:vertical;min-height:150px;line-height:1.5}
 .legalComposerFooter{display:flex;justify-content:space-between;gap:14px;align-items:flex-end}

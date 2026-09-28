@@ -396,7 +396,7 @@ test("public Transparency index publishes the audit return without sign in",asyn
   await expect(page.getByRole("heading",{name:"Audit library + public accountability record",exact:true})).toBeVisible();
   await expect(page.getByText(/EXTERNAL AUDIT RETURN · 25 SEP 2026/)).toBeVisible();
   await expect(page.getByText(/14 findings/)).toBeVisible();
-  await expect(page.getByText(/not a full production certification/i)).toBeVisible();
+  await expect(page.getByRole("note",{name:"Audit coverage limitation"})).toContainText(/not a full production certification/i);
   await expect(page.getByRole("link",{name:"Findings JSON",exact:true})).toBeVisible();
   await expect(page.getByRole("link",{name:"Reported backlog JSON",exact:true})).toBeVisible();
 
