@@ -2,7 +2,7 @@
 
 Resonance DataNest uses a **DataNest-managed** production model. DataNest owns product lifecycle and deployment intent, GitHub owns source control/history/CI/evidence, and Supabase owns auth/data/storage/backend services. **GitHub Pages is the current public delivery target.**
 
-Hosting is replaceable delivery infrastructure, not system authority. Moving to another delivery target must not redefine product ownership, governance, source authority, backend authority, or the RONSAS product relationship.
+Hosting is replaceable delivery infrastructure, not system authority. The canonical branded identity is `reson8.datanest.life`; it is independent of any one delivery provider. Moving to another delivery target must not redefine product ownership, governance, source authority, backend authority, or the RONSAS product relationship.
 
 ## Required runtime variables
 
@@ -41,7 +41,7 @@ A future delivery target change does not change product ownership or governance.
 
 Dropbox `/DataNest-AI-Backups` is the governed backup-artifact host. Local PCs are not backup hosts and are not continuity authorities. Dropbox stores governed recovery packages, manifests, and release artifacts; it does not serve the production web application.
 
-GitHub Pages is the operational and canonical public web delivery target. Railway is not required by DataNest. A future branded alias may be added through replaceable edge/DNS infrastructure without changing source, backend, backup, or governance authority.
+GitHub Pages is the operational public web delivery target. Railway is not required by DataNest. The canonical branded hostname is `reson8.datanest.life`; it may be activated through replaceable edge/DNS infrastructure without changing source, backend, backup, or governance authority.
 
 ## Local development and controlled testing
 
