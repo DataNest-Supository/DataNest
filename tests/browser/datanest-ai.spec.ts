@@ -205,8 +205,9 @@ test("mobile TranScheduler status filter uses a compact select",async({page})=>{
 test("human input is traced and remains uncertified",async({page})=>{
   await signIn(page);
   await openWorkspace(page,"DataNest AI");
-  await expect(page.getByText("DataNest AI E2E Job",{exact:true}).first()).toBeVisible();
-  await page.getByText("DataNest AI E2E Job",{exact:true}).first().click();
+  const activeJob=page.getByLabel("Active Job context",{exact:true});
+  await expect(activeJob).toBeVisible();
+  await expect(activeJob.locator("option:checked")).toContainText("DataNest AI E2E Job");
 
   const message="Keep DataNest AI trace IDs visible on every governed turn.";
   await page.getByPlaceholder(/Ask DataNest AI to analyze/i).fill(message);
@@ -222,8 +223,9 @@ test("human input is traced and remains uncertified",async({page})=>{
 test("AI Companion return becomes uncertified evidence in the selected Job",async({page})=>{
   await signIn(page);
   await openWorkspace(page,"DataNest AI");
-  await expect(page.getByText("DataNest AI E2E Job",{exact:true}).first()).toBeVisible();
-  await page.getByText("DataNest AI E2E Job",{exact:true}).first().click();
+  const activeJob=page.getByLabel("Active Job context",{exact:true});
+  await expect(activeJob).toBeVisible();
+  await expect(activeJob.locator("option:checked")).toContainText("DataNest AI E2E Job");
 
   const assistant=page.getByRole("button",{name:"AI assistant",exact:true});
   await expect(assistant).toBeVisible();
