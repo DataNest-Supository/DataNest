@@ -260,10 +260,14 @@ export default function DataNestAiChatPanel({
 
       const trend=(payload.trendAnalysis||{}) as Record<string,unknown>;
       const candidateId=String(trend.candidateId||"");
+      const contributionTracking=(payload.contributionTracking||{}) as Record<string,unknown>;
+      const contributionStatus=String(contributionTracking.status||"not_applicable");
       setNotice(
-        candidateId
-          ?"DataNest AI routed this "+expertise.label+" contribution into its verification track, recorded UNCERTIFIED evidence, and staged the repeated pattern for governed learning review."
-          :"DataNest AI routed this "+expertise.label+" contribution into its verification track and recorded traceable UNCERTIFIED evidence for "+requestJobCode+"."
+        contributionStatus==="failed"
+          ?"DataNest AI recorded the "+expertise.label+" input for session evidence and trend analysis, but governed contribution verification intake did not stage. Project impact scoring will exclude it until contribution intake succeeds."
+          :candidateId
+            ?"DataNest AI routed this "+expertise.label+" contribution into governed verification and project-impact intake, recorded UNCERTIFIED evidence, and staged the repeated pattern for learning review."
+            :"DataNest AI routed this "+expertise.label+" contribution into governed verification and project-impact intake with traceable UNCERTIFIED evidence for "+requestJobCode+"."
       );
       await onContextRefresh(nextSession);
       // Keep the returned answer until refreshed events contain its trace.
