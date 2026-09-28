@@ -10,9 +10,16 @@ const contract=JSON.parse(readFileSync(new URL("../../public/.well-known/reson8-
 
 test("DataNest declares its canonical Reson8 ecosystem binding",()=>{
   assert.match(binding,/RESON8_HUB_URL = "https:\/\/reson8\.life\/"/);
+  assert.match(binding,/DATANEST_CANONICAL_NAME = "reson8\.datanest\.life"/);
+  assert.match(binding,/DATANEST_BRANDED_URL = "https:\/\/reson8\.datanest\.life\/"/);
   assert.match(binding,/DATANEST_PUBLIC_URL = "https:\/\/datanest-supository\.github\.io\/DataNest\/"/);
   assert.equal(contract.contract,"reson8-app@1");
   assert.equal(contract.key,"datanest");
+  assert.equal(contract.name,"reson8.datanest.life");
+  assert.equal(contract.displayName,"Resonance DataNest");
+  assert.equal(contract.canonicalHost,"reson8.datanest.life");
+  assert.equal(contract.brandedUrl,"https://reson8.datanest.life/");
+  assert.equal(contract.brandedState,"reserved");
   assert.equal(contract.publicUrl,"https://datanest-supository.github.io/DataNest/");
   assert.equal(contract.hubUrl,"https://reson8.life/");
   assert.equal(contract.sourceRepository,"DataNest-Supository/DataNest");
