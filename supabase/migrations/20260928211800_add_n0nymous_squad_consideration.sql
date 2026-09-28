@@ -1,7 +1,7 @@
 -- N0NYMOUS SQUAD consideration layer.
 -- Adds an anonymous, evidence-based consideration signal without exposing contributor identity.
 
-alter function private.get_project_impact_dashboard_v1(uuid) rename to get_project_impact_dashboard_base_v1(uuid);
+alter function private.get_project_impact_dashboard_v1(uuid) rename to get_project_impact_dashboard_base_v1;
 revoke all on function private.get_project_impact_dashboard_base_v1(uuid) from public;
 grant execute on function private.get_project_impact_dashboard_base_v1(uuid) to authenticated;
 
