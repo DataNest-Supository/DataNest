@@ -122,23 +122,7 @@ alter table public.ai_messages enable row level security;
 alter table public.ai_development_updates enable row level security;
 alter table public.ai_prompt_queue enable row level security;
 
-create or replace function private.is_job_collaborator(target_job uuid)
-returns boolean
-language sql
-stable
-security definer
-set search_path = private, public, auth
-as $$
-  select exists (
-    select 1
-    from public.job_collaborators jc
-    where jc.job_id = target_job
-      and jc.user_id = auth.uid()
-      and jc.status = 'accepted'
-  );
-$$;
-
-create or replace function private.has_project_access(target_project uuid)
+create or replace function private.is_job_collaborator(target_job uuid)returns boolean language sql stable security definer set search_path=private,public,auth as $$ select exists(select 1 from public.job_collaborators jc where jc.job_id=target_job and jc.user_id=auth.uid()and jc.status='accepted');$$;create or replace function private.has_project_access(target_project uuid)
 returns boolean
 language sql
 stable
