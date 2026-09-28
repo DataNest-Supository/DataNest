@@ -7,6 +7,7 @@ import { FREE_PROMOTION_LABEL, RONSAS_FULL_NAME } from "@/lib/ecosystemAuthority
 import PortfolioRegistryPanel from "@/components/PortfolioRegistryPanel";
 import { type PortfolioRegistryRow, type PortfolioRole } from "@/lib/portfolioRegistry";
 import { getRonsasAppLaunch } from "@/lib/ronsasApps";
+import { getRonsasStatus } from "@/lib/ronsas";
 
 
 type CatalogProduct = {
@@ -198,6 +199,7 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
   const [productsSection,setProductsSection]=useState<"products"|"portfolio">("products");
   const [portfolioItems,setPortfolioItems]=useState<PortfolioRegistryRow[]>([]);
   const [portfolioRelationships,setPortfolioRelationships]=useState<PortfolioRelationshipRow[]>([]);
+  const [ronsasHubUrl,setRonsasHubUrl]=useState("");
 
   const [jobs,setJobs]=useState<Job[]>([]);
   const [selectedJobId,setSelectedJobId]=useState("");
@@ -389,6 +391,17 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
       }
       setPortfolioItems((itemResult.data||[]) as PortfolioRegistryRow[]);
       setPortfolioRelationships((relationshipResult.data||[]) as PortfolioRelationshipRow[]);
+    });
+    return()=>{active=false;};
+  },[projectId]);
+
+  useEffect(()=>{
+    let active=true;
+    setRonsasHubUrl("");
+    void getRonsasStatus().then(status=>{
+      if(active)setRonsasHubUrl(status.authority.publicHub);
+    }).catch(()=>{
+      if(active)setRonsasHubUrl("");
     });
     return()=>{active=false;};
   },[projectId]);
@@ -620,6 +633,13 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
                 <span className="productStatus">{governedProductLifecycle(product,portfolioItems).toUpperCase()}</span>
                 {executionAuthority==="DataNest"&&<span className="catalogInvariant">DATANEST MANAGED</span>}
                 {!product.billing_enabled&&<span className="catalogInvariant">{FREE_PROMOTION_LABEL}</span>}
+                {product.slug==="ronsas"&&ronsasHubUrl&&<a
+                  className="catalogRecordLaunch"
+                  href={ronsasHubUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Open RONSAS"
+                >Open RONSAS ↗</a>}
               </div>
             </div>
 
@@ -713,11 +733,20 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
                     <div className="catalogRecordList">
                       {items.map(record=>{
                         const launch=record.record_type==="application"?getRonsasAppLaunch(record.name):null;
+                        const ronsasHubLaunch=product.slug==="ronsas"&&record.record_type==="application"&&record.name?.trim().toLowerCase()==="ronsas hub"
+                          ?ronsasHubUrl
+                          :"";
                         return <article className="catalogRecord" key={record.id}>
                           <div><small>{record.code||record.record_type.replaceAll("_"," ")}</small><b>{record.name||record.code||"Governed record"}</b></div>
                           <div className="catalogRecordMeta">
                             {record.status&&<span>{record.status}</span>}
-                            {launch&&<a
+                            {ronsasHubLaunch?<a
+                              className="catalogRecordLaunch"
+                              href={ronsasHubLaunch}
+                              target="_blank"
+                              rel="noreferrer"
+                              aria-label="Open RONSAS Hub"
+                            >Open RONSAS ↗</a>:launch&&<a
                               className="catalogRecordLaunch"
                               href={launch.href}
                               aria-label={`Open ${record.name||launch.name} in DataNest`}
