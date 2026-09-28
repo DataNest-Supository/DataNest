@@ -876,30 +876,42 @@ Deno.serve(async(request:Request)=>{
         });
         sessionId=session.id;
         const traceId="DN-AI-"+crypto.randomUUID();
-        const {data:learningPolicyData,error:learningPolicyError}=await serviceClient.rpc(
-          "service_evaluate_data_policy_v1",{
-            target_project:job.project_id,
-            target_actor_user:user.id,
-            target_subject_type:"job",
-            target_purpose:"project_learning",
-            target_requested_operation:"reuse",
-            target_trace_id:traceId,
-            target_subject_id:job.id,
-            target_subject_reference:null,
-            target_provider_connection:null,
-            target_provider_key:null,
-            target_hard_learning_exclusion:!learningEligible
+        if(developmentMode){
+          learningPolicy={
+            outcome:"not_applicable",
+            reason_code:"development_working_memory_lane",
+            reuse_state:"session_context",
+            policy_version:policyVersion,
+            decision_record_id:null
+          };
+          learningPolicyErrorMessage=null;
+          finalLearningEligible=false;
+        }else{
+          const {data:learningPolicyData,error:learningPolicyError}=await serviceClient.rpc(
+            "service_evaluate_data_policy_v1",{
+              target_project:job.project_id,
+              target_actor_user:user.id,
+              target_subject_type:"job",
+              target_purpose:"project_learning",
+              target_requested_operation:"reuse",
+              target_trace_id:traceId,
+              target_subject_id:job.id,
+              target_subject_reference:null,
+              target_provider_connection:null,
+              target_provider_key:null,
+              target_hard_learning_exclusion:!learningEligible
+            }
+          );
+          if(learningPolicyError){
+            learningPolicyErrorMessage=learningPolicyError.message||"Project-learning policy evaluation failed.";
+          }else if(learningPolicyData){
+            learningPolicy=learningPolicyData as Record<string,unknown>;
           }
-        );
-        if(learningPolicyError){
-          learningPolicyErrorMessage=learningPolicyError.message||"Project-learning policy evaluation failed.";
-        }else if(learningPolicyData){
-          learningPolicy=learningPolicyData as Record<string,unknown>;
+          finalLearningEligible=
+            !learningPolicyErrorMessage &&
+            learningEligible &&
+            String(learningPolicy.outcome||"deny")==="allow";
         }
-        finalLearningEligible=
-          !learningPolicyErrorMessage &&
-          learningEligible &&
-          String(learningPolicy.outcome||"deny")==="allow";
 
         const {data,error}=await stagingClient
           .from("ai_intake_events")
@@ -1355,8 +1367,6 @@ Deno.serve(async(request:Request)=>{
         if(error)throw error;
 
         try{
-          if(learningPolicyErrorMessage)throw new Error(learningPolicyErrorMessage);
-
           if(developmentMode){
             trendAnalysis={status:"not_applicable"};
             if(developmentDual&&outputEvent.traceId){
@@ -1377,6 +1387,9 @@ Deno.serve(async(request:Request)=>{
             }
             return;
           }
+
+          if(learningPolicyErrorMessage)throw new Error(learningPolicyErrorMessage);
+
           if(legalMode){
             trendAnalysis={status:"not_applicable"};
             return;
