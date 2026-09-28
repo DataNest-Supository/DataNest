@@ -37,11 +37,17 @@ The RONSAS integration is served by the JWT-protected Supabase Edge Function `ro
 
 A future delivery target change does not change product ownership or governance.
 
-## Local development, recovery, controlled test, and offline continuity
+## Backup and continuity authority
 
-The following Node and Docker paths remain supported for local development, recovery, controlled test environments, and offline continuity. They are not the canonical production authority.
+Dropbox `/DataNest-AI-Backups` is the governed backup-artifact host. Local PCs are not backup hosts and are not continuity authorities. Dropbox stores governed recovery packages, manifests, and release artifacts; it does not serve the production web application.
 
-### Windows / Node.js recovery launcher
+GitHub Pages remains the operational web fallback, while Railway provides the branded Reson8 ingress.
+
+## Local development and controlled testing
+
+The following Node and Docker paths remain supported for local development and controlled test environments. They are not backup hosts, continuity authorities, or canonical production authority.
+
+### Windows / Node.js controlled-test launcher
 
 ```powershell
 $env:SUPABASE_PUBLISHABLE_KEY="<publishable key>"
@@ -50,7 +56,7 @@ $env:SUPABASE_PUBLISHABLE_KEY="<publishable key>"
 
 Open `http://localhost:3000`.
 
-The filename is retained for shortcut compatibility. The script itself warns that it is a legacy local/recovery launcher.
+The filename is retained for shortcut compatibility. The script itself warns that it is a legacy local/controlled-test launcher.
 
 ### Local Docker Compose
 
@@ -72,7 +78,7 @@ Health endpoint:
 GET /api/health
 ```
 
-### Generic container recovery/test path
+### Generic container controlled-test path
 
 Build:
 
@@ -80,7 +86,7 @@ Build:
 docker build -t resonance-datanest .
 ```
 
-Run in a controlled local, recovery, test or continuity environment:
+Run in a controlled local or test environment:
 
 ```bash
 docker run --rm -p 3000:3000 \
