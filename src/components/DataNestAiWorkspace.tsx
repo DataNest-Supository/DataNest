@@ -48,9 +48,9 @@ function jobCode(job:Job){
   return "JOB-"+String(job.job_number).padStart(5,"0");
 }
 
-function formatDate(value:string){
+function formatDate(value:string,timeZone:string){
   return new Intl.DateTimeFormat(undefined,{
-    month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"UTC",timeZoneName:"short"
+    month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit",timeZone,timeZoneName:"short"
   }).format(new Date(value));
 }
 
@@ -67,6 +67,7 @@ export default function DataNestAiWorkspace({
   onActiveSessionChange
 }:Props){
   const [jobs,setJobs]=useState<Job[]>([]);
+  const [displayTimeZone,setDisplayTimeZone]=useState("UTC");
   const [selectedJobId,setSelectedJobId]=useState("");
   const [sessionId,setSessionId]=useState("");
   const [context,setContext]=useState<ContextResponse|null>(null);
@@ -82,6 +83,10 @@ export default function DataNestAiWorkspace({
   const sessionKey=useCallback((jobId:string)=>
     projectId+":"+currentUserId+":"+jobId
   ,[projectId,currentUserId]);
+
+  useEffect(()=>{
+    setDisplayTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone||"UTC");
+  },[]);
 
   const selectedJob=useMemo(
     ()=>jobs.find(job=>job.id===selectedJobId)||null,
@@ -289,6 +294,58 @@ export default function DataNestAiWorkspace({
       </div>
     </section>
 
+    {selectedJob&&<>
+      <section className="panel datanestAiJobPicker" aria-label="Select active Job Manifest">
+        <label htmlFor="datanest-ai-active-job">Active Job context</label>
+        <select id="datanest-ai-active-job" value={selectedJobId} onChange={event=>selectJob(event.target.value)}>
+          {jobs.map(job=><option key={job.id} value={job.id}>{jobCode(job)+" · "+job.title}</option>)}
+        </select>
+        <small className="muted">Choose the Job before composing a command. Drafts stay with their Job.</small>
+      </section>
+      <section id="datanest-ai-chat" className="datanestAiChatStage" aria-label="DataNest AI Chat">
+        <DataNestAiChatPanel
+          draftScope={projectId+":"+currentUserId}
+          jobId={selectedJob.id}
+          jobCode={jobCode(selectedJob)}
+          sessionId={sessionId}
+          contextReady={contextReady}
+          events={context?.events||[]}
+          onSessionChange={nextSessionId=>{
+            sessionByJobRef.current[sessionKey(selectedJob.id)]=nextSessionId;
+            if(selectedJobIdRef.current===selectedJob.id)setSessionId(nextSessionId);
+          }}
+          onContextRefresh={refreshContext}
+          setNotice={setNotice}
+          setError={setError}
+        />
+        {loading&&!context&&<div className="datanestAiContextSync" role="status">
+          <span className="datanestAiPipelineDot" aria-hidden="true"/>
+          Synchronising governed Job context…
+        </div>}
+      </section>
+    </>}
+
+    <section className="datanestAiStatusCards" aria-label="DataNest AI operational status">
+      <button type="button" className="datanestAiStatusCard" onClick={inspectContext}>
+        <span className={"datanestAiStatusPulse "+(loading?"syncing":contextReady?"online":"")} aria-hidden="true"/>
+        <small>Context</small>
+        <b role="status">{contextStatus}</b>
+        <span>Inspect governed Job context</span>
+      </button>
+      <button type="button" className="datanestAiStatusCard" onClick={inspectCertifiedMemory}>
+        <span className="datanestAiStatusIcon" aria-hidden="true">◫</span>
+        <small>Certified memory</small>
+        <b>{context?.certifiedMemory?.length||0} ITEMS</b>
+        <span>Open reviewed project memory</span>
+      </button>
+      <button type="button" className="datanestAiStatusCard" onClick={inspectContext}>
+        <span className="datanestAiStatusIcon" aria-hidden="true">▰</span>
+        <small>Active context</small>
+        <b>{selectedJob?jobCode(selectedJob):"STANDBY"}</b>
+        <span>{selectedJob?.title||"Select a Job Manifest"}</span>
+      </button>
+    </section>
+
     <details className="datanestAiOverviewDisclosure">
       <summary>
         <span>
@@ -395,57 +452,7 @@ export default function DataNestAiWorkspace({
     </section>
     </details>
 
-    <section className="datanestAiStatusCards" aria-label="DataNest AI operational status">
-      <button type="button" className="datanestAiStatusCard" onClick={inspectContext}>
-        <span className={"datanestAiStatusPulse "+(loading?"syncing":contextReady?"online":"")} aria-hidden="true"/>
-        <small>Context</small>
-        <b role="status">{contextStatus}</b>
-        <span>Inspect governed Job context</span>
-      </button>
-      <button type="button" className="datanestAiStatusCard" onClick={inspectCertifiedMemory}>
-        <span className="datanestAiStatusIcon" aria-hidden="true">◫</span>
-        <small>Certified memory</small>
-        <b>{context?.certifiedMemory?.length||0} ITEMS</b>
-        <span>Open reviewed project memory</span>
-      </button>
-      <button type="button" className="datanestAiStatusCard" onClick={inspectContext}>
-        <span className="datanestAiStatusIcon" aria-hidden="true">▰</span>
-        <small>Active context</small>
-        <b>{selectedJob?jobCode(selectedJob):"STANDBY"}</b>
-        <span>{selectedJob?.title||"Select a Job Manifest"}</span>
-      </button>
-    </section>
-
     {selectedJob&&<>
-      <section className="panel datanestAiJobPicker" aria-label="Select active Job Manifest">
-        <label htmlFor="datanest-ai-active-job">Active Job context</label>
-        <select id="datanest-ai-active-job" value={selectedJobId} onChange={event=>selectJob(event.target.value)}>
-          {jobs.map(job=><option key={job.id} value={job.id}>{jobCode(job)+" · "+job.title}</option>)}
-        </select>
-        <small className="muted">Choose the Job before composing a command. Drafts stay with their Job.</small>
-      </section>
-      <section id="datanest-ai-chat" className="datanestAiChatStage" aria-label="DataNest AI Chat">
-        <DataNestAiChatPanel
-          draftScope={projectId+":"+currentUserId}
-          jobId={selectedJob.id}
-          jobCode={jobCode(selectedJob)}
-          sessionId={sessionId}
-          contextReady={contextReady}
-          events={context?.events||[]}
-          onSessionChange={nextSessionId=>{
-            sessionByJobRef.current[sessionKey(selectedJob.id)]=nextSessionId;
-            if(selectedJobIdRef.current===selectedJob.id)setSessionId(nextSessionId);
-          }}
-          onContextRefresh={refreshContext}
-          setNotice={setNotice}
-          setError={setError}
-        />
-        {loading&&!context&&<div className="datanestAiContextSync" role="status">
-          <span className="datanestAiPipelineDot" aria-hidden="true"/>
-          Synchronising governed Job context…
-        </div>}
-      </section>
-
       <section className="datanestAiContextRail" aria-label="Active DataNest AI context">
         <section className="panel datanestAiCurrentJob">
           <div className="rowBetween">
@@ -459,7 +466,7 @@ export default function DataNestAiWorkspace({
           <div className="manifestMeta">
             <span>{"Priority "+selectedJob.priority}</span>
             <span>{selectedJob.required_capabilities?.join(", ")||"chat"}</span>
-            <span>{"Updated "+formatDate(selectedJob.updated_at)}</span>
+            <span>{"Updated "+formatDate(selectedJob.updated_at,displayTimeZone)}</span>
             <span>{sessionId?"Session "+sessionId.slice(0,8):"Session establishing…"}</span>
           </div>
           <div className="rowActions">
