@@ -36,6 +36,12 @@ Provisioned target:
 
 The ingress uses the former validation-only `nova-task4-validation` service. No live Hub or application fallback service was repurposed. DataNest source/governance authority remains the DataNest repository; Railway is only the branded edge/proxy layer.
 
+## Backup host
+
+Dropbox `/DataNest-AI-Backups` is the governed backup-artifact host. Local PCs, including Ealiophin/Spider/Weed, are not backup hosts and are not continuity authorities.
+
+Dropbox stores governed release/recovery artifacts and manifests. It does not replace the public request-serving path: GitHub Pages remains the operational web fallback until the branded Reson8 ingress is healthy, and Railway remains the branded edge/proxy layer.
+
 ## Hub registry
 
 The Reson8 Hub should register DataNest as a non-billable ecosystem surface, not as a paid SKU. The Hub-side tracking item is:
