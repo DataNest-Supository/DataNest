@@ -21,6 +21,7 @@ jobs:
       matrix:
         function:
           - datanest-ai-chat
+          - manage-ai-provider-v2
           - datanest-ai-intake
           - datanest-ai-certification
           - datanest-ai-upload
