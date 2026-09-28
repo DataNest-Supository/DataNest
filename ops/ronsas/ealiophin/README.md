@@ -6,6 +6,8 @@ This directory is the active source authority for launching and inspecting RONSA
 
 - Application source is read only from `apps/ronsas/*` in this repository.
 - Runtime state and logs are written outside Git under `%LOCALAPPDATA%\Resonance\DataNest-RONSAS` by default.
+- This workstation control plane is for execution and controlled testing only; Ealiophin and other local PCs are not backup hosts or continuity authorities.
+- Dropbox `/DataNest-AI-Backups` is the governed backup-artifact host for release/recovery material.
 - Historical RONSAS/Open Nova repositories remain evidence and recovery sources only; they are not runtime authority.
 - The current commercial state is free promotion. This control plane does not activate pricing or paid checkout behavior.
 
@@ -19,7 +21,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\ops\ronsas\ealiophin\STATU
 powershell -NoProfile -ExecutionPolicy Bypass -File .\ops\ronsas\ealiophin\STOP-RONSAS-DATANEST.ps1
 ```
 
-The start command installs dependencies only when an app has no `node_modules` directory, builds each imported web app, starts its preview server on the governed loopback port, waits for health, and records only processes it owns.
+The start command installs dependencies only when an app has no `node_modules` directory, builds each imported web app, starts its preview server on the governed loopback port, waits for health, and records only processes it owns. These processes are not backup hosting; governed continuity artifacts belong in Dropbox.
 
 Use `-RefreshDependencies` to force a clean dependency refresh or `-SkipBuild` only when a previously validated build is intentionally being reused.
 
