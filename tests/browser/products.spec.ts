@@ -34,8 +34,8 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
       return route.fulfill({contentType:"application/json",body:JSON.stringify({
         contract:"ronsas-status@1",checkedAt:"2026-09-28T08:30:00Z",mode:"cloud",runtimeMode:"local-first",managedByDataNest:true,
         billingState:"free-promotion",independent:false,localInteractionRequired:false,
-        authority:{owner:"DataNest-Supository",controlRepository:"DataNest-Supository/DataNest",hubRepository:"DataNest-Supository/DataNest",publicHub:"https://reson8.life/"},
-        hub:{ok:true,status:200,latencyMs:42,origin:"https://reson8.life/"}
+        authority:{owner:"DataNest-Supository",controlRepository:"DataNest-Supository/DataNest",hubRepository:"DataNest-Supository/DataNest",publicHub:"https://reson8.life/apps/"},
+        hub:{ok:true,status:200,latencyMs:42,origin:"https://reson8.life"}
       })});
     }
 
@@ -102,14 +102,14 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
   await expect(page.getByText("FREE PROMOTION · BILLING OFF",{exact:true})).toBeVisible();
   const navRonsasLaunch=page.getByRole("link",{name:"Open RONSAS from DataNest navigation"});
   await expect(navRonsasLaunch).toBeVisible();
-  await expect(navRonsasLaunch).toHaveAttribute("href","https://reson8.life/");
+  await expect(navRonsasLaunch).toHaveAttribute("href","https://reson8.life/apps/");
   await page.keyboard.press("Control+K");
   await page.getByRole("searchbox",{name:"Search DataNest workspaces"}).fill("ronsas");
   await expect(page.getByRole("option",{name:"Open RONSAS application hub"})).toBeVisible();
   await page.keyboard.press("Escape");
   const ronsasLaunch=page.getByRole("link",{name:"Open RONSAS",exact:true});
   await expect(ronsasLaunch).toBeVisible();
-  await expect(ronsasLaunch).toHaveAttribute("href","https://reson8.life/");
+  await expect(ronsasLaunch).toHaveAttribute("href","https://reson8.life/apps/");
   await expect(page.getByLabel("Filter governed record type")).toHaveValue("risk");
   await expect(page.getByLabel("Search governed product records")).toHaveValue("runner");
   await expect(page.locator("details.catalogDetails")).toHaveAttribute("open","");
@@ -130,7 +130,7 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
 
   const ronsasHubRecord=page.locator(".catalogRecord").filter({hasText:"RONSAS Hub"}).getByRole("link",{name:"Open RONSAS Hub"});
   await expect(ronsasHubRecord).toBeVisible();
-  await expect(ronsasHubRecord).toHaveAttribute("href","https://reson8.life/");
+  await expect(ronsasHubRecord).toHaveAttribute("href","https://reson8.life/apps/");
 
   const syncVisionLaunch=page.locator(".catalogRecord").getByRole("link",{name:"Open Sync Vision in DataNest"});
   await expect(syncVisionLaunch).toBeVisible();
