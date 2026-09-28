@@ -22,6 +22,7 @@ import {
   buildLegalEaglePrompt,
   formatDualAdvocacyResponse,
   parseCompleteDualAdvocacyResponse,
+  parseDualAdvocacyResponse,
   type DualAdvocacyResponse
 } from "../_shared/dualAdvocacy.ts";
 
