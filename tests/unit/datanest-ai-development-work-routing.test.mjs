@@ -1,0 +1,56 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
+const chat=fs.readFileSync(path.join(root,"src/components/DataNestAiChatPanel.tsx"),"utf8");
+const edge=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-chat/index.ts"),"utf8");
+const impact=fs.readFileSync(path.join(root,"supabase/migrations/20260928220000_reconcile_production_impact_scoring_governed.sql"),"utf8");
+const intake=fs.readFileSync(path.join(root,"supabase/migrations/20260928223500_add_development_work_contribution_intake.sql"),"utf8");
+
+const sections=[
+  ["ui_ux","UI & UX"],["frontend","Frontend"],["backend","Backend"],["data","Data"],["ai","AI"],
+  ["testing","Testing"],["security","Security"],["infrastructure","Infrastructure"],
+  ["documentation","Documentation"],["product_planning","Product Planning"]
+];
+
+test("Development Work exposes selectable expertise sections and requires a route",()=>{
+  for(const [key,label] of sections){
+    assert.ok(chat.includes(`key:"${key}"`),`missing expertise key ${key}`);
+    assert.ok(chat.includes(`label:"${label}"`),`missing expertise label ${label}`);
+  }
+  assert.ok(chat.includes("DEVELOPMENT WORK · CHOOSE EXPERTISE"));
+  assert.ok(chat.includes("expertiseSection:expertise.key"));
+  assert.ok(chat.includes("disabled={busy||!contextReady||!selectedExpertise||!draft.trim()}"));
+});
+
+test("expertise survives cumulative Development Command working memory",()=>{
+  assert.ok(edge.includes("body.expertiseSection"));
+  assert.ok(edge.includes("Unsupported Development Work expertise section."));
+  assert.ok(edge.includes("working_memory_scope:\"development_command\""));
+  assert.ok(edge.includes("impact_area:input.expertiseLabel"));
+  assert.ok(edge.includes("expertise_section:input.expertiseSection"));
+  assert.ok(edge.includes('routing_version:input.expertiseSection?"development-work-expertise-v1":null'));
+});
+
+test("expertise-routed commands stage governed contribution verification with zero raw points",()=>{
+  assert.ok(edge.includes('"submit_development_work_contribution_v1"'));
+  assert.ok(edge.includes("contributionTracking"));
+  assert.ok(intake.includes("insert into public.contribution_ledger"));
+  assert.ok(intake.includes("'human_input'"));
+  assert.ok(intake.includes("'development_work'"));
+  assert.ok(intake.includes("0,"));
+  assert.ok(intake.includes("false,"));
+  assert.ok(intake.includes("insert into public.contribution_evidence"));
+  assert.ok(intake.includes("verification_state"));
+  assert.ok(intake.includes("set lifecycle_state='staged'"));
+});
+
+test("production impact scoring groups governed contributions by routed impact area",()=>{
+  assert.ok(impact.includes("from public.contribution_ledger l"));
+  assert.ok(impact.includes("l.metadata->>'impact_area'"));
+  assert.ok(impact.includes("'raw_activity_never_awards_points',true"));
+  assert.ok(impact.includes("'source','public.contribution_ledger'"));
+});
