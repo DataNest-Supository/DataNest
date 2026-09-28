@@ -31,3 +31,18 @@ The shared AI configuration is endpoint-based rather than machine-based. A compa
 ## Learning rule
 
 User interactions are provisional. Cross-user knowledge becomes reusable only after the governed DataNest validation and certification process promotes it into certified memory.
+
+
+## Bootstrap inference profile
+
+As of 2026-09-28, the preferred zero-dedicated-GPU bootstrap route is Cloudflare Workers AI through its OpenAI-compatible Chat Completions API.
+
+- Bootstrap model: `@cf/nvidia/nemotron-3-120b-a12b`
+- Provider host: `api.cloudflare.com`
+- Provider type inside DataNest: `openai_compatible`
+- DataNest identity and certified memory remain independent of this provider and model.
+- The provider may be replaced when a stronger, cheaper, more private, or more sovereign approved endpoint is available.
+- No Cloudflare account identifier or credential is committed to source control.
+- High-sensitivity and local-only workloads should remain on an appropriately approved private/local route rather than being assumed safe for hosted inference.
+
+The production provider-domain allowlist includes `api.cloudflare.com`; activation still requires a valid account-specific endpoint and server-side credential.
