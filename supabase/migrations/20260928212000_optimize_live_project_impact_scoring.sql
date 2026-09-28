@@ -1,9 +1,16 @@
 -- Performance hardening for live impact scoring.
-create index if not exists ai_intake_events_project_user_time_idx
-  on public.ai_intake_events(project_id, source_user_id, created_at desc);
+-- Staging-only relations are optional in production, so index creation must be conditional.
+do $migration$
+begin
+  if to_regclass('public.ai_intake_events') is not null then
+    execute 'create index if not exists ai_intake_events_project_user_time_idx on public.ai_intake_events(project_id, source_user_id, created_at desc)';
+  end if;
 
-create index if not exists ai_candidate_evidence_event_candidate_idx
-  on public.ai_candidate_evidence(event_id, candidate_id);
+  if to_regclass('public.ai_candidate_evidence') is not null then
+    execute 'create index if not exists ai_candidate_evidence_event_candidate_idx on public.ai_candidate_evidence(event_id, candidate_id)';
+  end if;
+end;
+$migration$;
 
 create or replace function private.get_project_impact_dashboard_base_v1(target_project uuid)
 returns jsonb
