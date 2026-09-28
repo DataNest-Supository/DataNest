@@ -1,61 +1,43 @@
-# reson8.datanest.life integration
+# DataNest ↔ Reson8 integration
 
-Canonical DataNest branded identity:
+DataNest remains independently served from its current public endpoint:
 
-- Name: `reson8.datanest.life`
-- Branded URL: `https://reson8.datanest.life/`
-- Current branded state: wire-ready
-- Operational delivery: `https://datanest-supository.github.io/DataNest/`
+- DataNest: `https://datanest-supository.github.io/DataNest/`
+- Reson8 Hub: `https://reson8.life/`
 - Repository: `DataNest-Supository/DataNest`
 - Branch: `main`
-- Canonical ecosystem Hub: `https://reson8.life/`
 - Backup-artifact host: Dropbox `/DataNest-AI-Backups`
 - Railway dependency: none
 
-## Independence model
+## No DNS cutover
 
-`reson8.datanest.life` is the active canonical name in DataNest metadata and contracts. It is not coupled to Railway or any other hosting-provider record. Provider-specific metadata that cannot be deleted does not define DataNest identity, routing authority, source authority, backend authority, or backup authority.
+There is no active custom-domain or DNS cutover for DataNest.
 
-The application layer is wired so that requests served on `reson8.datanest.life` immediately redirect to `https://reson8.life/`. The remaining network-layer step is DNS/edge binding for `reson8.datanest.life`; until that exists, the current live DataNest application continues to be served by GitHub Pages.
+`reson8.datanest.life` is not a required runtime, redirect, delivery, or future activation target. DataNest must not depend on DNS binding, CNAME changes, apex records, or an application-layer hostname redirect.
 
-## Machine-readable binding
+The live GitHub Pages project path is the canonical public delivery URL until an entirely new domain project is explicitly authorized.
 
-The current live contract is:
+## Reson8 relationship
+
+Reson8 remains an ecosystem destination and Hub. DataNest provides visible navigation back to the Hub, but does not redirect its own public URL to Reson8.
+
+The machine-readable DataNest contract is published at:
 
 `https://datanest-supository.github.io/DataNest/.well-known/reson8-app.json`
 
-The contract publishes the canonical name and branded URL separately from the operational delivery URL. This prevents a hosting-provider record from becoming identity authority.
-
-## Delivery
-
-```text
-reson8.datanest.life
-  canonical branded identity
-      ↓
-DNS / edge binding
-      ↓
-DataNest application-layer redirect
-      ↓
-https://reson8.life/
-```
-
-The redirect guard is exact-host scoped, so the normal GitHub Pages DataNest application remains operational at its existing URL.
-
-Railway is not required.
+That contract identifies the GitHub Pages URL as both public and operational delivery.
 
 ## Backup host
 
 Dropbox `/DataNest-AI-Backups` remains the governed artifact-recovery host. Local PCs are not backup hosts or continuity authorities.
 
-## Reson8 Hub registry
+## Hub registry
 
-The Reson8 Hub should keep DataNest non-billable. Until `reson8.datanest.life` is actually bound and verified, the Hub CTA should continue to use:
+The Reson8 Hub should keep DataNest non-billable and link directly to:
 
 `https://datanest-supository.github.io/DataNest/`
 
-After the branded hostname is verified, the CTA may switch to:
-
-`https://reson8.datanest.life/`
+There is no later CTA switch tied to DNS or branded-host activation.
 
 Hub-side tracking item:
 

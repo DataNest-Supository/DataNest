@@ -1,17 +1,15 @@
-# reson8.datanest.life
+# DataNest
 
-**reson8.datanest.life** is the canonical DataNest platform identity and Resonance AppDev web control plane. It governs product execution intent, promotion, evidence and lifecycle state while preserving separate source, backend and delivery authorities.
+**DataNest** is the canonical Resonance AppDev web control plane. It governs product execution intent, promotion, evidence and lifecycle state while preserving separate source, backend and delivery authorities.
 
 It combines two first-class tools:
 
 - **UNIFI** — project orchestration, planning, Job Manifests, context, checkpoints, artifacts and audit.
 - **TranScheduler** — capability-aware scheduling, dependencies, reservations, retry/backoff, execution history and human controls.
 
-## Canonical identity
+## Canonical public identity
 
-**reson8.datanest.life** is the canonical branded DataNest name.
-
-The branded hostname is intentionally independent of prior provider metadata. Its application-layer wire is configured to redirect `https://reson8.datanest.life/` to `https://reson8.life/`. Until DNS/edge binding is activated, the live operational endpoint remains GitHub Pages.
+DataNest uses its current GitHub Pages project-path deployment as the canonical public endpoint. There is no active DNS/custom-domain cutover or branded-host redirect. Reson8 remains an ecosystem Hub link rather than a routing target.
 
 ## Live web UI
 
@@ -19,7 +17,7 @@ Primary free public endpoint:
 
 **https://datanest-supository.github.io/DataNest/**
 
-Reson8 ecosystem integration uses the canonical identity **reson8.datanest.life** while linking to the live GitHub Pages endpoint until the branded hostname is activated. No Railway ingress is required.
+Reson8 ecosystem integration links directly between the live DataNest GitHub Pages endpoint and the Reson8 Hub. No branded-host activation, DNS cutover, or Railway ingress is required.
 
 Static health marker:
 
