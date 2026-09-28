@@ -1,6 +1,7 @@
 import "./globals.css";
 import "./entry.css";
 import "./datanest-ai-optimized.css";
+import "./datanest-ai-command-center.css";
 import type { ReactNode } from "react";
 
 export const metadata = {
