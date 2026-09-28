@@ -97,7 +97,7 @@ select jsonb_build_object(
 );
 $fn$;
 
-revoke all on function private.get_n0nymous_squad_consideration_v1(uuid) from public;
+revoke all on function private.get_n0nymous_squad_consideration_v1(uuid) from public, authenticated;
 
 create or replace function private.get_project_impact_dashboard_v1(target_project uuid)
 returns jsonb language plpgsql security definer set search_path=public,private
