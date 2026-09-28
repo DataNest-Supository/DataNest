@@ -11,7 +11,7 @@ const config=readFileSync(new URL("../../supabase/config.toml",import.meta.url),
 const manifest=readFileSync(new URL("../../scripts/write-release-manifest.mjs",import.meta.url),"utf8");
 
 test("RONSAS status is cloud-backed while runtime authority is DataNest local-first",()=>{
-  assert.match(edge,/const HUB_ORIGIN = "https:\/\/reson8\.life\/"/);
+  assert.match(edge,/const HUB_ORIGIN = "https:\/\/reson8\.life\/apps\/"/);
   assert.match(edge,/mode: "cloud"/);
   assert.match(edge,/runtimeMode: "local-first"/);
   assert.match(edge,/managedByDataNest: true/);
