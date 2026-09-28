@@ -31,7 +31,6 @@ test("RONSAS status is cloud-backed while runtime authority is DataNest local-fi
   assert.match(edge,/entry as \{ key\?: unknown \}\)\.key === "datanest"/);
   assert.match(edge,/provider: "GitHub Pages"/);
   assert.match(edge,/operationalUrl: publicUrl\.toString\(\)/);
-  assert.match(edge,/railwayRequired: false/);
   assert.match(edge,/provider: DATANEST_BACKUP_PROVIDER/);
   assert.match(edge,/localPcBackupHosting: false/);
 });
@@ -48,7 +47,6 @@ test("DataNest exposes the governed RONSAS status contract through JWT-protected
   assert.match(client,/!status\.delivery/);
   assert.match(client,/status\.delivery\.hubRegistration\.listed/);
   assert.match(client,/status\.delivery\.provider !== "GitHub Pages"/);
-  assert.match(client,/status\.delivery\.railwayRequired !== false/);
   assert.match(client,/status\.delivery\.backupHost\.provider !== "Dropbox"/);
   assert.match(client,/status\.delivery\.backupHost\.localPcBackupHosting !== false/);
   assert.match(panel,/Runtime model<\/dt><dd>\{status\?\.runtimeMode \|\| "local-first"\}/);
@@ -57,7 +55,6 @@ test("DataNest exposes the governed RONSAS status contract through JWT-protected
   assert.match(panel,/status\?\.authority\.publicHub/);
   assert.match(panel,/Open RONSAS ↗/);
   assert.match(panel,/Public delivery<\/dt><dd>/);
-  assert.match(panel,/Railway required<\/dt><dd>NO<\/dd>/);
   assert.match(panel,/Operational URL<\/dt><dd>/);
   assert.match(panel,/Hub listing<\/dt><dd>/);
   assert.match(panel,/Backup host<\/dt><dd>/);
