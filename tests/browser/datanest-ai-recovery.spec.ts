@@ -87,7 +87,9 @@ test("in-flight commands lock edits and retain a reply when refresh fails",async
   await page.getByRole("button",{name:"Send command",exact:true}).click();
   await expect.poll(()=>state.chatRequests).toBe(1);
   await expect(composer).toHaveAttribute("readonly","");
-  await expect(page.getByRole("button",{name:"Clear draft",exact:true})).toBeDisabled();
+  await expect(composer).toHaveValue("");
+  await expect(page.getByRole("button",{name:"Clear draft",exact:true})).toHaveCount(0);
+  await expect(page.getByRole("log",{name:"Job conversation"})).toContainText("Analyze the fixture Job.");
   await expect(page.getByRole("button",{name:"DataNest AI reasoning…"})).toBeDisabled();
   state.failContext=true;state.releaseChat();
   await expect(page.getByRole("heading",{name:"Job context needs attention"})).toBeVisible();
