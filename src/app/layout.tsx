@@ -3,6 +3,7 @@ import "./entry.css";
 import "./datanest-ai-optimized.css";
 import "./datanest-ai-command-center.css";
 import "./datanest-ai-zoom.css";
+import "./datanest-brand-fit.css";
 import type { ReactNode } from "react";
 
 // Keep focused DataNest AI refinements last so UX overrides remain authoritative.
