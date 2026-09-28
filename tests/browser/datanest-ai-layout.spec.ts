@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 const appPath = process.env.DATANEST_APP_PATH || "/";
 
-test("DataNest AI keeps the animated hero above the command channel and active context below it", async ({ page }) => {
+test("DataNest AI keeps the animated hero and a compact command-first workspace", async ({ page }) => {
   const projectId = "00000000-0000-4000-8000-000000000010";
   const userId = "00000000-0000-4000-8000-000000000001";
   const otherUserId = "00000000-0000-4000-8000-000000000002";
@@ -87,9 +87,10 @@ test("DataNest AI keeps the animated hero above the command channel and active c
   await expect(page.locator(".datanestAiHeroV2")).toBeVisible();
   await expect(page.getByText("Hosted CI · Cloud browser",{exact:true})).toBeVisible();
   await expect(page.getByText("Current objective",{exact:true})).toBeVisible();
-  await expect(page.getByLabel("Select active Job Manifest")).toBeVisible();
+  await expect(page.getByLabel("Active Job context",{exact:true})).toBeVisible();
   await expect(page.getByText(/Remote desktop/i)).toHaveCount(0);
-  await expect(page.getByText("Current Job Context",{exact:true})).toBeVisible();
+  await expect(page.getByText("Job details",{exact:true})).toBeVisible();
+  await expect(page.getByText("Memory & governance",{exact:true})).toBeVisible();
   await expect(page.getByText("AI Hero Layout Fixture",{exact:true}).first()).toBeVisible();
 
   for(const label of ["Continue","Analyze","Build","Debug","Plan","Compare"]){
@@ -106,7 +107,7 @@ test("DataNest AI keeps the animated hero above the command channel and active c
   await expect(page.getByLabel("DataNest AI command context locked to JOB-00099")).toBeVisible();
 
   await page.reload();
-  await expect(page.getByRole("heading",{name:"JOB-00099 · AI Hero Layout Fixture",exact:true})).toBeVisible();
+  await expect(page.getByText("JOB-00099 · AI Hero Layout Fixture",{exact:true}).first()).toBeVisible();
   await expect(composer).toHaveValue("First Job draft must stay with JOB-00099.");
   await expect(page.getByText("SESSION-ONLY DRAFT · LOCKED TO JOB-00099",{exact:true})).toBeVisible();
 
@@ -121,7 +122,7 @@ test("DataNest AI keeps the animated hero above the command channel and active c
 
   await page.evaluate(otherUserId=>localStorage.setItem("fixture-user-override",otherUserId),otherUserId);
   await page.reload();
-  await expect(page.getByRole("heading",{name:"JOB-00099 · AI Hero Layout Fixture",exact:true})).toBeVisible();
+  await expect(page.getByText("JOB-00099 · AI Hero Layout Fixture",{exact:true}).first()).toBeVisible();
   await expect(composer).toHaveValue("");
   await expect(page.getByText("SESSION-ONLY DRAFT · LOCKED TO JOB-00099",{exact:true})).toBeHidden();
 
@@ -130,12 +131,12 @@ test("DataNest AI keeps the animated hero above the command channel and active c
 
   await page.evaluate(()=>localStorage.removeItem("fixture-user-override"));
   await page.reload();
-  await expect(page.getByRole("heading",{name:"JOB-00099 · AI Hero Layout Fixture",exact:true})).toBeVisible();
+  await expect(page.getByText("JOB-00099 · AI Hero Layout Fixture",{exact:true}).first()).toBeVisible();
   await expect(composer).toHaveValue("First Job draft must stay with JOB-00099.");
 
   contextRequests.length=0;
-  await page.locator(".datanestAiJobStrip .rndJobChip").filter({hasText:"Second AI Job Fixture"}).click();
-  await expect(page.getByRole("heading",{name:"JOB-00100 · Second AI Job Fixture",exact:true})).toBeVisible();
+  await page.getByLabel("Active Job context",{exact:true}).selectOption(secondJob.id);
+  await expect(page.getByText("JOB-00100 · Second AI Job Fixture",{exact:true}).first()).toBeVisible();
   await expect(composer).toHaveValue("");
   await expect.poll(()=>contextRequests.filter(item=>item.jobId===secondJob.id).length).toBeGreaterThan(0);
   const secondJobContextRequests=contextRequests.filter(item=>item.jobId===secondJob.id);
@@ -146,24 +147,24 @@ test("DataNest AI keeps the animated hero above the command channel and active c
   await expect(page.getByText("SESSION-ONLY DRAFT · LOCKED TO JOB-00100",{exact:true})).toBeVisible();
   await expect(page.getByLabel("DataNest AI command context locked to JOB-00100")).toBeVisible();
   contextRequests.length=0;
-  await page.locator(".datanestAiJobStrip .rndJobChip").filter({hasText:"AI Hero Layout Fixture"}).click();
-  await expect(page.getByRole("heading",{name:"JOB-00099 · AI Hero Layout Fixture",exact:true})).toBeVisible();
+  await page.getByLabel("Active Job context",{exact:true}).selectOption(job.id);
+  await expect(page.getByText("JOB-00099 · AI Hero Layout Fixture",{exact:true}).first()).toBeVisible();
   await expect(composer).toHaveValue("First Job draft must stay with JOB-00099.");
   await expect.poll(()=>contextRequests.filter(item=>item.jobId===job.id).length).toBeGreaterThan(0);
   const firstJobReturnRequests=contextRequests.filter(item=>item.jobId===job.id);
   expect(firstJobReturnRequests[0]?.sessionId).toBe("fixture-session-001");
   expect(firstJobReturnRequests.some(item=>item.sessionId==="fixture-session-002")).toBe(false);
 
-  await page.locator(".datanestAiJobStrip .rndJobChip").filter({hasText:"Second AI Job Fixture"}).click();
+  await page.getByLabel("Active Job context",{exact:true}).selectOption(secondJob.id);
   await expect(composer).toHaveValue("Second Job draft must stay with JOB-00100.");
-  await page.locator(".datanestAiJobStrip .rndJobChip").filter({hasText:"AI Hero Layout Fixture"}).click();
+  await page.getByLabel("Active Job context",{exact:true}).selectOption(job.id);
   await expect(composer).toHaveValue("First Job draft must stay with JOB-00099.");
   await page.getByRole("button",{name:"Clear draft",exact:true}).click();
   await expect(composer).toHaveValue("");
   await expect(page.getByText("SESSION-ONLY DRAFT · LOCKED TO JOB-00099",{exact:true})).toBeHidden();
 
   await page.reload();
-  await expect(page.getByRole("heading",{name:"JOB-00099 · AI Hero Layout Fixture",exact:true})).toBeVisible();
+  await expect(page.getByText("JOB-00099 · AI Hero Layout Fixture",{exact:true}).first()).toBeVisible();
   await expect(composer).toHaveValue("");
   await expect(page.getByText("SESSION-ONLY DRAFT · LOCKED TO JOB-00099",{exact:true})).toBeHidden();
 
@@ -178,9 +179,9 @@ test("DataNest AI keeps the animated hero above the command channel and active c
       workspace:rect(".datanestAiWorkspace"),
       hero:rect(".datanestAiHeroV2"),
       chat:rect(".datanestAiChatStage"),
-      objective:rect(".datanestAiCommandSummary"),
-      picker:rect(".datanestAiJobPicker"),
-      context:rect(".datanestAiContextRail"),
+      objective:rect(".datanestAiCommandSummaryCompact"),
+      details:rect(".datanestAiContextDetails"),
+      advanced:rect(".datanestAiAdvancedDisclosure"),
       scrollWidth:document.documentElement.scrollWidth,
       viewportWidth:innerWidth
     };
@@ -188,8 +189,10 @@ test("DataNest AI keeps the animated hero above the command channel and active c
 
   expect(layout.chat.y).toBeGreaterThanOrEqual(layout.hero.bottom-2);
   expect(layout.objective.y).toBeGreaterThanOrEqual(layout.chat.bottom-2);
-  expect(layout.picker.y).toBeGreaterThanOrEqual(layout.objective.bottom-2);
-  expect(layout.context.y).toBeGreaterThanOrEqual(layout.picker.bottom-2);
+  expect(layout.details.y).toBeGreaterThanOrEqual(layout.objective.bottom-2);
+  expect(layout.advanced.y).toBeGreaterThanOrEqual(layout.details.bottom-2);
+  await expect(page.locator(".datanestAiContextDetails")).not.toHaveAttribute("open","");
+  await expect(page.locator(".datanestAiAdvancedDisclosure")).not.toHaveAttribute("open","");
   expect(layout.chat.width).toBeLessThanOrEqual(982);
   expect(Math.abs(layout.chat.center-layout.workspace.center)).toBeLessThanOrEqual(2);
   expect(layout.scrollWidth).toBeLessThanOrEqual(layout.viewportWidth);
