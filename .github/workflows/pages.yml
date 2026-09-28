@@ -78,7 +78,7 @@ jobs:
           curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors \
             https://datanest-supository.github.io/DataNest/ \
             -o /tmp/datanest-home.html
-          grep -q "Resonance DataNest" /tmp/datanest-home.html
+          grep -q "reson8.datanest.life" /tmp/datanest-home.html
           if ! grep -q 'class="authShell"' /tmp/datanest-home.html; then
             echo "Expected Next.js auth shell was not served. Live HTML prefix:"
             head -c 2000 /tmp/datanest-home.html
