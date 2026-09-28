@@ -35,4 +35,9 @@ test("cumulative working memory remains separated from Certified Memory and user
   assert.match(gateway,/sha256Text\(input\.userId\+"\|"\+input\.command\)/);
   assert.match(gateway,/sha256Text\(input\.userId\+"\|"\+input\.dual\.synthesis\)/);
   assert.match(gateway,/const learningEligible=!legalMode&&!developmentMode&&reuseState==="project_learning_eligible"/);
+  assert.match(gateway,/if\(developmentMode\)\{\s*learningPolicy=\{/);
+  assert.match(gateway,/reason_code:"development_working_memory_lane"/);
+  assert.match(gateway,/if\(developmentMode\)\{[\s\S]*?recordDevelopmentWorkingMemory/);
+  assert.match(gateway,/target_purpose:"external_provider_processing"/);
+  assert.match(gateway,/service_authorize_ai_request/);
 });
