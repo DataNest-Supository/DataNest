@@ -7,6 +7,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
 import { DATANEST_LOGO_SRC } from "@/lib/brand";
+import { RESON8_HUB_URL } from "@/lib/reson8";
 
 const DataNestApp = dynamic(() => import("@/components/DataNestApp"), {
   ssr: false,
@@ -263,7 +264,7 @@ export default function AuthGate() {
       <a className="skipLink" href="#sign-in-email">Skip to sign in</a>
       <header className="landingHeader">
         <a className="landingBrand" href="#" aria-label="Resonance DataNest home"><span className="landingLogo" aria-hidden="true"><img src={DATANEST_LOGO_SRC} alt="" /></span><span className="landingBrandText"><small>RESONANCE</small><b>DataNest</b></span></a>
-        <MotionControl/>
+        <div className="landingHeaderActions"><a className="landingHubLink" href={RESON8_HUB_URL} target="_blank" rel="noreferrer">Reson8 Hub <span aria-hidden="true">↗</span></a><MotionControl/></div>
       </header>
       <div className="landingLayout">
       <section className="landingStory" aria-labelledby="landing-title">
