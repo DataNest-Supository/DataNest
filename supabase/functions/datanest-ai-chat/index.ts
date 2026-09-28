@@ -17,6 +17,12 @@ import {
 } from "../_shared/ilm.ts";
 import { chronologicalFromNewestFirst } from "../_shared/datanestAiContinuity.ts";
 import { updateTrendCandidate } from "../_shared/datanestAiLearning.ts";
+import {
+  buildDevelopmentCommandPrompt,
+  formatDualAdvocacyResponse,
+  parseDualAdvocacyResponse,
+  type DualAdvocacyResponse
+} from "../_shared/dualAdvocacy.ts";
 
 declare const Deno:{
   env:{get:(name:string)=>string|undefined};
@@ -196,6 +202,96 @@ async function loadCertifiedMemory(input:{
   return Array.isArray(items)?items as Array<Record<string,unknown>>:[];
 }
 
+
+async function loadDevelopmentWorkingMemory(
+  serviceClient:AnyClient,
+  projectId:string
+):Promise<string[]>{
+  const {data,error}=await serviceClient
+    .from("development_command_working_memory")
+    .select("normalized_knowledge,created_at")
+    .eq("project_id",projectId)
+    .eq("active",true)
+    .order("created_at",{ascending:false})
+    .limit(120);
+  if(error)throw error;
+  return (data||[])
+    .slice()
+    .reverse()
+    .map(item=>String(item.normalized_knowledge||""))
+    .filter(Boolean);
+}
+
+async function recordDevelopmentWorkingMemory(input:{
+  serviceClient:AnyClient;
+  projectId:string;
+  jobId:string;
+  userId:string;
+  sessionId:string;
+  clientRequestId:string;
+  inputTraceId:string;
+  outputTraceId:string;
+  command:string;
+  dual:DualAdvocacyResponse;
+  providerLabel:string|null;
+  modelLabel:string|null;
+}){
+  const commandHash=await sha256Text(input.command);
+  const synthesisHash=await sha256Text(input.dual.synthesis);
+  const now=new Date().toISOString();
+  const {data:memoryRows,error:memoryError}=await input.serviceClient
+    .from("development_command_working_memory")
+    .upsert([
+      {
+        project_id:input.projectId,
+        job_id:input.jobId,
+        user_id:input.userId,
+        memory_kind:"development_command",
+        normalized_knowledge:input.command,
+        content_hash:commandHash,
+        source_trace_id:input.inputTraceId,
+        source_label:"development_command_channel",
+        metadata:{working_memory_scope:"development_command",origin:"human_command"},
+        active:true,
+        updated_at:now
+      },
+      {
+        project_id:input.projectId,
+        job_id:input.jobId,
+        user_id:input.userId,
+        memory_kind:"assistant_synthesis",
+        normalized_knowledge:input.dual.synthesis,
+        content_hash:synthesisHash,
+        source_trace_id:input.outputTraceId,
+        source_label:"development_command_channel",
+        metadata:{working_memory_scope:"development_command",origin:"dual_advocacy_synthesis"},
+        active:true,
+        updated_at:now
+      }
+    ],{onConflict:"project_id,memory_kind,content_hash"})
+    .select("id");
+  if(memoryError)throw memoryError;
+
+  const memoryIds=(memoryRows||[]).map(item=>String(item.id));
+  const {error:turnError}=await input.serviceClient
+    .from("development_command_turns")
+    .upsert({
+      project_id:input.projectId,
+      job_id:input.jobId,
+      user_id:input.userId,
+      session_id:input.sessionId,
+      client_request_id:input.clientRequestId,
+      trace_id:input.outputTraceId,
+      command_text:input.command,
+      angels_advocate:input.dual.angelsAdvocate,
+      devils_advocate:input.dual.devilsAdvocate,
+      synthesis:input.dual.synthesis,
+      provider_label:input.providerLabel,
+      model_label:input.modelLabel,
+      memory_item_ids:memoryIds
+    },{onConflict:"project_id,user_id,client_request_id"});
+  if(turnError)throw turnError;
+}
 
 async function loadActiveIlmProfile(input:{
   serviceClient:AnyClient;
@@ -648,11 +744,17 @@ Deno.serve(async(request:Request)=>{
       ?body.clientTimeZone.trim().slice(0,120)
       :"";
 
+    const channelMode=String(body.channelMode||"").trim();
+    if(channelMode&&channelMode!=="development_command"){
+      return json({error:"Unsupported DataNest AI channel mode."},400,origin);
+    }
+
     const productMode=String(body.productMode||"").trim();
     if(productMode&&productMode!=="legal_eagle"){
       return json({error:"Unsupported DataNest AI product mode."},400,origin);
     }
     const legalMode=productMode==="legal_eagle";
+    const developmentMode=channelMode==="development_command"&&!legalMode;
     const jurisdiction=legalMode?String(body.jurisdiction||"").trim().slice(0,160):"";
     const legalTask=legalMode?String(body.legalTask||"general").trim().slice(0,80):"";
     if(legalMode&&!jurisdiction){
@@ -669,11 +771,11 @@ Deno.serve(async(request:Request)=>{
     if(requestedReuseState&&!rawReuseStates.has(requestedReuseState)){
       return json({error:"Unsupported DataNest AI reuse state."},400,origin);
     }
-    const reuseState=legalMode
+    const reuseState=(legalMode||developmentMode)
       ?"session_context"
       :(requestedReuseState||"project_learning_eligible");
     const policyPurpose=legalMode?"user_requested_analysis":"job_execution";
-    const learningEligible=!legalMode&&reuseState==="project_learning_eligible";
+    const learningEligible=!legalMode&&!developmentMode&&reuseState==="project_learning_eligible";
 
     const job=await loadAuthorizedJob(userClient,jobId);
 
@@ -736,6 +838,9 @@ Deno.serve(async(request:Request)=>{
     let learningPolicyErrorMessage:string|null=null;
     let finalLearningEligible=false;
     let trendAnalysis:{status:"not_applicable"|"recorded"|"failed";candidateId?:string|null;trendKey?:string|null;evidenceCount?:number;error?:string}={status:"not_applicable"};
+    let developmentDual:DualAdvocacyResponse|null=null;
+    let developmentProviderLabel:string|null=null;
+    let developmentModelLabel:string|null=null;
 
     const result=await executeChatTurn({
       beginRequest:async()=>{
@@ -808,7 +913,8 @@ Deno.serve(async(request:Request)=>{
             content_hash:fingerprint,
             metadata:{
               request_id:requestId,
-              trust_state:"uncertified",
+              trust_state:developmentMode?"working_memory":"uncertified",
+              channel_mode:developmentMode?"development_command":"standard",
               product_mode:legalMode?"legal_eagle":"datanest_ai",
               jurisdiction:legalMode?jurisdiction:null,
               legal_task:legalMode?legalTask:null,
@@ -841,7 +947,7 @@ Deno.serve(async(request:Request)=>{
           :null
       }),
       callProvider:async()=>{
-        const [certifiedMemory,events]=await Promise.all([
+        const [certifiedMemory,events,developmentMemory]=await Promise.all([
           loadCertifiedMemory({
             client:userClient,
             projectId:job.project_id,
@@ -852,7 +958,10 @@ Deno.serve(async(request:Request)=>{
             projectId:job.project_id,
             jobId:job.id,
             sessionId
-          })
+          }),
+          developmentMode
+            ?loadDevelopmentWorkingMemory(serviceClient,job.project_id)
+            :Promise.resolve([] as string[])
         ]);
         certifiedMemoryIds=certifiedMemory.map(item=>String(item.id||"")).filter(Boolean);
         provisionalIds=events.map(item=>item.id);
@@ -878,13 +987,22 @@ Deno.serve(async(request:Request)=>{
             "Keep this legal conversation scoped to the current Job/session. It is not eligible for automatic project-wide learning."
           );
         }
-        const governedPrompt=buildGovernedPrompt({
-          governance:governanceRules.join("\n"),
-          certifiedMemory:certifiedMemory.map(item=>String(item.normalized_knowledge||"")),
-          job,
-          uncertifiedEvidence:events.map(item=>item.content),
-          userMessage:message
-        });
+        const governedPrompt=developmentMode
+          ?buildDevelopmentCommandPrompt({
+              job,
+              workingMemory:[
+                ...certifiedMemory.map(item=>"[CERTIFIED BASELINE] "+String(item.normalized_knowledge||"")),
+                ...developmentMemory.map(item=>"[WORKING MEMORY] "+item)
+              ],
+              userMessage:message
+            })
+          :buildGovernedPrompt({
+              governance:governanceRules.join("\n"),
+              certifiedMemory:certifiedMemory.map(item=>String(item.normalized_knowledge||"")),
+              job,
+              uncertifiedEvidence:events.map(item=>item.content),
+              userMessage:message
+            });
 
         const ilm=await resolveActiveIlmRoute({
           serviceClient,
@@ -970,8 +1088,17 @@ Deno.serve(async(request:Request)=>{
                   outputTokens:ext.outputTokens
                 });
                 requestStatus="succeeded";
+                const content=developmentMode
+                  ?formatDualAdvocacyResponse(
+                      developmentDual=parseDualAdvocacyResponse(ext.content)
+                    )
+                  :ext.content;
+                if(developmentMode){
+                  developmentProviderLabel=connection.label;
+                  developmentModelLabel=connection.model;
+                }
                 return {
-                  content:ext.content,
+                  content,
                   providerMode:"external",
                   providerLabel:connection.label,
                   inputTokens:ext.inputTokens,
@@ -1112,13 +1239,22 @@ Deno.serve(async(request:Request)=>{
                     outputTokens:ext.outputTokens
                   });
                   requestStatus="succeeded";
-                  return {
-                    content:ext.content,
-                    providerMode:"external",
-                    providerLabel:connection.label,
-                    inputTokens:ext.inputTokens,
-                    outputTokens:ext.outputTokens
-                  };
+                  const content=developmentMode
+                  ?formatDualAdvocacyResponse(
+                      developmentDual=parseDualAdvocacyResponse(ext.content)
+                    )
+                  :ext.content;
+                if(developmentMode){
+                  developmentProviderLabel=connection.label;
+                  developmentModelLabel=connection.model;
+                }
+                return {
+                  content,
+                  providerMode:"external",
+                  providerLabel:connection.label,
+                  inputTokens:ext.inputTokens,
+                  outputTokens:ext.outputTokens
+                };
                 }catch(error){
                   const category=(error as Error&{category?:string}).category==="failed"
                     ?"failed"
@@ -1179,7 +1315,8 @@ Deno.serve(async(request:Request)=>{
             content:provider.content,
             content_hash:contentHash,
             metadata:{
-              trust_state:"uncertified",
+              trust_state:developmentMode?"working_memory":"uncertified",
+              channel_mode:developmentMode?"development_command":"standard",
               request_status:requestStatus,
               policy_version:policyVersion,
               product_mode:legalMode?"legal_eagle":"datanest_ai",
@@ -1218,6 +1355,26 @@ Deno.serve(async(request:Request)=>{
         try{
           if(learningPolicyErrorMessage)throw new Error(learningPolicyErrorMessage);
 
+          if(developmentMode){
+            trendAnalysis={status:"not_applicable"};
+            if(developmentDual&&outputEvent.traceId){
+              await recordDevelopmentWorkingMemory({
+                serviceClient,
+                projectId:job.project_id,
+                jobId:job.id,
+                userId:user.id,
+                sessionId,
+                clientRequestId,
+                inputTraceId:String(inputEvent.traceId||stagedInputTraceId),
+                outputTraceId:String(outputEvent.traceId),
+                command:message,
+                dual:developmentDual,
+                providerLabel:developmentProviderLabel,
+                modelLabel:developmentModelLabel
+              });
+            }
+            return;
+          }
           if(legalMode){
             trendAnalysis={status:"not_applicable"};
             return;
@@ -1247,7 +1404,9 @@ Deno.serve(async(request:Request)=>{
 
     return json({
       ...result,
-      trustState:"UNCERTIFIED",
+      trustState:developmentMode?"WORKING_MEMORY":"UNCERTIFIED",
+      channelMode:developmentMode?"development_command":null,
+      cumulativeWorkingMemory:developmentMode,
       certifiedMemoryIds,
       requestStatus,
       trendAnalysis,
