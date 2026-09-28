@@ -279,6 +279,19 @@ test("DataNest AI chat renders the submitted turn immediately and uses Enter to 
   assert.match(chat,/clientTimeZone:Intl\.DateTimeFormat\(\)\.resolvedOptions\(\)\.timeZone/);
 });
 
+test("DataNest AI chat distinguishes pending human turns and localizes visible timestamps", () => {
+  const chat=fs.readFileSync(path.join(root,"src/components/DataNestAiChatPanel.tsx"),"utf8");
+  const workspace=fs.readFileSync(path.join(root,"src/components/DataNestAiWorkspace.tsx"),"utf8");
+  const css=fs.readFileSync(path.join(root,"src/app/globals.css"),"utf8");
+  assert.match(chat,/const \[displayTimeZone,setDisplayTimeZone\]=useState\("UTC"\)/);
+  assert.match(chat,/resolvedOptions\(\)\.timeZone\|\|"UTC"/);
+  assert.match(chat,/pending=roleClass==="human"&&item\.trace_id==="DN-AI-pending"/);
+  assert.match(chat,/pending\?"SENDING":"UNCERTIFIED"/);
+  assert.match(workspace,/formatDate\(selectedJob\.updated_at,displayTimeZone\)/);
+  assert.match(css,/\.datanestAiCommandConsole \.datanestAiTurn\.human\.pending\{/);
+  assert.match(css,/flex-direction:row-reverse/);
+});
+
 test("embedded DataNest AI responds directly to basic conversational utility prompts", () => {
   const gateway=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-chat/index.ts"),"utf8");
   assert.match(gateway,/Today is \$\{date\}/);
