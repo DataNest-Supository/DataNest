@@ -5,6 +5,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useRef, useState, type CSSP
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
 import { DATANEST_LOGO_SRC } from "@/lib/brand";
+import { getRonsasStatus } from "@/lib/ronsas";
 import { SPARKS_TASK_COMPLETE, SPARKS_TASK_EVIDENCE, SPARKS_TASK_START, SPARKS_WORKSPACE_DESCRIPTION } from "@/lib/ecosystemAuthority";
 import { workflowPhaseForView, workflowPhases } from "@/lib/workflowPhases";
 import JobInviteForm from "@/components/JobInviteForm";
@@ -115,6 +116,10 @@ const nav:Array<{key:ViewKey;label:string;group:string;glyph:string}> = [
   {key:"transparency",label:"Transparency",group:"Verify",glyph:"◎"},
   {key:"settings",label:"Settings",group:"System",glyph:"⚙"}
 ];
+
+type CommandItem =
+  | {kind:"view";id:ViewKey;key:ViewKey;label:string;group:string;glyph:string;description:string}
+  | {kind:"external";id:"ronsas";href:string;label:string;group:string;glyph:string;description:string};
 
 const viewKeys = new Set<ViewKey>(nav.map(item=>item.key));
 
@@ -385,6 +390,7 @@ export default function DataNestApp({session}:{session:Session}) {
   const [commandOpen,setCommandOpen]=useState(false);
   const [commandQuery,setCommandQuery]=useState("");
   const [commandActiveIndex,setCommandActiveIndex]=useState(-1);
+  const [ronsasHubUrl,setRonsasHubUrl]=useState("");
   const commandInputRef=useRef<HTMLInputElement|null>(null);
   const commandReturnFocusRef=useRef<HTMLElement|null>(null);
   const [aiSidebarOpen,setAiSidebarOpen]=useState(false);
@@ -686,14 +692,34 @@ export default function DataNestApp({session}:{session:Session}) {
     }
   },[activeDataNestAiSession,view,project,runCount,checkpointCount,eventCount,runPage,checkpointPage,eventPage]);
 
-  const commandItems=useMemo(()=>{
+  const commandItems=useMemo<CommandItem[]>(()=>{
+    const items:CommandItem[]=nav.map(item=>({
+      kind:"view",
+      id:item.key,
+      key:item.key,
+      label:item.label,
+      group:item.group,
+      glyph:item.glyph,
+      description:viewDescriptions[item.key]
+    }));
+    if(ronsasHubUrl){
+      items.push({
+        kind:"external",
+        id:"ronsas",
+        href:ronsasHubUrl,
+        label:"RONSAS",
+        group:"Applications",
+        glyph:"◉",
+        description:"Open governed RONSAS application hub."
+      });
+    }
     const query=commandQuery.trim().toLowerCase();
-    if(!query)return nav;
-    return nav.filter(item=>{
-      const haystack=[item.label,item.group,viewDescriptions[item.key]].join(" ").toLowerCase();
+    if(!query)return items;
+    return items.filter(item=>{
+      const haystack=[item.label,item.group,item.description].join(" ").toLowerCase();
       return haystack.includes(query);
     });
-  },[commandQuery]);
+  },[commandQuery,ronsasHubUrl]);
 
   const loadSummary=useCallback(async(projectId:string)=>{
     const supabase=getSupabase();
@@ -1072,6 +1098,15 @@ export default function DataNestApp({session}:{session:Session}) {
     return()=>window.clearTimeout(timer);
   },[commandOpen]);
   useEffect(()=>{
+    let active=true;
+    void getRonsasStatus().then(status=>{
+      if(active)setRonsasHubUrl(status.authority.publicHub);
+    }).catch(()=>{
+      if(active)setRonsasHubUrl("");
+    });
+    return()=>{active=false;};
+  },[]);
+  useEffect(()=>{
     const saved=window.localStorage.getItem("datanest.aiSidebar.open");
     if(saved==="true")setAiSidebarOpen(true);
     const open=()=>setAiSidebarOpen(true);
@@ -1173,12 +1208,20 @@ export default function DataNestApp({session}:{session:Session}) {
     }
     if(event.key==="Enter"&&commandQuery.trim()&&commandItems[0]){
       event.preventDefault();
-      if(commandActiveIndex>0&&commandItems[commandActiveIndex]){
-        chooseCommandView(commandItems[commandActiveIndex].key);
-      }else{
-        chooseCommandView(commandItems[0].key);
-      }
+      const selected=commandActiveIndex>0&&commandItems[commandActiveIndex]
+        ?commandItems[commandActiveIndex]
+        :commandItems[0];
+      chooseCommandItem(selected);
     }
+  }
+
+  function chooseCommandItem(item:CommandItem){
+    if(item.kind==="external"){
+      window.open(item.href,"_blank","noopener,noreferrer");
+      closeCommandPalette();
+      return;
+    }
+    chooseCommandView(item.key);
   }
 
   function chooseCommandView(nextView:ViewKey){
@@ -1330,6 +1373,13 @@ export default function DataNestApp({session}:{session:Session}) {
           </button>)}
         </details>)}
       </nav>
+      {ronsasHubUrl&&<a
+        className="ronsasNavLaunch"
+        href={ronsasHubUrl}
+        target="_blank"
+        rel="noreferrer"
+        aria-label="Open RONSAS from DataNest navigation"
+      ><span aria-hidden="true">◉</span><span><b>RONSAS</b><small>Open governed application hub</small></span><strong aria-hidden="true">↗</strong></a>}
       <div className="sidebarFooter">
         <div className="userMini"><div className="avatar">{(session.user.email||"U").slice(0,1).toUpperCase()}</div><div><b>{session.user.email?.split("@")[0]||"Authorized user"}</b><small>{membership ? membership.role.toUpperCase()+" · Authenticated" : "Authenticated"}</small></div></div>
         <div className="mobileNavActions" aria-label="Mobile workspace actions">
@@ -1392,16 +1442,19 @@ export default function DataNestApp({session}:{session:Session}) {
         </label>
         <div className="commandResults" role="listbox" aria-label="DataNest workspaces">
           {commandItems.map((item,index)=><button
-            className={"commandResult "+((commandActiveIndex===index||view===item.key)?"active":"")}
+            className={"commandResult "+((commandActiveIndex===index||(item.kind==="view"&&view===item.key))?"active":"")}
             type="button"
             role="option"
             aria-selected={commandActiveIndex===index}
-            key={item.key}
-            onClick={()=>chooseCommandView(item.key)}
+            aria-label={item.kind==="external"?"Open RONSAS application hub":undefined}
+            key={item.id}
+            onClick={()=>chooseCommandItem(item)}
           >
             <span className="commandGlyph" aria-hidden="true">{item.glyph}</span>
-            <span className="commandResultCopy"><b>{item.label}</b><small>{item.group+" · "+viewDescriptions[item.key]}</small></span>
-            {view===item.key?<span className="commandCurrent">Current</span>:<span className="workspaceArrow" aria-hidden="true">→</span>}
+            <span className="commandResultCopy"><b>{item.label}</b><small>{item.group+" · "+item.description}</small></span>
+            {item.kind==="view"&&view===item.key
+              ?<span className="commandCurrent">Current</span>
+              :<span className="workspaceArrow" aria-hidden="true">{item.kind==="external"?"↗":"→"}</span>}
           </button>)}
           {!commandItems.length&&<div className="commandEmpty">No DataNest workspace matches “{commandQuery}”.</div>}
         </div>
