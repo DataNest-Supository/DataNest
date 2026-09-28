@@ -41,6 +41,14 @@ export type RonsasStatus = {
       listed: boolean;
       error?: string;
     };
+    backupHost: {
+      provider: "Dropbox";
+      path: string;
+      role: "artifact-recovery";
+      status: "active";
+      servesApplication: false;
+      localPcBackupHosting: false;
+    };
   };
 };
 
@@ -74,7 +82,13 @@ export async function getRonsasStatus(): Promise<RonsasStatus> {
     typeof status.delivery.operationalUrl !== "string" ||
     !status.delivery.ingress ||
     !status.delivery.hubRegistration ||
-    typeof status.delivery.hubRegistration.listed !== "boolean"
+    typeof status.delivery.hubRegistration.listed !== "boolean" ||
+    !status.delivery.backupHost ||
+    status.delivery.backupHost.provider !== "Dropbox" ||
+    status.delivery.backupHost.role !== "artifact-recovery" ||
+    status.delivery.backupHost.status !== "active" ||
+    status.delivery.backupHost.servesApplication !== false ||
+    status.delivery.backupHost.localPcBackupHosting !== false
   ) {
     throw new Error("RONSAS returned an invalid integration contract.");
   }
