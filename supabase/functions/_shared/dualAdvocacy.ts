@@ -88,11 +88,7 @@ export function parseCompleteDualAdvocacyResponse(raw:string):DualAdvocacyRespon
     const synthesis=clean(value.synthesis);
     if(angelsAdvocate&&devilsAdvocate&&synthesis)return {angelsAdvocate,devilsAdvocate,synthesis};
   }catch{}
-  return {
-    angelsAdvocate:trimmed,
-    devilsAdvocate:"A distinct opposing analysis was not returned.",
-    synthesis:"Re-run the command to obtain the complete dual-advocacy response."
-  };
+  return null;
 }
 
 export function parseDualAdvocacyResponse(raw:string):DualAdvocacyResponse{
