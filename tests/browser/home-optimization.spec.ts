@@ -250,6 +250,10 @@ async function openJourneyFixture(page: import('@playwright/test').Page) {
     if(path.endsWith("/projects")) body={id:projectId,slug:"resonance-datanest",name:"Journey fixture",description:null,status:"ACTIVE"};
     if(path.endsWith("/project_members")) body={project_id:projectId,user_id:userId,role:"viewer",status:"active"};
     if(path.endsWith("/get_project_dashboard_summary")) body={total_jobs:0,active_jobs:0,running_jobs:0,blocked_jobs:0};
+    if(path.endsWith("/get_governance_workspace_v1")) body={
+      ratified_protocol:null,draft_protocols:[],proposals:[],decisions:[],disputes:[],
+      can_manage:false,can_vote:false,member_role:"viewer",boundaries:{}
+    };
     return route.fulfill({contentType:"application/json",body:JSON.stringify(body)});
   });
   await page.goto(appPath);
