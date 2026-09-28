@@ -68,7 +68,7 @@ test("Products reads the governed product catalog from Supabase",()=>{
   assert.match(products,/GOVERNED PRODUCT CATALOG/);
   assert.match(products,/FREE_PROMOTION_LABEL|FREE PROMOTION · BILLING OFF/);
   assert.match(products,/PARENT PLATFORM/);
-  assert.match(products,/RESONANCE DATANEST/);
+  assert.match(products,/RESON8\.DATANEST\.LIFE/);
   assert.match(products,/EXECUTION AUTHORITY/);
   assert.match(products,/\["intake","staging","audit","main"\]/);
   assert.match(products,/className="catalogNavigator"/);
