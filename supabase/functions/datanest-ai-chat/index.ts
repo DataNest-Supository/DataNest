@@ -1176,11 +1176,8 @@ Deno.serve(async(request:Request)=>{
                   outputTokens:ext.outputTokens
                 });
                 requestStatus="succeeded";
-                const content=developmentMode
-                  ?formatDualAdvocacyResponse(
-                      developmentDual=parseCompleteDualAdvocacyResponse(ext.content)
-                    )
-                  :ext.content;
+                developmentDual=developmentMode?parseCompleteDualAdvocacyResponse(ext.content):null;
+                const content=developmentDual?formatDualAdvocacyResponse(developmentDual):ext.content;
                 if(developmentMode){
                   developmentProviderLabel=connection.label;
                   developmentModelLabel=connection.model;
