@@ -1,3 +1,4 @@
+# Deployment trigger: publish latest main branding update
 name: Deploy GitHub Pages
 
 on:
