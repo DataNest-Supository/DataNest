@@ -37,7 +37,10 @@ const visibilityClasses=new Set([
 const rawReuseStates=new Set([
   "runtime_only","session_context","project_learning_eligible"
 ]);
-const developmentWorkExpertise=new Map([
+type DevelopmentWorkExpertiseKey=
+  "ui_ux"|"frontend"|"backend"|"data"|"ai"|"testing"|"security"|"infrastructure"|"documentation"|"product_planning";
+type DevelopmentWorkExpertiseRoute={label:string;verificationTrack:DevelopmentWorkExpertiseKey};
+const developmentWorkExpertise=new Map<DevelopmentWorkExpertiseKey,DevelopmentWorkExpertiseRoute>([
   ["ui_ux",{label:"UI & UX",verificationTrack:"ui_ux"}],
   ["frontend",{label:"Frontend",verificationTrack:"frontend"}],
   ["backend",{label:"Backend",verificationTrack:"backend"}],
@@ -48,7 +51,7 @@ const developmentWorkExpertise=new Map([
   ["infrastructure",{label:"Infrastructure",verificationTrack:"infrastructure"}],
   ["documentation",{label:"Documentation",verificationTrack:"documentation"}],
   ["product_planning",{label:"Product Planning",verificationTrack:"product_planning"}]
-] as const);
+]);
 
 type AnyClient=SupabaseClient<any>;
 
@@ -723,7 +726,7 @@ Deno.serve(async(request:Request)=>{
 
     const requestedExpertiseSection=String(body.expertiseSection||"").trim();
     const expertise=requestedExpertiseSection
-      ?developmentWorkExpertise.get(requestedExpertiseSection as typeof developmentWorkExpertise extends Map<infer K,unknown>?K:never)||null
+      ?developmentWorkExpertise.get(requestedExpertiseSection as DevelopmentWorkExpertiseKey)||null
       :null;
     if(requestedExpertiseSection&&!expertise){
       return json({error:"Unsupported Development Work expertise section."},400,origin);
