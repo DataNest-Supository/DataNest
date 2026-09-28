@@ -84,7 +84,9 @@ async function tryLoadFFmpeg(source: typeof FFMPEG_SOURCES[number], onProgress?:
 
     const loadPromise = ffmpeg.load({ coreURL, wasmURL });
     const timeout = new Promise<never>((_, reject) =>
-      window.setTimeout(() => reject(new Error(`FFmpeg load timed out (${source.label})`)), source.timeout)
+      // nosemgrep: ajinabraham.njsscan.eval.eval_node.eval_nodejs
+      // Static callback + numeric deadline only; no string/eval-style timer execution occurs here.
+      setTimeout(() => reject(new Error(`FFmpeg load timed out (${source.label})`)), source.timeout)
     );
     await Promise.race([loadPromise, timeout]);
     console.log(`[VideoExport] FFmpeg loaded via ${source.label} ✓`);
@@ -299,7 +301,9 @@ function speakSegment(
 
     // Shorter timeout: 15s max (500-char segments should finish in <10s)
     const maxMs = Math.max(8_000, Math.min((text.length / 12) * 1000, 15_000));
-    const timer = window.setTimeout(() => {
+    // nosemgrep: ajinabraham.njsscan.eval.eval_node.eval_nodejs
+    // Static callback + bounded numeric delay; this is a false positive for eval-style timer execution.
+    const timer = setTimeout(() => {
       window.speechSynthesis.cancel();
       console.warn(`[TTS] Segment ${segIdx + 1}/${totalSegs} timed out after ${(maxMs / 1000).toFixed(0)}s, skipping`);
       settle(resolve);
