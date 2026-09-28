@@ -1,4 +1,4 @@
-import { access, cp, mkdir, rm, writeFile } from "node:fs/promises";
+import { access, cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
@@ -43,6 +43,11 @@ for(const app of apps){
   const targetDir=path.join(appsOut,app.slug);
   await mkdir(targetDir,{recursive:true});
   await cp(builtDir,targetDir,{recursive:true});
+  const targetIndex=path.join(targetDir,"index.html");
+  const html=await readFile(targetIndex,"utf8");
+  if(!/<head\b[^>]*>/i.test(html))throw new Error(`${app.slug} has no HTML head for the cloud preview policy`);
+  const networkPolicy=`<meta http-equiv="Content-Security-Policy" content="connect-src 'self' https: wss: blob: data:">`;
+  await writeFile(targetIndex,html.replace(/<head\b[^>]*>/i,head=>`${head}\n${networkPolicy}`),"utf8");
 
   manifest.push({
     slug:app.slug,

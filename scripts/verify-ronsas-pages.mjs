@@ -21,6 +21,9 @@ for(const app of staticApps){
   if(response&&(response.status!==200||new URL(response.url).origin!==new URL(origin).origin))throw new Error(`Live launch failed: ${launch} (${response.status}, ${response.url})`);
   const html=liveOnly?await response.text():await readFile(index,"utf8");
   if(!/<html\b/i.test(html))throw new Error(`Missing HTML shell: ${app.slug}`);
+  if(!/<meta\s+http-equiv=["']Content-Security-Policy["'][^>]*connect-src\s+'self'\s+https:/i.test(html)){
+    throw new Error(`Missing cloud preview network policy: ${app.slug}`);
+  }
   const assets=[...html.matchAll(/(?:src|href)=["']([^"']+\.(?:js|css)(?:\?[^"']*)?)["']/gi)]
     .map(match=>match[1]).filter(value=>!/^https?:\/\//.test(value));
   for(const asset of assets){

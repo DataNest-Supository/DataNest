@@ -13,3 +13,5 @@ Serving a static bundle from DataNest verifies its entry and assets. It does not
 | SyncVision | Built | MuseTalk, speech transcription, and Hub routes call `127.0.0.1` in `sovereign-local.ts`, `UploadStep.tsx`, and Hub integration. |
 
 The readiness flag for a static app must be set only after its primary workflow passes from a client without any service on Ealiophin or the visitor's machine. Broken or machine-bound features should display a clear unavailable state until migrated. The static Pages check covers HTML and referenced assets; it is not this workflow gate.
+
+DataNest's static bundle build inserts a `connect-src` policy that permits the app origin and secure cloud endpoints while blocking cross-origin HTTP loopback calls. This prevents a preview from invoking a service on the visitor's computer. Local-only features remain visibly incomplete until migrated; this policy is a containment gate, not a substitute for functional cloud acceptance.
