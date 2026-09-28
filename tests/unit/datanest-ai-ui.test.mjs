@@ -14,7 +14,7 @@ test("DataNest AI command center prioritizes active work above decorative hero c
 
   assert.match(workspace,/className="datanestAiCommandSummary"/);
   assert.match(workspace,/Current objective/);
-  assert.match(workspace,/Open AI workspace/);
+  assert.match(workspace,/Focus chat/);
   assert.match(workspace,/Inspect context/);
   assert.match(workspace,/className="datanestAiStatusCards"/);
   assert.match(workspace,/aria-label="DataNest AI operational status"/);
@@ -26,7 +26,7 @@ test("DataNest AI command center prioritizes active work above decorative hero c
   assert.match(css,/\.datanestAiHeroV2\s*\{[^}]*min-height:340px/s);
   assert.match(css,/\.datanestAiHeroV2 h2\s*\{[^}]*font-size:clamp\(40px,4\.4vw,64px\)/s);
   assert.match(css,/\.datanestAiStatusCards\s*\{/);
-  assert.match(css,/\.aiCommandGuide\s*\{/);
+  assert.match(css,/\.aiViewPhaseRail\s*\{/);
 });
 
 test("DataNest AI command center keeps responsive and reduced-motion safeguards",()=>{
@@ -50,15 +50,15 @@ test("DataNest shell keeps navigation compact and the active workspace cyan-led 
 });
 
 
-test("DataNest AI task guide opens the active Job selector and falls back to UNIFI when no Job exists",()=>{
+test("DataNest AI omits the redundant task guide and uses the compact AI phase rail",()=>{
+  const workspace=read("src/components/DataNestAiWorkspace.tsx");
   const app=read("src/components/DataNestApp.tsx");
   const css=read("src/app/datanest-ai-optimized.css");
 
-  assert.match(app,/className="workspaceTaskGuideAction"/);
-  assert.match(app,/>Select Job Manifest <span aria-hidden="true">→<\/span><\/button>/);
-  assert.match(app,/document\.getElementById\("datanest-ai-active-job"\)/);
-  assert.match(app,/if\(!target\)\{\s*setView\("unifi"\);\s*return;\s*\}/s);
-  assert.match(app,/prefers-reduced-motion: reduce/);
-  assert.match(css,/\.workspaceTaskGuideAction\s*\{/);
-  assert.match(css,/\.workspaceTaskGuideAction:focus-visible/);
+  assert.match(app,/className=\{"workflowPhaseRail "\+\(view==="ai"\?"aiViewPhaseRail":""\)\}/);
+  assert.match(app,/!loadingCore&&view!=="ai"&&workspaceTaskGuides\[view\]/);
+  assert.doesNotMatch(app,/className=\{"workspaceTaskGuide "\+\(view==="ai"\?" aiCommandGuide":""\)\}/);
+  assert.match(workspace,/aria-label="Select active Job Manifest"/);
+  assert.match(css,/\.aiViewPhaseRail\s*\{/);
+  assert.match(css,/\.aiViewPhaseRail \.workflowPhaseSteps\s*\{/);
 });
