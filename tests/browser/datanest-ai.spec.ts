@@ -219,7 +219,6 @@ test("human input is traced and remains uncertified",async({page})=>{
   await selectPrimaryAiJob(page);
 
   const message="Keep DataNest AI trace IDs visible on every governed turn.";
-  await page.getByRole("button",{name:/Documentation/}).click();
   await page.getByPlaceholder(/Ask DataNest AI to analyze/i).fill(message);
   await page.getByRole("button",{name:"Send command"}).click();
 
