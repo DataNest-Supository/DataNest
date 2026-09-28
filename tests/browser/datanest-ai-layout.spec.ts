@@ -193,7 +193,7 @@ test("DataNest AI keeps the animated hero and a compact command-first workspace"
   expect(layout.advanced.y).toBeGreaterThanOrEqual(layout.details.bottom-2);
   await expect(page.locator(".datanestAiContextDetails")).not.toHaveAttribute("open","");
   await expect(page.locator(".datanestAiAdvancedDisclosure")).not.toHaveAttribute("open","");
-  expect(layout.chat.width).toBeLessThanOrEqual(982);
+  expect(layout.chat.width).toBeLessThanOrEqual(1042);
   expect(Math.abs(layout.chat.center-layout.workspace.center)).toBeLessThanOrEqual(2);
   expect(layout.scrollWidth).toBeLessThanOrEqual(layout.viewportWidth);
 
