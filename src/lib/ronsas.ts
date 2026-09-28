@@ -22,6 +22,26 @@ export type RonsasStatus = {
     origin: string;
     error?: string;
   };
+  delivery: {
+    brandedUrl: string;
+    fallbackUrl: string;
+    operationalUrl: string;
+    ingress: {
+      ok: boolean;
+      status: number | null;
+      latencyMs: number;
+      origin: string;
+      error?: string;
+    };
+    hubRegistration: {
+      ok: boolean;
+      status: number | null;
+      latencyMs: number;
+      endpoint: string;
+      listed: boolean;
+      error?: string;
+    };
+  };
 };
 
 export async function getRonsasStatus(): Promise<RonsasStatus> {
@@ -47,7 +67,14 @@ export async function getRonsasStatus(): Promise<RonsasStatus> {
     status.independent !== false ||
     status.localInteractionRequired !== false ||
     !status.authority ||
-    !status.hub
+    !status.hub ||
+    !status.delivery ||
+    typeof status.delivery.brandedUrl !== "string" ||
+    typeof status.delivery.fallbackUrl !== "string" ||
+    typeof status.delivery.operationalUrl !== "string" ||
+    !status.delivery.ingress ||
+    !status.delivery.hubRegistration ||
+    typeof status.delivery.hubRegistration.listed !== "boolean"
   ) {
     throw new Error("RONSAS returned an invalid integration contract.");
   }
