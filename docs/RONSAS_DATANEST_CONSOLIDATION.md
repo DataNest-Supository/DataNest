@@ -31,11 +31,17 @@ The historical repository exposed four binary files that the GitHub connector co
 
 This is an explicit DataNest runtime migration. It does not claim that the unavailable historical binaries were recovered byte-for-byte.
 
-## DataNest-native control plane
+## Backup-host policy
 
-Active RONSAS operational authority now lives under `ops/ronsas/ealiophin` and reads application source only from this repository.
+Dropbox `/DataNest-AI-Backups` is the governed backup-artifact host for DataNest/RONSAS continuity material. Local PCs are no longer backup hosts or continuity authorities. They may still run development, controlled tests, and hardware-bound optional services, but recovery artifacts and release backups are governed in Dropbox.
 
-- `RONSAS-MODULES.json` declares DataNest as the single repository authority and preserves `free-promotion` / `paidCheckoutActive: false`.
+Dropbox is backup/recovery storage rather than a production web origin. GitHub Pages remains the operational web fallback and Railway remains the branded Reson8 ingress.
+
+## DataNest-native local execution control plane
+
+The local RONSAS execution control plane under `ops/ronsas/ealiophin` reads application source only from this repository. It is not backup-host authority.
+
+- `RONSAS-MODULES.json` declares DataNest as the single repository authority, Dropbox as the backup-artifact host, disables local-PC backup hosting, and preserves `free-promotion` / `paidCheckoutActive: false`.
 - `START-RONSAS-DATANEST.ps1`, `STATUS-RONSAS-DATANEST.ps1`, and `STOP-RONSAS-DATANEST.ps1` govern the local suite and track only DataNest-owned process state.
 - `RONSAS-SUPERVISOR.ps1` performs bounded recovery for required modules without Open Nova paths, Desktop Commander, or the historical standalone repository.
 - SyncVision's recovered MuseTalk 1.5 bridge now lives at `apps/ronsas/syncvision/runtime/musetalk/musetalk_bridge.py` and is registered as an optional localhost-only service at `127.0.0.1:7863` because its model/Python/FFmpeg assets remain machine-local.
