@@ -7,14 +7,14 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
 import { DATANEST_LOGO_SRC } from "@/lib/brand";
-import { RESON8_HUB_URL } from "@/lib/reson8";
+import { DATANEST_CANONICAL_NAME, RESON8_HUB_URL } from "@/lib/reson8";
 
 const DataNestApp = dynamic(() => import("@/components/DataNestApp"), {
   ssr: false,
   loading: () => (
     <main className="authShell" aria-live="polite">
       <div className="bootPulse" aria-hidden="true" />
-      <p>Loading Resonance DataNest workspace…</p>
+      <p>Loading reson8.datanest.life workspace…</p>
     </main>
   )
 });
@@ -33,9 +33,9 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
 
 function AuthBrand() {
   return (
-    <div className="authBrand" aria-label="Resonance DataNest brand">
+    <div className="authBrand" aria-label="reson8.datanest.life brand">
       <span className="authLogo" aria-hidden="true"><img src={DATANEST_LOGO_SRC} alt="" /></span>
-      <span className="authBrandCopy"><small>RESONANCE</small><strong>DataNest</strong></span>
+      <span className="authBrandCopy"><small>RESON8</small><strong>datanest.life</strong></span>
     </div>
   );
 }
@@ -185,13 +185,13 @@ export default function AuthGate() {
       <main className="authShell" role="status" aria-live="polite" aria-busy="true">
         <section className="authCard">
           <AuthBrand />
-          <h1>Resonance DataNest</h1>
+          <h1>{DATANEST_CANONICAL_NAME}</h1>
           <div className="bootRow">
             <div className="bootPulse" aria-hidden="true" />
             <p className="lede">Checking your secure DataNest session…</p>
           </div>
           <noscript>
-            <p className="authMessage">JavaScript is required to sign in to Resonance DataNest.</p>
+            <p className="authMessage">JavaScript is required to sign in to reson8.datanest.life.</p>
           </noscript>
         </section>
       </main>
@@ -203,7 +203,7 @@ export default function AuthGate() {
       <main className="authShell">
         <section className="authCard" role="alert">
           <AuthBrand />
-          <h1>Resonance DataNest</h1>
+          <h1>{DATANEST_CANONICAL_NAME}</h1>
           <p className="lede">{startupMessage}</p>
           <div className="setupBox">
             <b>Required public runtime values</b>
@@ -263,7 +263,7 @@ export default function AuthGate() {
     <main className="authShell authLanding">
       <a className="skipLink" href="#sign-in-email">Skip to sign in</a>
       <header className="landingHeader">
-        <a className="landingBrand" href="#" aria-label="Resonance DataNest home"><span className="landingLogo" aria-hidden="true"><img src={DATANEST_LOGO_SRC} alt="" /></span><span className="landingBrandText"><small>RESONANCE</small><b>DataNest</b></span></a>
+        <a className="landingBrand" href="#" aria-label="reson8.datanest.life home"><span className="landingLogo" aria-hidden="true"><img src={DATANEST_LOGO_SRC} alt="" /></span><span className="landingBrandText"><small>RESON8</small><b>datanest.life</b></span></a>
         <div className="landingHeaderActions"><a className="landingHubLink" href={RESON8_HUB_URL} target="_blank" rel="noreferrer">Reson8 Hub <span aria-hidden="true">↗</span></a><MotionControl/></div>
       </header>
       <div className="landingLayout">
@@ -281,7 +281,7 @@ export default function AuthGate() {
       </section>
       <section className="authCard landingSignIn" aria-labelledby="sign-in-title">
         <AuthBrand />
-        <h1 id="sign-in-title">Resonance DataNest</h1>
+        <h1 id="sign-in-title">{DATANEST_CANONICAL_NAME}</h1>
         <p className="lede">Welcome to your workspace. Sign in to continue.</p>
 
         <form onSubmit={signIn} className="authForm" aria-busy={busy}>
