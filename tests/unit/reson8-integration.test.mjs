@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 
 const binding=readFileSync(new URL("../../src/lib/reson8.ts",import.meta.url),"utf8");
 const layout=readFileSync(new URL("../../src/app/layout.tsx",import.meta.url),"utf8");
+const reson8Wire=readFileSync(new URL("../../public/reson8-wire.js",import.meta.url),"utf8");
 const auth=readFileSync(new URL("../../src/components/AuthGate.tsx",import.meta.url),"utf8");
 const shell=readFileSync(new URL("../../src/components/DataNestApp.tsx",import.meta.url),"utf8");
 const contract=JSON.parse(readFileSync(new URL("../../public/.well-known/reson8-app.json",import.meta.url),"utf8"));
@@ -57,7 +58,10 @@ test("DataNest keeps a visible return path to the Reson8 Hub even when status pr
 
 test("DataNest runtime config stays local while the branded hostname redirects to Reson8",()=>{
   assert.match(layout,/const runtimeConfigSource=basePath \+ "\/runtime-config\.js"/);
-  assert.match(layout,/window\.location\.hostname===\"reson8\.datanest\.life\"/);
-  assert.match(layout,/window\.location\.replace\(\"https:\/\/reson8\.life\/\"\)/);
+  assert.match(layout,/const reson8WireSource=basePath \+ "\/reson8-wire\.js"/);
+  assert.match(layout,/<script src=\{reson8WireSource\} \/>/);
+  assert.match(reson8Wire,/window\.location\.hostname === "reson8\.datanest\.life"/);
+  assert.match(reson8Wire,/window\.location\.replace\("https:\/\/reson8\.life\/"\)/);
+  assert.doesNotMatch(layout,/dangerouslySetInnerHTML/);
   assert.doesNotMatch(layout,/DATANEST_RUNTIME_CONFIG_URL/);
 });

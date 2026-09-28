@@ -42,6 +42,18 @@ type AllowDomain={
   updated_at:string;
 };
 
+type SharedProviderStatus={
+  id:string;
+  provider:string;
+  label:string;
+  api_base_url:string;
+  endpoint_host:string;
+  model:string;
+  status:string;
+  last_rotated_at:string|null;
+  updated_at:string;
+};
+
 function formatDate(value:string|null){
   if(!value)return "—";
   return new Intl.DateTimeFormat(undefined,{
@@ -68,6 +80,12 @@ export default function AiOperationsDashboard({
   const [connections,setConnections]=useState<Connection[]>([]);
   const [budget,setBudget]=useState<BudgetStatus|null>(null);
   const [allowlist,setAllowlist]=useState<AllowDomain[]>([]);
+  const [sharedProvider,setSharedProvider]=useState<SharedProviderStatus|null>(null);
+
+  const [cloudflareAccountId,setCloudflareAccountId]=useState("");
+  const [sharedLabel,setSharedLabel]=useState("DataNest Open AI · Nemotron 3 Super");
+  const [sharedModel,setSharedModel]=useState("@cf/nvidia/nemotron-3-120b-a12b");
+  const [sharedApiKey,setSharedApiKey]=useState("");
 
   const [provider,setProvider]=useState("openai");
   const [label,setLabel]=useState("My OpenAI");
@@ -126,7 +144,19 @@ export default function AiOperationsDashboard({
       setBudgetCurrency(nextBudget.currency||"ZAR");
     }
     setAllowlist((allowResult.data||[]) as AllowDomain[]);
-  },[projectId,currentUserId]);
+
+    if(canManageAi){
+      const {data:sharedData,error:sharedError}=await supabase.functions.invoke("manage-ai-provider-v2",{
+        body:{action:"shared_status",projectId}
+      });
+      if(sharedError){setError(sharedError.message);return;}
+      const sharedPayload=(sharedData||{}) as {error?:unknown;config?:SharedProviderStatus|null};
+      if(sharedPayload.error){setError(String(sharedPayload.error));return;}
+      setSharedProvider(sharedPayload.config||null);
+    }else{
+      setSharedProvider(null);
+    }
+  },[projectId,currentUserId,canManageAi]);
 
   useEffect(()=>{void load()},[load]);
 
@@ -155,6 +185,61 @@ export default function AiOperationsDashboard({
     if(payload.error){setError(String(payload.error));return;}
     setApiKey("");
     setNotice("AI provider connected or rotated. Credentials remain server-side.");
+    await load();
+  }
+
+  async function connectSharedProvider(event:FormEvent){
+    event.preventDefault();
+    const supabase=getSupabase();
+    const accountId=cloudflareAccountId.trim();
+    if(!supabase||!canManageAi)return;
+    if(!/^[A-Za-z0-9_-]{8,64}$/.test(accountId)){
+      setError("Enter a valid Cloudflare account ID.");
+      return;
+    }
+
+    setBusy(true);setNotice("");setError("");
+    const apiBaseUrl=
+      "https://api.cloudflare.com/client/v4/accounts/"+
+      accountId+
+      "/ai/v1/chat/completions";
+
+    const {data,error:invokeError}=await supabase.functions.invoke("manage-ai-provider-v2",{
+      body:{
+        action:"connect_shared",
+        projectId,
+        provider:"openai_compatible",
+        label:sharedLabel,
+        apiBaseUrl,
+        model:sharedModel,
+        apiKey:sharedApiKey
+      }
+    });
+    setBusy(false);
+    if(invokeError){setError(invokeError.message);return;}
+    const payload=(data||{}) as Record<string,unknown>;
+    if(payload.error){setError(String(payload.error));return;}
+
+    setSharedApiKey("");
+    setNotice("Project-shared DataNest AI provider activated. The credential remains encrypted server-side.");
+    await load();
+  }
+
+  async function disableSharedProvider(){
+    const supabase=getSupabase();
+    if(!supabase||!canManageAi)return;
+    if(!window.confirm("Disable the project-shared AI provider for all users? Personal provider connections will remain unchanged."))return;
+
+    setBusy(true);setNotice("");setError("");
+    const {data,error:invokeError}=await supabase.functions.invoke("manage-ai-provider-v2",{
+      body:{action:"disable_shared",projectId}
+    });
+    setBusy(false);
+    if(invokeError){setError(invokeError.message);return;}
+    const payload=(data||{}) as Record<string,unknown>;
+    if(payload.error){setError(String(payload.error));return;}
+
+    setNotice("Project-shared AI provider disabled. DataNest will use personal providers or embedded fallback.");
     await load();
   }
 
@@ -260,6 +345,47 @@ export default function AiOperationsDashboard({
         <small>{budget?.monthly_cost_limit_minor==null?"No cost ceiling configured":"Limit "+money(budget.monthly_cost_limit_minor,budget.currency)}</small>
       </article>
     </section>
+
+    {canManageAi&&<section className="panel">
+      <div className="panelHead">
+        <div>
+          <p className="eyebrow">DATANEST SHARED AI</p>
+          <h3>Project-wide open-model provider</h3>
+        </div>
+        {sharedProvider&&<span className={"badge "+stateTone(sharedProvider.status)}>{sharedProvider.status}</span>}
+      </div>
+      <p className="muted">
+        Configure one encrypted Cloudflare Workers AI credential for DataNest. Registered users without a personal provider receive a governed project-managed connection automatically. Personal providers remain higher priority.
+      </p>
+
+      {sharedProvider&&<article className="connectionCard">
+        <div className="rowBetween">
+          <div><b>{sharedProvider.label}</b><small>{sharedProvider.provider+" · "+sharedProvider.model}</small></div>
+          <span className={"badge "+stateTone(sharedProvider.status)}>{sharedProvider.status}</span>
+        </div>
+        <p className="muted">{sharedProvider.api_base_url}</p>
+        <div className="manifestMeta">
+          <span>{"Host "+sharedProvider.endpoint_host}</span>
+          <span>{"Rotated "+formatDate(sharedProvider.last_rotated_at)}</span>
+        </div>
+      </article>}
+
+      <form className="plannerForm" onSubmit={connectSharedProvider}>
+        <div className="fieldRow">
+          <label>Cloudflare account ID<input value={cloudflareAccountId} onChange={e=>setCloudflareAccountId(e.target.value)} placeholder="Account ID" required/></label>
+          <label>Connection label<input value={sharedLabel} onChange={e=>setSharedLabel(e.target.value)} required/></label>
+        </div>
+        <label>Open model<input value={sharedModel} onChange={e=>setSharedModel(e.target.value)} required/></label>
+        <label>Workers AI API token<input type="password" autoComplete="off" value={sharedApiKey} onChange={e=>setSharedApiKey(e.target.value)} placeholder="Encrypted in Supabase Vault" required/></label>
+        <div className="rowActions">
+          <button className="primaryButton" disabled={busy}>{busy?"Saving…":sharedProvider?"Rotate / update shared provider":"Activate shared provider"}</button>
+          {sharedProvider?.status==="active"&&<button className="textButton dangerText" type="button" disabled={busy} onClick={()=>void disableSharedProvider()}>Disable shared provider</button>}
+        </div>
+      </form>
+      <p className="muted">
+        Bootstrap model: NVIDIA Nemotron 3 Super 120B-A12B. The model and endpoint remain replaceable; DataNest identity and certified memory do not depend on Cloudflare.
+      </p>
+    </section>}
 
     <section className="twoCol stakeholderCols">
       <div className="panel">
