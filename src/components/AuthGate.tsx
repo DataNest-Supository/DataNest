@@ -7,14 +7,14 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
 import { DATANEST_LOGO_SRC } from "@/lib/brand";
-import { DATANEST_CANONICAL_NAME, RESON8_HUB_URL } from "@/lib/reson8";
+import { DATANEST_CANONICAL_NAME, DATANEST_PUBLIC_URL, RESON8_HUB_URL } from "@/lib/reson8";
 
 const DataNestApp = dynamic(() => import("@/components/DataNestApp"), {
   ssr: false,
   loading: () => (
     <main className="authShell" aria-live="polite">
       <div className="bootPulse" aria-hidden="true" />
-      <p>Loading reson8.datanest.life workspace…</p>
+      <p>Loading DataNest workspace…</p>
     </main>
   )
 });
@@ -191,7 +191,7 @@ export default function AuthGate() {
             <p className="lede">Checking your secure DataNest session…</p>
           </div>
           <noscript>
-            <p className="authMessage">JavaScript is required to sign in to reson8.datanest.life.</p>
+            <p className="authMessage">JavaScript is required to sign in at {DATANEST_PUBLIC_URL}.</p>
           </noscript>
         </section>
       </main>
