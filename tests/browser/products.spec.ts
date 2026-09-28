@@ -35,7 +35,14 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
         contract:"ronsas-status@1",checkedAt:"2026-09-28T08:30:00Z",mode:"cloud",runtimeMode:"local-first",managedByDataNest:true,
         billingState:"free-promotion",independent:false,localInteractionRequired:false,
         authority:{owner:"DataNest-Supository",controlRepository:"DataNest-Supository/DataNest",hubRepository:"DataNest-Supository/DataNest",publicHub:"https://reson8.life/"},
-        hub:{ok:true,status:200,latencyMs:42,origin:"https://reson8.life/"}
+        hub:{ok:true,status:200,latencyMs:42,origin:"https://reson8.life/"},
+        delivery:{
+          brandedUrl:"https://datanest.reson8.life/",
+          fallbackUrl:"https://datanest-supository.github.io/DataNest/",
+          operationalUrl:"https://datanest-supository.github.io/DataNest/",
+          ingress:{ok:false,status:null,latencyMs:42,origin:"https://datanest.reson8.life",error:"DNS pending"},
+          hubRegistration:{ok:true,status:200,latencyMs:42,endpoint:"https://reson8.life/api/public/app-status/health",listed:false}
+        }
       })});
     }
 
