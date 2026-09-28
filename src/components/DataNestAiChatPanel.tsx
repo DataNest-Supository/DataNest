@@ -404,7 +404,7 @@ export default function DataNestAiChatPanel({
       {!visibleEvents.length&&!busy&&<div className="emptyState datanestAiConsoleEmpty">
         <div className="datanestAiConsoleEmptyCore" aria-hidden="true">AI</div>
         <h3>{contextReady?"DataNest AI is ready":"Waiting for Job context"}</h3>
-        <p>{contextReady?"Issue a development command below. DataNest will bind it to this Job and trace the interaction before inference.":"You can prepare a draft while context loads. Sending becomes available once this Job context is ready."}</p>
+        <p>{contextReady?"Issue a development command above. DataNest will bind it to this Job and trace the interaction before inference.":"You can prepare a draft while context loads. Sending becomes available once this Job context is ready."}</p>
       </div>}
     </div>
   </section>;
