@@ -9,15 +9,19 @@ It combines two first-class tools:
 
 ## Live web UI
 
-Primary free public endpoint:
+Owned canonical domain and migration target:
+
+**https://reson8.life/**
+
+Canonical RONSAS Hub path under DataNest:
+
+**https://reson8.life/apps/**
+
+GitHub Pages fallback during the domain cutover:
 
 **https://datanest-supository.github.io/DataNest/**
 
-Static health marker:
-
-**https://datanest-supository.github.io/DataNest/health.json**
-
-GitHub Pages is the **current public delivery target** for the DataNest-managed production path. Supabase supplies the governed auth, database, storage and backend-function services.
+The root-domain build is validated separately from the project-path fallback. GitHub remains source/CI/evidence authority and Supabase supplies governed auth, database, storage and backend-function services. The existing Lovable domain binding must not be switched until the exact root-domain build passes its dedicated readiness workflow.
 
 Standalone Node/Docker runtimes continue to expose the server health endpoint at `/api/health`, but they are local development, recovery, controlled-test and continuity paths rather than the canonical production authority.
 
@@ -30,10 +34,12 @@ Standalone Node/Docker runtimes continue to expose the server health endpoint at
 - Supabase: `sgqdmfgjbprsoqsmgigi`
 - Supabase URL: `https://sgqdmfgjbprsoqsmgigi.supabase.co`
 - Supabase: auth, database, storage and backend-function authority
-- Current public delivery target: **GitHub Pages**
-- Canonical production route: **DataNest-managed public delivery: GitHub Pages + Supabase**
+- Owned canonical public origin: **https://reson8.life/**
+- Domain delivery owner: **Lovable-managed domain binding**
+- Cutover fallback: **GitHub Pages project-path deployment**
+- Canonical production route target: **reson8.life + Supabase**
 - Hosting model: **replaceable delivery infrastructure**
-- Optional future delivery target: **Vercel**
+- Optional future delivery targets remain non-authoritative infrastructure choices
 
 GitHub and Supabase remain the required source/CI and backend authorities. Hosting is replaceable delivery infrastructure, not system authority.
 
@@ -56,8 +62,8 @@ DataNest integrates with **RONSAS (Resonance Open Nova Sovereign Application Sui
 - No local workstation, loopback service, desktop launcher, or Ealiophin interaction is required by the DataNest web control plane.
 - The integration is cloud-only and rejects localhost, loopback, and `.local` origins.
 - RONSAS health is non-blocking: DataNest remains usable when the public RONSAS Hub is unavailable.
-- Resonance AppDev source authority is explicit: `resonance36912-cell/RONSAS` is the control-source repository and `resonance36912-cell/resonance-hub` is the public Hub source.
-- The canonical public Hub probe is `https://reson8.life/`.
+- Resonance AppDev source and Hub authority are consolidated in `DataNest-Supository/DataNest`; legacy external RONSAS repositories are historical evidence only.
+- The canonical public Hub probe is `https://reson8.life/apps/` under the DataNest root domain.
 
 ## Web UI
 
