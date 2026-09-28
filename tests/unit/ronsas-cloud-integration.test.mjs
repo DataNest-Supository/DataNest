@@ -45,6 +45,10 @@ test("DataNest exposes the governed RONSAS status contract through JWT-protected
   assert.match(app,/getRonsasStatus/);
   assert.match(app,/status\.authority\.publicHub/);
   assert.match(app,/aria-label="Open RONSAS from DataNest navigation"/);
+  assert.match(app,/label:"RONSAS"/);
+  assert.match(app,/description:"Open governed RONSAS application hub\."/);
+  assert.match(app,/window\.open\(item\.href,"_blank","noopener,noreferrer"\)/);
+  assert.match(app,/aria-label=\{item\.kind==="external"\?"Open RONSAS application hub":undefined\}/);
   assert.match(app,/RonsasIntegrationPanel/);
   assert.match(manifest,/ronsasStatus:process\.env\.DATANEST_EDGE_RONSAS_STATUS \|\| "ronsas-status@1"/);
 });
