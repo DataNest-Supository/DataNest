@@ -19,6 +19,15 @@ test("DataNest AI command center prioritizes active work above decorative hero c
   assert.match(workspace,/className="datanestAiStatusCards"/);
   assert.match(workspace,/aria-label="DataNest AI operational status"/);
 
+  const commandIndex=workspace.indexOf('className="datanestAiCommandSummary"');
+  const jobIndex=workspace.indexOf('className="panel datanestAiJobPicker"');
+  const chatIndex=workspace.indexOf('className="datanestAiChatStage"');
+  const statusIndex=workspace.indexOf('className="datanestAiStatusCards"');
+  const overviewIndex=workspace.indexOf('className="datanestAiOverviewDisclosure"');
+  const contextIndex=workspace.indexOf('className="datanestAiContextRail"');
+  assert.ok(commandIndex<jobIndex&&jobIndex<chatIndex&&chatIndex<statusIndex&&statusIndex<overviewIndex&&overviewIndex<contextIndex,
+    "DOM order must match the chat-first visual and keyboard-reading order");
+
   assert.match(app,/view!==\"ai\"&&workspaceTaskGuides\[view\]/);
   assert.match(workspace,/aria-label="Select active Job Manifest"/);
 
