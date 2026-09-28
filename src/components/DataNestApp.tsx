@@ -6,7 +6,7 @@ import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
 import { DATANEST_LOGO_SRC } from "@/lib/brand";
 import { getRonsasStatus } from "@/lib/ronsas";
-import { RESON8_HUB_URL } from "@/lib/reson8";
+import { DATANEST_CANONICAL_NAME, RESON8_HUB_URL } from "@/lib/reson8";
 import { SPARKS_TASK_COMPLETE, SPARKS_TASK_EVIDENCE, SPARKS_TASK_START, SPARKS_WORKSPACE_DESCRIPTION } from "@/lib/ecosystemAuthority";
 import { workflowPhaseForView, workflowPhases } from "@/lib/workflowPhases";
 import JobInviteForm from "@/components/JobInviteForm";
@@ -1356,7 +1356,7 @@ export default function DataNestApp({session}:{session:Session}) {
     <aside id="datanest-navigation" aria-label="DataNest navigation" className={"sidebar "+(mobileOpen?"open":"")}>
       <div className="sidebarTop">
         <div className="logo" aria-label="Resonance AppDev"><img src={DATANEST_LOGO_SRC} alt="Resonance AppDev"/></div>
-        <div><p className="eyebrow">RESONANCE APPDEV</p><b>DataNest</b></div>
+        <div><p className="eyebrow">RESON8.DATANEST.LIFE</p><b>DataNest</b></div>
         <button className="closeMenu" onClick={()=>setMobileOpen(false)} aria-label="Close menu" aria-controls="datanest-navigation">×</button>
       </div>
       <div className="projectPill"><span className="liveDot"/><div><small>PROJECT</small><strong>{project?.name||"Resonance DataNest"}</strong></div></div>
@@ -1467,7 +1467,7 @@ export default function DataNestApp({session}:{session:Session}) {
       <header className="topbar">
         <button className="menuButton" onClick={()=>setMobileOpen(true)} aria-label="Open menu" aria-controls="datanest-navigation" aria-expanded={mobileOpen}>☰</button>
         <div className="topbarTitle">
-          <p className="eyebrow">RESONANCE DATANEST · {currentGroup.toUpperCase()}</p>
+          <p className="eyebrow">{DATANEST_CANONICAL_NAME.toUpperCase()} · {currentGroup.toUpperCase()}</p>
           <h1 id="workspace-title" ref={workspaceTitleRef} tabIndex={-1}>{currentLabel}</h1>
           <p className="topbarContext">{currentDescription}</p>
         </div>
