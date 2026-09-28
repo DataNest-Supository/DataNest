@@ -2990,6 +2990,67 @@ code,pre{
   box-shadow:inset 2px 0 rgba(79,226,255,.42);
 }
 
+.datanestAiTurn.dualAdvocacy{
+  border-style:solid;
+}
+
+.datanestAiAdvocacyGrid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin-top:12px;
+}
+
+.datanestAiAdvocacyCard,
+.datanestAiAdvocacySynthesis{
+  min-width:0;
+  padding:13px 14px;
+  border:1px solid rgba(101,220,255,.13);
+  border-radius:12px;
+  background:rgba(4,12,28,.54);
+}
+
+.datanestAiAdvocacyCard.angel{
+  border-color:rgba(114,230,174,.22);
+  background:linear-gradient(145deg,rgba(44,161,121,.08),rgba(4,12,28,.54));
+}
+
+.datanestAiAdvocacyCard.devil{
+  border-color:rgba(255,134,171,.22);
+  background:linear-gradient(145deg,rgba(176,62,102,.08),rgba(4,12,28,.54));
+}
+
+.datanestAiAdvocacyCard small,
+.datanestAiAdvocacySynthesis small{
+  display:block;
+  color:#8ba6ba;
+  font:900 9px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace;
+  letter-spacing:.08em;
+}
+
+.datanestAiAdvocacyCard p,
+.datanestAiAdvocacySynthesis p{
+  margin:8px 0 0;
+  color:#dfeef7;
+  font-size:11px;
+  line-height:1.62;
+}
+
+.datanestAiAdvocacySynthesis{
+  grid-column:1/-1;
+  border-color:rgba(139,92,246,.24);
+  background:linear-gradient(145deg,rgba(139,92,246,.08),rgba(4,12,28,.58));
+}
+
+@container datanest-main (max-width:620px){
+  .datanestAiAdvocacyGrid{
+    grid-template-columns:1fr;
+  }
+  .datanestAiAdvocacySynthesis{
+    grid-column:auto;
+  }
+}
+
 .datanestAiConsoleEmpty{
   min-height:220px!important;
   display:grid;

@@ -205,13 +205,15 @@ async function loadCertifiedMemory(input:{
 
 async function loadDevelopmentWorkingMemory(
   serviceClient:AnyClient,
-  projectId:string
+  projectId:string,
+  userId:string
 ):Promise<string[]>{
   const {data,error}=await serviceClient
     .from("development_command_working_memory")
     .select("normalized_knowledge,created_at")
     .eq("project_id",projectId)
     .eq("active",true)
+    .or("user_id.is.null,user_id.eq."+userId)
     .order("created_at",{ascending:false})
     .limit(120);
   if(error)throw error;
@@ -236,8 +238,8 @@ async function recordDevelopmentWorkingMemory(input:{
   providerLabel:string|null;
   modelLabel:string|null;
 }){
-  const commandHash=await sha256Text(input.command);
-  const synthesisHash=await sha256Text(input.dual.synthesis);
+  const commandHash=await sha256Text(input.userId+"|"+input.command);
+  const synthesisHash=await sha256Text(input.userId+"|"+input.dual.synthesis);
   const now=new Date().toISOString();
   const {data:memoryRows,error:memoryError}=await input.serviceClient
     .from("development_command_working_memory")
@@ -960,7 +962,7 @@ Deno.serve(async(request:Request)=>{
             sessionId
           }),
           developmentMode
-            ?loadDevelopmentWorkingMemory(serviceClient,job.project_id)
+            ?loadDevelopmentWorkingMemory(serviceClient,job.project_id,user.id)
             :Promise.resolve([] as string[])
         ]);
         certifiedMemoryIds=certifiedMemory.map(item=>String(item.id||"")).filter(Boolean);
