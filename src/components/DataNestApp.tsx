@@ -15,6 +15,7 @@ import MotionControl from "@/components/MotionControl";
 import ExecutionAuthorityPanel from "@/components/ExecutionAuthorityPanel";
 import ResourceFabricPanel from "@/components/ResourceFabricPanel";
 import RecoveryDiagnosticsPanel from "@/components/RecoveryDiagnosticsPanel";
+import ImpactScoringWorkspace from "@/components/ImpactScoringWorkspace";
 import type { ExecutionAuthorityRole } from "@/lib/executionAuthority";
 import { useSessionDraftState } from "@/lib/sessionDraft";
 import { useSingleFlight } from "@/lib/singleFlight";
@@ -31,7 +32,7 @@ type Checkpoint = { id:string; job_id:string; completed:string[]; remaining:stri
 type AuditEvent = { id:number; job_id:string|null; event_type:string; actor:string; payload:Record<string,unknown>; created_at:string };
 type Policy = { id:string; policy_key:string; value:Record<string,unknown> };
 type ProjectMember = { project_id:string; user_id:string; role:"owner"|"admin"|"operator"|"viewer"; status:string };
-type ViewKey = "overview"|"stakeholder"|"sparks"|"governance"|"products"|"thinktank"|"ai"|"productlab"|"unifi"|"scheduler"|"runs"|"checkpoints"|"audit"|"transparency"|"settings";
+type ViewKey = "overview"|"stakeholder"|"sparks"|"impact"|"governance"|"products"|"thinktank"|"ai"|"productlab"|"unifi"|"scheduler"|"runs"|"checkpoints"|"audit"|"transparency"|"settings";
 type SchedulerViewMode = "queue"|"gantt"|"authority"|"resources";
 type SchedulerSortMode = "priority"|"deadline"|"recent";
 const schedulerFilterOptions=["ALL","PLANNED","READY","QUEUED","RUNNING","MANUAL_ACTION","BLOCKED","COMPLETED"] as const;
@@ -105,6 +106,7 @@ const nav:Array<{key:ViewKey;label:string;group:string;glyph:string}> = [
   {key:"ai",label:"DataNest AI",group:"Core",glyph:"✦"},
   {key:"stakeholder",label:"Stakeholder",group:"Discover",glyph:"◌"},
   {key:"sparks",label:"Sparks",group:"Discover",glyph:"✧"},
+  {key:"impact",label:"Impact",group:"Discover",glyph:"◉"},
   {key:"thinktank",label:"Think Tanks",group:"Discover",glyph:"◈"},
   {key:"governance",label:"Governance",group:"Govern & Build",glyph:"◆"},
   {key:"products",label:"Products",group:"Govern & Build",glyph:"◉"},
@@ -128,6 +130,7 @@ const viewDescriptions:Record<ViewKey,string> = {
   overview:"Human intent and governed AI collaboration at a glance.",
   stakeholder:"Capture stakeholder input and review contribution context.",
   sparks:SPARKS_WORKSPACE_DESCRIPTION,
+  impact:"Live input quality, verification acceptance, impact points, and the project areas your work affects.",
   governance:"Review sovereign governance controls and decisions.",
   products:"Inspect governed Resonance products, their architecture, controls, evidence, risks and promotion branches.",
   thinktank:"Coordinate structured research and collaborative thinking.",
@@ -146,6 +149,7 @@ type WorkspaceTaskGuide = { start:string; complete:string; evidence:string };
 
 const workspaceTaskGuides:Partial<Record<ViewKey,WorkspaceTaskGuide>> = {
   ai:{start:"Select the Job Manifest that owns the work, then continue in the development chat.",complete:"The Job has an actionable AI output or durable memory worth certifying.",evidence:"Job-scoped session, event trail and certified memory."},
+  impact:{start:"Inspect each input, its quality score, verification stage, and project area.",complete:"The live impact record shows how inputs progressed through verification and where they landed.",evidence:"Input trace, scoring version, verification stage, impact area and points."},
   stakeholder:{start:"Review stakeholder state and recent contribution events before changing preferences or review decisions.",complete:"Contribution context and participation preferences reflect the stakeholder's current intent.",evidence:"Profile state, contribution events and review signals."},
   sparks:{start:SPARKS_TASK_START,complete:SPARKS_TASK_COMPLETE,evidence:SPARKS_TASK_EVIDENCE},
   thinktank:{start:"Choose a Think Tank, open a thread, then discuss, ask or propose a governed decision.",complete:"The discussion has produced a decision, action item or reviewed learning candidate.",evidence:"Messages, decisions, actions and institutional-memory candidates."},
@@ -165,7 +169,8 @@ const workflowNext:Partial<Record<ViewKey,ViewKey>> = {
   overview:"ai",
   ai:"unifi",
   stakeholder:"sparks",
-  sparks:"thinktank",
+  sparks:"impact",
+  impact:"thinktank",
   thinktank:"governance",
   governance:"products",
   products:"productlab",
@@ -224,7 +229,8 @@ function resolveWorkflowRecommendation(
 const workflowPrevious:Partial<Record<ViewKey,ViewKey>> = {
   ai:"overview",
   sparks:"stakeholder",
-  thinktank:"sparks",
+  impact:"sparks",
+  thinktank:"impact",
   governance:"thinktank",
   products:"governance",
   productlab:"products",
@@ -1641,6 +1647,7 @@ export default function DataNestApp({session}:{session:Session}) {
           {recoveryLedgerError&&<button className="secondaryButton compact" type="button" onClick={()=>void synchronizeDurableRecoveries()}>Retry recovery sync</button>}
         </section>}
         {!loadingCore&&project&&view==="sparks"&&recoveryHydrated&&<SparksWorkspace projectId={project.id} currentUserId={session.user.id} canOperate={canOperate} canManage={canManageAi} setNotice={setNotice} setError={setError}/>}
+        {!loadingCore&&project&&view==="impact"&&<ImpactScoringWorkspace projectId={project.id} currentUserId={session.user.id}/>} 
         {!loadingCore&&project&&view==="governance"&&<GovernanceWorkspace projectId={project.id} currentUserId={session.user.id} role={membership?.role||"viewer"} canManage={canManageAi} setNotice={setNotice} setError={setError}/>} 
         {!loadingCore&&project&&view==="products"&&<ProductsWorkspace projectId={project.id} currentUserId={session.user.id} role={membership?.role||"viewer"}/>}
         {!loadingCore&&project&&view==="thinktank"&&<ThinkTankWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} canReview={canManageAi} setNotice={setNotice} setError={setError}/>}
