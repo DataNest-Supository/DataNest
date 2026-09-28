@@ -2,7 +2,7 @@ import registry from "./ronsasAppRegistry.json" with {type:"json"};
 
 export type RonsasKind = "static" | "server" | "native" | "operations";
 export type RonsasHostedApp = {slug:string;name:string;aliases:readonly string[]};
-export type RonsasLaunch = {slug:string;name:string;kind:RonsasKind;href:string|null;availability:"ready"|"unavailable"};
+export type RonsasLaunch = {slug:string;name:string;kind:RonsasKind;href:string|null;availability:"ready"|"preview"|"unavailable"};
 type RegistryEntry = RonsasHostedApp & {kind:RonsasKind;source?:string;output?:string;build?:string};
 const entries:readonly RegistryEntry[]=registry as RegistryEntry[];
 export const RONSAS_HOSTED_APPS:readonly RonsasHostedApp[]=entries.filter(app=>app.kind==="static");
@@ -27,9 +27,10 @@ export function resolveRonsasLaunch(name:string|null|undefined,basePath:string,a
   const app=appByName.get(normalizeAppName(name));
   if(!app)return null;
   const base=basePath.replace(/\/+$/,"");
-  const ready=app.kind==="static"||app.kind==="native"||availability[app.slug]===true;
-  const href=!ready?null:app.kind==="native"?`${base}/?view=ai`:app.kind==="operations"?`${base}/?view=ronsasops`:`${base}/apps/${app.slug}/`;
-  return {slug:app.slug,name:app.name,kind:app.kind,href,availability:ready?"ready":"unavailable"};
+  const ready=app.kind==="native"||availability[app.slug]===true;
+  const preview=app.kind==="static"&&!ready;
+  const href=!ready&&!preview?null:app.kind==="native"?`${base}/?view=ai`:app.kind==="operations"?`${base}/?view=ronsasops`:`${base}/apps/${app.slug}/`;
+  return {slug:app.slug,name:app.name,kind:app.kind,href,availability:ready?"ready":preview?"preview":"unavailable"};
 }
 
 export function getRonsasAppLaunch(name:string|null|undefined){

@@ -36,7 +36,7 @@
 - Modify: `scripts/build-ronsas-pages.mjs`
 
 **Interfaces:**
-- Produces: `resolveRonsasLaunch(name: string | null | undefined, basePath: string, availability: Record<string, boolean>): RonsasLaunch | null`, where `RonsasLaunch` has `slug`, `name`, `kind: "static" | "server" | "native" | "operations"`, `href: string | null`, and `availability: "ready" | "unavailable"`.
+- Produces: `resolveRonsasLaunch(name: string | null | undefined, basePath: string, availability: Record<string, boolean>): RonsasLaunch | null`, where `RonsasLaunch` has `slug`, `name`, `kind: "static" | "server" | "native" | "operations"`, `href: string | null`, and `availability: "ready" | "preview" | "unavailable"`. Static bundles remain clickable previews until cloud workflow acceptance sets their availability flag.
 - Static slugs remain the seven current `RONSAS_HOSTED_APPS` entries; YouTube, AppDev, and Control Center get distinct kinds and no invented static bundle.
 
 - [ ] Write a test that resolves `SyncVision` to `/DataNest/apps/syncvision/`, leaves an unknown name null, and marks YouTube unavailable when its health flag is false.

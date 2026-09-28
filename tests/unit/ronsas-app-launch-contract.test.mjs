@@ -6,7 +6,7 @@ const { resolveRonsasLaunch } = launches;
 test('known static aliases use the DataNest app path', () => {
   assert.deepEqual(resolveRonsasLaunch('SyncVision', '/DataNest', {}), {
     slug: 'syncvision', name: 'Sync Vision', kind: 'static',
-    href: '/DataNest/apps/syncvision/', availability: 'ready',
+    href: '/DataNest/apps/syncvision/', availability: 'preview',
   });
   assert.equal(resolveRonsasLaunch('unknown app', '/DataNest', {}), null);
 });

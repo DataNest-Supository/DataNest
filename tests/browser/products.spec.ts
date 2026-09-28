@@ -128,13 +128,14 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
   await expect(ronsasHubRecord).toBeVisible();
   await expect(ronsasHubRecord).toHaveAttribute("href","https://reson8.life/");
 
-  const syncVisionLaunch=page.locator(".catalogRecord").getByRole("link",{name:"Open Sync Vision in DataNest"});
+  const syncVisionLaunch=page.locator(".catalogRecord").getByRole("link",{name:"Preview Sync Vision in DataNest"});
   await expect(syncVisionLaunch).toBeVisible();
   await expect(syncVisionLaunch).toHaveAttribute("href",/\/apps\/syncvision\/$/);
 
-  const compositionLaunch=page.getByLabel("RONSAS Composition").getByRole("link",{name:"Open Sync Vision in DataNest"});
+  const compositionLaunch=page.getByLabel("RONSAS Composition").getByRole("link",{name:"Preview Sync Vision in DataNest"});
   await expect(compositionLaunch).toBeVisible();
   await expect(compositionLaunch).toHaveAttribute("href",/\/apps\/syncvision\/$/);
+  await expect(page.locator(".catalogRecord").filter({hasText:"Sync Vision"}).getByText("Cloud workflows pending",{exact:true})).toBeVisible();
   expect(new URL(await syncVisionLaunch.getAttribute("href")||"",page.url()).origin).toBe(new URL(page.url()).origin);
   for(const name of ["YouTube Optimizer","RONS Control Center"]){
     const record=page.locator(".catalogRecord").filter({hasText:name});

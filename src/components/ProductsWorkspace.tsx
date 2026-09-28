@@ -666,7 +666,8 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
                 const launch=resolveRonsasLaunch(item.name,process.env.NEXT_PUBLIC_BASE_PATH||"",{});
                 return <span key={item.id}>
                   {index>0?", ":""}
-                  {launch?.href?<a className="ronsasCompositionLaunch" href={launch.href} aria-label={`Open ${item.name} in DataNest`}>{item.name}</a>:item.name}
+                  {launch?.href?<a className="ronsasCompositionLaunch" href={launch.href} aria-label={`${launch.availability==="preview"?"Preview":"Open"} ${item.name} in DataNest`}>{item.name}</a>:item.name}
+                  {launch?.availability==="preview"&&<span className="ronsasLaunchUnavailable"> · Preview · cloud workflows pending</span>}
                   {launch?.availability==="unavailable"&&<span className="ronsasLaunchUnavailable"> · Unavailable in DataNest</span>}
                 </span>;
               }):"None recorded";
@@ -752,8 +753,9 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
                             >Open RONSAS ↗</a>:launch?.href?<a
                               className="catalogRecordLaunch"
                               href={launch.href}
-                              aria-label={`Open ${record.name||launch.name} in DataNest`}
-                            >Open in DataNest ↗</a>:launch?.availability==="unavailable"&&<span className="ronsasLaunchUnavailable">Unavailable in DataNest</span>}
+                              aria-label={`${launch.availability==="preview"?"Preview":"Open"} ${record.name||launch.name} in DataNest`}
+                            >{launch.availability==="preview"?"Preview in DataNest ↗":"Open in DataNest ↗"}</a>:launch?.availability==="unavailable"&&<span className="ronsasLaunchUnavailable">Unavailable in DataNest</span>}
+                            {launch?.availability==="preview"&&<span className="ronsasLaunchUnavailable">Cloud workflows pending</span>}
                           </div>
                           <p>{payloadText(record.payload,"description","rule","target_outcome","decision","summary","purpose","mitigation","location")}</p>
                         </article>;

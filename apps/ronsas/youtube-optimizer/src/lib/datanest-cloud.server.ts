@@ -1,3 +1,5 @@
+import {isIP} from "node:net";
+
 export type CloudCapability="auth"|"data"|"ai"|"storage";
 export type CloudRuntime=Record<CloudCapability,{available:boolean;url:string|null}>;
 
@@ -15,6 +17,8 @@ function cloudUrl(raw:string|undefined):string|null{
   try{
     const url=new URL(raw.trim());
     if(url.username||url.password||url.search||url.hash)return null;
+    const host=url.hostname.replace(/^\[|\]$/g,"").replace(/\.$/,"").toLowerCase();
+    if(isIP(host)||host==="localhost"||host.endsWith(".localhost")||host.endsWith(".local")||host==="host.docker.internal"||host==="gateway.docker.internal"||!host.includes("."))return null;
     const privateDns=url.hostname.endsWith(".internal")||url.hostname.endsWith(".svc.cluster.local");
     if(url.protocol!=="https:"&&!(url.protocol==="http:"&&privateDns))return null;
     return url.toString().replace(/\/$/,"");

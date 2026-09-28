@@ -29,7 +29,7 @@ for(const app of staticApps){
     if(!liveOnly)await access(path.join(root,"out",decodeURIComponent(assetUrl.pathname).replace(/^\//,"").replace(new RegExp(`^${base.replace(/^\//,"")}/`),"")));
   }
   if(liveOnly){
-    for(const asset of assets.slice(0,2)){
+    for(const asset of assets){
       const assetResponse=await fetch(new URL(asset,new URL(launch,origin)),{redirect:"follow"});
       if(assetResponse.status!==200||new URL(assetResponse.url).origin!==new URL(origin).origin||!(await assetResponse.arrayBuffer()).byteLength){
         throw new Error(`Live asset failed: ${app.slug} ${asset}`);
