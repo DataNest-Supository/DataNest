@@ -1,7 +1,7 @@
 {
   "contract": "reson8-app@1",
   "key": "datanest",
-  "name": "reson8.datanest.life",
+  "name": "DataNest",
   "publicUrl": "https://datanest-supository.github.io/DataNest/",
   "hubUrl": "https://reson8.life/",
   "sourceRepository": "DataNest-Supository/DataNest",
@@ -36,15 +36,15 @@
     "healthUrl": "https://datanest-supository.github.io/DataNest/health.json",
     "railwayRequired": false
   },
-  "displayName": "reson8.datanest.life",
-  "canonicalHost": "reson8.datanest.life",
-  "brandedUrl": "https://reson8.datanest.life/",
-  "brandedState": "wire-ready",
+  "displayName": "DataNest",
+  "canonicalHost": "datanest-supository.github.io",
+  "brandedUrl": "https://datanest-supository.github.io/DataNest/",
+  "brandedState": "live",
   "wire": {
-    "source": "https://reson8.datanest.life/",
-    "target": "https://reson8.life/",
-    "mode": "redirect",
-    "applicationLayer": "ready",
-    "networkState": "dns-pending"
+    "source": "https://datanest-supository.github.io/DataNest/",
+    "target": "https://datanest-supository.github.io/DataNest/",
+    "mode": "direct",
+    "applicationLayer": "not-required",
+    "networkState": "not-applicable"
   }
 }
