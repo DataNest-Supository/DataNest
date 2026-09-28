@@ -5,6 +5,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useRef, useState, type CSSP
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
 import { DATANEST_LOGO_SRC } from "@/lib/brand";
+import { getRonsasStatus } from "@/lib/ronsas";
 import { SPARKS_TASK_COMPLETE, SPARKS_TASK_EVIDENCE, SPARKS_TASK_START, SPARKS_WORKSPACE_DESCRIPTION } from "@/lib/ecosystemAuthority";
 import { workflowPhaseForView, workflowPhases } from "@/lib/workflowPhases";
 import JobInviteForm from "@/components/JobInviteForm";
@@ -385,6 +386,7 @@ export default function DataNestApp({session}:{session:Session}) {
   const [commandOpen,setCommandOpen]=useState(false);
   const [commandQuery,setCommandQuery]=useState("");
   const [commandActiveIndex,setCommandActiveIndex]=useState(-1);
+  const [ronsasHubUrl,setRonsasHubUrl]=useState("");
   const commandInputRef=useRef<HTMLInputElement|null>(null);
   const commandReturnFocusRef=useRef<HTMLElement|null>(null);
   const [aiSidebarOpen,setAiSidebarOpen]=useState(false);
@@ -1072,6 +1074,15 @@ export default function DataNestApp({session}:{session:Session}) {
     return()=>window.clearTimeout(timer);
   },[commandOpen]);
   useEffect(()=>{
+    let active=true;
+    void getRonsasStatus().then(status=>{
+      if(active)setRonsasHubUrl(status.authority.publicHub);
+    }).catch(()=>{
+      if(active)setRonsasHubUrl("");
+    });
+    return()=>{active=false;};
+  },[]);
+  useEffect(()=>{
     const saved=window.localStorage.getItem("datanest.aiSidebar.open");
     if(saved==="true")setAiSidebarOpen(true);
     const open=()=>setAiSidebarOpen(true);
@@ -1330,6 +1341,13 @@ export default function DataNestApp({session}:{session:Session}) {
           </button>)}
         </details>)}
       </nav>
+      {ronsasHubUrl&&<a
+        className="ronsasNavLaunch"
+        href={ronsasHubUrl}
+        target="_blank"
+        rel="noreferrer"
+        aria-label="Open RONSAS from DataNest navigation"
+      ><span aria-hidden="true">◉</span><span><b>RONSAS</b><small>Open governed application hub</small></span><strong aria-hidden="true">↗</strong></a>}
       <div className="sidebarFooter">
         <div className="userMini"><div className="avatar">{(session.user.email||"U").slice(0,1).toUpperCase()}</div><div><b>{session.user.email?.split("@")[0]||"Authorized user"}</b><small>{membership ? membership.role.toUpperCase()+" · Authenticated" : "Authenticated"}</small></div></div>
         <div className="mobileNavActions" aria-label="Mobile workspace actions">
