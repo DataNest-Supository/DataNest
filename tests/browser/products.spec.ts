@@ -109,7 +109,7 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
   await page.getByLabel("Filter governed record type").selectOption("all");
   await expect(page).toHaveURL(/product=ronsas/);
 
-  const syncVisionLaunch=page.getByRole("link",{name:"Open Sync Vision in DataNest"});
+  const syncVisionLaunch=page.locator(".catalogRecord").getByRole("link",{name:"Open Sync Vision in DataNest"});
   await expect(syncVisionLaunch).toBeVisible();
   await expect(syncVisionLaunch).toHaveAttribute("href",/\/apps\/syncvision\/$/);
 
