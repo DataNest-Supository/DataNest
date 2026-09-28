@@ -82,7 +82,7 @@ test("DataNest AI keeps the animated hero above the command channel and active c
   await page.goto(appPath+"?view=ai");
 
   await expect(page.getByRole("heading",{name:"DataNest AI",exact:true}).first()).toBeVisible();
-  await expect(page.getByRole("heading",{name:"Development command channel",exact:true})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"DEVELOPMENT COMMAND CHANNEL",exact:true})).toBeVisible();
   await expect(page.getByText("AI CORE LINKED",{exact:true})).toBeVisible();
   await expect(page.locator(".datanestAiHeroV2")).toBeVisible();
   await expect(page.getByText("Hosted CI · Cloud browser",{exact:true})).toBeVisible();
