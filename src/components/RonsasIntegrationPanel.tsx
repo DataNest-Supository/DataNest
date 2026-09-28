@@ -81,7 +81,8 @@ export default function RonsasIntegrationPanel() {
         <div><dt>Commercial mode</dt><dd>{status?.billingState || "free-promotion"}</dd></div>
         <div><dt>RONSAS Hub</dt><dd>{hubState}{status?.hub.status ? ` · HTTP ${status.hub.status}` : ""}{status?.authority.publicHub&&<> · <a className="catalogRecordLaunch" href={status.authority.publicHub} target="_blank" rel="noreferrer" aria-label="Open RONSAS from integration settings">Open RONSAS ↗</a></>}</dd></div>
         <div><dt>Canonical name</dt><dd>{status?.delivery.canonicalName || "reson8.datanest.life"}</dd></div>
-        <div><dt>Branded URL</dt><dd>{status?.delivery.brandedUrl || "https://reson8.datanest.life/"} · {status?.delivery.brandedState || "reserved"}</dd></div>
+        <div><dt>Branded URL</dt><dd>{status?.delivery.brandedUrl || "https://reson8.datanest.life/"} · {status?.delivery.brandedState || "wire-ready"}</dd></div>
+        <div><dt>Hub wire</dt><dd>{status?.delivery.wire ? `${status.delivery.wire.source} → ${status.delivery.wire.target} · ${status.delivery.wire.networkState}` : "https://reson8.datanest.life/ → https://reson8.life/ · dns-pending"}</dd></div>
         <div><dt>Public delivery</dt><dd>{deliveryState}{status?.delivery.publicDelivery.status ? ` · HTTP ${status.delivery.publicDelivery.status}` : ""} · {status?.delivery.provider || "GitHub Pages"}</dd></div>
         <div><dt>Operational URL</dt><dd>{status?.delivery.operationalUrl ? <a className="catalogRecordLaunch" href={status.delivery.operationalUrl} target="_blank" rel="noreferrer" aria-label="Open operational DataNest delivery URL">Open DataNest ↗</a> : "—"}</dd></div>
         <div><dt>Hub listing</dt><dd>{hubListingState}{status?.delivery.hubRegistration.status ? ` · HTTP ${status.delivery.hubRegistration.status}` : ""}</dd></div>
