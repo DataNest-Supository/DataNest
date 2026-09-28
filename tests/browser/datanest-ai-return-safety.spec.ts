@@ -22,10 +22,20 @@ async function openWorkspace(page:import("@playwright/test").Page,label:string){
   await expect(dialog).toBeHidden();
 }
 
+async function selectPrimaryAiJob(page:import("@playwright/test").Page){
+  const activeJob=page.getByLabel("Active Job context",{exact:true});
+  await expect(activeJob).toBeVisible();
+  const primary=activeJob.locator("option").filter({hasText:/· DataNest AI E2E Job$/}).first();
+  const primaryId=await primary.getAttribute("value");
+  if(!primaryId)throw new Error("Primary DataNest AI E2E Job fixture is required.");
+  await activeJob.selectOption(primaryId);
+  await expect(activeJob).toHaveValue(primaryId);
+  await expect(activeJob.locator("option:checked")).toHaveText(/· DataNest AI E2E Job$/);
+}
+
 async function openAiSidebar(page:import("@playwright/test").Page){
   await openWorkspace(page,"DataNest AI");
-  await expect(page.getByText("DataNest AI E2E Job",{exact:true}).first()).toBeVisible();
-  await page.getByText("DataNest AI E2E Job",{exact:true}).first().click();
+  await selectPrimaryAiJob(page);
   const assistant=page.getByRole("button",{name:"AI assistant",exact:true});
   await expect(assistant).toBeVisible();
   await assistant.click();

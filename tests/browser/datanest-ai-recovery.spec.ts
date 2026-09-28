@@ -107,7 +107,9 @@ test("mobile Job selector and reduced-motion composer remain usable",async({page
   await expect(page.getByText("AI CORE LINKED",{exact:true})).toBeVisible();
   const selector=page.getByLabel("Active Job context",{exact:true});
   const composer=page.getByPlaceholder(/Ask DataNest AI to analyze/i);
-  expect((await selector.boundingBox())!.y).toBeLessThan((await composer.boundingBox())!.y);
+  await expect(selector).toBeVisible();
+  await expect(composer).toBeVisible();
+  expect((await composer.boundingBox())!.y).toBeLessThan((await selector.boundingBox())!.y);
   await page.getByRole("button",{name:"Jump to DataNest AI command composer",exact:true}).click();
   await expect(composer).toBeFocused();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
