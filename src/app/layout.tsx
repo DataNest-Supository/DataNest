@@ -10,11 +10,13 @@ export const metadata = {
 
 export default function RootLayout({children}:{children:ReactNode}) {
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+  const forceHttpsSource=basePath + "/force-https.js";
   const runtimeConfigSource=basePath + "/runtime-config.js";
 
   return (
     <html lang="en">
       <head>
+        <script src={forceHttpsSource} />
         <script src={runtimeConfigSource} />
       </head>
       <body>{children}</body>
