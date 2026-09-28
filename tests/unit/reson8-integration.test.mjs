@@ -12,6 +12,7 @@ test("DataNest declares its canonical Reson8 ecosystem binding",()=>{
   assert.match(binding,/RESON8_HUB_URL = "https:\/\/reson8\.life\/"/);
   assert.match(binding,/DATANEST_CANONICAL_NAME = "reson8\.datanest\.life"/);
   assert.match(binding,/DATANEST_BRANDED_URL = "https:\/\/reson8\.datanest\.life\/"/);
+  assert.match(binding,/DATANEST_WIRE_TARGET = RESON8_HUB_URL/);
   assert.match(binding,/DATANEST_PUBLIC_URL = "https:\/\/datanest-supository\.github\.io\/DataNest\/"/);
   assert.equal(contract.contract,"reson8-app@1");
   assert.equal(contract.key,"datanest");
@@ -19,7 +20,12 @@ test("DataNest declares its canonical Reson8 ecosystem binding",()=>{
   assert.equal(contract.displayName,"reson8.datanest.life");
   assert.equal(contract.canonicalHost,"reson8.datanest.life");
   assert.equal(contract.brandedUrl,"https://reson8.datanest.life/");
-  assert.equal(contract.brandedState,"reserved");
+  assert.equal(contract.brandedState,"wire-ready");
+  assert.equal(contract.wire?.source,"https://reson8.datanest.life/");
+  assert.equal(contract.wire?.target,"https://reson8.life/");
+  assert.equal(contract.wire?.mode,"redirect");
+  assert.equal(contract.wire?.applicationLayer,"ready");
+  assert.equal(contract.wire?.networkState,"dns-pending");
   assert.equal(contract.publicUrl,"https://datanest-supository.github.io/DataNest/");
   assert.equal(contract.hubUrl,"https://reson8.life/");
   assert.equal(contract.sourceRepository,"DataNest-Supository/DataNest");
@@ -49,8 +55,9 @@ test("DataNest keeps a visible return path to the Reson8 Hub even when status pr
   assert.match(shell,/setRonsasHubUrl\(RESON8_HUB_URL\)/);
 });
 
-test("DataNest runtime config is served from its own delivery surface",()=>{
+test("DataNest runtime config stays local while the branded hostname redirects to Reson8",()=>{
   assert.match(layout,/const runtimeConfigSource=basePath \+ "\/runtime-config\.js"/);
+  assert.match(layout,/window\.location\.hostname===\"reson8\.datanest\.life\"/);
+  assert.match(layout,/window\.location\.replace\(\"https:\/\/reson8\.life\/\"\)/);
   assert.doesNotMatch(layout,/DATANEST_RUNTIME_CONFIG_URL/);
-  assert.doesNotMatch(layout,/reson8\.life/);
 });
