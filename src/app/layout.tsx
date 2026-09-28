@@ -3,7 +3,13 @@ import "./entry.css";
 import "./datanest-ai-optimized.css";
 import type { ReactNode } from "react";
 
+const configuredPublicOrigin = (process.env.DATANEST_PUBLIC_ORIGIN || "").trim().replace(/\/+$/, "");
+
 export const metadata = {
+  ...(configuredPublicOrigin ? {
+    metadataBase: new URL(configuredPublicOrigin),
+    alternates: { canonical: "/" }
+  } : {}),
   title: "Resonance DataNest",
   description: "Plan projects, collaborate with DataNest AI, and review traceable work in one workspace."
 };
