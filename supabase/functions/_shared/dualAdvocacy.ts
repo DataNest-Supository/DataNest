@@ -95,6 +95,14 @@ export function parseCompleteDualAdvocacyResponse(raw:string):DualAdvocacyRespon
   };
 }
 
+export function parseDualAdvocacyResponse(raw:string):DualAdvocacyResponse{
+  return parseCompleteDualAdvocacyResponse(raw)||{
+    angelsAdvocate:raw.trim(),
+    devilsAdvocate:"A distinct opposing analysis was not returned.",
+    synthesis:"Re-run the command to obtain the complete dual-advocacy response."
+  };
+}
+
 export function formatDualAdvocacyResponse(value:DualAdvocacyResponse):string{
   return [
     "ANGEL'S ADVOCATE",value.angelsAdvocate,"",
