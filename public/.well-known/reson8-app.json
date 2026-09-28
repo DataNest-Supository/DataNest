@@ -33,7 +33,6 @@
     "provider": "GitHub Pages",
     "status": "live",
     "url": "https://datanest-supository.github.io/DataNest/",
-    "healthUrl": "https://datanest-supository.github.io/DataNest/health.json",
-    "railwayRequired": false
+    "healthUrl": "https://datanest-supository.github.io/DataNest/health.json"
   }
 }
