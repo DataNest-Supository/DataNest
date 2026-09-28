@@ -418,7 +418,7 @@ async function resolveConfiguredProviderConnection(input:{
 }):Promise<ProviderConnection|null>{
   const load=async()=>{
     const {data,error}=await input.serviceClient.rpc(
-      "service_get_ai_provider_connection_v2",{
+      "service_get_ai_provider_connection_v3",{
         target_project:input.projectId,
         target_user:input.userId,
         target_connection:input.requestedConnection
@@ -429,7 +429,30 @@ async function resolveConfiguredProviderConnection(input:{
   };
 
   const existing=await load();
-  if(existing||input.requestedConnection)return existing;
+  if(input.requestedConnection)return existing;
+
+  if(existing){
+    const metadata=(existing.metadata||{}) as Record<string,unknown>;
+    if(String(metadata.scope||"")!=="project_shared_copy")return existing;
+
+    const {data:refreshed,error:refreshError}=await input.serviceClient.rpc(
+      "service_sync_shared_ai_provider_connection_v1",{
+        target_project:input.projectId,
+        target_user:input.userId
+      }
+    );
+    if(refreshError)throw refreshError;
+    return refreshed?refreshed as ProviderConnection:null;
+  }
+
+  const {data:sharedConnection,error:sharedError}=await input.serviceClient.rpc(
+    "service_sync_shared_ai_provider_connection_v1",{
+      target_project:input.projectId,
+      target_user:input.userId
+    }
+  );
+  if(sharedError)throw sharedError;
+  if(sharedConnection)return sharedConnection as ProviderConnection;
 
   const apiBaseUrl=(Deno.env.get("DATANEST_SHARED_AI_BASE_URL")||"").trim();
   const endpointHost=(Deno.env.get("DATANEST_SHARED_AI_HOST")||"").trim().toLowerCase();
