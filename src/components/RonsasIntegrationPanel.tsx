@@ -83,6 +83,8 @@ export default function RonsasIntegrationPanel() {
         <div><dt>DataNest ingress</dt><dd>{ingressState}{status?.delivery.ingress.status ? ` · HTTP ${status.delivery.ingress.status}` : ""}</dd></div>
         <div><dt>Operational URL</dt><dd>{status?.delivery.operationalUrl ? <a className="catalogRecordLaunch" href={status.delivery.operationalUrl} target="_blank" rel="noreferrer" aria-label="Open operational DataNest delivery URL">Open DataNest ↗</a> : "—"}</dd></div>
         <div><dt>Hub listing</dt><dd>{hubListingState}{status?.delivery.hubRegistration.status ? ` · HTTP ${status.delivery.hubRegistration.status}` : ""}</dd></div>
+        <div><dt>Backup host</dt><dd>{status?.delivery.backupHost ? `${status.delivery.backupHost.provider} · ${status.delivery.backupHost.path} · artifact recovery` : "Dropbox · /DataNest-AI-Backups · artifact recovery"}</dd></div>
+        <div><dt>Local PC backup hosting</dt><dd>DISABLED</dd></div>
         <div><dt>AppDev authority</dt><dd>{status?.authority.owner || "DataNest-Supository"}</dd></div>
         <div><dt>Control source</dt><dd>{status?.authority.controlRepository || "DataNest-Supository/DataNest"}</dd></div>
         <div><dt>Hub source</dt><dd>{status?.authority.hubRepository || "DataNest-Supository/DataNest"}</dd></div>
