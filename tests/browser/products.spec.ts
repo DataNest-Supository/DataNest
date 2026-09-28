@@ -239,6 +239,6 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
   await page.setViewportSize({width:1280,height:900});
   await appDevLaunch.click();
   await expect(page).toHaveURL(/\?view=ai$/);
-  await expect(page.getByRole("region",{name:"DataNest AI development command center"})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"Development command channel",exact:true})).toBeVisible();
   await expect(page.getByText("Fixture project",{exact:true}).first()).toBeVisible();
 });
