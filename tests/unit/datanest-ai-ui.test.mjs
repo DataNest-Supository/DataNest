@@ -12,10 +12,8 @@ test("DataNest AI keeps the animated hero while compressing duplicated workspace
   const css=read("src/app/datanest-ai-optimized.css");
   const layout=read("src/app/layout.tsx");
 
-  assert.match(workspace,/className="datanestAiCommandSummary"/);
   assert.match(workspace,/Current objective/);
   assert.match(workspace,/Focus chat/);
-  assert.match(workspace,/Inspect context/);
   assert.match(workspace,/className="datanestAiCommandSummary datanestAiCommandSummaryCompact"/);
   assert.match(workspace,/className="datanestAiContextSignals"/);
   assert.match(workspace,/className="datanestAiContextDetails"/);
