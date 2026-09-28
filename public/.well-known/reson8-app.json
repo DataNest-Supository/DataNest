@@ -1,7 +1,7 @@
 {
   "contract": "reson8-app@1",
   "key": "datanest",
-  "name": "Resonance DataNest",
+  "name": "reson8.datanest.life",
   "publicUrl": "https://datanest-supository.github.io/DataNest/",
   "hubUrl": "https://reson8.life/",
   "sourceRepository": "DataNest-Supository/DataNest",
@@ -34,5 +34,9 @@
     "status": "live",
     "url": "https://datanest-supository.github.io/DataNest/",
     "healthUrl": "https://datanest-supository.github.io/DataNest/health.json"
-  }
+  },
+  "displayName": "Resonance DataNest",
+  "canonicalHost": "reson8.datanest.life",
+  "brandedUrl": "https://reson8.datanest.life/",
+  "brandedState": "reserved"
 }
