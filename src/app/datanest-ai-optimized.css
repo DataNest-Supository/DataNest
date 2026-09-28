@@ -442,3 +442,128 @@
     min-height:128px!important;
   }
 }
+
+
+/* 2026-09-28 first-viewport density pass */
+/* Keep the working command surface visible sooner on laptop-height viewports without
+   removing governance context or lifecycle navigation. */
+.aiCommandGuide{
+  gap:6px;
+  margin-bottom:10px;
+}
+.aiCommandGuide>div{
+  min-width:0;
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  align-items:center;
+  gap:6px 10px;
+  padding:8px 10px;
+}
+.aiCommandGuide>div:first-child{
+  grid-template-columns:auto minmax(0,1fr) auto;
+}
+.aiCommandGuide>div>span{
+  margin:0;
+  white-space:nowrap;
+}
+.aiCommandGuide>div>p{
+  margin:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.aiCommandGuide .workspaceTaskGuideAction{
+  margin:0;
+  min-height:30px;
+  padding:5px 9px;
+  white-space:nowrap;
+}
+
+.datanestAiCommandSummary{
+  gap:10px;
+  margin-bottom:10px;
+  padding:11px 13px;
+  border-radius:13px;
+}
+.datanestAiCommandObjective strong{font-size:14px}
+.datanestAiCommandObjective p{
+  margin-top:3px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.datanestAiCommandEvidence{gap:6px}
+.datanestAiCommandEvidence>div{
+  padding:7px 9px;
+  border-radius:9px;
+}
+.datanestAiCommandEvidence small{margin-bottom:3px}
+.datanestAiCommandEvidence span{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.datanestAiCommandActions{gap:6px}
+.datanestAiCommandActions .primaryButton,
+.datanestAiCommandActions .secondaryButton{
+  min-height:34px;
+  padding:8px 11px;
+  font-size:10px;
+}
+
+.datanestAiJobPicker{
+  gap:4px 10px;
+  padding:9px 12px;
+}
+.datanestAiJobPicker select{
+  min-height:34px;
+  padding:6px 10px;
+}
+.datanestAiJobPicker small{font-size:8px}
+
+.datanestAiConsoleHead{
+  padding:15px 18px 12px;
+}
+.datanestAiConsoleGlyph{
+  width:44px;
+  height:44px;
+  border-radius:13px;
+  font-size:16px;
+}
+.datanestAiConsoleIdentity{gap:11px}
+.datanestAiConsoleIdentity h3{
+  margin:2px 0 2px;
+  font-size:clamp(19px,2cqi,26px);
+}
+.datanestAiConsoleGuardrail{
+  margin:10px 18px 0;
+  padding:7px 10px;
+}
+.datanestAiQuickCommands{
+  margin-top:10px;
+}
+.datanestAiCommandConsole .datanestAiComposer{
+  margin:10px 18px 10px;
+  padding:13px;
+}
+.datanestAiCommandConsole .datanestAiComposer textarea{
+  min-height:96px;
+  padding:13px 14px;
+}
+.datanestAiCommandConsole .datanestAiTranscript{
+  margin-left:18px;
+  margin-right:18px;
+}
+
+@media(max-width:900px){
+  .aiCommandGuide>div,
+  .aiCommandGuide>div:first-child{
+    grid-template-columns:1fr;
+    align-items:start;
+  }
+  .aiCommandGuide>div>p{white-space:normal}
+  .aiCommandGuide .workspaceTaskGuideAction{justify-self:start}
+  .datanestAiCommandObjective p,
+  .datanestAiCommandEvidence span{white-space:normal}
+}
