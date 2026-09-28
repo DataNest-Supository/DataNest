@@ -167,7 +167,6 @@ export default {
           provider: "GitHub Pages",
           operationalUrl: publicUrl.toString(),
           publicDelivery,
-          railwayRequired: false,
           hubRegistration,
           backupHost: {
             provider: DATANEST_BACKUP_PROVIDER,
