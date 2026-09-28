@@ -7,13 +7,19 @@ It combines two first-class tools:
 - **UNIFI** — project orchestration, planning, Job Manifests, context, checkpoints, artifacts and audit.
 - **TranScheduler** — capability-aware scheduling, dependencies, reservations, retry/backoff, execution history and human controls.
 
+## Canonical identity
+
+**reson8.datanest.life** is the canonical branded DataNest name.
+
+The branded hostname is intentionally independent of prior provider metadata. Until its DNS/edge binding is activated, the live operational endpoint remains GitHub Pages.
+
 ## Live web UI
 
 Primary free public endpoint:
 
 **https://datanest-supository.github.io/DataNest/**
 
-Reson8 ecosystem integration links to the same canonical DataNest endpoint. No Railway ingress is required.
+Reson8 ecosystem integration uses the canonical identity **reson8.datanest.life** while linking to the live GitHub Pages endpoint until the branded hostname is activated. No Railway ingress is required.
 
 Static health marker:
 
