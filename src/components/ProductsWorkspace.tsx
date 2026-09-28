@@ -642,7 +642,13 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
               const shared=portfolioItems.filter(item=>item.active_classification==="shared_datanest_capability"&&hasRelationship(item,["uses","depends_on"]));
               const external=portfolioItems.filter(item=>item.active_classification==="registered_external_capability"&&hasRelationship(item,["uses","integrates_with"]));
               const pending=portfolioItems.filter(item=>item.review_state==="pending_review"&&item.active_classification===null&&historicalParentProductId(item)===product.id);
-              const names=(items:PortfolioRegistryRow[])=>items.length?items.map(item=>item.name).join(", "):"None recorded";
+              const names=(items:PortfolioRegistryRow[])=>items.length?items.map((item,index)=>{
+                const launch=getRonsasAppLaunch(item.name);
+                return <span key={item.id}>
+                  {index>0?", ":""}
+                  {launch?<a className="ronsasCompositionLaunch" href={launch.href} aria-label={`Open ${item.name} in DataNest`}>{item.name}</a>:item.name}
+                </span>;
+              }):"None recorded";
               return <section className="ronsasComposition" aria-label="RONSAS Composition">
                 <div className="catalogRecordGroupHead"><h4>RONSAS Composition</h4><span>{owned.length+shared.length+external.length+pending.length}</span></div>
                 <div className="ronsasCompositionGrid">
