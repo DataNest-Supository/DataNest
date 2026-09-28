@@ -1040,7 +1040,7 @@ export default function DataNestApp({session}:{session:Session}) {
 
     window.history.pushState(window.history.state,"",url.toString());
     window.scrollTo({top:0,left:0,behavior:"auto"});
-  },[view,viewReady]);
+  },[view,viewReady,commandOpen]);
   useEffect(()=>{
     if(!viewReady)return;
     const url=new URL(window.location.href);
@@ -1068,7 +1068,7 @@ export default function DataNestApp({session}:{session:Session}) {
     if(nextUrl!==window.location.href)window.history.replaceState(window.history.state,"",nextUrl);
   },[view,viewReady,jobPage,runPage,checkpointPage,eventPage,schedulerViewMode,schedulerFilter,schedulerSortMode]);
   useEffect(()=>{
-    if(!viewReady)return;
+    if(!viewReady||commandOpen)return;
     if(previousViewRef.current===view)return;
     previousViewRef.current=view;
     const frame=window.requestAnimationFrame(()=>{
