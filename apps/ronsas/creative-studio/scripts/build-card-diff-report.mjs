@@ -136,11 +136,7 @@ function render(items) {
       <div class="tags">
         <span class="tag route">${esc(i.route)}</span>
         <span class="tag engine">${esc(i.browser)}</span>
-        ${
-          i.expectedDims && i.actualDims && (i.expectedDims.w !== i.actualDims.w || i.expectedDims.h !== i.actualDims.h)
-            ? `<span class="tag warn">size drift ${i.expectedDims.w}×${i.expectedDims.h} → ${i.actualDims.w}×${i.actualDims.h}</span>`
-            : ""
-        }
+        <span class="tag size">size ${i.expectedDims?.w ?? "?"}×${i.expectedDims?.h ?? "?"} → ${i.actualDims?.w ?? "?"}×${i.actualDims?.h ?? "?"}</span>
       </div>
     </header>
     <div class="panes">
