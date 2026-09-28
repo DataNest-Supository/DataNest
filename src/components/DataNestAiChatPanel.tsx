@@ -200,7 +200,8 @@ export default function DataNestAiChatPanel({
           jobId:requestJobId,
           sessionId:requestSessionId||null,
           clientRequestId:requestId,
-          message
+          message,
+          clientTimeZone:Intl.DateTimeFormat().resolvedOptions().timeZone||"UTC"
         }
       });
       if(error)throw error;
