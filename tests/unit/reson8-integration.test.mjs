@@ -16,7 +16,7 @@ test("DataNest declares its canonical Reson8 ecosystem binding",()=>{
   assert.equal(contract.contract,"reson8-app@1");
   assert.equal(contract.key,"datanest");
   assert.equal(contract.name,"reson8.datanest.life");
-  assert.equal(contract.displayName,"Resonance DataNest");
+  assert.equal(contract.displayName,"reson8.datanest.life");
   assert.equal(contract.canonicalHost,"reson8.datanest.life");
   assert.equal(contract.brandedUrl,"https://reson8.datanest.life/");
   assert.equal(contract.brandedState,"reserved");
