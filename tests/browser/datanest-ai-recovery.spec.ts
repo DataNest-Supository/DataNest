@@ -70,6 +70,8 @@ test("failed context is honest, keeps the draft, and recovers",async({page})=>{
   await expect(page.getByRole("button",{name:"Send command",exact:true})).toBeDisabled();
   state.failContext=false;
   await page.getByRole("button",{name:"Retry AI context"}).click();
+  await expect(page.getByRole("button",{name:"Send command",exact:true})).toBeDisabled();
+  await page.getByRole("button",{name:/UI & UX/}).click();
   await expect(page.getByRole("button",{name:"Send command",exact:true})).toBeEnabled();
   await expect(composer).toHaveValue("Preserve this draft while recovering.");
   await page.getByLabel("Active Job context",{exact:true}).selectOption(secondJob.id);
@@ -83,6 +85,7 @@ test("in-flight commands lock edits and retain a reply when refresh fails",async
   await page.goto(appPath+"?view=ai");
   const composer=page.getByPlaceholder(/Ask DataNest AI to analyze/i);
   await expect(page.getByText("AI CORE LINKED",{exact:true})).toBeVisible();
+  await page.getByRole("button",{name:/UI & UX/}).click();
   await composer.fill("Analyze the fixture Job.");
   await page.getByRole("button",{name:"Send command",exact:true}).click();
   await expect.poll(()=>state.chatRequests).toBe(1);

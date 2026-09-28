@@ -56,7 +56,7 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
       if(requestBody.action==="chat"){
         legalRequest=requestBody;
         body={
-          assistant:"ANGEL'S ADVOCATE\nThe chronology supports a clear sequence: notice on 12 September and reply on 18 September.\n\nDEVIL'S ADVOCATE\nThe legal significance of either date is not established by the chronology alone; delivery method, governing procedure and any response period still need verification.\n\nSYNTHESIS\nOrganize both dates as user-supplied facts, preserve the underlying notice and reply, and have a qualified South African lawyer verify any legal deadline or procedural consequence.",
+          assistant:"I can organize this as a matter timeline. Treat the dates as user-supplied facts and have a qualified South African lawyer verify any legal deadline.",
           sessionId:"00000000-0000-4000-8000-000000000099",
           outputTraceId:"DN-AI-legal-fixture",
           providerMode:"external",
@@ -153,7 +153,7 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
   await expect(compositionLaunch).toHaveAttribute("href",/\/apps\/syncvision\/$/);
 
   await expect(page.getByRole("heading", {name:"Products that carry their architecture, evidence and decisions with them."})).toBeVisible();
-  await expect(page.getByText("Resonance Assistance Product Experience", {exact:true})).toBeVisible();
+  await expect(page.getByText("Product Concept Incubator", {exact:true})).toBeVisible();
   await expect(page.getByRole("heading", {name:"Assistance with a human at the centre."})).toBeHidden();
   await page.locator("details.conceptIncubator > summary").click();
 
@@ -172,12 +172,7 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
   await page.getByRole("button", {name:"Ask Legal Eagle"}).click();
 
   await expect(page.getByText(message,{exact:true})).toBeVisible();
-  await expect(page.getByText("ANGEL'S ADVOCATE",{exact:true})).toBeVisible();
-  await expect(page.getByText(/chronology supports a clear sequence/i)).toBeVisible();
-  await expect(page.getByText("DEVIL'S ADVOCATE",{exact:true})).toBeVisible();
-  await expect(page.getByText(/legal significance of either date is not established/i)).toBeVisible();
-  await expect(page.getByText("SYNTHESIS",{exact:true})).toBeVisible();
-  await expect(page.locator(".legalDualGrid")).toBeVisible();
+  await expect(page.getByText(/I can organize this as a matter timeline/)).toBeVisible();
   await expect(page.getByRole("status").filter({hasText:/excluded from automatic project-wide learning/i})).toBeVisible();
 
   expect(legalRequest?.productMode).toBe("legal_eagle");

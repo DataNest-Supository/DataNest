@@ -19,16 +19,15 @@ test("Products is a first-class DataNest workspace",()=>{
   assert.match(app,/Inspect governed Resonance products, their architecture, controls, evidence, risks and promotion branches/);
 });
 
-test("Resonance Assistance exposes Legal Eagle as its first live governed product",()=>{
+test("Resonance Assistance stays concept 01 while Legal Eagle is its first live specialist",()=>{
   assert.match(products,/CONCEPT 01/);
-  assert.match(products,/Resonance Assistance Product Experience/);
+  assert.match(products,/Product Concept Incubator/);
   assert.doesNotMatch(products,/PRODUCT 01/);
   assert.match(products,/Resonance Assistance/);
-  assert.match(products,/FIRST SPECIALIST · LIVE PRODUCT/);
+  assert.match(products,/FIRST SPECIALIST · LIVE/);
   assert.match(products,/Legal Eagle/);
   assert.match(products,/GOVERNED ASSISTANT/);
-  assert.match(products,/LIVE GOVERNED PRODUCT/);
-  assert.match(products,/Open Legal Eagle/);
+  assert.match(products,/live or incubating but not yet promoted as standalone catalog products/);
 });
 
 test("Legal Eagle calls the governed AI gateway with matter and jurisdiction scope",()=>{

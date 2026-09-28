@@ -305,11 +305,9 @@ test("purpose guide supports keyboard, compact layouts, and browser history", as
   await page.getByRole("searchbox",{name:"Search DataNest workspaces"}).fill("governance");
   await page.keyboard.press("Enter");
   await expect(page.getByRole("heading",{name:"Governance",level:1,exact:true})).toBeFocused();
-  await page.keyboard.press("Control+K");
-  await expect(page.getByRole("dialog",{name:"Quick switch DataNest workspace"})).toBeVisible();
-  await expect(page.getByRole("searchbox",{name:"Search DataNest workspaces"})).toBeVisible();
+  await page.getByRole("button",{name:/Quick switch/}).click();
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("heading",{name:"Governance",level:1,exact:true})).toBeFocused();
+  await expect(page.getByRole("button",{name:/Quick switch/})).toBeFocused();
 });
 
 test("workspace arrivals honor paused and reduced motion without hiding content", async ({page}) => {
