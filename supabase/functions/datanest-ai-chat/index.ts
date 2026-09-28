@@ -760,6 +760,7 @@ Deno.serve(async(request:Request)=>{
     let learningPolicyErrorMessage:string|null=null;
     let finalLearningEligible=false;
     let trendAnalysis:{status:"not_applicable"|"recorded"|"failed";candidateId?:string|null;trendKey?:string|null;evidenceCount?:number;error?:string}={status:"not_applicable"};
+    let contributionTracking:{status:"not_applicable"|"staged"|"failed";contributionId?:string|null;error?:string}={status:"not_applicable"};
 
     const result=await executeChatTurn({
       beginRequest:async()=>{
@@ -856,6 +857,26 @@ Deno.serve(async(request:Request)=>{
           .single();
         if(error||!data)throw error||new Error("Unable to stage DataNest AI input.");
         stagedInputTraceId=String(data.trace_id);
+
+        if(expertise){
+          const {data:contributionId,error:contributionError}=await userClient.rpc(
+            "submit_development_work_contribution_v1",{
+              target_project:job.project_id,
+              target_job:job.id,
+              target_source_ref:String(data.id),
+              target_content:message,
+              target_content_hash:fingerprint,
+              target_impact_area:expertise.label,
+              target_expertise_section:requestedExpertiseSection,
+              target_verification_track:expertise.verificationTrack,
+              target_routing_version:"development-work-expertise-v1"
+            }
+          );
+          contributionTracking=contributionError
+            ?{status:"failed",error:contributionError.message||"Governed contribution intake failed."}
+            :{status:"staged",contributionId:String(contributionId||"")};
+        }
+
         return {
           id:String(data.id),
           traceId:stagedInputTraceId,
@@ -1289,7 +1310,8 @@ Deno.serve(async(request:Request)=>{
       policyPurpose,
       expertiseSection:requestedExpertiseSection||null,
       impactArea:expertise?.label||null,
-      verificationTrack:expertise?.verificationTrack||null
+      verificationTrack:expertise?.verificationTrack||null,
+      contributionTracking
     },200,origin);
   }catch(error){
     const message=error instanceof Error?error.message:"Unable to process DataNest AI request.";
