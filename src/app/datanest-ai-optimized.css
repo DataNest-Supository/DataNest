@@ -287,18 +287,10 @@
 }
 
 
+/* CSS source order now follows semantic DOM order; no visual order overrides required. */
 /* 2026-09-28 chat-first workspace flow */
 /* Keep the operational chat in the first working viewport. The decorative intelligence
    overview remains available below without blocking the primary task. */
-.datanestAiCommandSummary{order:10}
-.datanestAiJobPicker{order:20}
-.datanestAiChatStage{order:30}
-.datanestAiStatusCards{order:40}
-.datanestAiHeroV2{order:50}
-.datanestAiContextRail{order:60}
-.datanestAiSupportGrid{order:70}
-.datanestAiCertificationStage{order:80}
-.datanestAiFootnote{order:90}
 
 .datanestAiJobPicker{
   width:min(100%,980px);
@@ -364,11 +356,7 @@
 /* The command field is the primary action. Show it before conversation history so a
    user can type immediately without scrolling through prior turns. */
 .datanestAiCommandConsole{display:grid}
-.datanestAiConsoleHead{order:10}
-.datanestAiConsoleGuardrail{order:20}
-.datanestAiQuickCommands{order:30}
 .datanestAiCommandConsole .datanestAiComposer{
-  order:40;
   margin-top:14px;
   border-color:rgba(91,230,255,.24);
   box-shadow:
@@ -377,7 +365,6 @@
     inset 0 1px rgba(255,255,255,.03);
 }
 .datanestAiCommandConsole .datanestAiTranscript{
-  order:50;
   margin-top:0;
   margin-bottom:22px;
   padding-top:14px;
@@ -613,7 +600,6 @@
 /* Keep the visual intelligence-core explanation available without forcing a large
    decorative block into the primary work path. */
 .datanestAiOverviewDisclosure{
-  order:50;
   min-width:0;
   border:1px solid rgba(132,87,255,.18);
   border-radius:13px;
