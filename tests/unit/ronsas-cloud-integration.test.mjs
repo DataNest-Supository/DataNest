@@ -15,6 +15,7 @@ test("RONSAS status is cloud-backed while runtime authority is DataNest local-fi
   assert.match(edge,/const HUB_STATUS_PATH = "\/api\/public\/app-status\/health"/);
   assert.match(edge,/const DATANEST_CANONICAL_NAME = "reson8\.datanest\.life"/);
   assert.match(edge,/const DATANEST_BRANDED_URL = "https:\/\/reson8\.datanest\.life\/"/);
+  assert.match(edge,/const DATANEST_WIRE_TARGET = HUB_ORIGIN/);
   assert.match(edge,/const DATANEST_PUBLIC_ORIGIN = "https:\/\/datanest-supository\.github\.io\/DataNest\/"/);
   assert.match(edge,/const DATANEST_HEALTH_PATH = "\/DataNest\/health\.json"/);
   assert.match(edge,/const DATANEST_BACKUP_PROVIDER = "Dropbox"/);
@@ -33,7 +34,11 @@ test("RONSAS status is cloud-backed while runtime authority is DataNest local-fi
   assert.match(edge,/entry as \{ key\?: unknown \}\)\.key === "datanest"/);
   assert.match(edge,/canonicalName: DATANEST_CANONICAL_NAME/);
   assert.match(edge,/brandedUrl: DATANEST_BRANDED_URL/);
-  assert.match(edge,/brandedState: "reserved"/);
+  assert.match(edge,/brandedState: "wire-ready"/);
+  assert.match(edge,/source: DATANEST_BRANDED_URL/);
+  assert.match(edge,/target: DATANEST_WIRE_TARGET/);
+  assert.match(edge,/mode: "redirect"/);
+  assert.match(edge,/networkState: "dns-pending"/);
   assert.match(edge,/provider: "GitHub Pages"/);
   assert.match(edge,/operationalUrl: publicUrl\.toString\(\)/);
   assert.match(edge,/railwayRequired: false/);
@@ -53,6 +58,7 @@ test("DataNest exposes the governed RONSAS status contract through JWT-protected
   assert.match(client,/!status\.delivery/);
   assert.match(client,/status\.delivery\.canonicalName !== "reson8\.datanest\.life"/);
   assert.match(client,/status\.delivery\.brandedUrl !== "https:\/\/reson8\.datanest\.life\/"/);
+  assert.match(client,/status\.delivery\.wire\.target !== "https:\/\/reson8\.life\/"/);
   assert.match(client,/status\.delivery\.hubRegistration\.listed/);
   assert.match(client,/status\.delivery\.provider !== "GitHub Pages"/);
   assert.match(client,/status\.delivery\.backupHost\.provider !== "Dropbox"/);
@@ -64,6 +70,7 @@ test("DataNest exposes the governed RONSAS status contract through JWT-protected
   assert.match(panel,/Open RONSAS ↗/);
   assert.match(panel,/Canonical name<\/dt><dd>/);
   assert.match(panel,/Branded URL<\/dt><dd>/);
+  assert.match(panel,/Hub wire<\/dt><dd>/);
   assert.match(panel,/reson8\.datanest\.life/);
   assert.match(panel,/Public delivery<\/dt><dd>/);
   assert.match(panel,/Operational URL<\/dt><dd>/);
