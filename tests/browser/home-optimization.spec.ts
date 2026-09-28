@@ -189,7 +189,7 @@ test("workflow shell guides execution forward and preserves browser history", as
 
   const aiNav = page.locator(".navGroup button.aiHeroNav", {hasText:"DataNest AI"});
   await expect(aiNav).toBeVisible();
-  expect(await aiNav.evaluate(el => getComputedStyle(el, "::after").content)).toContain("CORE");
+  expect(await aiNav.evaluate(el => getComputedStyle(el, "::after").content)).toContain("COMMAND");
 
   await page.getByRole("button", {name:"Continue · TranScheduler →"}).click();
   await expect(page).toHaveURL(/\?view=scheduler/);
