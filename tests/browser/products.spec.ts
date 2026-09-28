@@ -30,6 +30,15 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
     const path = new URL(request.url()).pathname;
     let body: unknown = [];
 
+    if(path.endsWith("/functions/v1/ronsas-status")){
+      return route.fulfill({contentType:"application/json",body:JSON.stringify({
+        contract:"ronsas-status@1",checkedAt:"2026-09-28T08:30:00Z",mode:"cloud",runtimeMode:"local-first",managedByDataNest:true,
+        billingState:"free-promotion",independent:false,localInteractionRequired:false,
+        authority:{owner:"DataNest-Supository",controlRepository:"DataNest-Supository/DataNest",hubRepository:"DataNest-Supository/DataNest",publicHub:"https://reson8.life/"},
+        hub:{ok:true,status:200,latencyMs:42,origin:"https://reson8.life/"}
+      })});
+    }
+
     if(path.endsWith("/functions/v1/datanest-ai-chat")){
       const requestBody=(request.postDataJSON()||{}) as Record<string,unknown>;
       if(requestBody.action==="chat"){
@@ -91,6 +100,9 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
   await expect(page.getByText("DATANEST MANAGED",{exact:true})).toBeVisible();
   await expect(page.getByText("Windows local environment",{exact:true})).toBeVisible();
   await expect(page.getByText("FREE PROMOTION · BILLING OFF",{exact:true})).toBeVisible();
+  const ronsasLaunch=page.getByRole("link",{name:"Open RONSAS",exact:true});
+  await expect(ronsasLaunch).toBeVisible();
+  await expect(ronsasLaunch).toHaveAttribute("href","https://reson8.life/");
   await expect(page.getByLabel("Filter governed record type")).toHaveValue("risk");
   await expect(page.getByLabel("Search governed product records")).toHaveValue("runner");
   await expect(page.locator("details.catalogDetails")).toHaveAttribute("open","");
@@ -108,6 +120,10 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
   await page.getByLabel("Search governed product records").fill("");
   await page.getByLabel("Filter governed record type").selectOption("all");
   await expect(page).toHaveURL(/product=ronsas/);
+
+  const ronsasHubRecord=page.locator(".catalogRecord").filter({hasText:"RONSAS Hub"}).getByRole("link",{name:"Open RONSAS Hub"});
+  await expect(ronsasHubRecord).toBeVisible();
+  await expect(ronsasHubRecord).toHaveAttribute("href","https://reson8.life/");
 
   const syncVisionLaunch=page.locator(".catalogRecord").getByRole("link",{name:"Open Sync Vision in DataNest"});
   await expect(syncVisionLaunch).toBeVisible();
