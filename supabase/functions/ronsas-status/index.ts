@@ -2,7 +2,7 @@
 import { withSupabase } from "npm:@supabase/server@1.8.0";
 
 const CONTRACT = "ronsas-status@1";
-const HUB_ORIGIN = "https://reson8.life/";
+const HUB_ORIGIN = "https://reson8.life/apps/";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
