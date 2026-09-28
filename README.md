@@ -41,6 +41,8 @@ Standalone Node/Docker runtimes continue to expose the server health endpoint at
 - Hosting model: **replaceable delivery infrastructure**
 - Backup-artifact host: **Dropbox · `/DataNest-AI-Backups`**
 - Local PC backup hosting: **disabled**
+- AI compute: **replaceable approved HTTPS inference endpoints; no workstation is required**
+- AI architecture: [`docs/DATANEST_AI_ARCHITECTURE.md`](docs/DATANEST_AI_ARCHITECTURE.md)
 - Optional future delivery target: **Vercel**
 
 GitHub and Supabase remain the required source/CI and backend authorities. Dropbox is continuity storage for governed release and recovery artifacts; it is not the request-serving production web runtime. Hosting remains replaceable delivery infrastructure, not system authority.
