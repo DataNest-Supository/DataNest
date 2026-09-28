@@ -1626,20 +1626,6 @@ export default function DataNestApp({session}:{session:Session}) {
           <div>
             <span>START HERE</span>
             <p>{workspaceTaskGuides[view]?.start}</p>
-            {view==="ai"&&<button
-              className="workspaceTaskGuideAction"
-              type="button"
-              onClick={()=>{
-                const target=document.getElementById("datanest-ai-active-job");
-                if(!target){
-                  setView("unifi");
-                  return;
-                }
-                const reduceMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches||document.documentElement.dataset.motionPaused==="true";
-                target.scrollIntoView({behavior:reduceMotion?"auto":"smooth",block:"center"});
-                target.focus({preventScroll:true});
-              }}
-            >Select Job Manifest <span aria-hidden="true">→</span></button>}
           </div>
           <div><span>COMPLETE WHEN</span><p>{workspaceTaskGuides[view]?.complete}</p></div>
           <div><span>EVIDENCE</span><p>{workspaceTaskGuides[view]?.evidence}</p></div>
