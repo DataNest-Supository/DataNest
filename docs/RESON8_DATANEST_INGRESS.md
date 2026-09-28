@@ -55,10 +55,13 @@ Until the branded ingress is live, Hub navigation should use the current GitHub 
 Railway now hosts the branded ingress on the repurposed validation-only service `nova-task4-validation` in project `RONSAS Nova Validation`.
 
 - Railway service domain: `https://nova-task4-validation-production.up.railway.app/`
-- Railway deployment: `e5b9f6e6-17e7-43fd-9486-0879e28d9d1d`
+- Railway deployment: `6e29fc87-0510-452e-aebd-ed59bbc25f89`
 - Health endpoint: `/health`
+- Public networking and runtime are aligned on container port `3000` (Railway healthcheck passed on the same deployment).
 - Custom domain attached: `datanest.reson8.life`
 - Required DNS record: `CNAME datanest.reson8.life -> r3sevmpy.up.railway.app`
 - Certificate state after attachment: validating ownership
 
 The ingress reverse-proxies the canonical GitHub Pages release and preserves the branded `datanest.reson8.life` host in the browser. The outstanding production step is publishing the CNAME at the authoritative DNS provider and waiting for Railway certificate validation.
+
+The earlier ingress deployment `e5b9f6e6-17e7-43fd-9486-0879e28d9d1d` was superseded after aligning the Railway domain target port with the service runtime. The active deployment is `6e29fc87-0510-452e-aebd-ed59bbc25f89`.
