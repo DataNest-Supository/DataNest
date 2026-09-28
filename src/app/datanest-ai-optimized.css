@@ -389,3 +389,56 @@
   .datanestAiCommandConsole .datanestAiComposer{margin-top:12px}
   .datanestAiCommandConsole .datanestAiTranscript{margin-bottom:18px}
 }
+
+
+/* 2026-09-28 command-first chat console */
+/* Put the command surface before conversation history so the primary action is visible
+   immediately after entering the AI workspace. */
+.datanestAiCommandConsole .datanestAiComposer{
+  margin:14px 24px 12px;
+  border-color:rgba(91,229,255,.24);
+  background:
+    radial-gradient(circle at 92% 100%,rgba(255,74,221,.055),transparent 30%),
+    linear-gradient(180deg,rgba(4,11,29,.78),rgba(5,7,24,.72));
+  box-shadow:0 12px 30px rgba(0,0,0,.12),inset 0 1px rgba(255,255,255,.03);
+}
+
+.datanestAiCommandConsole .datanestAiTranscript{
+  margin:0 24px 22px;
+  padding:14px 4px 2px 0;
+  border-top:1px solid rgba(91,224,255,.08);
+  max-height:540px;
+}
+
+.datanestAiConsoleEmpty{
+  min-height:150px!important;
+  padding:20px;
+}
+
+.datanestAiCommandConsole .datanestAiComposer textarea{
+  min-height:108px;
+}
+
+.datanestAiComposerFooter{
+  align-items:center;
+}
+
+@container datanest-main (max-width:700px){
+  .datanestAiCommandConsole .datanestAiComposer{
+    margin:12px 18px 10px;
+  }
+  .datanestAiCommandConsole .datanestAiTranscript{
+    margin-left:18px;
+    margin-right:18px;
+    margin-bottom:18px;
+  }
+}
+
+@container datanest-main (max-width:480px){
+  .datanestAiCommandConsole .datanestAiComposer textarea{
+    min-height:96px;
+  }
+  .datanestAiConsoleEmpty{
+    min-height:128px!important;
+  }
+}
