@@ -31,5 +31,13 @@
   "readiness": {
     "contract": "ronsas-status@1",
     "authenticated": true
+  },
+  "backupHost": {
+    "provider": "Dropbox",
+    "path": "/DataNest-AI-Backups",
+    "role": "artifact-recovery",
+    "status": "active",
+    "servesApplication": false,
+    "localPcBackupHosting": false
   }
 }
