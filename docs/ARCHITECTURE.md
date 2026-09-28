@@ -250,3 +250,8 @@ The Phase F source implementation adds **ILM-1** as DataNest's governed intellig
 - Phase G public growth/stakeholder surfaces and Phase H Outcome Ledger/Shadow Economics remain future work.
 
 This section records source architecture only. Production ILM-1 activation requires the Phase F migration, exact-head verification, and an explicitly active governed ILM profile.
+
+
+## Release Validation Checkpoint · 28 Sep 2026
+
+The canonical `main` branch has been refreshed after the Development Work expertise-routing merge. This checkpoint exists to trigger a fresh pull-request validation run; it does not change runtime architecture or production authority.
