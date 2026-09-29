@@ -18,7 +18,7 @@ const Privacy = () => {
       <main className="container mx-auto px-6 py-16 max-w-3xl">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display font-bold text-4xl mb-2">Privacy Policy</h1>
-          <p className="text-muted-foreground text-sm mb-10">Last updated: March 29, 2026</p>
+          <p className="text-muted-foreground text-sm mb-3">Review-gated legacy draft · 0.1-draft · effective date not approved.</p>\n          <p className="text-muted-foreground text-sm mb-10">This legacy YouTube Optimizer privacy copy remains review-gated until verified platform data flows and authorized legal review support an approved replacement.</p>
 
           <div className="space-y-8 text-sm text-muted-foreground leading-relaxed">
             <section>
@@ -45,7 +45,7 @@ const Privacy = () => {
 
             <section>
               <h2 className="font-display font-semibold text-lg text-foreground mb-3">3. Data Storage & Security</h2>
-              <p>Your data is stored securely using industry-standard encryption and access controls. We use cloud infrastructure with enterprise-grade security measures. Channel analysis data is processed in real-time and audit results are stored to improve recommendations over time.</p>
+              <p>Storage and security representations remain under review against verified implementation evidence. This draft does not make a platform-wide encryption or security guarantee. Channel analysis data handling must be documented from verified implementation and retention evidence.</p>
             </section>
 
             <section>

@@ -10,7 +10,7 @@ const Terms = () => {
     <div className="min-h-screen bg-background">
       <SEO
         title="Terms of Service – Resonance YouTube Optimizer"
-        description="The terms governing your use of Resonance YouTube Optimizer — accounts, billing, acceptable use and cancellation."
+        description="Review-gated legacy terms for Resonance YouTube Optimizer pending governed DataNest legal approval."
         path="/terms"
       />
       <SiteHeader />
@@ -18,7 +18,7 @@ const Terms = () => {
       <main className="container mx-auto px-6 py-16 max-w-3xl">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display font-bold text-4xl mb-2">Terms of Service</h1>
-          <p className="text-muted-foreground text-sm mb-10">Last updated: March 29, 2026</p>
+          <p className="text-muted-foreground text-sm mb-3">Review-gated legacy draft · 0.1-draft · effective date not approved.</p>\n          <p className="text-muted-foreground text-sm mb-10">This legacy YouTube Optimizer terms copy remains review-gated under the Resonance DataNest legal process and is not a replacement for the central governed legal record.</p>
 
           <div className="space-y-8 text-sm text-muted-foreground leading-relaxed">
             <section>
