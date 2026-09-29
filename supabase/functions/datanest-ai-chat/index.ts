@@ -209,8 +209,10 @@ async function loadSessionEvents(input:{
 type CertifiedMemorySelection={
   items:Array<Record<string,unknown>>;
   strategy:string;
+  projection:{key:string;version:number}|null;
   summary:{
     active_count:number;
+    projected_count:number;
     applicable_count:number;
     selected_count:number;
     review_due_count:number;
@@ -229,10 +231,58 @@ async function loadCertifiedMemory(input:{
   query:string;
   purpose:string;
   productScope:string|null;
+  projectionKey:string;
   jurisdiction:string|null;
   visibilityClass:string;
   limit?:number;
 }):Promise<CertifiedMemorySelection>{
+  const rankedV3=await input.client.rpc("get_ranked_certified_memory_context_v3",{
+    target_project:input.projectId,
+    target_job:input.jobId,
+    target_query:input.query,
+    target_purpose:input.purpose,
+    target_product_scope:input.productScope,
+    target_projection_key:input.projectionKey,
+    target_jurisdiction:input.jurisdiction,
+    target_visibility_class:input.visibilityClass,
+    target_limit:input.limit||24
+  });
+  if(!rankedV3.error){
+    const payload=(rankedV3.data||{}) as Record<string,unknown>;
+    const rawItems=Array.isArray(payload.items)?payload.items:[];
+    const items=rawItems as Array<Record<string,unknown>>;
+    const rawSummary=
+      payload.summary&&typeof payload.summary==="object"&&!Array.isArray(payload.summary)
+        ?payload.summary as Record<string,unknown>
+        :{};
+    const rawProjection=
+      payload.projection&&typeof payload.projection==="object"&&!Array.isArray(payload.projection)
+        ?payload.projection as Record<string,unknown>
+        :{};
+    return {
+      items,
+      strategy:String(payload.strategy||"verified-memory-ranked-v3"),
+      projection:{
+        key:String(rawProjection.key||input.projectionKey),
+        version:nonNegativeCount(rawProjection.version,1)
+      },
+      summary:{
+        active_count:nonNegativeCount(rawSummary.active_count,items.length),
+        projected_count:nonNegativeCount(rawSummary.projected_count,items.length),
+        applicable_count:nonNegativeCount(rawSummary.applicable_count,items.length),
+        selected_count:items.length,
+        review_due_count:nonNegativeCount(rawSummary.review_due_count,0)
+      }
+    };
+  }
+
+  const missingV3=
+    String((rankedV3.error as {code?:unknown}).code||"")==="PGRST202" ||
+    /get_ranked_certified_memory_context_v3|could not find the function/i.test(
+      String((rankedV3.error as {message?:unknown}).message||"")
+    );
+  if(!missingV3)throw rankedV3.error;
+
   const ranked=await input.client.rpc("get_ranked_certified_memory_context_v2",{
     target_project:input.projectId,
     target_job:input.jobId,
@@ -253,9 +303,11 @@ async function loadCertifiedMemory(input:{
         :{};
     return {
       items,
-      strategy:String(payload.strategy||"verified-memory-ranked-v1"),
+      strategy:String(payload.strategy||"verified-memory-ranked-v2"),
+      projection:null,
       summary:{
         active_count:nonNegativeCount(rawSummary.active_count,items.length),
+        projected_count:nonNegativeCount(rawSummary.applicable_count,items.length),
         applicable_count:nonNegativeCount(rawSummary.applicable_count,items.length),
         selected_count:items.length,
         review_due_count:nonNegativeCount(rawSummary.review_due_count,0)
@@ -281,8 +333,10 @@ async function loadCertifiedMemory(input:{
   return {
     items,
     strategy:"legacy-recency-fallback",
+    projection:null,
     summary:{
       active_count:items.length,
+      projected_count:items.length,
       applicable_count:items.length,
       selected_count:items.length,
       review_due_count:0
@@ -305,6 +359,37 @@ async function recordCertifiedMemoryUsage(input:{
   const selectedMemoryIds=input.selection.items
     .map(item=>String(item.id||""))
     .filter(Boolean);
+  const queryHash=await sha256Text(input.query);
+
+  if(input.selection.projection){
+    const projected=await input.serviceClient.rpc("service_record_certified_memory_usage_v2",{
+      target_project:input.projectId,
+      target_job:input.jobId,
+      target_ai_usage_request:input.requestId,
+      target_trace_id:input.traceId,
+      target_strategy:input.selection.strategy,
+      target_projection_key:input.selection.projection.key,
+      target_projection_version:input.selection.projection.version,
+      target_purpose:input.purpose,
+      target_product_scope:input.productScope,
+      target_visibility_class:input.visibilityClass,
+      target_query_hash:queryHash,
+      target_active_count:input.selection.summary.active_count,
+      target_applicable_count:input.selection.summary.applicable_count,
+      target_selected_count:selectedMemoryIds.length,
+      target_review_due_count:input.selection.summary.review_due_count,
+      target_selected_memory_ids:selectedMemoryIds
+    });
+    if(!projected.error)return "recorded";
+
+    const missingV2=
+      String((projected.error as {code?:unknown}).code||"")==="PGRST202" ||
+      /service_record_certified_memory_usage_v2|could not find the function/i.test(
+        String((projected.error as {message?:unknown}).message||"")
+      );
+    if(!missingV2)throw projected.error;
+  }
+
   const {error}=await input.serviceClient.rpc("service_record_certified_memory_usage_v1",{
     target_project:input.projectId,
     target_job:input.jobId,
@@ -314,7 +399,7 @@ async function recordCertifiedMemoryUsage(input:{
     target_purpose:input.purpose,
     target_product_scope:input.productScope,
     target_visibility_class:input.visibilityClass,
-    target_query_hash:await sha256Text(input.query),
+    target_query_hash:queryHash,
     target_active_count:input.selection.summary.active_count,
     target_applicable_count:input.selection.summary.applicable_count,
     target_selected_count:selectedMemoryIds.length,
@@ -927,6 +1012,11 @@ Deno.serve(async(request:Request)=>{
       ?"session_context"
       :(requestedReuseState||"project_learning_eligible");
     const policyPurpose=legalMode?"user_requested_analysis":"job_execution";
+    const projectionKey=legalMode
+      ?"legal_eagle"
+      :developmentMode
+        ?"development_command"
+        :"datanest_ai";
     const learningEligible=!legalMode&&!developmentMode&&reuseState==="project_learning_eligible";
 
     const job=await loadAuthorizedJob(userClient,jobId);
@@ -953,6 +1043,7 @@ Deno.serve(async(request:Request)=>{
           query:[job.title,job.description,legalTask,jurisdiction].filter(Boolean).join(" "),
           purpose:policyPurpose,
           productScope:legalMode?"legal_eagle":developmentMode?"development_command":"datanest_ai",
+          projectionKey,
           jurisdiction:legalMode?jurisdiction:null,
           visibilityClass,
           limit:24
@@ -964,6 +1055,7 @@ Deno.serve(async(request:Request)=>{
         events,
         certifiedMemory:certifiedMemorySelection.items,
         certifiedMemoryStrategy:certifiedMemorySelection.strategy,
+        certifiedMemoryProjection:certifiedMemorySelection.projection,
         certifiedMemorySummary:certifiedMemorySelection.summary
       },200,origin);
     }
@@ -1177,6 +1269,7 @@ Deno.serve(async(request:Request)=>{
             query:memoryQuery,
             purpose:policyPurpose,
             productScope,
+            projectionKey,
             jurisdiction:legalMode?jurisdiction:null,
             visibilityClass,
             limit:24

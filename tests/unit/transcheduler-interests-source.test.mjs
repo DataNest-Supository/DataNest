@@ -87,3 +87,14 @@ test("TranScheduler identifies requirement sections outside the user's saved int
   assert.match(app,/Outside your interests · /);
   assert.match(app,/className="interestGapDetail"/);
 });
+
+
+test("Stakeholder shows current open Job demand for each interest area",()=>{
+  assert.match(stakeholder,/supabase\.from\("jobs"\)\.select\("requirements,status"\)\.eq\("project_id",projectId\)/);
+  assert.match(stakeholder,/const interestDemandFinalStates=new Set\(\["COMPLETED","FAILED","CANCELLED"\]\)/);
+  assert.match(stakeholder,/workFocusKeysFromRequirements\(job\.requirements\)/);
+  assert.match(stakeholder,/setInterestDemandJobCount\(openJobs\.length\)/);
+  assert.match(stakeholder,/open Jobs mapped across requirement sections/);
+  assert.match(stakeholder,/open Jobs require /);
+  assert.match(stakeholder,/className="interestDemandBadge"/);
+});
