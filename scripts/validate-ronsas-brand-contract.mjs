@@ -68,14 +68,14 @@ if(!existsSync(contractPath)){
             if(lock.packages?.[""]?.dependencies?.[dependency]!=="5.3.0") failures.push(`creative-studio lock root missing font dependency: ${dependency}`);
             if(lock.packages?.["node_modules/"+dependency]?.version!=="5.3.0") failures.push(`creative-studio lock entry missing font package: ${dependency}`);
           }
-          for(const token of ["Resonance Sole Proprietorship","Resonance App Development","Resonance DataNest","RSGP Governed","/legal","/governance","free promotion"]){
+          for(const token of ["Resonance Sole Proprietorship","Resonance App Development","Resonance DataNest","RSGP Governed","/DataNest/legal","/DataNest/governance","free promotion"]){
             if(!sources.footer.includes(token)) failures.push(`creative-studio footer missing token: ${token}`);
           }
           if(/checkout/i.test(sources.footer)) failures.push("creative-studio footer must not expose checkout language");
           if(/new Date\s*\(|toLocaleDateString\s*\(/.test(sources.terms+sources.privacy)) failures.push("creative-studio legal pages must not manufacture current effective dates");
-          if(!sources.terms.includes("Review required")||!sources.privacy.includes("Review required")) failures.push("creative-studio legal pages must remain review-gated");
+          if(!sources.terms.includes("Review-gated legacy draft")||!sources.privacy.includes("Review-gated legacy draft")||!sources.terms.includes("0.1-draft")||!sources.privacy.includes("0.1-draft")) failures.push("creative-studio legal pages must remain review-gated at 0.1-draft");
           if(/industry-standard encryption|not retained beyond the generation session/i.test(sources.privacy)) failures.push("creative-studio privacy page contains unsupported guarantees");
-          for(const token of ["@media (prefers-color-scheme: light)","@media (prefers-contrast: more)","@media (prefers-reduced-motion: reduce)","--dn-app-accent","font-family"]){
+          for(const token of ["@media (prefers-color-scheme: light)","@media (prefers-contrast: more)","@media (prefers-reduced-motion: reduce)","--rdn-app-accent: #ff36d8","font-family"]){
             if(!sources.adapter.includes(token)) failures.push(`creative-studio adapter missing token: ${token}`);
           }
           if(!sources.main.includes("@fontsource-variable/inter-tight")||!sources.main.includes("./resonance-datanest-adapter.css")) failures.push("creative-studio main entry does not load canonical fonts and adapter");
