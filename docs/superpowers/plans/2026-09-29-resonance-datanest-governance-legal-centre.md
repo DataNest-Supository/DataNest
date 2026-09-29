@@ -349,25 +349,28 @@ git commit -m "feat: define cross-app DataNest legal contract"
 - Checklist enumerates document id, draft version, evidence required, review owner, decision, effective date, and approval reference.
 - Initial state is review-required; no reviewer name/signature is fabricated.
 
-- [ ] **Step 1: Add failing source assertion for the checklist**
+- [x] **Step 1: Add failing source assertion for the checklist**
 
 Require the checklist to state that production legal approval is a human/legal decision and that blank/review-required fields are not equivalent to approval.
 
-- [ ] **Step 2: Run test**
+- [x] **Step 2: Run test**
 
 Run: `node --test tests/unit/legal-centre-source.test.mjs`  
 Expected: FAIL until checklist exists.
 
-- [ ] **Step 3: Add checklist and architecture cross-reference**
+- [x] **Step 3: Add checklist and architecture cross-reference**
 
-- [ ] **Step 4: Verify all legal-centre tests**
+- [x] **Step 4: Verify all legal-centre tests**
 
 Run: `node --test tests/unit/legal-centre-source.test.mjs && npm run check && npm run build && npx playwright test tests/browser/legal-centre.spec.ts`  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add docs/governance/legal-review docs/UX_WORKFLOW_ARCHITECTURE.md tests/unit/legal-centre-source.test.mjs
 git commit -m "docs: add DataNest legal review gate"
 ```
+
+> Task 8 evidence: checklist-missing RED → focused GREEN; exact-head CI #2319 PASS and PR Verification #1199 PASS cover unit tests, TypeScript, production build and browser verification. Checklist keeps all documents review-required until an authorized human/legal reviewer records decision, effective date and approval reference.
+
