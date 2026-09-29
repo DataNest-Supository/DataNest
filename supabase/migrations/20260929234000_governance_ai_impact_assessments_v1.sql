@@ -130,7 +130,7 @@ begin
   if v_control_id is not null and not exists(
     select 1 from public.governance_control_evidence e
     where e.project_id=target_project
-      and e.control_id=control_id
+      and e.control_id=v_control_id
       and e.evidence_kind='migration'
       and e.evidence_ref='supabase/migrations/20260929234000_governance_ai_impact_assessments_v1.sql'
   ) then
