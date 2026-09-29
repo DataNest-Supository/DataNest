@@ -457,7 +457,7 @@ export default function OwnerDevelopmentAnalytics({
               )) : <p className={styles.muted}>No open pull requests.</p>}
             </div>
             <div className={styles.queueFooter}>
-              <span><b>{formatNumber(github?.openPulls.length || 0)}</b> open</span>
+              <span><b>{formatNumber(github?.openPullCount || 0)}</b> open</span>
               <span><b>{formatNumber(github?.supabaseOpenCount || 0)}</b> touching Supabase</span>
             </div>
           </article>
