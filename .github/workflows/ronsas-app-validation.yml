@@ -40,7 +40,7 @@ jobs:
         with:
           node-version: 22
       - name: Validate canonical Resonance DataNest brand contract
-        run: node scripts/validate-ronsas-brand-contract.mjs
+        run: node scripts/validate-ronsas-brand-contract.mjs --complete
 
   npm-apps:
     needs: brand-contract
