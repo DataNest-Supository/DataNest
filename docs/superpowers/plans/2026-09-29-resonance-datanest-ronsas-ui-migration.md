@@ -16,9 +16,9 @@
 - Legal operator is **Resonance Sole Proprietorship**; business brand is **Resonance App Development**; parent platform is **Resonance DataNest**.
 - App attribution uses “a governed Resonance DataNest application by Resonance App Development” or equivalent approved wording.
 - RSGP remains unexpanded and must not look like an external certification seal.
-- Canonical fonts are Inter Tight / Inter / Instrument Serif Italic / JetBrains Mono, with safe fallbacks if an app cannot yet package a font asset.
+- Canonical fonts are Inter Tight / Inter / Instrument Serif Italic / JetBrains Mono. Package-managed apps load them through app-local `@fontsource` packages; simple apps copy the same `@fontsource` assets into their build output from app-local dependencies. System fallbacks remain only as load-failure fallbacks.
 - Each migrated app preserves one product accent while using the shared surface/semantic palette.
-- Each migrated user-facing surface must support dark/light/high-contrast or equivalent accessibility behavior supported by that app’s current theme system.
+- Each migrated user-facing surface must include a light-surface override and `prefers-contrast: more`/reduced-effects rules. Existing manual theme controls are preserved where present; adding a new manual switch is not required in apps that currently rely on system preference.
 - Existing app routing, startup recovery, local/sovereign guards, auth, data processing, and specialist workflow behavior must not be rewritten for visual consistency.
 - Free-promotion/no-paid-checkout remains active; migration must not introduce paid CTAs.
 - App legal pages remain review-gated until the central legal review process approves replacement text.
@@ -80,6 +80,8 @@ git commit -m "feat: define RONSAS DataNest brand contract"
 - Modify: `apps/ronsas/creative-studio/src/pages/Terms.tsx`
 - Modify: `apps/ronsas/creative-studio/src/pages/Privacy.tsx`
 - Modify: `apps/ronsas/creative-studio/src/index.css`
+- Modify: `apps/ronsas/creative-studio/package.json`
+- Modify: `apps/ronsas/creative-studio/package-lock.json`
 - Create or modify: `apps/ronsas/creative-studio/src/lib/resonanceDataNestBrand.test.ts`
 - Modify: `scripts/validate-ronsas-brand-contract.mjs`
 
@@ -99,7 +101,7 @@ Expected: FAIL on new assertions.
 
 - [ ] **Step 3: Implement the adapter and footer/legal migration**
 
-Import `resonance-datanest-adapter.css` after the existing index stylesheet in `main.tsx` so it acts as the deliberate app adapter, not an uncontrolled global override.
+Add app-local `@fontsource-variable/inter-tight`, `@fontsource-variable/inter`, `@fontsource/instrument-serif`, and `@fontsource-variable/jetbrains-mono`; import their CSS before the app adapter in `main.tsx`. Import `resonance-datanest-adapter.css` after the existing index stylesheet so it acts as the deliberate app adapter, not an uncontrolled global override.
 
 - [ ] **Step 4: Validate build and contract**
 
@@ -123,6 +125,8 @@ git commit -m "feat: align Creative Studio with Resonance DataNest"
 - Modify: `apps/ronsas/epublisher/src/pages/Terms.tsx`
 - Modify: `apps/ronsas/epublisher/src/pages/Privacy.tsx`
 - Modify: `apps/ronsas/epublisher/src/index.css`
+- Modify: `apps/ronsas/epublisher/package.json`
+- Modify: `apps/ronsas/epublisher/package-lock.json`
 - Create or modify: `apps/ronsas/epublisher/src/lib/resonanceDataNestBrand.test.ts`
 - Modify: `scripts/validate-ronsas-brand-contract.mjs`
 
@@ -139,7 +143,7 @@ Expected: FAIL on new migration assertions.
 
 - [ ] **Step 3: Implement adapter/footer/legal changes**
 
-Remove or relabel legacy Hub pricing links that imply paid access; keep free-promotion language.
+Load the four canonical families through app-local `@fontsource` imports before the adapter. Remove or relabel legacy Hub pricing links that imply paid access; keep free-promotion language.
 
 - [ ] **Step 4: Verify**
 
@@ -162,6 +166,8 @@ git commit -m "feat: align ePublisher with Resonance DataNest"
 - Modify: `apps/ronsas/syncvision/src/components/brand/ResonanceFooter.tsx`
 - Modify: `apps/ronsas/syncvision/src/components/Layout.tsx`
 - Modify: `apps/ronsas/syncvision/src/index.css`
+- Modify: `apps/ronsas/syncvision/package.json`
+- Modify: `apps/ronsas/syncvision/package-lock.json`
 - Create or modify: `apps/ronsas/syncvision/src/lib/resonanceDataNestBrand.test.ts`
 - Modify: `scripts/validate-ronsas-brand-contract.mjs`
 
@@ -181,7 +187,7 @@ Expected: FAIL on new migration assertions only.
 
 - [ ] **Step 3: Implement UI adapter changes**
 
-Do not alter FFmpeg package pins, local service endpoints, or sovereign guard behavior.
+Load the four canonical families through app-local `@fontsource` imports before the adapter. Do not alter FFmpeg package pins, local service endpoints, or sovereign guard behavior.
 
 - [ ] **Step 4: Verify**
 
@@ -206,6 +212,8 @@ git commit -m "feat: align SyncVision with Resonance DataNest"
 - Modify: `apps/ronsas/youtube-optimizer/src/pages/Terms.tsx`
 - Modify: `apps/ronsas/youtube-optimizer/src/pages/Privacy.tsx`
 - Modify: `apps/ronsas/youtube-optimizer/src/styles.css`
+- Modify: `apps/ronsas/youtube-optimizer/package.json`
+- Modify: `apps/ronsas/youtube-optimizer/bun.lock`
 - Create or modify: `apps/ronsas/youtube-optimizer/src/lib/resonanceDataNestBrand.test.ts`
 - Modify: `scripts/validate-ronsas-brand-contract.mjs`
 
@@ -230,7 +238,7 @@ Expected: FAIL on migration assertions.
 
 - [ ] **Step 3: Implement adapter/header/footer/legal changes**
 
-Import `resonance-datanest-adapter.css?url` from `src/routes/__root.tsx` and add it as a stylesheet link after the existing `appCss` link so the adapter is explicit and compatible with TanStack Start SSR.
+Add the four canonical `@fontsource` packages to the Bun lockfile and import their CSS from `src/routes/__root.tsx`. Import `resonance-datanest-adapter.css?url` there and add it as a stylesheet link after the existing `appCss` link so the adapter is explicit and compatible with TanStack Start SSR.
 
 - [ ] **Step 4: Verify app**
 
@@ -251,15 +259,27 @@ git commit -m "feat: align YouTube Optimizer with Resonance DataNest"
 - Modify: `apps/ronsas/career-compass/index.html`
 - Modify: `apps/ronsas/career-compass/styles.css`
 - Modify: `apps/ronsas/career-compass/test/logic.test.mjs`
+- Modify: `apps/ronsas/career-compass/package.json`
+- Modify: `apps/ronsas/career-compass/package-lock.json`
+- Modify: `apps/ronsas/career-compass/scripts/build.mjs`
 - Modify: `apps/ronsas/sovereign-forge/index.html`
 - Modify: `apps/ronsas/sovereign-forge/styles.css`
 - Modify: `apps/ronsas/sovereign-forge/test/logic.test.mjs`
+- Modify: `apps/ronsas/sovereign-forge/package.json`
+- Modify: `apps/ronsas/sovereign-forge/package-lock.json`
+- Modify: `apps/ronsas/sovereign-forge/scripts/build.mjs`
 - Modify: `apps/ronsas/lyricsync-studio/index.html`
 - Modify: `apps/ronsas/lyricsync-studio/styles.css`
 - Modify: `apps/ronsas/lyricsync-studio/test/logic.test.mjs`
+- Modify: `apps/ronsas/lyricsync-studio/package.json`
+- Modify: `apps/ronsas/lyricsync-studio/package-lock.json`
+- Modify: `apps/ronsas/lyricsync-studio/scripts/build.mjs`
 - Modify: `apps/ronsas/scene-song-spark/index.html`
 - Modify: `apps/ronsas/scene-song-spark/styles.css`
 - Modify: `apps/ronsas/scene-song-spark/test/logic.test.mjs`
+- Modify: `apps/ronsas/scene-song-spark/package.json`
+- Modify: `apps/ronsas/scene-song-spark/package-lock.json`
+- Modify: `apps/ronsas/scene-song-spark/scripts/build.mjs`
 - Modify: `scripts/validate-ronsas-brand-contract.mjs`
 
 **Interfaces:**
@@ -281,9 +301,9 @@ Run:
 ```
 Expected: FAIL on new source assertions.
 
-- [ ] **Step 3: Implement static markup/CSS adapters**
+- [ ] **Step 3: Implement static markup/CSS adapters and build-time font copying**
 
-Keep existing app logic files untouched unless a visual control requires an accessible label fix.
+Add the four canonical `@fontsource` dependencies to each simple app. Extend each `scripts/build.mjs` to copy only the required WOFF2/CSS assets into that app's `dist/fonts` output, and reference those local assets from `styles.css`. Keep existing app logic files untouched unless a visual control requires an accessible label fix.
 
 - [ ] **Step 4: Build and validate**
 
