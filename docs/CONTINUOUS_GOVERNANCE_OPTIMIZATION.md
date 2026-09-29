@@ -1,7 +1,7 @@
 # Resonance DataNest Continuous Governance Optimization
 
 Status: governed engineering baseline; not a claim of ISO certification, legal compliance, or exhaustive standards conformity.  
-Version: `continuous-governance-v1.2`.  
+Version: `continuous-governance-v1.3`.  
 Review date: 2026-09-29.
 
 ## Objective
@@ -170,6 +170,27 @@ This implements:
 
 The system does not automatically create improvement candidates from impact assessments and does not treat high materiality or residual risk as proof of harm.
 
+### Outcome feedback integration
+
+`governance_outcome_feedback_links` connects adverse Certified Memory use outcomes to the continuous-governance observation ledger without converting outcome frequency or severity into truth.
+
+The source outcome remains governed by `certified_memory_outcome_evidence`, where challenged or contradicted evidence can already trigger review without changing certification or confidence automatically. v1.3 adds an explicit Owner/Admin bridge:
+
+**challenged or contradicted use outcome → human routing review → append-only governance observation**
+
+The bridge:
+
+- exposes only `challenged` and `contradicted` outcome evidence to Owner/Admin inside the Governance workspace;
+- requires a separate governance summary and routing rationale before promotion;
+- records one durable routing link per source outcome;
+- preserves memory ID, usage-receipt ID, outcome signal, outcome kind and source time as lineage;
+- maps `challenged` to moderate review severity and `contradicted` to high review severity;
+- does not copy the source evidence payload into the governance ledger automatically;
+- does not change Certified Memory truth status, certification, confidence or active state;
+- does not create an improvement candidate or Governance proposal automatically.
+
+Once routed, the resulting observation enters the normal evidence → improvement-candidate → human review → formal Governance path.
+
 ### Control-evidence graph
 
 `governance_control_catalog` and `governance_control_evidence` create a project-scoped graph:
@@ -183,7 +204,8 @@ The initial graph includes:
 - `CGO-AUTH-001` — governance change firewall;
 - `CGO-STD-001` — living standards applicability review;
 - `CGO-PROV-001` — append-only provenance and evidence chain;
-- `CGO-REL-001` — governed release verification.
+- `CGO-REL-001` — governed release verification;
+- `CGO-OUT-001` — governed Certified Memory outcome-feedback bridge.
 
 The model borrows provenance concepts from W3C PROV-O, machine-readable control/assessment structure from NIST OSCAL, and release provenance concepts from SLSA while keeping DataNest's existing ISO/NIST/OECD governance baseline authoritative for project policy.
 
@@ -207,6 +229,9 @@ The following are hard boundaries:
 12. An AI impact assessment is decision-support evidence and cannot authorize deployment or operation.
 13. Materiality and residual-risk labels increase scrutiny, not truth status or governance authority.
 14. Routing an impact assessment requires explicit Owner/Admin action after human review; no assessment creates an improvement candidate automatically.
+15. A Certified Memory outcome may trigger review or governance observation routing, but it cannot change truth status, certification or confidence automatically.
+16. Only challenged or contradicted Certified Memory outcomes may enter the adverse-outcome governance bridge, and routing requires explicit Owner/Admin action.
+17. Outcome-feedback routing creates an observation only; it cannot create an improvement candidate, proposal, vote, decision or deployment automatically.
 
 ## Innovation roadmap
 
@@ -215,7 +240,7 @@ The next governed extensions should build on this firewall rather than weaken it
 - **standards watch**: implemented in v1.1 as append-only authoritative-source lifecycle observations with no automatic applicability mutation;
 - **impact-assessment linkage**: implemented in v1.2 as versioned AI impact assessments with explicit human review and optional routing of `needs_action` assessments into non-authoritative improvement candidates;
 - **control-evidence graph**: implemented in v1.1 as standards → controls → implementation → evidence provenance, without a conformity score;
-- **outcome feedback integration**: once the separate Verified Memory outcome-evidence work is merged, allow adverse governed outcomes to become governance observations without changing truth status automatically;
+- **outcome feedback integration**: implemented in v1.3 as explicit Owner/Admin routing of challenged/contradicted Certified Memory outcome evidence into append-only governance observations, with no automatic truth-status or candidate change;
 - **multilingual governance review**: once qualified reviewer controls are merged, require language/domain review where governance meaning could materially change;
 - **trend comparison**: compare successive review cycles by metric and uncertainty without collapsing governance quality into a single score;
 - **controlled experimentation**: permit reversible governance-process experiments only after a formal proposal defines scope, safeguards, measurement and rollback;
