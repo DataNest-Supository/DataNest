@@ -288,6 +288,12 @@ const AiOperationsDashboard = dynamic(() => import("@/components/AiOperationsDas
 });
 
 
+const OwnerOptimizerDashboard = dynamic(() => import("@/components/OwnerOptimizerDashboard"), {
+  ssr: false,
+  loading: () => <section className="panel"><p className="muted">Loading Owner Optimizer Console…</p></section>
+});
+
+
 const ProductsWorkspace = dynamic(() => import("@/components/ProductsWorkspace"), {
   ssr: false,
   loading: () => <section className="panel"><p className="muted">Loading Resonance products…</p></section>
@@ -2489,6 +2495,10 @@ function Settings({
     {project&&<RecoveryDiagnosticsPanel projectId={project.id} hydrated={recoveryHydrated} ledgerError={recoveryLedgerError} lastSyncedAt={recoveryLastSyncedAt} syncing={recoverySyncing} onSync={synchronizeDurableRecoveries}/>}
     {project&&<div className="fullWidth" aria-label="AI Administration">
       <AiOperationsDashboard projectId={project.id} currentUserId={currentUserId} canManageAi={canManageAi}/>
+    </div>}
+
+    {project&&membership?.role==="owner"&&<div className="fullWidth" aria-label="Owner Optimizer Administration">
+      <OwnerOptimizerDashboard projectId={project.id}/>
     </div>}
 
     <div className="panel fullWidth"><p className="eyebrow">SCHEDULER</p><h3>Policies</h3><div className="policyGrid">{policies.map(policy=><article key={policy.id}><b>{policy.policy_key}</b><pre>{JSON.stringify(policy.value,null,2)}</pre></article>)}</div></div>
