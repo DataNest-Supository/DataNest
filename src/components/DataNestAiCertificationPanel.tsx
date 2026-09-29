@@ -226,8 +226,7 @@ export default function DataNestAiCertificationPanel({
           qualificationScope,
           evidence:{
             basis:qualificationBasis.trim(),
-            source:"DataNest AI certification console",
-            self_recorded:false
+            source:"DataNest AI certification console"
           }
         }
       });
