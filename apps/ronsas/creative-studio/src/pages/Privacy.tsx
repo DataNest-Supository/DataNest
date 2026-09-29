@@ -16,7 +16,7 @@ const Privacy = () => (
       </Link>
 
       <h1 className="font-display text-3xl font-bold text-foreground mb-2">Privacy Policy</h1>
-      <p className="text-sm text-muted-foreground mb-4">Review required · legacy policy draft · effective date not approved.</p>\n      <p className="text-sm text-muted-foreground mb-10">This legacy Creative Studio privacy copy remains review-gated until verified platform data flows and authorized legal review support an approved replacement.</p>
+      <p className="text-sm text-muted-foreground mb-4">Review-gated legacy draft · 0.1-draft · effective date not approved.</p>\n      <p className="text-sm text-muted-foreground mb-10">This legacy Creative Studio privacy copy remains review-gated until verified platform data flows and authorized legal review support an approved replacement.</p>
 
       <div className="space-y-8 text-sm text-secondary-foreground leading-relaxed">
         <section>
