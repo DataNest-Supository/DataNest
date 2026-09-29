@@ -77,6 +77,10 @@ create index if not exists certified_memory_reviews_project_created_idx
 create index if not exists certified_memory_reviews_memory_created_idx
   on public.certified_memory_reviews(memory_id,created_at desc);
 
+create index if not exists certified_memory_reviews_reviewer_idx
+  on public.certified_memory_reviews(reviewed_by)
+  where reviewed_by is not null;
+
 create or replace function private.review_certified_memory_v1(
   target_project uuid,
   target_memory uuid,
