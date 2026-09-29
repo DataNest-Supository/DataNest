@@ -1,4 +1,5 @@
 import "./globals.css";
+import "./external-auditor.css";
 import "./entry.css";
 import "./datanest-ai-optimized.css";
 import "./datanest-ai-command-center.css";
