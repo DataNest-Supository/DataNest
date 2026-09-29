@@ -1711,7 +1711,7 @@ export default function DataNestApp({session}:{session:Session}) {
           {notice&&<div className="notice goodNotice">{notice}</div>}
           {error&&<div className="notice errorNotice" role="alert">{error}</div>}
         </div>
-        {(loadingCore||loadingView)&&<div className="loadingBar" aria-label="Loading DataNest data"><span/></div>}
+        {(loadingCore||loadingView)&&<div className="loadingBar" role="progressbar" aria-label="Loading DataNest data"><span/></div>}
 
         {!loadingCore&&view!=="ai"&&workspaceTaskGuides[view]&&<section className="workspaceTaskGuide" aria-label={currentLabel+" task guide"}>
           <div>
