@@ -135,11 +135,28 @@ type ImpactAssessment={
   updated_at:string;
 };
 
+type OutcomeFeedback={
+  outcome_evidence_id:string;
+  memory_id:string;
+  usage_receipt_id:string;
+  signal:"challenged"|"contradicted";
+  outcome_kind:string;
+  summary:string;
+  review_triggered:boolean;
+  created_at:string;
+  feedback_link_id:string|null;
+  observation_id:string|null;
+  routing_rationale:string|null;
+  routed_at:string|null;
+  routed:boolean;
+};
+
 type Workspace={
   role:string|null;
   can_manage:boolean;
   can_record_control_evidence:boolean;
   can_author_impact_assessment:boolean;
+  can_route_outcome_feedback:boolean;
   standards:StandardItem[];
   observations:Observation[];
   candidates:Candidate[];
@@ -149,6 +166,7 @@ type Workspace={
   standard_watch:StandardWatchEvent[];
   impact_assessments:ImpactAssessment[];
   impact_reviews:Array<Record<string,unknown>>;
+  outcome_feedback:OutcomeFeedback[];
   boundaries:Record<string,unknown>;
 };
 
@@ -223,6 +241,8 @@ export default function GovernanceImprovementPanel({
   const [impactResidualRisk,setImpactResidualRisk]=useState("unknown");
   const [impactEvidenceRefs,setImpactEvidenceRefs]=useState("");
   const [impactReviewRationales,setImpactReviewRationales]=useState<Record<string,string>>({});
+  const [outcomeGovernanceSummaries,setOutcomeGovernanceSummaries]=useState<Record<string,string>>({});
+  const [outcomeRoutingRationales,setOutcomeRoutingRationales]=useState<Record<string,string>>({});
 
   const load=useCallback(async()=>{
     const supabase=getSupabase();
@@ -241,6 +261,7 @@ export default function GovernanceImprovementPanel({
         can_manage:Boolean(raw.can_manage),
         can_record_control_evidence:Boolean(raw.can_record_control_evidence),
         can_author_impact_assessment:Boolean(raw.can_author_impact_assessment),
+        can_route_outcome_feedback:Boolean(raw.can_route_outcome_feedback),
         standards:raw.standards||[],
         observations:raw.observations||[],
         candidates:raw.candidates||[],
@@ -250,6 +271,7 @@ export default function GovernanceImprovementPanel({
         standard_watch:raw.standard_watch||[],
         impact_assessments:raw.impact_assessments||[],
         impact_reviews:raw.impact_reviews||[],
+        outcome_feedback:raw.outcome_feedback||[],
         boundaries:raw.boundaries||{}
       } as Workspace):null;
       setWorkspace(next);
@@ -532,6 +554,28 @@ export default function GovernanceImprovementPanel({
     });
   }
 
+  async function routeOutcomeFeedback(item:OutcomeFeedback){
+    const supabase=getSupabase();
+    if(!supabase||!workspace?.can_route_outcome_feedback)return;
+    const governanceSummary=(outcomeGovernanceSummaries[item.outcome_evidence_id]||"").trim();
+    const rationale=(outcomeRoutingRationales[item.outcome_evidence_id]||"").trim();
+    if(governanceSummary.length<3||rationale.length<3){
+      setError("Enter a governance summary and routing rationale before routing adverse outcome evidence.");
+      return;
+    }
+    await action("route-outcome-feedback:"+item.outcome_evidence_id,async()=>{
+      const {error}=await supabase.rpc("route_certified_memory_outcome_to_governance_v1",{
+        target_outcome_evidence:item.outcome_evidence_id,
+        target_governance_summary:governanceSummary,
+        target_rationale:rationale
+      });
+      if(error)throw error;
+      setOutcomeGovernanceSummaries(current=>({...current,[item.outcome_evidence_id]:""}));
+      setOutcomeRoutingRationales(current=>({...current,[item.outcome_evidence_id]:""}));
+      setNotice("Adverse Certified Memory outcome routed to an append-only governance observation. Memory truth, certification and confidence were not changed.");
+    });
+  }
+
   if(loading)return <section className="panel"><p className="muted">Loading continuous governance evidence…</p></section>;
   if(!workspace)return <section className="panel"><p className="muted">Continuous governance workspace is unavailable.</p></section>;
 
@@ -558,6 +602,7 @@ export default function GovernanceImprovementPanel({
       <article className="metricCard"><span>Controls mapped</span><strong>{workspace.controls.length}</strong><small>{workspace.control_evidence.length} provenance links</small></article>
       <article className="metricCard"><span>Standards watch</span><strong>{workspace.standard_watch.length}</strong><small>Lifecycle observations</small></article>
       <article className="metricCard"><span>Impact assessments</span><strong>{workspace.impact_assessments.length}</strong><small>{workspace.impact_assessments.filter(item=>item.status==="needs_action").length} need action</small></article>
+      <article className="metricCard"><span>Adverse outcomes</span><strong>{workspace.outcome_feedback.length}</strong><small>{workspace.outcome_feedback.filter(item=>!item.routed).length} awaiting governance routing review</small></article>
       <article className="metricCard"><span>Evidence observations</span><strong>{workspace.observations.length}</strong><small>Append-only review evidence</small></article>
       <article className="metricCard"><span>Open improvements</span><strong>{openCandidates.length}</strong><small>Non-authoritative hypotheses</small></article>
       <article className="metricCard"><span>Review cycles</span><strong>{workspace.cycles.length}</strong><small>Longitudinal governance evidence</small></article>
@@ -573,6 +618,7 @@ export default function GovernanceImprovementPanel({
         <span>learning can close proposals: no</span>
         <span>learning can ratify: no</span>
         <span>evidence repetition raises truth: no</span>
+        <span>outcome feedback changes memory truth: no</span>
       </div>
       <p className="muted">Human-reviewed improvements enter the existing Sovereign Governance proposal process; they never bypass it.</p>
     </section>
@@ -789,6 +835,34 @@ export default function GovernanceImprovementPanel({
         <button className="primaryButton" disabled={Boolean(activeAction)||!watchStandardId||!watchSourceUrl.trim().toLowerCase().startsWith("https://")||watchSummary.trim().length<3}>Record standards watch evidence</button>
       </form>}
     </details>
+
+    <section className="panel">
+      <div className="panelHead">
+        <div><p className="eyebrow">OUTCOME FEEDBACK</p><h3>Certified Memory outcomes → Governance observations</h3></div>
+        <span className="countPill">{workspace.outcome_feedback.length} adverse</span>
+      </div>
+      <p className="muted">Only challenged or contradicted Certified Memory outcomes appear here, and only Owner/Admin can see or route them. Routing creates one append-only governance observation; it does not change memory truth status, certification, confidence, or create an improvement candidate automatically.</p>
+      {workspace.outcome_feedback.length?<div className="manifestList">
+        {workspace.outcome_feedback.map(item=><article className="manifestCard" key={item.outcome_evidence_id}>
+          <div className="rowBetween">
+            <div><b>{label(item.outcome_kind)} · {item.signal}</b><small>{date(item.created_at)} · memory {item.memory_id}</small></div>
+            <span className={"badge "+(item.signal==="contradicted"?"warn":"neutral")}>{item.routed?"ROUTED":"REVIEW"}</span>
+          </div>
+          <p>{item.summary}</p>
+          <div className="manifestMeta">
+            <span>usage receipt · {item.usage_receipt_id}</span>
+            <span>memory review triggered · {item.review_triggered?"yes":"no"}</span>
+            <span>truth status changed: no</span>
+          </div>
+          {item.routed&&<p className="muted">Governance observation · {item.observation_id} · routed {date(item.routed_at)}</p>}
+          {!item.routed&&workspace.can_route_outcome_feedback&&<div className="settingsGrid">
+            <label>Governance summary<textarea rows={2} value={outcomeGovernanceSummaries[item.outcome_evidence_id]||""} onChange={event=>setOutcomeGovernanceSummaries(current=>({...current,[item.outcome_evidence_id]:event.target.value}))} placeholder="State the governance-relevant observation without treating the source outcome as automatic truth."/></label>
+            <label>Routing rationale<textarea rows={2} value={outcomeRoutingRationales[item.outcome_evidence_id]||""} onChange={event=>setOutcomeRoutingRationales(current=>({...current,[item.outcome_evidence_id]:event.target.value}))} placeholder="Why should this adverse outcome enter governance review, and what limitations remain?"/></label>
+            <button type="button" className="primaryButton compact" disabled={Boolean(activeAction)} onClick={()=>void routeOutcomeFeedback(item)}>Route to governance observation</button>
+          </div>}
+        </article>)}
+      </div>:<p className="muted">No challenged or contradicted Certified Memory outcome evidence is awaiting governance review.</p>}
+    </section>
 
     <details className="panel quietDisclosure">
       <summary>Record governance observation</summary>
