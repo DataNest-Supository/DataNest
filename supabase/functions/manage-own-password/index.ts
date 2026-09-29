@@ -69,9 +69,11 @@ Deno.serve(async(req:Request)=>{
 
   const {data:userResult,error:userError}=await callerClient.auth.getUser();
   const caller=userResult.user;
-  if(userError||!caller||!caller.email){
+  if(userError||!caller||!callerEmail){
     return json(req,{error:"Authentication with an email account is required."},401);
   }
+  const callerId=caller.id;
+  const callerEmail=caller.email;
 
   let payload:{
     projectId?:string;
@@ -97,22 +99,23 @@ Deno.serve(async(req:Request)=>{
     .from("project_members")
     .select("role,status")
     .eq("project_id",projectId)
-    .eq("user_id",caller.id)
+    .eq("user_id",callerId)
     .maybeSingle();
 
   if(membershipError)return json(req,{error:"Unable to verify project access."},500);
   if(!membership||membership.status!=="active"){
     return json(req,{error:"Active project membership is required."},403);
   }
+  const membershipRole=membership.role;
 
   async function record(actionName:"self_change"|"self_email_reset",metadata:Record<string,unknown>){
     const {error}=await service.from("password_security_events").insert({
       project_id:projectId,
-      actor_user_id:caller.id,
-      target_user_id:caller.id,
+      actor_user_id:callerId,
+      target_user_id:callerId,
       action:actionName,
-      actor_role:membership.role,
-      target_role:membership.role,
+      actor_role:membershipRole,
+      target_role:membershipRole,
       outcome:"succeeded",
       metadata
     });
@@ -120,7 +123,7 @@ Deno.serve(async(req:Request)=>{
   }
 
   if(action==="email_reset"){
-    const {error}=await emailClient.auth.resetPasswordForEmail(caller.email,{
+    const {error}=await emailClient.auth.resetPasswordForEmail(callerEmail,{
       redirectTo:safeRedirect(payload.redirectTo)
     });
     if(error)return json(req,{error:error.message},400);
@@ -147,14 +150,14 @@ Deno.serve(async(req:Request)=>{
   }
 
   const {error:verificationError}=await verificationClient.auth.signInWithPassword({
-    email:caller.email,
+    email:callerEmail,
     password:currentPassword
   });
   if(verificationError){
     return json(req,{error:"Current password is incorrect."},403);
   }
 
-  const {error:updateError}=await service.auth.admin.updateUserById(caller.id,{password:newPassword});
+  const {error:updateError}=await service.auth.admin.updateUserById(callerId,{password:newPassword});
   if(updateError)return json(req,{error:updateError.message},400);
 
   const auditRecorded=await record("self_change",{source:"manage-own-password"});
