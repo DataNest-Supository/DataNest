@@ -47,29 +47,32 @@
 - `promotionState` must encode free promotion and `paidCheckoutActive:false`.
 - Validator reads the contract and each app adapter/source marker; it reports drift with app/path-specific messages.
 
-- [ ] **Step 1: Write the failing validator contract**
+- [x] **Step 1: Write the failing validator contract**
 
 Make the script require exact approved identity strings, no RSGP expansion, required accent keys for every app, and free-promotion state.
 
-- [ ] **Step 2: Run and verify failure**
+- [x] **Step 2: Run and verify failure**
 
 Run: `node scripts/validate-ronsas-brand-contract.mjs`  
 Expected: FAIL because the contract/adapters are absent.
 
-- [ ] **Step 3: Create the contract and wire baseline validation**
+- [x] **Step 3: Create the contract and wire baseline validation**
 
 At this task only, validate the contract itself and allow app-adapter checks to report “not migrated” until subsequent tasks add each adapter; do not mark them compliant prematurely.
 
-- [ ] **Step 4: Add workflow invocation**
+- [x] **Step 4: Add workflow invocation**
 
 Run the validator before per-app matrix builds.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/ronsas/shared scripts/validate-ronsas-brand-contract.mjs scripts/validate-ronsas-imports.mjs .github/workflows/ronsas-app-validation.yml
 git commit -m "feat: define RONSAS DataNest brand contract"
 ```
+
+
+> Task 1 evidence: validator existed before contract and therefore defined the RED condition; current contract satisfies exact identity/font/token/accent/free-promotion checks, import validation requires it, and RONSAS Application Validation canonical-brand job passes before the app matrix.
 
 ### Task 2: Migrate Creative Studio
 
