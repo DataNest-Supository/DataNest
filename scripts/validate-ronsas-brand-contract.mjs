@@ -68,9 +68,10 @@ if(!existsSync(contractPath)){
             if(lock.packages?.[""]?.dependencies?.[dependency]!=="5.3.0") failures.push(`creative-studio lock root missing font dependency: ${dependency}`);
             if(lock.packages?.["node_modules/"+dependency]?.version!=="5.3.0") failures.push(`creative-studio lock entry missing font package: ${dependency}`);
           }
-          for(const token of ["Resonance Sole Proprietorship","Resonance App Development","Resonance DataNest","RSGP Governed","/DataNest/legal","/DataNest/governance","free promotion"]){
+          for(const token of ["Resonance Sole Proprietorship","Resonance App Development","Resonance DataNest","RSGP Governed","/DataNest/legal","/DataNest/governance"]){
             if(!sources.footer.includes(token)) failures.push(`creative-studio footer missing token: ${token}`);
           }
+          if(!/free promotion/i.test(sources.footer)) failures.push("creative-studio footer must preserve free promotion");
           if(/checkout/i.test(sources.footer)) failures.push("creative-studio footer must not expose checkout language");
           if(/new Date\s*\(|toLocaleDateString\s*\(/.test(sources.terms+sources.privacy)) failures.push("creative-studio legal pages must not manufacture current effective dates");
           if(!sources.terms.includes("Review-gated legacy draft")||!sources.privacy.includes("Review-gated legacy draft")||!sources.terms.includes("0.1-draft")||!sources.privacy.includes("0.1-draft")) failures.push("creative-studio legal pages must remain review-gated at 0.1-draft");
