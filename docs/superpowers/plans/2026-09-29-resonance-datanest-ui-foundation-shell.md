@@ -78,6 +78,7 @@ git commit -m "feat: add canonical DataNest brand and theme contracts"
 **Files:**
 - Create: `src/app/resonance-design-system.css`
 - Create: `src/components/platform/ThemeControl.tsx`
+- Create: `src/components/platform/ThemeBootstrapScript.tsx`
 - Modify: `src/app/layout.tsx`
 - Modify: `src/app/globals.css`
 - Modify: `tests/browser/auth.smoke.spec.ts`
@@ -86,7 +87,9 @@ git commit -m "feat: add canonical DataNest brand and theme contracts"
 **Interfaces:**
 - Consumes: Task 1 theme types and storage key.
 - Produces: CSS variables for surfaces, text, semantic states, product accents, typography, spacing, radii, elevation, motion, and focus.
+- Root fonts are self-hosted by Next through `next/font/google`: `Inter_Tight`, `Inter`, `Instrument_Serif` (400 italic), and `JetBrains_Mono`, each exposed as a CSS variable matching the design-system tokens.
 - Produces: `ThemeControl({compact?:boolean})`.
+- Produces: `ThemeBootstrapScript()` containing the minimal inline bootstrap that reads `THEME_STORAGE_KEY`, honors `prefers-color-scheme`, normalizes invalid values to `system`, and sets `document.documentElement.dataset.theme` before first paint.
 - Theme state is applied on `document.documentElement.dataset.theme` with values `dark` or `light`.
 
 - [ ] **Step 1: Add failing browser tests for theme behavior**
@@ -98,13 +101,13 @@ Cover: dark default, explicit light selection persistence across reload, invalid
 Run: `npx playwright test tests/browser/auth.smoke.spec.ts --grep "theme|contrast"`  
 Expected: FAIL because no theme control/token layer exists.
 
-- [ ] **Step 3: Implement `resonance-design-system.css` and `ThemeControl`**
+- [ ] **Step 3: Implement `resonance-design-system.css`, Next font variables, `ThemeControl`, and `ThemeBootstrapScript`**
 
-Define the approved font-family variables with system-safe fallbacks; do not introduce Montserrat. Put shared semantic colors and surface levels in this file. Keep legacy selectors temporarily in existing CSS but replace durable literals touched by this task with variables.
+Use `next/font/google` in `layout.tsx` for the four approved font families so the root static export self-hosts the font assets. Define system-safe fallbacks; do not introduce Montserrat. Put shared semantic colors and surface levels in the canonical CSS file. Keep legacy selectors temporarily in existing CSS but replace durable literals touched by this task with variables.
 
 - [ ] **Step 4: Wire root layout without adding another override layer**
 
-Import `resonance-design-system.css` before page-specific CSS. Apply a minimal pre-render theme bootstrap in the document head or equivalent safe client bootstrap so persisted light/dark preference does not flash through a contradictory theme.
+Import `resonance-design-system.css` before page-specific CSS, apply the Next font variable classes on `<html>`, and render `ThemeBootstrapScript` in `<head>` before the runtime configuration scripts.
 
 - [ ] **Step 5: Run tests**
 
@@ -114,7 +117,7 @@ Expected: PASS.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/app/resonance-design-system.css src/components/platform/ThemeControl.tsx src/app/layout.tsx src/app/globals.css tests/browser/auth.smoke.spec.ts tests/unit/resonance-design-system-source.test.mjs
+git add src/app/resonance-design-system.css src/components/platform/ThemeControl.tsx src/components/platform/ThemeBootstrapScript.tsx src/app/layout.tsx src/app/globals.css tests/browser/auth.smoke.spec.ts tests/unit/resonance-design-system-source.test.mjs
 git commit -m "feat: add Resonance DataNest theme system"
 ```
 
@@ -166,6 +169,7 @@ git commit -m "feat: unify DataNest public brand and governance chrome"
 - Create: `src/components/platform/ContextStrip.tsx`
 - Create: `src/components/platform/GlobalNavigation.tsx`
 - Create: `src/components/platform/PlatformShell.tsx`
+- Create: `src/components/platform/navigationTypes.ts`
 - Modify: `src/components/DataNestApp.tsx`
 - Modify: `src/lib/workflowPhases.ts`
 - Modify: `tests/browser/home-optimization.spec.ts`
@@ -174,8 +178,9 @@ git commit -m "feat: unify DataNest public brand and governance chrome"
 **Interfaces:**
 - `LifecycleRail({currentPhase,onNavigate}:{currentPhase:WorkflowPhaseId|null;onNavigate:(destination:WorkflowDestination)=>void})`.
 - `ContextStrip({projectName,applicationName,phase,status,nextAction}:{projectName?:string;applicationName?:string;phase:WorkflowPhaseId|null;status?:string;nextAction?:string})`.
-- `GlobalNavigation` consumes the existing view registry/navigation callback from `DataNestApp`; it does not own URL state.
-- `PlatformShell` composes sidebar/topbar/context/content/footer but does not own project data fetching or mutation state.
+- `NavigationItem = {id:string;label:string;group:string;phase:WorkflowPhaseId|null;keywords:readonly string[]}` lives in `navigationTypes.ts`.
+- `GlobalNavigation({items,currentView,onNavigate,onOpenQuickSwitch}:{items:readonly NavigationItem[];currentView:string;onNavigate:(view:string)=>void;onOpenQuickSwitch:()=>void})`; it does not own URL state.
+- `PlatformShell({navigation,topbar,context,children,footer}:{navigation:ReactNode;topbar:ReactNode;context?:ReactNode;children:ReactNode;footer?:ReactNode})` composes layout only and does not own project data fetching or mutation state.
 
 - [ ] **Step 1: Extend lifecycle browser tests before extraction**
 
@@ -246,6 +251,7 @@ git commit -m "feat: add shared DataNest operational UI primitives"
 ### Task 6: Migrate Home, AI & I, and DataNest AI onto the shared shell
 
 **Files:**
+- Create: `src/components/platform/OpportunityProjectionCard.tsx`
 - Modify: `src/components/ResonanceHome.tsx`
 - Modify: `src/components/DataNestAiWorkspace.tsx`
 - Modify: `src/components/DataNestApp.tsx`
@@ -258,7 +264,8 @@ git commit -m "feat: add shared DataNest operational UI primitives"
 
 **Interfaces:**
 - Consumes: Tasks 4–5 shell/page/status primitives.
-- Home must expose current objective/work context, continue-work/attention regions, application shortcuts, and a business-opportunity/projection **presentation slot** with an actionable empty state when no governed data source is available.
+- `OpportunityProjection = {id:string;title:string;estimatedValue?:string;confidence?:string;assumptions?:readonly string[];dependencies?:readonly string[];governanceImpact?:string;nextAction?:string}` and `OpportunityProjectionCard({opportunity}:{opportunity:OpportunityProjection|null})` provide the UI-only projection slot.
+- Home must expose current objective/work context, continue-work/attention regions, application shortcuts, and `OpportunityProjectionCard`; when no governed source supplies data, pass `null` and render the actionable empty state rather than fabricated values.
 - DataNest AI keeps current recovery/provider/runtime behavior; only presentation hierarchy changes.
 
 - [ ] **Step 1: Add failing tests for page anatomy and opportunity empty state**
@@ -282,7 +289,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/components/ResonanceHome.tsx src/components/DataNestAiWorkspace.tsx src/components/DataNestApp.tsx src/app/datanest-ai-command-center.css src/app/datanest-ai-optimized.css src/app/datanest-ai-zoom.css tests/browser/home-optimization.spec.ts tests/browser/datanest-ai-layout.spec.ts tests/browser/datanest-ai-recovery.spec.ts
+git add src/components/platform/OpportunityProjectionCard.tsx src/components/ResonanceHome.tsx src/components/DataNestAiWorkspace.tsx src/components/DataNestApp.tsx src/app/datanest-ai-command-center.css src/app/datanest-ai-optimized.css src/app/datanest-ai-zoom.css tests/browser/home-optimization.spec.ts tests/browser/datanest-ai-layout.spec.ts tests/browser/datanest-ai-recovery.spec.ts
 git commit -m "feat: align Home and DataNest AI with shared UX architecture"
 ```
 
