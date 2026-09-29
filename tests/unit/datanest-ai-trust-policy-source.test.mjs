@@ -41,6 +41,8 @@ test("external provider routing records Phase C then Phase D before existing pro
 
 test("report-only external findings do not override existing provider authorization",()=>{
   const source=fs.readFileSync(aiPath,"utf8");
+  assert.match(source,/const providerPolicyEnforced=String\(providerPolicy\.enforcement_mode\|\|"report_only"\)==="enforced"/);
+  assert.match(source,/providerPolicyEnforced&&String\(providerPolicy\.outcome\|\|"deny"\)!=="allow"/);
   assert.match(source,/String\(phaseCPolicy\.enforcement_mode\|\|"report_only"\)==="enforced"/);
   assert.match(source,/String\(phaseCPolicy\.outcome\|\|"deny"\)!=="allow"/);
   assert.match(source,/provider_trust_policy_denied/);
