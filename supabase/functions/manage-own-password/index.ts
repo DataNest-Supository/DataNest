@@ -69,7 +69,7 @@ Deno.serve(async(req:Request)=>{
 
   const {data:userResult,error:userError}=await callerClient.auth.getUser();
   const caller=userResult.user;
-  if(userError||!caller||!callerEmail){
+  if(userError||!caller||!caller.email){
     return json(req,{error:"Authentication with an email account is required."},401);
   }
   const callerId=caller.id;
