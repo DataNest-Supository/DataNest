@@ -22,7 +22,7 @@ import { useSingleFlight } from "@/lib/singleFlight";
 import { PENDING_MUTATION_EVENT, classifyPendingMutationAge, clearPendingMutation, getOrCreatePendingMutation, loadPendingMutation, markPendingMutationDurable, markPendingMutationVerification, restorePendingMutation, type PendingMutationAge, type PendingMutationIntent, type PendingMutationVerification } from "@/lib/pendingMutation";
 import { durableRecoveryToPendingIntent, listDurableRecoveries, markDurableRecoveryVerification, registerDurableRecovery, resolveDurableRecovery } from "@/lib/durableRecovery";
 import { reconcileServerMutation, type MutationReconciliationState } from "@/lib/mutationReconciliation";
-import { WORK_FOCUS_AREAS, normalizeWorkFocusKeys, workFocusKeysFromRequirements, workFocusLabel, workInterestOverlapCount, workInterestOverlapKeys, workMatchesInterests, type WorkFocusKey } from "@/lib/workFocus";
+import { WORK_FOCUS_AREAS, normalizeWorkFocusKeys, workFocusKeysFromRequirements, workFocusLabel, workInterestCoverage, workInterestOverlapCount, workInterestOverlapKeys, workMatchesInterests, type WorkFocusKey } from "@/lib/workFocus";
 
 type Project = { id:string; slug:string; name:string; description:string|null; status:string; created_at:string };
 type Tool = { id:string; tool_key:string; name:string; role:string; enabled:boolean; config:Record<string,unknown> };
@@ -2052,6 +2052,7 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
   },[projectId,jobs]);
   const statusVisible=filter==="ALL"?jobs:jobs.filter(item=>item.status===filter);
   const interestMatchCount=statusVisible.filter(item=>workMatchesInterests(item.requirements,userInterests)).length;
+  const interestCoverage=workInterestCoverage(jobs.map(item=>item.requirements),userInterests);
   const visible=interestOnly&&userInterests.length>0
     ? statusVisible.filter(item=>workMatchesInterests(item.requirements,userInterests))
     : statusVisible;
@@ -2152,6 +2153,13 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
             <b>Interest matching</b>
             <span>{userInterests.length?userInterests.map(workFocusLabel).join(" · "):"Save interests in Stakeholder to enable relevance matching."}</span>
           </div>
+          {userInterests.length>0&&<div className="schedulerInterestCoverage" aria-label="Interest coverage on current queue page">
+            <div className="schedulerInterestCoverageHead"><b>Interest coverage · current queue page</b><span>{interestCoverage.covered.length+" covered · "+interestCoverage.gaps.length+" gap"+(interestCoverage.gaps.length===1?"":"s")}</span></div>
+            <div className="schedulerInterestCoverageItems">
+              {interestCoverage.covered.map(key=><span className="covered" aria-label={"Covered interest: "+workFocusLabel(key)} key={"covered-"+key}><b>Covered</b>{workFocusLabel(key)}</span>)}
+              {interestCoverage.gaps.map(key=><span className="gap" aria-label={"No current Job interest: "+workFocusLabel(key)} key={"gap-"+key}><b>No current Job</b>{workFocusLabel(key)}</span>)}
+            </div>
+          </div>}
 
           {!orderedVisible.length?<div className="schedulerEmptyState"><EmptyState
             title={total===0?"No project jobs yet":"No jobs match this filter"}
