@@ -19,7 +19,8 @@ export default function Privacy() {
 
         <article className="prose prose-sm dark:prose-invert max-w-none space-y-6">
           <h1>Privacy Policy</h1>
-          <p className="text-muted-foreground">Last updated: March 29, 2026</p>
+          <p className="text-muted-foreground">Review-gated legacy draft · 0.1-draft · effective date not approved.</p>
+          <p className="text-muted-foreground">This legacy ePublisher privacy copy remains review-gated under the Resonance DataNest legal process and is not a replacement for the central governed legal record.</p>
 
           <h2>1. Information We Collect</h2>
           <p>When you use Resonance ePublisher, we may collect the following information:</p>
@@ -39,7 +40,7 @@ export default function Privacy() {
           </ul>
 
           <h2>3. Data Storage & Security</h2>
-          <p>Your data is stored securely using industry-standard encryption and access controls. We use cloud infrastructure with enterprise-grade security measures.</p>
+          <p>Storage and security representations remain under review against verified implementation evidence. This draft does not make a platform-wide encryption or security guarantee.</p>
 
           <h2>4. Third-Party Services</h2>
           <ul>
