@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LEGAL_DOCUMENTS, LEGAL_IDENTITY } from "@/lib/legalRegistry";
+import { LEGAL_DOCUMENTS, LEGAL_IDENTITY, legalApprovalLabel } from "@/lib/legalRegistry";
 import GovernanceTrustMark from "@/components/platform/GovernanceTrustMark";
 
 const LEGAL_IDS=new Set(["terms","privacy","disclaimers","acceptable-use","intellectual-property"]);
@@ -30,7 +30,7 @@ export default function GovernanceLegalCentre(){
         <div className="legalPolicyGrid">
           {legalDocuments.map(document=><Link className="legalPolicyCard" href={"/"+document.id} key={document.id}>
             <span>{document.title}</span>
-            <strong>Human / legal review required</strong>
+            <strong>{legalApprovalLabel(document.status)}</strong>
             <code>{document.version}</code>
           </Link>)}
         </div>
