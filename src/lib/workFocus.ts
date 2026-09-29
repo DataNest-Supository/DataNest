@@ -42,6 +42,11 @@ export function workInterestOverlapKeys(requirements:unknown,interests:unknown):
   return workFocusKeysFromRequirements(requirements).filter(key=>selected.has(key));
 }
 
+export function workInterestGapKeys(requirements:unknown,interests:unknown):WorkFocusKey[] {
+  const selected=new Set(normalizeWorkFocusKeys(interests));
+  return workFocusKeysFromRequirements(requirements).filter(key=>!selected.has(key));
+}
+
 export function workInterestOverlapCount(requirements:unknown,interests:unknown){
   return workInterestOverlapKeys(requirements,interests).length;
 }
