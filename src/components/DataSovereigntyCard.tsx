@@ -42,7 +42,7 @@ export default function DataSovereigntyCard({
 
     <p className="muted">
       Sovereignty is derived from the active Trust Manifest and governed provider, retention and classification evidence.
-      DataNest does not infer physical residency, customer-managed key custody, or ownership transfer from a provider name or deployment location.
+      DataNest does not infer physical residency, customer-managed key custody, or ownership transfer from a provider name or deployment location. Runtime provider routes must explicitly declare a processing region before a regional allowlist can be enforced.
     </p>
 
     <section className="metricGrid">
