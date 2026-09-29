@@ -11,9 +11,16 @@ create table if not exists public.ai_language_reviewer_qualifications (
   active boolean not null default true,
   verified_by uuid not null,
   verified_at timestamptz not null default now(),
+  revoked_by uuid,
+  revoked_at timestamptz,
+  revocation_reason text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique(project_id,user_id,language_tag,qualification_scope)
+  check (
+    (active=true and revoked_by is null and revoked_at is null)
+    or
+    (active=false and revoked_by is not null and revoked_at is not null)
+  )
 );
 
 alter table public.ai_language_reviewer_qualifications enable row level security;
@@ -23,5 +30,9 @@ grant select,insert,update on table public.ai_language_reviewer_qualifications t
 
 create index if not exists ai_language_reviewer_qualification_lookup_idx
   on public.ai_language_reviewer_qualifications(project_id,user_id,active,language_tag);
+
+create unique index if not exists ai_language_reviewer_active_unique_idx
+  on public.ai_language_reviewer_qualifications(project_id,user_id,language_tag,qualification_scope)
+  where active=true;
 
 commit;
