@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import BusinessOsTransparencyPanel from "@/components/BusinessOsTransparencyPanel";
 
 type Finding = {
   id:string;
@@ -131,6 +132,7 @@ export default function TransparencyWorkspace(){
   const mediumCount=findings?.findings.filter(item=>item.severity.startsWith("MEDIUM")).length||5;
 
   return <div className="transparencyWorkspace">
+    <BusinessOsTransparencyPanel/>
     <section className="heroPanel transparencyHero" aria-labelledby="transparency-title">
       <div>
         <p className="eyebrow">TRANSPARENCY</p>

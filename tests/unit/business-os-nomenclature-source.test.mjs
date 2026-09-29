@@ -34,3 +34,21 @@ test("public registry does not invent concepts outside the TypeScript source",()
     if(entry.acronym)assert.ok(registrySource.includes(entry.acronym),`missing acronym ${entry.acronym}`);
   }
 });
+
+
+test("Business OS transparency consumes the canonical registry and marks target state",()=>{
+  const panel=readText("../../src/components/BusinessOsTransparencyPanel.tsx");
+  const publicPage=readText("../../public/transparency/index.html");
+  const businessOsPage=readText("../../src/app/business-os/page.tsx");
+  assert.match(panel,/DATANEST_NOMENCLATURE/);
+  assert.match(panel,/Approved target architecture/);
+  assert.match(panel,/Sparks remain internal utility/);
+  assert.match(panel,/publicBasePath/);
+  assert.match(panel,/business-os\/nomenclature\.json/);
+  assert.match(publicPage,/Business OS Architecture/);
+  assert.match(publicPage,/approved target architecture/i);
+  assert.match(publicPage,/business-os\/nomenclature\.json/);
+  assert.match(businessOsPage,/Approved target architecture/);
+  assert.match(businessOsPage,/implementation status varies by section/i);
+  assert.doesNotMatch(businessOsPage,/dangerouslySetInnerHTML/);
+});

@@ -54,3 +54,19 @@ test("existing scheduler and transparency deep links remain addressable",async({
   await page.goto(appPath+"?view=transparency");
   await expect(page.getByRole("heading",{name:"Transparency",exact:true})).toBeVisible();
 });
+
+
+test("Transparency publishes the Business OS target architecture without promoting targets to live tools",async({page})=>{
+  await setup(page);
+  await page.goto(appPath+"?view=transparency");
+  await expect(page.getByRole("heading",{name:"Business OS Architecture",exact:true})).toBeVisible();
+  await expect(page.getByText(/Approved target architecture/i).first()).toBeVisible();
+  await expect(page.getByText("Barterer Tender",{exact:true})).toBeVisible();
+  await expect(page.getByText("TARGET",{exact:true}).first()).toBeVisible();
+  await expect(page.getByText(/Sparks remain internal utility/i)).toBeVisible();
+
+  const publicBusinessOsPath=appPath.endsWith("/")?appPath+"business-os":appPath+"/business-os";
+  await page.goto(publicBusinessOsPath);
+  await expect(page.getByRole("heading",{name:"Resonance DataNest — Business OS & Collective Intelligence Architecture",exact:true})).toBeVisible();
+  await expect(page.getByText(/Approved target architecture · implementation status varies by section\./i)).toBeVisible();
+});
