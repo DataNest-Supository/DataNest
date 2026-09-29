@@ -3,6 +3,7 @@ import { resolveDataNestAiStaging } from "../_shared/datanestAiStaging.ts";
 import { sha256Text } from "../_shared/datanestAiRuntime.ts";
 import { replayContentMatches } from "../_shared/datanestAiContinuity.ts";
 import { buildEvidenceLanguageMetadata } from "../_shared/datanestLanguageMetadata.ts";
+import { selectLatestAuthorizedSessionId } from "../_shared/datanestAiSessionSelection.ts";
 
 declare const Deno:{
   env:{get:(name:string)=>string|undefined};
@@ -68,6 +69,48 @@ async function ensureCompanionSession(input:{
       throw new Error("Active DataNest AI session does not match the authorized user and Job.");
     }
     return {id:String(data.id)};
+  }
+
+  // The sidebar can be one render behind the main DataNest AI workspace when
+  // the user opens an external companion immediately after selecting a Job.
+  // Prefer the latest populated DataNest AI session for this Job/user instead
+  // of creating an orphan companion-only session.
+  const {data:recentEvents,error:recentEventsError}=await input.staging
+    .from("ai_intake_events")
+    .select("session_id,created_at")
+    .eq("project_id",input.projectId)
+    .eq("job_id",input.jobId)
+    .in("source_type",["human","datanest_ai"])
+    .order("created_at",{ascending:false})
+    .limit(25);
+  if(recentEventsError)throw recentEventsError;
+
+  const candidateSessionIds=[...new Set(
+    (recentEvents||[])
+      .map(row=>String(row.session_id||""))
+      .filter(Boolean)
+  )];
+  if(candidateSessionIds.length){
+    const {data:candidateSessions,error:candidateSessionsError}=await input.staging
+      .from("ai_sessions")
+      .select("id,project_id,job_id,user_id")
+      .in("id",candidateSessionIds)
+      .eq("project_id",input.projectId)
+      .eq("job_id",input.jobId)
+      .eq("user_id",input.userId);
+    if(candidateSessionsError)throw candidateSessionsError;
+
+    const allowedSessionIds=new Set((candidateSessions||[]).map(row=>String(row.id)));
+    const latestPopulatedSessionId=selectLatestAuthorizedSessionId(
+      (recentEvents||[]).map(row=>({
+        session_id:row.session_id?String(row.session_id):null,
+        created_at:String(row.created_at||"")
+      })),
+      allowedSessionIds
+    );
+    if(latestPopulatedSessionId){
+      return {id:latestPopulatedSessionId};
+    }
   }
 
   const {data,error}=await input.staging

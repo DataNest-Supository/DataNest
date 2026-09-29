@@ -101,6 +101,7 @@ export default function ExternalAiSidebar({
   const clipboardContextRef=useRef("");
   const clipboardConsentRef=useRef(false);
   const pendingAutoReturnSession=useRef("");
+  const restoreGeneration=useRef(0);
   const companionWindowRef=useRef<Window|null>(null);
   const companionClosePollRef=useRef<number|null>(null);
   const clipboardContextKey=JSON.stringify([projectId,currentUserEmail,selectedJobId,provider,sessionId]);
@@ -203,9 +204,10 @@ export default function ExternalAiSidebar({
   const restoreLatestSession=useCallback(async(jobId:string,providerKey:string)=>{
     const supabase=getSupabase();
     if(!supabase||!jobId||!providerKey)return;
+    const request=++restoreGeneration.current;
     const {data:userResult}=await supabase.auth.getUser();
     const userId=userResult.user?.id;
-    if(!userId)return;
+    if(!userId||request!==restoreGeneration.current)return;
 
     const {data,error}=await supabase
       .from("external_ai_sessions")
@@ -222,7 +224,7 @@ export default function ExternalAiSidebar({
       onError(error.message);
       return;
     }
-    if(!data)return;
+    if(request!==restoreGeneration.current||!data)return;
 
     const snapshot=(data.context_snapshot||{}) as Record<string,unknown>;
     const restoredTraceKey=String(snapshot.trace_key||"");
@@ -594,6 +596,9 @@ export default function ExternalAiSidebar({
 
   async function startSession(mode:"sidebar"|"companion"|"popout"){
     if(!selectedJob)return;
+    // A fresh launch supersedes any in-flight session restore so an older
+    // persisted session cannot overwrite the newly-created tracked session.
+    restoreGeneration.current+=1;
     // Every tracked session starts with auto-return off. Opening a companion is
     // the session-level opt-in only when the browser has already granted
     // clipboard-read permission; first-time permission remains an explicit

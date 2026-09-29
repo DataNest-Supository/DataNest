@@ -1,5 +1,6 @@
 "use client";
 
+import DataSovereigntyCard from "@/components/DataSovereigntyCard";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 import {
@@ -306,6 +307,8 @@ export default function TrustPolicyPanel({
       <article className="metricCard"><span>Provider profiles</span><strong>{workspace.provider_profiles.length}</strong><small>Policy metadata only</small></article>
       <article className="metricCard"><span>Active holds</span><strong>{workspace.retention_holds.length}</strong><small>Block future disposition</small></article>
     </section>
+
+    <DataSovereigntyCard activeManifest={activeManifest} providerProfiles={workspace.provider_profiles} retentionPolicies={workspace.retention_policies} retentionHolds={workspace.retention_holds}/>
 
     <section className="panel">
       <div className="panelHead"><div><p className="eyebrow">ACTIVE TRUST MANIFEST</p><h3>{activeManifest?"Version "+text(activeManifest.version):"No active manifest"}</h3></div>{activeManifest&&<span className={"badge "+(text(activeManifest.evidence_state)==="verified"?"good":"neutral")}>{trustPolicyLabel(text(activeManifest.evidence_state))}</span>}</div>
