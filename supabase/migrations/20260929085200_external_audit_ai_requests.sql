@@ -35,7 +35,7 @@ begin
   if target_client_request_id is null then raise exception 'client_request_id is required.'; end if;
   select * into a from public.external_audit_assessments where id=target_assessment;
   if not found then raise exception 'Assessment not found.'; end if;
-  if not public.has_project_role(a.project_id,array['owner','admin','operator']) then
+  if not private.has_project_role(a.project_id,array['owner','admin','operator']) then
     raise insufficient_privilege using message='Operator access is required.';
   end if;
   select * into existing from public.ai_usage_requests where user_id=caller and client_request_id=target_client_request_id;
