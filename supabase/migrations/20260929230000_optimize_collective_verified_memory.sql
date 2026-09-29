@@ -40,6 +40,8 @@ create table if not exists public.certified_memory_relations (
 
 alter table public.certified_memory_relations enable row level security;
 revoke all on table public.certified_memory_relations from public,anon,authenticated;
+grant select on table public.certified_memory to service_role;
+grant select,insert on table public.certified_memory_relations to service_role;
 
 create index if not exists certified_memory_relations_source_idx
   on public.certified_memory_relations(project_id,source_memory_id,relation_kind);
@@ -289,9 +291,9 @@ begin
     raise exception 'Certified memory applicability must be a JSON object.';
   end if;
 
-  select key into invalid_key
-  from jsonb_object_keys(coalesce(target_applicability,'{}'::jsonb)) key
-  where key not in ('product_scopes','purposes','jurisdictions','visibility_classes')
+  select k into invalid_key
+  from jsonb_object_keys(coalesce(target_applicability,'{}'::jsonb)) as keys(k)
+  where k not in ('product_scopes','purposes','jurisdictions','visibility_classes')
   limit 1;
   if invalid_key is not null then
     raise exception 'Unsupported certified memory applicability key: %',invalid_key;
