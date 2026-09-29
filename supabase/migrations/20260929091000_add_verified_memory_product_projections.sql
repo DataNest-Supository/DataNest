@@ -34,7 +34,7 @@ insert into public.certified_memory_projection_profiles(
   allowed_categories,excluded_categories,min_confidence,max_items,
   require_jurisdiction,metadata
 )
-select p.id,'datanest-ai-v1',1,'active','datanest_ai',true,
+select p.id,'datanest_ai',1,'active','datanest_ai',true,
   '{}'::text[],'{}'::text[],0,24,false,
   jsonb_build_object(
     'policy','project-wide governed baseline',
@@ -48,7 +48,7 @@ insert into public.certified_memory_projection_profiles(
   allowed_categories,excluded_categories,min_confidence,max_items,
   require_jurisdiction,metadata
 )
-select p.id,'development-command-v1',1,'active','development_command',true,
+select p.id,'development_command',1,'active','development_command',true,
   '{}'::text[],'{}'::text[],0.50,24,false,
   jsonb_build_object(
     'policy','certified baseline plus separate Development Command working memory',
@@ -62,7 +62,7 @@ insert into public.certified_memory_projection_profiles(
   allowed_categories,excluded_categories,min_confidence,max_items,
   require_jurisdiction,metadata
 )
-select p.id,'legal-eagle-v1',1,'active','legal_eagle',true,
+select p.id,'legal_eagle',1,'active','legal_eagle',true,
   '{}'::text[],'{}'::text[],0.70,16,true,
   jsonb_build_object(
     'policy','matter-scoped legal information with governed Certified Memory baseline',
@@ -86,7 +86,7 @@ begin
   )
   values
     (
-      new.id,'datanest-ai-v1',1,'active','datanest_ai',true,
+      new.id,'datanest_ai',1,'active','datanest_ai',true,
       '{}'::text[],'{}'::text[],0,24,false,
       jsonb_build_object(
         'policy','project-wide governed baseline',
@@ -94,7 +94,7 @@ begin
       )
     ),
     (
-      new.id,'development-command-v1',1,'active','development_command',true,
+      new.id,'development_command',1,'active','development_command',true,
       '{}'::text[],'{}'::text[],0.50,24,false,
       jsonb_build_object(
         'policy','certified baseline plus separate Development Command working memory',
@@ -102,7 +102,7 @@ begin
       )
     ),
     (
-      new.id,'legal-eagle-v1',1,'active','legal_eagle',true,
+      new.id,'legal_eagle',1,'active','legal_eagle',true,
       '{}'::text[],'{}'::text[],0.70,16,true,
       jsonb_build_object(
         'policy','matter-scoped legal information with governed Certified Memory baseline',
@@ -164,7 +164,7 @@ begin
   select p.* into projection
   from public.certified_memory_projection_profiles p
   where p.project_id=target_project
-    and p.projection_key=coalesce(nullif(btrim(target_projection_key),''),'datanest-ai-v1')
+    and p.projection_key=coalesce(nullif(btrim(target_projection_key),''),'datanest_ai')
     and p.status='active'
   order by p.version desc
   limit 1;
