@@ -17,6 +17,12 @@ export type LegalApprovalStatus =
   | "approved"
   | "superseded";
 
+export function legalApprovalLabel(status:LegalApprovalStatus):string {
+  if(status==="draft-review-required") return "Human / legal review required";
+  if(status==="approved") return "Approved";
+  return "Superseded";
+}
+
 export type LegalDocumentMeta = {
   id: LegalDocumentId;
   title: string;
