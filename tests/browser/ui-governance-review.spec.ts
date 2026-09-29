@@ -1,3 +1,4 @@
+import { writeFileSync } from "node:fs";
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { setupUiGovernanceFixture } from "./ui-governance-fixture";
 
@@ -25,12 +26,16 @@ async function capture(
 
   expect(context.overflow,`${surface} must not overflow at ${width}px`).toBe(false);
 
+  const contextPath=testInfo.outputPath(`${surface}-${width}-context.json`);
+  const screenshotPath=testInfo.outputPath(`${surface}-${width}.png`);
+  writeFileSync(contextPath,JSON.stringify(context,null,2),"utf8");
+  await page.screenshot({path:screenshotPath,fullPage:true});
   await testInfo.attach(`${surface}-${width}-context.json`,{
-    body:Buffer.from(JSON.stringify(context,null,2)),
+    path:contextPath,
     contentType:"application/json"
   });
   await testInfo.attach(`${surface}-${width}.png`,{
-    body:await page.screenshot({fullPage:true}),
+    path:screenshotPath,
     contentType:"image/png"
   });
 }
