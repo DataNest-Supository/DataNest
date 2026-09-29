@@ -298,6 +298,9 @@ git commit -m "feat: standardize governed action presentation"
 
 > Task 6 evidence: existing RED→GREEN governed-action assertions are present in execution-authority, external-auditor, and governance resilience tests; exact-head CI #2272 PASS and PR Verification #1154 PASS exercise the standardized presentation. Ruling: no duplicate implementation commit was added because the branch already contained the planned code before this resume. Cost if wrong: rerun the focused suites and amend presentation only; backend authority semantics remain untouched.
 
+
+> Task 6 ruling: the governed-action lifecycle was already produced and RED→GREEN verified by the UI Foundation plan before this legal plan reached Task 6. Reuse the shared implementation rather than duplicating state-mapping code. Current source guards and PR Verification #1252 revalidate the authority path; External Auditor retains its previously verified review-required → authorized evidence transition. Cost if wrong: a future regression could escape the narrower PR suite, so the final whole-branch review must re-run the focused External Auditor test.
+
 ### Task 7: Publish the cross-application legal contract for app migration
 
 **Files:**
