@@ -37,12 +37,14 @@ test("memory usage receipts are append-only governed audit evidence",()=>{
 test("memory receipts never persist raw prompts",()=>{
   assert.doesNotMatch(migration,/\b(raw_prompt|raw_content|prompt_text|query_text)\s+(text|jsonb)\b/i);
   assert.match(migration,/target_query_hash text/);
-  assert.match(chat,/target_query_hash:await sha256Text\(input\.query\)/);
+  assert.match(chat,/const queryHash=await sha256Text\(input\.query\)/);
+  assert.match(chat,/target_query_hash:queryHash/);
 });
 
 test("DataNest AI records ranked selection evidence before reasoning",()=>{
   assert.match(chat,/type CertifiedMemorySelection=/);
-  assert.match(chat,/strategy:String\(payload\.strategy\|\|"verified-memory-ranked-v1"\)/);
+  assert.match(chat,/strategy:String\(payload\.strategy\|\|"verified-memory-ranked-v3"\)/);
+  assert.match(chat,/projection:\{[\s\S]*key:String\(rawProjection\.key\|\|input\.projectionKey\)/);
   assert.match(chat,/memoryReceiptStatus=await recordCertifiedMemoryUsage/);
   assert.match(chat,/target_selected_memory_ids:selectedMemoryIds/);
   assert.match(chat,/memorySelectionStrategy=memorySelection\.strategy/);
@@ -50,6 +52,7 @@ test("DataNest AI records ranked selection evidence before reasoning",()=>{
 });
 
 test("deployment transition keeps receipt logging compatible",()=>{
+  assert.match(chat,/service_record_certified_memory_usage_v2\|could not find the function/);
   assert.match(chat,/service_record_certified_memory_usage_v1\|could not find the function/);
   assert.match(chat,/if\(missingReceiptFunction\)return "not_available"/);
 });
