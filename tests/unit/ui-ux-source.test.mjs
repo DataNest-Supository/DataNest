@@ -441,7 +441,7 @@ test("active Job evidence locator spans paginated Runs, Checkpoints, and Audit w
 
 
 test("workspace presentation state is URL-addressable without exposing active Job identity", () => {
-  assert.match(appSource, /const operationalUrlStateKeys=\["page","mode","filter","sort","interests"\] as const/);
+  assert.match(appSource, /const operationalUrlStateKeys=\["page","mode","filter","sort","interests","focus"\] as const/);
   assert.match(appSource, /const workspaceScopedUrlStateKeys=\[\.\.\.operationalUrlStateKeys,"section"\] as const/);
   assert.match(appSource, /const paginatedWorkspaceViews=new Set<ViewKey>\(\["unifi","scheduler","runs","checkpoints","audit"\]\)/);
   assert.match(appSource, /function scopeUrlToWorkspace\(url:URL,view:ViewKey\)/);

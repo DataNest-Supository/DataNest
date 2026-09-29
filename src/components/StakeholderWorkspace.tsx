@@ -112,12 +112,14 @@ export default function StakeholderWorkspace({
   projectId,
   currentUserId,
   canReview,
-  onOpenMatchedJobs
+  onOpenMatchedJobs,
+  onOpenRequirementJobs
 }:{
   projectId:string;
   currentUserId:string;
   canReview:boolean;
   onOpenMatchedJobs:()=>void;
+  onOpenRequirementJobs:(key:WorkFocusKey)=>void;
 }) {
   const [workspace,setWorkspace]=useState<Workspace|null>(null);
   const [intelligence,setIntelligence]=useState<IntelligenceWorkspace|null>(null);
@@ -366,7 +368,7 @@ export default function StakeholderWorkspace({
       <p className="muted">These interests connect directly to UNIFI Job requirement sections and TranScheduler relevance matching. They do not change Job priority, execution authority, contribution scores, or access permissions.</p>
       <p className="interestDemandSummary">{interestDemandJobCount?interestDemandJobCount+" open Jobs mapped across requirement sections.":"No open Jobs currently expose requirement-section demand."}</p>
       <div className="workFocusGrid stakeholderInterestGrid">
-        {WORK_FOCUS_AREAS.map(item=><label key={item.key} title={item.description}><input type="checkbox" disabled={savingPreference} checked={interestKeys.includes(item.key)} onChange={()=>void toggleInterest(item.key)}/><span><b>{item.label}</b><small>{item.description}</small><small className="interestDemandBadge" aria-label={interestDemand[item.key]+" open Jobs require "+item.label}>{interestDemand[item.key]+" open "+(interestDemand[item.key]===1?"Job":"Jobs")}</small></span></label>)}
+        {WORK_FOCUS_AREAS.map(item=><label key={item.key} title={item.description}><input type="checkbox" disabled={savingPreference} checked={interestKeys.includes(item.key)} onChange={()=>void toggleInterest(item.key)}/><span><b>{item.label}</b><small>{item.description}</small><button className="interestDemandBadge" type="button" disabled={interestDemand[item.key]===0} aria-label={interestDemand[item.key]+" open Jobs require "+item.label} onClick={event=>{event.preventDefault();event.stopPropagation();onOpenRequirementJobs(item.key);}}>{interestDemand[item.key]+" open "+(interestDemand[item.key]===1?"Job":"Jobs")}</button></span></label>)}
       </div>
       <div className="heroActions">
         <button className="primaryButton compact" type="button" disabled={interestKeys.length===0||savingPreference} onClick={onOpenMatchedJobs}>Open matched Jobs</button>

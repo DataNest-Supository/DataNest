@@ -213,7 +213,29 @@ test("Stakeholder interests drive TranScheduler requirement matching and filteri
   await expect(page.getByLabel("1 open Jobs require Security & Testing")).toHaveText("1 open Job");
   await expect(page.getByLabel("1 open Jobs require Database & Architecture")).toHaveText("1 open Job");
   await expect(page.getByLabel("1 open Jobs require Governance & Process")).toHaveText("1 open Job");
-  await expect(page.getByLabel("0 open Jobs require Brand & Promotion")).toHaveText("0 open Jobs");
+  const zeroDemand=page.getByRole("button",{name:"0 open Jobs require Brand & Promotion",exact:true});
+  await expect(zeroDemand).toHaveText("0 open Jobs");
+  await expect(zeroDemand).toBeDisabled();
+
+  const uiUxDemand=page.getByRole("button",{name:"2 open Jobs require UI/UX",exact:true});
+  await uiUxDemand.click();
+  await expect(page.getByRole("heading",{name:"Capability-aware project scheduler",exact:true})).toBeVisible();
+  await expect(page).toHaveURL(/view=scheduler/);
+  await expect(page).toHaveURL(/focus=ui_ux/);
+  await expect(page).not.toHaveURL(/interests=1/);
+  await expect(page.getByLabel("Requirement focus: UI/UX")).toContainText("UI/UX · open Jobs only");
+  await expect(page.locator(".ganttRow")).toHaveCount(2);
+  await expect(page.locator(".ganttJobTitle small")).toHaveText(["UI polish","Accessibility review"]);
+  await expect(page.getByText("Database maintenance",{exact:true})).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByLabel("Requirement focus: UI/UX")).toContainText("UI/UX · open Jobs only");
+  await expect(page.locator(".ganttJobTitle small")).toHaveText(["UI polish","Accessibility review"]);
+
+  await page.getByRole("button",{name:"Clear focus",exact:true}).click();
+  await expect(page).not.toHaveURL(/focus=/);
+  await expect(page.locator(".ganttRow")).toHaveCount(3);
+
+  await page.goto(appPath+"?view=stakeholder");
   const uiUxInterest=page.getByRole("checkbox",{name:/UI\/UX/});
   await expect(uiUxInterest).not.toBeChecked();
   await uiUxInterest.click();
