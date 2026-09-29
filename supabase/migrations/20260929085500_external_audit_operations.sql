@@ -162,27 +162,29 @@ create or replace function public.publish_external_audit_document_v1(
   target_revision integer,
   target_kind text,
   target_format text,
-  target_content_hash text,
+  target_content text,
   target_storage_reference text,
   target_visibility text default 'project_restricted'
 ) returns uuid
 language plpgsql
 security definer
-set search_path=public,auth
+set search_path=public,auth,extensions
 as $$
 declare a public.external_audit_assessments%rowtype;
 declare doc_id uuid;
+declare content_hash_value text;
 begin
   select * into a from public.external_audit_assessments where id=target_assessment;
   if not found then raise exception 'Assessment not found.'; end if;
   if a.revision<>target_revision then raise exception 'Assessment revision is stale.'; end if;
   if not public.has_project_role(a.project_id,array['owner','admin','operator']) then raise insufficient_privilege; end if;
-  if target_content_hash !~ '^[0-9a-f]{64}$' then raise exception 'Invalid SHA-256 hash.'; end if;
-  insert into public.external_audit_documents(assessment_id,project_id,revision,kind,format,content_hash,storage_reference,visibility,generated_by)
-  values(a.id,a.project_id,a.revision,target_kind,target_format,target_content_hash,nullif(btrim(coalesce(target_storage_reference,'')),''),target_visibility,auth.uid())
+  if coalesce(target_content,'')='' then raise exception 'Document content is required.'; end if;
+  content_hash_value:=encode(digest(convert_to(target_content,'UTF8'),'sha256'),'hex');
+  insert into public.external_audit_documents(assessment_id,project_id,revision,kind,format,content_hash,content_text,storage_reference,visibility,generated_by)
+  values(a.id,a.project_id,a.revision,target_kind,target_format,content_hash_value,target_content,nullif(btrim(coalesce(target_storage_reference,'')),''),target_visibility,auth.uid())
   returning id into doc_id;
   insert into public.external_audit_events(assessment_id,project_id,revision,event_type,actor_user_id,payload)
-  values(a.id,a.project_id,a.revision,'DOCUMENT_PUBLISHED',auth.uid(),jsonb_build_object('document_id',doc_id,'kind',target_kind,'format',target_format,'content_hash',target_content_hash));
+  values(a.id,a.project_id,a.revision,'DOCUMENT_PUBLISHED',auth.uid(),jsonb_build_object('document_id',doc_id,'kind',target_kind,'format',target_format,'content_hash',content_hash_value));
   return doc_id;
 end;
 $$;
