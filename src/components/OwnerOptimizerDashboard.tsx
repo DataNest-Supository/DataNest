@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback,useEffect,useMemo,useState } from "react";
-import { getSupabase } from "@/lib/supabase";\nimport GovernanceControlMonitor from "@/components/GovernanceControlMonitor";
+import { getSupabase } from "@/lib/supabase";
+import GovernanceControlMonitor from "@/components/GovernanceControlMonitor";
 
 type OptimizerSettings={
   project_id:string;
@@ -327,6 +328,8 @@ export default function OwnerOptimizerDashboard({projectId}:{projectId:string}){
       :<p className="muted">No optimizer runs recorded yet.</p>
     }
 
-    <GovernanceControlMonitor projectId={projectId}/>\n\n    <p className="securityNote">Owner approval creates an evidence-linked governance improvement candidate marked ready for formal governance. It does not deploy code, change production, cast votes, or ratify a decision.</p>
+    <GovernanceControlMonitor projectId={projectId}/>
+
+    <p className="securityNote">Owner approval creates an evidence-linked governance improvement candidate marked ready for formal governance. It does not deploy code, change production, cast votes, or ratify a decision.</p>
   </section>;
 }
