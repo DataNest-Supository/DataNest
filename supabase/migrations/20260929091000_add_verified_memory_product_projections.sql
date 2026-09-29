@@ -72,6 +72,56 @@ select p.id,'legal-eagle-v1',1,'active','legal_eagle',true,
 from public.projects p
 on conflict(project_id,projection_key,version) do nothing;
 
+create or replace function private.seed_verified_memory_projection_profiles_v1()
+returns trigger
+language plpgsql
+security definer
+set search_path=''
+as $
+begin
+  insert into public.certified_memory_projection_profiles(
+    project_id,projection_key,version,status,product_scope,include_unscoped,
+    allowed_categories,excluded_categories,min_confidence,max_items,
+    require_jurisdiction,metadata
+  )
+  values
+    (
+      new.id,'datanest-ai-v1',1,'active','datanest_ai',true,
+      '{}'::text[],'{}'::text[],0,24,false,
+      jsonb_build_object(
+        'policy','project-wide governed baseline',
+        'purpose','General DataNest AI retrieval'
+      )
+    ),
+    (
+      new.id,'development-command-v1',1,'active','development_command',true,
+      '{}'::text[],'{}'::text[],0.50,24,false,
+      jsonb_build_object(
+        'policy','certified baseline plus separate Development Command working memory',
+        'purpose','Development reasoning'
+      )
+    ),
+    (
+      new.id,'legal-eagle-v1',1,'active','legal_eagle',true,
+      '{}'::text[],'{}'::text[],0.70,16,true,
+      jsonb_build_object(
+        'policy','matter-scoped legal information with governed Certified Memory baseline',
+        'purpose','Legal Eagle retrieval',
+        'automatic_project_learning',false
+      )
+    )
+  on conflict(project_id,projection_key,version) do nothing;
+
+  return new;
+end;
+$;
+
+drop trigger if exists seed_verified_memory_projection_profiles on public.projects;
+create trigger seed_verified_memory_projection_profiles
+after insert on public.projects
+for each row
+execute function private.seed_verified_memory_projection_profiles_v1();
+
 alter table public.certified_memory_usage_receipts
   add column if not exists projection_key text,
   add column if not exists projection_version bigint;
