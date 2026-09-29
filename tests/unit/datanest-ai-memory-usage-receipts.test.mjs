@@ -9,6 +9,10 @@ const migration=fs.readFileSync(
   path.join(root,"supabase/migrations/20260929083000_add_certified_memory_usage_receipts.sql"),
   "utf8"
 );
+const requestIndex=fs.readFileSync(
+  path.join(root,"supabase/migrations/20260929084500_index_certified_memory_usage_receipts_request.sql"),
+  "utf8"
+);
 const chat=fs.readFileSync(
   path.join(root,"supabase/functions/datanest-ai-chat/index.ts"),
   "utf8"
@@ -60,4 +64,10 @@ test("Intelligence Fabric exposes memory selection receipts and review health",(
   assert.match(panel,/MEMORY RECEIPTS/);
   assert.match(panel,/Verified memory selection evidence/);
   assert.match(panel,/Audited verified-memory selections/);
+});
+
+test("memory receipt request lineage has a covering index",()=>{
+  assert.match(requestIndex,/create index if not exists certified_memory_usage_receipts_request_idx/);
+  assert.match(requestIndex,/on public\.certified_memory_usage_receipts\(ai_usage_request_id\)/);
+  assert.match(requestIndex,/where ai_usage_request_id is not null/);
 });
