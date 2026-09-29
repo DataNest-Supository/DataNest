@@ -27,11 +27,12 @@ test("consequential governance surfaces use the shared governed-action lifecycle
   const auditor=fs.readFileSync(path.join(root,"src/components/ExternalAuditor.tsx"),"utf8");
   const governed=fs.readFileSync(path.join(root,"src/components/platform/GovernedAction.tsx"),"utf8");
 
-  assert.match(source,/import GovernedAction from "@\/components\/platform\/GovernedAction"/);
-  assert.match(improvement,/import GovernedAction from "@\/components\/platform\/GovernedAction"/);
-  assert.match(authority,/import GovernedAction from "@\/components\/platform\/GovernedAction"/);
-  assert.match(auditor,/import GovernedAction from "@\/components\/platform\/GovernedAction"/);
-  assert.match(governed,/data-governed-stage=\{stage\}/);\n  assert.doesNotMatch(governed,/export\\s+export/);
+  assert.match(source,/import GovernedAction(?:,\s*\{[^}]+\})? from "@\/components\/platform\/GovernedAction"/);
+  assert.match(improvement,/import GovernedAction(?:,\s*\{[^}]+\})? from "@\/components\/platform\/GovernedAction"/);
+  assert.match(authority,/import GovernedAction(?:,\s*\{[^}]+\})? from "@\/components\/platform\/GovernedAction"/);
+  assert.match(auditor,/import GovernedAction(?:,\s*\{[^}]+\})? from "@\/components\/platform\/GovernedAction"/);
+  assert.match(governed,/data-governed-stage=\{stage\}/);
+  assert.doesNotMatch(governed,/export\s+export/);
   assert.match(authority,/review-required/);
   assert.match(improvement,/review-required/);
   assert.match(auditor,/review-required/);
