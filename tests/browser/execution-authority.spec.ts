@@ -212,6 +212,17 @@ test("owner sees independent review lease route breaker and exact-action control
   await page.getByRole("button",{name:"Authority & Execution",exact:true}).click();
 
   await expect(page.getByText("A3 · workflow:fixture",{exact:true})).toBeVisible();
+  const proposedEnvelope=page.locator(".manifestCard").filter({hasText:"A3 · workflow:fixture"});
+  const proposedGoverned=proposedEnvelope.locator(".platformGovernedAction");
+  await expect(proposedGoverned).toHaveAttribute("data-governed-stage","review-required");
+  await expect(proposedGoverned.getByText("Human / external review required",{exact:true})).toBeVisible();
+  await expect(proposedGoverned.getByText("Authorized",{exact:true})).toHaveCount(0);
+
+  const approvedA4=page.locator(".manifestCard").filter({hasText:"A4 · user:"+otherUserId});
+  const approvedGoverned=approvedA4.locator(".platformGovernedAction");
+  await expect(approvedGoverned).toHaveAttribute("data-governed-stage","authorized");
+  await expect(approvedGoverned.getByText("REVIEWER",{exact:true})).toBeVisible();
+  await expect(approvedGoverned.getByText(userId,{exact:true})).toBeVisible();
   await expect(page.getByRole("button",{name:"Approve",exact:true}).first()).toBeVisible();
   await expect(page.getByText(/Independent review required: the proposer cannot approve/i)).toBeVisible();
   await expect(page.locator("summary").filter({hasText:"Issue Capability Lease · Owner / admin"})).toBeVisible();
