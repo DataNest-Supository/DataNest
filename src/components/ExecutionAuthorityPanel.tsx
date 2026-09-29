@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 import { useSingleFlight } from "@/lib/singleFlight";
 import PageHeader from "@/components/platform/PageHeader";
+import GovernedAction from "@/components/platform/GovernedAction";
 import {
   autonomyDescriptions,
   autonomyLabels,
@@ -383,8 +384,18 @@ export default function ExecutionAuthorityPanel({
         const isProposer=txt(item.proposed_by)===currentUserId;
         const independent=bool(item.require_independent_approval)||level==="A4";
         const mayApprove=state==="proposed"&&canApprove&&!((independent)&&isProposer);
+        const approval=workspace.approvals.find(approval=>txt(approval.authority_envelope_id)===txt(item.id)&&txt(approval.status)==="approved");
+        const requestedStage=state==="proposed"?"review-required":(["approved","active"].includes(state)?"authorized":"checked");
+        const reviewer=approval?txt(approval.approver_user_id):undefined;
+        const approvalEvidence=approval?<span>{"Approval evidence · "+txt(approval.id)}</span>:state==="proposed"?<span>Reviewer approval evidence has not been recorded for this proposal.</span>:undefined;
         return <article className="manifestCard" key={txt(item.id)}>
           <div className="rowBetween"><b>{level+" · "+txt(item.actor_key)}</b><span className={"badge "+statusTone(state)}>{executionAuthorityLabel(state)}</span></div>
+          <GovernedAction
+            stage={requestedStage}
+            summary={state==="proposed"?"This authority proposal remains review-required until the applicable human review is recorded.":"Presentation follows the recorded authority-envelope state and never upgrades missing review evidence."}
+            reviewer={reviewer}
+            evidence={approvalEvidence}
+          />
           <p>{txt(item.purpose)}</p>
           <div className="manifestMeta">
             <span>{txt(item.job_id)?"Job "+txt(item.job_id).slice(0,8):"Project scope"}</span>
