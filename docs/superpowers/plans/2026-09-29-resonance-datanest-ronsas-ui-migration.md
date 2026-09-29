@@ -237,36 +237,39 @@ git commit -m "feat: align SyncVision with Resonance DataNest"
 - Terms/Privacy must remove stale billing/cancellation wording that contradicts free promotion and mark unapproved policy content as review-gated.
 - Remove unsupported privacy guarantees such as “industry-standard encryption” unless separate implementation evidence is linked and reviewed.
 
-- [ ] **Step 1: Locate the real application entry before editing**
+- [x] **Step 1: Locate the real application entry before editing**
 
 Run: `grep -R "src/styles.css\|./styles.css" -n apps/ronsas/youtube-optimizer/src apps/ronsas/youtube-optimizer | head -20`  
 Expected: identify the exact entry module; update this plan’s working notes if the file name differs from conventional `main.tsx`.
 
-- [ ] **Step 2: Add failing tests for free-promotion and legal claim safety**
+- [x] **Step 2: Add failing tests for free-promotion and legal claim safety**
 
 Require no billing/cancellation SEO description, no unsupported security guarantee, DataNest attribution, and legal/governance links.
 
-- [ ] **Step 2: Run tests**
+- [x] **Step 2: Run tests**
 
 Run: `cd apps/ronsas/youtube-optimizer && bun run typecheck && bun run test`  
 Expected: FAIL on migration assertions.
 
-- [ ] **Step 3: Implement adapter/header/footer/legal changes**
+- [x] **Step 3: Implement adapter/header/footer/legal changes**
 
 Add the four canonical `@fontsource` packages to the Bun lockfile and import their CSS from `src/routes/__root.tsx`. Import `resonance-datanest-adapter.css?url` there and add it as a stylesheet link after the existing `appCss` link so the adapter is explicit and compatible with TanStack Start SSR.
 
-- [ ] **Step 4: Verify app**
+- [x] **Step 4: Verify app**
 
 Run: `cd apps/ronsas/youtube-optimizer && bun run typecheck && bun run test && bun run build -- --base=/DataNest/apps/youtube-optimizer/`  
 Run: `node scripts/validate-ronsas-brand-contract.mjs --app youtube-optimizer`  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/ronsas/youtube-optimizer scripts/validate-ronsas-brand-contract.mjs
 git commit -m "feat: align YouTube Optimizer with Resonance DataNest"
 ```
+
+
+> Task 5 evidence: real SSR entry confirmed at `src/routes/__root.tsx`; current migration adds canonical Fontsource imports, explicit adapter stylesheet ordering, DataNest attribution, free-promotion legal links, review-gated Terms/Privacy, and removes unsupported encryption/billing wording. RONSAS Application Validation #119 YouTube Optimizer job PASS: typecheck, 6 Vitest files / 22 tests, client+SSR+Nitro production build.
 
 ### Task 6: Migrate the four simple static applications
 
