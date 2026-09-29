@@ -74,6 +74,9 @@ git commit -m "feat: define RONSAS DataNest brand contract"
 
 > Task 1 evidence: validator existed before contract and therefore defined the RED condition; current contract satisfies exact identity/font/token/accent/free-promotion checks, import validation requires it, and RONSAS Application Validation canonical-brand job passes before the app matrix.
 
+
+> Task 1 evidence: validator RED on missing contract → GREEN local validator; RONSAS Application Validation canonical brand-contract job PASS. App-adapter checks remain incremental until each app migration task.
+
 ### Task 2: Migrate Creative Studio
 
 **Files:**
