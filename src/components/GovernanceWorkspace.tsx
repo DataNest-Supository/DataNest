@@ -79,6 +79,12 @@ function date(value:string|null){
 }
 function label(value:string){return value.replaceAll("_"," ");}
 function boolText(value:unknown){return value===true?"Yes":"No";}
+function proposalGovernedStage(status:string):GovernedActionStage{
+  if(status==="accepted")return "checked";
+  if(["rejected","withdrawn","closed","dismissed"].includes(status))return "verified";
+  return "review-required";
+}
+
 
 export default function GovernanceWorkspace({
   projectId,currentUserId,role,canManage,setNotice,setError
@@ -470,6 +476,13 @@ export default function GovernanceWorkspace({
           <div>
             <div className="rowBetween"><b>{item.title}</b><span className="badge neutral">{label(item.status)}</span></div>
             <p>{item.summary}</p>
+            <GovernedAction
+              stage={proposalGovernedStage(item.status)}
+              summary={item.status==="accepted"
+                ?"Project governance decision is recorded; downstream production or legal authority remains separately controlled."
+                :"Human governance review is required before this proposal can become an adopted project decision."}
+              evidence={<span>{item.trace_key} · {label(item.proposal_type)}</span>}
+            />
             <div className="manifestMeta">
               <span>{item.trace_key}</span><span>{label(item.proposal_type)}</span>
               <span>support {item.support_count}</span><span>oppose {item.oppose_count}</span><span>abstain {item.abstain_count}</span>
