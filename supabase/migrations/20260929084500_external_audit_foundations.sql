@@ -382,4 +382,72 @@ $$;
 revoke all on function public.create_external_audit_v1(uuid,uuid,text,text,text,text) from public,anon;
 grant execute on function public.create_external_audit_v1(uuid,uuid,text,text,text,text) to authenticated;
 
+create or replace function private.external_audit_enforce_assessment_project()
+returns trigger
+language plpgsql
+security definer
+set search_path=public,private
+as $$
+begin
+  if not exists(
+    select 1 from public.external_audit_assessments a
+    where a.id=new.assessment_id and a.project_id=new.project_id
+  ) then
+    raise exception 'External audit child row must match the assessment project.';
+  end if;
+  return new;
+end;
+$$;
+
+create or replace function private.external_audit_validate_finding_evidence()
+returns trigger
+language plpgsql
+security definer
+set search_path=public,private
+as $$
+begin
+  if exists(
+    select 1
+    from unnest(coalesce(new.evidence_ids,'{}'::uuid[])) evidence_id
+    where not exists(
+      select 1 from public.external_audit_sources s
+      where s.id=evidence_id
+        and s.assessment_id=new.assessment_id
+        and s.project_id=new.project_id
+        and s.revision=new.revision
+    )
+  ) then
+    raise exception 'Finding evidence must belong to the same assessment project and revision.';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists external_audit_profiles_scope_guard on public.external_audit_profiles;
+create trigger external_audit_profiles_scope_guard before insert or update on public.external_audit_profiles
+for each row execute function private.external_audit_enforce_assessment_project();
+drop trigger if exists external_audit_sources_scope_guard on public.external_audit_sources;
+create trigger external_audit_sources_scope_guard before insert or update on public.external_audit_sources
+for each row execute function private.external_audit_enforce_assessment_project();
+drop trigger if exists external_audit_findings_scope_guard on public.external_audit_findings;
+create trigger external_audit_findings_scope_guard before insert or update on public.external_audit_findings
+for each row execute function private.external_audit_enforce_assessment_project();
+drop trigger if exists external_audit_actions_scope_guard on public.external_audit_actions;
+create trigger external_audit_actions_scope_guard before insert or update on public.external_audit_actions
+for each row execute function private.external_audit_enforce_assessment_project();
+drop trigger if exists external_audit_reviewers_scope_guard on public.external_audit_reviewers;
+create trigger external_audit_reviewers_scope_guard before insert or update on public.external_audit_reviewers
+for each row execute function private.external_audit_enforce_assessment_project();
+drop trigger if exists external_audit_events_scope_guard on public.external_audit_events;
+create trigger external_audit_events_scope_guard before insert or update on public.external_audit_events
+for each row execute function private.external_audit_enforce_assessment_project();
+drop trigger if exists external_audit_documents_scope_guard on public.external_audit_documents;
+create trigger external_audit_documents_scope_guard before insert or update on public.external_audit_documents
+for each row execute function private.external_audit_enforce_assessment_project();
+
+drop trigger if exists external_audit_findings_evidence_guard on public.external_audit_findings;
+create trigger external_audit_findings_evidence_guard before insert or update of evidence_ids,assessment_id,project_id,revision on public.external_audit_findings
+for each row execute function private.external_audit_validate_finding_evidence();
+
+
 commit;
