@@ -13,7 +13,7 @@ export default function GovernanceLegalCentre(){
         <h1>Governance &amp; Legal Centre</h1>
         <p>Operator identity, governance context, public policy status, accessibility, and traceability in one reviewable surface.</p>
       </div>
-      <GovernanceTrustMark/><strong>RSGP Governed</strong></span>
+      <GovernanceTrustMark/>
     </header>
 
     <div className="legalCentreGrid">
