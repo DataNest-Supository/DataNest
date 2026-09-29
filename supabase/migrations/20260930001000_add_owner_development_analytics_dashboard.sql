@@ -21,20 +21,20 @@ as $$
           'database_version', current_setting('server_version'),
           'public_table_count', (
             select count(*)
-            from public.pg_class c
-            join public.pg_namespace n on n.oid = c.relnamespace
+            from pg_catalog.pg_class c
+            join pg_catalog.pg_namespace n on n.oid = c.relnamespace
             where n.nspname = 'public' and c.relkind = 'r'
           ),
           'public_view_count', (
             select count(*)
-            from public.pg_class c
-            join public.pg_namespace n on n.oid = c.relnamespace
+            from pg_catalog.pg_class c
+            join pg_catalog.pg_namespace n on n.oid = c.relnamespace
             where n.nspname = 'public' and c.relkind = 'v'
           ),
           'function_count', (
             select count(*)
-            from public.pg_proc p
-            join public.pg_namespace n on n.oid = p.pronamespace
+            from pg_catalog.pg_proc p
+            join pg_catalog.pg_namespace n on n.oid = p.pronamespace
             where n.nspname in ('public','private')
           ),
           'migration_count', (
