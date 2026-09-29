@@ -3,7 +3,21 @@
 import { FormEvent, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 
-export default function AccountPasswordPanel() {
+async function actionErrorMessage(error:unknown){
+  const fallback=error instanceof Error?error.message:"Unable to complete the password action.";
+  if(!error||typeof error!=="object"||!("context" in error))return fallback;
+  const context=(error as {context?:Response}).context;
+  if(!context||typeof context.clone!=="function")return fallback;
+  try{
+    const payload=await context.clone().json() as {error?:unknown};
+    if(payload?.error)return String(payload.error);
+  }catch{
+    // Fall back to the client error when the Edge response has no JSON body.
+  }
+  return fallback;
+}
+
+export default function AccountPasswordPanel({projectId}:{projectId:string}) {
   const [currentPassword,setCurrentPassword]=useState("");
   const [newPassword,setNewPassword]=useState("");
   const [confirmPassword,setConfirmPassword]=useState("");
@@ -41,30 +55,27 @@ export default function AccountPasswordPanel() {
     setMessage("");
     setMessageTone("neutral");
     try{
-      const {data:userResult,error:userError}=await supabase.auth.getUser();
-      if(userError||!userResult.user?.email){
-        throw userError||new Error("Your signed-in account email could not be resolved.");
-      }
-
-      const {error:verifyError}=await supabase.auth.signInWithPassword({
-        email:userResult.user.email,
-        password:currentPassword
+      const {data,error}=await supabase.functions.invoke("manage-own-password",{
+        body:{
+          projectId,
+          action:"change",
+          currentPassword,
+          newPassword
+        }
       });
-      if(verifyError){
-        throw new Error("Current password is incorrect.");
-      }
-
-      const {error:updateError}=await supabase.auth.updateUser({password:newPassword});
-      if(updateError)throw updateError;
-
+      if(error)throw error;
+      const payload=(data||{}) as {auditRecorded?:boolean};
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
       setMessageTone("good");
-      setMessage("Password changed successfully.");
+      setMessage(payload.auditRecorded===false
+        ?"Password changed successfully. The security event could not be recorded; an owner can review the service logs."
+        :"Password changed successfully and recorded in the security audit trail."
+      );
     }catch(error){
       setMessageTone("error");
-      setMessage(error instanceof Error?error.message:"Unable to change your password.");
+      setMessage(await actionErrorMessage(error));
     }finally{
       setBusy(false);
     }
@@ -78,21 +89,20 @@ export default function AccountPasswordPanel() {
     setMessage("");
     setMessageTone("neutral");
     try{
-      const {data:userResult,error:userError}=await supabase.auth.getUser();
-      const email=userResult.user?.email;
-      if(userError||!email){
-        throw userError||new Error("Your signed-in account email could not be resolved.");
-      }
-
       const redirectTo=window.location.href.split("#")[0].split("?")[0];
-      const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo});
+      const {data,error}=await supabase.functions.invoke("manage-own-password",{
+        body:{projectId,action:"email_reset",redirectTo}
+      });
       if(error)throw error;
-
+      const payload=(data||{}) as {auditRecorded?:boolean};
       setMessageTone("good");
-      setMessage("Password reset email requested. Follow the secure link in your inbox to choose a new password.");
+      setMessage(payload.auditRecorded===false
+        ?"Password reset email requested. The security event could not be recorded; an owner can review the service logs."
+        :"Password reset email requested and recorded. Follow the secure link in your inbox to choose a new password."
+      );
     }catch(error){
       setMessageTone("error");
-      setMessage(error instanceof Error?error.message:"Unable to send a password reset email.");
+      setMessage(await actionErrorMessage(error));
     }finally{
       setBusy(false);
     }
@@ -101,9 +111,9 @@ export default function AccountPasswordPanel() {
   return <section className="panel accountSecurityPanel">
     <div className="panelHead">
       <div><p className="eyebrow">ACCOUNT SECURITY</p><h3>Change my password</h3></div>
-      <span className="countPill">SELF-SERVICE</span>
+      <span className="countPill">AUDITED</span>
     </div>
-    <p className="muted">Confirm your current password before replacing it. Your password is sent only to Supabase Auth and is never written to DataNest project data.</p>
+    <p className="muted">Confirm your current password before replacing it. Password material is processed only by Supabase Auth and is never written to DataNest project data or the security audit trail.</p>
 
     <form className="accountSecurityForm" onSubmit={changePassword} aria-busy={busy}>
       <label>Current password
