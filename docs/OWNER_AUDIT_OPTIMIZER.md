@@ -51,3 +51,14 @@ The cron request carries a random token held in Supabase Vault under datanest_op
 - supabase/functions/audit-optimizer/index.ts
 - supabase/migrations/20260929235900_datanest_owner_optimizer_v1.sql
 - supabase/migrations/20260929235930_optimize_datanest_owner_optimizer_indexes.sql
+
+
+## Evidence recency and resolution reconciliation
+
+Accepted governance decision `DN-GOV-DEC-5B1BAB65C7D543BD` adds a recency safeguard to optimizer evidence preparation.
+
+For control-monitor evidence, DataNest groups records by control/check identity and supplies the optimizer with the latest applicable state. Older failed records remain represented only as historical summary context. A later passing state therefore supersedes an earlier failure for active-problem analysis.
+
+The optimizer prompt explicitly prohibits proposing remediation from a superseded failure when the latest state for the same control/check is passed or resolved. Suggestion evidence references are also filtered to identifiers present in the reconciled evidence snapshot, so stale trace keys cannot independently drive a new governance proposal.
+
+This safeguard changes evidence interpretation only. It does not grant the optimizer voting, ratification, deployment, role, ownership, contractual, or financial authority.

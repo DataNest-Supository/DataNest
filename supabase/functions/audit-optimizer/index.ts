@@ -48,6 +48,102 @@ function objectValue(value:unknown):Record<string,unknown>{
     :{};
 }
 
+function timestampValue(value:unknown){
+  const timestamp=Date.parse(String(value||""));
+  return Number.isFinite(timestamp)?timestamp:0;
+}
+
+function monitorEvidenceIdentity(item:Record<string,unknown>){
+  const evidenceRef=String(item.evidence_ref||"");
+  if(!evidenceRef.startsWith("control-monitor:"))return "";
+  const parts=evidenceRef.split(":");
+  const checkKey=parts.slice(2).join(":").trim();
+  if(!checkKey)return "";
+  return `${String(item.control_key||"unknown")}:${checkKey}`;
+}
+
+function reconcileControlEvidence(value:unknown,maxActive=15,maxHistory=12){
+  const items=(Array.isArray(value)?value:[])
+    .filter(item=>item&&typeof item==="object"&&!Array.isArray(item))
+    .map(item=>item as Record<string,unknown>)
+    .sort((a,b)=>timestampValue(b.observed_at)-timestampValue(a.observed_at));
+
+  const latestByCheck=new Map<string,Record<string,unknown>>();
+  const historyByCheck=new Map<string,{
+    control_key:string;
+    check_key:string;
+    latest_trace_key:string;
+    latest_evidence_state:string;
+    latest_observed_at:string;
+    superseded_failure_count:number;
+  }>();
+  const retainedNonMonitor:Record<string,unknown>[]=[];
+
+  for(const item of items){
+    const identity=monitorEvidenceIdentity(item);
+    if(!identity){
+      retainedNonMonitor.push(item);
+      continue;
+    }
+
+    const [controlKey,...checkParts]=identity.split(":");
+    const checkKey=checkParts.join(":");
+    const existing=latestByCheck.get(identity);
+    if(!existing){
+      latestByCheck.set(identity,item);
+      historyByCheck.set(identity,{
+        control_key:controlKey,
+        check_key:checkKey,
+        latest_trace_key:String(item.trace_key||""),
+        latest_evidence_state:String(item.evidence_state||"unknown"),
+        latest_observed_at:String(item.observed_at||""),
+        superseded_failure_count:0
+      });
+      continue;
+    }
+
+    const state=String(item.evidence_state||"").toLowerCase();
+    if(state==="failed"){
+      const summary=historyByCheck.get(identity);
+      if(summary)summary.superseded_failure_count+=1;
+    }
+  }
+
+  const active=[...latestByCheck.values(),...retainedNonMonitor]
+    .sort((a,b)=>timestampValue(b.observed_at)-timestampValue(a.observed_at))
+    .slice(0,maxActive);
+  const history=[...historyByCheck.values()]
+    .sort((a,b)=>timestampValue(b.latest_observed_at)-timestampValue(a.latest_observed_at))
+    .slice(0,maxHistory);
+
+  return {active,history};
+}
+
+function collectAllowedEvidenceRefs(compactEvidence:Record<string,unknown>){
+  const allowed=new Set<string>([
+    "ai_metrics","job_metrics","ai_impact_assessments","governance_observations",
+    "external_audit_findings","control_evidence","governance_cycles"
+  ]);
+  const arrays=[
+    compactEvidence.governance_observations,
+    compactEvidence.external_audit_findings,
+    compactEvidence.ai_impact_assessments,
+    compactEvidence.control_evidence,
+    compactEvidence.governance_cycles
+  ];
+  for(const array of arrays){
+    if(!Array.isArray(array))continue;
+    for(const raw of array){
+      const item=objectValue(raw);
+      for(const key of ["id","trace_key","assessment_key","evidence_ref","control_key"]){
+        const value=String(item[key]||"").trim();
+        if(value)allowed.add(value);
+      }
+    }
+  }
+  return allowed;
+}
+
 function parseProviderJson(content:string):unknown{
   const trimmed=content.trim();
   const unfenced=trimmed
@@ -77,7 +173,11 @@ type OptimizerSuggestion={
   confidence:number|null;
 };
 
-async function validateDraft(raw:unknown,standardKeys:Set<string>):Promise<{summary:string;limitations:string[];suggestions:OptimizerSuggestion[]}>{
+async function validateDraft(
+  raw:unknown,
+  standardKeys:Set<string>,
+  allowedEvidenceRefs:Set<string>
+):Promise<{summary:string;limitations:string[];suggestions:OptimizerSuggestion[]}>{
   if(!raw||typeof raw!=="object")throw new Error("optimizer_draft_object_required");
   const record=raw as Record<string,unknown>;
   const suggestionsRaw=Array.isArray(record.suggestions)?record.suggestions.slice(0,10):[];
@@ -94,7 +194,8 @@ async function validateDraft(raw:unknown,standardKeys:Set<string>):Promise<{summ
 
     const proposedChange=objectValue(value.proposedChange);
     const guardrails=objectValue(value.guardrails);
-    const evidenceRefs=stringArray(value.evidenceRefs);
+    const evidenceRefs=stringArray(value.evidenceRefs).filter(ref=>allowedEvidenceRefs.has(ref));
+    if(evidenceRefs.length===0)continue;
     const standardRefs=stringArray(value.standardRefs).filter(key=>standardKeys.has(key));
     const riskRaw=String(value.riskClass||"moderate").toLowerCase();
     const riskClass=(riskClasses.has(riskRaw)?riskRaw:"moderate") as OptimizerSuggestion["riskClass"];
@@ -219,6 +320,7 @@ Deno.serve(async(request)=>{
     const standardKeys=new Set(
       standards.map(item=>String((item as Record<string,unknown>)?.standard_key||"")).filter(Boolean)
     );
+    const reconciledControlEvidence=reconcileControlEvidence(evidenceObject.control_evidence);
     const compactEvidence={
       captured_at:evidenceObject.captured_at||null,
       project:evidenceObject.project||null,
@@ -230,7 +332,8 @@ Deno.serve(async(request)=>{
       governance_observations:Array.isArray(evidenceObject.governance_observations)?evidenceObject.governance_observations.slice(0,15):[],
       external_audit_findings:Array.isArray(evidenceObject.external_audit_findings)?evidenceObject.external_audit_findings.slice(0,15):[],
       ai_impact_assessments:Array.isArray(evidenceObject.ai_impact_assessments)?evidenceObject.ai_impact_assessments.slice(0,10):[],
-      control_evidence:Array.isArray(evidenceObject.control_evidence)?evidenceObject.control_evidence.slice(0,15):[]
+      control_evidence:reconciledControlEvidence.active,
+      control_evidence_history:reconciledControlEvidence.history
     };
     const evidenceText=JSON.stringify(compactEvidence);
     const evidenceDigest=await sha256Text(evidenceText);
@@ -284,6 +387,8 @@ Deno.serve(async(request)=>{
       "Analyze the supplied DataNest governance, audit, operational, AI-usage, impact-assessment, and control evidence.",
       "Prefer concrete, reversible, testable improvements. Preserve dissent, uncertainty, provenance, privacy, security, accessibility, and existing governance boundaries.",
       "Each suggestion must cite evidenceRefs using identifiers or trace keys present in the supplied evidence. Use standardRefs only from the supplied active standard_key values.",
+      "For monitored governance controls, control_evidence contains only the latest applicable state per control/check. control_evidence_history is historical context only.",
+      "Never propose remediation from a superseded failed monitor record when the latest evidence for that same control/check is passed or resolved. Do not cite superseded historical failures as active evidence.",
       "Return JSON only with this shape:",
       JSON.stringify({
         summary:"string",
@@ -314,7 +419,8 @@ Deno.serve(async(request)=>{
     });
 
     const parsed=parseProviderJson(provider.content);
-    const draft=await validateDraft(parsed,standardKeys);
+    const allowedEvidenceRefs=collectAllowedEvidenceRefs(compactEvidence);
+    const draft=await validateDraft(parsed,standardKeys,allowedEvidenceRefs);
 
     await serviceClient.rpc("service_finish_ai_request",{
       target_request:aiRequestId,target_status:"succeeded",
@@ -336,6 +442,8 @@ Deno.serve(async(request)=>{
           governanceObservationCount:Array.isArray(evidenceObject.governance_observations)?evidenceObject.governance_observations.length:0,
           externalAuditFindingCount:Array.isArray(evidenceObject.external_audit_findings)?evidenceObject.external_audit_findings.length:0,
           controlEvidenceCount:Array.isArray(evidenceObject.control_evidence)?evidenceObject.control_evidence.length:0,
+          reconciledControlEvidenceCount:reconciledControlEvidence.active.length,
+          reconciledMonitorCheckCount:reconciledControlEvidence.history.length,
           impactAssessmentCount:Array.isArray(evidenceObject.ai_impact_assessments)?evidenceObject.ai_impact_assessments.length:0
         },
         target_suggestions:draft.suggestions,
