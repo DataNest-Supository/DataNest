@@ -1,32 +1,53 @@
-function isPrivateIpv4(host:string){
+function isNonPublicIpv4(host:string){
   const parts=host.split(".").map(Number);
   if(parts.length!==4||parts.some(n=>!Number.isInteger(n)||n<0||n>255))return false;
-  return parts[0]===10||parts[0]===127||(parts[0]===169&&parts[1]===254)||(parts[0]===192&&parts[1]===168)||(parts[0]===172&&parts[1]>=16&&parts[1]<=31)||(parts[0]===0)||(parts[0]>=224);
+  const [a,b,c]=parts;
+  return a===0||a===10||a===127||(a===100&&b>=64&&b<=127)||(a===169&&b===254)||
+    (a===172&&b>=16&&b<=31)||(a===192&&b===0)||(a===192&&b===168)||
+    (a===198&&(b===18||b===19))||(a===198&&b===51&&c===100)||
+    (a===203&&b===0&&c===113)||a>=224;
+}
+
+function normalizeHost(hostname:string){
+  return hostname.toLowerCase().replace(/\.$/,"").replace(/^\[/,"").replace(/\]$/,"");
+}
+
+function isNonPublicIpv6(address:string){
+  const host=normalizeHost(address);
+  if(!host.includes(":"))return false;
+  return host==="::"||host==="::1"||host.startsWith("fc")||host.startsWith("fd")||
+    /^fe[89ab]/.test(host)||host.startsWith("ff")||host.startsWith("2001:db8:")||
+    host.startsWith("::ffff:");
 }
 
 function forbiddenHostname(hostname:string){
-  const host=hostname.toLowerCase().replace(/\.$/,"");
-  return host==="localhost"||host.endsWith(".localhost")||host.endsWith(".local")||host==="::1"||host==="0.0.0.0"||isPrivateIpv4(host);
+  const host=normalizeHost(hostname);
+  return host==="localhost"||host.endsWith(".localhost")||host.endsWith(".local")||
+    host==="0.0.0.0"||isNonPublicIpv4(host);
 }
 
 export function validatePublicSourceUrl(raw:string):URL{
   const url=new URL(raw);
   if(url.protocol!=="https:")throw new Error("https_required");
   if(url.username||url.password)throw new Error("credentials_in_url_rejected");
-  if(forbiddenHostname(url.hostname))throw new Error("private_or_local_host_rejected");
+  const host=normalizeHost(url.hostname);
+  if(host.includes(":"))throw new Error("ipv6_literal_rejected");
+  if(forbiddenHostname(host))throw new Error("private_or_local_host_rejected");
   return url;
 }
 
 export async function assertPublicDns(url:URL){
-  const host=url.hostname;
-  if(isPrivateIpv4(host)||host.includes(":"))return;
+  const host=normalizeHost(url.hostname);
+  if(forbiddenHostname(host))throw new Error("private_or_local_host_rejected");
+  if(host.includes(":"))throw new Error("ipv6_literal_rejected");
   const deno=(globalThis as unknown as {Deno?:{resolveDns?:(host:string,record:"A"|"AAAA")=>Promise<string[]>}}).Deno;
   if(!deno?.resolveDns)return;
   for(const record of ["A","AAAA"] as const){
     let addresses:string[]=[];
     try{addresses=await deno.resolveDns(host,record);}catch{continue;}
     for(const address of addresses){
-      if(forbiddenHostname(address)||address.startsWith("fc")||address.startsWith("fd")||address.startsWith("fe80:"))throw new Error("private_dns_resolution_rejected");
+      if(record==="A"&&isNonPublicIpv4(address))throw new Error("private_dns_resolution_rejected");
+      if(record==="AAAA"&&isNonPublicIpv6(address))throw new Error("private_dns_resolution_rejected");
     }
   }
 }
