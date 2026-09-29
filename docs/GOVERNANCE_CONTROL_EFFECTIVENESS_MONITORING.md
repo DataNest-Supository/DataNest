@@ -57,3 +57,8 @@ CI runs the dedicated governance-control effectiveness contract on every release
 ## Boundaries
 
 Monitoring evidence does not equal truth, certification, governance approval, or deployment authority. Any remediation that changes governance behavior remains subject to the existing human governance and release processes.
+
+
+## Migration ordering
+
+The monitor migration is intentionally ordered after the governed outcome-feedback migration because runtime instrumentation attaches to the outcome-feedback link table. Fresh-database replay must preserve that dependency order.
