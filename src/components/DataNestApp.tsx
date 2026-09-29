@@ -33,7 +33,7 @@ type Checkpoint = { id:string; job_id:string; completed:string[]; remaining:stri
 type AuditEvent = { id:number; job_id:string|null; event_type:string; actor:string; payload:Record<string,unknown>; created_at:string };
 type Policy = { id:string; policy_key:string; value:Record<string,unknown> };
 type ProjectMember = { project_id:string; user_id:string; role:"owner"|"admin"|"operator"|"viewer"; status:string };
-type ViewKey = "overview"|"stakeholder"|"sparks"|"impact"|"governance"|"products"|"thinktank"|"ai"|"productlab"|"unifi"|"scheduler"|"runs"|"checkpoints"|"audit"|"transparency"|"settings";
+type ViewKey = "overview"|"stakeholder"|"sparks"|"impact"|"governance"|"products"|"external_auditor"|"thinktank"|"ai"|"productlab"|"unifi"|"scheduler"|"runs"|"checkpoints"|"audit"|"transparency"|"settings";
 type SchedulerViewMode = "queue"|"gantt"|"authority"|"resources";
 type SchedulerSortMode = "priority"|"deadline"|"recent"|"interest";
 const schedulerFilterOptions=["ALL","PLANNED","READY","QUEUED","RUNNING","MANUAL_ACTION","BLOCKED","COMPLETED"] as const;
@@ -115,6 +115,7 @@ const nav:Array<{key:ViewKey;label:string;group:string;glyph:string}> = [
   {key:"thinktank",label:"Think Tanks",group:"Discover",glyph:"◈"},
   {key:"governance",label:"Governance",group:"Govern & Build",glyph:"◆"},
   {key:"products",label:"Products",group:"Govern & Build",glyph:"◉"},
+  {key:"external_auditor",label:"External Auditor",group:"Govern & Build",glyph:"◫"},
   {key:"productlab",label:"Product Lab",group:"Govern & Build",glyph:"▣"},
   {key:"unifi",label:"UNIFI Planner",group:"Execute",glyph:"◇"},
   {key:"scheduler",label:"TranScheduler",group:"Execute",glyph:"⌁"},
@@ -138,6 +139,7 @@ const viewDescriptions:Record<ViewKey,string> = {
   impact:"Live input quality, verification acceptance, impact points, and the project areas your work affects.",
   governance:"Review sovereign governance controls and decisions.",
   products:"Inspect governed Resonance products, their architecture, controls, evidence, risks and promotion branches.",
+  external_auditor:"Assess external projects and products with evidence-linked findings, ISO-aware traceability, governed AI analysis, and reviewed optimization handoff.",
   thinktank:"Coordinate structured research and collaborative thinking.",
   ai:"Work with governed DataNest AI memory and project context.",
   productlab:"Test and review product surfaces before release.",
@@ -160,6 +162,7 @@ const workspaceTaskGuides:Partial<Record<ViewKey,WorkspaceTaskGuide>> = {
   thinktank:{start:"Choose a Think Tank, open a thread, then discuss, ask or propose a governed decision.",complete:"The discussion has produced a decision, action item or reviewed learning candidate.",evidence:"Messages, decisions, actions and institutional-memory candidates."},
   governance:{start:"Begin with a protocol draft or formal proposal; ratify only after the required support and vote.",complete:"The decision is recorded, ratified where applicable, or moved into a visible dispute path.",evidence:"Proposal, votes, decision register, protocol version and dispute history."},
   products:{start:"Choose the governed product and inspect its architecture, controls, evidence and risks before promotion.",complete:"The product state or promotion branch is supported by current evidence.",evidence:"Product architecture, linked controls, evidence and promotion history."},
+  external_auditor:{start:"Create an assessment, capture immutable evidence, and approve the applicable standards profile before analysis.",complete:"Reviewed findings and optimization actions are traceable to evidence and approved actions have governed UNIFI handoff.",evidence:"Assessment revision, standards profile, source hashes, findings, review events, Job linkage and verification evidence."},
   productlab:{start:"Select or register an immutable product surface before creating and running test cases.",complete:"Validation results are tied to the exact test-case version and product build.",evidence:"Versioned test runs, build identity and optional evidence links."},
   unifi:{start:"Describe the outcome, acceptance conditions and required capabilities in one complete Job Manifest.",complete:"The Job is ready for governed scheduling without hidden execution assumptions.",evidence:"Job Manifest, acceptance criteria, capabilities, priority and deadline."},
   scheduler:{start:"Review queue state and capability constraints, then move the right Job into execution.",complete:"The Job is running, intentionally queued, or visibly blocked with a reason.",evidence:"Job status, capability match and scheduling state."},
@@ -178,7 +181,8 @@ const workflowNext:Partial<Record<ViewKey,ViewKey>> = {
   impact:"thinktank",
   thinktank:"governance",
   governance:"products",
-  products:"productlab",
+  products:"external_auditor",
+  external_auditor:"productlab",
   productlab:"unifi",
   unifi:"scheduler",
   scheduler:"runs",
@@ -238,7 +242,8 @@ const workflowPrevious:Partial<Record<ViewKey,ViewKey>> = {
   thinktank:"impact",
   governance:"thinktank",
   products:"governance",
-  productlab:"products",
+  external_auditor:"products",
+  productlab:"external_auditor",
   unifi:"productlab",
   scheduler:"unifi",
   runs:"scheduler",
@@ -281,6 +286,11 @@ const AiOperationsDashboard = dynamic(() => import("@/components/AiOperationsDas
 const ProductsWorkspace = dynamic(() => import("@/components/ProductsWorkspace"), {
   ssr: false,
   loading: () => <section className="panel"><p className="muted">Loading Resonance products…</p></section>
+});
+
+const ExternalAuditor = dynamic(() => import("@/components/ExternalAuditor"), {
+  ssr: false,
+  loading: () => <section className="panel"><p className="muted">Loading External Auditor…</p></section>
 });
 
 const ProductLab = dynamic(() => import("@/components/ProductLab"), {
@@ -1658,6 +1668,7 @@ export default function DataNestApp({session}:{session:Session}) {
         {!loadingCore&&project&&view==="impact"&&<ImpactScoringWorkspace projectId={project.id} currentUserId={session.user.id}/>} 
         {!loadingCore&&project&&view==="governance"&&<GovernanceWorkspace projectId={project.id} currentUserId={session.user.id} role={membership?.role||"viewer"} canManage={canManageAi} setNotice={setNotice} setError={setError}/>} 
         {!loadingCore&&project&&view==="products"&&<ProductsWorkspace projectId={project.id} currentUserId={session.user.id} role={membership?.role||"viewer"}/>}
+        {!loadingCore&&project&&view==="external_auditor"&&<ExternalAuditor projectId={project.id} currentUserId={session.user.id} role={membership?.role||"viewer"}/>}
         {!loadingCore&&project&&view==="thinktank"&&<ThinkTankWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} canReview={canManageAi} setNotice={setNotice} setError={setError}/>}
         {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace key={project.id+":"+session.user.id} projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError} preferredJobId={activeDataNestAiSession?.jobId||null} onActiveSessionChange={updateActiveWorkContext}/>}
         {!loadingCore&&project&&view==="productlab"&&recoveryHydrated&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate} setNotice={setNotice} setError={setError}/>}
