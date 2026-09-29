@@ -5082,4 +5082,10 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
 }
 .schedulerRow.interestMatch,.ganttRow.interestMatch{box-shadow:inset 2px 0 rgba(66,231,255,.35)}
 .stakeholderInterestGrid{margin-top:12px}
+.interestDemandSummary{margin:10px 0 0;color:#7892a7;font-size:9px;line-height:1.4}
+.interestDemandBadge{
+  display:inline-flex!important;width:max-content;margin-top:3px;padding:2px 6px;
+  border:1px solid rgba(102,218,255,.12);border-radius:999px;background:rgba(102,218,255,.035);
+  color:#8eb2c5!important;font-size:7px!important;font-weight:800;letter-spacing:.02em
+}
 @container datanest-main (max-width:620px){.workFocusGrid{grid-template-columns:1fr}}

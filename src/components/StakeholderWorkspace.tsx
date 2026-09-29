@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
-import { WORK_FOCUS_AREAS, normalizeWorkFocusKeys, type WorkFocusKey } from "@/lib/workFocus";
+import { WORK_FOCUS_AREAS, normalizeWorkFocusKeys, workFocusKeysFromRequirements, type WorkFocusKey } from "@/lib/workFocus";
 
 type Workspace = {
   profile: Record<string,unknown>;
@@ -13,6 +13,8 @@ type Workspace = {
   ui_complexity:"simple"|"detailed";
   economic_boundary:Record<string,boolean>;
 };
+
+type InterestDemandJob = { requirements:Record<string,unknown>; status:string };
 
 type Contribution = {
   id:string;
@@ -100,6 +102,12 @@ function label(value:unknown){
   return String(value||"").replaceAll("_"," ");
 }
 
+const interestDemandFinalStates=new Set(["COMPLETED","FAILED","CANCELLED"]);
+
+function emptyInterestDemand():Record<WorkFocusKey,number>{
+  return Object.fromEntries(WORK_FOCUS_AREAS.map(item=>[item.key,0])) as Record<WorkFocusKey,number>;
+}
+
 export default function StakeholderWorkspace({
   projectId,
   currentUserId,
@@ -118,6 +126,8 @@ export default function StakeholderWorkspace({
   const [error,setError]=useState("");
   const [savingPreference,setSavingPreference]=useState(false);
   const [interestKeys,setInterestKeys]=useState<WorkFocusKey[]>([]);
+  const [interestDemand,setInterestDemand]=useState<Record<WorkFocusKey,number>>(()=>emptyInterestDemand());
+  const [interestDemandJobCount,setInterestDemandJobCount]=useState(0);
   const [refreshingIntelligence,setRefreshingIntelligence]=useState(false);
 
   const load=useCallback(async()=>{
@@ -126,7 +136,7 @@ export default function StakeholderWorkspace({
     setLoading(true);
     setError("");
 
-    const [workspaceResult,contributionResult,intelligenceResult,interestResult]=await Promise.all([
+    const [workspaceResult,contributionResult,intelligenceResult,interestResult,interestDemandResult]=await Promise.all([
       supabase.rpc("get_contribution_workspace",{target_project:projectId}),
       supabase
         .from("contribution_ledger")
@@ -136,7 +146,8 @@ export default function StakeholderWorkspace({
         .order("created_at",{ascending:false})
         .limit(50),
       supabase.rpc("get_contribution_intelligence_workspace",{target_project:projectId}),
-      supabase.from("datanest_user_preferences").select("interest_keys").eq("user_id",currentUserId).maybeSingle()
+      supabase.from("datanest_user_preferences").select("interest_keys").eq("user_id",currentUserId).maybeSingle(),
+      supabase.from("jobs").select("requirements,status").eq("project_id",projectId)
     ]);
 
     if(workspaceResult.error){
@@ -165,6 +176,20 @@ export default function StakeholderWorkspace({
       setInterestKeys([]);
     }else{
       setInterestKeys(normalizeWorkFocusKeys((interestResult.data as {interest_keys?:unknown}|null)?.interest_keys));
+    }
+
+    if(interestDemandResult.error){
+      setError(current=>current||interestDemandResult.error!.message);
+      setInterestDemand(emptyInterestDemand());
+      setInterestDemandJobCount(0);
+    }else{
+      const openJobs=((interestDemandResult.data||[]) as InterestDemandJob[]).filter(job=>!interestDemandFinalStates.has(job.status));
+      const nextDemand=emptyInterestDemand();
+      for(const job of openJobs){
+        for(const key of workFocusKeysFromRequirements(job.requirements))nextDemand[key]+=1;
+      }
+      setInterestDemand(nextDemand);
+      setInterestDemandJobCount(openJobs.length);
     }
 
     setLoading(false);
@@ -339,8 +364,9 @@ export default function StakeholderWorkspace({
     <section className="panel">
       <div className="panelHead"><div><p className="eyebrow">USER INTERESTS</p><h3>Work areas you want to see</h3></div><span className="countPill">{interestKeys.length+" selected"}</span></div>
       <p className="muted">These interests connect directly to UNIFI Job requirement sections and TranScheduler relevance matching. They do not change Job priority, execution authority, contribution scores, or access permissions.</p>
+      <p className="interestDemandSummary">{interestDemandJobCount?interestDemandJobCount+" open Jobs mapped across requirement sections.":"No open Jobs currently expose requirement-section demand."}</p>
       <div className="workFocusGrid stakeholderInterestGrid">
-        {WORK_FOCUS_AREAS.map(item=><label key={item.key} title={item.description}><input type="checkbox" disabled={savingPreference} checked={interestKeys.includes(item.key)} onChange={()=>void toggleInterest(item.key)}/><span><b>{item.label}</b><small>{item.description}</small></span></label>)}
+        {WORK_FOCUS_AREAS.map(item=><label key={item.key} title={item.description}><input type="checkbox" disabled={savingPreference} checked={interestKeys.includes(item.key)} onChange={()=>void toggleInterest(item.key)}/><span><b>{item.label}</b><small>{item.description}</small><small className="interestDemandBadge" aria-label={interestDemand[item.key]+" open Jobs require "+item.label}>{interestDemand[item.key]+" open "+(interestDemand[item.key]===1?"Job":"Jobs")}</small></span></label>)}
       </div>
       <div className="heroActions">
         <button className="primaryButton compact" type="button" disabled={interestKeys.length===0||savingPreference} onClick={onOpenMatchedJobs}>Open matched Jobs</button>
