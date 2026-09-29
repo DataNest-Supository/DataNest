@@ -106,10 +106,40 @@ type StandardWatchEvent={
   authoritative_change:boolean;
 };
 
+type ImpactAssessment={
+  id:string;
+  assessment_key:string;
+  version:number;
+  subject_kind:string;
+  subject_ref:string;
+  title:string;
+  scope:string;
+  lifecycle_stage:string;
+  trigger_kind:string;
+  materiality:"low"|"moderate"|"high"|"critical";
+  affected_parties:string[];
+  intended_benefits:unknown;
+  potential_harms:unknown;
+  mitigations:unknown;
+  residual_risk:"unknown"|"low"|"moderate"|"high"|"critical";
+  evidence_refs:string[];
+  standard_refs:string[];
+  status:"draft"|"needs_evidence"|"needs_action"|"monitor"|"closed";
+  review_after:string;
+  review_due:boolean;
+  reviewed_at:string|null;
+  linked_improvement_candidate_id:string|null;
+  governance_effect:boolean;
+  deployment_authority:boolean;
+  conformity_claim:boolean;
+  updated_at:string;
+};
+
 type Workspace={
   role:string|null;
   can_manage:boolean;
   can_record_control_evidence:boolean;
+  can_author_impact_assessment:boolean;
   standards:StandardItem[];
   observations:Observation[];
   candidates:Candidate[];
@@ -117,6 +147,8 @@ type Workspace={
   controls:Control[];
   control_evidence:ControlEvidence[];
   standard_watch:StandardWatchEvent[];
+  impact_assessments:ImpactAssessment[];
+  impact_reviews:Array<Record<string,unknown>>;
   boundaries:Record<string,unknown>;
 };
 
@@ -176,6 +208,22 @@ export default function GovernanceImprovementPanel({
   const [watchObservedEdition,setWatchObservedEdition]=useState("");
   const [watchSummary,setWatchSummary]=useState("");
 
+  const [impactKey,setImpactKey]=useState("");
+  const [impactSubjectKind,setImpactSubjectKind]=useState("ai_system");
+  const [impactSubjectRef,setImpactSubjectRef]=useState("datanest-ai");
+  const [impactTitle,setImpactTitle]=useState("");
+  const [impactScope,setImpactScope]=useState("");
+  const [impactLifecycleStage,setImpactLifecycleStage]=useState("operation");
+  const [impactTriggerKind,setImpactTriggerKind]=useState("material_change");
+  const [impactMateriality,setImpactMateriality]=useState("moderate");
+  const [impactAffectedParties,setImpactAffectedParties]=useState("");
+  const [impactBenefits,setImpactBenefits]=useState("");
+  const [impactHarms,setImpactHarms]=useState("");
+  const [impactMitigations,setImpactMitigations]=useState("");
+  const [impactResidualRisk,setImpactResidualRisk]=useState("unknown");
+  const [impactEvidenceRefs,setImpactEvidenceRefs]=useState("");
+  const [impactReviewRationales,setImpactReviewRationales]=useState<Record<string,string>>({});
+
   const load=useCallback(async()=>{
     const supabase=getSupabase();
     if(!supabase)return;
@@ -192,6 +240,7 @@ export default function GovernanceImprovementPanel({
         ...raw,
         can_manage:Boolean(raw.can_manage),
         can_record_control_evidence:Boolean(raw.can_record_control_evidence),
+        can_author_impact_assessment:Boolean(raw.can_author_impact_assessment),
         standards:raw.standards||[],
         observations:raw.observations||[],
         candidates:raw.candidates||[],
@@ -199,6 +248,8 @@ export default function GovernanceImprovementPanel({
         controls:raw.controls||[],
         control_evidence:raw.control_evidence||[],
         standard_watch:raw.standard_watch||[],
+        impact_assessments:raw.impact_assessments||[],
+        impact_reviews:raw.impact_reviews||[],
         boundaries:raw.boundaries||{}
       } as Workspace):null;
       setWorkspace(next);
@@ -408,6 +459,79 @@ export default function GovernanceImprovementPanel({
     });
   }
 
+  async function versionImpactAssessment(event:FormEvent){
+    event.preventDefault();
+    const supabase=getSupabase();
+    if(!supabase||!workspace?.can_author_impact_assessment)return;
+    const list=(value:string)=>value.split(",").map(item=>item.trim()).filter(Boolean);
+    const lines=(value:string)=>value.split("\n").map(item=>item.trim()).filter(Boolean);
+    await action("version-impact-assessment:"+impactKey.trim(),async()=>{
+      const {error}=await supabase.rpc("version_governance_ai_impact_assessment_v1",{
+        target_project:projectId,
+        target_assessment_key:impactKey.trim(),
+        target_subject_kind:impactSubjectKind,
+        target_subject_ref:impactSubjectRef.trim(),
+        target_title:impactTitle.trim(),
+        target_scope:impactScope.trim(),
+        target_lifecycle_stage:impactLifecycleStage,
+        target_trigger_kind:impactTriggerKind,
+        target_materiality:impactMateriality,
+        target_affected_parties:list(impactAffectedParties),
+        target_intended_benefits:lines(impactBenefits),
+        target_potential_harms:lines(impactHarms),
+        target_mitigations:lines(impactMitigations),
+        target_residual_risk:impactResidualRisk,
+        target_evidence_refs:list(impactEvidenceRefs),
+        target_standard_refs:["iso-iec-42005-2025","iso-iec-23894-2023","nist-ai-rmf-1-0"],
+        target_review_days:90,
+        target_metadata:{source:"governance_improvement_workspace"}
+      });
+      if(error)throw error;
+      setImpactTitle("");
+      setImpactScope("");
+      setImpactAffectedParties("");
+      setImpactBenefits("");
+      setImpactHarms("");
+      setImpactMitigations("");
+      setImpactEvidenceRefs("");
+      setNotice("AI impact assessment version recorded as decision-support evidence. It does not authorize deployment or change governance.");
+    });
+  }
+
+  async function reviewImpactAssessment(assessment:ImpactAssessment,decision:"needs_evidence"|"needs_action"|"monitor"|"closed"){
+    const supabase=getSupabase();
+    if(!supabase||!workspace?.can_manage)return;
+    const rationale=(impactReviewRationales[assessment.id]||"").trim();
+    if(rationale.length<3){
+      setError("Enter an impact-assessment review rationale before recording the decision.");
+      return;
+    }
+    await action("review-impact-assessment:"+assessment.id,async()=>{
+      const {error}=await supabase.rpc("review_governance_ai_impact_assessment_v1",{
+        target_assessment:assessment.id,
+        target_decision:decision,
+        target_rationale:rationale,
+        target_evidence:{source:"governance_improvement_workspace"},
+        target_review_days:90
+      });
+      if(error)throw error;
+      setImpactReviewRationales(current=>({...current,[assessment.id]:""}));
+      setNotice("Impact assessment review recorded. Review status is not deployment approval or standards conformity.");
+    });
+  }
+
+  async function routeImpactAssessment(assessment:ImpactAssessment){
+    const supabase=getSupabase();
+    if(!supabase||!workspace?.can_manage)return;
+    await action("route-impact-assessment:"+assessment.id,async()=>{
+      const {error}=await supabase.rpc("route_governance_ai_impact_to_improvement_v1",{
+        target_assessment:assessment.id
+      });
+      if(error)throw error;
+      setNotice("Reviewed impact assessment routed to a non-authoritative improvement candidate. Formal governance remains required.");
+    });
+  }
+
   if(loading)return <section className="panel"><p className="muted">Loading continuous governance evidence…</p></section>;
   if(!workspace)return <section className="panel"><p className="muted">Continuous governance workspace is unavailable.</p></section>;
 
@@ -433,6 +557,7 @@ export default function GovernanceImprovementPanel({
       <article className="metricCard"><span>Standards tracked</span><strong>{workspace.standards.length}</strong><small>{dueStandards.length} due for DataNest review</small></article>
       <article className="metricCard"><span>Controls mapped</span><strong>{workspace.controls.length}</strong><small>{workspace.control_evidence.length} provenance links</small></article>
       <article className="metricCard"><span>Standards watch</span><strong>{workspace.standard_watch.length}</strong><small>Lifecycle observations</small></article>
+      <article className="metricCard"><span>Impact assessments</span><strong>{workspace.impact_assessments.length}</strong><small>{workspace.impact_assessments.filter(item=>item.status==="needs_action").length} need action</small></article>
       <article className="metricCard"><span>Evidence observations</span><strong>{workspace.observations.length}</strong><small>Append-only review evidence</small></article>
       <article className="metricCard"><span>Open improvements</span><strong>{openCandidates.length}</strong><small>Non-authoritative hypotheses</small></article>
       <article className="metricCard"><span>Review cycles</span><strong>{workspace.cycles.length}</strong><small>Longitudinal governance evidence</small></article>
@@ -502,6 +627,78 @@ export default function GovernanceImprovementPanel({
         <label>Evidence summary<textarea rows={3} value={controlEvidenceSummary} onChange={event=>setControlEvidenceSummary(event.target.value)} placeholder="State exactly what this evidence supports and its limitations."/></label>
         <button className="primaryButton" disabled={Boolean(activeAction)||!controlEvidenceControlId||controlEvidenceRef.trim().length<1||controlEvidenceSummary.trim().length<3}>Record control evidence</button>
       </form>}
+    </section>
+
+    <section className="panel">
+      <div className="panelHead">
+        <div><p className="eyebrow">AI IMPACT ASSESSMENT</p><h3>Version impacts across material lifecycle changes</h3></div>
+        <span className="countPill">{workspace.impact_assessments.length} active</span>
+      </div>
+      <p className="muted">Assessments document affected parties, intended benefits, foreseeable harms, mitigations and residual risk. Review status is decision-support evidence only; it never authorizes deployment or asserts ISO conformity.</p>
+
+      {workspace.impact_assessments.length?<div className="manifestList">
+        {workspace.impact_assessments.map(item=><article className="manifestCard" key={item.id}>
+          <div className="rowBetween">
+            <div><b>{item.assessment_key} · {item.title}</b><small>{label(item.subject_kind)} · {item.subject_ref} · v{item.version}</small></div>
+            <span className={"badge "+(["high","critical"].includes(item.materiality)?"warn":"neutral")}>{label(item.status)} · {item.materiality}</span>
+          </div>
+          <p>{item.scope}</p>
+          <div className="manifestMeta">
+            <span>{label(item.lifecycle_stage)} · {label(item.trigger_kind)}</span>
+            <span>residual risk · {item.residual_risk}</span>
+            <span>{item.review_due?"review due":"review by "+date(item.review_after)}</span>
+            <span>deployment authority: no</span>
+          </div>
+          <small>affected parties · {item.affected_parties.join(", ")||"not recorded"} · standards · {item.standard_refs.join(", ")}</small>
+          {item.linked_improvement_candidate_id&&<p className="muted">Linked improvement candidate · {item.linked_improvement_candidate_id}</p>}
+          {workspace.can_manage&&<div className="settingsGrid">
+            <label>Review rationale<textarea rows={2} value={impactReviewRationales[item.id]||""} onChange={event=>setImpactReviewRationales(current=>({...current,[item.id]:event.target.value}))} placeholder="Record evidence checked, uncertainty, affected-party considerations and why this review state is appropriate."/></label>
+            <div className="heroActions">
+              <button type="button" className="secondaryButton compact" disabled={Boolean(activeAction)} onClick={()=>void reviewImpactAssessment(item,"needs_evidence")}>Needs evidence</button>
+              <button type="button" className="secondaryButton compact" disabled={Boolean(activeAction)} onClick={()=>void reviewImpactAssessment(item,"monitor")}>Monitor</button>
+              <button type="button" className="primaryButton compact" disabled={Boolean(activeAction)} onClick={()=>void reviewImpactAssessment(item,"needs_action")}>Needs governed action</button>
+              <button type="button" className="secondaryButton compact" disabled={Boolean(activeAction)} onClick={()=>void reviewImpactAssessment(item,"closed")}>Close review</button>
+              {item.status==="needs_action"&&!item.linked_improvement_candidate_id&&<button type="button" className="primaryButton compact" disabled={Boolean(activeAction)} onClick={()=>void routeImpactAssessment(item)}>Route to improvement candidate</button>}
+            </div>
+          </div>}
+        </article>)}
+      </div>:<p className="muted">No active AI impact assessment has been recorded yet.</p>}
+
+      {workspace.can_author_impact_assessment&&<details className="quietDisclosure">
+        <summary>Version an AI impact assessment</summary>
+        <form className="settingsGrid" onSubmit={versionImpactAssessment}>
+          <label>Assessment key<input value={impactKey} onChange={event=>setImpactKey(event.target.value)} placeholder="datanest-ai-core"/></label>
+          <label>Subject kind<select value={impactSubjectKind} onChange={event=>setImpactSubjectKind(event.target.value)}>
+            <option value="platform">Platform</option><option value="ai_system">AI system</option><option value="model">Model</option>
+            <option value="provider">Provider</option><option value="workflow">Workflow</option><option value="product">Product</option>
+            <option value="feature">Feature</option><option value="use_case">Use case</option><option value="release">Release</option>
+          </select></label>
+          <label>Subject reference<input value={impactSubjectRef} onChange={event=>setImpactSubjectRef(event.target.value)} placeholder="datanest-ai"/></label>
+          <label>Title<input value={impactTitle} onChange={event=>setImpactTitle(event.target.value)} placeholder="Impact assessment title"/></label>
+          <label>Lifecycle stage<select value={impactLifecycleStage} onChange={event=>setImpactLifecycleStage(event.target.value)}>
+            <option value="design">Design</option><option value="development">Development</option><option value="testing">Testing</option>
+            <option value="deployment">Deployment</option><option value="operation">Operation</option><option value="retirement">Retirement</option>
+          </select></label>
+          <label>Trigger<select value={impactTriggerKind} onChange={event=>setImpactTriggerKind(event.target.value)}>
+            <option value="baseline">Baseline</option><option value="material_change">Material change</option><option value="new_use_case">New use case</option>
+            <option value="provider_change">Provider change</option><option value="model_change">Model change</option><option value="data_change">Data change</option>
+            <option value="policy_change">Policy change</option><option value="incident">Incident</option><option value="periodic_review">Periodic review</option><option value="other">Other</option>
+          </select></label>
+          <label>Materiality<select value={impactMateriality} onChange={event=>setImpactMateriality(event.target.value)}>
+            <option value="low">Low</option><option value="moderate">Moderate</option><option value="high">High</option><option value="critical">Critical</option>
+          </select></label>
+          <label>Residual risk<select value={impactResidualRisk} onChange={event=>setImpactResidualRisk(event.target.value)}>
+            <option value="unknown">Unknown</option><option value="low">Low</option><option value="moderate">Moderate</option><option value="high">High</option><option value="critical">Critical</option>
+          </select></label>
+          <label>Scope<textarea rows={3} value={impactScope} onChange={event=>setImpactScope(event.target.value)} placeholder="System boundary, intended context, lifecycle change and assessment limits."/></label>
+          <label>Affected parties<input value={impactAffectedParties} onChange={event=>setImpactAffectedParties(event.target.value)} placeholder="Comma-separated groups or stakeholders"/></label>
+          <label>Intended benefits<textarea rows={3} value={impactBenefits} onChange={event=>setImpactBenefits(event.target.value)} placeholder="One benefit per line"/></label>
+          <label>Foreseeable harms<textarea rows={3} value={impactHarms} onChange={event=>setImpactHarms(event.target.value)} placeholder="One potential harm or adverse impact per line"/></label>
+          <label>Mitigations<textarea rows={3} value={impactMitigations} onChange={event=>setImpactMitigations(event.target.value)} placeholder="One mitigation or safeguard per line"/></label>
+          <label>Evidence references<input value={impactEvidenceRefs} onChange={event=>setImpactEvidenceRefs(event.target.value)} placeholder="Comma-separated audits, tests, commits, incidents or documents"/></label>
+          <button className="primaryButton" disabled={Boolean(activeAction)||impactKey.trim().length<3||impactSubjectRef.trim().length<1||impactTitle.trim().length<3||impactScope.trim().length<3}>Record versioned impact assessment</button>
+        </form>
+      </details>}
     </section>
 
     {latestCycle&&<section className="panel">
