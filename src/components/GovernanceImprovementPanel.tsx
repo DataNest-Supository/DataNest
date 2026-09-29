@@ -61,13 +61,62 @@ type Cycle={
   created_at:string;
 };
 
+type Control={
+  id:string;
+  control_key:string;
+  version:number;
+  title:string;
+  purpose:string;
+  control_kind:string;
+  standard_refs:string[];
+  implementation_refs:string[];
+  rationale:string;
+  governance_effect:boolean;
+  evidence_count:number;
+  latest_evidence_at:string|null;
+};
+
+type ControlEvidence={
+  id:string;
+  control_id:string;
+  trace_key:string;
+  evidence_kind:string;
+  evidence_ref:string;
+  evidence_digest:string|null;
+  summary:string;
+  evidence_state:"observed"|"passed"|"failed"|"superseded";
+  observed_at:string;
+  recorder_role:string;
+  authoritative_change:boolean;
+};
+
+type StandardWatchEvent={
+  id:string;
+  standard_id:string;
+  standard_key:string;
+  observation_id:string;
+  trace_key:string;
+  event_type:string;
+  source_authority:string;
+  source_url:string;
+  observed_edition:string|null;
+  summary:string;
+  observed_at:string;
+  recorder_role:string;
+  authoritative_change:boolean;
+};
+
 type Workspace={
   role:string|null;
   can_manage:boolean;
+  can_record_control_evidence:boolean;
   standards:StandardItem[];
   observations:Observation[];
   candidates:Candidate[];
   cycles:Cycle[];
+  controls:Control[];
+  control_evidence:ControlEvidence[];
+  standard_watch:StandardWatchEvent[];
   boundaries:Record<string,unknown>;
 };
 
@@ -115,6 +164,18 @@ export default function GovernanceImprovementPanel({
   const [standardRationale,setStandardRationale]=useState("");
   const [reviewRationales,setReviewRationales]=useState<Record<string,string>>({});
 
+  const [controlEvidenceControlId,setControlEvidenceControlId]=useState("");
+  const [controlEvidenceKind,setControlEvidenceKind]=useState("repository");
+  const [controlEvidenceRef,setControlEvidenceRef]=useState("");
+  const [controlEvidenceSummary,setControlEvidenceSummary]=useState("");
+  const [controlEvidenceState,setControlEvidenceState]=useState<ControlEvidence["evidence_state"]>("observed");
+
+  const [watchStandardId,setWatchStandardId]=useState("");
+  const [watchEventType,setWatchEventType]=useState("status_checked");
+  const [watchSourceUrl,setWatchSourceUrl]=useState("");
+  const [watchObservedEdition,setWatchObservedEdition]=useState("");
+  const [watchSummary,setWatchSummary]=useState("");
+
   const load=useCallback(async()=>{
     const supabase=getSupabase();
     if(!supabase)return;
@@ -126,7 +187,20 @@ export default function GovernanceImprovementPanel({
       setError(error.message);
       setWorkspace(null);
     }else{
-      const next=(data||null) as Workspace|null;
+      const raw=(data||null) as Partial<Workspace>|null;
+      const next=raw?({
+        ...raw,
+        can_manage:Boolean(raw.can_manage),
+        can_record_control_evidence:Boolean(raw.can_record_control_evidence),
+        standards:raw.standards||[],
+        observations:raw.observations||[],
+        candidates:raw.candidates||[],
+        cycles:raw.cycles||[],
+        controls:raw.controls||[],
+        control_evidence:raw.control_evidence||[],
+        standard_watch:raw.standard_watch||[],
+        boundaries:raw.boundaries||{}
+      } as Workspace):null;
       setWorkspace(next);
       setStandardId(current=>
         current&&next?.standards.some(item=>item.id===current)
@@ -137,6 +211,16 @@ export default function GovernanceImprovementPanel({
         current&&next?.observations.some(item=>item.id===current)
           ?current
           :next?.observations[0]?.id||""
+      );
+      setControlEvidenceControlId(current=>
+        current&&next?.controls.some(item=>item.id===current)
+          ?current
+          :next?.controls[0]?.id||""
+      );
+      setWatchStandardId(current=>
+        current&&next?.standards.some(item=>item.id===current)
+          ?current
+          :next?.standards[0]?.id||""
       );
     }
     setLoading(false);
@@ -279,6 +363,51 @@ export default function GovernanceImprovementPanel({
     });
   }
 
+  async function recordControlEvidence(event:FormEvent){
+    event.preventDefault();
+    const supabase=getSupabase();
+    if(!supabase||!workspace?.can_record_control_evidence||!controlEvidenceControlId)return;
+    await action("record-control-evidence:"+controlEvidenceControlId,async()=>{
+      const {error}=await supabase.rpc("record_governance_control_evidence_v1",{
+        target_control:controlEvidenceControlId,
+        target_evidence_kind:controlEvidenceKind,
+        target_evidence_ref:controlEvidenceRef.trim(),
+        target_summary:controlEvidenceSummary.trim(),
+        target_evidence_state:controlEvidenceState,
+        target_evidence_digest:null,
+        target_provenance:{source:"governance_improvement_workspace"},
+        target_observed_at:new Date().toISOString()
+      });
+      if(error)throw error;
+      setControlEvidenceRef("");
+      setControlEvidenceSummary("");
+      setControlEvidenceState("observed");
+      setNotice("Control evidence recorded as append-only provenance. Evidence does not create governance authority or a conformity claim.");
+    });
+  }
+
+  async function recordStandardsWatch(event:FormEvent){
+    event.preventDefault();
+    const supabase=getSupabase();
+    if(!supabase||!workspace?.can_manage||!watchStandardId)return;
+    await action("record-standards-watch:"+watchStandardId,async()=>{
+      const {error}=await supabase.rpc("record_governance_standard_watch_event_v1",{
+        target_standard:watchStandardId,
+        target_event_type:watchEventType,
+        target_source_url:watchSourceUrl.trim(),
+        target_summary:watchSummary.trim(),
+        target_observed_edition:watchObservedEdition.trim()||null,
+        target_evidence:{source:"governance_improvement_workspace"},
+        target_observed_at:new Date().toISOString()
+      });
+      if(error)throw error;
+      setWatchSourceUrl("");
+      setWatchObservedEdition("");
+      setWatchSummary("");
+      setNotice("Standards lifecycle evidence recorded. The standards register and applicability state were not changed automatically.");
+    });
+  }
+
   if(loading)return <section className="panel"><p className="muted">Loading continuous governance evidence…</p></section>;
   if(!workspace)return <section className="panel"><p className="muted">Continuous governance workspace is unavailable.</p></section>;
 
@@ -302,6 +431,8 @@ export default function GovernanceImprovementPanel({
 
     <section className="metricGrid">
       <article className="metricCard"><span>Standards tracked</span><strong>{workspace.standards.length}</strong><small>{dueStandards.length} due for DataNest review</small></article>
+      <article className="metricCard"><span>Controls mapped</span><strong>{workspace.controls.length}</strong><small>{workspace.control_evidence.length} provenance links</small></article>
+      <article className="metricCard"><span>Standards watch</span><strong>{workspace.standard_watch.length}</strong><small>Lifecycle observations</small></article>
       <article className="metricCard"><span>Evidence observations</span><strong>{workspace.observations.length}</strong><small>Append-only review evidence</small></article>
       <article className="metricCard"><span>Open improvements</span><strong>{openCandidates.length}</strong><small>Non-authoritative hypotheses</small></article>
       <article className="metricCard"><span>Review cycles</span><strong>{workspace.cycles.length}</strong><small>Longitudinal governance evidence</small></article>
@@ -319,6 +450,58 @@ export default function GovernanceImprovementPanel({
         <span>evidence repetition raises truth: no</span>
       </div>
       <p className="muted">Human-reviewed improvements enter the existing Sovereign Governance proposal process; they never bypass it.</p>
+    </section>
+
+    <section className="panel">
+      <div className="panelHead">
+        <div><p className="eyebrow">CONTROL-EVIDENCE GRAPH</p><h3>Standards → controls → implementation → evidence</h3></div>
+        <span className="countPill">{workspace.controls.length} controls</span>
+      </div>
+      <p className="muted">Mapped controls describe implementation intent and provenance. A mapped standard, passing test or repeated observation is not a conformity claim and does not increase authority.</p>
+      {workspace.controls.length?<div className="manifestList">
+        {workspace.controls.map(item=><article className="manifestCard" key={item.id}>
+          <div className="rowBetween">
+            <div><b>{item.control_key} · {item.title}</b><small>{label(item.control_kind)} · v{item.version}</small></div>
+            <span className="badge neutral">{item.evidence_count} evidence</span>
+          </div>
+          <p>{item.purpose}</p>
+          <div className="manifestMeta">
+            <span>standards · {item.standard_refs.join(", ")||"none"}</span>
+            <span>latest evidence · {date(item.latest_evidence_at)}</span>
+            <span>governance effect: no</span>
+          </div>
+          <small>implementation · {item.implementation_refs.join(" · ")||"not recorded"}</small>
+        </article>)}
+      </div>:<p className="muted">No active governance controls are mapped yet.</p>}
+
+      {workspace.control_evidence.length>0&&<details className="quietDisclosure">
+        <summary>Recent control evidence · {workspace.control_evidence.length}</summary>
+        <div className="manifestList">
+          {workspace.control_evidence.slice(0,20).map(item=><article className="manifestCard" key={item.id}>
+            <div className="rowBetween"><b>{label(item.evidence_kind)}</b><span className="badge neutral">{label(item.evidence_state)}</span></div>
+            <p>{item.summary}</p>
+            <div className="manifestMeta"><span>{item.evidence_ref}</span><span>{item.trace_key}</span><span>{date(item.observed_at)}</span></div>
+          </article>)}
+        </div>
+      </details>}
+
+      {workspace.can_record_control_evidence&&workspace.controls.length>0&&<form className="settingsGrid" onSubmit={recordControlEvidence}>
+        <label>Control<select value={controlEvidenceControlId} onChange={event=>setControlEvidenceControlId(event.target.value)}>
+          {workspace.controls.map(item=><option key={item.id} value={item.id}>{item.control_key} · {item.title}</option>)}
+        </select></label>
+        <label>Evidence kind<select value={controlEvidenceKind} onChange={event=>setControlEvidenceKind(event.target.value)}>
+          <option value="repository">Repository</option><option value="migration">Migration</option><option value="test">Test</option>
+          <option value="workflow">Workflow</option><option value="deployment">Deployment</option><option value="observation">Observation</option>
+          <option value="incident">Incident</option><option value="external_audit">External audit</option>
+          <option value="certified_memory">Certified Memory</option><option value="manual">Manual</option>
+        </select></label>
+        <label>Evidence state<select value={controlEvidenceState} onChange={event=>setControlEvidenceState(event.target.value as ControlEvidence["evidence_state"])}>
+          <option value="observed">Observed</option><option value="passed">Passed</option><option value="failed">Failed</option><option value="superseded">Superseded</option>
+        </select></label>
+        <label>Evidence reference<input value={controlEvidenceRef} onChange={event=>setControlEvidenceRef(event.target.value)} placeholder="Commit, migration, test, workflow run, deployment or trace reference"/></label>
+        <label>Evidence summary<textarea rows={3} value={controlEvidenceSummary} onChange={event=>setControlEvidenceSummary(event.target.value)} placeholder="State exactly what this evidence supports and its limitations."/></label>
+        <button className="primaryButton" disabled={Boolean(activeAction)||!controlEvidenceControlId||controlEvidenceRef.trim().length<1||controlEvidenceSummary.trim().length<3}>Record control evidence</button>
+      </form>}
     </section>
 
     {latestCycle&&<section className="panel">
@@ -369,6 +552,44 @@ export default function GovernanceImprovementPanel({
         </select></label>
         <label>Assessment rationale<textarea rows={3} value={standardRationale} onChange={event=>setStandardRationale(event.target.value)} placeholder="Record scope, evidence checked, limitations and why this state applies."/></label>
         <button className="primaryButton" disabled={Boolean(activeAction)||!standardId||standardRationale.trim().length<3}>Record versioned standards review</button>
+      </form>}
+    </details>
+
+    <details className="panel quietDisclosure" open={workspace.standard_watch.length>0}>
+      <summary>Standards lifecycle watch · {workspace.standard_watch.length} observations</summary>
+      <p className="muted">Record authoritative-source lifecycle changes as evidence. Watch events never rewrite the standards register, applicability, or certification state automatically.</p>
+      {workspace.standard_watch.length>0&&<div className="manifestList">
+        {workspace.standard_watch.slice(0,20).map(item=><article className="manifestCard" key={item.id}>
+          <div className="rowBetween">
+            <div><b>{item.standard_key} · {label(item.event_type)}</b><small>{item.source_authority} · {date(item.observed_at)}</small></div>
+            <span className="badge neutral">REVIEW EVIDENCE</span>
+          </div>
+          <p>{item.summary}</p>
+          <div className="manifestMeta">
+            <span>{item.observed_edition?("observed edition · "+item.observed_edition):"edition unchanged/unspecified"}</span>
+            <span>{item.trace_key}</span>
+            <span>automatic applicability change: no</span>
+          </div>
+        </article>)}
+      </div>}
+      {workspace.can_manage&&<form className="settingsGrid" onSubmit={recordStandardsWatch}>
+        <label>Standard<select value={watchStandardId} onChange={event=>setWatchStandardId(event.target.value)}>
+          {workspace.standards.map(item=><option key={item.id} value={item.id}>{item.title} · {item.edition}</option>)}
+        </select></label>
+        <label>Lifecycle event<select value={watchEventType} onChange={event=>setWatchEventType(event.target.value)}>
+          <option value="status_checked">Status checked</option>
+          <option value="revision_announced">Revision announced</option>
+          <option value="new_edition_published">New edition published</option>
+          <option value="amendment_published">Amendment published</option>
+          <option value="withdrawn">Withdrawn</option>
+          <option value="superseded">Superseded</option>
+          <option value="guidance_updated">Guidance updated</option>
+          <option value="other">Other</option>
+        </select></label>
+        <label>Authoritative HTTPS source<input type="url" value={watchSourceUrl} onChange={event=>setWatchSourceUrl(event.target.value)} placeholder="https://official-authority.example/..."/></label>
+        <label>Observed edition<input value={watchObservedEdition} onChange={event=>setWatchObservedEdition(event.target.value)} placeholder="Optional published/revision edition"/></label>
+        <label>Lifecycle observation<textarea rows={3} value={watchSummary} onChange={event=>setWatchSummary(event.target.value)} placeholder="Describe the source-backed lifecycle change and what requires human review."/></label>
+        <button className="primaryButton" disabled={Boolean(activeAction)||!watchStandardId||!watchSourceUrl.trim().toLowerCase().startsWith("https://")||watchSummary.trim().length<3}>Record standards watch evidence</button>
       </form>}
     </details>
 
