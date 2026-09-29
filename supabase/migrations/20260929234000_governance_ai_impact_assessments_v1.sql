@@ -100,7 +100,7 @@ security definer
 set search_path=''
 as $$
 declare
-  control_id uuid;
+  v_control_id uuid;
 begin
   insert into public.governance_control_catalog(
     project_id,control_key,version,title,purpose,control_kind,standard_refs,
@@ -122,12 +122,12 @@ begin
   )
   on conflict(project_id,control_key,version) do nothing;
 
-  select id into control_id
+  select id into v_control_id
   from public.governance_control_catalog
   where project_id=target_project and control_key='CGO-IMP-001' and active=true
   limit 1;
 
-  if control_id is not null and not exists(
+  if v_control_id is not null and not exists(
     select 1 from public.governance_control_evidence e
     where e.project_id=target_project
       and e.control_id=control_id
@@ -139,7 +139,7 @@ begin
       evidence_state,provenance,recorder_role
     )
     values(
-      target_project,control_id,
+      target_project,v_control_id,
       'DN-GOV-EVD-'||upper(substr(md5(target_project::text||':CGO-IMP-001:migration'),1,16)),
       'migration','supabase/migrations/20260929234000_governance_ai_impact_assessments_v1.sql',
       'Source migration implements versioned AI impact assessments and human review routing.',
