@@ -99,3 +99,11 @@ test("legal review checklist cannot fabricate production approval",()=>{
   assert.match(checklist,/blank[^\n]{0,80}review-required[^\n]{0,80}(?:not|never)[^\n]{0,80}approval/i);
   assert.doesNotMatch(checklist,/Approved by:\s*[A-Z][a-z]+\s+[A-Z][a-z]+/);
 });
+
+
+test("Legal Centre policy cards derive review labels from registry status",()=>{
+  const centre=readSource("src/components/legal/GovernanceLegalCentre.tsx");
+  assert.match(legalRegistrySource,/export function legalApprovalLabel\(/);
+  assert.match(centre,/legalApprovalLabel\(document\.status\)/);
+  assert.doesNotMatch(centre,/<strong>Human \/ legal review required<\/strong>/);
+});
