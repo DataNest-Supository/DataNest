@@ -210,7 +210,8 @@ test("Stakeholder interests drive TranScheduler requirement matching and filteri
   await expect(page.getByRole("heading",{name:"Work areas you want to see",exact:true})).toBeVisible();
   const uiUxInterest=page.getByRole("checkbox",{name:/UI\/UX/});
   await expect(uiUxInterest).not.toBeChecked();
-  await uiUxInterest.check();
+  await uiUxInterest.click();
+  await expect(uiUxInterest).toBeChecked();
   await expect(page.getByText("1 selected",{exact:true})).toBeVisible();
   await expect.poll(()=>preferenceWrites).toBe(1);
   expect(interestKeys).toEqual(["ui_ux"]);
