@@ -171,7 +171,7 @@ begin
     raise exception 'Unsupported Verified Memory projection key.';
   end if;
 
-  if btrim(target_product_scope)<>expected_scope then
+  if btrim(coalesce(target_product_scope,''))<>expected_scope then
     raise exception 'Verified Memory projection key and product scope do not match.';
   end if;
 
@@ -185,8 +185,8 @@ begin
 
   if exists(
     select 1
-    from unnest(coalesce(target_allowed_categories,'{}'::text[])) category
-    where category=any(coalesce(target_excluded_categories,'{}'::text[]))
+    from unnest(coalesce(target_allowed_categories,'{}'::text[])) as allowed(category)
+    where allowed.category=any(coalesce(target_excluded_categories,'{}'::text[]))
   ) then
     raise exception 'Verified Memory projection cannot both allow and exclude the same category.';
   end if;
