@@ -13,13 +13,19 @@ type Candidate={
   has_conflict:boolean;
   confidence:number|null;
   required_authority:"automation"|"admin"|"owner";
+  language_review:{
+    required:boolean;
+    sourceLanguages:string[];
+    reasons:string[];
+    evidenceIds:string[];
+  };
   updated_at:string;
 };
 
 type ValidationRun={
   id:string;
   candidate_id:string;
-  gate:"AUDIT"|"VERIFY"|"VALIDATE"|"STRESS_TEST";
+  gate:"AUDIT"|"VERIFY"|"VALIDATE"|"STRESS_TEST"|"LANGUAGE_REVIEW";
   passed:boolean;
   created_at:string;
 };
@@ -51,7 +57,19 @@ type Props={
   setError:(value:string)=>void;
 };
 
-const gateOrder=["AUDIT","VERIFY","VALIDATE","STRESS_TEST"] as const;
+const baseGateOrder=["AUDIT","VERIFY","VALIDATE","STRESS_TEST"] as const;
+const languageGateOrder=["AUDIT","VERIFY","LANGUAGE_REVIEW","VALIDATE","STRESS_TEST"] as const;
+
+type LanguageReviewDraft={
+  languages:string;
+  basis:string;
+  meaningPreserved:boolean;
+  noUnresolvedAmbiguity:boolean;
+};
+
+function candidateGateOrder(candidate:Candidate){
+  return candidate.language_review?.required?languageGateOrder:baseGateOrder;
+}
 
 function formatDate(value:string){
   return new Intl.DateTimeFormat(undefined,{
@@ -80,6 +98,7 @@ export default function DataNestAiCertificationPanel({
   const [workspace,setWorkspace]=useState<WorkspaceResponse|null>(null);
   const [busyId,setBusyId]=useState("");
   const [busyMemoryId,setBusyMemoryId]=useState("");
+  const [languageReviewDrafts,setLanguageReviewDrafts]=useState<Record<string,LanguageReviewDraft>>({});
 
   const canReview=role==="owner"||role==="admin";
 
@@ -121,7 +140,9 @@ export default function DataNestAiCertificationPanel({
           ?"Certified DataNest AI memory promoted to project-wide context."
           :action==="certify"
             ?"Learning candidate certified."
-            :"Certification evidence recorded."
+            :extra.gate==="LANGUAGE_REVIEW"
+              ?"Governed language review recorded."
+              :"Certification evidence recorded."
       );
       await load();
       await onChanged();
@@ -130,6 +151,39 @@ export default function DataNestAiCertificationPanel({
     }finally{
       setBusyId("");
     }
+  }
+
+  function languageReviewDraft(candidate:Candidate):LanguageReviewDraft{
+    return languageReviewDrafts[candidate.id]||{
+      languages:(candidate.language_review?.sourceLanguages||[]).join(", "),
+      basis:"",
+      meaningPreserved:false,
+      noUnresolvedAmbiguity:false
+    };
+  }
+
+  function updateLanguageReviewDraft(candidate:Candidate,patch:Partial<LanguageReviewDraft>){
+    setLanguageReviewDrafts(current=>({
+      ...current,
+      [candidate.id]:{...languageReviewDraft(candidate),...patch}
+    }));
+  }
+
+  async function recordLanguageReview(candidate:Candidate){
+    const draft=languageReviewDraft(candidate);
+    const reviewedLanguages=draft.languages
+      .split(",")
+      .map(value=>value.trim())
+      .filter(Boolean);
+    await invoke("record_validation",candidate,{
+      gate:"LANGUAGE_REVIEW",
+      suiteVersion:"datanest-language-review-v1",
+      reviewedLanguages,
+      reviewBasis:draft.basis,
+      meaningPreserved:draft.meaningPreserved,
+      unresolvedAmbiguity:!draft.noUnresolvedAmbiguity,
+      results:{source:"DataNest AI certification console"}
+    });
   }
 
   async function reviewMemory(memory:MemoryReviewItem,decision:"reaffirmed"|"retired"){
@@ -182,7 +236,7 @@ export default function DataNestAiCertificationPanel({
     <div className="panelHead">
       <div>
         <p className="eyebrow">LEARNING & CERTIFICATION</p>
-        <h3>Audit → verify → validate → stress-test → certify</h3>
+        <h3>Audit → verify → language review when required → validate → stress-test → certify</h3>
       </div>
       <button className="textButton" type="button" onClick={()=>void load()}>Refresh</button>
     </div>
@@ -231,8 +285,10 @@ export default function DataNestAiCertificationPanel({
     <div className="manifestList">
       {(workspace?.candidates||[]).map(candidate=>{
         const gateState=runsByCandidate.get(candidate.id)||new Map<string,boolean>();
-        const allPassed=gateOrder.every(gate=>gateState.get(gate)===true);
+        const gates=candidateGateOrder(candidate);
+        const allPassed=gates.every(gate=>gateState.get(gate)===true);
         const canHumanCertify=candidate.required_authority!=="owner"||role==="owner";
+        const languageDraft=languageReviewDraft(candidate);
         return <article className="manifestCard" key={candidate.id}>
           <div className="rowBetween">
             <div>
@@ -251,8 +307,70 @@ export default function DataNestAiCertificationPanel({
             <span>{candidate.confidence==null?"confidence —":"confidence "+Math.round(candidate.confidence*100)+"%"}</span>
           </div>
 
+          {candidate.language_review?.required&&<div className="plannerForm">
+            <div>
+              <b>Language review required</b>
+              <p className="muted">
+                Review the preserved source evidence before certification. This records a role-authorized human review; it does not claim a language-qualification registry check.
+              </p>
+              <div className="manifestMeta">
+                <span>{"source languages "+(candidate.language_review.sourceLanguages.join(", ")||"not supplied")}</span>
+                <span>{"signals "+(candidate.language_review.reasons.join(", ")||"review required")}</span>
+              </div>
+            </div>
+            <label>
+              Reviewed BCP 47 languages
+              <input
+                value={languageDraft.languages}
+                placeholder="e.g. af, en-ZA"
+                onChange={event=>updateLanguageReviewDraft(candidate,{languages:event.target.value})}
+              />
+            </label>
+            <label>
+              Review basis and limitations
+              <textarea
+                rows={3}
+                value={languageDraft.basis}
+                placeholder="Describe the source comparison, terminology checks, and any limitations."
+                onChange={event=>updateLanguageReviewDraft(candidate,{basis:event.target.value})}
+              />
+            </label>
+            <div className="checkRow">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={languageDraft.meaningPreserved}
+                  onChange={event=>updateLanguageReviewDraft(candidate,{meaningPreserved:event.target.checked})}
+                />
+                Meaning, negation, quantities and modal force are preserved.
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={languageDraft.noUnresolvedAmbiguity}
+                  onChange={event=>updateLanguageReviewDraft(candidate,{noUnresolvedAmbiguity:event.target.checked})}
+                />
+                No unresolved semantic ambiguity remains.
+              </label>
+            </div>
+            <button
+              className="secondaryButton compact"
+              type="button"
+              disabled={
+                busyId===candidate.id||
+                gateState.get("LANGUAGE_REVIEW")===true||
+                candidate.lifecycle_state==="CERTIFIED"||
+                !languageDraft.meaningPreserved||
+                !languageDraft.noUnresolvedAmbiguity||
+                languageDraft.basis.trim().length<12||
+                !languageDraft.languages.trim()
+              }
+              onClick={()=>void recordLanguageReview(candidate)}
+            >{gateState.get("LANGUAGE_REVIEW")===true?"✓ LANGUAGE REVIEW":"Record language review"}</button>
+          </div>}
+
           <div className="datanestAiGateRow">
-            {gateOrder.map(gate=>{
+            {gates.map(gate=>{
               const passed=gateState.get(gate)===true;
               if(gate==="STRESS_TEST"){
                 return <span
@@ -260,6 +378,13 @@ export default function DataNestAiCertificationPanel({
                   key={gate}
                   title="Recorded by governed stress suite"
                 >{passed?"✓ ":""}STRESS TEST · Recorded by governed stress suite</span>;
+              }
+              if(gate==="LANGUAGE_REVIEW"){
+                return <span
+                  className={passed?"secondaryButton compact active":"secondaryButton compact"}
+                  key={gate}
+                  title="Recorded through the governed language review form"
+                >{passed?"✓ ":""}LANGUAGE REVIEW · Human evidence</span>;
               }
               return <button
                 key={gate}
