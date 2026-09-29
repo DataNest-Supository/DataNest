@@ -208,6 +208,12 @@ test("Stakeholder interests drive TranScheduler requirement matching and filteri
   await page.goto(appPath+"?view=stakeholder");
 
   await expect(page.getByRole("heading",{name:"Work areas you want to see",exact:true})).toBeVisible();
+  await expect(page.getByText("3 open Jobs mapped across requirement sections.",{exact:true})).toBeVisible();
+  await expect(page.getByLabel("2 open Jobs require UI/UX")).toHaveText("2 open Jobs");
+  await expect(page.getByLabel("1 open Jobs require Security & Testing")).toHaveText("1 open Job");
+  await expect(page.getByLabel("1 open Jobs require Database & Architecture")).toHaveText("1 open Job");
+  await expect(page.getByLabel("1 open Jobs require Governance & Process")).toHaveText("1 open Job");
+  await expect(page.getByLabel("0 open Jobs require Brand & Promotion")).toHaveText("0 open Jobs");
   const uiUxInterest=page.getByRole("checkbox",{name:/UI\/UX/});
   await expect(uiUxInterest).not.toBeChecked();
   await uiUxInterest.click();
