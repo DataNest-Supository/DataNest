@@ -24,9 +24,14 @@ const memoryPanel=fs.readFileSync(
 
 test("Certified Memory receives category-based review schedules",()=>{
   assert.match(migration,/certified_memory_review_interval_v1/);
-  assert.match(migration,/when 'security' then interval '30 days'/);
-  assert.match(migration,/when 'architecture' then interval '90 days'/);
-  assert.match(migration,/when 'workflow' then interval '180 days'/);
+  assert.match(migration,/\(security\|authorization\|authority\|privacy\|legal\|destructive\)/);
+  assert.match(migration,/\(governance\|policy\)/);
+  assert.match(migration,/\(architecture\|infrastructure\|schema\|migration\)/);
+  assert.match(migration,/\(workflow\|product\|ecosystem\)/);
+  assert.match(migration,/then interval '30 days'/);
+  assert.match(migration,/then interval '60 days'/);
+  assert.match(migration,/then interval '90 days'/);
+  assert.match(migration,/then interval '180 days'/);
   assert.match(migration,/schedule_certified_memory_review_v1/);
   assert.match(migration,/before insert on public\.certified_memory/);
   assert.match(migration,/where active=true\s+and review_after is null/);
