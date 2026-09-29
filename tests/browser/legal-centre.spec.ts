@@ -67,3 +67,17 @@ test("substantive legal routes stay review-gated without manufactured effective 
     await expect(page.getByText("2026-09-29",{exact:true})).toHaveCount(0);
   }
 });
+
+
+test("Legal Centre exposes canonical policy destinations",async({page})=>{
+  await page.goto(appPath+"legal");
+  for(const [label,route] of [
+    ["Terms & Conditions","terms"],
+    ["Privacy / POPIA","privacy"],
+    ["General & AI Disclaimers","disclaimers"],
+    ["Acceptable Use","acceptable-use"],
+    ["Intellectual Property","intellectual-property"]
+  ] as const){
+    await expect(page.getByRole("link",{name:new RegExp(label)})).toHaveAttribute("href",new RegExp("/"+route+"\\/?$"));
+  }
+});
