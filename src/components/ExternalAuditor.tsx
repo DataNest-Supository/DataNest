@@ -4,7 +4,6 @@ import type { ExternalAuditorProps,AssessmentBundle } from "@/lib/externalAuditT
 import { STANDARDS_REGISTER,selectSuggestedStandards } from "@/lib/externalAuditStandards";
 import { analyzeAssessment,approveAction,createAssessment,loadAssessment,saveStandardsProfile,snapshotSource } from "@/lib/externalAuditClient";
 import ExternalAuditDocuments from "@/components/ExternalAuditDocuments";
-import "@/app/external-auditor.css";
 
 const DEFAULT_DOMAINS=["audit","software","ux","security"];
 
