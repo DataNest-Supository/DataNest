@@ -171,6 +171,15 @@ test("public surface exposes canonical operator and governance identity", async 
   await expect(footer).toContainText("Resonance App Development");
   await expect(footer).toContainText("Resonance DataNest");
   await expect(footer).toContainText("free promotion");
+  for(const [label,href] of [
+    ["Legal Centre","/legal"],
+    ["Governance","/governance"],
+    ["Privacy","/privacy"],
+    ["Terms","/terms"],
+    ["Disclaimers","/disclaimers"]
+  ] as const){
+    await expect(footer.getByRole("link",{name:label,exact:true})).toHaveAttribute("href",new RegExp(href+"\\/?$"));
+  }
 
   await expect(trustMark).not.toContainText(/certif|accredit/i);
   await expect(page.getByRole("link", { name: /buy|subscribe|checkout/i })).toHaveCount(0);
