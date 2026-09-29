@@ -38,20 +38,43 @@ function canonicalToken(token:string):string{
 }
 
 export function normalizeTrendTokens(value:string):string[] {
-  const scrubbed=value.toLowerCase()
+  // Normalize only the derived search representation; retain original evidence.
+  const scrubbed=value.normalize("NFC").toLowerCase().normalize("NFC")
     .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi," ")
     .replace(/\b[0-9a-f]{16,}\b/gi," ")
     .replace(/\b\d{6,}\b/g," ")
-    .replace(/[^a-z0-9' ]+/g," ");
+    .replace(/[^\p{L}\p{M}\p{N}'\s]+/gu," ");
 
   return [...new Set(
     scrubbed
       .split(/\s+/)
       .map(token=>token.replace(/^'+|'+$/g,""))
-      .filter(token=>token.length>2)
+      .filter(token=>/[\p{L}\p{N}]/u.test(token))
+      .filter(token=>Array.from(token).length>2||/[^\x00-\x7f]/.test(token))
       .map(canonicalToken)
       .filter(token=>!stopWords.has(token))
   )].sort();
+}
+
+/** Conservative review signal, not language detection or a trust score. */
+export function requiresLanguageReview(event:LearningEvidence):boolean{
+  const metadata=event.metadata||{};
+  if(metadata.language_review_required===true)return true;
+  for(const key of ["source_language","language"]){
+    if(metadata[key]===undefined)continue;
+    if(typeof metadata[key]!=="string"||!metadata[key].trim())return true;
+    try{
+      const language=Intl.getCanonicalLocales(metadata[key].trim())[0];
+      if(!/^en(?:-|$)/i.test(language))return true;
+    }catch{
+      return true;
+    }
+  }
+  // Existing risk/negation rules have only been tested for English. An English
+  // tag cannot bypass review of non-ASCII letters, marks or numbers.
+  return Array.from(event.content).some(character=>
+    character.codePointAt(0)!>127&&/[\p{L}\p{M}\p{N}]/u.test(character)
+  );
 }
 
 export function evidenceSimilarity(a:string[],b:string[]):number {
@@ -200,6 +223,7 @@ export function candidateFromRepeatedEvidence(
   confidence:number;
   hasConflict:boolean;
   independentEvidenceCount:number;
+  languageReviewRequired:boolean;
 }|null {
   if(events.length<2)return null;
   const anchor=events[0];
@@ -225,19 +249,21 @@ export function candidateFromRepeatedEvidence(
   );
   const hasConflict=polarities.size>1||hasScalarConflict(similar)||explicitConflict;
   const risk=classifyLearningRisk(similar.map(item=>item.content).join(" "));
+  const languageReviewRequired=similar.some(requiresLanguageReview);
   const normalizedKnowledge=representative.content.trim().replace(/\s+/g," ");
   const independentEvidenceCount=new Set(similar.map(evidenceIdentity)).size;
 
   return {
     normalizedKnowledge,
     category:risk.category,
-    riskClass:risk.riskClass,
+    riskClass:languageReviewRequired?"high":risk.riskClass,
     lifecycleState:"INTAKE",
     evidenceIds:similar.map(item=>item.id),
     trendKey:trendKeyForTokens(trendTokens),
     confidence:candidateConfidence(similar,representative,hasConflict),
     hasConflict,
-    independentEvidenceCount
+    independentEvidenceCount,
+    languageReviewRequired
   };
 }
 
@@ -269,6 +295,12 @@ export function classifyCertifiedMemoryRelation(
     return {relation:"contradicts",similarity,polarityConflict,scalarConflict};
   }
   if(similarity>=0.9&&!polarityConflict&&!scalarConflict){
+    const uncertainLanguage=[candidate,existing].some(content=>
+      requiresLanguageReview({id:"relation",content})
+    );
+    if(uncertainLanguage&&candidate.normalize("NFC")!==existing.normalize("NFC")){
+      return {relation:"related",similarity,polarityConflict,scalarConflict};
+    }
     return {relation:"duplicates",similarity,polarityConflict,scalarConflict};
   }
   return {relation:"related",similarity,polarityConflict,scalarConflict};
