@@ -11,6 +11,11 @@ import {
 } from "../_shared/datanestAiPolicy.ts";
 import { sha256Text } from "../_shared/datanestAiRuntime.ts";
 import { classifyCertifiedMemoryRelation } from "../_shared/datanestAiTrends.ts";
+import {
+  governedLanguageReviewResult,
+  summarizeLanguageReviewEvidence,
+  type LanguageReviewSummary
+} from "../_shared/datanestLanguageReview.ts";
 import { resolveDataNestAiStaging } from "../_shared/datanestAiStaging.ts";
 import {
   candidateValidationSeal,
@@ -30,13 +35,24 @@ const allowedOrigins=new Set([
   "http://localhost:4173"
 ]);
 const currentPolicyVersion="datanest-ai-governed-memory-v2";
-const gateOrder:CertificationGate[]=["AUDIT","VERIFY","VALIDATE","STRESS_TEST"];
-const lifecycleAfterGate:Record<CertificationGate,string>={
+const baseGateOrder:CertificationGate[]=["AUDIT","VERIFY","VALIDATE","STRESS_TEST"];
+const lifecycleAfterGate:Partial<Record<CertificationGate,string>>={
   AUDIT:"AUDITED",
   VERIFY:"VERIFIED",
   VALIDATE:"VALIDATED",
   STRESS_TEST:"CERTIFICATION_REVIEW"
 };
+const emptyLanguageReview:LanguageReviewSummary={
+  required:false,
+  sourceLanguages:[],
+  reasons:[],
+  evidenceIds:[]
+};
+function requiredGateOrder(languageReviewRequired:boolean):CertificationGate[]{
+  return languageReviewRequired
+    ?["AUDIT","VERIFY","LANGUAGE_REVIEW","VALIDATE","STRESS_TEST"]
+    :baseGateOrder;
+}
 
 type AnyClient=SupabaseClient<any>;
 type Member={role:ProjectRole;status:string};
