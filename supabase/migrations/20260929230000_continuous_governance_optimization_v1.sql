@@ -205,7 +205,7 @@ begin
 end;
 $$;
 
-create or replace function public.review_governance_standard_v1(
+create or replace function private.review_governance_standard_v1(
   target_standard uuid,
   target_applicability_state text,
   target_rationale text,
@@ -298,7 +298,7 @@ begin
 end;
 $$;
 
-create or replace function public.record_governance_observation_v1(
+create or replace function private.record_governance_observation_v1(
   target_project uuid,
   target_source_kind text,
   target_summary text,
@@ -377,7 +377,7 @@ begin
 end;
 $$;
 
-create or replace function public.create_governance_improvement_candidate_v1(
+create or replace function private.create_governance_improvement_candidate_v1(
   target_project uuid,
   target_title text,
   target_problem_statement text,
@@ -484,7 +484,7 @@ begin
 end;
 $$;
 
-create or replace function public.review_governance_improvement_candidate_v1(
+create or replace function private.review_governance_improvement_candidate_v1(
   target_candidate uuid,
   target_decision text,
   target_rationale text,
@@ -554,7 +554,7 @@ begin
 end;
 $$;
 
-create or replace function public.convert_governance_improvement_to_proposal_v1(
+create or replace function private.convert_governance_improvement_to_proposal_v1(
   target_candidate uuid,
   target_proposal_type text default 'process_change'
 ) returns uuid
@@ -636,7 +636,7 @@ begin
 end;
 $$;
 
-create or replace function public.run_governance_improvement_cycle_v1(
+create or replace function private.run_governance_improvement_cycle_v1(
   target_project uuid,
   target_window_days integer default 90
 ) returns uuid
@@ -803,7 +803,7 @@ begin
 end;
 $$;
 
-create or replace function public.get_governance_improvement_workspace_v1(
+create or replace function private.get_governance_improvement_workspace_v1(
   target_project uuid
 ) returns jsonb
 language plpgsql
@@ -910,6 +910,119 @@ begin
 end;
 $$;
 
+
+-- Exposed RPCs remain SECURITY INVOKER. Privileged mutation lives in the non-exposed
+-- private schema, where each function performs its own auth.uid()/project-role checks.
+create or replace function public.review_governance_standard_v1(
+  target_standard uuid,
+  target_applicability_state text,
+  target_rationale text,
+  target_review_days integer default 90,
+  target_metadata jsonb default '{}'::jsonb
+) returns uuid
+language sql
+security invoker
+set search_path=''
+as $
+  select private.review_governance_standard_v1(
+    target_standard,target_applicability_state,target_rationale,target_review_days,target_metadata
+  );
+$;
+
+create or replace function public.record_governance_observation_v1(
+  target_project uuid,
+  target_source_kind text,
+  target_summary text,
+  target_severity text default 'info',
+  target_confidence numeric default null,
+  target_source_ref text default null,
+  target_evidence jsonb default '{}'::jsonb,
+  target_observed_at timestamptz default now()
+) returns uuid
+language sql
+security invoker
+set search_path=''
+as $
+  select private.record_governance_observation_v1(
+    target_project,target_source_kind,target_summary,target_severity,target_confidence,
+    target_source_ref,target_evidence,target_observed_at
+  );
+$;
+
+create or replace function public.create_governance_improvement_candidate_v1(
+  target_project uuid,
+  target_title text,
+  target_problem_statement text,
+  target_hypothesis text,
+  target_desired_outcome text,
+  target_source_observation_ids uuid[] default '{}',
+  target_standard_refs text[] default '{}',
+  target_risk_class text default 'moderate',
+  target_confidence numeric default null,
+  target_proposed_change jsonb default '{}'::jsonb,
+  target_guardrails jsonb default '{}'::jsonb
+) returns uuid
+language sql
+security invoker
+set search_path=''
+as $
+  select private.create_governance_improvement_candidate_v1(
+    target_project,target_title,target_problem_statement,target_hypothesis,target_desired_outcome,
+    target_source_observation_ids,target_standard_refs,target_risk_class,target_confidence,
+    target_proposed_change,target_guardrails
+  );
+$;
+
+create or replace function public.review_governance_improvement_candidate_v1(
+  target_candidate uuid,
+  target_decision text,
+  target_rationale text,
+  target_evidence jsonb default '{}'::jsonb
+) returns uuid
+language sql
+security invoker
+set search_path=''
+as $
+  select private.review_governance_improvement_candidate_v1(
+    target_candidate,target_decision,target_rationale,target_evidence
+  );
+$;
+
+create or replace function public.convert_governance_improvement_to_proposal_v1(
+  target_candidate uuid,
+  target_proposal_type text default 'process_change'
+) returns uuid
+language sql
+security invoker
+set search_path=''
+as $
+  select private.convert_governance_improvement_to_proposal_v1(
+    target_candidate,target_proposal_type
+  );
+$;
+
+create or replace function public.run_governance_improvement_cycle_v1(
+  target_project uuid,
+  target_window_days integer default 90
+) returns uuid
+language sql
+security invoker
+set search_path=''
+as $
+  select private.run_governance_improvement_cycle_v1(target_project,target_window_days);
+$;
+
+create or replace function public.get_governance_improvement_workspace_v1(
+  target_project uuid
+) returns jsonb
+language sql
+stable
+security invoker
+set search_path=''
+as $
+  select private.get_governance_improvement_workspace_v1(target_project);
+$;
+
 alter table public.governance_standards_register enable row level security;
 alter table public.governance_observations enable row level security;
 alter table public.governance_improvement_candidates enable row level security;
@@ -957,6 +1070,39 @@ revoke execute on function private.seed_continuous_governance_standards_v1(uuid)
   from public,anon,authenticated;
 revoke execute on function private.seed_continuous_governance_for_project_v1()
   from public,anon,authenticated;
+
+
+grant usage on schema private to authenticated;
+
+revoke execute on function private.review_governance_standard_v1(uuid,text,text,integer,jsonb)
+  from public,anon;
+revoke execute on function private.record_governance_observation_v1(uuid,text,text,text,numeric,text,jsonb,timestamptz)
+  from public,anon;
+revoke execute on function private.create_governance_improvement_candidate_v1(uuid,text,text,text,text,uuid[],text[],text,numeric,jsonb,jsonb)
+  from public,anon;
+revoke execute on function private.review_governance_improvement_candidate_v1(uuid,text,text,jsonb)
+  from public,anon;
+revoke execute on function private.convert_governance_improvement_to_proposal_v1(uuid,text)
+  from public,anon;
+revoke execute on function private.run_governance_improvement_cycle_v1(uuid,integer)
+  from public,anon;
+revoke execute on function private.get_governance_improvement_workspace_v1(uuid)
+  from public,anon;
+
+grant execute on function private.review_governance_standard_v1(uuid,text,text,integer,jsonb)
+  to authenticated;
+grant execute on function private.record_governance_observation_v1(uuid,text,text,text,numeric,text,jsonb,timestamptz)
+  to authenticated;
+grant execute on function private.create_governance_improvement_candidate_v1(uuid,text,text,text,text,uuid[],text[],text,numeric,jsonb,jsonb)
+  to authenticated;
+grant execute on function private.review_governance_improvement_candidate_v1(uuid,text,text,jsonb)
+  to authenticated;
+grant execute on function private.convert_governance_improvement_to_proposal_v1(uuid,text)
+  to authenticated;
+grant execute on function private.run_governance_improvement_cycle_v1(uuid,integer)
+  to authenticated;
+grant execute on function private.get_governance_improvement_workspace_v1(uuid)
+  to authenticated;
 
 revoke execute on function public.review_governance_standard_v1(uuid,text,text,integer,jsonb)
   from public,anon;
