@@ -220,14 +220,9 @@ No `ViewKey` is added or removed. Unimplemented target components such as iBank,
 In `tests/browser/business-os-foundation.spec.ts`, add the smallest mocked Supabase/auth fixture needed to load the existing DataNest shell and assert:
 
 ```ts
-await expect(page.getByText("Home",{exact:true})).toBeVisible();
-await expect(page.getByText("Explore",{exact:true})).toBeVisible();
-await expect(page.getByText("Portfolio",{exact:true})).toBeVisible();
-await expect(page.getByText("Projects",{exact:true})).toBeVisible();
-await expect(page.getByText("Intelligence",{exact:true})).toBeVisible();
-await expect(page.getByText("Governance",{exact:true})).toBeVisible();
-await expect(page.getByText("Assurance",{exact:true})).toBeVisible();
-await expect(page.getByText("System",{exact:true})).toBeVisible();
+await expect(page.locator(".navGroup>p")).toHaveText([
+  "Home","Explore","Portfolio","Projects","Intelligence","Governance","Assurance","System"
+]);
 await expect(page.getByText(/Business, Intelligence, Collaboration, and Expansion Operating System/i)).toBeVisible();
 await expect(page.getByRole("button",{name:"iBank",exact:true})).toHaveCount(0);
 await expect(page.getByRole("button",{name:"Barterer Tender",exact:true})).toHaveCount(0);
@@ -247,11 +242,11 @@ Expected: FAIL because current grouping/copy still uses the old organization.
 
 - [ ] **Step 3: Regroup the existing navigation**
 
-Modify only the `group` and user-visible label for existing entries in `src/components/DataNestApp.tsx`.
+Modify only the `group`, user-visible label, and array ordering for existing entries in `src/components/DataNestApp.tsx`; preserve every existing `ViewKey` and routing branch. Reorder entries so the rendered group headings follow the exact Phase 1 order pinned by Step 1.
 
 Rename the current `external_auditor` display label to **External Audit & Optimizer** while preserving the `external_auditor` view key and existing component routing.
 
-Do not add placeholder buttons for target-state capabilities.
+Do not add navigation buttons for target-state capabilities.
 
 - [ ] **Step 4: Update AI & I fallback platform copy**
 
@@ -351,7 +346,8 @@ Render:
 - **Implemented / Partial / Target** legend;
 - the formal nomenclature registry with implementation-state badges;
 - explicit current boundary: **Sparks remain internal utility; iBank and the External Value Rail are target-state architecture in Phase 1**;
-- links to `./business-os` and `./transparency/business-os/nomenclature.json`.
+- link to `./business-os`;
+- define `const publicBasePath=process.env.NEXT_PUBLIC_BASE_PATH ?? "";` and link the JSON projection with `${publicBasePath}/transparency/business-os/nomenclature.json`, matching the existing audit-asset base-path pattern.
 
 The component must consume the Task 1 registry and constants; do not duplicate canonical term definitions inline.
 
