@@ -144,6 +144,21 @@ function collectAllowedEvidenceRefs(compactEvidence:Record<string,unknown>){
   return allowed;
 }
 
+function collectPassingControlEvidenceRefs(value:unknown){
+  const refs=new Set<string>();
+  if(!Array.isArray(value))return refs;
+  for(const raw of value){
+    const item=objectValue(raw);
+    const state=String(item.evidence_state||"").toLowerCase();
+    if(state!=="passed"&&state!=="resolved")continue;
+    for(const key of ["id","trace_key","evidence_ref"]){
+      const ref=String(item[key]||"").trim();
+      if(ref)refs.add(ref);
+    }
+  }
+  return refs;
+}
+
 function parseProviderJson(content:string):unknown{
   const trimmed=content.trim();
   const unfenced=trimmed
@@ -176,7 +191,8 @@ type OptimizerSuggestion={
 async function validateDraft(
   raw:unknown,
   standardKeys:Set<string>,
-  allowedEvidenceRefs:Set<string>
+  allowedEvidenceRefs:Set<string>,
+  passingControlEvidenceRefs:Set<string>
 ):Promise<{summary:string;limitations:string[];suggestions:OptimizerSuggestion[]}>{
   if(!raw||typeof raw!=="object")throw new Error("optimizer_draft_object_required");
   const record=raw as Record<string,unknown>;
@@ -196,6 +212,7 @@ async function validateDraft(
     const guardrails=objectValue(value.guardrails);
     const evidenceRefs=stringArray(value.evidenceRefs).filter(ref=>allowedEvidenceRefs.has(ref));
     if(evidenceRefs.length===0)continue;
+    if(evidenceRefs.every(ref=>passingControlEvidenceRefs.has(ref)))continue;
     const standardRefs=stringArray(value.standardRefs).filter(key=>standardKeys.has(key));
     const riskRaw=String(value.riskClass||"moderate").toLowerCase();
     const riskClass=(riskClasses.has(riskRaw)?riskRaw:"moderate") as OptimizerSuggestion["riskClass"];
@@ -332,8 +349,7 @@ Deno.serve(async(request)=>{
       governance_observations:Array.isArray(evidenceObject.governance_observations)?evidenceObject.governance_observations.slice(0,15):[],
       external_audit_findings:Array.isArray(evidenceObject.external_audit_findings)?evidenceObject.external_audit_findings.slice(0,15):[],
       ai_impact_assessments:Array.isArray(evidenceObject.ai_impact_assessments)?evidenceObject.ai_impact_assessments.slice(0,10):[],
-      control_evidence:reconciledControlEvidence.active,
-      control_evidence_history:reconciledControlEvidence.history
+      control_evidence:reconciledControlEvidence.active
     };
     const evidenceText=JSON.stringify(compactEvidence);
     const evidenceDigest=await sha256Text(evidenceText);
@@ -387,8 +403,8 @@ Deno.serve(async(request)=>{
       "Analyze the supplied DataNest governance, audit, operational, AI-usage, impact-assessment, and control evidence.",
       "Prefer concrete, reversible, testable improvements. Preserve dissent, uncertainty, provenance, privacy, security, accessibility, and existing governance boundaries.",
       "Each suggestion must cite evidenceRefs using identifiers or trace keys present in the supplied evidence. Use standardRefs only from the supplied active standard_key values.",
-      "For monitored governance controls, control_evidence contains only the latest applicable state per control/check. control_evidence_history is historical context only.",
-      "Never propose remediation from a superseded failed monitor record when the latest evidence for that same control/check is passed or resolved. Do not cite superseded historical failures as active evidence.",
+      "For monitored governance controls, control_evidence contains only the latest applicable state per control/check. Superseded monitor failures are intentionally omitted from active-problem evidence.",
+      "Never propose remediation from a superseded failed monitor record when the latest evidence for that same control/check is passed or resolved. Do not infer an active problem from a current passed/resolved control state.",
       "Return JSON only with this shape:",
       JSON.stringify({
         summary:"string",
@@ -420,7 +436,8 @@ Deno.serve(async(request)=>{
 
     const parsed=parseProviderJson(provider.content);
     const allowedEvidenceRefs=collectAllowedEvidenceRefs(compactEvidence);
-    const draft=await validateDraft(parsed,standardKeys,allowedEvidenceRefs);
+    const passingControlEvidenceRefs=collectPassingControlEvidenceRefs(reconciledControlEvidence.active);
+    const draft=await validateDraft(parsed,standardKeys,allowedEvidenceRefs,passingControlEvidenceRefs);
 
     await serviceClient.rpc("service_finish_ai_request",{
       target_request:aiRequestId,target_status:"succeeded",
