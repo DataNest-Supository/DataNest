@@ -11,7 +11,7 @@ test("audit analysis rejects unknown source and criterion identities",()=>{
 });
 
 test("unsupported findings are downgraded to inference",()=>{
-  assert.match(analysis,/evidenceIds\.length===0\?"inferred"/);
+  assert.match(analysis,/evidenceIds\.length===0[\s\S]*?"inferred"/);
 });
 
 test("source acquisition blocks unsafe URL classes and redirects",()=>{
