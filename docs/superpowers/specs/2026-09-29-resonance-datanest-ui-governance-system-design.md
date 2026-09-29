@@ -59,6 +59,8 @@ Dense operational screens use:
 - primary identity: **Resonance DataNest**;
 - compact trust signal: **RSGP Governed**.
 
+The compact **RSGP Governed** trust marker must open or link to a concise explanation of the applicable governance context and a route to the Governance & Legal Centre. Its visual treatment must not resemble an external certification seal.
+
 The complete operator statement appears consistently on:
 
 - sign-in and public surfaces;
@@ -100,8 +102,8 @@ The primary platform experience remains **Resonance Sovereign Spectrum**:
 Supported presentation behavior:
 
 1. **Sovereign Dark** — primary/default experience.
-2. **Accessible Light** — supported where the underlying page architecture allows it without contrast or semantic loss.
-3. **High-contrast/reduced-effects behavior** — driven by accessibility preferences and system/user motion settings, not treated as a decorative theme.
+2. **Accessible Light** — required on each user-facing surface by completion of that surface's migration, with equivalent semantic state and contrast; surfaces not yet migrated may retain their existing theme behavior.
+3. **High-contrast/reduced-effects behavior** — required on each migrated user-facing surface and driven by accessibility preferences and system/user motion settings, not treated as a decorative theme.
 
 ### 4.2 Canonical typography
 
