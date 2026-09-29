@@ -147,7 +147,7 @@ export function qualificationCoverageForReviewedLanguages(
     const base=canonical.split("-")[0].toLowerCase();
     const ids=byBase.get(base)||[];
     ids.push(String(qualification.id));
-    byBase.set(base,ids);
+    byBase.set(base,[...new Set(ids)].sort());
   }
 
   const missingLanguages:string[]=[];
@@ -160,7 +160,7 @@ export function qualificationCoverageForReviewedLanguages(
       missingLanguages.push(canonical);
       continue;
     }
-    for(const id of ids)qualificationIds.add(id);
+    qualificationIds.add(ids[0]);
   }
 
   return {
