@@ -18,6 +18,7 @@ type Workspace={
   routes:Row[];
   evaluations:Row[];
   capability_evidence:Row[];
+  memory_receipts:Row[];
   certified_memory:Record<string,unknown>;
   resource_fabric:Record<string,unknown>;
   caller_role:string|null;
@@ -86,6 +87,7 @@ export default function IntelligenceFabricPanel({
         routes:rows(raw.routes),
         evaluations:rows(raw.evaluations),
         capability_evidence:rows(raw.capability_evidence),
+        memory_receipts:rows(raw.memory_receipts),
         certified_memory:obj(raw.certified_memory),
         resource_fabric:obj(raw.resource_fabric),
         caller_role:raw.caller_role?String(raw.caller_role):null,
@@ -159,7 +161,12 @@ export default function IntelligenceFabricPanel({
         <article>
           <small>Certified memory</small>
           <b>{txt(workspace.certified_memory.active_count)||"0"}</b>
-          <span>Reusable governed memory objects</span>
+          <span>{txt(workspace.certified_memory.review_due_count)||"0"} review due · reusable governed memory</span>
+        </article>
+        <article>
+          <small>Memory receipts</small>
+          <b>{txt(workspace.certified_memory.usage_receipt_count)||"0"}</b>
+          <span>Audited verified-memory selections</span>
         </article>
         <article>
           <small>Resource Fabric</small>
@@ -201,6 +208,28 @@ export default function IntelligenceFabricPanel({
             <div className="manifestMeta"><span>{intelligenceLabel(txt(item.evaluator_kind))}</span><span>{txt(item.trace_id)}</span></div>
           </article>)}
           {!workspace.evaluations.length&&<p className="muted">No evaluation evidence has been recorded yet.</p>}
+        </div>
+      </div>
+
+      <div className="panel">
+        <div className="panelHead"><div><p className="eyebrow">MEMORY RECEIPTS</p><h3>Verified memory selection evidence</h3></div><span className="countPill">{workspace.memory_receipts.length}</span></div>
+        <div className="manifestList">
+          {workspace.memory_receipts.slice(0,8).map(item=><article className="manifestCard intelligenceEvidenceCard" key={txt(item.id)}>
+            <div className="rowBetween">
+              <div><b>{intelligenceLabel(txt(item.strategy))}</b><small>{prettyDate(item.created_at)}</small></div>
+              <span className="badge good">{txt(item.selected_count)||"0"} selected</span>
+            </div>
+            <div className="manifestMeta">
+              <span>{txt(item.product_scope)||"datanest_ai"}</span>
+              <span>{txt(item.purpose)||"purpose —"}</span>
+              <span>{txt(item.applicable_count)||"0"} applicable</span>
+              <span>{txt(item.active_count)||"0"} active</span>
+            </div>
+            <p className="muted">
+              {txt(item.review_due_count)||"0"} review due · trace {txt(item.trace_id).slice(0,24)}
+            </p>
+          </article>)}
+          {!workspace.memory_receipts.length&&<p className="muted">No verified-memory selection receipts have been recorded yet.</p>}
         </div>
       </div>
 
