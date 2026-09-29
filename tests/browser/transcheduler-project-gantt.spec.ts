@@ -127,7 +127,7 @@ test("Stakeholder interests drive TranScheduler requirement matching and filteri
     {
       id:"00000000-0000-4000-8000-000000000113",job_number:113,title:"Accessibility review",description:null,
       priority:50,status:"READY",required_capabilities:["chat"],
-      requirements:{source:"UNIFI Planner",focus_areas:["ui_ux","security_testing"]},acceptance:{},
+      requirements:{source:"UNIFI Planner",focus_areas:["ui_ux","security_testing","governance_process"]},acceptance:{},
       created_at:"2026-09-29T01:00:00Z",updated_at:"2026-09-29T01:10:00Z",deadline:null
     }
   ];
@@ -238,6 +238,8 @@ test("Stakeholder interests drive TranScheduler requirement matching and filteri
   await expect(page.getByText("Matched 1 · UI/UX",{exact:true})).toHaveCount(1);
   await expect(page.getByLabel("Matched interests: UI/UX, Security & Testing")).toHaveCount(1);
   await expect(page.getByLabel("Matched interests: UI/UX",{exact:true})).toHaveCount(1);
+  await expect(page.getByText("Outside your interests · Governance & Process",{exact:true})).toHaveCount(1);
+  await expect(page.getByLabel("Requirement sections outside your interests: Governance & Process")).toHaveCount(1);
   await expect(page.locator(".jobFocusChip").filter({hasText:"UI/UX"})).toHaveCount(2);
 
   const ganttTitles=page.locator(".ganttJobTitle small");
@@ -258,4 +260,5 @@ test("Stakeholder interests drive TranScheduler requirement matching and filteri
   await expect(page).not.toHaveURL(/interests=1/);
   await expect(page.locator(".ganttRow")).toHaveCount(3);
   await expect(page.locator(".ganttJobTitle small")).toHaveText(["Accessibility review","UI polish","Database maintenance"]);
+  await expect(page.getByText("Outside your interests · Database & Architecture",{exact:true})).toHaveCount(1);
 });
