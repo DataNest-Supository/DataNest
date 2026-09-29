@@ -280,8 +280,13 @@ test("stale External AI session recovery cannot overwrite a fresh launch or manu
   );
   assert.match(
     source,
-    /value=\{selectedJobId\} onChange=\{event=>\{blockSessionRestore\(\);setSelectedJobId/,
+    /value=\{selectedJobId\} onChange=\{event=>\{manualJobSelectionRef\.current=true;blockSessionRestore\(\);setSelectedJobId/,
     "manual Job switches must fail closed instead of reviving an old session"
+  );
+  assert.match(
+    source,
+    /!manualJobSelectionRef\.current&&[\s\S]*?activeJobId!==selectedJobId/,
+    "shell active-Job synchronization must respect an explicit Job choice in the dock"
   );
   assert.match(
     source,
