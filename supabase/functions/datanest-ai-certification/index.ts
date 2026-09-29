@@ -13,6 +13,7 @@ import { sha256Text } from "../_shared/datanestAiRuntime.ts";
 import { classifyCertifiedMemoryRelation } from "../_shared/datanestAiTrends.ts";
 import {
   governedLanguageReviewResult,
+  reviewedLanguageCoverageSatisfied,
   summarizeLanguageReviewEvidence,
   type LanguageReviewSummary
 } from "../_shared/datanestLanguageReview.ts";
@@ -548,6 +549,12 @@ Deno.serve(async(request:Request)=>{
           meaningPreserved:body.meaningPreserved,
           unresolvedAmbiguity:body.unresolvedAmbiguity
         });
+        if(!reviewedLanguageCoverageSatisfied(
+          languageReview.sourceLanguages,
+          review.reviewedLanguages
+        )){
+          throw new Error("Reviewed languages must cover every specific declared source language.");
+        }
         passed=review.passed;
         governedResults={
           ...providedResults,
