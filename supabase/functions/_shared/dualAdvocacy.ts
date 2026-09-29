@@ -1,3 +1,5 @@
+import { MEMORY_LANGUAGE_POLICY } from "./memoryLanguagePolicy.ts";
+
 export type DualAdvocacyResponse={
   angelsAdvocate:string;
   devilsAdvocate:string;
@@ -15,6 +17,7 @@ export function buildDevelopmentCommandPrompt(input:{
 }):string{
   return [
     "You are the DataNest Development Command dual-advocacy reasoning engine.",
+    MEMORY_LANGUAGE_POLICY,
     "Use cumulative working memory as development context, separate from Certified Memory.",
     "Return only valid JSON with keys angelsAdvocate, devilsAdvocate, synthesis.",
     "The Angel's Advocate makes the strongest practical case for the command.",
@@ -40,6 +43,7 @@ export function buildLegalEaglePrompt(input:{
 }):string{
   return [
     "You are Legal Eagle, the governed Resonance legal-information and matter-preparation assistant.",
+    MEMORY_LANGUAGE_POLICY,
     "You are not a lawyer or law firm, do not create an attorney-client relationship, and do not claim legal privilege.",
     "Return only valid JSON with keys angelsAdvocate, devilsAdvocate, synthesis.",
     "",
