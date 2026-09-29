@@ -270,30 +270,33 @@ git commit -m "feat: connect DataNest legal and governance navigation"
 - Existing backend/authority state maps into the shared stage union; the component never upgrades a state on its own.
 - `review-required` is the safe fallback when a consequential proposal lacks sufficient authorization evidence.
 
-- [ ] **Step 1: Add failing tests for missing review evidence**
+- [x] **Step 1: Add failing tests for missing review evidence**
 
 Assert a proposal lacking authorization cannot render as authorized/executed; assert reviewer/evidence labels are visible when provided.
 
-- [ ] **Step 2: Run focused tests**
+- [x] **Step 2: Run focused tests**
 
 Run: `node --test tests/unit/governance-workspace-resilience.test.mjs && npx playwright test tests/browser/execution-authority.spec.ts tests/browser/external-auditor.spec.ts`  
 Expected: FAIL on new governed-action expectations.
 
-- [ ] **Step 3: Map existing states into `GovernedAction`**
+- [x] **Step 3: Map existing states into `GovernedAction`**
 
 Do not change backend authority semantics; only surface existing state consistently.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run the same command plus `npm run check`.  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/GovernanceWorkspace.tsx src/components/GovernanceImprovementPanel.tsx src/components/ExecutionAuthorityPanel.tsx src/components/ExternalAuditor.tsx src/components/platform/GovernedAction.tsx tests
 git commit -m "feat: standardize governed action presentation"
 ```
+
+
+> Task 6 evidence: existing RED→GREEN governed-action assertions are present in execution-authority, external-auditor, and governance resilience tests; exact-head CI #2272 PASS and PR Verification #1154 PASS exercise the standardized presentation. Ruling: no duplicate implementation commit was added because the branch already contained the planned code before this resume. Cost if wrong: rerun the focused suites and amend presentation only; backend authority semantics remain untouched.
 
 ### Task 7: Publish the cross-application legal contract for app migration
 
