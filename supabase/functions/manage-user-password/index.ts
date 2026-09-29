@@ -71,6 +71,28 @@ Deno.serve(async(req:Request)=>{
   const emailClient=createClient(supabaseUrl,anonKey,{auth:{persistSession:false}});
   const service=createClient(supabaseUrl,serviceRoleKey,{auth:{persistSession:false}});
 
+  async function recordPasswordSecurityEvent(values:{
+    projectId:string;
+    actorUserId:string;
+    targetUserId:string;
+    action:"admin_email_reset"|"admin_set_temporary";
+    actorRole:string;
+    targetRole:string;
+    metadata?:Record<string,unknown>;
+  }){
+    const {error}=await service.from("password_security_events").insert({
+      project_id:values.projectId,
+      actor_user_id:values.actorUserId,
+      target_user_id:values.targetUserId,
+      action:values.action,
+      actor_role:values.actorRole,
+      target_role:values.targetRole,
+      outcome:"succeeded",
+      metadata:values.metadata||{}
+    });
+    return !error;
+  }
+
   const {data:userResult,error:userError}=await callerClient.auth.getUser();
   const caller=userResult.user;
   if(userError||!caller){
@@ -149,7 +171,16 @@ Deno.serve(async(req:Request)=>{
     if(resetError){
       return json(req,{error:resetError.message},400);
     }
-    return json(req,{ok:true,action:"email_reset",userId});
+    const auditRecorded=await recordPasswordSecurityEvent({
+      projectId,
+      actorUserId:caller.id,
+      targetUserId:userId,
+      action:"admin_email_reset",
+      actorRole:callerMembership.role,
+      targetRole:targetMembership.role,
+      metadata:{source:"manage-user-password",delivery:"email"}
+    });
+    return json(req,{ok:true,action:"email_reset",userId,auditRecorded});
   }
 
   const password=String(payload.password||"");
@@ -165,5 +196,14 @@ Deno.serve(async(req:Request)=>{
     return json(req,{error:updateError.message},400);
   }
 
-  return json(req,{ok:true,action:"set_temporary",userId});
+  const auditRecorded=await recordPasswordSecurityEvent({
+    projectId,
+    actorUserId:caller.id,
+    targetUserId:userId,
+    action:"admin_set_temporary",
+    actorRole:callerMembership.role,
+    targetRole:targetMembership.role,
+    metadata:{source:"manage-user-password"}
+  });
+  return json(req,{ok:true,action:"set_temporary",userId,auditRecorded});
 });
