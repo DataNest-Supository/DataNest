@@ -50,6 +50,13 @@ type Candidate={
   updated_at:string;
 };
 
+
+function candidateGovernedStage(status:Candidate["status"]):GovernedActionStage{
+  if(status==="ready_for_governance"||status==="converted_to_proposal")return "checked";
+  if(status==="dismissed")return "verified";
+  return "review-required";
+}
+
 type Cycle={
   id:string;
   trace_key:string;
@@ -946,6 +953,15 @@ export default function GovernanceImprovementPanel({
           <p><b>Problem:</b> {candidate.problem_statement}</p>
           <p><b>Hypothesis:</b> {candidate.hypothesis}</p>
           <p><b>Desired outcome:</b> {candidate.desired_outcome}</p>
+          <GovernedAction
+            stage={candidateGovernedStage(candidate.status)}
+            summary={candidate.status==="converted_to_proposal"
+              ?"Candidate has entered the formal governance process; this is not production authorization."
+              :candidate.status==="ready_for_governance"
+                ?"Evidence review is sufficient to enter formal governance, which remains the decision authority."
+                :"Human review remains required; continuous learning cannot adopt governance changes autonomously."}
+            evidence={<span>{candidate.trace_key} · governance effect: no</span>}
+          />
           <div className="manifestMeta">
             <span>{candidate.source_observation_ids.length} observation refs</span>
             <span>{candidate.standard_refs.length} standards refs</span>
