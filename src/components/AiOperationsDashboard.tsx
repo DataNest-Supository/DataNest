@@ -16,6 +16,7 @@ type Connection={
   last_used_at:string|null;
   last_error:string|null;
   last_rotated_at?:string|null;
+  metadata?:Record<string,unknown>|null;
   updated_at:string;
 };
 
@@ -50,6 +51,7 @@ type SharedProviderStatus={
   endpoint_host:string;
   model:string;
   status:string;
+  metadata?:Record<string,unknown>|null;
   last_rotated_at:string|null;
   updated_at:string;
 };
@@ -86,12 +88,14 @@ export default function AiOperationsDashboard({
   const [sharedLabel,setSharedLabel]=useState("DataNest Open AI · Nemotron 3 Super");
   const [sharedModel,setSharedModel]=useState("@cf/nvidia/nemotron-3-120b-a12b");
   const [sharedApiKey,setSharedApiKey]=useState("");
+  const [sharedProcessingRegion,setSharedProcessingRegion]=useState("");
 
   const [provider,setProvider]=useState("openai");
   const [label,setLabel]=useState("My OpenAI");
   const [endpoint,setEndpoint]=useState("https://api.openai.com/v1/chat/completions");
   const [model,setModel]=useState("");
   const [apiKey,setApiKey]=useState("");
+  const [processingRegion,setProcessingRegion]=useState("");
 
   const [domainHost,setDomainHost]=useState("");
   const [dailyLimit,setDailyLimit]=useState("100");
@@ -113,7 +117,7 @@ export default function AiOperationsDashboard({
 
     const [connectionsResult,budgetResult,allowResult]=await Promise.all([
       supabase.from("ai_provider_connections")
-        .select("id,provider,label,api_base_url,endpoint_host,model,status,is_default,last_used_at,last_error,last_rotated_at,updated_at")
+        .select("id,provider,label,api_base_url,endpoint_host,model,status,is_default,last_used_at,last_error,last_rotated_at,metadata,updated_at")
         .eq("project_id",projectId)
         .eq("user_id",currentUserId)
         .order("updated_at",{ascending:false}),
@@ -153,6 +157,7 @@ export default function AiOperationsDashboard({
       const sharedPayload=(sharedData||{}) as {error?:unknown;config?:SharedProviderStatus|null};
       if(sharedPayload.error){setError(String(sharedPayload.error));return;}
       setSharedProvider(sharedPayload.config||null);
+      setSharedProcessingRegion(String(sharedPayload.config?.metadata?.processing_region||""));
     }else{
       setSharedProvider(null);
     }
@@ -177,7 +182,7 @@ export default function AiOperationsDashboard({
     if(!supabase)return;
     setBusy(true);setNotice("");setError("");
     const {data,error:invokeError}=await supabase.functions.invoke("manage-ai-provider-v2",{
-      body:{action:"connect",projectId,provider,label,apiBaseUrl:endpoint,model,apiKey}
+      body:{action:"connect",projectId,provider,label,apiBaseUrl:endpoint,model,apiKey,processingRegion}
     });
     setBusy(false);
     if(invokeError){setError(invokeError.message);return;}
@@ -212,7 +217,8 @@ export default function AiOperationsDashboard({
         label:sharedLabel,
         apiBaseUrl,
         model:sharedModel,
-        apiKey:sharedApiKey
+        apiKey:sharedApiKey,
+        processingRegion:sharedProcessingRegion
       }
     });
     setBusy(false);
@@ -366,6 +372,7 @@ export default function AiOperationsDashboard({
         <p className="muted">{sharedProvider.api_base_url}</p>
         <div className="manifestMeta">
           <span>{"Host "+sharedProvider.endpoint_host}</span>
+          <span>{"Region "+String(sharedProvider.metadata?.processing_region||"not declared")}</span>
           <span>{"Rotated "+formatDate(sharedProvider.last_rotated_at)}</span>
         </div>
       </article>}
@@ -376,6 +383,7 @@ export default function AiOperationsDashboard({
           <label>Connection label<input value={sharedLabel} onChange={e=>setSharedLabel(e.target.value)} required/></label>
         </div>
         <label>Open model<input value={sharedModel} onChange={e=>setSharedModel(e.target.value)} required/></label>
+        <label>Declared processing region<input value={sharedProcessingRegion} onChange={e=>setSharedProcessingRegion(e.target.value)} placeholder="e.g. eu-central-1" maxLength={64}/><small>Use only a provider region supported by reviewed locality evidence. Leave blank when unknown.</small></label>
         <label>Workers AI API token<input type="password" autoComplete="off" value={sharedApiKey} onChange={e=>setSharedApiKey(e.target.value)} placeholder="Encrypted in Supabase Vault" required/></label>
         <div className="rowActions">
           <button className="primaryButton" disabled={busy}>{busy?"Saving…":sharedProvider?"Rotate / update shared provider":"Activate shared provider"}</button>
@@ -393,7 +401,7 @@ export default function AiOperationsDashboard({
           <div><p className="eyebrow">MODEL ROUTING</p><h3>Approved provider connection</h3></div>
         </div>
         <p className="muted">
-          OpenAI uses its canonical endpoint. Other compatible providers require an approved hostname. Credentials stay encrypted server-side and are never returned to the browser.
+          OpenAI uses its canonical endpoint. Other compatible providers require an approved hostname. Processing region is an explicit reviewed declaration, never inferred from provider or hostname. Credentials stay encrypted server-side and are never returned to the browser.
         </p>
         <form className="plannerForm" onSubmit={connectProvider}>
           <div className="fieldRow">
@@ -407,6 +415,7 @@ export default function AiOperationsDashboard({
             <label>Connection label<input value={label} onChange={e=>setLabel(e.target.value)} required/></label>
           </div>
           <label>API endpoint<input type="url" value={endpoint} onChange={e=>setEndpoint(e.target.value)} required/></label>
+          <label>Declared processing region<input value={processingRegion} onChange={e=>setProcessingRegion(e.target.value)} placeholder="e.g. eu-central-1" maxLength={64}/><small>Declare only a provider processing region backed by reviewed evidence. DataNest does not infer region from hostname.</small></label>
           <div className="fieldRow">
             <label>Model<input value={model} onChange={e=>setModel(e.target.value)} placeholder="Allowed provider model ID" required/></label>
             <label>API credential<input type="password" autoComplete="off" value={apiKey} onChange={e=>setApiKey(e.target.value)} placeholder="Encrypted server-side" required/></label>
@@ -422,6 +431,7 @@ export default function AiOperationsDashboard({
             </div>
             <p className="muted">{connection.api_base_url}</p>
             <div className="manifestMeta">
+              <span>{"Region "+String(connection.metadata?.processing_region||"not declared")}</span>
               <span>{"Last used "+formatDate(connection.last_used_at)}</span>
               <span>{"Rotated "+formatDate(connection.last_rotated_at||null)}</span>
               {connection.is_default&&<span>Default</span>}
