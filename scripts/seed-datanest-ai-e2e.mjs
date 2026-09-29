@@ -71,6 +71,20 @@ async function ensureProject(userId){
   return project;
 }
 
+async function closeStaleLaunchedExternalAiSessions(userId,jobIds){
+  if(!jobIds.length)return 0;
+  const now=new Date().toISOString();
+  const {data,error}=await admin
+    .from("external_ai_sessions")
+    .update({status:"closed",closed_at:now,updated_at:now})
+    .eq("user_id",userId)
+    .in("job_id",jobIds)
+    .eq("status","launched")
+    .select("id");
+  if(error)throw error;
+  return data?.length||0;
+}
+
 async function ensureJob(projectId,{title,description,priority}){
   const existing=await admin.from("jobs")
     .select("id,job_number,title")
@@ -108,10 +122,16 @@ const switchJob=await ensureJob(project.id,{
   priority:60
 });
 
+const closedExternalAiSessions=await closeStaleLaunchedExternalAiSessions(
+  user.id,
+  [job.id,switchJob.id]
+);
+
 console.log(JSON.stringify({
   projectId:project.id,
   jobId:job.id,
   jobNumber:job.job_number,
   switchJobId:switchJob.id,
-  switchJobNumber:switchJob.job_number
+  switchJobNumber:switchJob.job_number,
+  closedExternalAiSessions
 }));
