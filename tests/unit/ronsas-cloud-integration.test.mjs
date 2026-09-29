@@ -105,3 +105,16 @@ test("RONSAS launch registry distinguishes seven DataNest Pages apps from YouTub
   assert.match(panel,/External SSR|SSR runtime/);
   assert.match(panel,/YouTube Optimizer/);
 });
+
+
+const brandValidator=readFileSync(new URL("../../scripts/validate-ronsas-brand-contract.mjs",import.meta.url),"utf8");
+const ronsasWorkflow=readFileSync(new URL("../../.github/workflows/ronsas-app-validation.yml",import.meta.url),"utf8");
+
+test("RONSAS CI enforces complete brand governance across all eight user-facing apps",()=>{
+  assert.match(brandValidator,/process\.argv\.includes\("--complete"\)/);
+  for(const slug of ["career-compass","creative-studio","epublisher","lyricsync-studio","scene-song-spark","sovereign-forge","syncvision","youtube-optimizer"]){
+    assert.match(brandValidator,new RegExp(slug));
+  }
+  assert.match(brandValidator,/sovereign-backend/);
+  assert.match(ronsasWorkflow,/validate-ronsas-brand-contract\.mjs --complete/);
+});
