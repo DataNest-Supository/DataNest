@@ -40,7 +40,7 @@ export default function DataNestAiMemoryPanel({items}:{items:CertifiedMemoryItem
     <div className="panelHead">
       <div>
         <p className="eyebrow">CERTIFIED MEMORY</p>
-        <h3>Context-selected Verified Memory</h3>
+        <h3>Project-wide reusable knowledge</h3>
       </div>
       <span className="countPill">{items.length}</span>
     </div>
