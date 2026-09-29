@@ -89,6 +89,20 @@ test("TranScheduler identifies requirement sections outside the user's saved int
 });
 
 
+test("TranScheduler shows loaded-page saved-interest coverage and per-Job coverage ratios",()=>{
+  assert.match(taxonomy,/function workInterestCoverage/);
+  assert.match(taxonomy,/covered:selected\.filter\(key=>coveredSet\.has\(key\)\)/);
+  assert.match(taxonomy,/gaps:selected\.filter\(key=>!coveredSet\.has\(key\)\)/);
+  assert.match(app,/Interest coverage · current queue page/);
+  assert.match(app,/Covered interest:/);
+  assert.match(app,/No current Job interest:/);
+  assert.match(app,/const requirementCount=workFocusKeysFromRequirements\(job\.requirements\)\.length/);
+  assert.match(app,/Interest coverage /);
+  assert.match(app,/"Coverage "\+matched\.length\+" of "\+requirementCount/);
+  assert.match(app,/className="interestCoverageDetail"/);
+});
+
+
 test("Stakeholder shows current open Job demand for each interest area",()=>{
   assert.match(stakeholder,/supabase\.from\("jobs"\)\.select\("requirements,status"\)\.eq\("project_id",projectId\)/);
   assert.match(stakeholder,/const interestDemandFinalStates=new Set\(\["COMPLETED","FAILED","CANCELLED"\]\)/);
