@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { NavigationItem } from "@/components/platform/navigationTypes";
 
 const navigationGlyphs:Record<string,string> = {
@@ -21,6 +22,8 @@ const navigationGlyphs:Record<string,string> = {
   transparency:"◎",
   settings:"⚙"
 };
+
+const legalLinks=[{"href":"/legal","label":"Legal Centre"},{"href":"/governance","label":"Governance"},{"href":"/privacy","label":"Privacy"},{"href":"/terms","label":"Terms"},{"href":"/disclaimers","label":"Disclaimers"}] as const;
 
 export default function GlobalNavigation({
   items,currentView,onNavigate,onOpenQuickSwitch
@@ -49,5 +52,11 @@ export default function GlobalNavigation({
         <span aria-hidden="true">{navigationGlyphs[item.id]||"•"}</span>{item.label}
       </button>)}
     </details>)}
+    <div className="navLegalSection">
+      <p>Governance &amp; Legal</p>
+      <div className="navLegalLinks" role="navigation" aria-label="Governance and legal links">
+        {legalLinks.map(item=><Link href={item.href} key={item.href}>{item.label}</Link>)}
+      </div>
+    </div>
   </nav>;
 }
