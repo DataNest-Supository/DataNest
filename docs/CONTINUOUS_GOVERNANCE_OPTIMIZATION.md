@@ -1,7 +1,7 @@
 # Resonance DataNest Continuous Governance Optimization
 
 Status: governed engineering baseline; not a claim of ISO certification, legal compliance, or exhaustive standards conformity.  
-Version: `continuous-governance-v1`.  
+Version: `continuous-governance-v1.1`.  
 Review date: 2026-09-29.
 
 ## Objective
