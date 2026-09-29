@@ -71,7 +71,7 @@ test("governance UI surfaces review-due memory without relabeling it uncertified
   assert.match(certificationPanel,/CERTIFIED · REVIEW DUE/);
   assert.match(certificationPanel,/Reaffirm reviewed memory/);
   assert.match(certificationPanel,/Retire from active memory/);
-  assert.match(memoryPanel,/Context-selected Verified Memory/);
+  assert.match(memoryPanel,/Project-wide reusable knowledge/);
   assert.match(memoryPanel,/CERTIFIED · REVIEW DUE/);
   assert.match(memoryPanel,/reviewFactor:item\.review_factor/);
 });
