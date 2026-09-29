@@ -11,6 +11,9 @@ verify_jwt = true
 [functions.send-project-member-invite]
 verify_jwt = true
 
+[functions.manage-user-password]
+verify_jwt = true
+
 [functions.ronsas-status]
 verify_jwt = true
 
