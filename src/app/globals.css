@@ -5036,3 +5036,44 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
   .legalDualGrid{grid-template-columns:1fr}
   .legalDualSynthesis{grid-column:auto}
 }
+
+
+/* 2026-09-29 TranScheduler Job requirements + user interests */
+.workFocusFieldset{
+  margin:0;
+  padding:14px;
+  border:1px solid rgba(102,218,255,.13);
+  border-radius:12px;
+  background:rgba(4,9,24,.35);
+}
+.workFocusFieldset legend{padding:0 6px;color:#ccecf6;font-size:10px;font-weight:850}
+.workFocusFieldset>p{margin:0 0 10px;font-size:9px;line-height:1.5}
+.workFocusGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.workFocusGrid>label{
+  display:flex;align-items:flex-start;gap:8px;min-width:0;padding:9px;
+  border:1px solid rgba(255,255,255,.06);border-radius:9px;background:rgba(255,255,255,.02);cursor:pointer
+}
+.workFocusGrid>label:has(input:checked){border-color:rgba(66,231,255,.28);background:rgba(66,231,255,.055)}
+.workFocusGrid input{margin-top:2px}
+.workFocusGrid span{display:grid;gap:2px;min-width:0}
+.workFocusGrid b{color:#bdd9e6;font-size:9px}
+.workFocusGrid small{color:#6f879b;font-size:8px;line-height:1.35}
+.schedulerInterestToggle{
+  display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:6px 9px;
+  border:1px solid rgba(102,218,255,.13);border-radius:9px;background:rgba(5,10,25,.55);
+  color:#92adbf;font-size:9px;font-weight:800
+}
+.schedulerInterestSummary{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-3px 0 12px;color:#7892a7;font-size:9px}
+.schedulerInterestSummary b{color:#b8d5e2}
+.interestMatchTag{
+  display:inline-flex;margin:5px 0 0 6px;padding:2px 6px;border:1px solid rgba(66,231,255,.24);
+  border-radius:999px;background:rgba(66,231,255,.07);color:#8beeff;font-size:7px;font-weight:900;letter-spacing:.08em
+}
+.jobFocusTags{display:flex!important;flex-wrap:wrap;gap:4px;margin-top:5px!important}
+.jobFocusTags small,.jobFocusChip{
+  display:inline-flex!important;width:max-content;padding:2px 5px;border:1px solid rgba(255,255,255,.07);
+  border-radius:999px;background:rgba(255,255,255,.025);color:#7896aa!important;font-size:7px!important
+}
+.schedulerRow.interestMatch,.ganttRow.interestMatch{box-shadow:inset 2px 0 rgba(66,231,255,.35)}
+.stakeholderInterestGrid{margin-top:12px}
+@container datanest-main (max-width:620px){.workFocusGrid{grid-template-columns:1fr}}

@@ -1257,7 +1257,7 @@ test("UNIFI reconciles pending, not-recorded, and confirmed-after-error outcomes
       headers["Content-Range"]="*/0";
     }
 
-    if(path.endsWith("/create_job_manifest_v2")){
+    if(path.endsWith("/create_job_manifest_v3")){
       createCalls += 1;
       const payload=route.request().postDataJSON() as {target_request_key?:string};
       requestKeys.push(String(payload.target_request_key||""));
