@@ -65,3 +65,13 @@ test("interest-only scheduler state is shareable and Stakeholder can open it dir
   assert.match(stakeholder,/Open matched Jobs/);
   assert.match(stakeholder,/onOpenMatchedJobs:\(\)=>void/);
 });
+
+
+test("TranScheduler explains why each Job matches the user's interests",()=>{
+  assert.match(taxonomy,/function workInterestOverlapKeys/);
+  assert.match(taxonomy,/workFocusKeysFromRequirements\(requirements\)\.filter\(key=>selected\.has\(key\)\)/);
+  assert.match(app,/Matched interests:/);
+  assert.match(app,/"Matched "\+workInterestOverlapKeys\(job\.requirements,userInterests\)\.length/);
+  assert.match(app,/workInterestOverlapKeys\(job\.requirements,userInterests\)\.map\(workFocusLabel\)\.join\(" · "\)/);
+  assert.match(app,/className="interestMatchDetail"/);
+});

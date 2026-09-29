@@ -234,6 +234,10 @@ test("Stakeholder interests drive TranScheduler requirement matching and filteri
   await expect(page.getByText("2 interest matches",{exact:true})).toBeVisible();
   await expect(page.getByText("INTEREST MATCH",{exact:true})).toHaveCount(2);
   await expect(page.locator(".ganttRow.interestMatch")).toHaveCount(2);
+  await expect(page.getByText("Matched 2 · UI/UX · Security & Testing",{exact:true})).toHaveCount(1);
+  await expect(page.getByText("Matched 1 · UI/UX",{exact:true})).toHaveCount(1);
+  await expect(page.getByLabel("Matched interests: UI/UX, Security & Testing")).toHaveCount(1);
+  await expect(page.getByLabel("Matched interests: UI/UX",{exact:true})).toHaveCount(1);
   await expect(page.locator(".jobFocusChip").filter({hasText:"UI/UX"})).toHaveCount(2);
 
   const ganttTitles=page.locator(".ganttJobTitle small");

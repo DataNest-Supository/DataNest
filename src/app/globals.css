@@ -5069,6 +5069,9 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
   display:inline-flex;margin:5px 0 0 6px;padding:2px 6px;border:1px solid rgba(66,231,255,.24);
   border-radius:999px;background:rgba(66,231,255,.07);color:#8beeff;font-size:7px;font-weight:900;letter-spacing:.08em
 }
+.interestMatchDetail{
+  display:inline-flex;margin:5px 0 0 6px;color:#88a9bb;font-size:8px;font-weight:750;line-height:1.35
+}
 .jobFocusTags{display:flex!important;flex-wrap:wrap;gap:4px;margin-top:5px!important}
 .jobFocusTags small,.jobFocusChip{
   display:inline-flex!important;width:max-content;padding:2px 5px;border:1px solid rgba(255,255,255,.07);
