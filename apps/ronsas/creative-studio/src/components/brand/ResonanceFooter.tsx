@@ -11,7 +11,10 @@ const APPS = [
   { name: "Podcast", href: "https://resonance-podcast.com" },
 ];
 
-const DATANEST_ROOT = import.meta.env.BASE_URL.startsWith("/DataNest/apps/") ? "/DataNest" : "";
+const DATANEST_LEGAL = "/DataNest/legal";
+const DATANEST_GOVERNANCE = "/DataNest/governance";
+const DATANEST_PRIVACY = "/DataNest/privacy";
+const DATANEST_TERMS = "/DataNest/terms";
 
 export function ResonanceFooter({
   currentApp,
@@ -45,17 +48,17 @@ export function ResonanceFooter({
           ))}
         </nav>
         <nav aria-label="DataNest governance and legal" className="text-xs space-y-2">
-          <a href={`${DATANEST_ROOT}/legal`} className="block hover:text-foreground">Legal Centre</a>
-          <a href={`${DATANEST_ROOT}/governance`} className="block hover:text-foreground">Governance</a>
-          <a href={`${DATANEST_ROOT}/privacy`} className="block hover:text-foreground">Privacy</a>
-          <a href={`${DATANEST_ROOT}/terms`} className="block hover:text-foreground">Terms</a>
+          <a href={DATANEST_LEGAL} className="block hover:text-foreground">Legal Centre</a>
+          <a href={DATANEST_GOVERNANCE} className="block hover:text-foreground">Governance</a>
+          <a href={DATANEST_PRIVACY} className="block hover:text-foreground">Privacy</a>
+          <a href={DATANEST_TERMS} className="block hover:text-foreground">Terms</a>
           <a href={HUB_UPDATES_URL} target="_blank" rel="noopener noreferrer" className="block hover:text-foreground">Ecosystem updates ↗</a>
           <a href={`mailto:${contact}`} className="block hover:text-foreground">{contact}</a>
         </nav>
       </div>
       <div className="border-t border-white/5 px-6 py-6 text-center max-w-4xl mx-auto">
         <p className="text-xs leading-relaxed text-muted-foreground">
-          Free promotion is active. No paid checkout is active in Creative Studio. Future commercial terms require governed approval.
+          Free promotion is active. Paid transactions are disabled in Creative Studio. Future commercial terms require governed approval.
         </p>
       </div>
     </footer>
