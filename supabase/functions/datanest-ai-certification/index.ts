@@ -380,6 +380,85 @@ function certifiedMemoryRelationHints(
     .sort((a,b)=>b.similarity-a.similarity||a.memoryId.localeCompare(b.memoryId));
 }
 
+async function loadCanonicalMemoryConsolidationSuggestions(
+  serviceClient:AnyClient,
+  projectId:string
+){
+  const {data,error}=await serviceClient
+    .from("certified_memory")
+    .select("id,normalized_knowledge,category,effective_version,certification_class,confidence,content_hash,promoted_at")
+    .eq("project_id",projectId)
+    .eq("active",true)
+    .order("promoted_at",{ascending:false})
+    .limit(120);
+  if(error)throw error;
+  const memories=(data||[]).map(item=>({
+    id:String(item.id),
+    normalized_knowledge:String(item.normalized_knowledge||""),
+    category:String(item.category||""),
+    effective_version:Number(item.effective_version||0),
+    certification_class:String(item.certification_class||""),
+    confidence:item.confidence==null?null:Number(item.confidence),
+    content_hash:String(item.content_hash||""),
+    promoted_at:String(item.promoted_at||"")
+  }));
+  const suggestions:Array<Record<string,unknown>>=[];
+  for(let leftIndex=0;leftIndex<memories.length;leftIndex+=1){
+    const first=memories[leftIndex];
+    for(let rightIndex=leftIndex+1;rightIndex<memories.length;rightIndex+=1){
+      const second=memories[rightIndex];
+      if(first.category!==second.category)continue;
+      const hint=classifyCertifiedMemoryRelation(
+        first.normalized_knowledge,
+        second.normalized_knowledge
+      );
+      if(hint.relation!=="duplicates")continue;
+      suggestions.push({
+        id:[first.id,second.id].sort().join(":"),
+        first,
+        second,
+        similarity:hint.similarity,
+        polarityConflict:hint.polarityConflict,
+        scalarConflict:hint.scalarConflict,
+        classifier:"datanest-certified-memory-relation-v1"
+      });
+      if(suggestions.length>=30)return suggestions;
+    }
+  }
+  return suggestions;
+}
+
+async function loadCanonicalMemoryConsolidationProposals(
+  serviceClient:AnyClient,
+  projectId:string
+){
+  const {data:proposals,error:proposalError}=await serviceClient
+    .from("certified_memory_consolidations")
+    .select("id,project_id,canonical_memory_id,status,reason,evidence,proposed_by,proposer_role,decided_by,decision_reason,proposed_at,decided_at,executed_at")
+    .eq("project_id",projectId)
+    .order("proposed_at",{ascending:false})
+    .limit(100);
+  if(proposalError){
+    const unavailable=
+      ["42P01","PGRST205"].includes(String((proposalError as {code?:unknown}).code||"")) ||
+      /certified_memory_consolidations/i.test(String((proposalError as {message?:unknown}).message||""));
+    if(unavailable)return [] as Array<Record<string,unknown>>;
+    throw proposalError;
+  }
+  const proposalIds=(proposals||[]).map(item=>String(item.id)).filter(Boolean);
+  if(!proposalIds.length)return [] as Array<Record<string,unknown>>;
+  const {data:members,error:memberError}=await serviceClient
+    .from("certified_memory_consolidation_members")
+    .select("consolidation_id,memory_id,member_role,normalized_knowledge_snapshot,content_hash_snapshot,category_snapshot,effective_version_snapshot,active_snapshot")
+    .in("consolidation_id",proposalIds)
+    .order("effective_version_snapshot",{ascending:false});
+  if(memberError)throw memberError;
+  return (proposals||[]).map(proposal=>({
+    ...proposal,
+    members:(members||[]).filter(member=>String(member.consolidation_id)===String(proposal.id))
+  })) as Array<Record<string,unknown>>;
+}
+
 async function loadCertifiedMemoryReviewQueue(
   serviceClient:AnyClient,
   projectId:string
@@ -458,7 +537,13 @@ Deno.serve(async(request:Request)=>{
     }
 
     if(action==="workspace"){
-      const [candidateResult,memoryReviewItems,memoryOutcomeItems]=await Promise.all([
+      const [
+        candidateResult,
+        memoryReviewItems,
+        memoryOutcomeItems,
+        memoryConsolidationSuggestions,
+        memoryConsolidationProposals
+      ]=await Promise.all([
         staging
           .from("ai_learning_candidates")
           .select("*")
@@ -467,7 +552,9 @@ Deno.serve(async(request:Request)=>{
           .order("updated_at",{ascending:false})
           .limit(100),
         loadCertifiedMemoryReviewQueue(serviceClient,projectId),
-        loadRecentMemoryOutcomes(serviceClient,projectId)
+        loadRecentMemoryOutcomes(serviceClient,projectId),
+        loadCanonicalMemoryConsolidationSuggestions(serviceClient,projectId),
+        loadCanonicalMemoryConsolidationProposals(serviceClient,projectId)
       ]);
       const {data:candidates,error:candidatesError}=candidateResult;
       if(candidatesError)throw candidatesError;
@@ -506,7 +593,9 @@ Deno.serve(async(request:Request)=>{
         validationRuns:runs||[],
         certificationDecisions:decisions||[],
         memoryReviewItems,
-        memoryOutcomeItems
+        memoryOutcomeItems,
+        memoryConsolidationSuggestions,
+        memoryConsolidationProposals
       },200,origin);
     }
 
@@ -574,6 +663,106 @@ Deno.serve(async(request:Request)=>{
       );
       if(outcomeError)throw outcomeError;
       return json({outcome},200,origin);
+    }
+
+    if(action==="propose_memory_consolidation"){
+      const canonicalMemoryId=String(body.canonicalMemoryId||"");
+      const requestedIds=Array.isArray(body.memoryIds)
+        ?body.memoryIds.map(value=>String(value||"")).filter(Boolean)
+        :[];
+      const memoryIds=[...new Set(requestedIds)];
+      if(!canonicalMemoryId||memoryIds.length<2){
+        return json({error:"canonicalMemoryId and at least two distinct memoryIds are required."},400,origin);
+      }
+      if(memoryIds.length>8){
+        return json({error:"A single canonical memory consolidation is limited to eight memories."},400,origin);
+      }
+      if(!memoryIds.includes(canonicalMemoryId)){
+        return json({error:"canonicalMemoryId must be included in memoryIds."},400,origin);
+      }
+      const {data:memories,error:memoryError}=await serviceClient
+        .from("certified_memory")
+        .select("id,normalized_knowledge,category,content_hash")
+        .eq("project_id",projectId)
+        .eq("active",true)
+        .in("id",memoryIds);
+      if(memoryError)throw memoryError;
+      if((memories||[]).length!==memoryIds.length){
+        return json({error:"Every consolidation member must be active Verified Memory in this project."},409,origin);
+      }
+      const canonical=(memories||[]).find(item=>String(item.id)===canonicalMemoryId);
+      if(!canonical)return json({error:"Canonical Verified Memory was not found."},409,origin);
+      const relationHints=(memories||[])
+        .filter(item=>String(item.id)!==canonicalMemoryId)
+        .map(item=>({
+          memoryId:String(item.id),
+          ...classifyCertifiedMemoryRelation(
+            String(canonical.normalized_knowledge||""),
+            String(item.normalized_knowledge||"")
+          )
+        }));
+      if(
+        (memories||[]).some(item=>String(item.category)!==String(canonical.category)) ||
+        relationHints.some(item=>item.relation!=="duplicates")
+      ){
+        return json({
+          error:"Canonical consolidation requires same-category memory that the governed relation classifier identifies as equivalent duplicates.",
+          relationHints
+        },409,origin);
+      }
+      const reason=String(
+        body.reason||
+        "Governed canonical consolidation of historically equivalent Certified Memory."
+      ).trim().slice(0,2000);
+      const {data:proposalId,error:proposalError}=await serviceClient.rpc(
+        "service_propose_certified_memory_consolidation_v1",{
+          target_project:projectId,
+          target_canonical_memory:canonicalMemoryId,
+          target_memory_ids:memoryIds,
+          target_actor:user.id,
+          target_reason:reason,
+          target_evidence:{
+            source:"datanest_ai_certification_gateway",
+            policy_version:currentPolicyVersion,
+            classifier:"datanest-certified-memory-relation-v1",
+            relation_hints:relationHints,
+            canonical_is_existing_certified_memory:true,
+            no_new_knowledge_certified:true
+          }
+        }
+      );
+      if(proposalError)throw proposalError;
+      return json({proposalId,relationHints},200,origin);
+    }
+
+    if(action==="decide_memory_consolidation"){
+      if(member.role!=="owner"){
+        return json({
+          error:"Owner authority is required to execute or reject a canonical memory consolidation."
+        },403,origin);
+      }
+      const consolidationId=String(body.consolidationId||"");
+      const decision=String(body.decision||"");
+      if(!consolidationId||!["execute","reject"].includes(decision)){
+        return json({error:"consolidationId and an execute or reject decision are required."},400,origin);
+      }
+      const reason=String(
+        body.reason||
+        (decision==="execute"
+          ?"Owner authorized canonical memory consolidation after review."
+          :"Owner rejected canonical memory consolidation after review.")
+      ).trim().slice(0,2000);
+      const {data:result,error:decisionError}=await serviceClient.rpc(
+        "service_decide_certified_memory_consolidation_v1",{
+          target_project:projectId,
+          target_consolidation:consolidationId,
+          target_actor:user.id,
+          target_decision:decision,
+          target_reason:reason
+        }
+      );
+      if(decisionError)throw decisionError;
+      return json({result},200,origin);
     }
 
     const candidateId=String(body.candidateId||"");
