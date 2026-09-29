@@ -1705,7 +1705,7 @@ export default function DataNestApp({session}:{session:Session}) {
           checkpointCount={checkpointCount}
           eventCount={eventCount}
           health={health}
-          onNavigate={setView}
+          onNavigate={next=>setView(next)}
         />}
                 {!loadingCore&&project&&view==="overview"&&<ResonanceHome project={project} jobs={recentJobs} counts={summary} canOperate={canOperate} onNavigate={setView}/>}
         {!loadingCore&&project&&view==="stakeholder"&&<StakeholderWorkspace projectId={project.id} currentUserId={session.user.id} canReview={canManageAi} onOpenMatchedJobs={()=>{setSchedulerRequirementFocus(null);setSchedulerInterestOnly(true);setSchedulerSortMode("interest");setSchedulerFilter("ALL");setSchedulerViewMode("gantt");setJobPage(0);setView("scheduler");}} onOpenRequirementJobs={key=>{setSchedulerRequirementFocus(key);setSchedulerInterestOnly(false);setSchedulerSortMode("priority");setSchedulerFilter("ALL");setSchedulerViewMode("gantt");setJobPage(0);setView("scheduler");}}/>}
