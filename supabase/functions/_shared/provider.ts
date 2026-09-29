@@ -30,6 +30,7 @@ export async function callOpenAiCompatibleProvider(input:{
   connection:ProviderConnection;
   governedPrompt:string;
   maxOutputTokens:number;
+  chatTemplateKwargs?:Record<string,unknown>;
 }):Promise<ProviderCallResult> {
   const endpoint=validateProviderConnection(input.connection);
   let response:Response;
@@ -58,7 +59,8 @@ export async function callOpenAiCompatibleProvider(input:{
           {role:"user",content:input.governedPrompt}
         ],
         temperature:0.2,
-        max_tokens:input.maxOutputTokens
+        max_tokens:input.maxOutputTokens,
+        chat_template_kwargs:input.chatTemplateKwargs
       })
     });
   }catch(error){
