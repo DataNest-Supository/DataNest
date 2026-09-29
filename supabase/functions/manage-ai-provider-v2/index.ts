@@ -37,6 +37,15 @@ function json(body:unknown,status=200,origin:string|null=null){
   });
 }
 
+function parseProcessingRegion(value:unknown){
+  const region=String(value||"").trim().toLowerCase();
+  if(!region)return null;
+  if(!/^[a-z0-9][a-z0-9._-]{0,63}$/.test(region)){
+    throw new Error("Processing region must be a normalized provider region identifier.");
+  }
+  return region;
+}
+
 function parseEndpoint(raw:string,provider:string){
   let url:URL;
   try{url=new URL(raw)}catch{throw new Error("Provider endpoint is invalid.");}
@@ -153,6 +162,7 @@ Deno.serve(async(req:Request)=>{
       const model=String(body?.model||"").trim();
       const secret=String(body?.apiKey||"").trim();
       const rawEndpoint=String(body?.apiBaseUrl||"").trim();
+      const processingRegion=parseProcessingRegion(body?.processingRegion);
 
       if(provider!=="openai_compatible"){
         return json({error:"Project-shared providers must be OpenAI-compatible."},400,origin);
@@ -173,6 +183,15 @@ Deno.serve(async(req:Request)=>{
         target_secret:secret
       });
       if(error)throw error;
+
+      const {error:regionError}=await service.rpc(
+        "service_set_shared_ai_provider_processing_region_v1",{
+          target_project:projectId,
+          target_actor:user.id,
+          target_processing_region:processingRegion
+        }
+      );
+      if(regionError)throw regionError;
 
       const {data:connection,error:syncError}=await service.rpc(
         "service_sync_shared_ai_provider_connection_v1",{
@@ -219,6 +238,7 @@ Deno.serve(async(req:Request)=>{
       body?.apiBaseUrl||
       (provider==="openai"?"https://api.openai.com/v1/chat/completions":"")
     ).trim();
+    const personalProcessingRegion=parseProcessingRegion(body?.processingRegion);
 
     if(!["openai","openai_compatible"].includes(provider)){
       return json({error:"Unsupported provider type."},400,origin);
@@ -240,7 +260,25 @@ Deno.serve(async(req:Request)=>{
     });
     if(error)throw error;
 
-    return json({ok:true,connection:data},200,origin);
+    const connectionId=String((data as Record<string,unknown>|null)?.id||"");
+    if(!connectionId)throw new Error("AI provider connection could not be resolved after update.");
+    const {error:regionError}=await service.rpc(
+      "service_set_ai_provider_processing_region_v1",{
+        target_project:projectId,
+        target_user:user.id,
+        target_connection:connectionId,
+        target_processing_region:personalProcessingRegion
+      }
+    );
+    if(regionError)throw regionError;
+
+    return json({
+      ok:true,
+      connection:{
+        ...(data as Record<string,unknown>),
+        processing_region:personalProcessingRegion
+      }
+    },200,origin);
   }catch(error){
     return json({
       error:error instanceof Error
