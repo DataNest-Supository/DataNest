@@ -75,3 +75,15 @@ test("TranScheduler explains why each Job matches the user's interests",()=>{
   assert.match(app,/workInterestOverlapKeys\(job\.requirements,userInterests\)\.map\(workFocusLabel\)\.join\(" · "\)/);
   assert.match(app,/className="interestMatchDetail"/);
 });
+
+
+test("TranScheduler shows current-page coverage and gaps for saved interests",()=>{
+  assert.match(taxonomy,/function workInterestCoverage/);
+  assert.match(taxonomy,/covered:selected\.filter\(key=>coveredSet\.has\(key\)\)/);
+  assert.match(taxonomy,/gaps:selected\.filter\(key=>!coveredSet\.has\(key\)\)/);
+  assert.match(app,/Interest coverage · current queue page/);
+  assert.match(app,/Covered interest:/);
+  assert.match(app,/No current Job interest:/);
+  assert.match(app,/interestCoverage\.covered\.length/);
+  assert.match(app,/interestCoverage\.gaps\.length/);
+});
