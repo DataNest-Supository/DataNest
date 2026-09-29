@@ -34,7 +34,7 @@ type Checkpoint = { id:string; job_id:string; completed:string[]; remaining:stri
 type AuditEvent = { id:number; job_id:string|null; event_type:string; actor:string; payload:Record<string,unknown>; created_at:string };
 type Policy = { id:string; policy_key:string; value:Record<string,unknown> };
 type ProjectMember = { project_id:string; user_id:string; role:"owner"|"admin"|"operator"|"viewer"; status:string };
-type ViewKey = "overview"|"stakeholder"|"sparks"|"impact"|"governance"|"products"|"external_auditor"|"thinktank"|"ai"|"productlab"|"unifi"|"scheduler"|"runs"|"checkpoints"|"audit"|"transparency"|"settings";
+type ViewKey = "dashboard"|"overview"|"stakeholder"|"sparks"|"impact"|"governance"|"products"|"external_auditor"|"thinktank"|"ai"|"productlab"|"unifi"|"scheduler"|"runs"|"checkpoints"|"audit"|"transparency"|"settings";
 type SchedulerViewMode = "queue"|"gantt"|"authority"|"resources";
 type SchedulerSortMode = "priority"|"deadline"|"recent"|"interest";
 const schedulerFilterOptions=["ALL","PLANNED","READY","QUEUED","RUNNING","MANUAL_ACTION","BLOCKED","COMPLETED"] as const;
@@ -113,6 +113,7 @@ const finalStates = new Set(["COMPLETED","FAILED","CANCELLED"]);
 const jobColumns = "id,job_number,title,description,priority,status,required_capabilities,requirements,acceptance,created_at,updated_at,deadline";
 
 const nav:Array<{key:ViewKey;label:string;group:string;glyph:string}> = [
+  {key:"dashboard",label:"Control Center",group:"Core",glyph:"▦"},
   {key:"overview",label:"AI & I",group:"Core",glyph:"◎"},
   {key:"ai",label:"DataNest AI",group:"Core",glyph:"✦"},
   {key:"stakeholder",label:"Stakeholder",group:"Discover",glyph:"◌"},
@@ -139,6 +140,7 @@ type CommandItem =
 const viewKeys = new Set<ViewKey>(nav.map(item=>item.key));
 
 const viewDescriptions:Record<ViewKey,string> = {
+  dashboard:"Live operational dashboard across work, execution, governance, AI optimization, controls and evidence.",
   overview:"Human intent and governed AI collaboration at a glance.",
   stakeholder:"Capture stakeholder input and review contribution context.",
   sparks:SPARKS_WORKSPACE_DESCRIPTION,
@@ -281,6 +283,11 @@ const ThinkTankWorkspace = dynamic(() => import("@/components/ThinkTankWorkspace
 const DataNestAiWorkspace = dynamic(() => import("@/components/DataNestAiWorkspace"), {
   ssr: false,
   loading: () => <section className="panel"><p className="muted">Loading DataNest AI…</p></section>
+});
+
+const DataNestDashboard = dynamic(() => import("@/components/DataNestDashboard"), {
+  ssr: false,
+  loading: () => <section className="panel"><p className="muted">Loading DataNest Control Center…</p></section>
 });
 
 const AiOperationsDashboard = dynamic(() => import("@/components/AiOperationsDashboard"), {
@@ -1688,7 +1695,19 @@ export default function DataNestApp({session}:{session:Session}) {
         </section>}
 
         <div key={view} className="viewStage workspaceArrival">
-        {!loadingCore&&project&&view==="overview"&&<ResonanceHome project={project} jobs={recentJobs} counts={summary} canOperate={canOperate} onNavigate={setView}/>}
+        {!loadingCore&&project&&view==="dashboard"&&<DataNestDashboard
+          projectId={project.id}
+          projectName={project.name}
+          role={membership?.role||"viewer"}
+          counts={summary}
+          jobs={recentJobs}
+          runCount={runCount}
+          checkpointCount={checkpointCount}
+          eventCount={eventCount}
+          health={health}
+          onNavigate={setView}
+        />}
+                {!loadingCore&&project&&view==="overview"&&<ResonanceHome project={project} jobs={recentJobs} counts={summary} canOperate={canOperate} onNavigate={setView}/>}
         {!loadingCore&&project&&view==="stakeholder"&&<StakeholderWorkspace projectId={project.id} currentUserId={session.user.id} canReview={canManageAi} onOpenMatchedJobs={()=>{setSchedulerRequirementFocus(null);setSchedulerInterestOnly(true);setSchedulerSortMode("interest");setSchedulerFilter("ALL");setSchedulerViewMode("gantt");setJobPage(0);setView("scheduler");}} onOpenRequirementJobs={key=>{setSchedulerRequirementFocus(key);setSchedulerInterestOnly(false);setSchedulerSortMode("priority");setSchedulerFilter("ALL");setSchedulerViewMode("gantt");setJobPage(0);setView("scheduler");}}/>}
         {!loadingCore&&project&&["sparks","productlab","unifi"].includes(view)&&!recoveryHydrated&&<section className="panel" role="status" aria-live="polite">
           <p className="eyebrow">DURABLE RECOVERY</p>
