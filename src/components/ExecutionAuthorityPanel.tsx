@@ -4,7 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 import { useSingleFlight } from "@/lib/singleFlight";
 import PageHeader from "@/components/platform/PageHeader";
-import GovernedAction from "@/components/platform/GovernedAction";
+import GovernedAction, { type GovernedActionStage } from "@/components/platform/GovernedAction";
 import {
   autonomyDescriptions,
   autonomyLabels,
