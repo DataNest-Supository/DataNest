@@ -77,7 +77,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path=''
-as $
+as $fn$
 begin
   insert into public.certified_memory_projection_profiles(
     project_id,projection_key,version,status,product_scope,include_unscoped,
@@ -114,7 +114,7 @@ begin
 
   return new;
 end;
-$;
+$fn$;
 
 drop trigger if exists seed_verified_memory_projection_profiles on public.projects;
 create trigger seed_verified_memory_projection_profiles
@@ -137,7 +137,7 @@ create or replace function private.upsert_certified_memory_projection_profile_v1
 language plpgsql
 security definer
 set search_path=''
-as $
+as $fn$
 declare
   caller uuid:=auth.uid();
   caller_role text;
@@ -221,7 +221,7 @@ begin
 
   return new_id;
 end;
-$;
+$fn$;
 
 create or replace function public.upsert_certified_memory_projection_profile_v1(
   target_project uuid,
@@ -238,13 +238,13 @@ create or replace function public.upsert_certified_memory_projection_profile_v1(
 language sql
 security definer
 set search_path=''
-as $
+as $fn$
   select private.upsert_certified_memory_projection_profile_v1(
     target_project,target_projection_key,target_product_scope,target_include_unscoped,
     target_allowed_categories,target_excluded_categories,target_min_confidence,
     target_max_items,target_require_jurisdiction,target_metadata
   );
-$;
+$fn$;
 
 revoke execute on function private.upsert_certified_memory_projection_profile_v1(
   uuid,text,text,boolean,text[],text[],numeric,integer,boolean,jsonb
