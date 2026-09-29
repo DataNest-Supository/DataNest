@@ -5,7 +5,7 @@ import { getSupabase } from "@/lib/supabase";
 import styles from "./OwnerDevelopmentAnalytics.module.css";
 
 const GITHUB_REPO = "DataNest-Supository/DataNest";
-const GITHUB_INTERVAL_MS = 5 * 60 * 1000;
+const GITHUB_INTERVAL_MS = 10 * 60 * 1000;
 const DB_INTERVAL_MS = 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -238,8 +238,7 @@ export default function OwnerDevelopmentAnalytics({
   const loadGithub = useCallback(async () => {
     try {
       const since = new Date(Date.now() - 30 * DAY_MS).toISOString();
-      const [repository, openPulls, openPullSearch, supabasePulls, closedPulls, commits, workflowRuns] = await Promise.all([
-        githubJson<GithubRepository>("/repos/" + GITHUB_REPO),
+      const [openPulls, openPullSearch, supabasePulls, closedPulls, commits, workflowRuns] = await Promise.all([
         githubJson<GithubPull[]>("/repos/" + GITHUB_REPO + "/pulls?state=open&per_page=100&sort=updated&direction=desc"),
         githubJson<GithubIssueSearch>("/search/issues?q=repo%3A" + encodeURIComponent(GITHUB_REPO) + "+is%3Apr+is%3Aopen&per_page=1"),
         githubJson<GithubIssueSearch>("/search/issues?q=repo%3A" + encodeURIComponent(GITHUB_REPO) + "+is%3Apr+is%3Aopen+path%3Asupabase&per_page=100"),
@@ -249,7 +248,7 @@ export default function OwnerDevelopmentAnalytics({
       ]);
 
       setGithub({
-        repository,
+        repository: { default_branch: "main" },
         openPulls,
         openPullCount: openPullSearch.total_count,
         supabaseOpenCount: supabasePulls.total_count,
@@ -406,7 +405,7 @@ export default function OwnerDevelopmentAnalytics({
             <div className={styles.legend}>
               <span><i className={styles.legendPrimary} /> Commits</span>
               <span><i className={styles.legendSecondary} /> Merged PRs</span>
-              {github && <span className={styles.timestamp}>Repo pushed {formatDate(github.repository.pushed_at)}</span>}
+              {github && <span className={styles.timestamp}>GitHub snapshot {formatDate(github.fetchedAt)}</span>}
             </div>
           </article>
 
