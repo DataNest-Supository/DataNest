@@ -200,6 +200,52 @@ export default function ExternalAiSidebar({
     setSuggestions((suggestionResult.data||[]) as Suggestion[]);
   },[onError]);
 
+  const restoreLatestSession=useCallback(async(jobId:string,providerKey:string)=>{
+    const supabase=getSupabase();
+    if(!supabase||!jobId||!providerKey)return;
+    const {data:userResult}=await supabase.auth.getUser();
+    const userId=userResult.user?.id;
+    if(!userId)return;
+
+    const {data,error}=await supabase
+      .from("external_ai_sessions")
+      .select("id,status,provider,launch_mode,context_snapshot,launched_at")
+      .eq("job_id",jobId)
+      .eq("user_id",userId)
+      .eq("provider",providerKey)
+      .eq("status","launched")
+      .order("launched_at",{ascending:false})
+      .limit(1)
+      .maybeSingle();
+
+    if(error){
+      onError(error.message);
+      return;
+    }
+    if(!data)return;
+
+    const snapshot=(data.context_snapshot||{}) as Record<string,unknown>;
+    const restoredTraceKey=String(snapshot.trace_key||"");
+    const restoredMode=data.launch_mode==="sidebar"||data.launch_mode==="companion"||data.launch_mode==="popout"
+      ?data.launch_mode
+      :providerKey==="chatgpt"?"companion":"popout";
+
+    pendingAutoReturnSession.current="";
+    setAutoCaptureEnabled(false);
+    setSessionId(String(data.id));
+    setTraceKey(restoredTraceKey);
+    setLaunchMode(restoredMode);
+    setEmbedUrl(restoredMode==="sidebar"?selectedProvider.url:"");
+    setHandoff(buildHandoff({
+      sessionId:String(data.id),
+      traceKey:restoredTraceKey,
+      providerLabel:selectedProvider.label
+    }));
+    setResponseText("");
+    setLastImportedId("");
+    lastClipboardCapture.current="";
+  },[onError,selectedProvider.label,selectedProvider.url,setAutoCaptureEnabled]);
+
   useEffect(()=>{
     const savedWidth=Number(window.localStorage.getItem("datanest.aiSidebar.width")||"500");
     const savedProvider=window.localStorage.getItem("datanest.aiSidebar.provider");
@@ -231,7 +277,8 @@ export default function ExternalAiSidebar({
     lastClipboardCapture.current="";
     setEmbedUrl("");
     void loadJobContext(selectedJobId);
-  },[selectedJobId,loadJobContext]);
+    void restoreLatestSession(selectedJobId,provider);
+  },[selectedJobId,loadJobContext,provider,restoreLatestSession]);
 
   useEffect(()=>{
     window.localStorage.setItem("datanest.aiSidebar.width",String(width));
@@ -248,7 +295,8 @@ export default function ExternalAiSidebar({
     setLastImportedId("");
     lastClipboardCapture.current="";
     setEmbedUrl("");
-  },[provider]);
+    void restoreLatestSession(selectedJobId,provider);
+  },[provider,selectedJobId,restoreLatestSession]);
 
   useEffect(()=>()=>{
     if(companionClosePollRef.current!==null){
