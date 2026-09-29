@@ -1750,3 +1750,24 @@ test("stale recovery stays preserved and user-scoped across account transitions"
   const preservedAfterSwitch=await page.evaluate(()=>Object.keys(sessionStorage).filter(key=>key.startsWith("datanest.pendingMutation.")));
   expect(preservedAfterSwitch).toHaveLength(2);
 });
+
+
+test("authenticated legal navigation preserves workspace history", async ({page}) => {
+  await openJourneyFixture(page);
+  await page.goto(appPath+"?view=governance");
+  await expect(page.getByRole("heading",{name:"Governance",level:1,exact:true})).toBeVisible();
+
+  const legalNav=page.getByRole("navigation",{name:"Governance and legal links"});
+  await expect(legalNav).toBeVisible();
+  for(const label of ["Legal Centre","Governance","Privacy","Terms","Disclaimers"]){
+    await expect(legalNav.getByRole("link",{name:label,exact:true})).toBeVisible();
+  }
+
+  await legalNav.getByRole("link",{name:"Legal Centre",exact:true}).click();
+  await expect(page).toHaveURL(/\/legal\/?$/);
+  await expect(page.getByRole("heading",{name:"Governance & Legal Centre",exact:true})).toBeVisible();
+
+  await page.goBack();
+  await expect(page).toHaveURL(/\?view=governance$/);
+  await expect(page.getByRole("heading",{name:"Governance",level:1,exact:true})).toBeVisible();
+});
