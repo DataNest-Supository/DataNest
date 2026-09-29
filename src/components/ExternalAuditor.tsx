@@ -59,7 +59,13 @@ export default function ExternalAuditor({projectId,role}:ExternalAuditorProps){
     await analyzeAssessment(bundle.assessment.id,crypto.randomUUID());await refresh(bundle.assessment.id);setNotice("Evidence-linked draft analysis created for human review.");
   });
 
-  const publishReport=()=>run("publish",async()=>{\n    if(!bundle)throw new Error("Load an assessment first.");\n    await publishAuditDocument({assessmentId:bundle.assessment.id,revision:bundle.assessment.revision,kind:"assessment_report",format:"json",content:JSON.stringify(bundle,null,2)});\n    await refresh(bundle.assessment.id);setNotice("Versioned assessment report published with a server-calculated SHA-256 hash.");\n  });\n\n  const handoff=(actionId:string)=>run("handoff",async()=>{
+  const publishReport=()=>run("publish",async()=>{
+    if(!bundle)throw new Error("Load an assessment first.");
+    await publishAuditDocument({assessmentId:bundle.assessment.id,revision:bundle.assessment.revision,kind:"assessment_report",format:"json",content:JSON.stringify(bundle,null,2)});
+    await refresh(bundle.assessment.id);setNotice("Versioned assessment report published with a server-calculated SHA-256 hash.");
+  });
+
+  const handoff=(actionId:string)=>run("handoff",async()=>{
     await approveAction(actionId,crypto.randomUUID());await refresh();setNotice("Approved action handed to UNIFI as one idempotent Job Manifest.");
   });
 
