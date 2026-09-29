@@ -11,6 +11,12 @@ import {
 } from "../_shared/datanestAiPolicy.ts";
 import { sha256Text } from "../_shared/datanestAiRuntime.ts";
 import { classifyCertifiedMemoryRelation } from "../_shared/datanestAiTrends.ts";
+import {
+  governedLanguageReviewResult,
+  reviewedLanguageCoverageSatisfied,
+  summarizeLanguageReviewEvidence,
+  type LanguageReviewSummary
+} from "../_shared/datanestLanguageReview.ts";
 import { resolveDataNestAiStaging } from "../_shared/datanestAiStaging.ts";
 import {
   candidateValidationSeal,
@@ -30,13 +36,24 @@ const allowedOrigins=new Set([
   "http://localhost:4173"
 ]);
 const currentPolicyVersion="datanest-ai-governed-memory-v2";
-const gateOrder:CertificationGate[]=["AUDIT","VERIFY","VALIDATE","STRESS_TEST"];
-const lifecycleAfterGate:Record<CertificationGate,string>={
+const baseGateOrder:CertificationGate[]=["AUDIT","VERIFY","VALIDATE","STRESS_TEST"];
+const lifecycleAfterGate:Partial<Record<CertificationGate,string>>={
   AUDIT:"AUDITED",
   VERIFY:"VERIFIED",
   VALIDATE:"VALIDATED",
   STRESS_TEST:"CERTIFICATION_REVIEW"
 };
+const emptyLanguageReview:LanguageReviewSummary={
+  required:false,
+  sourceLanguages:[],
+  reasons:[],
+  evidenceIds:[]
+};
+function requiredGateOrder(languageReviewRequired:boolean):CertificationGate[]{
+  return languageReviewRequired
+    ?["AUDIT","VERIFY","LANGUAGE_REVIEW","VALIDATE","STRESS_TEST"]
+    :baseGateOrder;
+}
 
 type AnyClient=SupabaseClient<any>;
 type Member={role:ProjectRole;status:string};
@@ -131,6 +148,46 @@ async function loadCandidateEvidenceIds(staging:AnyClient,candidateId:string):Pr
   if(error)throw error;
   return [...new Set((data||[]).map(item=>String(item.event_id)).filter(Boolean))].sort();
 }
+async function loadLanguageReviewByCandidate(
+  staging:AnyClient,
+  candidateIds:string[]
+):Promise<Map<string,LanguageReviewSummary>>{
+  const summaries=new Map<string,LanguageReviewSummary>();
+  for(const candidateId of candidateIds)summaries.set(candidateId,emptyLanguageReview);
+  if(!candidateIds.length)return summaries;
+
+  const {data:links,error:linksError}=await staging
+    .from("ai_candidate_evidence")
+    .select("candidate_id,event_id")
+    .in("candidate_id",candidateIds);
+  if(linksError)throw linksError;
+  const eventIds=[...new Set((links||[]).map(item=>String(item.event_id)).filter(Boolean))];
+  if(!eventIds.length)return summaries;
+
+  const {data:events,error:eventsError}=await staging
+    .from("ai_intake_events")
+    .select("id,content,metadata")
+    .in("id",eventIds);
+  if(eventsError)throw eventsError;
+  const eventById=new Map((events||[]).map(event=>[
+    String(event.id),
+    {
+      id:String(event.id),
+      content:String(event.content||""),
+      metadata:typeof event.metadata==="object"&&event.metadata!==null
+        ?event.metadata as Record<string,unknown>
+        :{}
+    }
+  ]));
+  for(const candidateId of candidateIds){
+    const evidence=(links||[])
+      .filter(link=>String(link.candidate_id)===candidateId)
+      .map(link=>eventById.get(String(link.event_id)))
+      .filter(Boolean) as Array<{id:string;content:string;metadata:Record<string,unknown>}>;
+    summaries.set(candidateId,summarizeLanguageReviewEvidence(evidence));
+  }
+  return summaries;
+}
 async function currentValidationRuns(staging:AnyClient,candidate:Candidate){
   const [runs,evidenceIds]=await Promise.all([
     loadValidationRuns(staging,candidate.id),
@@ -155,11 +212,16 @@ function latestGateState(runs:Array<{gate:CertificationGate;passed:boolean}>){
   for(const run of runs)state.set(run.gate,run.passed);
   return state;
 }
-function assertGatePrerequisites(gate:CertificationGate,runs:Array<{gate:CertificationGate;passed:boolean}>){
-  const index=gateOrder.indexOf(gate);
+function assertGatePrerequisites(
+  gate:CertificationGate,
+  runs:Array<{gate:CertificationGate;passed:boolean}>,
+  languageReviewRequired:boolean
+){
+  const order=requiredGateOrder(languageReviewRequired);
+  const index=order.indexOf(gate);
   if(index<0)throw new Error("Invalid certification gate.");
   const latest=latestGateState(runs);
-  for(const prior of gateOrder.slice(0,index)){
+  for(const prior of order.slice(0,index)){
     if(latest.get(prior)!==true){
       throw new Error(`${prior} must pass before ${gate}.`);
     }
@@ -412,26 +474,35 @@ Deno.serve(async(request:Request)=>{
       const candidateIds=(candidates||[]).map(candidate=>String(candidate.id));
       let runs:Record<string,unknown>[]=[];
       let decisions:Record<string,unknown>[]=[];
+      let languageReviews=new Map<string,LanguageReviewSummary>();
       if(candidateIds.length){
-        const [runsResult,decisionsResult]=await Promise.all([
+        const [runsResult,decisionsResult,loadedLanguageReviews]=await Promise.all([
           staging.from("ai_validation_runs").select("*").in("candidate_id",candidateIds).order("created_at",{ascending:false}).limit(500),
-          staging.from("ai_certification_decisions").select("*").in("candidate_id",candidateIds).order("created_at",{ascending:false}).limit(500)
+          staging.from("ai_certification_decisions").select("*").in("candidate_id",candidateIds).order("created_at",{ascending:false}).limit(500),
+          loadLanguageReviewByCandidate(staging,candidateIds)
         ]);
         if(runsResult.error)throw runsResult.error;
         if(decisionsResult.error)throw decisionsResult.error;
         runs=(runsResult.data||[]) as Record<string,unknown>[];
         decisions=(decisionsResult.data||[]) as Record<string,unknown>[];
+        languageReviews=loadedLanguageReviews;
       }
       return json({
         role:member.role,
-        candidates:(candidates||[]).map(candidate=>({
-          ...candidate,
-          required_authority:requiredCertificationAuthority({
-            category:String(candidate.category),
-            riskClass:candidate.risk_class as RiskClass,
-            hasConflict:Boolean(candidate.has_conflict)
-          })
-        })),
+        candidates:(candidates||[]).map(candidate=>{
+          const languageReview=languageReviews.get(String(candidate.id))||emptyLanguageReview;
+          return {
+            ...candidate,
+            language_review:languageReview,
+            required_authority:languageReview.required
+              ?"owner"
+              :requiredCertificationAuthority({
+                category:String(candidate.category),
+                riskClass:candidate.risk_class as RiskClass,
+                hasConflict:Boolean(candidate.has_conflict)
+              })
+          };
+        }),
         validationRuns:runs||[],
         certificationDecisions:decisions||[],
         memoryReviewItems,
@@ -511,16 +582,50 @@ Deno.serve(async(request:Request)=>{
 
     if(action==="record_validation"){
       const gate=String(body.gate||"") as CertificationGate;
+      const languageReview=(await loadLanguageReviewByCandidate(staging,[candidate.id]))
+        .get(candidate.id)||emptyLanguageReview;
+      const gateOrder=requiredGateOrder(languageReview.required);
       if(!gateOrder.includes(gate))return json({error:"Invalid certification gate."},400,origin);
       if(gate==="STRESS_TEST"){
         return json({error:"STRESS_TEST evidence must be recorded by the governed stress suite."},403,origin);
       }
+      if(gate==="LANGUAGE_REVIEW"&&!languageReview.required){
+        return json({error:"This candidate does not require a language review gate."},409,origin);
+      }
       const current=await currentValidationRuns(staging,candidate);
-      assertGatePrerequisites(gate,current.runs);
-      const passed=Boolean(body.passed);
+      assertGatePrerequisites(gate,current.runs,languageReview.required);
+      let passed=Boolean(body.passed);
       const providedResults=typeof body.results==="object"&&body.results!==null
         ?body.results as Record<string,unknown>
         :{};
+      let governedResults:Record<string,unknown>=providedResults;
+      if(gate==="LANGUAGE_REVIEW"){
+        const review=governedLanguageReviewResult({
+          reviewedLanguages:body.reviewedLanguages,
+          reviewBasis:body.reviewBasis,
+          meaningPreserved:body.meaningPreserved,
+          unresolvedAmbiguity:body.unresolvedAmbiguity
+        });
+        if(!reviewedLanguageCoverageSatisfied(
+          languageReview.sourceLanguages,
+          review.reviewedLanguages
+        )){
+          throw new Error("Reviewed languages must cover every specific declared source language.");
+        }
+        passed=review.passed;
+        governedResults={
+          ...providedResults,
+          reviewed_languages:review.reviewedLanguages,
+          review_basis:review.reviewBasis,
+          meaning_preserved:review.meaningPreserved,
+          unresolved_ambiguity:review.unresolvedAmbiguity,
+          source_languages:languageReview.sourceLanguages,
+          review_reasons:languageReview.reasons,
+          reviewed_evidence_ids:languageReview.evidenceIds,
+          reviewer_qualification_status:"role_authorized_not_language_registry_verified",
+          language_review_policy:"datanest-language-review-v1"
+        };
+      }
       const {data:run,error:runError}=await staging
         .from("ai_validation_runs")
         .insert({
@@ -528,7 +633,7 @@ Deno.serve(async(request:Request)=>{
           gate,
           suite_version:String(body.suiteVersion||candidate.policy_version||currentPolicyVersion),
           passed,
-          results:{...providedResults,...current.seal},
+          results:{...governedResults,...current.seal},
           actor_type:"human",
           actor_user_id:user.id
         })
@@ -536,7 +641,9 @@ Deno.serve(async(request:Request)=>{
         .single();
       if(runError||!run)throw runError||new Error("Unable to record validation run.");
 
-      const nextState=passed?lifecycleAfterGate[gate]:"NEEDS_EVIDENCE";
+      const nextState=gate==="LANGUAGE_REVIEW"
+        ?(passed?candidate.lifecycle_state:"NEEDS_EVIDENCE")
+        :(passed?(lifecycleAfterGate[gate]||candidate.lifecycle_state):"NEEDS_EVIDENCE");
       const {error:updateError}=await staging
         .from("ai_learning_candidates")
         .update({lifecycle_state:nextState,updated_at:new Date().toISOString()})
@@ -548,6 +655,7 @@ Deno.serve(async(request:Request)=>{
       const refreshedRuns=refreshedValidation.runs;
       let autoCertification:Record<string,unknown>|null=null;
       if(
+        !languageReview.required &&
         allAutomatedCertificationGatesPassed(refreshedRuns) &&
         canAutoCertify({
           category:refreshedCandidate.category,
@@ -571,9 +679,22 @@ Deno.serve(async(request:Request)=>{
     }
 
     if(action==="certify"){
-      const {runs}=await currentValidationRuns(staging,candidate);
-      if(!allCertificationGatesPassed(runs)){
-        return json({error:"All audit, verify, validate and stress-test gates must pass before certification."},409,origin);
+      const [{runs},languageReviews]=await Promise.all([
+        currentValidationRuns(staging,candidate),
+        loadLanguageReviewByCandidate(staging,[candidate.id])
+      ]);
+      const languageReview=languageReviews.get(candidate.id)||emptyLanguageReview;
+      const latest=latestGateState(runs);
+      if(
+        !allCertificationGatesPassed(runs) ||
+        (languageReview.required&&latest.get("LANGUAGE_REVIEW")!==true)
+      ){
+        return json({
+          error:"All required audit, verify, language-review, validate and stress-test gates must pass before certification."
+        },409,origin);
+      }
+      if(languageReview.required&&member.role!=="owner"){
+        return json({error:"Owner authority is required for language-review candidates."},403,origin);
       }
       const policyInput={
         category:candidate.category,

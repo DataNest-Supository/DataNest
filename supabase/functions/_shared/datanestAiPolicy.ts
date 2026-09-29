@@ -64,7 +64,7 @@ export function canHumanCertify(
   return role==="owner"||role==="admin";
 }
 
-export type CertificationGate="AUDIT"|"VERIFY"|"VALIDATE"|"STRESS_TEST";
+export type CertificationGate="AUDIT"|"VERIFY"|"VALIDATE"|"STRESS_TEST"|"LANGUAGE_REVIEW";
 
 export function allCertificationGatesPassed(
   runs:Array<{gate:CertificationGate;passed:boolean}>

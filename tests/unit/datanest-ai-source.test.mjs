@@ -368,5 +368,5 @@ test("certification accepts only validation runs for the current candidate evide
   const source=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-certification/index.ts"),"utf8");
   assert.match(source,/async function currentValidationRuns[\s\S]{0,2200}validationRunMatchesSeal/);
   assert.match(source,/loadCandidateEvidenceIds[\s\S]{0,1800}sha256Text\(evidenceIds\.join\("\\n"\)\)/);
-  assert.match(source,/results:\{\.\.\.providedResults,\.\.\.current\.seal\}/);
+  assert.match(source,/results:\{\.\.\.governedResults,\.\.\.current\.seal\}/);
 });
