@@ -474,6 +474,7 @@ export default function DataNestApp({session}:{session:Session}) {
   const [recoverySyncing,setRecoverySyncing]=useState(false);
   const recoverySyncingRef=useRef(false);
   const [health,setHealth]=useState<HealthState>({state:"checking",checkedAt:null,message:"Checking control plane…"});
+  const pendingSettingsFocusRef=useRef<"account-security"|null>(null);
   const [reloadingLatest,setReloadingLatest]=useState(false);
   const [locatingActiveJob,setLocatingActiveJob]=useState(false);
   const [locatingActiveEvidence,setLocatingActiveEvidence]=useState(false);
@@ -1221,6 +1222,18 @@ export default function DataNestApp({session}:{session:Session}) {
   },[runs,checkpoints,events,view,activeDataNestAiSession]);
   useEffect(()=>{ if(view==="settings") void loadPolicies(); },[view,loadPolicies]);
   useEffect(()=>{
+    if(view!=="settings"||!pendingSettingsFocusRef.current)return;
+    const targetId=pendingSettingsFocusRef.current;
+    const frame=window.requestAnimationFrame(()=>{
+      const target=document.getElementById(targetId);
+      if(!target)return;
+      pendingSettingsFocusRef.current=null;
+      target.scrollIntoView({behavior:"smooth",block:"start"});
+      target.focus({preventScroll:true});
+    });
+    return()=>window.cancelAnimationFrame(frame);
+  },[view]);
+  useEffect(()=>{
     if(!project) return;
     const timer=window.setInterval(()=>void checkControlPlane(project.id),60000);
     return ()=>window.clearInterval(timer);
@@ -1300,6 +1313,12 @@ export default function DataNestApp({session}:{session:Session}) {
   function chooseCommandView(nextView:ViewKey){
     setView(nextView);
     closeCommandPalette(nextView===view);
+    setMobileOpen(false);
+  }
+
+  function openAccountSecurity(){
+    pendingSettingsFocusRef.current="account-security";
+    setView("settings");
     setMobileOpen(false);
   }
 
@@ -1455,6 +1474,7 @@ export default function DataNestApp({session}:{session:Session}) {
       ><span aria-hidden="true">◉</span><span><b>RONSAS</b><small>Open governed application hub</small></span><strong aria-hidden="true">↗</strong></a>}
       <div className="sidebarFooter">
         <div className="userMini"><div className="avatar">{(session.user.email||"U").slice(0,1).toUpperCase()}</div><div><b>{session.user.email?.split("@")[0]||"Authorized user"}</b><small>{membership ? membership.role.toUpperCase()+" · Authenticated" : "Authenticated"}</small></div></div>
+        <button className="accountSecurityShortcut" type="button" onClick={openAccountSecurity}><span aria-hidden="true">◈</span><span><b>Account security</b><small>Change password or email a reset link</small></span></button>
         <div className="mobileNavActions" aria-label="Mobile workspace actions">
           <div className={"mobileSystemStatus "+health.state} title={health.message}>
             <span className={"statusDot "+health.state}/>
@@ -2522,7 +2542,7 @@ function Settings({
     <div className="panel"><p className="eyebrow">PROJECT</p><h3>{project?.name||DATANEST_CANONICAL_NAME}</h3><dl className="settingsList"><div><dt>Slug</dt><dd>{project?.slug||"resonance-datanest"}</dd></div><div><dt>Status</dt><dd><Badge value={project?.status||"ACTIVE"}/></dd></div><div><dt>Access role</dt><dd><Badge value={(membership?.role||"viewer").toUpperCase()}/></dd></div><div><dt>GitHub</dt><dd>DataNest-Supository/DataNest</dd></div><div><dt>Supabase</dt><dd>sgqdmfgjbprsoqsmgigi</dd></div><div><dt>Hosting</dt><dd>Provider-agnostic</dd></div><div><dt>Production host</dt><dd>GitHub Pages</dd></div></dl></div>
     <div className="panel"><p className="eyebrow">TOOLS</p><h3>Tool registry</h3>{tools.map(tool=><div className="settingRow" key={tool.id}><div><b>{tool.name}</b><small>{tool.role}</small></div><Badge value={tool.enabled?"ACTIVE":"DISABLED"}/></div>)}</div>
     <RonsasIntegrationPanel/>
-    <div className="fullWidth">{project&&<AccountPasswordPanel projectId={project.id}/>}</div>
+    <div className="fullWidth accountSecurityAnchor" id="account-security" tabIndex={-1}>{project&&<AccountPasswordPanel projectId={project.id}/>}</div>
     {project&&<RecoveryDiagnosticsPanel projectId={project.id} hydrated={recoveryHydrated} ledgerError={recoveryLedgerError} lastSyncedAt={recoveryLastSyncedAt} syncing={recoverySyncing} onSync={synchronizeDurableRecoveries}/>}
     {project&&<div className="fullWidth" aria-label="AI Administration">
       <AiOperationsDashboard projectId={project.id} currentUserId={currentUserId} canManageAi={canManageAi}/>
