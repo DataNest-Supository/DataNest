@@ -219,8 +219,14 @@ test("Stakeholder interests drive TranScheduler requirement matching and filteri
   await securityInterest.click();
   await expect(securityInterest).toBeChecked();
   await expect(page.getByText("2 selected",{exact:true})).toBeVisible();
-  await expect.poll(()=>preferenceWrites).toBe(2);
-  expect(interestKeys).toEqual(["ui_ux","security_testing"]);
+
+  const documentationInterest=page.getByRole("checkbox",{name:/Documentation & Mentoring/});
+  await expect(documentationInterest).not.toBeChecked();
+  await documentationInterest.click();
+  await expect(documentationInterest).toBeChecked();
+  await expect(page.getByText("3 selected",{exact:true})).toBeVisible();
+  await expect.poll(()=>preferenceWrites).toBe(3);
+  expect(interestKeys).toEqual(["ui_ux","security_testing","documentation_mentoring"]);
 
   const openMatchedJobs=page.getByRole("button",{name:"Open matched Jobs",exact:true});
   await expect(openMatchedJobs).toBeEnabled();
@@ -232,6 +238,11 @@ test("Stakeholder interests drive TranScheduler requirement matching and filteri
   await expect(page).toHaveURL(/interests=1/);
   await expect(page.locator(".schedulerInterestSummary")).toContainText("UI/UX");
   await expect(page.getByText("2 interest matches",{exact:true})).toBeVisible();
+  const coverage=page.getByLabel("Interest coverage on current queue page");
+  await expect(coverage).toContainText("2 covered · 1 gap");
+  await expect(page.getByLabel("Covered interest: UI/UX")).toHaveCount(1);
+  await expect(page.getByLabel("Covered interest: Security & Testing")).toHaveCount(1);
+  await expect(page.getByLabel("No current Job interest: Documentation & Mentoring")).toHaveCount(1);
   await expect(page.getByText("INTEREST MATCH",{exact:true})).toHaveCount(2);
   await expect(page.locator(".ganttRow.interestMatch")).toHaveCount(2);
   await expect(page.getByText("Matched 2 · UI/UX · Security & Testing",{exact:true})).toHaveCount(1);
