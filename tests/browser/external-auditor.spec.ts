@@ -180,10 +180,17 @@ test("External Auditor completes a governed traceable assessment flow", async ({
   await expect(page.getByText("1 findings",{exact:true})).toBeVisible();
   await expect(page.getByText("1 actions",{exact:true})).toBeVisible();
 
+  const proposedAction=page.locator(".externalAuditList article").filter({hasText:"Clarify the primary task hierarchy."});
+  await expect(proposedAction.locator(".platformGovernedAction")).toHaveAttribute("data-governed-stage","review-required");
+  await expect(proposedAction.getByText("Human / external review required",{exact:true})).toBeVisible();
+
   await page.getByRole("button",{name:"Approve → UNIFI"}).click();
   await expect(page.getByText("Approved action handed to UNIFI as one idempotent Job Manifest.")).toBeVisible();
   await expect(page.getByText("1 UNIFI jobs",{exact:true})).toBeVisible();
   await expect(page.getByText("UNIFI Job "+jobId,{exact:true})).toBeVisible();
+  const authorizedAction=page.locator(".externalAuditList article").filter({hasText:"Clarify the primary task hierarchy."});
+  await expect(authorizedAction.locator(".platformGovernedAction")).toHaveAttribute("data-governed-stage","authorized");
+  await expect(authorizedAction.getByText(userId,{exact:true})).toBeVisible();
 
   await page.getByRole("button",{name:"Publish report"}).click();
   await expect(page.getByText("Versioned assessment report published with a server-calculated SHA-256 hash.")).toBeVisible();
