@@ -27,6 +27,7 @@ jobs:
           - datanest-ai-upload
           - datanest-ai-file-worker
           - send-project-member-invite
+          - manage-user-password
           - ronsas-status
           - external-audit
           - audit-optimizer
