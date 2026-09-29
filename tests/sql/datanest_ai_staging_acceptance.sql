@@ -15,6 +15,7 @@ begin
     'ai_learning_candidates',
     'ai_candidate_evidence',
     'ai_validation_runs',
+    'ai_language_reviewer_qualifications',
     'ai_certification_decisions',
     'ai_memory_supersessions'
   ]) required_name
@@ -38,8 +39,8 @@ begin
     and c.relname in (
       'ai_sessions','ai_intake_events','ai_reasoning_envelopes',
       'ai_trend_clusters','ai_trend_evidence','ai_learning_candidates',
-      'ai_candidate_evidence','ai_validation_runs','ai_certification_decisions',
-      'ai_memory_supersessions'
+      'ai_candidate_evidence','ai_validation_runs','ai_language_reviewer_qualifications',
+      'ai_certification_decisions','ai_memory_supersessions'
     )
     and not c.relrowsecurity;
 
@@ -53,6 +54,21 @@ begin
   if has_table_privilege('authenticated','public.ai_intake_events','INSERT')
      or has_table_privilege('anon','public.ai_intake_events','SELECT') then
     raise exception 'browser roles must not have direct staging-table privileges';
+  end if;
+end $datanest$;
+
+
+do $datanest$
+begin
+  if has_table_privilege('authenticated','public.ai_language_reviewer_qualifications','SELECT')
+     or has_table_privilege('anon','public.ai_language_reviewer_qualifications','SELECT') then
+    raise exception 'browser roles must not read language reviewer qualifications directly';
+  end if;
+
+  if not has_table_privilege('service_role','public.ai_language_reviewer_qualifications','SELECT')
+     or not has_table_privilege('service_role','public.ai_language_reviewer_qualifications','INSERT')
+     or not has_table_privilege('service_role','public.ai_language_reviewer_qualifications','UPDATE') then
+    raise exception 'service_role must manage language reviewer qualifications';
   end if;
 end $datanest$;
 
