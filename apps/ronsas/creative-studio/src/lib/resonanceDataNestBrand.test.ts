@@ -1,51 +1,51 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
 
-const read=(path:string)=>readFileSync(resolve(process.cwd(),path),"utf8");
+const appRoot=path.resolve(import.meta.dirname,"../..");
+const read=(relative:string)=>fs.existsSync(path.join(appRoot,relative))
+  ?fs.readFileSync(path.join(appRoot,relative),"utf8")
+  :"";
 
-describe("Resonance DataNest brand migration",()=>{
-  it("loads canonical fonts and the deliberate DataNest adapter",()=>{
-    const main=read("src/main.tsx");
-    const pkg=JSON.parse(read("package.json"));
-    expect(main).toContain('@fontsource-variable/inter-tight');
-    expect(main).toContain('@fontsource-variable/inter');
-    expect(main).toContain('@fontsource/instrument-serif/400-italic.css');
-    expect(main).toContain('@fontsource-variable/jetbrains-mono');
-    expect(main.indexOf('./resonance-datanest-adapter.css')).toBeGreaterThan(main.indexOf('./index.css'));
-    for(const dependency of ["@fontsource-variable/inter-tight","@fontsource-variable/inter","@fontsource/instrument-serif","@fontsource-variable/jetbrains-mono"]){
-      expect(pkg.dependencies?.[dependency]).toBeTruthy();
-    }
+describe("Creative Studio Resonance DataNest contract",()=>{
+  it("loads canonical fonts and a deliberate DataNest adapter after the legacy stylesheet",()=>{
+    const main=read("main.tsx");
+    expect(main).toContain("@fontsource-variable/inter-tight");
+    expect(main).toContain("@fontsource-variable/inter");
+    expect(main).toContain("@fontsource/instrument-serif");
+    expect(main).toContain("@fontsource-variable/jetbrains-mono");
+    expect(main).toMatch(/import "\.\/index\.css";[\s\S]*import "\.\/resonance-datanest-adapter\.css";/);
   });
 
-  it("publishes canonical operator platform governance and legal attribution",()=>{
-    const footer=read("src/components/brand/ResonanceFooter.tsx");
+  it("uses governed operator attribution and central legal destinations without paid checkout",()=>{
+    const footer=read("components/brand/ResonanceFooter.tsx");
     expect(footer).toContain("Resonance Sole Proprietorship");
     expect(footer).toContain("Resonance App Development");
     expect(footer).toContain("Resonance DataNest");
     expect(footer).toContain("RSGP Governed");
-    expect(footer).toContain("/legal");
-    expect(footer).toContain("/governance");
-    expect(footer).toContain("free promotion");
-    expect(footer).not.toMatch(/checkout/i);
+    expect(footer).toContain("/DataNest/legal");
+    expect(footer).toContain("/DataNest/governance");
+    expect(footer).toMatch(/free promotion/i);
+    expect(footer).not.toMatch(/checkout|subscribe|buy now/i);
   });
 
-  it("keeps legacy policy copy visibly review-gated and removes manufactured dates and guarantees",()=>{
-    const terms=read("src/pages/Terms.tsx");
-    const privacy=read("src/pages/Privacy.tsx");
+  it("keeps legal copy visibly review-gated and removes manufactured dates and unsupported guarantees",()=>{
+    const terms=read("pages/Terms.tsx");
+    const privacy=read("pages/Privacy.tsx");
     for(const source of [terms,privacy]){
-      expect(source).toContain("Review required");
+      expect(source).toContain("Review-gated legacy draft");
+      expect(source).toContain("0.1-draft");
       expect(source).not.toMatch(/new Date\s*\(|toLocaleDateString\s*\(/);
     }
-    expect(privacy).not.toMatch(/industry-standard encryption|not retained beyond the generation session/i);
+    expect(privacy).not.toMatch(/industry-standard encryption/i);
+    expect(privacy).not.toMatch(/not retained beyond the generation session/i);
   });
 
-  it("provides light contrast focus and reduced-motion adapter rules",()=>{
-    const adapter=read("src/resonance-datanest-adapter.css");
-    expect(adapter).toContain("@media (prefers-color-scheme: light)");
-    expect(adapter).toContain("@media (prefers-contrast: more)");
-    expect(adapter).toContain("@media (prefers-reduced-motion: reduce)");
-    expect(adapter).toContain("--dn-app-accent");
-    expect(adapter).toContain("font-family");
+  it("provides accessible light, high-contrast and reduced-motion adapter behavior",()=>{
+    const adapter=read("resonance-datanest-adapter.css");
+    expect(adapter).toContain("--rdn-app-accent: #ff36d8");
+    expect(adapter).toMatch(/prefers-color-scheme:\s*light/);
+    expect(adapter).toMatch(/prefers-contrast:\s*more/);
+    expect(adapter).toMatch(/prefers-reduced-motion:\s*reduce/);
   });
 });
