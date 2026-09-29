@@ -13,10 +13,13 @@ import { sha256Text } from "../_shared/datanestAiRuntime.ts";
 import { classifyCertifiedMemoryRelation } from "../_shared/datanestAiTrends.ts";
 import {
   governedLanguageReviewResult,
+  qualificationCoverageForReviewedLanguages,
   reviewedLanguageCoverageSatisfied,
   summarizeLanguageReviewEvidence,
-  type LanguageReviewSummary
+  type LanguageReviewSummary,
+  type ReviewerQualification
 } from "../_shared/datanestLanguageReview.ts";
+import { canonicalizeDeclaredLanguage } from "../_shared/datanestLanguageMetadata.ts";
 import { resolveDataNestAiStaging } from "../_shared/datanestAiStaging.ts";
 import {
   candidateValidationSeal,
@@ -187,6 +190,25 @@ async function loadLanguageReviewByCandidate(
     summaries.set(candidateId,summarizeLanguageReviewEvidence(evidence));
   }
   return summaries;
+}
+async function loadReviewerQualifications(
+  staging:AnyClient,
+  projectId:string,
+  userId:string
+):Promise<ReviewerQualification[]>{
+  const {data,error}=await staging
+    .from("ai_language_reviewer_qualifications")
+    .select("id,language_tag,qualification_scope,active")
+    .eq("project_id",projectId)
+    .eq("user_id",userId)
+    .eq("active",true);
+  if(error)throw error;
+  return (data||[]).map(item=>({
+    id:String(item.id),
+    language_tag:String(item.language_tag),
+    qualification_scope:String(item.qualification_scope) as ReviewerQualification["qualification_scope"],
+    active:Boolean(item.active)
+  }));
 }
 async function currentValidationRuns(staging:AnyClient,candidate:Candidate){
   const [runs,evidenceIds]=await Promise.all([
@@ -458,7 +480,7 @@ Deno.serve(async(request:Request)=>{
     }
 
     if(action==="workspace"){
-      const [candidateResult,memoryReviewItems,memoryOutcomeItems]=await Promise.all([
+      const [candidateResult,memoryReviewItems,memoryOutcomeItems,qualificationResult]=await Promise.all([
         staging
           .from("ai_learning_candidates")
           .select("*")
@@ -467,10 +489,17 @@ Deno.serve(async(request:Request)=>{
           .order("updated_at",{ascending:false})
           .limit(100),
         loadCertifiedMemoryReviewQueue(serviceClient,projectId),
-        loadRecentMemoryOutcomes(serviceClient,projectId)
+        loadRecentMemoryOutcomes(serviceClient,projectId),
+        staging
+          .from("ai_language_reviewer_qualifications")
+          .select("*")
+          .eq("project_id",projectId)
+          .eq("active",true)
+          .order("language_tag",{ascending:true})
       ]);
       const {data:candidates,error:candidatesError}=candidateResult;
       if(candidatesError)throw candidatesError;
+      if(qualificationResult.error)throw qualificationResult.error;
       const candidateIds=(candidates||[]).map(candidate=>String(candidate.id));
       let runs:Record<string,unknown>[]=[];
       let decisions:Record<string,unknown>[]=[];
@@ -505,6 +534,8 @@ Deno.serve(async(request:Request)=>{
         }),
         validationRuns:runs||[],
         certificationDecisions:decisions||[],
+        languageReviewerQualifications:qualificationResult.data||[],
+        currentUserId:user.id,
         memoryReviewItems,
         memoryOutcomeItems
       },200,origin);
@@ -576,6 +607,66 @@ Deno.serve(async(request:Request)=>{
       return json({outcome},200,origin);
     }
 
+    if(action==="register_language_reviewer"){
+      if(member.role!=="owner"){
+        return json({error:"Owner authority is required to register language reviewer qualifications."},403,origin);
+      }
+      const reviewerUserId=String(body.reviewerUserId||user.id);
+      const reviewerMember=await loadMember(userClient,projectId,reviewerUserId);
+      if(!["owner","admin"].includes(reviewerMember.role)){
+        return json({error:"Language reviewer must be an active Owner or Admin project member."},403,origin);
+      }
+      const languageTag=canonicalizeDeclaredLanguage(body.languageTag);
+      const qualificationScope=String(body.qualificationScope||"source_language_review");
+      if(!["source_language_review","semantic_equivalence"].includes(qualificationScope)){
+        return json({error:"Unsupported language reviewer qualification scope."},400,origin);
+      }
+      const evidence=typeof body.evidence==="object"&&body.evidence!==null
+        ?body.evidence as Record<string,unknown>
+        :{};
+      if(String(evidence.basis||"").trim().length<12){
+        return json({error:"Qualification evidence must include a substantive basis."},400,origin);
+      }
+      const {data:qualification,error:qualificationError}=await staging
+        .from("ai_language_reviewer_qualifications")
+        .upsert({
+          project_id:projectId,
+          user_id:reviewerUserId,
+          language_tag:languageTag,
+          qualification_scope:qualificationScope,
+          evidence:{...evidence,recorded_by_owner:user.id},
+          active:true,
+          verified_by:user.id,
+          verified_at:new Date().toISOString(),
+          updated_at:new Date().toISOString()
+        },{onConflict:"project_id,user_id,language_tag,qualification_scope"})
+        .select("*")
+        .single();
+      if(qualificationError||!qualification){
+        throw qualificationError||new Error("Unable to register language reviewer qualification.");
+      }
+      return json({qualification},200,origin);
+    }
+
+    if(action==="revoke_language_reviewer"){
+      if(member.role!=="owner"){
+        return json({error:"Owner authority is required to revoke language reviewer qualifications."},403,origin);
+      }
+      const qualificationId=String(body.qualificationId||"");
+      if(!qualificationId)return json({error:"qualificationId is required."},400,origin);
+      const {data:qualification,error:qualificationError}=await staging
+        .from("ai_language_reviewer_qualifications")
+        .update({active:false,updated_at:new Date().toISOString()})
+        .eq("id",qualificationId)
+        .eq("project_id",projectId)
+        .select("*")
+        .single();
+      if(qualificationError||!qualification){
+        throw qualificationError||new Error("Language reviewer qualification not found.");
+      }
+      return json({qualification},200,origin);
+    }
+
     const candidateId=String(body.candidateId||"");
     if(!candidateId)return json({error:"candidateId is required."},400,origin);
     const candidate=await loadCandidate(staging,projectId,candidateId);
@@ -612,6 +703,17 @@ Deno.serve(async(request:Request)=>{
         )){
           throw new Error("Reviewed languages must cover every specific declared source language.");
         }
+        const qualifications=await loadReviewerQualifications(staging,projectId,user.id);
+        const qualificationCoverage=qualificationCoverageForReviewedLanguages(
+          qualifications,
+          review.reviewedLanguages
+        );
+        if(!qualificationCoverage.covered){
+          return json({
+            error:"Active language reviewer qualification is required for every reviewed language.",
+            missingLanguages:qualificationCoverage.missingLanguages
+          },403,origin);
+        }
         passed=review.passed;
         governedResults={
           ...providedResults,
@@ -622,8 +724,9 @@ Deno.serve(async(request:Request)=>{
           source_languages:languageReview.sourceLanguages,
           review_reasons:languageReview.reasons,
           reviewed_evidence_ids:languageReview.evidenceIds,
-          reviewer_qualification_status:"role_authorized_not_language_registry_verified",
-          language_review_policy:"datanest-language-review-v1"
+          reviewer_qualification_status:"registry_verified",
+          reviewer_qualification_ids:qualificationCoverage.qualificationIds,
+          language_review_policy:"datanest-language-review-v2"
         };
       }
       const {data:run,error:runError}=await staging
