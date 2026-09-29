@@ -120,7 +120,15 @@ if(complete){
     if(!/free (?:access )?promotion/i.test(presentation)) failures.push(`${app.slug} must preserve free-promotion presentation`);
     if(/checkout|subscribe|paid plan/i.test(presentation)) failures.push(`${app.slug} presentation exposes paid checkout language`);
     if(!style.toLowerCase().includes(`--rdn-app-accent:${app.accent}`)&&!style.toLowerCase().includes(`--rdn-app-accent: ${app.accent}`)) failures.push(`${app.slug} accent mismatch; expected ${app.accent}`);
-    for(const media of [/prefers-color-scheme:\s*light/i,/prefers-contrast:\s*more/i,/prefers-reduced-motion:\s*reduce/i]){
+    const lightSource=app.lightTheme==="class"&&existsSync(resolve(appRoot,"src/index.css"))
+      ? readFileSync(resolve(appRoot,"src/index.css"),"utf8")
+      : style;
+    if(app.lightTheme==="class"){
+      if(!/\.light\b/.test(lightSource)) failures.push(`${app.slug} missing governed class-based light theme`);
+    }else if(!/prefers-color-scheme:\s*light/i.test(lightSource)){
+      failures.push(`${app.slug} style surface missing light-mode contract`);
+    }
+    for(const media of [/prefers-contrast:\s*more/i,/prefers-reduced-motion:\s*reduce/i]){
       if(!media.test(style)) failures.push(`${app.slug} style surface missing accessibility media contract: ${media}`);
     }
     for(const dependency of canonicalFonts){
