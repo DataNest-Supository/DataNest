@@ -310,30 +310,33 @@ git commit -m "feat: standardize governed action presentation"
 - It contains no substantive Terms/Privacy promises.
 - Plan 3 app adapters consume these values conceptually and are validated against this contract.
 
-- [ ] **Step 1: Add failing contract assertions**
+- [x] **Step 1: Add failing contract assertions**
 
 Require exact identity values, central route paths, no RSGP expansion, and no `approved` policy state before human/legal review.
 
-- [ ] **Step 2: Run validators**
+- [x] **Step 2: Run validators**
 
 Run: `node --test tests/unit/legal-centre-source.test.mjs && node scripts/validate-ronsas-imports.mjs`  
 Expected: FAIL on missing shared contract.
 
-- [ ] **Step 3: Add the contract and import validation**
+- [x] **Step 3: Add the contract and import validation**
 
 Keep the validation structural; do not mark legal content approved.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run the same commands.  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/ronsas/shared/legal-contract.json scripts/validate-ronsas-imports.mjs tests/unit/legal-centre-source.test.mjs
 git commit -m "feat: define cross-app DataNest legal contract"
 ```
+
+
+> Task 7 evidence: missing-contract RED → focused GREEN; exact-head unit tests PASS, TypeScript PASS, and CI RONSAS import contracts PASS. Contract is structural only, preserves free-promotion/no-paid-checkout, and remains policyState=review-gated.
 
 ### Task 8: Record legal review requirements without fabricating approval
 
