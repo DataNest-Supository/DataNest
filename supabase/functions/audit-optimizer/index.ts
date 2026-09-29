@@ -204,7 +204,20 @@ Deno.serve(async(request)=>{
     const standardKeys=new Set(
       standards.map(item=>String((item as Record<string,unknown>)?.standard_key||"")).filter(Boolean)
     );
-    const evidenceText=JSON.stringify(evidenceObject);
+    const compactEvidence={
+      captured_at:evidenceObject.captured_at||null,
+      project:evidenceObject.project||null,
+      job_metrics:evidenceObject.job_metrics||{},
+      ai_metrics:evidenceObject.ai_metrics||{},
+      boundaries:evidenceObject.boundaries||{},
+      standards:Array.isArray(evidenceObject.standards)?evidenceObject.standards.slice(0,24):[],
+      governance_cycles:Array.isArray(evidenceObject.governance_cycles)?evidenceObject.governance_cycles.slice(0,4):[],
+      governance_observations:Array.isArray(evidenceObject.governance_observations)?evidenceObject.governance_observations.slice(0,15):[],
+      external_audit_findings:Array.isArray(evidenceObject.external_audit_findings)?evidenceObject.external_audit_findings.slice(0,15):[],
+      ai_impact_assessments:Array.isArray(evidenceObject.ai_impact_assessments)?evidenceObject.ai_impact_assessments.slice(0,10):[],
+      control_evidence:Array.isArray(evidenceObject.control_evidence)?evidenceObject.control_evidence.slice(0,15):[]
+    };
+    const evidenceText=JSON.stringify(compactEvidence);
     const evidenceDigest=await sha256Text(evidenceText);
     const clientRequestId=crypto.randomUUID();
 
@@ -275,13 +288,13 @@ Deno.serve(async(request)=>{
       }),
       "Generate at most 5 suggestions. It is acceptable to return zero suggestions when evidence does not support a useful change.",
       "DATANEST EVIDENCE SNAPSHOT:",
-      evidenceText.slice(0,90000)
+      evidenceText.slice(0,26000)
     ].join("\n\n");
 
     const provider=await callOpenAiCompatibleProvider({
       connection:connection as ProviderConnection,
       governedPrompt,
-      maxOutputTokens:Math.min(Number((authorization as Record<string,unknown>)?.max_output_tokens||4000),6000)
+      maxOutputTokens:Math.min(Number((authorization as Record<string,unknown>)?.max_output_tokens||2200),2200)
     });
 
     let parsed:unknown;
