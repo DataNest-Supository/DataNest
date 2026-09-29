@@ -76,6 +76,10 @@ export default function ProjectMembersPanel({
   const [role,setRole]=useState<"admin"|"operator"|"viewer">("viewer");
   const [inviteState,setInviteState]=useState<InviteState>("idle");
   const [inviteFeedback,setInviteFeedback]=useState("");
+  const [passwordTarget,setPasswordTarget]=useState<Member|null>(null);
+  const [temporaryPassword,setTemporaryPassword]=useState("");
+  const [confirmTemporaryPassword,setConfirmTemporaryPassword]=useState("");
+  const [passwordFeedback,setPasswordFeedback]=useState("");
 
   const load=useCallback(async()=>{
     const supabase=getSupabase();if(!supabase)return;
@@ -150,6 +154,92 @@ export default function ProjectMembersPanel({
 
   async function resendInvite(invite:Invitation){
     await deliverInvite(invite.email,invite.role,false);
+  }
+
+  function canManagePassword(member:Member){
+    if(!workspace?.can_invite||member.status!=="active")return false;
+    if(workspace.caller_role==="owner")return true;
+    return workspace.caller_role==="admin"&&(member.role==="operator"||member.role==="viewer");
+  }
+
+  async function passwordActionErrorMessage(error:unknown){
+    const fallback=error instanceof Error?error.message:"Unable to manage the member password.";
+    if(!error||typeof error!=="object"||!("context" in error))return fallback;
+    const context=(error as {context?:Response}).context;
+    if(!context||typeof context.clone!=="function")return fallback;
+    try{
+      const payload=await context.clone().json() as {error?:unknown};
+      if(payload?.error)return String(payload.error);
+    }catch{
+      // Fall back to the client error when the Edge response has no JSON body.
+    }
+    return fallback;
+  }
+
+  async function sendMemberPasswordReset(member:Member){
+    const supabase=getSupabase();
+    if(!supabase||!canManagePassword(member)||!member.email)return;
+    await runSingleFlight("password-email:"+member.user_id,async()=>{
+      setBusy(true);setError("");setPasswordFeedback("");
+      setNotice("Sending a secure password reset email…");
+      try{
+        const redirectTo=window.location.href.split("#")[0].split("?")[0];
+        const {error}=await supabase.functions.invoke("manage-user-password",{
+          body:{projectId,userId:member.user_id,action:"email_reset",redirectTo}
+        });
+        if(error)throw error;
+        const feedback="Password reset email sent to "+member.email+". The member chooses the new password through the secure recovery link.";
+        setPasswordFeedback(feedback);
+        setNotice(feedback);
+      }catch(actionError){
+        const feedback=await passwordActionErrorMessage(actionError);
+        setError(feedback);
+        setPasswordFeedback("Reset email failed. "+feedback);
+      }finally{
+        setBusy(false);
+      }
+    });
+  }
+
+  async function setMemberTemporaryPassword(event:FormEvent){
+    event.preventDefault();
+    const supabase=getSupabase();
+    const member=passwordTarget;
+    if(!supabase||!member||!canManagePassword(member))return;
+    if(temporaryPassword.length<12){
+      setPasswordFeedback("Temporary passwords must contain at least 12 characters.");
+      return;
+    }
+    if(temporaryPassword.length>128){
+      setPasswordFeedback("Temporary passwords must be 128 characters or fewer.");
+      return;
+    }
+    if(temporaryPassword!==confirmTemporaryPassword){
+      setPasswordFeedback("The temporary passwords do not match.");
+      return;
+    }
+    await runSingleFlight("password-set:"+member.user_id,async()=>{
+      setBusy(true);setError("");setPasswordFeedback("");
+      setNotice("Updating the selected member password…");
+      try{
+        const {error}=await supabase.functions.invoke("manage-user-password",{
+          body:{projectId,userId:member.user_id,action:"set_temporary",password:temporaryPassword}
+        });
+        if(error)throw error;
+        const feedback="Temporary password set for "+(member.email||"the selected member")+". Share it through a secure channel and have the member replace it after sign-in.";
+        setNotice(feedback);
+        setPasswordFeedback(feedback);
+        setTemporaryPassword("");
+        setConfirmTemporaryPassword("");
+        setPasswordTarget(null);
+      }catch(actionError){
+        const feedback=await passwordActionErrorMessage(actionError);
+        setError(feedback);
+        setPasswordFeedback("Password update failed. "+feedback);
+      }finally{
+        setBusy(false);
+      }
+    });
   }
 
   async function revokeInvite(id:string){
@@ -256,16 +346,53 @@ export default function ProjectMembersPanel({
       </div>
     </form>}
 
-    <div className="dataTable membershipTable">
-      <div className="dataRow headerRow"><span>Member</span><span>Role</span><span>Status</span><span>Formal vote</span><span>Updated</span></div>
+    <div className="dataTable membershipTable memberPasswordTable">
+      <div className="dataRow headerRow"><span>Member</span><span>Role</span><span>Status</span><span>Formal vote</span><span>Updated</span><span>Password</span></div>
       {workspace.members.map(member=><div className="dataRow" key={member.user_id}>
         <div className="membershipIdentity" data-label="Member"><b>{member.email||"Authenticated member"}</b><small title={member.user_id}>ID {shortId(member.user_id)}</small></div>
         <span data-label="Role">{member.role}</span>
         <span data-label="Status">{label(member.status)}</span>
         <span data-label="Formal vote">{member.formal_voting_eligible?"eligible":"not eligible"}</span>
         <span data-label="Updated">{date(member.updated_at)}</span>
+        <span className="memberPasswordActions" data-label="Password">
+          {canManagePassword(member)?<>
+            <button className="textButton" type="button" disabled={busy||!member.email} onClick={()=>void sendMemberPasswordReset(member)}>Email reset</button>
+            <button className="textButton" type="button" disabled={busy} onClick={()=>{
+              setPasswordTarget(member);
+              setTemporaryPassword("");
+              setConfirmTemporaryPassword("");
+              setPasswordFeedback("");
+            }}>Set temporary</button>
+          </>:<span className="muted">Protected</span>}
+        </span>
       </div>)}
     </div>
+
+    {passwordTarget&&<form className="memberPasswordForm" onSubmit={setMemberTemporaryPassword} aria-busy={busy}>
+      <div className="memberPasswordHeader">
+        <div><p className="eyebrow">DIRECT PASSWORD UPDATE</p><h4>{passwordTarget.email||"Selected member"}</h4><small>{passwordTarget.role} · {shortId(passwordTarget.user_id)}</small></div>
+        <button className="textButton" type="button" disabled={busy} onClick={()=>{
+          setPasswordTarget(null);
+          setTemporaryPassword("");
+          setConfirmTemporaryPassword("");
+          setPasswordFeedback("");
+        }}>Cancel</button>
+      </div>
+      <div className="memberPasswordFields">
+        <label>Temporary password
+          <input type="password" required minLength={12} maxLength={128} autoComplete="new-password" value={temporaryPassword} onChange={event=>setTemporaryPassword(event.target.value)} placeholder="At least 12 characters"/>
+        </label>
+        <label>Confirm temporary password
+          <input type="password" required minLength={12} maxLength={128} autoComplete="new-password" value={confirmTemporaryPassword} onChange={event=>setConfirmTemporaryPassword(event.target.value)} placeholder="Re-enter temporary password"/>
+        </label>
+        <div className="memberPasswordButtons">
+          <button className="primaryButton compact" type="submit" disabled={busy}>{busy?"Saving…":"Set temporary password"}</button>
+        </div>
+      </div>
+      <p className="muted">Email reset is preferred. A directly set password should be delivered through a secure channel and replaced by the member after sign-in.</p>
+    </form>}
+
+    {passwordFeedback&&<div className="inviteContext neutral" role="status" aria-live="polite">{passwordFeedback}</div>}
 
     {workspace.can_invite&&<>
       <div className="panelHead">
@@ -289,6 +416,7 @@ export default function ProjectMembersPanel({
       </div>:<p className="muted">No project-member invitations have been issued yet.</p>}
     </>}
 
-    <p className="muted">Invite boundaries: no self-invite, no owner invitation, admin invitations require the owner, and acceptance requires the matching authenticated account.</p>
+    <p className="muted">Password boundaries: owners may manage active project members; admins may manage active operators and viewers only. Admin and owner accounts remain protected from admin password takeover.</p>
+        <p className="muted">Invite boundaries: no self-invite, no owner invitation, admin invitations require the owner, and acceptance requires the matching authenticated account.</p>
   </section>;
 }

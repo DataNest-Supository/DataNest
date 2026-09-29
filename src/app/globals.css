@@ -4851,6 +4851,15 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
 .membershipIdentity small{display:block;margin-top:3px;color:#627d96;font-size:9px;letter-spacing:.02em}
 .membershipTable .dataRow{grid-template-columns:minmax(220px,1.55fr) minmax(90px,.65fr) minmax(90px,.65fr) minmax(100px,.65fr) minmax(130px,.85fr)}
 .inviteRowActions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.memberPasswordTable .dataRow{grid-template-columns:minmax(220px,1.4fr) minmax(80px,.55fr) minmax(90px,.6fr) minmax(95px,.6fr) minmax(125px,.8fr) minmax(190px,1fr)}
+.memberPasswordActions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.memberPasswordForm{display:grid;gap:12px;margin:14px 0 22px;padding:14px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.018)}
+.memberPasswordHeader{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.memberPasswordHeader h4{margin:3px 0}
+.memberPasswordHeader small{display:block;color:#627d96;font-size:9px}
+.memberPasswordFields{display:grid;grid-template-columns:minmax(220px,1fr) minmax(220px,1fr) auto;gap:10px;align-items:end}
+.memberPasswordFields label{display:grid;gap:6px;color:#b7cadb;font-size:11px;font-weight:700}
+.memberPasswordButtons{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .dangerTextButton{color:var(--red)}
 @media(max-width:1180px){
   .projectInviteFields{grid-template-columns:1fr 1fr}
@@ -4859,6 +4868,7 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
 @media(max-width:900px){
   .projectInviteFields{grid-template-columns:1fr}
   .projectInviteAction{grid-column:auto}
+  .memberPasswordFields{grid-template-columns:1fr}
 }
 @media(max-width:720px){
   .membershipPanel{padding:16px}
