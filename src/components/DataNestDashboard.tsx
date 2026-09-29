@@ -2,6 +2,7 @@
 
 import {useCallback,useEffect,useMemo,useState} from "react";
 import {getSupabase} from "@/lib/supabase";
+import OwnerDevelopmentAnalytics from "@/components/OwnerDevelopmentAnalytics";
 
 type DashboardDestination=
   |"ai"|"unifi"|"scheduler"|"runs"|"audit"|"governance"
@@ -296,6 +297,8 @@ export default function DataNestDashboard({
         </div>
       </article>
     </section>
+
+    {isOwner&&<OwnerDevelopmentAnalytics projectId={projectId}/>}
 
     <section className="controlCenterLaunchpad" aria-label="DataNest workspaces">
       <div><p className="eyebrow">QUICK LAUNCH</p><h3>Move from signal to governed action</h3></div>
