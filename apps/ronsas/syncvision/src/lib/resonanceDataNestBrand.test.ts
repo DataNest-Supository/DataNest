@@ -43,7 +43,7 @@ describe("SyncVision Resonance DataNest contract",()=>{
   it("keeps the SyncVision accent accessibility modes and sovereign FFmpeg pins",()=>{
     const adapter=read("resonance-datanest-adapter.css");
     const pkg=JSON.parse(read("../package.json"));
-    expect(adapter).toContain("--rdn-app-accent: #ff36d8");
+    expect(adapter).toContain("--rdn-app-accent: #42e7ff");
     expect(adapter).toMatch(/prefers-color-scheme:\s*light/);
     expect(adapter).toMatch(/prefers-contrast:\s*more/);
     expect(adapter).toMatch(/prefers-reduced-motion:\s*reduce/);
