@@ -54,10 +54,24 @@ type MemoryOutcomeItem={
   created_at:string;
 };
 
+type LanguageReviewerQualification={
+  id:string;
+  project_id:string;
+  user_id:string;
+  language_tag:string;
+  qualification_scope:"source_language_review"|"semantic_equivalence";
+  evidence:Record<string,unknown>;
+  active:boolean;
+  verified_by:string;
+  verified_at:string;
+};
+
 type WorkspaceResponse={
   role:"owner"|"admin";
+  currentUserId:string;
   candidates:Candidate[];
   validationRuns:ValidationRun[];
+  languageReviewerQualifications:LanguageReviewerQualification[];
   memoryReviewItems:MemoryReviewItem[];
   memoryOutcomeItems:MemoryOutcomeItem[];
 };
@@ -99,8 +113,12 @@ function normalizeWorkspaceResponse(data:unknown,fallbackRole:"owner"|"admin"):W
     :fallbackRole;
   return {
     role:responseRole,
+    currentUserId:typeof record.currentUserId==="string"?record.currentUserId:"",
     candidates:Array.isArray(record.candidates)?record.candidates as Candidate[]:[],
     validationRuns:Array.isArray(record.validationRuns)?record.validationRuns as ValidationRun[]:[],
+    languageReviewerQualifications:Array.isArray(record.languageReviewerQualifications)
+      ?record.languageReviewerQualifications as LanguageReviewerQualification[]
+      :[],
     memoryReviewItems:Array.isArray(record.memoryReviewItems)?record.memoryReviewItems as MemoryReviewItem[]:[],
     memoryOutcomeItems:Array.isArray(record.memoryOutcomeItems)?record.memoryOutcomeItems as MemoryOutcomeItem[]:[]
   };
@@ -112,6 +130,10 @@ export default function DataNestAiCertificationPanel({
   const [workspace,setWorkspace]=useState<WorkspaceResponse|null>(null);
   const [busyId,setBusyId]=useState("");
   const [busyMemoryId,setBusyMemoryId]=useState("");
+  const [busyQualificationId,setBusyQualificationId]=useState("");
+  const [qualificationLanguage,setQualificationLanguage]=useState("");
+  const [qualificationScope,setQualificationScope]=useState<"source_language_review"|"semantic_equivalence">("source_language_review");
+  const [qualificationBasis,setQualificationBasis]=useState("");
   const [languageReviewDrafts,setLanguageReviewDrafts]=useState<Record<string,LanguageReviewDraft>>({});
 
   const canReview=role==="owner"||role==="admin";
@@ -189,6 +211,61 @@ export default function DataNestAiCertificationPanel({
     });
   }
 
+  async function registerLanguageQualification(){
+    const supabase=getSupabase();
+    if(!supabase||role!=="owner")return;
+    setBusyQualificationId("new");
+    setError("");
+    try{
+      const {error}=await supabase.functions.invoke("datanest-ai-certification",{
+        body:{
+          action:"register_language_reviewer",
+          projectId,
+          reviewerUserId:workspace?.currentUserId,
+          languageTag:qualificationLanguage.trim(),
+          qualificationScope,
+          evidence:{
+            basis:qualificationBasis.trim(),
+            source:"DataNest AI certification console",
+            self_recorded:false
+          }
+        }
+      });
+      if(error)throw error;
+      setNotice("Language reviewer qualification registered.");
+      setQualificationLanguage("");
+      setQualificationBasis("");
+      await load();
+    }catch(actionError){
+      setError(actionError instanceof Error?actionError.message:"Unable to register language reviewer qualification.");
+    }finally{
+      setBusyQualificationId("");
+    }
+  }
+
+  async function revokeLanguageQualification(qualification:LanguageReviewerQualification){
+    const supabase=getSupabase();
+    if(!supabase||role!=="owner")return;
+    setBusyQualificationId(qualification.id);
+    setError("");
+    try{
+      const {error}=await supabase.functions.invoke("datanest-ai-certification",{
+        body:{
+          action:"revoke_language_reviewer",
+          projectId,
+          qualificationId:qualification.id
+        }
+      });
+      if(error)throw error;
+      setNotice("Language reviewer qualification revoked.");
+      await load();
+    }catch(actionError){
+      setError(actionError instanceof Error?actionError.message:"Unable to revoke language reviewer qualification.");
+    }finally{
+      setBusyQualificationId("");
+    }
+  }
+
   async function recordLanguageReview(candidate:Candidate){
     const draft=languageReviewDraft(candidate);
     const reviewedLanguages=draft.languages
@@ -260,6 +337,86 @@ export default function DataNestAiCertificationPanel({
       </div>
       <button className="textButton" type="button" onClick={()=>void load()}>Refresh</button>
     </div>
+
+    <div className="rowBetween">
+      <div>
+        <h4>Language reviewer qualifications</h4>
+        <p className="muted">
+          LANGUAGE REVIEW can pass only when the reviewer has active registry coverage for every reviewed language. Registry entries are project governance evidence, not external accreditation.
+        </p>
+      </div>
+      <span className="countPill">{workspace?.languageReviewerQualifications.length||0}</span>
+    </div>
+    {(workspace?.languageReviewerQualifications.length||0)>0&&<div className="manifestList">
+      {(workspace?.languageReviewerQualifications||[]).map(qualification=><article className="manifestCard" key={qualification.id}>
+        <div className="rowBetween">
+          <div>
+            <b>{qualification.language_tag}</b>
+            <small>{qualification.qualification_scope.replaceAll("_"," ")}</small>
+          </div>
+          <span className="badge good">ACTIVE</span>
+        </div>
+        <p>{String(qualification.evidence?.basis||"Qualification evidence recorded.")}</p>
+        <div className="manifestMeta">
+          <span>{"reviewer "+qualification.user_id.slice(0,8)}</span>
+          <span>{"verified "+formatDate(qualification.verified_at)}</span>
+        </div>
+        {role==="owner"&&<div className="rowActions">
+          <button
+            className="secondaryButton compact"
+            type="button"
+            disabled={busyQualificationId===qualification.id}
+            onClick={()=>void revokeLanguageQualification(qualification)}
+          >Revoke qualification</button>
+        </div>}
+      </article>)}
+    </div>}
+    {role==="owner"&&<div className="plannerForm">
+      <div>
+        <b>Register my reviewer qualification</b>
+        <p className="muted">
+          Record the language scope and evidence basis. This authorizes governed project review only; it does not assert professional accreditation.
+        </p>
+      </div>
+      <label>
+        BCP 47 language
+        <input
+          value={qualificationLanguage}
+          placeholder="e.g. af or zu-ZA"
+          onChange={event=>setQualificationLanguage(event.target.value)}
+        />
+      </label>
+      <label>
+        Qualification scope
+        <select
+          value={qualificationScope}
+          onChange={event=>setQualificationScope(event.target.value as "source_language_review"|"semantic_equivalence")}
+        >
+          <option value="source_language_review">Source language review</option>
+          <option value="semantic_equivalence">Semantic equivalence</option>
+        </select>
+      </label>
+      <label>
+        Qualification evidence basis
+        <textarea
+          rows={3}
+          value={qualificationBasis}
+          placeholder="Describe relevant fluency, domain experience, assessment, or other review evidence and limitations."
+          onChange={event=>setQualificationBasis(event.target.value)}
+        />
+      </label>
+      <button
+        className="secondaryButton compact"
+        type="button"
+        disabled={
+          busyQualificationId==="new"||
+          !qualificationLanguage.trim()||
+          qualificationBasis.trim().length<12||
+          !workspace?.currentUserId
+        }
+        onClick={()=>void registerLanguageQualification()}
+      >Register qualification</button>
+    </div>}
 
     {(workspace?.memoryReviewItems.length||0)>0&&<>
       <div className="rowBetween">
@@ -360,7 +517,7 @@ export default function DataNestAiCertificationPanel({
             <div>
               <b>Language review required</b>
               <p className="muted">
-                Review the preserved source evidence before certification. This records a role-authorized human review; it does not claim a language-qualification registry check.
+                Review the preserved source evidence before certification. A passing review requires active reviewer-registry coverage for every reviewed language and remains bound to the current candidate evidence.
               </p>
               <div className="manifestMeta">
                 <span>{"source languages "+(candidate.language_review.sourceLanguages.join(", ")||"not supplied")}</span>
