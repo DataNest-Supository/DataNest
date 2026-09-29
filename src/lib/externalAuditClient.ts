@@ -51,3 +51,11 @@ export async function closeAction(actionId:string,verificationSourceId:string,re
   const {data,error}=await client().rpc("close_external_audit_action_v1",{target_action:actionId,target_verification_source:verificationSourceId,target_reason:reason});
   if(error)throw error; return String(data);
 }
+export async function publishAuditDocument(input:{assessmentId:string;revision:number;kind:string;format:"html"|"csv"|"json";content:string;visibility?:string}){
+  const {data,error}=await client().rpc("publish_external_audit_document_v1",{
+    target_assessment:input.assessmentId,target_revision:input.revision,target_kind:input.kind,target_format:input.format,
+    target_content:input.content,target_storage_reference:null,target_visibility:input.visibility||"project_restricted"
+  });
+  if(error)throw error;
+  return String(data);
+}
