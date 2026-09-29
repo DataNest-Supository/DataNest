@@ -10,6 +10,7 @@ import {
   type RiskClass
 } from "../_shared/datanestAiPolicy.ts";
 import { sha256Text } from "../_shared/datanestAiRuntime.ts";
+import { classifyCertifiedMemoryRelation } from "../_shared/datanestAiTrends.ts";
 import { resolveDataNestAiStaging } from "../_shared/datanestAiStaging.ts";
 import {
   candidateValidationSeal,
@@ -280,6 +281,43 @@ async function sourceLineage(staging:AnyClient,candidateId:string){
   };
 }
 
+async function loadActiveCertifiedMemory(
+  serviceClient:AnyClient,
+  projectId:string,
+  category:string
+):Promise<Array<{id:string;normalized_knowledge:string;content_hash:string}>>{
+  const {data,error}=await serviceClient
+    .from("certified_memory")
+    .select("id,normalized_knowledge,content_hash")
+    .eq("project_id",projectId)
+    .eq("category",category)
+    .eq("active",true)
+    .limit(200);
+  if(error)throw error;
+  return (data||[]).map(item=>({
+    id:String(item.id),
+    normalized_knowledge:String(item.normalized_knowledge||""),
+    content_hash:String(item.content_hash||"")
+  }));
+}
+
+function certifiedMemoryRelationHints(
+  candidate:Candidate,
+  memories:Array<{id:string;normalized_knowledge:string;content_hash:string}>
+){
+  return memories
+    .filter(memory=>memory.content_hash!==candidate.content_hash)
+    .map(memory=>({
+      memoryId:memory.id,
+      ...classifyCertifiedMemoryRelation(
+        candidate.normalized_knowledge,
+        memory.normalized_knowledge
+      )
+    }))
+    .filter(item=>item.relation!=="none")
+    .sort((a,b)=>b.similarity-a.similarity||a.memoryId.localeCompare(b.memoryId));
+}
+
 Deno.serve(async(request:Request)=>{
   const origin=request.headers.get("Origin");
   if(request.method==="OPTIONS")return new Response("ok",{headers:cors(origin)});
@@ -446,8 +484,14 @@ Deno.serve(async(request:Request)=>{
     }
 
     if(action==="promote"||action==="supersede"){
-      if(action==="supersede"&&member.role!=="owner"){
+      const supersedesMemoryId=typeof body.supersedesMemoryId==="string"&&body.supersedesMemoryId
+        ?body.supersedesMemoryId
+        :null;
+      if((action==="supersede"||supersedesMemoryId)&&member.role!=="owner"){
         return json({error:"Owner access is required for explicit knowledge supersession."},403,origin);
+      }
+      if(action==="supersede"&&!supersedesMemoryId){
+        return json({error:"supersedesMemoryId is required for explicit knowledge supersession."},400,origin);
       }
       if(candidate.lifecycle_state!=="CERTIFIED"){
         return json({error:"Only certified candidates can be promoted."},409,origin);
@@ -456,12 +500,41 @@ Deno.serve(async(request:Request)=>{
       if(!decision)return json({error:"Certified candidate has no certification decision."},409,origin);
       assertCertificationDecisionCurrent(decision,candidate);
 
+      const activeMemory=await loadActiveCertifiedMemory(
+        serviceClient,
+        projectId,
+        candidate.category
+      );
+      const relationHints=certifiedMemoryRelationHints(candidate,activeMemory);
+      const contradictions=relationHints.filter(item=>item.relation==="contradicts");
+      const duplicates=relationHints.filter(item=>item.relation==="duplicates");
+
+      if(contradictions.length&&!supersedesMemoryId){
+        return json({
+          error:"Candidate conflicts with active Verified Memory. Owner supersession is required before promotion.",
+          conflictMemoryIds:contradictions.map(item=>item.memoryId),
+          relationHints
+        },409,origin);
+      }
+      if(duplicates.length&&!supersedesMemoryId){
+        return json({
+          error:"Candidate substantially duplicates active Verified Memory. Reuse the existing memory or supersede it explicitly.",
+          duplicateMemoryIds:duplicates.map(item=>item.memoryId),
+          relationHints
+        },409,origin);
+      }
+
       const lineage=await sourceLineage(staging,candidate.id);
-      const supersedesMemoryId=typeof body.supersedesMemoryId==="string"&&body.supersedesMemoryId
-        ?body.supersedesMemoryId
-        :null;
+      const applicability=
+        typeof body.applicability==="object"&&body.applicability!==null&&!Array.isArray(body.applicability)
+          ?body.applicability as Record<string,unknown>
+          :{};
+      const validFrom=typeof body.validFrom==="string"&&body.validFrom?body.validFrom:null;
+      const validUntil=typeof body.validUntil==="string"&&body.validUntil?body.validUntil:null;
+      const reviewAfter=typeof body.reviewAfter==="string"&&body.reviewAfter?body.reviewAfter:null;
+
       const {data:memoryId,error:promotionError}=await serviceClient.rpc(
-        "service_promote_certified_memory",{
+        "service_promote_certified_memory_v2",{
           target_project:projectId,
           target_knowledge:candidate.normalized_knowledge,
           target_category:candidate.category,
@@ -472,6 +545,10 @@ Deno.serve(async(request:Request)=>{
           target_confidence:candidate.confidence,
           target_policy_version:candidate.policy_version,
           target_content_hash:candidate.content_hash,
+          target_applicability:applicability,
+          target_valid_from:validFrom,
+          target_valid_until:validUntil,
+          target_review_after:reviewAfter,
           target_supersedes:supersedesMemoryId
         }
       );
@@ -490,7 +567,12 @@ Deno.serve(async(request:Request)=>{
           });
         if(supersessionError)throw supersessionError;
       }
-      return json({memoryId,sourceJobIds:lineage.jobIds,sourceTraceIds:lineage.traceIds},200,origin);
+      return json({
+        memoryId,
+        sourceJobIds:lineage.jobIds,
+        sourceTraceIds:lineage.traceIds,
+        relationHints
+      },200,origin);
     }
 
     return json({error:"Unsupported certification action."},400,origin);
