@@ -107,22 +107,22 @@ const finalStates = new Set(["COMPLETED","FAILED","CANCELLED"]);
 const jobColumns = "id,job_number,title,description,priority,status,required_capabilities,requirements,acceptance,created_at,updated_at,deadline";
 
 const nav:Array<{key:ViewKey;label:string;group:string;glyph:string}> = [
-  {key:"overview",label:"AI & I",group:"Core",glyph:"◎"},
-  {key:"ai",label:"DataNest AI",group:"Core",glyph:"✦"},
-  {key:"stakeholder",label:"Stakeholder",group:"Discover",glyph:"◌"},
-  {key:"sparks",label:"Sparks",group:"Discover",glyph:"✧"},
-  {key:"impact",label:"Impact",group:"Discover",glyph:"◉"},
-  {key:"thinktank",label:"Think Tanks",group:"Discover",glyph:"◈"},
-  {key:"governance",label:"Governance",group:"Govern & Build",glyph:"◆"},
-  {key:"products",label:"Products",group:"Govern & Build",glyph:"◉"},
-  {key:"external_auditor",label:"External Auditor",group:"Govern & Build",glyph:"◫"},
-  {key:"productlab",label:"Product Lab",group:"Govern & Build",glyph:"▣"},
-  {key:"unifi",label:"UNIFI Planner",group:"Execute",glyph:"◇"},
-  {key:"scheduler",label:"TranScheduler",group:"Execute",glyph:"⌁"},
-  {key:"runs",label:"Runs",group:"Execute",glyph:"▶"},
-  {key:"checkpoints",label:"Checkpoints",group:"Verify",glyph:"↺"},
-  {key:"audit",label:"Audit",group:"Verify",glyph:"≡"},
-  {key:"transparency",label:"Transparency",group:"Verify",glyph:"◎"},
+  {key:"overview",label:"AI & I",group:"Home",glyph:"◎"},
+  {key:"stakeholder",label:"Stakeholder",group:"Explore",glyph:"◌"},
+  {key:"sparks",label:"Sparks",group:"Explore",glyph:"✧"},
+  {key:"impact",label:"Impact",group:"Explore",glyph:"◉"},
+  {key:"thinktank",label:"Think Tanks",group:"Explore",glyph:"◈"},
+  {key:"products",label:"Products",group:"Portfolio",glyph:"◉"},
+  {key:"unifi",label:"UNIFI Planner",group:"Projects",glyph:"◇"},
+  {key:"scheduler",label:"TranScheduler",group:"Projects",glyph:"⌁"},
+  {key:"runs",label:"Runs",group:"Projects",glyph:"▶"},
+  {key:"ai",label:"DataNest AI",group:"Intelligence",glyph:"✦"},
+  {key:"governance",label:"Governance",group:"Governance",glyph:"◆"},
+  {key:"external_auditor",label:"External Audit & Optimizer",group:"Assurance",glyph:"◫"},
+  {key:"productlab",label:"Product Lab",group:"Assurance",glyph:"▣"},
+  {key:"checkpoints",label:"Checkpoints",group:"Assurance",glyph:"↺"},
+  {key:"audit",label:"Audit",group:"Assurance",glyph:"≡"},
+  {key:"transparency",label:"Transparency",group:"Assurance",glyph:"◎"},
   {key:"settings",label:"Settings",group:"System",glyph:"⚙"}
 ];
 
@@ -1386,7 +1386,7 @@ export default function DataNestApp({session}:{session:Session}) {
       </div>
       <div className="projectPill"><span className="liveDot"/><div><small>PROJECT</small><strong>{project?.name||DATANEST_CANONICAL_NAME}</strong></div></div>
       <nav className="navStack" aria-label="Project workspaces">
-        {groups.map(group=><details className="navGroup navDisclosure" key={group+String(nav.some(item=>item.group===group&&item.key===view))} open={group==="Core"||nav.some(item=>item.group===group&&item.key===view)}>
+        {groups.map(group=><details className="navGroup navDisclosure" key={group+String(nav.some(item=>item.group===group&&item.key===view))} open={group==="Home"||nav.some(item=>item.group===group&&item.key===view)}>
           <summary>{group}</summary>
           {nav.filter(item=>item.group===group).map(item=><button
             key={item.key}
