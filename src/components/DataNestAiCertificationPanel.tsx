@@ -120,7 +120,8 @@ export default function DataNestAiCertificationPanel({
     const map=new Map<string,Map<string,boolean>>();
     for(const run of workspace?.validationRuns||[]){
       if(!map.has(run.candidate_id))map.set(run.candidate_id,new Map());
-      map.get(run.candidate_id)!.set(run.gate,run.passed);
+      const candidateRuns=map.get(run.candidate_id)!;
+      if(!candidateRuns.has(run.gate))candidateRuns.set(run.gate,run.passed);
     }
     return map;
   },[workspace]);
@@ -163,10 +164,15 @@ export default function DataNestAiCertificationPanel({
   }
 
   function updateLanguageReviewDraft(candidate:Candidate,patch:Partial<LanguageReviewDraft>){
-    setLanguageReviewDrafts(current=>({
-      ...current,
-      [candidate.id]:{...languageReviewDraft(candidate),...patch}
-    }));
+    setLanguageReviewDrafts(current=>{
+      const base=current[candidate.id]||{
+        languages:(candidate.language_review?.sourceLanguages||[]).join(", "),
+        basis:"",
+        meaningPreserved:false,
+        noUnresolvedAmbiguity:false
+      };
+      return {...current,[candidate.id]:{...base,...patch}};
+    });
   }
 
   async function recordLanguageReview(candidate:Candidate){
