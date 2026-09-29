@@ -1928,7 +1928,7 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
         await resolveDurableRecovery(project.id,requestScope,intent.requestKey,"confirmed");
         clearPendingMutation(requestScope,"confirmed");
         setReconciliationState("confirmed");
-        setTitle("");setDescription("");setPriority(50);setCapability("chat");setTests(true);setArtifact(true);setFocusAreas([]);setFocusAreas([]);
+        setTitle("");setDescription("");setPriority(50);setCapability("chat");setTests(true);setArtifact(true);setFocusAreas([]);
         setNotice("JOB-"+String(number||"?").padStart(5,"0")+" created transactionally by UNIFI.");
         await reload();
       } catch(createError) {
