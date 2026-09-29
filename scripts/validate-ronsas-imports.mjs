@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 const root = process.cwd();
 
 const required = [
+  "apps/ronsas/shared/legal-contract.json",
   "apps/ronsas/epublisher/package.json",
   "apps/ronsas/epublisher/package-lock.json",
   "apps/ronsas/creative-studio/package.json",
@@ -245,6 +246,38 @@ for (const [rel, expectedSource] of sourceAuthorities) {
     }
   } catch (error) {
     failures.push(`invalid RONSAS source-authority JSON in ${rel}: ${error.message}`);
+  }
+}
+
+
+const legalContractPath = resolve(root, "apps/ronsas/shared/legal-contract.json");
+if (existsSync(legalContractPath)) {
+  try {
+    const raw = readFileSync(legalContractPath, "utf8");
+    const contract = JSON.parse(raw);
+    const expectedRoutes = {
+      legal:"/legal",
+      governance:"/governance",
+      privacy:"/privacy",
+      terms:"/terms",
+      disclaimers:"/disclaimers",
+      acceptableUse:"/acceptable-use",
+      intellectualProperty:"/intellectual-property",
+      accessibility:"/accessibility"
+    };
+    if (contract.schema !== "datanest.ronsas.legal-contract.v1") failures.push("unexpected cross-app legal contract schema");
+    if (contract.legalOperator !== "Resonance Sole Proprietorship") failures.push("cross-app legal contract legal operator mismatch");
+    if (contract.businessBrand !== "Resonance App Development") failures.push("cross-app legal contract business brand mismatch");
+    if (contract.platform !== "Resonance DataNest") failures.push("cross-app legal contract platform mismatch");
+    if (contract.governanceLabel !== "RSGP Governed") failures.push("cross-app legal contract governance label mismatch");
+    if (contract.policyState !== "review-gated") failures.push("cross-app legal contract must remain review-gated");
+    if (contract.commercialState !== "free-promotion" || contract.paidCheckoutActive !== false) failures.push("cross-app legal contract must preserve free-promotion / no-paid-checkout policy");
+    if (JSON.stringify(contract.routes) !== JSON.stringify(expectedRoutes)) failures.push("cross-app legal contract route map mismatch");
+    if (/RSGP\s+(?:means|stands for|is short for)/i.test(raw)) failures.push("cross-app legal contract invents an RSGP expansion");
+    if (/"policyState"\s*:\s*"approved"/i.test(raw)) failures.push("cross-app legal contract cannot mark policy approved before human/legal review");
+    if (/encryption|retention|jurisdiction|waiver|indemnif|liabilit/i.test(raw)) failures.push("cross-app legal contract must stay structural and avoid substantive policy promises");
+  } catch (error) {
+    failures.push(`invalid cross-app legal contract: ${error.message}`);
   }
 }
 
