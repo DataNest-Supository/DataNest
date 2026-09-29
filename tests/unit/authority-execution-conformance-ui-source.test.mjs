@@ -60,7 +60,7 @@ test("panel does not expose credential or destructive legal financial executors"
 test("Governance preserves Authority and Execution while supporting additional deep-linkable governed sections",()=>{
   const source=governance();
   assert.match(source,/ExecutionAuthorityPanel/);
-  assert.match(source,/useState<"sovereign"\|"trust"\|"authority"\|"improvement">/);
+  assert.match(source,/useState<"sovereign"\|"trust"\|"authority"\|"improvement"\|"platform_review">/);
   assert.match(source,/requested==="authority"/);
   assert.match(source,/searchParams\.set\("section","authority"\)/);
   assert.match(source,/>Authority & Execution<\/button>/);
@@ -68,7 +68,11 @@ test("Governance preserves Authority and Execution while supporting additional d
   assert.match(source,/requested==="improvement"/);
   assert.match(source,/searchParams\.set\("section","improvement"\)/);
   assert.match(source,/>Learning & Improvement<\/button>/);
-  assert.match(source,/return "sovereign"|\?"improvement":"sovereign"/);
+  assert.match(source,/requested==="platform_review"/);
+  assert.match(source,/searchParams\.set\("section","platform_review"\)/);
+  assert.match(source,/>Platform Review & Dossier<\/button>/);
+  assert.match(source,/section==="platform_review"[\s\S]*PlatformReviewPanel/);
+  assert.match(source,/return "sovereign"|\?"platform_review":"sovereign"/);
 });
 
 test("TranScheduler preserves its operational Authority mode and loads read-only job authority summaries",()=>{
