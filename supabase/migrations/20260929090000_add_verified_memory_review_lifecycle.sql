@@ -6,14 +6,15 @@ language sql
 immutable
 set search_path=''
 as $$
-  select case lower(coalesce(target_category,''))
-    when 'security' then interval '30 days'
-    when 'authorization' then interval '30 days'
-    when 'destructive' then interval '30 days'
-    when 'governance' then interval '60 days'
-    when 'architecture' then interval '90 days'
-    when 'legal' then interval '30 days'
-    when 'workflow' then interval '180 days'
+  select case
+    when lower(coalesce(target_category,'')) ~ '(security|authorization|authority|privacy|legal|destructive)'
+      then interval '30 days'
+    when lower(coalesce(target_category,'')) ~ '(governance|policy)'
+      then interval '60 days'
+    when lower(coalesce(target_category,'')) ~ '(architecture|infrastructure|schema|migration)'
+      then interval '90 days'
+    when lower(coalesce(target_category,'')) ~ '(workflow|product|ecosystem)'
+      then interval '180 days'
     else interval '120 days'
   end;
 $$;
