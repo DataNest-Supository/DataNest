@@ -61,3 +61,9 @@ Certified Memory may declare applicability for product scopes, purposes, jurisdi
 
 Before a newly certified candidate is promoted, DataNest compares it with active Certified Memory in the same category. Near-duplicates are held back to prevent memory pollution, while deterministic contradiction hints require explicit Owner supersession. Supersession creates a durable memory relationship rather than deleting history.
 
+### Memory Usage Receipts
+
+Every new governed AI execution records a Verified Memory usage receipt for the selected context. The receipt stores the retrieval strategy, task scope, aggregate active/applicable/selected/review-due counts, selected Certified Memory IDs, trace identity, and a SHA-256 hash of the retrieval query. It deliberately does not store the raw prompt or private reasoning.
+
+These receipts let Intelligence Fabric answer which governed memory objects influenced a request without exposing chain-of-thought. Receipt creation is service-only and idempotent per project trace. Project members can inspect the receipt evidence through the existing Intelligence Fabric workspace.
+
