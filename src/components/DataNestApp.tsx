@@ -2009,7 +2009,26 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
   const setViewMode=onViewMode;
   const setSortMode=onSortMode;
   const [authoritySummary,setAuthoritySummary]=useState<Record<string,JobExecutionAuthorityState>>({});
+  const [userInterests,setUserInterests]=useState<WorkFocusKey[]>([]);
+  const [interestOnly,setInterestOnly]=useState(false);
   const filterOptions=schedulerFilterOptions;
+
+  useEffect(()=>{
+    let cancelled=false;
+    const supabase=getSupabase();
+    if(!supabase){setUserInterests([]);return ()=>{cancelled=true;};}
+    void supabase.from("datanest_user_preferences")
+      .select("interest_keys")
+      .eq("user_id",currentUserId)
+      .maybeSingle()
+      .then(({data,error})=>{
+        if(cancelled)return;
+        if(error||!data){setUserInterests([]);return;}
+        setUserInterests(normalizeWorkFocusKeys((data as {interest_keys?:unknown}).interest_keys));
+      });
+    return ()=>{cancelled=true;};
+  },[currentUserId]);
+
   useEffect(()=>{
     let cancelled=false;
     const supabase=getSupabase();
@@ -2024,7 +2043,11 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
     });
     return ()=>{cancelled=true;};
   },[projectId,jobs]);
-  const visible=filter==="ALL"?jobs:jobs.filter(item=>item.status===filter);
+  const statusVisible=filter==="ALL"?jobs:jobs.filter(item=>item.status===filter);
+  const interestMatchCount=statusVisible.filter(item=>workMatchesInterests(item.requirements,userInterests)).length;
+  const visible=interestOnly&&userInterests.length>0
+    ? statusVisible.filter(item=>workMatchesInterests(item.requirements,userInterests))
+    : statusVisible;
   const orderedVisible=[...visible].sort((left,right)=>{
     if(sortMode==="deadline"){
       const leftDeadline=ganttTime(left.deadline);
@@ -2047,6 +2070,7 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
   useEffect(()=>{
     function revealActiveContext(){
       setFilter("ALL");
+      setInterestOnly(false);
       setViewMode("gantt");
       window.requestAnimationFrame(()=>window.requestAnimationFrame(()=>{
         if(focusRenderedActiveContextRecord()){
@@ -2086,6 +2110,10 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
               <option value="recent">Recently updated</option>
             </select>
           </label>
+          <label className="schedulerInterestToggle">
+            <input type="checkbox" checked={interestOnly} disabled={userInterests.length===0} onChange={event=>setInterestOnly(event.target.checked)}/>
+            My interests
+          </label>
         </div>
         <div className="schedulerContextStats" aria-label="Current scheduler context">
           <span>{projectName}</span>
@@ -2093,6 +2121,7 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
           <span>{visible.length+" shown"}</span>
           <span>{activeCount+" active"}</span>
           <span>{deadlineCount+" deadlines"}</span>
+          <span>{userInterests.length?interestMatchCount+" interest matches":"No interests saved"}</span>
         </div>
       </div>
       {viewMode==="authority"
@@ -2106,17 +2135,21 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
             </select>
           </label>
           <div className="filterBar schedulerFilterDesktop">{filterOptions.map(item=><button key={item} className={filter===item?"active":""} onClick={()=>setFilter(item)}>{item.replace("_"," ")}</button>)}</div>
+          <div className="schedulerInterestSummary" aria-label="User interests">
+            <b>Interest matching</b>
+            <span>{userInterests.length?userInterests.map(workFocusLabel).join(" · "):"Save interests in Stakeholder to enable relevance matching."}</span>
+          </div>
 
           {!orderedVisible.length?<div className="schedulerEmptyState"><EmptyState
             title={total===0?"No project jobs yet":"No jobs match this filter"}
-            text={total===0?"Create a complete Job Manifest in UNIFI before scheduling execution.":"Clear the current status filter to return to the project queue."}
-            actionLabel={total===0?"Open UNIFI Planner":"Show all jobs"}
-            onAction={()=>{if(total===0)onNavigate("unifi");else setFilter("ALL");}}
+            text={total===0?"Create a complete Job Manifest in UNIFI before scheduling execution.":interestOnly?"No Jobs on this page match your saved interests. Turn off the interest filter or update your interests in Stakeholder.":"Clear the current status filter to return to the project queue."}
+            actionLabel={total===0?"Open UNIFI Planner":interestOnly?"Show all interests":"Show all jobs"}
+            onAction={()=>{if(total===0)onNavigate("unifi");else if(interestOnly)setInterestOnly(false);else setFilter("ALL");}}
           /></div>:viewMode==="queue"?<div className="schedulerProjectGroup">
             <ProjectGroupHeader projectName={projectName} projectSlug={projectSlug} jobs={orderedVisible}/>
             <div className="schedulerTable"><div className="schedulerRow headerRow"><span>Job</span><span>Priority</span><span>Capability</span><span>Status</span><span>Controls</span></div>
-            {orderedVisible.map(job=><div className={"schedulerRow "+(job.id===activeJobId?"contextMatch":"")} data-active-context={job.id===activeJobId?"true":undefined} tabIndex={job.id===activeJobId?-1:undefined} aria-label={job.id===activeJobId?"Active work context · "+jobCode(job)+" · "+job.title:undefined} key={job.id}>
-              <div data-label="Job"><b>{jobCode(job)}</b><small>{job.title}</small>{job.id===activeJobId&&<span className="contextMatchTag">ACTIVE CONTEXT</span>}</div>
+            {orderedVisible.map(job=><div className={"schedulerRow "+(job.id===activeJobId?"contextMatch ":"")+(workMatchesInterests(job.requirements,userInterests)?"interestMatch":"")} data-active-context={job.id===activeJobId?"true":undefined} tabIndex={job.id===activeJobId?-1:undefined} aria-label={job.id===activeJobId?"Active work context · "+jobCode(job)+" · "+job.title:undefined} key={job.id}>
+              <div data-label="Job"><b>{jobCode(job)}</b><small>{job.title}</small>{job.id===activeJobId&&<span className="contextMatchTag">ACTIVE CONTEXT</span>}{workMatchesInterests(job.requirements,userInterests)&&<span className="interestMatchTag">INTEREST MATCH</span>}{workFocusKeysFromRequirements(job.requirements).length>0&&<span className="jobFocusTags">{workFocusKeysFromRequirements(job.requirements).map(key=><small key={key}>{workFocusLabel(key)}</small>)}</span>}</div>
               <span data-label="Priority" className="schedulerPriorityCell"><b>{"P"+job.priority}</b><PriorityScale value={job.priority}/></span>
               <span data-label="Capability">{job.required_capabilities?.join(", ")||"chat"}</span>
               <span data-label="Status"><Badge value={job.status}/><small className="schedulerAuthorityState">{jobAuthorityReadinessLabel(authoritySummary[job.id])}</small></span>
@@ -2128,7 +2161,7 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
                 </> : <span className="muted">Read only</span>}
               </div>
             </div>)}
-          </div></div>:<SchedulerGantt projectName={projectName} projectSlug={projectSlug} jobs={orderedVisible} onStatus={onStatus} canOperate={canOperate} activeJobId={activeJobId}/>}
+          </div></div>:<SchedulerGantt projectName={projectName} projectSlug={projectSlug} jobs={orderedVisible} onStatus={onStatus} canOperate={canOperate} activeJobId={activeJobId} userInterests={userInterests}/>}
           <Pagination page={page} total={total} onPage={onPage}/>
         </>}
     </section>
@@ -2180,7 +2213,7 @@ function ProjectGroupHeader({projectName,projectSlug,jobs}:{projectName:string;p
   </div>;
 }
 
-function SchedulerGantt({projectName,projectSlug,jobs,onStatus,canOperate,activeJobId}:{projectName:string;projectSlug:string;jobs:Job[];onStatus:(j:Job,s:string)=>Promise<void>;canOperate:boolean;activeJobId:string|null}) {
+function SchedulerGantt({projectName,projectSlug,jobs,onStatus,canOperate,activeJobId,userInterests}:{projectName:string;projectSlug:string;jobs:Job[];onStatus:(j:Job,s:string)=>Promise<void>;canOperate:boolean;activeJobId:string|null;userInterests:WorkFocusKey[]}) {
   if(!jobs.length)return <div className="ganttEmpty"><EmptyState title="No jobs in this Gantt view" text="Change the status filter or add work in UNIFI."/></div>;
 
   const now=Date.now();
@@ -2239,15 +2272,16 @@ function SchedulerGantt({projectName,projectSlug,jobs,onStatus,canOperate,active
               ? "Closed "+formatDate(job.updated_at)
               : "Active through now · no deadline";
 
-          return <article className={"ganttRow "+(job.id===activeJobId?"contextMatch":"")} data-active-context={job.id===activeJobId?"true":undefined} tabIndex={job.id===activeJobId?-1:undefined} aria-label={job.id===activeJobId?"Active work context · "+jobCode(job)+" · "+job.title:undefined} key={job.id}>
+          return <article className={"ganttRow "+(job.id===activeJobId?"contextMatch ":"")+(workMatchesInterests(job.requirements,userInterests)?"interestMatch":"")} data-active-context={job.id===activeJobId?"true":undefined} tabIndex={job.id===activeJobId?-1:undefined} aria-label={job.id===activeJobId?"Active work context · "+jobCode(job)+" · "+job.title:undefined} key={job.id}>
             <div className="ganttJobLabel">
               <div className="ganttJobTitle">
-                <div><b>{jobCode(job)}</b><small title={job.title}>{job.title}</small>{job.id===activeJobId&&<span className="contextMatchTag">ACTIVE CONTEXT</span>}</div>
+                <div><b>{jobCode(job)}</b><small title={job.title}>{job.title}</small>{job.id===activeJobId&&<span className="contextMatchTag">ACTIVE CONTEXT</span>}{workMatchesInterests(job.requirements,userInterests)&&<span className="interestMatchTag">INTEREST MATCH</span>}</div>
                 <Badge value={job.status}/>
               </div>
               <div className="ganttMeta">
                 <span className="ganttPriorityMeta"><b>{"P"+job.priority}</b><PriorityScale value={job.priority}/></span>
                 <span>{job.required_capabilities?.join(", ")||"chat"}</span>
+                {workFocusKeysFromRequirements(job.requirements).map(key=><span className="jobFocusChip" key={key}>{workFocusLabel(key)}</span>)}
                 <span>{endText}</span>
               </div>
               <div className="rowActions ganttRowActions">
