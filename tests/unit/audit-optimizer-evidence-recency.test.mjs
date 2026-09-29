@@ -15,7 +15,7 @@ test("Audit Optimizer reconciles monitored evidence to the latest control/check 
   assert.match(source,/monitorEvidenceIdentity/);
   assert.match(source,/timestampValue\(b\.observed_at\)-timestampValue\(a\.observed_at\)/);
   assert.match(source,/control_evidence:reconciledControlEvidence\.active/);
-  assert.match(source,/control_evidence_history:reconciledControlEvidence\.history/);
+  assert.doesNotMatch(source,/control_evidence_history:reconciledControlEvidence\.history/);
   assert.match(source,/superseded_failure_count/);
 });
 
@@ -24,14 +24,16 @@ test("superseded failures are explicitly historical-only in the optimizer prompt
     source,
     /Never propose remediation from a superseded failed monitor record when the latest evidence for that same control\/check is passed or resolved\./
   );
-  assert.match(source,/control_evidence_history is historical context only/);
+  assert.match(source,/Superseded monitor failures are intentionally omitted from active-problem evidence/);
 });
 
 test("optimizer suggestions must cite evidence that exists in the reconciled snapshot",()=>{
   assert.match(source,/function collectAllowedEvidenceRefs\(/);
   assert.match(source,/filter\(ref=>allowedEvidenceRefs\.has\(ref\)\)/);
   assert.match(source,/if\(evidenceRefs\.length===0\)continue/);
-  assert.match(source,/validateDraft\(parsed,standardKeys,allowedEvidenceRefs\)/);
+  assert.match(source,/function collectPassingControlEvidenceRefs\(/);
+  assert.match(source,/evidenceRefs\.every\(ref=>passingControlEvidenceRefs\.has\(ref\)\)/);
+  assert.match(source,/validateDraft\(parsed,standardKeys,allowedEvidenceRefs,passingControlEvidenceRefs\)/);
 });
 
 test("optimizer run records reconciliation counts for provenance",()=>{
