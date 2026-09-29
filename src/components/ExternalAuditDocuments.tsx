@@ -11,16 +11,17 @@ export default function ExternalAuditDocuments({bundle,onPublish}:{bundle:Assess
         ...bundle.findings.map(finding=>["finding",finding.id,finding.state,finding.criterion_id].map(csv).join(",")),
         ...bundle.actions.map(action=>["action",action.id,action.status,action.job_id||""].map(csv).join(","))
       ].join("\n");
-    const blob=new Blob([payload],{type:kind==="json"?"application/json":"text/csv"});
-    const url=URL.createObjectURL(blob);
-    const anchor=document.createElement("a");
-    anchor.href=url;anchor.download=`external-audit-${bundle.assessment.id}-r${bundle.assessment.revision}.${kind}`;
-    anchor.click();URL.revokeObjectURL(url);
+    save(payload,kind,"external-audit-"+bundle.assessment.id+"-r"+bundle.assessment.revision+"."+kind);
   };
+
   return <section className="externalAuditSection" aria-labelledby="traceability-heading">
     <div className="externalAuditSectionHeader">
-      <div><p className="eyebrow">STANDARDS & TRACEABILITY</p><h3 id="traceability-heading">Traceable documentation</h3></div>
-      <div className="externalAuditActions"><button className="secondaryButton compact" onClick={onPublish}>Publish report</button><button className="secondaryButton compact" onClick={()=>download("json")}>Export JSON</button><button className="secondaryButton compact" onClick={()=>download("csv")}>Export CSV</button></div>
+      <div><p className="eyebrow">STANDARDS &amp; TRACEABILITY</p><h3 id="traceability-heading">Traceable documentation</h3></div>
+      <div className="externalAuditActions">
+        <button className="secondaryButton compact" onClick={onPublish}>Publish report</button>
+        <button className="secondaryButton compact" onClick={()=>download("json")}>Export JSON</button>
+        <button className="secondaryButton compact" onClick={()=>download("csv")}>Export CSV</button>
+      </div>
     </div>
     <p className="muted">Assessment {bundle.assessment.id} · revision {bundle.assessment.revision}. This is an assisted assessment record, not an ISO certificate or accreditation decision.</p>
     <div className="externalAuditGrid">
@@ -29,7 +30,28 @@ export default function ExternalAuditDocuments({bundle,onPublish}:{bundle:Assess
       <article><b>Optimization actions</b><span>{bundle.actions.length} actions</span><small>{bundle.actions.filter(a=>Boolean(a.job_id)).length} UNIFI jobs</small></article>
       <article><b>Immutable documents</b><span>{bundle.documents.length} versions</span><small>{bundle.events.length} review / trace events</small></article>
     </div>
-    {bundle.documents.length>0&&<div className="externalAuditList">{bundle.documents.map(doc=><div key={doc.id}><b>{doc.kind.replaceAll("_"," ")}</b><span>{doc.format.toUpperCase()} · SHA-256 {doc.content_hash.slice(0,12)}…</span><small>{new Date(doc.generated_at).toLocaleString()}</small><button className="secondaryButton compact" onClick={()=>downloadPublished(doc.content_text,doc.format,doc.id)}>Download published version</button></div>)}</div>}
+    {bundle.documents.length>0&&<div className="externalAuditList">
+      {bundle.documents.map(doc=><div key={doc.id}>
+        <b>{doc.kind.replaceAll("_"," ")}</b>
+        <span>{doc.format.toUpperCase()} · SHA-256 {doc.content_hash.slice(0,12)}…</span>
+        <small>{new Date(doc.generated_at).toLocaleString()}</small>
+        <button className="secondaryButton compact" onClick={()=>save(doc.content_text,doc.format,"external-audit-"+doc.id+"."+doc.format)}>Download published version</button>
+      </div>)}
+    </div>}
   </section>;
 }
-function downloadPublished(content:string,format:string,id:string){const blob=new Blob([content],{type:format==="json"?"application/json":format==="csv"?"text/csv":"text/html"});const url=URL.createObjectURL(blob);const anchor=document.createElement("a");anchor.href=url;anchor.download=`external-audit-${id}.${format}`;anchor.click();URL.revokeObjectURL(url);}\nfunction csv(value:unknown){const text=String(value??"");return /[",\\n]/.test(text)?`"${text.replaceAll('"','""')}"`:text;}
+
+function save(content:string,format:string,name:string){
+  const blob=new Blob([content],{type:format==="json"?"application/json":format==="csv"?"text/csv":"text/html"});
+  const url=URL.createObjectURL(blob);
+  const anchor=document.createElement("a");
+  anchor.href=url;
+  anchor.download=name;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+function csv(value:unknown){
+  const text=String(value??"");
+  return /[",\n]/.test(text)?'"'+text.replaceAll('"','""')+'"':text;
+}
