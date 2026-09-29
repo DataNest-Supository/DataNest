@@ -85,7 +85,7 @@ test("Pages production deployment is manual exact-SHA and environment gated",()=
     assert.match(pagesWorkflow,new RegExp(`\\n      ${input}:\\n`));
   }
   assert.match(pagesWorkflow,/ref: \$\{\{ inputs\.release_sha \}\}/);
-  assert.match(pagesWorkflow,/git merge-base --is-ancestor "\$\{\{ inputs\.release_sha \}\}" origin\/main/);
+  assert.match(pagesWorkflow,/git merge-base --is-ancestor "\$DATANEST_UI_RELEASE_SHA" origin\/main/);
   assert.match(pagesWorkflow,/name: github-pages/);
   assert.match(pagesWorkflow,/DATANEST_UI_PRODUCTION_CONFIRMATION: \$\{\{ inputs\.confirmation \}\}/);
 });
