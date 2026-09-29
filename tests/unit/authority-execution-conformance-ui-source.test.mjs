@@ -57,15 +57,18 @@ test("panel does not expose credential or destructive legal financial executors"
   assert.match(source,/A4[\s\S]*exact-action/i);
 });
 
-test("Governance adds Authority and Execution as a third deep-linkable section while sovereign remains default",()=>{
+test("Governance preserves Authority and Execution while supporting additional deep-linkable governed sections",()=>{
   const source=governance();
   assert.match(source,/ExecutionAuthorityPanel/);
-  assert.match(source,/useState<"sovereign"\|"trust"\|"authority">/);
+  assert.match(source,/useState<"sovereign"\|"trust"\|"authority"\|"improvement">/);
   assert.match(source,/requested==="authority"/);
   assert.match(source,/searchParams\.set\("section","authority"\)/);
   assert.match(source,/>Authority & Execution<\/button>/);
   assert.match(source,/section==="authority"[\s\S]*ExecutionAuthorityPanel/);
-  assert.match(source,/return "sovereign"|\?"trust":"sovereign"/);
+  assert.match(source,/requested==="improvement"/);
+  assert.match(source,/searchParams\.set\("section","improvement"\)/);
+  assert.match(source,/>Learning & Improvement<\/button>/);
+  assert.match(source,/return "sovereign"|\?"improvement":"sovereign"/);
 });
 
 test("TranScheduler preserves its operational Authority mode and loads read-only job authority summaries",()=>{
