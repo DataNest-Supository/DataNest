@@ -5,6 +5,7 @@ const root = process.cwd();
 
 const required = [
   "apps/ronsas/shared/legal-contract.json",
+  "apps/ronsas/shared/resonance-brand-contract.json",
   "apps/ronsas/epublisher/package.json",
   "apps/ronsas/epublisher/package-lock.json",
   "apps/ronsas/creative-studio/package.json",
