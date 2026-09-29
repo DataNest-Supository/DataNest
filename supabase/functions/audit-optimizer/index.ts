@@ -48,6 +48,21 @@ function objectValue(value:unknown):Record<string,unknown>{
     :{};
 }
 
+function parseProviderJson(content:string):unknown{
+  const trimmed=content.trim();
+  const unfenced=trimmed
+    .replace(/^\`\`\`(?:json)?\s*/i,"")
+    .replace(/\s*\`\`\`$/,"")
+    .trim();
+  try{return JSON.parse(unfenced);}catch{}
+  const start=unfenced.indexOf("{");
+  const end=unfenced.lastIndexOf("}");
+  if(start>=0&&end>start){
+    try{return JSON.parse(unfenced.slice(start,end+1));}catch{}
+  }
+  throw new Error("provider_returned_non_json_optimizer_draft");
+}
+
 type OptimizerSuggestion={
   fingerprint:string;
   title:string;
@@ -297,8 +312,7 @@ Deno.serve(async(request)=>{
       maxOutputTokens:Math.min(Number((authorization as Record<string,unknown>)?.max_output_tokens||2200),2200)
     });
 
-    let parsed:unknown;
-    try{parsed=JSON.parse(provider.content);}catch{throw new Error("provider_returned_non_json_optimizer_draft");}
+    const parsed=parseProviderJson(provider.content);
     const draft=await validateDraft(parsed,standardKeys);
 
     await serviceClient.rpc("service_finish_ai_request",{
