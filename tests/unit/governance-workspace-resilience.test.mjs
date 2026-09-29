@@ -19,3 +19,20 @@ test("Governance workspace normalizes collection fields before filter and map us
   }
   assert.match(source,/boundaries:boundaries&&typeof boundaries==="object"&&!Array\.isArray\(boundaries\)/);
 });
+
+
+test("consequential governance surfaces use the shared governed-action lifecycle",()=>{
+  const improvement=fs.readFileSync(path.join(root,"src/components/GovernanceImprovementPanel.tsx"),"utf8");
+  const authority=fs.readFileSync(path.join(root,"src/components/ExecutionAuthorityPanel.tsx"),"utf8");
+  const auditor=fs.readFileSync(path.join(root,"src/components/ExternalAuditor.tsx"),"utf8");
+  const governed=fs.readFileSync(path.join(root,"src/components/platform/GovernedAction.tsx"),"utf8");
+
+  assert.match(source,/import GovernedAction from "@\/components\/platform\/GovernedAction"/);
+  assert.match(improvement,/import GovernedAction from "@\/components\/platform\/GovernedAction"/);
+  assert.match(authority,/import GovernedAction from "@\/components\/platform\/GovernedAction"/);
+  assert.match(auditor,/import GovernedAction from "@\/components\/platform\/GovernedAction"/);
+  assert.match(governed,/data-governed-stage=\{stage\}/);
+  assert.match(authority,/review-required/);
+  assert.match(improvement,/review-required/);
+  assert.match(auditor,/review-required/);
+});
