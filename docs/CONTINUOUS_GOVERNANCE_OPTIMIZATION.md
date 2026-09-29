@@ -49,6 +49,9 @@ The register is deliberately versioned and project-scoped. A reference enters th
 | ISO 30401:2018 + applicable amendments | Knowledge acquisition, sharing, review, retention and improvement |
 | ISO 31000:2018 | Risk-management integration, monitoring, review and continual improvement |
 | ISO 37301:2021 | Compliance-management evaluation, maintenance and improvement |
+| ISO/IEC 38500:2024 | Governing-body principles for effective, efficient and acceptable use of IT |
+| ISO/IEC 38507:2022 | Organizational governance implications and governing-body responsibilities for AI use |
+| ISO/IEC 38505-1:2026 | Governance of data using the ISO/IEC 38500 governance model |
 | ISO/IEC 27001:2022 + Amd 1:2024 | Information-security management and risk-based controls |
 | ISO/IEC 27701:2025 | Privacy-information management and continual improvement |
 | ISO/IEC 5338:2023 | AI-system lifecycle processes and controlled lifecycle evidence |
