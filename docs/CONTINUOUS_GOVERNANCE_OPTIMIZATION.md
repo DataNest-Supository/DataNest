@@ -1,7 +1,7 @@
 # Resonance DataNest Continuous Governance Optimization
 
 Status: governed engineering baseline; not a claim of ISO certification, legal compliance, or exhaustive standards conformity.  
-Version: `continuous-governance-v1.1`.  
+Version: `continuous-governance-v1.2`.  
 Review date: 2026-09-29.
 
 ## Objective
@@ -146,6 +146,30 @@ Future snapshots link to the previous snapshot, creating longitudinal evidence w
 
 This implements a governed **watch → evidence → human review** pattern. A source announcing a revision, amendment, withdrawal or new edition is evidence that the project should reassess applicability; it is not itself a DataNest nonconformity finding.
 
+### AI system impact assessments
+
+`governance_ai_impact_assessments` provides a versioned, project-scoped impact-assessment lifecycle aligned to the DataNest reference use of ISO/IEC 42005:2025 and complementary AI-risk references.
+
+An assessment records:
+
+- the assessed AI system, model, provider, workflow, feature, use case or release;
+- lifecycle stage and the trigger for reassessment, including material changes, incidents, provider/model/data changes and periodic review;
+- affected parties and intended benefits;
+- foreseeable harms and mitigations;
+- materiality and residual risk;
+- supporting evidence and standards references;
+- immutable review history and supersession lineage.
+
+Owner/Admin review may mark an assessment `needs_evidence`, `needs_action`, `monitor` or `closed`. Those states are **decision-support review states**, not deployment approvals, standards-conformity claims or governance decisions.
+
+Only a human-reviewed `needs_action` assessment can be explicitly routed by Owner/Admin into the existing governance-improvement workflow. Routing creates a non-authoritative improvement candidate with the assessment lineage attached. It does not vote, decide, ratify or deploy.
+
+This implements:
+
+**material change → versioned impact assessment → human review → optional improvement candidate → formal governance**
+
+The system does not automatically create improvement candidates from impact assessments and does not treat high materiality or residual risk as proof of harm.
+
 ### Control-evidence graph
 
 `governance_control_catalog` and `governance_control_evidence` create a project-scoped graph:
@@ -180,13 +204,16 @@ The following are hard boundaries:
 9. A standards-watch event cannot alter the standards register or applicability state automatically.
 10. A control-evidence link is provenance, not proof that the control is effective or that a standard is satisfied.
 11. Control-catalog versioning documents implementation intent and cannot grant project, legal, financial or constitutional authority.
+12. An AI impact assessment is decision-support evidence and cannot authorize deployment or operation.
+13. Materiality and residual-risk labels increase scrutiny, not truth status or governance authority.
+14. Routing an impact assessment requires explicit Owner/Admin action after human review; no assessment creates an improvement candidate automatically.
 
 ## Innovation roadmap
 
 The next governed extensions should build on this firewall rather than weaken it:
 
 - **standards watch**: implemented in v1.1 as append-only authoritative-source lifecycle observations with no automatic applicability mutation;
-- **impact-assessment linkage**: next — version AI impact assessments and connect material changes to improvement candidates;
+- **impact-assessment linkage**: implemented in v1.2 as versioned AI impact assessments with explicit human review and optional routing of `needs_action` assessments into non-authoritative improvement candidates;
 - **control-evidence graph**: implemented in v1.1 as standards → controls → implementation → evidence provenance, without a conformity score;
 - **outcome feedback integration**: once the separate Verified Memory outcome-evidence work is merged, allow adverse governed outcomes to become governance observations without changing truth status automatically;
 - **multilingual governance review**: once qualified reviewer controls are merged, require language/domain review where governance meaning could materially change;
