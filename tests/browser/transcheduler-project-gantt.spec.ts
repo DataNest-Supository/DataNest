@@ -103,3 +103,138 @@ test("TranScheduler groups jobs under the project and renders the priority gradi
   await expect(page.locator(".ganttViewport")).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+
+test("Stakeholder interests drive TranScheduler requirement matching and filtering", async ({ page }) => {
+  const projectId = "00000000-0000-4000-8000-000000000010";
+  const userId = "00000000-0000-4000-8000-000000000001";
+  let interestKeys:string[] = [];
+  let preferenceWrites = 0;
+
+  const jobs = [
+    {
+      id:"00000000-0000-4000-8000-000000000111",job_number:111,title:"UI polish",description:null,
+      priority:90,status:"READY",required_capabilities:["repository"],
+      requirements:{source:"UNIFI Planner",focus_areas:["ui_ux"]},acceptance:{},
+      created_at:"2026-09-29T03:00:00Z",updated_at:"2026-09-29T03:10:00Z",deadline:null
+    },
+    {
+      id:"00000000-0000-4000-8000-000000000112",job_number:112,title:"Database maintenance",description:null,
+      priority:70,status:"PLANNED",required_capabilities:["database"],
+      requirements:{source:"UNIFI Planner",focus_areas:["database_architecture"]},acceptance:{},
+      created_at:"2026-09-29T02:00:00Z",updated_at:"2026-09-29T02:10:00Z",deadline:null
+    },
+    {
+      id:"00000000-0000-4000-8000-000000000113",job_number:113,title:"Accessibility review",description:null,
+      priority:50,status:"READY",required_capabilities:["chat"],
+      requirements:{source:"UNIFI Planner",focus_areas:["ui_ux","security_testing"]},acceptance:{},
+      created_at:"2026-09-29T01:00:00Z",updated_at:"2026-09-29T01:10:00Z",deadline:null
+    }
+  ];
+
+  await page.setViewportSize({width:1440,height:1000});
+  await page.route("**/runtime-config.js", route => route.fulfill({
+    contentType:"application/javascript",
+    body:"window.__DATANEST_CONFIG__={supabaseUrl:'https://fixture.supabase.co',supabasePublishableKey:'fixture-key',authoritative:true}"
+  }));
+
+  await page.addInitScript(({userId}) => {
+    const encode = (data:unknown) => btoa(JSON.stringify(data)).replaceAll("+","-").replaceAll("/","_").replaceAll("=","");
+    localStorage.setItem("sb-fixture-auth-token",JSON.stringify({
+      access_token:`${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:userId,exp:4102444800,role:"authenticated"})}.fixture`,
+      refresh_token:"fixture",token_type:"bearer",expires_at:4102444800,
+      user:{id:userId,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid"}
+    }));
+  },{userId});
+
+  await page.route("https://fixture.supabase.co/**", async route => {
+    const request=route.request();
+    const url=new URL(request.url());
+    const path=url.pathname;
+    const headers={"Content-Type":"application/json"};
+    let body:unknown=[];
+
+    if(path.endsWith("/projects")) {
+      body={id:projectId,slug:"fixture-project",name:"Fixture Project",description:null,status:"ACTIVE",created_at:"2026-09-24T00:00:00Z"};
+    } else if(path.endsWith("/project_members")) {
+      body={project_id:projectId,user_id:userId,role:"owner",status:"active"};
+    } else if(path.endsWith("/tool_registry")) {
+      body=[];
+    } else if(path.endsWith("/capabilities")) {
+      body=[{
+        id:"00000000-0000-4000-8000-000000000211",account_key:"fixture",connector_kind:"github",capability:"repository",
+        state:"AVAILABLE",observed_at:"2026-09-29T04:00:00Z",next_check_at:null,confidence:1,concurrency_limit:1,running:0,metadata:{}
+      }];
+    } else if(path.endsWith("/get_project_dashboard_summary")) {
+      body={total_jobs:3,active_jobs:2,running_jobs:0,blocked_jobs:0,available_capabilities:1,registered_capabilities:1};
+    } else if(path.endsWith("/get_job_execution_authority_summary_v1")) {
+      body={};
+    } else if(path.endsWith("/jobs")) {
+      body=jobs;
+    } else if(path.endsWith("/get_contribution_workspace")) {
+      body={
+        profile:{lifecycle_stage:"active_stakeholder",status:"active",origin:"invite"},
+        stakeholder:{tracked_points:0,pending_contributions:0,contribution_share_percent:0},
+        counts:{submitted:0,verified:0,scored:0,minted:0},
+        spark_balances:[],
+        scoring_model_version:"fixture",
+        ui_complexity:"simple",
+        economic_boundary:{}
+      };
+    } else if(path.endsWith("/get_contribution_intelligence_workspace")) {
+      body={
+        rolling_90:{},lifetime:{},progression:{},active_squad_membership:{},squad:[],anomaly_signals:[],
+        preferences:{ui_complexity:"simple",ranking_opt_in:false,squad_opt_in:false},
+        model:{model_version:"fixture",weights:{}},
+        can_manage:true,boundaries:{}
+      };
+    } else if(path.endsWith("/contribution_ledger")) {
+      body=[];
+    } else if(path.endsWith("/datanest_user_preferences")) {
+      if(request.method()==="POST"||request.method()==="PATCH"){
+        const payload=request.postDataJSON() as {interest_keys?:string[]};
+        if(Array.isArray(payload.interest_keys))interestKeys=[...payload.interest_keys];
+        preferenceWrites += 1;
+        return route.fulfill({status:200,headers,body:"[]"});
+      }
+      body={interest_keys:interestKeys};
+    } else if(path.includes("/accept_pending_project_member_invites_v1")||path.includes("/accept_pending_job_invites")) {
+      body=null;
+    }
+
+    return route.fulfill({status:200,headers,body:JSON.stringify(body)});
+  });
+
+  await page.goto(appPath+"?view=stakeholder");
+
+  await expect(page.getByRole("heading",{name:"Work areas you want to see",exact:true})).toBeVisible();
+  const uiUxInterest=page.getByRole("checkbox",{name:/UI\/UX/});
+  await expect(uiUxInterest).not.toBeChecked();
+  await uiUxInterest.click();
+  await expect(uiUxInterest).toBeChecked();
+  await expect(page.getByText("1 selected",{exact:true})).toBeVisible();
+  await expect.poll(()=>preferenceWrites).toBe(1);
+  expect(interestKeys).toEqual(["ui_ux"]);
+
+  await page.goto(appPath+"?view=scheduler");
+
+  await expect(page.getByRole("heading",{name:"Capability-aware project scheduler",exact:true})).toBeVisible();
+  await expect(page.locator(".schedulerInterestSummary")).toContainText("UI/UX");
+  await expect(page.getByText("2 interest matches",{exact:true})).toBeVisible();
+  await expect(page.getByText("INTEREST MATCH",{exact:true})).toHaveCount(2);
+  await expect(page.locator(".ganttRow.interestMatch")).toHaveCount(2);
+  await expect(page.locator(".jobFocusChip").filter({hasText:"UI/UX"})).toHaveCount(2);
+  await expect(page.locator(".jobFocusChip").filter({hasText:"Database & Architecture"})).toHaveCount(1);
+
+  const interestFilter=page.getByRole("checkbox",{name:"My interests"});
+  await expect(interestFilter).toBeEnabled();
+  await interestFilter.check();
+
+  await expect(page.locator(".ganttRow")).toHaveCount(2);
+  await expect(page.locator(".ganttJobTitle small")).toHaveText(["UI polish","Accessibility review"]);
+  await expect(page.getByText("Database maintenance",{exact:true})).toHaveCount(0);
+
+  await interestFilter.uncheck();
+  await expect(page.locator(".ganttRow")).toHaveCount(3);
+  await expect(page.locator(".ganttJobTitle small")).toHaveText(["UI polish","Database maintenance","Accessibility review"]);
+});
