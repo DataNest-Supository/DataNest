@@ -122,6 +122,142 @@ after insert on public.projects
 for each row
 execute function private.seed_verified_memory_projection_profiles_v1();
 
+create or replace function private.upsert_certified_memory_projection_profile_v1(
+  target_project uuid,
+  target_projection_key text,
+  target_product_scope text,
+  target_include_unscoped boolean,
+  target_allowed_categories text[],
+  target_excluded_categories text[],
+  target_min_confidence numeric,
+  target_max_items integer,
+  target_require_jurisdiction boolean,
+  target_metadata jsonb default '{}'::jsonb
+) returns uuid
+language plpgsql
+security definer
+set search_path=''
+as $
+declare
+  caller uuid:=auth.uid();
+  caller_role text;
+  expected_scope text;
+  next_version bigint;
+  new_id uuid;
+begin
+  if caller is null then
+    raise insufficient_privilege using message='Authentication is required.';
+  end if;
+
+  select pm.role into caller_role
+  from public.project_members pm
+  where pm.project_id=target_project
+    and pm.user_id=caller
+    and pm.status='active'
+  limit 1;
+
+  if caller_role is null or caller_role not in ('owner','admin') then
+    raise insufficient_privilege using message='Owner or Admin memory-projection authority is required.';
+  end if;
+
+  expected_scope:=case btrim(target_projection_key)
+    when 'datanest_ai' then 'datanest_ai'
+    when 'development_command' then 'development_command'
+    when 'legal_eagle' then 'legal_eagle'
+    else null
+  end;
+
+  if expected_scope is null then
+    raise exception 'Unsupported Verified Memory projection key.';
+  end if;
+
+  if btrim(target_product_scope)<>expected_scope then
+    raise exception 'Verified Memory projection key and product scope do not match.';
+  end if;
+
+  if target_min_confidence<0 or target_min_confidence>1 then
+    raise exception 'Verified Memory projection confidence must be between 0 and 1.';
+  end if;
+
+  if target_max_items<1 or target_max_items>50 then
+    raise exception 'Verified Memory projection max_items must be between 1 and 50.';
+  end if;
+
+  if exists(
+    select 1
+    from unnest(coalesce(target_allowed_categories,'{}'::text[])) category
+    where category=any(coalesce(target_excluded_categories,'{}'::text[]))
+  ) then
+    raise exception 'Verified Memory projection cannot both allow and exclude the same category.';
+  end if;
+
+  select coalesce(max(p.version),0)+1 into next_version
+  from public.certified_memory_projection_profiles p
+  where p.project_id=target_project
+    and p.projection_key=btrim(target_projection_key);
+
+  update public.certified_memory_projection_profiles
+  set status='superseded'
+  where project_id=target_project
+    and projection_key=btrim(target_projection_key)
+    and status='active';
+
+  insert into public.certified_memory_projection_profiles(
+    project_id,projection_key,version,status,product_scope,include_unscoped,
+    allowed_categories,excluded_categories,min_confidence,max_items,
+    require_jurisdiction,metadata
+  )
+  values(
+    target_project,btrim(target_projection_key),next_version,'active',
+    btrim(target_product_scope),coalesce(target_include_unscoped,true),
+    coalesce(target_allowed_categories,'{}'::text[]),
+    coalesce(target_excluded_categories,'{}'::text[]),
+    coalesce(target_min_confidence,0),
+    coalesce(target_max_items,24),
+    coalesce(target_require_jurisdiction,false),
+    coalesce(target_metadata,'{}'::jsonb)
+  )
+  returning id into new_id;
+
+  return new_id;
+end;
+$;
+
+create or replace function public.upsert_certified_memory_projection_profile_v1(
+  target_project uuid,
+  target_projection_key text,
+  target_product_scope text,
+  target_include_unscoped boolean,
+  target_allowed_categories text[],
+  target_excluded_categories text[],
+  target_min_confidence numeric,
+  target_max_items integer,
+  target_require_jurisdiction boolean,
+  target_metadata jsonb default '{}'::jsonb
+) returns uuid
+language sql
+security definer
+set search_path=''
+as $
+  select private.upsert_certified_memory_projection_profile_v1(
+    target_project,target_projection_key,target_product_scope,target_include_unscoped,
+    target_allowed_categories,target_excluded_categories,target_min_confidence,
+    target_max_items,target_require_jurisdiction,target_metadata
+  );
+$;
+
+revoke execute on function private.upsert_certified_memory_projection_profile_v1(
+  uuid,text,text,boolean,text[],text[],numeric,integer,boolean,jsonb
+) from public,anon,authenticated;
+
+revoke execute on function public.upsert_certified_memory_projection_profile_v1(
+  uuid,text,text,boolean,text[],text[],numeric,integer,boolean,jsonb
+) from public,anon;
+
+grant execute on function public.upsert_certified_memory_projection_profile_v1(
+  uuid,text,text,boolean,text[],text[],numeric,integer,boolean,jsonb
+) to authenticated;
+
 alter table public.certified_memory_usage_receipts
   add column if not exists projection_key text,
   add column if not exists projection_version bigint;
