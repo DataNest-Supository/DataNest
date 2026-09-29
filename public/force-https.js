@@ -1,19 +1,20 @@
 (function () {
-  var location = window.location;
-  var isDataNestPages = location.hostname === "datanest-supository.github.io";
-
-  if (location.protocol === "http:" && isDataNestPages) {
-    location.replace(
+  if (
+    window.location.protocol === "http:" &&
+    window.location.hostname === "datanest-supository.github.io"
+  ) {
+    window.location.replace(
       "https://" +
-        location.host +
-        location.pathname +
-        location.search +
-        location.hash
+        window.location.host +
+        window.location.pathname +
+        window.location.search +
+        window.location.hash
     );
     return;
   }
 
-  if (!isDataNestPages) return;
+  var location = window.location;
+  if (location.hostname !== "datanest-supository.github.io") return;
 
   var params = new URLSearchParams(location.search);
   var release = params.get("release");
