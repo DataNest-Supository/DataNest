@@ -261,3 +261,43 @@ test("DataNest app reserves and clears the companion rail", () => {
   assert.match(source, /onCompanionReserve=\{setCompanionReserve\}/);
   assert.match(source, /setCompanionReserve\(0\)/);
 });
+
+
+// Source guardrail: recovery must never reclaim an explicitly selected live context.
+test("stale External AI session recovery cannot overwrite a fresh launch or manual context switch", () => {
+  const source = fs.readFileSync(
+    path.join(repoRoot, "src/components/ExternalAiSidebar.tsx"),
+    "utf8"
+  );
+
+  assert.match(source, /sessionRestoreGeneration=useRef\(0\)/);
+  assert.match(source, /sessionRestoreAllowed=useRef\(true\)/);
+  assert.match(source, /manualJobSelectionRef=useRef\(false\)/);
+  assert.match(source, /const blockSessionRestore=useCallback/);
+  assert.match(source, /restoreGeneration===sessionRestoreGeneration\.current/);
+  assert.match(
+    source,
+    /async function startSession[\s\S]*?blockSessionRestore\(\)/,
+    "fresh companion launches must invalidate in-flight recovery"
+  );
+  assert.match(
+    source,
+    /value=\{selectedJobId\} onChange=\{event=>\{manualJobSelectionRef\.current=true;blockSessionRestore\(\);setSelectedJobId/,
+    "manual Job switches must fail closed instead of reviving an old session"
+  );
+  assert.match(
+    source,
+    /!manualJobSelectionRef\.current&&[\s\S]*?activeJobId!==selectedJobId/,
+    "shell active-Job synchronization must respect an explicit Job choice in the dock"
+  );
+  assert.match(
+    source,
+    /value=\{provider\} onChange=\{event=>\{blockSessionRestore\(\);setProvider/,
+    "manual provider switches must fail closed instead of reviving an old session"
+  );
+  assert.match(
+    source,
+    /if\(!selectedJobId\|\|!sessionRestoreAllowed\.current\)return;\s*void restoreLatestSession/,
+    "automatic recovery is limited to the initial allowed context"
+  );
+});
