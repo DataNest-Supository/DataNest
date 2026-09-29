@@ -61,6 +61,22 @@ Certified Memory may declare applicability for product scopes, purposes, jurisdi
 
 Before a newly certified candidate is promoted, DataNest compares it with active Certified Memory in the same category. Near-duplicates are held back to prevent memory pollution, while deterministic contradiction hints require explicit Owner supersession. Supersession creates a durable memory relationship rather than deleting history.
 
+
+
+### Product-specific Verified Memory projections
+
+Certified Memory remains one governed project knowledge base, but products consume it through versioned retrieval projections rather than receiving an undifferentiated copy.
+
+The default projections are:
+
+- `datanest_ai`: project-wide governed baseline, up to 24 selected memories.
+- `development_command`: Certified Memory baseline plus separate Development Command working memory; minimum confidence 0.50.
+- `legal_eagle`: matter-scoped retrieval, minimum confidence 0.70, maximum 16 selected memories, and jurisdiction context is mandatory.
+
+Projection profiles can allow or exclude categories, set minimum confidence, cap selected items, require jurisdiction, and decide whether unscoped project memory remains eligible. Owner/Admin changes create a new projection version and supersede the prior active version; they do not rewrite Certified Memory.
+
+The runtime records the projection key and version in Verified Memory usage receipts. This keeps the distinction explicit: **Certified Memory is the governed source of truth; a projection is a product-specific view of that truth.** Deployment keeps a safe fallback to the prior ranked-memory path if the projection-aware RPC has not yet reached an environment.
+
 ### Memory Usage Receipts
 
 Every new governed AI execution records a Verified Memory usage receipt for the selected context. The receipt stores the retrieval strategy, task scope, aggregate active/applicable/selected/review-due counts, selected Certified Memory IDs, trace identity, and a SHA-256 hash of the retrieval query. It deliberately does not store the raw prompt or private reasoning.
