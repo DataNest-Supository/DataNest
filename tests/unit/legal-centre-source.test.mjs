@@ -87,3 +87,15 @@ test("cross-app legal contract is structural and review-gated",()=>{
   assert.doesNotMatch(contractSource,/"policyState"\s*:\s*"approved"/i);
   assert.doesNotMatch(contractSource,/encryption|retention|jurisdiction|waiver|indemnif|liabilit/i);
 });
+
+
+test("legal review checklist cannot fabricate production approval",()=>{
+  const checklist=readSource("docs/governance/legal-review/RESONANCE_DATANEST_LEGAL_REVIEW_CHECKLIST.md");
+  assert.notEqual(checklist,"","legal review checklist must exist");
+  for(const token of ["Document ID","Draft version","Evidence required","Review owner","Decision","Effective date","Approval reference"]){
+    assert.match(checklist,new RegExp(token,"i"));
+  }
+  assert.match(checklist,/production legal approval is a human\/legal decision/i);
+  assert.match(checklist,/blank[^\n]{0,80}review-required[^\n]{0,80}(?:not|never)[^\n]{0,80}approval/i);
+  assert.doesNotMatch(checklist,/Approved by:\s*[A-Z][a-z]+\s+[A-Z][a-z]+/);
+});
