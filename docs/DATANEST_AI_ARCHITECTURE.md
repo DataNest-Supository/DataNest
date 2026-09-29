@@ -67,3 +67,7 @@ Every new governed AI execution records a Verified Memory usage receipt for the 
 
 These receipts let Intelligence Fabric answer which governed memory objects influenced a request without exposing chain-of-thought. Receipt creation is service-only and idempotent per project trace. Project members can inspect the receipt evidence through the existing Intelligence Fabric workspace.
 
+
+## Memory, learning and language standards
+
+The [memory and language control baseline](MEMORY_LEARNING_LANGUAGE_STANDARDS.md) maps ISO and open standards to implementation evidence, required controls, multilingual evaluation gates and outstanding gaps. All three reasoning modes include the shared `memory-language-v1` policy. This is partial standards alignment, not assessed ISO conformity or demonstrated multilingual learning parity.

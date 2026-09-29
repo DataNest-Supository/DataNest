@@ -1,3 +1,5 @@
+import { MEMORY_LANGUAGE_POLICY } from "./memoryLanguagePolicy.ts";
+
 export async function sha256Text(value:string):Promise<string> {
   const bytes=new TextEncoder().encode(value.trim());
   const digest=await crypto.subtle.digest("SHA-256",bytes);
@@ -25,6 +27,7 @@ export function buildGovernedPrompt(input:{
 }):string {
   return [
     input.governance,
+    MEMORY_LANGUAGE_POLICY,
     "CERTIFIED PROJECT MEMORY:",
     JSON.stringify(input.certifiedMemory),
     "CURRENT JOB MANIFEST:",
