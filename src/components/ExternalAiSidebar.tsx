@@ -101,6 +101,8 @@ export default function ExternalAiSidebar({
   const clipboardContextRef=useRef("");
   const clipboardConsentRef=useRef(false);
   const pendingAutoReturnSession=useRef("");
+  const sessionRestoreGeneration=useRef(0);
+  const sessionRestoreAllowed=useRef(true);
   const companionWindowRef=useRef<Window|null>(null);
   const companionClosePollRef=useRef<number|null>(null);
   const clipboardContextKey=JSON.stringify([projectId,currentUserEmail,selectedJobId,provider,sessionId]);
@@ -111,6 +113,15 @@ export default function ExternalAiSidebar({
     clipboardConsentRef.current=enabled;
     setAutoCaptureEnabledState(enabled);
   },[]);
+
+  const invalidateSessionRestore=useCallback(()=>{
+    sessionRestoreGeneration.current+=1;
+  },[]);
+
+  const blockSessionRestore=useCallback(()=>{
+    sessionRestoreAllowed.current=false;
+    invalidateSessionRestore();
+  },[invalidateSessionRestore]);
 
   useLayoutEffect(()=>{
     clipboardContextRef.current=clipboardContextKey;
@@ -201,9 +212,15 @@ export default function ExternalAiSidebar({
   },[onError]);
 
   const restoreLatestSession=useCallback(async(jobId:string,providerKey:string)=>{
+    if(!sessionRestoreAllowed.current)return;
+    const restoreGeneration=++sessionRestoreGeneration.current;
+    const isCurrentRestore=()=>sessionRestoreAllowed.current&&
+      restoreGeneration===sessionRestoreGeneration.current;
+
     const supabase=getSupabase();
-    if(!supabase||!jobId||!providerKey)return;
+    if(!supabase||!jobId||!providerKey||!isCurrentRestore())return;
     const {data:userResult}=await supabase.auth.getUser();
+    if(!isCurrentRestore())return;
     const userId=userResult.user?.id;
     if(!userId)return;
 
@@ -218,6 +235,7 @@ export default function ExternalAiSidebar({
       .limit(1)
       .maybeSingle();
 
+    if(!isCurrentRestore())return;
     if(error){
       onError(error.message);
       return;
@@ -256,11 +274,13 @@ export default function ExternalAiSidebar({
 
   useEffect(()=>{
     const activeJobId=activeDataNestAiSession?.jobId||"";
-    // Follow changes to the active AI job, not manual changes in this dock.
-    if(activeJobId&&jobs.some(job=>job.id===activeJobId)){
-      setSelectedJobId(current=>current===activeJobId?current:activeJobId);
+    // Follow changes to the active AI job, but never revive a prior external
+    // session across an already-hydrated context boundary.
+    if(activeJobId&&activeJobId!==selectedJobId&&jobs.some(job=>job.id===activeJobId)){
+      blockSessionRestore();
+      setSelectedJobId(activeJobId);
     }
-  },[activeDataNestAiSession?.jobId,jobs]);
+  },[activeDataNestAiSession?.jobId,jobs,selectedJobId,blockSessionRestore]);
 
   useEffect(()=>{
     if(!selectedJobId)return;
@@ -277,8 +297,7 @@ export default function ExternalAiSidebar({
     lastClipboardCapture.current="";
     setEmbedUrl("");
     void loadJobContext(selectedJobId);
-    void restoreLatestSession(selectedJobId,provider);
-  },[selectedJobId,loadJobContext,provider,restoreLatestSession]);
+  },[selectedJobId,loadJobContext,setAutoCaptureEnabled,setResponseText]);
 
   useEffect(()=>{
     window.localStorage.setItem("datanest.aiSidebar.width",String(width));
@@ -295,8 +314,14 @@ export default function ExternalAiSidebar({
     setLastImportedId("");
     lastClipboardCapture.current="";
     setEmbedUrl("");
+  },[provider,setAutoCaptureEnabled,setResponseText]);
+
+  useEffect(()=>{
+    // Recovery is an initial-hydration convenience only. Once the user launches
+    // or changes governed context, stale asynchronous recovery must fail closed.
+    if(!selectedJobId||!sessionRestoreAllowed.current)return;
     void restoreLatestSession(selectedJobId,provider);
-  },[provider,selectedJobId,restoreLatestSession]);
+  },[selectedJobId,provider,restoreLatestSession]);
 
   useEffect(()=>()=>{
     if(companionClosePollRef.current!==null){
@@ -311,12 +336,13 @@ export default function ExternalAiSidebar({
     const handle=(event:Event)=>{
       const detail=(event as CustomEvent<{jobId?:string}>).detail;
       if(detail?.jobId&&jobs.some(job=>job.id===detail.jobId)){
+        blockSessionRestore();
         setSelectedJobId(detail.jobId);
       }
     };
     window.addEventListener("datanest:job-selected",handle);
     return()=>window.removeEventListener("datanest:job-selected",handle);
-  },[jobs]);
+  },[jobs,blockSessionRestore]);
 
   const refreshClipboardAccess=useCallback(async():Promise<ClipboardAutoCaptureAccess>=>{
     if(!navigator.clipboard?.readText){
@@ -594,6 +620,9 @@ export default function ExternalAiSidebar({
 
   async function startSession(mode:"sidebar"|"companion"|"popout"){
     if(!selectedJob)return;
+    // A fresh governed launch supersedes any asynchronous recovery of an older
+    // external session for this sidebar instance.
+    blockSessionRestore();
     // Every tracked session starts with auto-return off. Opening a companion is
     // the session-level opt-in only when the browser has already granted
     // clipboard-read permission; first-time permission remains an explicit
@@ -851,7 +880,7 @@ export default function ExternalAiSidebar({
       <section className="externalAiDockSection">
         <label>
           Job Manifest
-          <select value={selectedJobId} onChange={event=>setSelectedJobId(event.target.value)}>
+          <select value={selectedJobId} onChange={event=>{blockSessionRestore();setSelectedJobId(event.target.value);}}>
             {jobs.map(job=><option value={job.id} key={job.id}>
               {jobCode(job)+" · "+job.title+" · "+job.status}
             </option>)}
@@ -860,7 +889,7 @@ export default function ExternalAiSidebar({
 
         <label>
           External AI
-          <select value={provider} onChange={event=>setProvider(event.target.value)}>
+          <select value={provider} onChange={event=>{blockSessionRestore();setProvider(event.target.value);}}>
             {providers.map(item=><option value={item.key} key={item.key}>{item.label}</option>)}
           </select>
         </label>
