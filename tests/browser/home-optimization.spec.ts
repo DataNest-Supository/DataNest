@@ -305,7 +305,11 @@ test("purpose guide supports keyboard, compact layouts, and browser history", as
   await page.getByRole("searchbox",{name:"Search DataNest workspaces"}).fill("governance");
   await page.keyboard.press("Enter");
   await expect(page.getByRole("heading",{name:"Governance",level:1,exact:true})).toBeFocused();
-  await page.getByRole("button",{name:/Quick switch/}).click();
+  // Use the documented keyboard shortcut after workspace navigation. The same test
+  // already covers pointer activation above; this avoids racing a transient
+  // topbar reconciliation while still verifying Escape restores launcher focus.
+  await page.keyboard.press("Control+K");
+  await expect(page.getByRole("searchbox",{name:"Search DataNest workspaces"})).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("button",{name:/Quick switch/})).toBeFocused();
 });
