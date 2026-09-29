@@ -31,7 +31,7 @@ test("consequential governance surfaces use the shared governed-action lifecycle
   assert.match(improvement,/import GovernedAction from "@\/components\/platform\/GovernedAction"/);
   assert.match(authority,/import GovernedAction from "@\/components\/platform\/GovernedAction"/);
   assert.match(auditor,/import GovernedAction from "@\/components\/platform\/GovernedAction"/);
-  assert.match(governed,/data-governed-stage=\{stage\}/);
+  assert.match(governed,/data-governed-stage=\{stage\}/);\n  assert.doesNotMatch(governed,/export\\s+export/);
   assert.match(authority,/review-required/);
   assert.match(improvement,/review-required/);
   assert.match(auditor,/review-required/);
