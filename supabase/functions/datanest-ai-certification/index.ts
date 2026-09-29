@@ -318,6 +318,24 @@ function certifiedMemoryRelationHints(
     .sort((a,b)=>b.similarity-a.similarity||a.memoryId.localeCompare(b.memoryId));
 }
 
+async function loadCertifiedMemoryReviewQueue(
+  serviceClient:AnyClient,
+  projectId:string
+){
+  const now=new Date().toISOString();
+  const {data,error}=await serviceClient
+    .from("certified_memory")
+    .select("id,normalized_knowledge,category,effective_version,certification_class,confidence,review_after,last_verified_at,promoted_at")
+    .eq("project_id",projectId)
+    .eq("active",true)
+    .not("review_after","is",null)
+    .lte("review_after",now)
+    .order("review_after",{ascending:true})
+    .limit(100);
+  if(error)throw error;
+  return (data||[]) as Array<Record<string,unknown>>;
+}
+
 Deno.serve(async(request:Request)=>{
   const origin=request.headers.get("Origin");
   if(request.method==="OPTIONS")return new Response("ok",{headers:cors(origin)});
@@ -358,13 +376,17 @@ Deno.serve(async(request:Request)=>{
     }
 
     if(action==="workspace"){
-      const {data:candidates,error:candidatesError}=await staging
-        .from("ai_learning_candidates")
-        .select("*")
-        .eq("project_id",projectId)
-        .neq("lifecycle_state","REJECTED")
-        .order("updated_at",{ascending:false})
-        .limit(100);
+      const [candidateResult,memoryReviewItems]=await Promise.all([
+        staging
+          .from("ai_learning_candidates")
+          .select("*")
+          .eq("project_id",projectId)
+          .neq("lifecycle_state","REJECTED")
+          .order("updated_at",{ascending:false})
+          .limit(100),
+        loadCertifiedMemoryReviewQueue(serviceClient,projectId)
+      ]);
+      const {data:candidates,error:candidatesError}=candidateResult;
       if(candidatesError)throw candidatesError;
       const candidateIds=(candidates||[]).map(candidate=>String(candidate.id));
       let runs:Record<string,unknown>[]=[];
@@ -390,8 +412,40 @@ Deno.serve(async(request:Request)=>{
           })
         })),
         validationRuns:runs||[],
-        certificationDecisions:decisions||[]
+        certificationDecisions:decisions||[],
+        memoryReviewItems
       },200,origin);
+    }
+
+    if(action==="review_memory"){
+      const memoryId=String(body.memoryId||"");
+      if(!memoryId)return json({error:"memoryId is required."},400,origin);
+      const decision=String(body.decision||"reaffirmed");
+      if(!["reaffirmed","review_required","retired"].includes(decision)){
+        return json({error:"Unsupported Certified Memory review decision."},400,origin);
+      }
+      if(decision==="retired"&&member.role!=="owner"){
+        return json({error:"Owner authority is required to retire Certified Memory."},403,origin);
+      }
+      const nextReviewAfter=typeof body.nextReviewAfter==="string"&&body.nextReviewAfter
+        ?body.nextReviewAfter
+        :null;
+      const {data:review,error:reviewError}=await serviceClient.rpc(
+        "service_review_certified_memory_v1",{
+          target_project:projectId,
+          target_memory:memoryId,
+          target_actor:user.id,
+          target_decision:decision,
+          target_reason:String(body.reason||"Governed Certified Memory review.").slice(0,2000),
+          target_next_review_after:nextReviewAfter,
+          target_evidence:{
+            source:"datanest_ai_certification_console",
+            policy_version:currentPolicyVersion
+          }
+        }
+      );
+      if(reviewError)throw reviewError;
+      return json({review},200,origin);
     }
 
     const candidateId=String(body.candidateId||"");
