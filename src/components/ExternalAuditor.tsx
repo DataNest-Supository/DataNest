@@ -2,7 +2,7 @@
 import { useEffect,useMemo,useState } from "react";
 import type { ExternalAuditorProps,AssessmentBundle } from "@/lib/externalAuditTypes";
 import { STANDARDS_REGISTER,selectSuggestedStandards } from "@/lib/externalAuditStandards";
-import { analyzeAssessment,approveAction,createAssessment,loadAssessment,saveStandardsProfile,snapshotSource } from "@/lib/externalAuditClient";
+import { analyzeAssessment,approveAction,createAssessment,loadAssessment,publishAuditDocument,saveStandardsProfile,snapshotSource } from "@/lib/externalAuditClient";
 import ExternalAuditDocuments from "@/components/ExternalAuditDocuments";
 
 const DEFAULT_DOMAINS=["audit","software","ux","security"];
@@ -59,7 +59,7 @@ export default function ExternalAuditor({projectId,role}:ExternalAuditorProps){
     await analyzeAssessment(bundle.assessment.id,crypto.randomUUID());await refresh(bundle.assessment.id);setNotice("Evidence-linked draft analysis created for human review.");
   });
 
-  const handoff=(actionId:string)=>run("handoff",async()=>{
+  const publishReport=()=>run("publish",async()=>{\n    if(!bundle)throw new Error("Load an assessment first.");\n    await publishAuditDocument({assessmentId:bundle.assessment.id,revision:bundle.assessment.revision,kind:"assessment_report",format:"json",content:JSON.stringify(bundle,null,2)});\n    await refresh(bundle.assessment.id);setNotice("Versioned assessment report published with a server-calculated SHA-256 hash.");\n  });\n\n  const handoff=(actionId:string)=>run("handoff",async()=>{
     await approveAction(actionId,crypto.randomUUID());await refresh();setNotice("Approved action handed to UNIFI as one idempotent Job Manifest.");
   });
 
@@ -97,7 +97,7 @@ export default function ExternalAuditor({projectId,role}:ExternalAuditorProps){
         {bundle.findings.length===0?<p className="muted">No findings yet. Capture evidence, approve a standards profile, and run governed analysis.</p>:<div className="externalAuditList">{bundle.findings.map(finding=><article key={finding.id}><div><b>{finding.criterion_id}</b><span className="externalAuditState">{finding.state}</span></div><p>{finding.observation}</p><small>{finding.claim_kind.toUpperCase()} · confidence {Math.round(finding.confidence*100)}% · evidence {finding.evidence_ids.length}</small></article>)}</div>}
         {bundle.actions.length>0&&<div className="externalAuditList">{bundle.actions.map(action=><article key={action.id}><div><b>{action.outcome}</b><span className="externalAuditState">{action.status}</span></div><small>{action.job_id?"UNIFI Job "+action.job_id:"Awaiting reviewer approval"}</small>{!action.job_id&&<button className="secondaryButton compact" disabled={!canApprove||Boolean(busy)} onClick={()=>handoff(action.id)}>Approve → UNIFI</button>}</article>)}</div>}
       </section>
-      <ExternalAuditDocuments bundle={bundle}/>
+      <ExternalAuditDocuments bundle={bundle} onPublish={publishReport}/>
     </>}
   </section>;
 }
