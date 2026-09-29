@@ -21,6 +21,7 @@ import GlobalNavigation from "@/components/platform/GlobalNavigation";
 import LifecycleRail from "@/components/platform/LifecycleRail";
 import ContextStrip from "@/components/platform/ContextStrip";
 import PlatformShell from "@/components/platform/PlatformShell";
+import PlatformFooter from "@/components/platform/PlatformFooter";
 import type { NavigationItem } from "@/components/platform/navigationTypes";
 import ImpactScoringWorkspace from "@/components/ImpactScoringWorkspace";
 import type { ExecutionAuthorityRole } from "@/lib/executionAuthority";
@@ -1621,6 +1622,7 @@ export default function DataNestApp({session}:{session:Session}) {
         </div>
       </header>
       }
+      footer={<PlatformFooter compact/>}
       context={project?<ContextStrip
         projectName={project.name}
         applicationName={currentLabel}
