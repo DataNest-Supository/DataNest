@@ -93,3 +93,28 @@ test("DataNest exposes the governed RONSAS status contract through JWT-protected
   assert.match(app,/RonsasIntegrationPanel/);
   assert.match(manifest,/ronsasStatus:process\.env\.DATANEST_EDGE_RONSAS_STATUS \|\| "ronsas-status@1"/);
 });
+
+
+const appRegistry=readFileSync(new URL("../../src/lib/ronsasApps.ts",import.meta.url),"utf8");
+
+test("RONSAS launch registry distinguishes seven DataNest Pages apps from YouTube Optimizer SSR",()=>{
+  assert.match(appRegistry,/launchKind:"datanest-pages"\|"external-ssr"/);
+  assert.match(appRegistry,/slug:"youtube-optimizer"[\s\S]*launchKind:"external-ssr"[\s\S]*href:/);
+  assert.equal((appRegistry.match(/\{slug:"[^"]+"[^}\n]*launchKind:"datanest-pages"/g)||[]).length,7);
+  assert.match(appRegistry,/YouTube Optimizer/);
+  assert.match(panel,/External SSR|SSR runtime/);
+  assert.match(panel,/YouTube Optimizer/);
+});
+
+
+const brandValidator=readFileSync(new URL("../../scripts/validate-ronsas-brand-contract.mjs",import.meta.url),"utf8");
+const ronsasWorkflow=readFileSync(new URL("../../.github/workflows/ronsas-app-validation.yml",import.meta.url),"utf8");
+
+test("RONSAS CI enforces complete brand governance across all eight user-facing apps",()=>{
+  assert.match(brandValidator,/process\.argv\.includes\("--complete"\)/);
+  for(const slug of ["career-compass","creative-studio","epublisher","lyricsync-studio","scene-song-spark","sovereign-forge","syncvision","youtube-optimizer"]){
+    assert.match(brandValidator,new RegExp(slug));
+  }
+  assert.match(brandValidator,/sovereign-backend/);
+  assert.match(ronsasWorkflow,/validate-ronsas-brand-contract\.mjs --complete/);
+});

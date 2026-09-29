@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { getRonsasStatus, type RonsasStatus } from "@/lib/ronsas";
+import { getRonsasAppLaunch } from "@/lib/ronsasApps";
 
 type State =
   | { kind: "checking"; status: null; message: string }
@@ -48,6 +49,7 @@ export default function RonsasIntegrationPanel() {
   }, [refresh]);
 
   const status = state.status;
+  const youtubeOptimizer = getRonsasAppLaunch("YouTube Optimizer");
   const hubState = status?.hub.ok ? "ONLINE" : state.kind === "checking" ? "CHECKING" : "DEGRADED";
   const deliveryState = status?.delivery.publicDelivery.ok
     ? "LIVE"
@@ -79,6 +81,7 @@ export default function RonsasIntegrationPanel() {
         <div><dt>Runtime model</dt><dd>{status?.runtimeMode || "local-first"}</dd></div>
         <div><dt>DataNest authority</dt><dd>Managed · required</dd></div>
         <div><dt>Commercial mode</dt><dd>{status?.billingState || "free-promotion"}</dd></div>
+        <div><dt>YouTube Optimizer</dt><dd>External SSR runtime · {youtubeOptimizer ? <a className="catalogRecordLaunch" href={youtubeOptimizer.href} target="_blank" rel="noreferrer" aria-label="Open YouTube Optimizer external SSR application">Open YouTube Optimizer ↗</a> : "Unavailable"}</dd></div>
         <div><dt>RONSAS Hub</dt><dd>{hubState}{status?.hub.status ? ` · HTTP ${status.hub.status}` : ""}{status?.authority.publicHub&&<> · <a className="catalogRecordLaunch" href={status.authority.publicHub} target="_blank" rel="noreferrer" aria-label="Open RONSAS from integration settings">Open RONSAS ↗</a></>}</dd></div>
         <div><dt>Canonical name</dt><dd>{status?.delivery.canonicalName || "reson8.datanest.life"}</dd></div>
         <div><dt>Branded URL</dt><dd>{status?.delivery.brandedUrl || "https://reson8.datanest.life/"} · {status?.delivery.brandedState || "wire-ready"}</dd></div>

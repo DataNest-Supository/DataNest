@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 
 const root=process.cwd();
 const contractPath=resolve(root,"apps/ronsas/shared/resonance-brand-contract.json");
+const complete=process.argv.includes("--complete");
 const requestedApp=process.argv.includes("--app")
   ? process.argv[process.argv.indexOf("--app")+1]
   : null;
@@ -85,6 +86,75 @@ if(!existsSync(contractPath)){
     }
   }catch(error){
     failures.push(`invalid RONSAS brand contract: ${error.message}`);
+  }
+}
+
+
+if(complete){
+  const canonicalFonts=["@fontsource-variable/inter-tight","@fontsource-variable/inter","@fontsource/instrument-serif","@fontsource-variable/jetbrains-mono"];
+  const appChecks=[
+    {slug:"career-compass",presentation:"index.html",style:"styles.css",accent:"#14bfff",kind:"static"},
+    {slug:"creative-studio",presentation:"src/components/brand/ResonanceFooter.tsx",style:"src/resonance-datanest-adapter.css",accent:"#ff36d8",kind:"bundled"},
+    {slug:"epublisher",presentation:"src/components/brand/ResonanceFooter.tsx",style:"src/resonance-datanest-adapter.css",accent:"#8b5cf6",kind:"bundled",lightTheme:"class"},
+    {slug:"lyricsync-studio",presentation:"index.html",style:"styles.css",accent:"#8aa6ff",kind:"static"},
+    {slug:"scene-song-spark",presentation:"index.html",style:"styles.css",accent:"#f4c66f",kind:"static"},
+    {slug:"sovereign-forge",presentation:"index.html",style:"styles.css",accent:"#72e6ae",kind:"static"},
+    {slug:"syncvision",presentation:"src/components/brand/ResonanceFooter.tsx",style:"src/resonance-datanest-adapter.css",accent:"#42e7ff",kind:"bundled"},
+    {slug:"youtube-optimizer",presentation:"src/components/SiteFooter.tsx",style:"src/resonance-datanest-adapter.css",accent:"#ff86ab",kind:"ssr"},
+  ];
+
+  for(const app of appChecks){
+    const appRoot=resolve(root,"apps/ronsas",app.slug);
+    const presentationPath=resolve(appRoot,app.presentation);
+    const stylePath=resolve(appRoot,app.style);
+    const packagePath=resolve(appRoot,"package.json");
+    if(!existsSync(presentationPath)){failures.push(`${app.slug} missing governed presentation surface: ${app.presentation}`);continue;}
+    if(!existsSync(stylePath)){failures.push(`${app.slug} missing Resonance DataNest style surface: ${app.style}`);continue;}
+    if(!existsSync(packagePath)){failures.push(`${app.slug} missing package.json`);continue;}
+    const presentation=readFileSync(presentationPath,"utf8");
+    const style=readFileSync(stylePath,"utf8");
+    const pkg=JSON.parse(readFileSync(packagePath,"utf8"));
+    for(const token of ["Resonance Sole Proprietorship","Resonance App Development","Resonance DataNest","RSGP Governed","/DataNest/legal","/DataNest/governance"]){
+      if(!presentation.includes(token)) failures.push(`${app.slug} presentation missing token: ${token}`);
+    }
+    if(!/free (?:access )?promotion/i.test(presentation)) failures.push(`${app.slug} must preserve free-promotion presentation`);
+    if(/checkout|subscribe|paid plan/i.test(presentation)) failures.push(`${app.slug} presentation exposes paid checkout language`);
+    if(!style.toLowerCase().includes(`--rdn-app-accent:${app.accent}`)&&!style.toLowerCase().includes(`--rdn-app-accent: ${app.accent}`)) failures.push(`${app.slug} accent mismatch; expected ${app.accent}`);
+    const lightSource=app.lightTheme==="class"&&existsSync(resolve(appRoot,"src/index.css"))
+      ? readFileSync(resolve(appRoot,"src/index.css"),"utf8")
+      : style;
+    if(app.lightTheme==="class"){
+      if(!/\.light\b/.test(lightSource)) failures.push(`${app.slug} missing governed class-based light theme`);
+    }else if(!/prefers-color-scheme:\s*light/i.test(lightSource)){
+      failures.push(`${app.slug} style surface missing light-mode contract`);
+    }
+    for(const media of [/prefers-contrast:\s*more/i,/prefers-reduced-motion:\s*reduce/i]){
+      if(!media.test(style)) failures.push(`${app.slug} style surface missing accessibility media contract: ${media}`);
+    }
+    for(const dependency of canonicalFonts){
+      if(pkg.dependencies?.[dependency]!=="5.3.0") failures.push(`${app.slug} canonical font dependency mismatch: ${dependency}`);
+    }
+    if(app.kind==="static"){
+      const buildPath=resolve(appRoot,"scripts/build.mjs");
+      if(!existsSync(buildPath)){failures.push(`${app.slug} missing static build script`);}
+      else{
+        const build=readFileSync(buildPath,"utf8");
+        if(!build.includes("node_modules")||!build.includes("woff2")||!build.includes("fonts")) failures.push(`${app.slug} must vendor canonical font assets into its static build`);
+      }
+    }
+  }
+
+  const backendAuthorityPath=resolve(root,"apps/ronsas/sovereign-backend/RONSAS-SOURCE-AUTHORITY.json");
+  if(!existsSync(backendAuthorityPath)){
+    failures.push("sovereign-backend missing repository authority metadata");
+  }else{
+    try{
+      const authority=JSON.parse(readFileSync(backendAuthorityPath,"utf8").replace(/^\uFEFF/,""));
+      if(authority.repository!=="https://github.com/DataNest-Supository/DataNest") failures.push("sovereign-backend repository authority is not DataNest");
+      if(authority.authority_state!=="active") failures.push("sovereign-backend authority metadata is not active");
+    }catch(error){
+      failures.push(`invalid sovereign-backend authority metadata: ${error.message}`);
+    }
   }
 }
 

@@ -42,6 +42,7 @@ for(const app of apps){
     run(npmCommand,["ci","--no-audit","--no-fund"],sourceDir);
     run(npmCommand,["run","build","--",`--base=${appBase}`],sourceDir);
   }else{
+    run(npmCommand,["ci","--no-audit","--no-fund"],sourceDir);
     run(process.execPath,["scripts/build.mjs"],sourceDir);
   }
 

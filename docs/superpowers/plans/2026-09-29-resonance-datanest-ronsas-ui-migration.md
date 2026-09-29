@@ -4,7 +4,7 @@
 
 **Goal:** Migrate every consolidated RONSAS application to the approved Resonance DataNest visual, operator, governance, legal-navigation, accessibility, and free-promotion contract while preserving each app’s specialist workflow and existing framework.
 
-**Architecture:** Define one machine-readable cross-app brand contract plus a validator, then implement thin app-local adapters instead of forcing a monorepo UI package or framework rewrite. React/Vite applications receive focused brand adapter styles and footer/legal attribution updates; simple static applications receive equivalent CSS/markup adapters. The DataNest Pages bundler is extended so every user-facing consolidated application, including YouTube Optimizer, is published under the DataNest app namespace.
+**Architecture:** Define one machine-readable cross-app brand contract plus a validator, then implement thin app-local adapters instead of forcing a monorepo UI package or framework rewrite. React/Vite applications receive focused brand adapter styles and footer/legal attribution updates; simple static applications receive equivalent CSS/markup adapters. The DataNest Pages bundler publishes the seven static-host-capable user-facing applications under the DataNest app namespace; YouTube Optimizer remains a governed external SSR launch target at its canonical runtime origin.
 
 **Tech Stack:** Vite, React 18/19, Tailwind 3/4, plain HTML/CSS/JS apps, Node test runner, Vitest, Bun, GitHub Actions.
 
@@ -185,7 +185,7 @@ git commit -m "feat: align ePublisher with Resonance DataNest"
 
 **Interfaces:**
 - Preserve `installSovereignNetworkGuard()`, crash logging, global error listeners, FFmpeg vendoring, and current video workflow.
-- Adapter uses SyncVision pink accent and DataNest shared semantics.
+- Adapter uses the canonical SyncVision accent (`#42e7ff`) from the cross-app brand contract and DataNest shared semantics.
 - Global footer/legal/governance links must not replace specialist scene/action controls.
 
 - [x] **Step 1: Add failing brand and sovereign-preservation tests**
@@ -237,36 +237,38 @@ git commit -m "feat: align SyncVision with Resonance DataNest"
 - Terms/Privacy must remove stale billing/cancellation wording that contradicts free promotion and mark unapproved policy content as review-gated.
 - Remove unsupported privacy guarantees such as “industry-standard encryption” unless separate implementation evidence is linked and reviewed.
 
-- [ ] **Step 1: Locate the real application entry before editing**
+- [x] **Step 1: Locate the real application entry before editing**
 
 Run: `grep -R "src/styles.css\|./styles.css" -n apps/ronsas/youtube-optimizer/src apps/ronsas/youtube-optimizer | head -20`  
 Expected: identify the exact entry module; update this plan’s working notes if the file name differs from conventional `main.tsx`.
 
-- [ ] **Step 2: Add failing tests for free-promotion and legal claim safety**
+- [x] **Step 2: Add failing tests for free-promotion and legal claim safety**
 
 Require no billing/cancellation SEO description, no unsupported security guarantee, DataNest attribution, and legal/governance links.
 
-- [ ] **Step 2: Run tests**
+- [x] **Step 2: Run tests**
 
 Run: `cd apps/ronsas/youtube-optimizer && bun run typecheck && bun run test`  
 Expected: FAIL on migration assertions.
 
-- [ ] **Step 3: Implement adapter/header/footer/legal changes**
+- [x] **Step 3: Implement adapter/header/footer/legal changes**
 
 Add the four canonical `@fontsource` packages to the Bun lockfile and import their CSS from `src/routes/__root.tsx`. Import `resonance-datanest-adapter.css?url` there and add it as a stylesheet link after the existing `appCss` link so the adapter is explicit and compatible with TanStack Start SSR.
 
-- [ ] **Step 4: Verify app**
+- [x] **Step 4: Verify app**
 
 Run: `cd apps/ronsas/youtube-optimizer && bun run typecheck && bun run test && bun run build -- --base=/DataNest/apps/youtube-optimizer/`  
 Run: `node scripts/validate-ronsas-brand-contract.mjs --app youtube-optimizer`  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/ronsas/youtube-optimizer scripts/validate-ronsas-brand-contract.mjs
 git commit -m "feat: align YouTube Optimizer with Resonance DataNest"
 ```
+
+> Task 5 evidence: existing YouTube Optimizer migration is present on the reconciled source, preserves TanStack Start/Nitro SSR, canonical local fonts, governed footer/legal links, free-promotion presentation, and review-gated legal copy. RONSAS Application Validation #149 passed the YouTube Optimizer type-check, test, and build job on the final implementation head.
 
 ### Task 6: Migrate the four simple static applications
 
@@ -301,11 +303,11 @@ git commit -m "feat: align YouTube Optimizer with Resonance DataNest"
 - Each app receives the canonical operator/platform footer, RSGP marker/link, DataNest Legal/Governance links, focus/motion/semantic token mappings, and its approved accent.
 - Do not introduce React/Tailwind dependencies into these apps.
 
-- [ ] **Step 1: Add source tests in each existing Node test suite**
+- [x] **Step 1: Add source tests in each existing Node test suite**
 
 Assert required attribution/link text, no checkout/pricing CTA, token presence, and no page-level horizontal overflow rules such as fixed minimum widths that exceed the viewport.
 
-- [ ] **Step 2: Run all four suites and verify failure**
+- [x] **Step 2: Run all four suites and verify failure**
 
 Run:
 ```bash
@@ -316,21 +318,23 @@ Run:
 ```
 Expected: FAIL on new source assertions.
 
-- [ ] **Step 3: Implement static markup/CSS adapters and build-time font copying**
+- [x] **Step 3: Implement static markup/CSS adapters and build-time font copying**
 
 Add the four canonical `@fontsource` dependencies to each simple app. Extend each `scripts/build.mjs` to copy only the required WOFF2/CSS assets into that app's `dist/fonts` output, and reference those local assets from `styles.css`. Keep existing app logic files untouched unless a visual control requires an accessible label fix.
 
-- [ ] **Step 4: Build and validate**
+- [x] **Step 4: Build and validate**
 
 Run the four `npm test && npm run build` commands and `node scripts/validate-ronsas-brand-contract.mjs`.  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/ronsas/career-compass apps/ronsas/sovereign-forge apps/ronsas/lyricsync-studio apps/ronsas/scene-song-spark scripts/validate-ronsas-brand-contract.mjs
 git commit -m "feat: align simple RONSAS apps with Resonance DataNest"
 ```
+
+> Task 6 evidence: all four static apps were verified RED before implementation, then GREEN after governed footer/legal attribution, accessibility modes, canonical app accents, and app-local Fontsource build assets were added. RONSAS Application Validation #149 passed Career Compass, SovereignForge, LyricSync Studio, Scene Song Spark, and the aggregate DataNest Pages bundle. The aggregate bundler now installs each static app's locked local dependencies before copying WOFF2 font assets.
 
 ### Task 7: Register YouTube Optimizer as a governed SSR launch target
 
@@ -346,30 +350,32 @@ git commit -m "feat: align simple RONSAS apps with Resonance DataNest"
 - YouTube Optimizer is registered as `launchKind:"external-ssr"` with its canonical SSR URL from the existing YouTube Optimizer configuration; DataNest displays the runtime distinction rather than pretending it is statically hosted.
 - A future move of YouTube Optimizer into static Pages requires a separate runtime-conversion design because its current Nitro server functions and SSR checks are functional requirements.
 
-- [ ] **Step 1: Add failing launch-contract tests**
+- [x] **Step 1: Add failing launch-contract tests**
 
 Assert seven apps resolve to DataNest Pages paths, YouTube Optimizer resolves to the explicit SSR URL, and the UI labels external SSR launch state accessibly.
 
-- [ ] **Step 2: Run focused tests**
+- [x] **Step 2: Run focused tests**
 
 Run: `node --test tests/unit/ronsas-cloud-integration.test.mjs && node scripts/validate-ronsas-imports.mjs`  
 Expected: FAIL because the current launch model has no SSR runtime distinction.
 
-- [ ] **Step 3: Extend the launch contract and integration panel**
+- [x] **Step 3: Extend the launch contract and integration panel**
 
 Preserve all existing aliases and static launch paths. Do not modify YouTube Optimizer's Nitro runtime or server functions in this UI migration.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run: `node --test tests/unit/ronsas-cloud-integration.test.mjs && node scripts/validate-ronsas-imports.mjs && npm run check`  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/ronsasApps.ts src/components/RonsasIntegrationPanel.tsx tests/unit/ronsas-cloud-integration.test.mjs scripts/validate-ronsas-imports.mjs
 git commit -m "feat: register YouTube Optimizer governed SSR launch"
 ```
+
+> Task 7 evidence: focused launch-contract tests were RED before the registry change and GREEN after distinguishing seven `datanest-pages` entries from the `external-ssr` YouTube Optimizer entry at `https://youtubeoptimizer.life`. CI #2404 passed the RONSAS import-contract validator and root unit/type/build gates on the final implementation head.
 
 ### Task 8: Enforce cross-app contract completeness
 
@@ -382,24 +388,26 @@ git commit -m "feat: register YouTube Optimizer governed SSR launch"
 - Validator fails unless all eight user-facing apps are marked migrated and satisfy operator/platform/governance/free-promotion contract checks, regardless of whether runtime hosting is Pages or external SSR.
 - Backend-only `sovereign-backend` is validated for repository/legal metadata only; it is not required to render UI tokens.
 
-- [ ] **Step 1: Flip validator from incremental to complete mode**
+- [x] **Step 1: Flip validator from incremental to complete mode**
 
 Add a `--complete` flag that requires all app adapters; use it in CI after all migration tasks land.
 
-- [ ] **Step 2: Run full application validation**
+- [x] **Step 2: Run full application validation**
 
 Run: `node scripts/validate-ronsas-brand-contract.mjs --complete`  
 Run each app command from `.github/workflows/ronsas-app-validation.yml`.  
 Expected: PASS.
 
-- [ ] **Step 3: Run bundled-output and launch-contract verification**
+- [x] **Step 3: Run bundled-output and launch-contract verification**
 
 Run: `npm run build && node scripts/build-ronsas-pages.mjs`  
 Expected: `out/apps/manifest.json` contains the seven static Pages-hosted apps, while the DataNest application registry exposes YouTube Optimizer as the eighth governed user-facing app through its SSR launch contract.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add scripts/validate-ronsas-brand-contract.mjs .github/workflows/ronsas-app-validation.yml tests/unit/ronsas-cloud-integration.test.mjs
 git commit -m "test: enforce DataNest UI contract across RONSAS apps"
 ```
+
+> Task 8 evidence: `--complete` validation is enforced in the RONSAS workflow across all eight user-facing apps plus Sovereign Backend authority metadata. Complete validation caught and corrected SyncVision accent drift to canonical `#42e7ff`, retained ePublisher's governed class-driven light theme, and preserved free-promotion/no-paid-checkout. Final implementation-head verification: CI #2404 PASS, PR Verification #1284 PASS including browser verification, RONSAS Application Validation #149 PASS including the Pages bundle, and Security #810 PASS.
