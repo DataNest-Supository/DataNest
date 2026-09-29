@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   canonicalizeReviewedLanguages,
   governedLanguageReviewResult,
+  reviewedLanguageCoverageSatisfied,
   summarizeLanguageReviewEvidence
 } from "../../supabase/functions/_shared/datanestLanguageReview.ts";
 
@@ -28,6 +29,13 @@ test("reviewed language coverage must be explicit valid BCP 47 metadata",()=>{
   assert.deepEqual(canonicalizeReviewedLanguages(["en-za","af","af"]),["af","en-ZA"]);
   assert.throws(()=>canonicalizeReviewedLanguages([]),/At least one reviewed/);
   assert.throws(()=>canonicalizeReviewedLanguages(["bad_tag"]),/valid BCP 47/);
+});
+
+test("reviewed language tags cover every specific declared source language",()=>{
+  assert.equal(reviewedLanguageCoverageSatisfied(["af","en-ZA"],["af-ZA","en"]),true);
+  assert.equal(reviewedLanguageCoverageSatisfied(["af","en-ZA"],["af"]),false);
+  assert.equal(reviewedLanguageCoverageSatisfied(["und"],["zu-ZA"]),true);
+  assert.equal(reviewedLanguageCoverageSatisfied(["af","en-ZA"],["mul"]),true);
 });
 
 test("passing language review requires preserved meaning and no unresolved ambiguity",()=>{
