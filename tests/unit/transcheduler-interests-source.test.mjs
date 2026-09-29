@@ -70,8 +70,20 @@ test("interest-only scheduler state is shareable and Stakeholder can open it dir
 test("TranScheduler explains why each Job matches the user's interests",()=>{
   assert.match(taxonomy,/function workInterestOverlapKeys/);
   assert.match(taxonomy,/workFocusKeysFromRequirements\(requirements\)\.filter\(key=>selected\.has\(key\)\)/);
+  assert.match(app,/function JobInterestEvidence/);
+  assert.match(app,/const matched=workInterestOverlapKeys\(job\.requirements,userInterests\)/);
   assert.match(app,/Matched interests:/);
-  assert.match(app,/"Matched "\+workInterestOverlapKeys\(job\.requirements,userInterests\)\.length/);
-  assert.match(app,/workInterestOverlapKeys\(job\.requirements,userInterests\)\.map\(workFocusLabel\)\.join\(" · "\)/);
+  assert.match(app,/"Matched "\+matched\.length/);
+  assert.match(app,/matched\.map\(workFocusLabel\)\.join\(" · "\)/);
   assert.match(app,/className="interestMatchDetail"/);
+});
+
+
+test("TranScheduler identifies requirement sections outside the user's saved interests",()=>{
+  assert.match(taxonomy,/function workInterestGapKeys/);
+  assert.match(taxonomy,/workFocusKeysFromRequirements\(requirements\)\.filter\(key=>!selected\.has\(key\)\)/);
+  assert.match(app,/function JobInterestEvidence/);
+  assert.match(app,/Requirement sections outside your interests:/);
+  assert.match(app,/Outside your interests · /);
+  assert.match(app,/className="interestGapDetail"/);
 });
