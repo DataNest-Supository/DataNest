@@ -1,5 +1,4 @@
 import { ResonanceLogo } from "./ResonanceLogo";
-import { FREE_PROMOTION } from "@/lib/promotion";
 
 const APPS = [
   { name: "Hub", href: "https://reson8.life" },
