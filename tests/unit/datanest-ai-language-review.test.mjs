@@ -35,7 +35,7 @@ test("reviewed language tags cover every specific declared source language",()=>
   assert.equal(reviewedLanguageCoverageSatisfied(["af","en-ZA"],["af-ZA","en"]),true);
   assert.equal(reviewedLanguageCoverageSatisfied(["af","en-ZA"],["af"]),false);
   assert.equal(reviewedLanguageCoverageSatisfied(["und"],["zu-ZA"]),true);
-  assert.equal(reviewedLanguageCoverageSatisfied(["af","en-ZA"],["mul"]),true);
+  assert.equal(reviewedLanguageCoverageSatisfied(["af","en-ZA"],["mul"]),false);
 });
 
 test("passing language review requires preserved meaning and no unresolved ambiguity",()=>{
