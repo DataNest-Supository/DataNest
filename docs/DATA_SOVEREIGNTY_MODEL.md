@@ -60,6 +60,21 @@ No new ownership, financial, contractual, constitutional, or role authority is c
 
 These are operational policy states. They are not a substitute for legal advice or a representation that a particular jurisdictional requirement has been satisfied.
 
+## Runtime region enforcement
+
+Provider Trust Profiles may define `allowed_regions`. DataNest does not derive a provider processing region from a hostname, vendor name, cloud account, or the region of the DataNest database.
+
+A provider connection can carry a reviewed `processing_region` declaration in protected connection metadata. During external provider processing:
+
+- an empty profile region allowlist creates no regional routing claim;
+- a non-empty profile allowlist with no declared provider region produces `provider_region_unresolved`;
+- a declared region outside the allowlist produces `provider_region_denied`;
+- the declared processing region and allowed-region evidence are written into the existing Phase C policy decision event;
+- report-only manifests record the finding without overriding existing provider authorization;
+- enforced manifests stop the external route when the region check does not allow it.
+
+Region declaration is evidence, not independent proof of provider infrastructure behavior. Contractual/provider evidence remains required for a verified locality claim.
+
 ## UI integration
 
 The Trust & Data Policy workspace contains a **Data Sovereignty Model** panel showing:
