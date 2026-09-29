@@ -9,6 +9,10 @@ const migration=fs.readFileSync(
   path.join(root,"supabase/migrations/20260929230000_continuous_governance_optimization_v1.sql"),
   "utf8"
 );
+const performanceMigration=fs.readFileSync(
+  path.join(root,"supabase/migrations/20260929231000_optimize_continuous_governance_fk_indexes.sql"),
+  "utf8"
+);
 const panel=fs.readFileSync(
   path.join(root,"src/components/GovernanceImprovementPanel.tsx"),
   "utf8"
@@ -116,6 +120,20 @@ test("exposed governance RPCs are security-invoker wrappers over non-exposed che
   assert.match(migration,/set search_path=''/);
   assert.match(migration,/revoke execute on function private\.record_governance_observation_v1/);
   assert.match(migration,/grant execute on function private\.record_governance_observation_v1[\s\S]*to authenticated/);
+});
+
+test("continuous governance covers foreign-key lookup paths flagged by production advisors",()=>{
+  for(const indexName of [
+    "governance_standards_created_by_idx",
+    "governance_standards_reviewed_by_idx",
+    "governance_observations_recorded_by_idx",
+    "governance_improvement_candidates_created_by_idx",
+    "governance_improvement_candidates_reviewed_by_idx",
+    "governance_improvement_reviews_reviewed_by_idx",
+    "governance_improvement_cycles_created_by_idx",
+    "governance_improvement_cycles_previous_cycle_idx"
+  ]) assert.match(performanceMigration,new RegExp("create index if not exists "+indexName));
+  assert.doesNotMatch(performanceMigration,/alter table|grant |revoke |create policy|drop policy/i);
 });
 
 test("database access keeps evidence tables read-only and mutations behind governed RPCs",()=>{
