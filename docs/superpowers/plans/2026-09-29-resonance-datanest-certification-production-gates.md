@@ -56,25 +56,25 @@
 - Produces `public/ui-governance-release.json`.
 - `write-release-manifest.mjs` adds a `uiGovernance` object only when UI-governance env is supplied, preserving existing non-UI release behavior.
 
-- [ ] **Step 1: Write failing unit tests**
+- [x] **Step 1: Write failing unit tests**
 
 Assert candidate evidence cannot claim authorization, authorized evidence requires all review references, and design/plan paths are exact.
 
-- [ ] **Step 2: Run tests and verify failure**
+- [x] **Step 2: Run tests and verify failure**
 
 Run: `node --test tests/unit/ui-governance-evidence.test.mjs tests/unit/release-manifest-alignment.test.mjs`  
 Expected: FAIL because the evidence writer/manifest fields do not exist.
 
-- [ ] **Step 3: Implement the evidence writer and release-manifest integration**
+- [x] **Step 3: Implement the evidence writer and release-manifest integration**
 
 Hard-code only artifact paths/contract version; read review identifiers from environment. Reject placeholder values such as empty string, `pending`, `todo`, and `tbd` when state is `authorized`.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run: `node --test tests/unit/ui-governance-evidence.test.mjs tests/unit/release-manifest-alignment.test.mjs`  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/write-ui-governance-evidence.mjs scripts/write-release-manifest.mjs tests/unit/ui-governance-evidence.test.mjs tests/unit/release-manifest-alignment.test.mjs
@@ -96,20 +96,20 @@ git commit -m "feat: add UI governance release evidence manifest"
 - Responsive certification widths: **320, 390, 768, 1440**.
 - Accessibility tests must cover visible focus, keyboard access, semantic landmark/headings, no color-only status, reduced motion, and no page-level horizontal overflow.
 
-- [ ] **Step 1: Add failing certification tests**
+- [x] **Step 1: Add failing certification tests**
 
 Cover signed-out entry, Legal Centre, Governance page, authenticated Home fixture, one lifecycle specialist page, and DataNest AI.
 
-- [ ] **Step 2: Run new suite**
+- [x] **Step 2: Run new suite**
 
 Run: `npx playwright test tests/browser/ui-governance-accessibility.spec.ts`  
 Expected: FAIL on current unmigrated UI issues or missing dependency.
 
-- [ ] **Step 3: Add `@axe-core/playwright` and fix violations in owning components**
+- [x] **Step 3: Add `@axe-core/playwright` and fix violations in owning components**
 
 Do not suppress a violation globally when it can be fixed in DataNest-owned markup.
 
-- [ ] **Step 4: Verify responsive suites**
+- [x] **Step 4: Verify responsive suites**
 
 Run:
 ```bash
@@ -117,7 +117,7 @@ npx playwright test   tests/browser/ui-governance-accessibility.spec.ts   tests/
 ```
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add package.json package-lock.json tests/browser src/components src/app
@@ -136,25 +136,25 @@ git commit -m "test: add DataNest UI accessibility certification"
 - It attaches full-page screenshots and a small JSON context record per surface; it asserts load/focus/overflow but does not use brittle golden-image pass/fail as the sole quality gate.
 - PR Verification uploads visual-review evidence on success and failure with bounded retention.
 
-- [ ] **Step 1: Write the visual-review test**
+- [x] **Step 1: Write the visual-review test**
 
 Use deterministic fixture data already used by the root browser suites; do not call production services.
 
-- [ ] **Step 2: Run locally and verify evidence exists**
+- [x] **Step 2: Run locally and verify evidence exists**
 
 Run: `npx playwright test tests/browser/ui-governance-review.spec.ts`  
 Expected: PASS only when each target renders and attachments are created.
 
-- [ ] **Step 3: Add PR workflow execution and artifact upload**
+- [x] **Step 3: Add PR workflow execution and artifact upload**
 
 Name the artifact with the workflow run id, for example `ui-governance-review-<run-id>`; retain long enough for external/human review but not indefinitely.
 
-- [ ] **Step 4: Verify workflow YAML/source tests**
+- [x] **Step 4: Verify workflow YAML/source tests**
 
 Run: `npm test && npm run check`  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add tests/browser/ui-governance-review.spec.ts playwright.config.ts .github/workflows/pr-verification.yml
@@ -173,25 +173,25 @@ git commit -m "test: capture UI governance visual review evidence"
 - Candidate evidence explicitly leaves security, RONSAS, legal, external, and production authorization references as independently supplied/pending evidence rather than claiming success.
 - Candidate artifact is uploaded for reviewers.
 
-- [ ] **Step 1: Add unit/source test for candidate semantics**
+- [x] **Step 1: Add unit/source test for candidate semantics**
 
 Assert candidate state never emits `authorized:true` and never fabricates missing independent workflow/review references.
 
-- [ ] **Step 2: Generate a local candidate manifest**
+- [x] **Step 2: Generate a local candidate manifest**
 
 Run with only candidate-safe env values; inspect JSON.  
 Expected: valid candidate file with explicit pending evidence slots/statuses.
 
-- [ ] **Step 3: Wire PR Verification upload**
+- [x] **Step 3: Wire PR Verification upload**
 
 Do not fail PR Verification merely because separate Security/RONSAS workflows have not yet completed; those are independent gates for production authorization.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run: `node --test tests/unit/ui-governance-evidence.test.mjs && npm test`  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add .github/workflows/pr-verification.yml scripts/write-ui-governance-evidence.mjs docs/governance/platform-dossier/README.md tests
@@ -223,24 +223,24 @@ git commit -m "feat: publish DataNest UI release candidate evidence"
 - Deployment continues to use the `github-pages` environment; repository settings must configure required human reviewers on that environment for the full gate.
 - Authorized evidence/manifest receives the exact review references from inputs.
 
-- [ ] **Step 1: Write failing authorization tests**
+- [x] **Step 1: Write failing authorization tests**
 
 Test missing/placeholder references, wrong confirmation text, malformed SHA, and a valid populated authorization payload.
 
-- [ ] **Step 2: Run unit tests**
+- [x] **Step 2: Run unit tests**
 
 Run: `node --test tests/unit/ui-production-authorization.test.mjs`  
 Expected: FAIL because the verifier does not exist.
 
-- [ ] **Step 3: Implement the verifier**
+- [x] **Step 3: Implement the verifier**
 
 Verifier validates structure only; it must not claim to prove the external reviewer’s identity beyond the supplied reference/environment authorization.
 
-- [ ] **Step 4: Refactor Pages workflow**
+- [x] **Step 4: Refactor Pages workflow**
 
 Build and test the requested SHA, write authorized evidence, bundle all eight apps, upload Pages artifact, and deploy only after the preflight plus environment gate.
 
-- [ ] **Step 5: Verify workflow source contract**
+- [x] **Step 5: Verify workflow source contract**
 
 Add assertions in `ui-production-authorization.test.mjs` that no automatic push deploy remains, all required inputs exist, exact-SHA checkout is used, and `environment.name` remains `github-pages`.
 
@@ -248,7 +248,7 @@ Add assertions in `ui-production-authorization.test.mjs` that no automatic push 
 
 Require at least one authorized human reviewer in repository Settings → Environments → `github-pages`. If the connected GitHub tooling can configure required reviewers, apply and read back the setting; otherwise stop before production use and have the repository owner configure it manually. The workflow must not be described as a fully enforced human gate until this readback is confirmed.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add .github/workflows/pages.yml scripts/verify-ui-production-authorization.mjs tests/unit/ui-production-authorization.test.mjs
@@ -275,17 +275,17 @@ git commit -m "feat: gate DataNest production Pages releases"
 - Release manifest `frontendCommit` must match `release_sha`, not workflow-file `GITHUB_SHA`.
 - Post-deploy Playwright runs against the live Pages base URL.
 
-- [ ] **Step 1: Add failing workflow/source assertions for the seven static app slugs, the YouTube Optimizer SSR launch target, and legal routes**
+- [x] **Step 1: Add failing workflow/source assertions for the seven static app slugs, the YouTube Optimizer SSR launch target, and legal routes**
 
-- [ ] **Step 2: Update live curl checks and Playwright smoke set**
+- [x] **Step 2: Update live curl checks and Playwright smoke set**
 
 Use the exact release SHA input when verifying manifests.
 
-- [ ] **Step 3: Run local static export verification**
+- [x] **Step 3: Run local static export verification**
 
 Run: `npm run build && node scripts/build-ronsas-pages.mjs`; serve the output under `/DataNest/` and run the smoke/legal/accessibility suites against it.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add .github/workflows/pages.yml tests/browser
@@ -316,20 +316,20 @@ git commit -m "test: extend DataNest post-deploy verification"
   - post-deployment verification.
 - Empty fields explicitly mean “not yet approved”; no sample values may look like real approval.
 
-- [ ] **Step 1: Add failing evidence-schema source assertion**
+- [x] **Step 1: Add failing evidence-schema source assertion**
 
 Require every production-chain stage from the spec and prohibit default “approved” values.
 
-- [ ] **Step 2: Add dossier docs**
+- [x] **Step 2: Add dossier docs**
 
 Explain that the workflow evidence JSON is machine traceability and the review record is human/governance traceability; neither substitutes for the other.
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 Run: `node --test tests/unit/ui-governance-evidence.test.mjs tests/unit/ui-production-authorization.test.mjs`  
 Expected: PASS.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add docs/governance/platform-dossier tests/unit
@@ -345,34 +345,72 @@ git commit -m "docs: add DataNest UI production review dossier"
 **Interfaces:**
 - Candidate is eligible for human/external authorization only when all commands/workflows below pass for the same commit SHA.
 
-- [ ] **Step 1: Run root gates**
+- [x] **Step 1: Run root gates**
 
 Run: `npm test && npm run check && npm run build`  
 Expected: PASS.
 
-- [ ] **Step 2: Run root browser certification**
+- [x] **Step 2: Run root browser certification**
 
 Run the PR Verification browser set plus `tests/browser/legal-centre.spec.ts`, `tests/browser/ui-governance-accessibility.spec.ts`, and `tests/browser/ui-governance-review.spec.ts`.  
 Expected: PASS.
 
-- [ ] **Step 3: Run RONSAS validation**
+- [x] **Step 3: Run RONSAS validation**
 
 Run `node scripts/validate-ronsas-imports.mjs`, `node scripts/validate-ronsas-brand-contract.mjs --complete`, and every application command encoded in `.github/workflows/ronsas-app-validation.yml`. Confirm the seven static apps bundle successfully and YouTube Optimizer passes its SSR build/gate plus DataNest launch-contract tests.  
 Expected: PASS.
 
-- [ ] **Step 4: Run security invariants locally where supported**
+- [x] **Step 4: Run security invariants locally where supported**
 
 Run: `node scripts/verify-security-invariants.mjs && npm audit --omit=dev --audit-level=high`  
 Expected: PASS. Semgrep/gitleaks remain authoritative in GitHub Actions.
 
-- [ ] **Step 5: Confirm GitHub workflow evidence for the same candidate SHA**
+- [x] **Step 5: Confirm GitHub workflow evidence for the same candidate SHA**
 
 Required: PR Verification PASS, RONSAS Application Validation PASS, Security Scan PASS, and visual-review artifact available.
 
-- [ ] **Step 6: Stop before production deployment**
+- [x] **Step 6: Stop before production deployment**
 
 Hand the candidate SHA and evidence references to authorized human/legal/external reviewers. Do not trigger the production Pages workflow until those reviews and the `github-pages` environment approval are complete.
 
-- [ ] **Step 7: Commit any final evidence-only documentation changes separately**
+- [x] **Step 7: Commit any final evidence-only documentation changes separately**
 
 Do not amend the tested candidate code commit after certification; if code changes, generate a new candidate SHA and repeat certification.
+
+
+## Exact-head candidate certification evidence — 2026-09-29
+
+Candidate implementation SHA: `88945f1002e96d0ca0d9c139d37e86c4fa32b1a1`  
+Merged to `main` by PR #282 as merge commit `9111d0915028fa1e53be562295a355c5eb81c9b4`.
+
+Exact candidate workflow evidence:
+
+- CI #2433 / run `36623863165`: **PASS**.
+- PR Verification #1311 / run `36623862900`: **PASS**.
+  - browser verification: PASS
+  - accessibility certification: PASS
+  - UI governance visual review: PASS
+  - artifact `ui-governance-review-36623862900`
+  - artifact `ui-governance-candidate-36623862900`
+- RONSAS Application Validation #172 / run `36623863024`: **PASS**.
+- Security scan #839 / run `36623863133`: **PASS**.
+  - project security invariants: PASS
+  - dependency audit: PASS
+  - Semgrep: PASS
+  - gitleaks: PASS
+- DataNest AI Certification #1569 / run `36623863261`: **PASS**.
+  - artifact `datanest-ai-certification-2d3a5571d0e02b1c41ba7a719035d02f95ffaf06`
+  - artifact `datanest-ai-backend-acceptance-2d3a5571d0e02b1c41ba7a719035d02f95ffaf06`
+
+### Remaining production blocker
+
+Task 5 Step 6 remains open. The repository workflow retains `environment.name: github-pages`, but the connected GitHub tooling available for this execution cannot read or configure the repository environment's required-reviewer protection. Therefore the human environment gate is **not claimed as verified**.
+
+Production deployment remains blocked until:
+
+1. the `github-pages` environment is confirmed to require at least one authorized human reviewer;
+2. durable governance-impact, legal-review, external/human-review, and production-authorization references exist for the exact release SHA;
+3. the manual Pages workflow is dispatched with those non-placeholder references and `AUTHORIZE PRODUCTION`;
+4. post-deployment verification passes and the dossier is updated.
+
+No production deployment was triggered while recording this evidence.
