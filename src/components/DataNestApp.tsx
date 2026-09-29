@@ -22,7 +22,7 @@ import { useSingleFlight } from "@/lib/singleFlight";
 import { PENDING_MUTATION_EVENT, classifyPendingMutationAge, clearPendingMutation, getOrCreatePendingMutation, loadPendingMutation, markPendingMutationDurable, markPendingMutationVerification, restorePendingMutation, type PendingMutationAge, type PendingMutationIntent, type PendingMutationVerification } from "@/lib/pendingMutation";
 import { durableRecoveryToPendingIntent, listDurableRecoveries, markDurableRecoveryVerification, registerDurableRecovery, resolveDurableRecovery } from "@/lib/durableRecovery";
 import { reconcileServerMutation, type MutationReconciliationState } from "@/lib/mutationReconciliation";
-import { WORK_FOCUS_AREAS, normalizeWorkFocusKeys, workFocusKeysFromRequirements, workFocusLabel, workInterestOverlapCount, workInterestOverlapKeys, workMatchesInterests, type WorkFocusKey } from "@/lib/workFocus";
+import { WORK_FOCUS_AREAS, normalizeWorkFocusKeys, workFocusKeysFromRequirements, workFocusLabel, workInterestGapKeys, workInterestOverlapCount, workInterestOverlapKeys, workMatchesInterests, type WorkFocusKey } from "@/lib/workFocus";
 
 type Project = { id:string; slug:string; name:string; description:string|null; status:string; created_at:string };
 type Tool = { id:string; tool_key:string; name:string; role:string; enabled:boolean; config:Record<string,unknown> };
@@ -2175,7 +2175,7 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
             <ProjectGroupHeader projectName={projectName} projectSlug={projectSlug} jobs={orderedVisible}/>
             <div className="schedulerTable"><div className="schedulerRow headerRow"><span>Job</span><span>Priority</span><span>Capability</span><span>Status</span><span>Controls</span></div>
             {orderedVisible.map(job=><div className={"schedulerRow "+(job.id===activeJobId?"contextMatch ":"")+(workMatchesInterests(job.requirements,userInterests)?"interestMatch":"")} data-active-context={job.id===activeJobId?"true":undefined} tabIndex={job.id===activeJobId?-1:undefined} aria-label={job.id===activeJobId?"Active work context · "+jobCode(job)+" · "+job.title:undefined} key={job.id}>
-              <div data-label="Job"><b>{jobCode(job)}</b><small>{job.title}</small>{job.id===activeJobId&&<span className="contextMatchTag">ACTIVE CONTEXT</span>}{workMatchesInterests(job.requirements,userInterests)&&<><span className="interestMatchTag">INTEREST MATCH</span><span className="interestMatchDetail" aria-label={"Matched interests: "+workInterestOverlapKeys(job.requirements,userInterests).map(workFocusLabel).join(", ")}>{"Matched "+workInterestOverlapKeys(job.requirements,userInterests).length+" · "+workInterestOverlapKeys(job.requirements,userInterests).map(workFocusLabel).join(" · ")}</span></>}{workFocusKeysFromRequirements(job.requirements).length>0&&<span className="jobFocusTags">{workFocusKeysFromRequirements(job.requirements).map(key=><small key={key}>{workFocusLabel(key)}</small>)}</span>}</div>
+              <div data-label="Job"><b>{jobCode(job)}</b><small>{job.title}</small>{job.id===activeJobId&&<span className="contextMatchTag">ACTIVE CONTEXT</span>}<JobInterestEvidence job={job} userInterests={userInterests}/>{workFocusKeysFromRequirements(job.requirements).length>0&&<span className="jobFocusTags">{workFocusKeysFromRequirements(job.requirements).map(key=><small key={key}>{workFocusLabel(key)}</small>)}</span>}</div>
               <span data-label="Priority" className="schedulerPriorityCell"><b>{"P"+job.priority}</b><PriorityScale value={job.priority}/></span>
               <span data-label="Capability">{job.required_capabilities?.join(", ")||"chat"}</span>
               <span data-label="Status"><Badge value={job.status}/><small className="schedulerAuthorityState">{jobAuthorityReadinessLabel(authoritySummary[job.id])}</small></span>
@@ -2191,6 +2191,20 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
           <Pagination page={page} total={total} onPage={onPage}/>
         </>}
     </section>
+  </>;
+}
+
+
+function JobInterestEvidence({job,userInterests}:{job:Job;userInterests:WorkFocusKey[]}) {
+  if(userInterests.length===0)return null;
+  const matched=workInterestOverlapKeys(job.requirements,userInterests);
+  const gaps=workInterestGapKeys(job.requirements,userInterests);
+  return <>
+    {matched.length>0&&<>
+      <span className="interestMatchTag">INTEREST MATCH</span>
+      <span className="interestMatchDetail" aria-label={"Matched interests: "+matched.map(workFocusLabel).join(", ")}>{"Matched "+matched.length+" · "+matched.map(workFocusLabel).join(" · ")}</span>
+    </>}
+    {gaps.length>0&&<span className="interestGapDetail" aria-label={"Requirement sections outside your interests: "+gaps.map(workFocusLabel).join(", ")}>{"Outside your interests · "+gaps.map(workFocusLabel).join(" · ")}</span>}
   </>;
 }
 
@@ -2301,7 +2315,7 @@ function SchedulerGantt({projectName,projectSlug,jobs,onStatus,canOperate,active
           return <article className={"ganttRow "+(job.id===activeJobId?"contextMatch ":"")+(workMatchesInterests(job.requirements,userInterests)?"interestMatch":"")} data-active-context={job.id===activeJobId?"true":undefined} tabIndex={job.id===activeJobId?-1:undefined} aria-label={job.id===activeJobId?"Active work context · "+jobCode(job)+" · "+job.title:undefined} key={job.id}>
             <div className="ganttJobLabel">
               <div className="ganttJobTitle">
-                <div><b>{jobCode(job)}</b><small title={job.title}>{job.title}</small>{job.id===activeJobId&&<span className="contextMatchTag">ACTIVE CONTEXT</span>}{workMatchesInterests(job.requirements,userInterests)&&<><span className="interestMatchTag">INTEREST MATCH</span><span className="interestMatchDetail" aria-label={"Matched interests: "+workInterestOverlapKeys(job.requirements,userInterests).map(workFocusLabel).join(", ")}>{"Matched "+workInterestOverlapKeys(job.requirements,userInterests).length+" · "+workInterestOverlapKeys(job.requirements,userInterests).map(workFocusLabel).join(" · ")}</span></>}</div>
+                <div><b>{jobCode(job)}</b><small title={job.title}>{job.title}</small>{job.id===activeJobId&&<span className="contextMatchTag">ACTIVE CONTEXT</span>}<JobInterestEvidence job={job} userInterests={userInterests}/></div>
                 <Badge value={job.status}/>
               </div>
               <div className="ganttMeta">
