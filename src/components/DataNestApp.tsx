@@ -421,6 +421,7 @@ export default function DataNestApp({session}:{session:Session}) {
   const commandInputRef=useRef<HTMLInputElement|null>(null);
   const quickSwitchButtonRef=useRef<HTMLButtonElement|null>(null);
   const commandReturnFocusRef=useRef<HTMLElement|null>(null);
+  const commandOpenRef=useRef(false);
   const [aiSidebarOpen,setAiSidebarOpen]=useState(false);
   const [companionReserve,setCompanionReserve]=useState(0);
   const [activeDataNestAiSession,setActiveDataNestAiSession]=useState<ActiveDataNestAiSession|null>(null);
@@ -1099,11 +1100,12 @@ export default function DataNestApp({session}:{session:Session}) {
     if(previousViewRef.current===view)return;
     previousViewRef.current=view;
     const frame=window.requestAnimationFrame(()=>{
+      if(commandOpenRef.current)return;
       workspaceTitleRef.current?.focus({preventScroll:true});
       window.scrollTo({top:0,left:0,behavior:"instant"});
     });
     return()=>window.cancelAnimationFrame(frame);
-  },[view,viewReady]);
+  },[view,viewReady,commandOpen]);
   useEffect(()=>{
     if(!mobileOpen)return;
     const closeOnEscape=(event:KeyboardEvent)=>{
@@ -1117,7 +1119,7 @@ export default function DataNestApp({session}:{session:Session}) {
       const isQuickSwitch=(event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==="k";
       if(isQuickSwitch){
         event.preventDefault();
-        if(commandOpen)closeCommandPalette();
+        if(commandOpenRef.current)closeCommandPalette();
         else openCommandPalette();
         return;
       }
@@ -1128,8 +1130,14 @@ export default function DataNestApp({session}:{session:Session}) {
   },[commandOpen]);
   useEffect(()=>{
     if(!commandOpen)return;
-    const timer=window.setTimeout(()=>commandInputRef.current?.focus(),0);
-    return()=>window.clearTimeout(timer);
+    const focusInput=()=>{
+      if(commandOpenRef.current)commandInputRef.current?.focus({preventScroll:true});
+    };
+    const frame=window.requestAnimationFrame(()=>{
+      focusInput();
+      window.setTimeout(focusInput,0);
+    });
+    return()=>window.cancelAnimationFrame(frame);
   },[commandOpen]);
   useEffect(()=>{
     let active=true;
@@ -1196,6 +1204,7 @@ export default function DataNestApp({session}:{session:Session}) {
 
   function openCommandPalette(){
     commandReturnFocusRef.current=quickSwitchButtonRef.current ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
+    commandOpenRef.current=true;
     setCommandQuery("");
     setCommandActiveIndex(-1);
     setCommandOpen(true);
@@ -1203,13 +1212,19 @@ export default function DataNestApp({session}:{session:Session}) {
   }
 
   function closeCommandPalette(restoreFocus=true){
+    commandOpenRef.current=false;
     setCommandOpen(false);
     setCommandQuery("");
     setCommandActiveIndex(-1);
-    window.setTimeout(()=>{
-      if(restoreFocus)commandReturnFocusRef.current?.focus();
+    window.requestAnimationFrame(()=>{
+      if(restoreFocus){
+        const liveLauncher=quickSwitchButtonRef.current;
+        const returnTarget=commandReturnFocusRef.current;
+        if(liveLauncher?.isConnected)liveLauncher.focus({preventScroll:true});
+        else if(returnTarget?.isConnected)returnTarget.focus({preventScroll:true});
+      }
       commandReturnFocusRef.current=null;
-    },0);
+    });
   }
 
   function trapCommandFocus(event:import("react").KeyboardEvent<HTMLElement>){

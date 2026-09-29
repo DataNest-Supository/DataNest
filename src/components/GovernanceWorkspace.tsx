@@ -48,6 +48,27 @@ type Workspace={
   boundaries:Record<string,unknown>;
 };
 
+function normalizeGovernanceWorkspace(value:unknown):Workspace|null{
+  if(!value||typeof value!=="object"||Array.isArray(value))return null;
+  const item=value as Partial<Workspace>;
+  const boundaries=item.boundaries;
+  return {
+    ratified_protocol:item.ratified_protocol&&typeof item.ratified_protocol==="object"
+      ?item.ratified_protocol as Protocol
+      :null,
+    draft_protocols:Array.isArray(item.draft_protocols)?item.draft_protocols:[],
+    proposals:Array.isArray(item.proposals)?item.proposals:[],
+    decisions:Array.isArray(item.decisions)?item.decisions:[],
+    disputes:Array.isArray(item.disputes)?item.disputes:[],
+    can_manage:item.can_manage===true,
+    can_vote:item.can_vote===true,
+    member_role:typeof item.member_role==="string"?item.member_role:null,
+    boundaries:boundaries&&typeof boundaries==="object"&&!Array.isArray(boundaries)
+      ?boundaries as Record<string,unknown>
+      :{}
+  };
+}
+
 function date(value:string|null){
   if(!value)return "—";
   return new Intl.DateTimeFormat(undefined,{month:"short",day:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}).format(new Date(value));
@@ -131,7 +152,7 @@ export default function GovernanceWorkspace({
     if(error){
       setError(error.message);setWorkspace(null);
     }else{
-      const next=(data||null) as Workspace|null;
+      const next=normalizeGovernanceWorkspace(data);
       setWorkspace(next);
       const openDisputes=(next?.disputes||[]).filter(item=>item.status==="open");
       setResolutionDisputeId(current=>current&&openDisputes.some(item=>item.id===current)?current:openDisputes[0]?.id||"");

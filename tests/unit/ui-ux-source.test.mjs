@@ -108,7 +108,7 @@ test("quick switch command palette is keyboard accessible and searchable", () =>
   assert.match(appSource, /event\.key\.toLowerCase\(\)==="k"/);
   assert.match(appSource, /aria-keyshortcuts="Control\+K Meta\+K"/);
   assert.match(appSource, /viewDescriptions\[item\.key\]/);
-  assert.match(appSource, /commandInputRef\.current\?\.focus\(\)/);
+  assert.match(appSource, /commandInputRef\.current\?\.focus\(\{preventScroll:true\}\)/);
 });
 
 test("quick switch preserves canonical workspace navigation", () => {
@@ -130,12 +130,19 @@ test("mobile scheduler uses a compact status select while desktop keeps filter c
 });
 
 
-test("quick switch traps modal focus and restores focus to its opener", () => {
+test("quick switch traps modal focus and restores focus to a live launcher", () => {
   assert.match(appSource, /commandReturnFocusRef/);
   assert.match(appSource, /function closeCommandPalette\(restoreFocus=true\)/);
   assert.match(appSource, /function trapCommandFocus\(/);
   assert.match(appSource, /onKeyDown=\{trapCommandFocus\}/);
-  assert.match(appSource, /commandReturnFocusRef\.current\?\.focus\(\)/);
+  assert.match(appSource, /const commandOpenRef=useRef\(false\)/);
+  assert.match(appSource, /if\(commandOpenRef\.current\)closeCommandPalette\(\)/);
+  assert.match(appSource, /commandOpenRef\.current=true/);
+  assert.match(appSource, /commandOpenRef\.current=false/);
+  assert.match(appSource, /const liveLauncher=quickSwitchButtonRef\.current/);
+  assert.match(appSource, /if\(liveLauncher\?\.isConnected\)liveLauncher\.focus\(\{preventScroll:true\}\)/);
+  assert.match(appSource, /else if\(returnTarget\?\.isConnected\)returnTarget\.focus\(\{preventScroll:true\}\)/);
+  assert.match(appSource, /\},\[view,viewReady,commandOpen\]\);/);
 });
 
 
