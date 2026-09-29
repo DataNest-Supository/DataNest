@@ -12,7 +12,7 @@ import { useSingleFlight } from "@/lib/singleFlight";
 import PageHeader from "@/components/platform/PageHeader";
 import StatusIndicator from "@/components/platform/StatusIndicator";
 import EvidencePanel from "@/components/platform/EvidencePanel";
-import GovernedAction from "@/components/platform/GovernedAction";
+import GovernedAction, { type GovernedActionStage } from "@/components/platform/GovernedAction";
 
 type Protocol={
   id:string;project_id:string;protocol_key:string;version:number;title:string;mission:string|null;vision:string|null;
