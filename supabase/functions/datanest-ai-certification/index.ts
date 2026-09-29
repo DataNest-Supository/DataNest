@@ -170,6 +170,9 @@ function latestGatePassed(
 ):boolean{
   return latestGateState(runs).get(gate)===true;
 }
+function coreCertificationRuns<T extends {gate:ValidationGate}>(runs:T[]):Array<T&{gate:CertificationGate}>{
+  return runs.filter(run=>run.gate!=="LANGUAGE_REVIEW") as Array<T&{gate:CertificationGate}>;
+}
 function assertGatePrerequisites(gate:CertificationGate,runs:Array<{gate:ValidationGate;passed:boolean}>){
   const index=gateOrder.indexOf(gate);
   if(index<0)throw new Error("Invalid certification gate.");
@@ -824,7 +827,7 @@ Deno.serve(async(request:Request)=>{
       let autoCertification:Record<string,unknown>|null=null;
       if(
         !languageReviewRequirement.required &&
-        allAutomatedCertificationGatesPassed(refreshedRuns) &&
+        allAutomatedCertificationGatesPassed(coreCertificationRuns(refreshedRuns)) &&
         canAutoCertify({
           category:refreshedCandidate.category,
           riskClass:refreshedCandidate.risk_class,
@@ -851,7 +854,7 @@ Deno.serve(async(request:Request)=>{
         currentValidationRuns(staging,candidate),
         loadLanguageReviewRequirement(staging,candidate.id)
       ]);
-      if(!allCertificationGatesPassed(runs)){
+      if(!allCertificationGatesPassed(coreCertificationRuns(runs))){
         return json({error:"All audit, verify, validate and stress-test gates must pass before certification."},409,origin);
       }
       if(
