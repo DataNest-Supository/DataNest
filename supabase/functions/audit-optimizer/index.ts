@@ -309,7 +309,8 @@ Deno.serve(async(request)=>{
     const provider=await callOpenAiCompatibleProvider({
       connection:connection as ProviderConnection,
       governedPrompt,
-      maxOutputTokens:Math.min(Number((authorization as Record<string,unknown>)?.max_output_tokens||2200),2200)
+      maxOutputTokens:Math.min(Number((authorization as Record<string,unknown>)?.max_output_tokens||2200),2200),
+      chatTemplateKwargs:{enable_thinking:false,force_nonempty_content:true}
     });
 
     const parsed=parseProviderJson(provider.content);
