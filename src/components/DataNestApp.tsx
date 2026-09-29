@@ -38,7 +38,7 @@ type SchedulerViewMode = "queue"|"gantt"|"authority"|"resources";
 type SchedulerSortMode = "priority"|"deadline"|"recent"|"interest";
 const schedulerFilterOptions=["ALL","PLANNED","READY","QUEUED","RUNNING","MANUAL_ACTION","BLOCKED","COMPLETED"] as const;
 type SchedulerFilter = typeof schedulerFilterOptions[number];
-const operationalUrlStateKeys=["page","mode","filter","sort","interests"] as const;
+const operationalUrlStateKeys=["page","mode","filter","sort","interests","focus"] as const;
 const workspaceScopedUrlStateKeys=[...operationalUrlStateKeys,"section"] as const;
 const paginatedWorkspaceViews=new Set<ViewKey>(["unifi","scheduler","runs","checkpoints","audit"]);
 function scopeUrlToWorkspace(url:URL,view:ViewKey){
@@ -48,6 +48,7 @@ function scopeUrlToWorkspace(url:URL,view:ViewKey){
     url.searchParams.delete("filter");
     url.searchParams.delete("sort");
     url.searchParams.delete("interests");
+    url.searchParams.delete("focus");
   }
   if(view!=="governance"&&view!=="products")url.searchParams.delete("section");
   return url;
@@ -70,6 +71,10 @@ function schedulerFilterFromUrl(url:URL):SchedulerFilter{
 }
 function schedulerInterestOnlyFromUrl(url:URL){
   return url.searchParams.get("interests")==="1";
+}
+function schedulerRequirementFocusFromUrl(url:URL):WorkFocusKey|null{
+  const raw=url.searchParams.get("focus");
+  return raw?normalizeWorkFocusKeys([raw])[0]||null:null;
 }
 type HealthState = { state:"checking"|"online"|"degraded"|"offline"; checkedAt:string|null; message:string };
 type Summary = { total:number; active:number; running:number; blocked:number; available:number; registered:number };
@@ -442,6 +447,7 @@ export default function DataNestApp({session}:{session:Session}) {
   const [schedulerFilter,setSchedulerFilter]=useState<SchedulerFilter>("ALL");
   const [schedulerSortMode,setSchedulerSortMode]=useState<SchedulerSortMode>("priority");
   const [schedulerInterestOnly,setSchedulerInterestOnly]=useState(false);
+  const [schedulerRequirementFocus,setSchedulerRequirementFocus]=useState<WorkFocusKey|null>(null);
   const [loadingCore,setLoadingCore]=useState(true);
   const [loadingView,setLoadingView]=useState(false);
   const [notice,setNotice]=useState("");
@@ -1036,6 +1042,7 @@ export default function DataNestApp({session}:{session:Session}) {
         setSchedulerFilter(schedulerFilterFromUrl(url));
         setSchedulerSortMode(schedulerSortModeFromUrl(url));
         setSchedulerInterestOnly(schedulerInterestOnlyFromUrl(url));
+        setSchedulerRequirementFocus(schedulerRequirementFocusFromUrl(url));
       }
       setView(next);
       setViewReady(true);
@@ -1082,10 +1089,11 @@ export default function DataNestApp({session}:{session:Session}) {
       if(schedulerFilter!=="ALL")url.searchParams.set("filter",schedulerFilter);
       if(schedulerSortMode!=="priority")url.searchParams.set("sort",schedulerSortMode);
       if(schedulerInterestOnly)url.searchParams.set("interests","1");
+      if(schedulerRequirementFocus)url.searchParams.set("focus",schedulerRequirementFocus);
     }
     const nextUrl=url.toString();
     if(nextUrl!==window.location.href)window.history.replaceState(window.history.state,"",nextUrl);
-  },[view,viewReady,jobPage,runPage,checkpointPage,eventPage,schedulerViewMode,schedulerFilter,schedulerSortMode,schedulerInterestOnly]);
+  },[view,viewReady,jobPage,runPage,checkpointPage,eventPage,schedulerViewMode,schedulerFilter,schedulerSortMode,schedulerInterestOnly,schedulerRequirementFocus]);
   useEffect(()=>{
     if(!viewReady||commandOpen)return;
     if(previousViewRef.current===view)return;
@@ -1659,7 +1667,7 @@ export default function DataNestApp({session}:{session:Session}) {
 
         <div key={view} className="viewStage workspaceArrival">
         {!loadingCore&&project&&view==="overview"&&<ResonanceHome project={project} jobs={recentJobs} counts={summary} canOperate={canOperate} onNavigate={setView}/>}
-        {!loadingCore&&project&&view==="stakeholder"&&<StakeholderWorkspace projectId={project.id} currentUserId={session.user.id} canReview={canManageAi} onOpenMatchedJobs={()=>{setSchedulerInterestOnly(true);setSchedulerSortMode("interest");setSchedulerFilter("ALL");setSchedulerViewMode("gantt");setView("scheduler");}}/>}
+        {!loadingCore&&project&&view==="stakeholder"&&<StakeholderWorkspace projectId={project.id} currentUserId={session.user.id} canReview={canManageAi} onOpenMatchedJobs={()=>{setSchedulerRequirementFocus(null);setSchedulerInterestOnly(true);setSchedulerSortMode("interest");setSchedulerFilter("ALL");setSchedulerViewMode("gantt");setJobPage(0);setView("scheduler");}} onOpenRequirementJobs={key=>{setSchedulerRequirementFocus(key);setSchedulerInterestOnly(false);setSchedulerSortMode("priority");setSchedulerFilter("ALL");setSchedulerViewMode("gantt");setJobPage(0);setView("scheduler");}}/>}
         {!loadingCore&&project&&["sparks","productlab","unifi"].includes(view)&&!recoveryHydrated&&<section className="panel" role="status" aria-live="polite">
           <p className="eyebrow">DURABLE RECOVERY</p>
           <h2>Synchronizing mutation continuity</h2>
@@ -1675,7 +1683,7 @@ export default function DataNestApp({session}:{session:Session}) {
         {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace key={project.id+":"+session.user.id} projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError} preferredJobId={activeDataNestAiSession?.jobId||null} onActiveSessionChange={updateActiveWorkContext}/>}
         {!loadingCore&&project&&view==="productlab"&&recoveryHydrated&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate} setNotice={setNotice} setError={setError}/>}
         {!loadingCore&&project&&view==="unifi"&&recoveryHydrated&&<UnifiPlanner project={project} currentUserId={session.user.id} jobs={jobs} capabilities={capabilities} reload={async()=>{await loadJobsPage(jobPage);await loadSummary(project.id);await loadRecentJobs(project.id);}} setNotice={setNotice} setError={setError} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} activeJobId={activeDataNestAiSession?.jobId||null}/>}
-        {!loadingCore&&view==="scheduler"&&project&&<Scheduler projectId={project.id} projectName={project?.name||DATANEST_CANONICAL_NAME} projectSlug={project?.slug||"resonance-datanest"} currentUserId={session.user.id} role={membership?.role||"viewer"} jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null} setNotice={setNotice} setError={setError} filter={schedulerFilter} viewMode={schedulerViewMode} sortMode={schedulerSortMode} interestOnly={schedulerInterestOnly} onFilter={setSchedulerFilter} onViewMode={setSchedulerViewMode} onSortMode={setSchedulerSortMode} onInterestOnly={setSchedulerInterestOnly}/>} 
+        {!loadingCore&&view==="scheduler"&&project&&<Scheduler projectId={project.id} projectName={project?.name||DATANEST_CANONICAL_NAME} projectSlug={project?.slug||"resonance-datanest"} currentUserId={session.user.id} role={membership?.role||"viewer"} jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null} setNotice={setNotice} setError={setError} filter={schedulerFilter} viewMode={schedulerViewMode} sortMode={schedulerSortMode} interestOnly={schedulerInterestOnly} requirementFocus={schedulerRequirementFocus} onFilter={setSchedulerFilter} onViewMode={setSchedulerViewMode} onSortMode={setSchedulerSortMode} onInterestOnly={setSchedulerInterestOnly} onRequirementFocus={setSchedulerRequirementFocus}/>} 
         {!loadingCore&&view==="runs"&&<Runs runs={runs} jobLookup={jobLookup} page={runPage} total={runCount} onPage={setRunPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
         {!loadingCore&&view==="checkpoints"&&<Checkpoints checkpoints={checkpoints} jobLookup={jobLookup} page={checkpointPage} total={checkpointCount} onPage={setCheckpointPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
         {!loadingCore&&view==="audit"&&<Audit events={events} jobLookup={jobLookup} page={eventPage} total={eventCount} onPage={setEventPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
@@ -2024,11 +2032,12 @@ function formatGanttTick(value:number,span:number) {
   return new Intl.DateTimeFormat(undefined,options).format(new Date(value));
 }
 
-function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,capabilities,onStatus,canOperate,page,total,onPage,onNavigate,activeJobId,setNotice,setError,filter,viewMode,sortMode,interestOnly,onFilter,onViewMode,onSortMode,onInterestOnly}:{projectId:string;projectName:string;projectSlug:string;currentUserId:string;role:ExecutionAuthorityRole;jobs:Job[];capabilities:Capability[];onStatus:(j:Job,s:string)=>Promise<void>;canOperate:boolean;page:number;total:number;onPage:(p:number)=>void;onNavigate:(v:ViewKey)=>void;activeJobId:string|null;setNotice:(value:string)=>void;setError:(value:string)=>void;filter:SchedulerFilter;viewMode:SchedulerViewMode;sortMode:SchedulerSortMode;interestOnly:boolean;onFilter:(value:SchedulerFilter)=>void;onViewMode:(value:SchedulerViewMode)=>void;onSortMode:(value:SchedulerSortMode)=>void;onInterestOnly:(value:boolean)=>void}) {
+function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,capabilities,onStatus,canOperate,page,total,onPage,onNavigate,activeJobId,setNotice,setError,filter,viewMode,sortMode,interestOnly,requirementFocus,onFilter,onViewMode,onSortMode,onInterestOnly,onRequirementFocus}:{projectId:string;projectName:string;projectSlug:string;currentUserId:string;role:ExecutionAuthorityRole;jobs:Job[];capabilities:Capability[];onStatus:(j:Job,s:string)=>Promise<void>;canOperate:boolean;page:number;total:number;onPage:(p:number)=>void;onNavigate:(v:ViewKey)=>void;activeJobId:string|null;setNotice:(value:string)=>void;setError:(value:string)=>void;filter:SchedulerFilter;viewMode:SchedulerViewMode;sortMode:SchedulerSortMode;interestOnly:boolean;requirementFocus:WorkFocusKey|null;onFilter:(value:SchedulerFilter)=>void;onViewMode:(value:SchedulerViewMode)=>void;onSortMode:(value:SchedulerSortMode)=>void;onInterestOnly:(value:boolean)=>void;onRequirementFocus:(value:WorkFocusKey|null)=>void}) {
   const setFilter=onFilter;
   const setViewMode=onViewMode;
   const setSortMode=onSortMode;
   const setInterestOnly=onInterestOnly;
+  const setRequirementFocus=onRequirementFocus;
   const [authoritySummary,setAuthoritySummary]=useState<Record<string,JobExecutionAuthorityState>>({});
   const [userInterests,setUserInterests]=useState<WorkFocusKey[]>([]);
   const filterOptions=schedulerFilterOptions;
@@ -2064,10 +2073,13 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
     return ()=>{cancelled=true;};
   },[projectId,jobs]);
   const statusVisible=filter==="ALL"?jobs:jobs.filter(item=>item.status===filter);
-  const interestMatchCount=statusVisible.filter(item=>workMatchesInterests(item.requirements,userInterests)).length;
-  const visible=interestOnly&&userInterests.length>0
-    ? statusVisible.filter(item=>workMatchesInterests(item.requirements,userInterests))
+  const requirementVisible=requirementFocus
+    ? statusVisible.filter(item=>!finalStates.has(item.status)&&workFocusKeysFromRequirements(item.requirements).includes(requirementFocus))
     : statusVisible;
+  const interestMatchCount=requirementVisible.filter(item=>workMatchesInterests(item.requirements,userInterests)).length;
+  const visible=interestOnly&&userInterests.length>0
+    ? requirementVisible.filter(item=>workMatchesInterests(item.requirements,userInterests))
+    : requirementVisible;
   const orderedVisible=[...visible].sort((left,right)=>{
     if(sortMode==="interest"){
       const overlapDifference=workInterestOverlapCount(right.requirements,userInterests)-workInterestOverlapCount(left.requirements,userInterests);
@@ -2096,6 +2108,7 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
     function revealActiveContext(){
       setFilter("ALL");
       setInterestOnly(false);
+      setRequirementFocus(null);
       setViewMode("gantt");
       window.requestAnimationFrame(()=>window.requestAnimationFrame(()=>{
         if(focusRenderedActiveContextRecord()){
@@ -2148,6 +2161,7 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
           <span>{activeCount+" active"}</span>
           <span>{deadlineCount+" deadlines"}</span>
           <span>{userInterests.length?interestMatchCount+" interest matches":"No interests saved"}</span>
+          {requirementFocus&&<span>{"Requirement · "+workFocusLabel(requirementFocus)}</span>}
         </div>
       </div>
       {viewMode==="authority"
@@ -2165,12 +2179,17 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
             <b>Interest matching</b>
             <span>{userInterests.length?userInterests.map(workFocusLabel).join(" · "):"Save interests in Stakeholder to enable relevance matching."}</span>
           </div>
+          {requirementFocus&&<div className="schedulerInterestSummary" aria-label={"Requirement focus: "+workFocusLabel(requirementFocus)}>
+            <b>Requirement focus</b>
+            <span>{workFocusLabel(requirementFocus)+" · open Jobs only"}</span>
+            <button className="ghostButton compact" type="button" onClick={()=>setRequirementFocus(null)}>Clear focus</button>
+          </div>}
 
           {!orderedVisible.length?<div className="schedulerEmptyState"><EmptyState
             title={total===0?"No project jobs yet":"No jobs match this filter"}
-            text={total===0?"Create a complete Job Manifest in UNIFI before scheduling execution.":interestOnly?"No Jobs on this page match your saved interests. Turn off the interest filter or update your interests in Stakeholder.":"Clear the current status filter to return to the project queue."}
-            actionLabel={total===0?"Open UNIFI Planner":interestOnly?"Show all interests":"Show all jobs"}
-            onAction={()=>{if(total===0)onNavigate("unifi");else if(interestOnly)setInterestOnly(false);else setFilter("ALL");}}
+            text={total===0?"Create a complete Job Manifest in UNIFI before scheduling execution.":requirementFocus?"No open Jobs on this page match "+workFocusLabel(requirementFocus)+". Clear the requirement focus to return to the project queue.":interestOnly?"No Jobs on this page match your saved interests. Turn off the interest filter or update your interests in Stakeholder.":"Clear the current status filter to return to the project queue."}
+            actionLabel={total===0?"Open UNIFI Planner":requirementFocus?"Clear requirement focus":interestOnly?"Show all interests":"Show all jobs"}
+            onAction={()=>{if(total===0)onNavigate("unifi");else if(requirementFocus)setRequirementFocus(null);else if(interestOnly)setInterestOnly(false);else setFilter("ALL");}}
           /></div>:viewMode==="queue"?<div className="schedulerProjectGroup">
             <ProjectGroupHeader projectName={projectName} projectSlug={projectSlug} jobs={orderedVisible}/>
             <div className="schedulerTable"><div className="schedulerRow headerRow"><span>Job</span><span>Priority</span><span>Capability</span><span>Status</span><span>Controls</span></div>
