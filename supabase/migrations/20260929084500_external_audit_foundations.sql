@@ -141,33 +141,33 @@ alter table public.external_audit_reviewers enable row level security;
 alter table public.external_audit_events enable row level security;
 alter table public.external_audit_documents enable row level security;
 
-create policy external_audit_assessments_select on public.external_audit_assessments for select to authenticated using (public.is_project_member(project_id));
-create policy external_audit_profiles_select on public.external_audit_profiles for select to authenticated using (public.is_project_member(project_id));
-create policy external_audit_sources_select on public.external_audit_sources for select to authenticated using (public.is_project_member(project_id));
-create policy external_audit_findings_select on public.external_audit_findings for select to authenticated using (public.is_project_member(project_id));
-create policy external_audit_actions_select on public.external_audit_actions for select to authenticated using (public.is_project_member(project_id));
-create policy external_audit_reviewers_select on public.external_audit_reviewers for select to authenticated using (public.is_project_member(project_id));
-create policy external_audit_events_select on public.external_audit_events for select to authenticated using (public.is_project_member(project_id));
-create policy external_audit_documents_select on public.external_audit_documents for select to authenticated using (public.is_project_member(project_id));
+create policy external_audit_assessments_select on public.external_audit_assessments for select to authenticated using (private.is_project_member(project_id));
+create policy external_audit_profiles_select on public.external_audit_profiles for select to authenticated using (private.is_project_member(project_id));
+create policy external_audit_sources_select on public.external_audit_sources for select to authenticated using (private.is_project_member(project_id));
+create policy external_audit_findings_select on public.external_audit_findings for select to authenticated using (private.is_project_member(project_id));
+create policy external_audit_actions_select on public.external_audit_actions for select to authenticated using (private.is_project_member(project_id));
+create policy external_audit_reviewers_select on public.external_audit_reviewers for select to authenticated using (private.is_project_member(project_id));
+create policy external_audit_events_select on public.external_audit_events for select to authenticated using (private.is_project_member(project_id));
+create policy external_audit_documents_select on public.external_audit_documents for select to authenticated using (private.is_project_member(project_id));
 
 create policy external_audit_assessments_insert on public.external_audit_assessments for insert to authenticated
-with check (public.has_project_role(project_id,array['owner','admin','operator']) and created_by=auth.uid());
+with check (private.has_project_role(project_id,array['owner','admin','operator']) and created_by=auth.uid());
 create policy external_audit_assessments_update on public.external_audit_assessments for update to authenticated
-using (public.has_project_role(project_id,array['owner','admin','operator']))
-with check (public.has_project_role(project_id,array['owner','admin','operator']));
+using (private.has_project_role(project_id,array['owner','admin','operator']))
+with check (private.has_project_role(project_id,array['owner','admin','operator']));
 create policy external_audit_profiles_insert on public.external_audit_profiles for insert to authenticated
-with check (public.has_project_role(project_id,array['owner','admin','operator']) and created_by=auth.uid());
+with check (private.has_project_role(project_id,array['owner','admin','operator']) and created_by=auth.uid());
 create policy external_audit_sources_insert on public.external_audit_sources for insert to authenticated
-with check (public.has_project_role(project_id,array['owner','admin','operator']));
+with check (private.has_project_role(project_id,array['owner','admin','operator']));
 create policy external_audit_findings_insert on public.external_audit_findings for insert to authenticated
-with check (public.has_project_role(project_id,array['owner','admin','operator']));
+with check (private.has_project_role(project_id,array['owner','admin','operator']));
 create policy external_audit_actions_insert on public.external_audit_actions for insert to authenticated
-with check (public.has_project_role(project_id,array['owner','admin','operator']));
+with check (private.has_project_role(project_id,array['owner','admin','operator']));
 create policy external_audit_reviewers_write on public.external_audit_reviewers for all to authenticated
-using (public.has_project_role(project_id,array['owner','admin']))
-with check (public.has_project_role(project_id,array['owner','admin']));
+using (private.has_project_role(project_id,array['owner','admin']))
+with check (private.has_project_role(project_id,array['owner','admin']));
 create policy external_audit_documents_insert on public.external_audit_documents for insert to authenticated
-with check (public.has_project_role(project_id,array['owner','admin','operator']));
+with check (private.has_project_role(project_id,array['owner','admin','operator']));
 
 revoke all on public.external_audit_events from anon,authenticated;
 grant select on public.external_audit_events to authenticated;
@@ -235,7 +235,7 @@ language plpgsql security invoker set search_path=public as $$
 declare existing public.external_audit_assessments%rowtype;
 declare created public.external_audit_assessments%rowtype;
 begin
-  if not public.has_project_role(target_project,array['owner','admin','operator']) then
+  if not private.has_project_role(target_project,array['owner','admin','operator']) then
     raise insufficient_privilege using message='Operator access is required to create assessments.';
   end if;
   if target_request_key is null or btrim(coalesce(target_name,''))='' then raise exception 'Request key and target name are required.'; end if;
