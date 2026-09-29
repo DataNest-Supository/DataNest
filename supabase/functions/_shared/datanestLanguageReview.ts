@@ -78,6 +78,20 @@ export function canonicalizeReviewedLanguages(value:unknown):string[]{
   return [...canonical].sort();
 }
 
+export function reviewedLanguageCoverageSatisfied(
+  sourceLanguages:string[],
+  reviewedLanguages:string[]
+):boolean{
+  const reviewedBases=new Set(reviewedLanguages.map(tag=>tag.split("-")[0].toLowerCase()));
+  if(reviewedBases.has("mul"))return true;
+  for(const sourceLanguage of sourceLanguages){
+    const base=sourceLanguage.split("-")[0].toLowerCase();
+    if(base==="und"||base==="mul")continue;
+    if(!reviewedBases.has(base))return false;
+  }
+  return true;
+}
+
 export function governedLanguageReviewResult(input:{
   reviewedLanguages:unknown;
   reviewBasis:unknown;
