@@ -105,6 +105,16 @@ test("continuous governance is visible as an explicit Governance workspace mode"
   assert.match(panel,/evidence repetition raises truth: no/);
 });
 
+test("exposed governance RPCs are security-invoker wrappers over non-exposed checked implementations",()=>{
+  assert.match(migration,/create or replace function private\.record_governance_observation_v1/);
+  assert.match(migration,/create or replace function public\.record_governance_observation_v1[\s\S]*security invoker/);
+  assert.match(migration,/create or replace function private\.run_governance_improvement_cycle_v1/);
+  assert.match(migration,/create or replace function public\.run_governance_improvement_cycle_v1[\s\S]*security invoker/);
+  assert.match(migration,/set search_path=''/);
+  assert.match(migration,/revoke execute on function private\.record_governance_observation_v1/);
+  assert.match(migration,/grant execute on function private\.record_governance_observation_v1[\s\S]*to authenticated/);
+});
+
 test("database access keeps evidence tables read-only and mutations behind governed RPCs",()=>{
   for(const table of [
     "governance_standards_register",
