@@ -12,6 +12,7 @@ import { useSingleFlight } from "@/lib/singleFlight";
 import PageHeader from "@/components/platform/PageHeader";
 import StatusIndicator from "@/components/platform/StatusIndicator";
 import EvidencePanel from "@/components/platform/EvidencePanel";
+import GovernedAction from "@/components/platform/GovernedAction";
 
 type Protocol={
   id:string;project_id:string;protocol_key:string;version:number;title:string;mission:string|null;vision:string|null;
@@ -357,6 +358,11 @@ export default function GovernanceWorkspace({
         description="Review protocol, proposals and immutable decisions while keeping legal ownership, contracts and financial authority outside participation signals."
         primaryAction={<button className="secondaryButton compact" type="button" onClick={()=>void load()}>Refresh</button>}
         meta={<StatusIndicator label={workspace.ratified_protocol?"Ratified protocol active":"Human ratification required"} tone={workspace.ratified_protocol?"success":"warning"} detail={canManage?"Authorized governance controls available":"Governance evidence view"}/>}
+      />
+      <GovernedAction
+        stage={openProposals.length?"review-required":"checked"}
+        summary={openProposals.length?"Open governance proposals remain review-required until formal voting and decision evidence is recorded.":"No open proposal is being presented as adopted governance."}
+        evidence={<span>{workspace.decisions.length+" immutable decision record"+(workspace.decisions.length===1?"":"s")+" available"}</span>}
       />
     </section>
     <EvidencePanel
