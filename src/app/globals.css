@@ -5065,6 +5065,22 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
 }
 .schedulerInterestSummary{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-3px 0 12px;color:#7892a7;font-size:9px}
 .schedulerInterestSummary b{color:#b8d5e2}
+.schedulerInterestCoverage{
+  display:grid;gap:7px;margin:-4px 0 14px;padding:10px 11px;border:1px solid rgba(102,218,255,.1);
+  border-radius:10px;background:rgba(5,10,25,.38)
+}
+.schedulerInterestCoverageHead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;color:#7892a7;font-size:8px}
+.schedulerInterestCoverageHead b{color:#b8d5e2;font-size:9px}
+.schedulerInterestCoverageItems{display:flex;gap:6px;flex-wrap:wrap}
+.schedulerInterestCoverageItems>span{
+  display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.06);
+  color:#7e99ac;font-size:7px
+}
+.schedulerInterestCoverageItems>span b{font-size:7px;text-transform:uppercase;letter-spacing:.06em}
+.schedulerInterestCoverageItems>span.covered{border-color:rgba(66,231,255,.2);background:rgba(66,231,255,.045)}
+.schedulerInterestCoverageItems>span.covered b{color:#8beeff}
+.schedulerInterestCoverageItems>span.gap{border-color:rgba(255,196,92,.18);background:rgba(255,196,92,.04)}
+.schedulerInterestCoverageItems>span.gap b{color:#e9c982}
 .interestMatchTag{
   display:inline-flex;margin:5px 0 0 6px;padding:2px 6px;border:1px solid rgba(66,231,255,.24);
   border-radius:999px;background:rgba(66,231,255,.07);color:#8beeff;font-size:7px;font-weight:900;letter-spacing:.08em
