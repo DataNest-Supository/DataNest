@@ -2,6 +2,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { resolveDataNestAiStaging } from "../_shared/datanestAiStaging.ts";
 import { sha256Text } from "../_shared/datanestAiRuntime.ts";
 import { replayContentMatches } from "../_shared/datanestAiContinuity.ts";
+import { buildEvidenceLanguageMetadata } from "../_shared/datanestLanguageMetadata.ts";
 
 declare const Deno:{
   env:{get:(name:string)=>string|undefined};
@@ -128,6 +129,13 @@ Deno.serve(async(request:Request)=>{
     if(!externalAiSessionId||!content){
       return json({error:"externalAiSessionId and content are required."},400,origin);
     }
+    const sourceLanguageProvided=Object.prototype.hasOwnProperty.call(body,"sourceLanguage");
+    const sourceLanguageMetadata=buildEvidenceLanguageMetadata({
+      content,
+      declaredLanguageProvided:sourceLanguageProvided,
+      declaredLanguage:body.sourceLanguage,
+      declaredBasis:"user_declared_for_external_evidence"
+    });
 
     const {data:session,error:sessionError}=await userClient
       .from("external_ai_sessions")
@@ -190,7 +198,7 @@ Deno.serve(async(request:Request)=>{
     if(session.staging_event_id){
       const {data:linkedEvent,error:linkedEventError}=await staging
         .from("ai_intake_events")
-        .select("id,trace_id,content_hash,session_id,external_ai_session_id")
+        .select("id,trace_id,content_hash,session_id,external_ai_session_id,metadata")
         .eq("id",String(session.staging_event_id))
         .maybeSingle();
       if(linkedEventError)throw linkedEventError;
@@ -199,6 +207,13 @@ Deno.serve(async(request:Request)=>{
       }
       if(!replayContentMatches(String(linkedEvent.content_hash||""),contentHash)){
         return json({error:"This external AI session is already staged with different content."},409,origin);
+      }
+      if(
+        sourceLanguageProvided &&
+        String((linkedEvent.metadata as Record<string,unknown>|null)?.source_language||"")!==
+          String(sourceLanguageMetadata.source_language||"")
+      ){
+        return json({error:"This external AI evidence is already staged with different language metadata."},409,origin);
       }
       return json({
         eventId:String(linkedEvent.id),
@@ -221,7 +236,7 @@ Deno.serve(async(request:Request)=>{
 
     const {data:existing,error:existingError}=await staging
       .from("ai_intake_events")
-      .select("id,trace_id,content_hash,session_id")
+      .select("id,trace_id,content_hash,session_id,metadata")
       .eq("source_type","ai_companion")
       .eq("external_ai_session_id",String(session.id))
       .limit(1)
@@ -231,6 +246,14 @@ Deno.serve(async(request:Request)=>{
     let staged=existing as Record<string,unknown>|null;
     if(staged&&!replayContentMatches(String(staged.content_hash||""),contentHash)){
       return json({error:"This external AI session is already staged with different content."},409,origin);
+    }
+    if(
+      staged &&
+      sourceLanguageProvided &&
+      String((staged.metadata as Record<string,unknown>|null)?.source_language||"")!==
+        String(sourceLanguageMetadata.source_language||"")
+    ){
+      return json({error:"This external AI evidence is already staged with different language metadata."},409,origin);
     }
 
     if(!staged){
@@ -248,6 +271,7 @@ Deno.serve(async(request:Request)=>{
           content,
           content_hash:contentHash,
           metadata:policyMetadata({
+            ...sourceLanguageMetadata,
             trace_key:traceKey,
             trust_state:"uncertified",
             source:"external_ai_companion"
