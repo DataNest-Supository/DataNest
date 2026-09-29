@@ -142,7 +142,7 @@ export default function AuthGate() {
       setNewPasswordValue("");
       setConfirmPassword("");
       setStartup("signed-in");
-      setMessage("Password created. Your DataNest session is ready.");
+      setMessage("Password updated. Your DataNest session is ready.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to set your password.");
     } finally {
@@ -175,6 +175,32 @@ export default function AuthGate() {
       setMessage("Magic sign-in link sent.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to send a magic link.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function sendPasswordReset() {
+    const supabase = getSupabase();
+
+    if (!supabase || !email) {
+      setMessage("Enter your account email first.");
+      return;
+    }
+
+    setBusy(true);
+    setMessage("");
+
+    try {
+      const redirect = window.location.href.split("#")[0].split("?")[0];
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirect
+      });
+
+      if (error) throw error;
+      setMessage("If this email belongs to an authorized account, a password reset link has been sent.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to send a password reset email.");
     } finally {
       setBusy(false);
     }
@@ -236,8 +262,8 @@ export default function AuthGate() {
       <main className="authShell">
         <section className="authCard">
           <AuthBrand />
-          <h1>Create your DataNest password</h1>
-          <p className="lede">Your invitation has been accepted. Set a password to use normal email-and-password sign-in.</p>
+          <h1>Set a new DataNest password</h1>
+          <p className="lede">Choose a new password to finish secure account recovery or invitation setup.</p>
           <form onSubmit={submitNewPassword} className="authForm" aria-busy={busy}>
             <label>
               New password
@@ -313,6 +339,9 @@ export default function AuthGate() {
           </button>
           <button className="secondaryButton" disabled={busy} type="button" onClick={sendMagicLink}>
             Send magic link
+          </button>
+          <button className="secondaryButton" disabled={busy} type="button" onClick={sendPasswordReset}>
+            Forgot password? Email reset link
           </button>
         </form>
 
