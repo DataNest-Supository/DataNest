@@ -16,7 +16,7 @@ const Terms = () => (
       </Link>
 
       <h1 className="font-display text-3xl font-bold text-foreground mb-2">Terms of Service</h1>
-      <p className="text-sm text-muted-foreground mb-4">Review required · legacy policy draft · effective date not approved.</p>\n      <p className="text-sm text-muted-foreground mb-10">This legacy Creative Studio policy remains review-gated under the Resonance DataNest legal process and is not a replacement for the central governed legal record.</p>
+      <p className="text-sm text-muted-foreground mb-4">Review-gated legacy draft · 0.1-draft · effective date not approved.</p>\n      <p className="text-sm text-muted-foreground mb-10">This legacy Creative Studio policy remains review-gated under the Resonance DataNest legal process and is not a replacement for the central governed legal record.</p>
 
       <div className="space-y-8 text-sm text-secondary-foreground leading-relaxed">
         <section>
