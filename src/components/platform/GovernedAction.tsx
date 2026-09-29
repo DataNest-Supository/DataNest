@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import StatusIndicator from "@/components/platform/StatusIndicator";
 
-export export type GovernedActionStage = "proposed"|"checked"|"review-required"|"authorized"|"scheduled"|"executed"|"verified";
+export type GovernedActionStage = "proposed"|"checked"|"review-required"|"authorized"|"scheduled"|"executed"|"verified";
 
 const stageCopy:Record<GovernedActionStage,{label:string;tone:"neutral"|"info"|"success"|"warning"|"danger"}> = {
   proposed:{label:"AI proposed",tone:"neutral"},
