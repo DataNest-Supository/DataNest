@@ -5244,3 +5244,46 @@ html[data-motion-paused="true"] .workspaceArrival,html[data-motion-paused="true"
 .accountSecurityAnchor{scroll-margin-top:18px}
 .accountSecurityAnchor:focus{outline:none}
 .accountSecurityAnchor:focus-visible{outline:1px solid rgba(91,229,255,.3);outline-offset:5px;border-radius:14px}
+
+
+.navLegalSection{
+  margin:4px 0 12px;
+  padding:12px 10px 0;
+  border-top:1px solid var(--line-soft);
+}
+.navLegalSection>p{
+  margin:0 0 8px;
+  color:var(--text-subtle);
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+.navLegalLinks{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:5px;
+}
+.navLegalLinks a{
+  min-width:0;
+  padding:7px 8px;
+  border:1px solid transparent;
+  border-radius:8px;
+  color:var(--text-secondary);
+  font-size:10px;
+  font-weight:750;
+  line-height:1.25;
+  text-decoration:none;
+}
+.navLegalLinks a:first-child{
+  grid-column:1/-1;
+  color:var(--text-primary);
+  border-color:var(--line-soft);
+  background:var(--surface-work-soft);
+}
+.navLegalLinks a:hover,
+.navLegalLinks a:focus-visible{
+  color:var(--text-primary);
+  border-color:var(--line-strong-token);
+  background:var(--surface-work-soft);
+}
