@@ -55,7 +55,7 @@ test("verified memory migration adds scope, ageing, ranking and relation graph",
   assert.match(migration,/ts_rank_cd/);
   assert.match(migration,/relevance_score\*0\.55/);
   assert.match(migration,/trust_score\*0\.25/);
-  assert.match(migration,/scope_score\)\*0\.15/);
+  assert.match(migration,/least\(1,s\.scope_score\)\*0\.15/);
   assert.match(migration,/freshness_score\*0\.05/);
   assert.match(migration,/'strategy','verified-memory-ranked-v1'/);
   assert.match(migration,/service_promote_certified_memory_v2/);
