@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
+import { WORK_FOCUS_AREAS, normalizeWorkFocusKeys, type WorkFocusKey } from "@/lib/workFocus";
 
 type Workspace = {
   profile: Record<string,unknown>;
@@ -114,6 +115,7 @@ export default function StakeholderWorkspace({
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState("");
   const [savingPreference,setSavingPreference]=useState(false);
+  const [interestKeys,setInterestKeys]=useState<WorkFocusKey[]>([]);
   const [refreshingIntelligence,setRefreshingIntelligence]=useState(false);
 
   const load=useCallback(async()=>{
@@ -122,7 +124,7 @@ export default function StakeholderWorkspace({
     setLoading(true);
     setError("");
 
-    const [workspaceResult,contributionResult,intelligenceResult]=await Promise.all([
+    const [workspaceResult,contributionResult,intelligenceResult,interestResult]=await Promise.all([
       supabase.rpc("get_contribution_workspace",{target_project:projectId}),
       supabase
         .from("contribution_ledger")
@@ -131,7 +133,8 @@ export default function StakeholderWorkspace({
         .eq("user_id",currentUserId)
         .order("created_at",{ascending:false})
         .limit(50),
-      supabase.rpc("get_contribution_intelligence_workspace",{target_project:projectId})
+      supabase.rpc("get_contribution_intelligence_workspace",{target_project:projectId}),
+      supabase.from("datanest_user_preferences").select("interest_keys").eq("user_id",currentUserId).maybeSingle()
     ]);
 
     if(workspaceResult.error){
@@ -153,6 +156,13 @@ export default function StakeholderWorkspace({
       setIntelligence(null);
     }else{
       setIntelligence((intelligenceResult.data||null) as IntelligenceWorkspace|null);
+    }
+
+    if(interestResult.error){
+      setError(current=>current||interestResult.error!.message);
+      setInterestKeys([]);
+    }else{
+      setInterestKeys(normalizeWorkFocusKeys((interestResult.data as {interest_keys?:unknown}|null)?.interest_keys));
     }
 
     setLoading(false);
@@ -209,6 +219,26 @@ export default function StakeholderWorkspace({
       ...current,
       preferences:{...current.preferences,[field]:value}
     }:current);
+    setSavingPreference(false);
+  }
+
+  async function toggleInterest(key:WorkFocusKey){
+    const supabase=getSupabase();
+    if(!supabase)return;
+    const next=interestKeys.includes(key)
+      ? interestKeys.filter(item=>item!==key)
+      : normalizeWorkFocusKeys([...interestKeys,key]);
+    setSavingPreference(true);
+    setError("");
+    const {error:prefError}=await supabase
+      .from("datanest_user_preferences")
+      .upsert({
+        user_id:currentUserId,
+        interest_keys:next,
+        updated_at:new Date().toISOString()
+      },{onConflict:"user_id"});
+    if(prefError)setError(prefError.message);
+    else setInterestKeys(next);
     setSavingPreference(false);
   }
 
@@ -302,6 +332,14 @@ export default function StakeholderWorkspace({
         <div><dt>Progression recommendation</dt><dd>{progression.recommended_stage?label(progression.recommended_stage):"No pending recommendation"}</dd></div>
       </dl>
       <p className="muted">Reputation weights: impact {fmt(Number(weights.impact||0)*100)}%, quality {fmt(Number(weights.quality||0)*100)}%, collaboration/mentoring {fmt(Number(weights.collaboration_mentoring||0)*100)}%, governance {fmt(Number(weights.governance||0)*100)}%, reusable knowledge {fmt(Number(weights.reusable_knowledge||0)*100)}%. Progression recommendations require human approval and never grant a project role automatically.</p>
+    </section>
+
+    <section className="panel">
+      <div className="panelHead"><div><p className="eyebrow">USER INTERESTS</p><h3>Work areas you want to see</h3></div><span className="countPill">{interestKeys.length+" selected"}</span></div>
+      <p className="muted">These interests connect directly to UNIFI Job requirement sections and TranScheduler relevance matching. They do not change Job priority, execution authority, contribution scores, or access permissions.</p>
+      <div className="workFocusGrid stakeholderInterestGrid">
+        {WORK_FOCUS_AREAS.map(item=><label key={item.key} title={item.description}><input type="checkbox" disabled={savingPreference} checked={interestKeys.includes(item.key)} onChange={()=>void toggleInterest(item.key)}/><span><b>{item.label}</b><small>{item.description}</small></span></label>)}
+      </div>
     </section>
 
     <section className="panel">

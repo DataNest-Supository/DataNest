@@ -308,7 +308,7 @@ test("active Job context remains visible inside operational evidence views witho
   assert.match(appSource, /data-active-context=\{job\.id===activeJobId\?"true":undefined\}/);
   assert.match(appSource, /data-active-context=\{active\?"true":undefined\}/);
   assert.match(appSource, /ACTIVE CONTEXT/);
-  assert.match(appSource, /const visible=filter==="ALL"\?jobs:jobs\.filter\(item=>item\.status===filter\)/);
+  assert.match(appSource, /const statusVisible=filter==="ALL"\?jobs:jobs\.filter\(item=>item\.status===filter\)/);
   assert.doesNotMatch(appSource, /jobs\.filter\(item=>item\.id===activeJobId\)/);
   assert.match(cssSource, /\.schedulerRow\.contextMatch/);
   assert.match(cssSource, /\.ganttRow\.contextMatch/);
@@ -574,7 +574,7 @@ test("UNIFI manifest creation has a server idempotency key and reconciles ambigu
   assert.match(unifiIdempotencyMigrationSource, /create or replace function public\.create_job_manifest_v2/);
   assert.match(unifiIdempotencyMigrationSource, /where project_id=target_project\s+and client_request_id=target_request_key/);
   assert.match(unifiIdempotencyMigrationSource, /Client request key already exists for a different UNIFI Job Manifest payload/);
-  assert.match(appSource, /create_job_manifest_v2/);
+  assert.match(appSource, /create_job_manifest_v3/);
   assert.match(appSource, /target_request_key:intent\.requestKey/);
   assert.match(appSource, /\.eq\("client_request_id",intent\.requestKey\)/);
   assert.match(appSource, /Previous UNIFI submission was not recorded/);
