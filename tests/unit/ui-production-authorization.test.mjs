@@ -11,6 +11,10 @@ const pagesWorkflow=readFileSync(
   new URL("../../.github/workflows/pages.yml",import.meta.url),
   "utf8"
 );
+const ronsasWorkflow=readFileSync(
+  new URL("../../.github/workflows/ronsas-app-validation.yml",import.meta.url),
+  "utf8"
+);
 
 const valid={
   DATANEST_UI_RELEASE_SHA:"c".repeat(40),
@@ -84,4 +88,48 @@ test("Pages production deployment is manual exact-SHA and environment gated",()=
   assert.match(pagesWorkflow,/git merge-base --is-ancestor "\$\{\{ inputs\.release_sha \}\}" origin\/main/);
   assert.match(pagesWorkflow,/name: github-pages/);
   assert.match(pagesWorkflow,/DATANEST_UI_PRODUCTION_CONFIRMATION: \$\{\{ inputs\.confirmation \}\}/);
+});
+
+
+test("Pages post-deployment verification covers all public legal routes and governed app targets",()=>{
+  for (const route of [
+    "legal",
+    "governance",
+    "accessibility",
+    "terms",
+    "privacy",
+    "disclaimers",
+    "acceptable-use",
+    "intellectual-property"
+  ]) {
+    assert.match(pagesWorkflow,new RegExp(`for route in [^\\n]*\\b${route}\\b`));
+  }
+
+  for (const slug of [
+    "career-compass",
+    "creative-studio",
+    "epublisher",
+    "lyricsync-studio",
+    "scene-song-spark",
+    "sovereign-forge",
+    "syncvision"
+  ]) {
+    assert.match(pagesWorkflow,new RegExp(`for app in [^\\n]*\\b${slug}\\b`));
+  }
+
+  assert.match(pagesWorkflow,/https:\/\/youtubeoptimizer\.life\//);
+  assert.match(pagesWorkflow,/ui-governance-release\.json/);
+  assert.match(pagesWorkflow,/"releaseState":"authorized"/);
+  assert.match(pagesWorkflow,/"authorized":true/);
+});
+
+test("RONSAS validation is required when the Pages release gate changes",()=>{
+  assert.match(
+    ronsasWorkflow,
+    /pull_request:[\s\S]*?paths:[\s\S]*?"\.github\/workflows\/pages\.yml"/
+  );
+  assert.match(
+    ronsasWorkflow,
+    /push:[\s\S]*?paths:[\s\S]*?"\.github\/workflows\/pages\.yml"/
+  );
 });
