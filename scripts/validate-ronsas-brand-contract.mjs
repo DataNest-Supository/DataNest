@@ -95,7 +95,7 @@ if(complete){
   const appChecks=[
     {slug:"career-compass",presentation:"index.html",style:"styles.css",accent:"#14bfff",kind:"static"},
     {slug:"creative-studio",presentation:"src/components/brand/ResonanceFooter.tsx",style:"src/resonance-datanest-adapter.css",accent:"#ff36d8",kind:"bundled"},
-    {slug:"epublisher",presentation:"src/components/brand/ResonanceFooter.tsx",style:"src/resonance-datanest-adapter.css",accent:"#8b5cf6",kind:"bundled"},
+    {slug:"epublisher",presentation:"src/components/brand/ResonanceFooter.tsx",style:"src/resonance-datanest-adapter.css",accent:"#8b5cf6",kind:"bundled",lightTheme:"class"},
     {slug:"lyricsync-studio",presentation:"index.html",style:"styles.css",accent:"#8aa6ff",kind:"static"},
     {slug:"scene-song-spark",presentation:"index.html",style:"styles.css",accent:"#f4c66f",kind:"static"},
     {slug:"sovereign-forge",presentation:"index.html",style:"styles.css",accent:"#72e6ae",kind:"static"},
