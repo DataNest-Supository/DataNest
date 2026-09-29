@@ -38,6 +38,7 @@ test("Certified Memory reviews are append-only governed evidence",()=>{
   assert.match(migration,/alter table public\.certified_memory_reviews enable row level security/);
   assert.match(migration,/revoke all on table public\.certified_memory_reviews from public,anon,authenticated/);
   assert.match(migration,/grant select,insert on table public\.certified_memory_reviews to service_role/);
+  assert.match(migration,/certified_memory_reviews_reviewer_idx/);
   assert.match(migration,/actor_role is null or actor_role not in \('owner','admin'\)/);
   assert.match(migration,/target_decision='retired' and actor_role<>'owner'/);
   assert.match(migration,/service_review_certified_memory_v1/);
