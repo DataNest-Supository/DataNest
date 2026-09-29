@@ -54,3 +54,14 @@ test("TranScheduler can rank Jobs by interest overlap without changing Job prior
   assert.match(app,/<option value="interest">Interest relevance<\/option>/);
   assert.match(app,/return right\.priority-left\.priority\|\|left\.job_number-right\.job_number/);
 });
+
+
+test("interest-only scheduler state is shareable and Stakeholder can open it directly",()=>{
+  assert.match(app,/operationalUrlStateKeys=\["page","mode","filter","sort","interests"\]/);
+  assert.match(app,/function schedulerInterestOnlyFromUrl/);
+  assert.match(app,/url\.searchParams\.get\("interests"\)==="1"/);
+  assert.match(app,/url\.searchParams\.set\("interests","1"\)/);
+  assert.match(app,/interestOnly=\{schedulerInterestOnly\}/);
+  assert.match(stakeholder,/Open matched Jobs/);
+  assert.match(stakeholder,/onOpenMatchedJobs:\(\)=>void/);
+});
