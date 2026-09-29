@@ -22,7 +22,8 @@ test("certification requires language review only for evidence that signals it",
   assert.match(source,/summarizeLanguageReviewEvidence/);
   assert.match(source,/languageReview\.required&&latest\.get\("LANGUAGE_REVIEW"\)!==true/);
   assert.match(source,/Owner authority is required for language-review candidates/);
-  assert.match(source,/role_authorized_not_language_registry_verified/);
+  assert.match(source,/reviewer_qualification_status:"registry_verified"/);
+  assert.match(source,/reviewer_qualification_ids:qualificationCoverage\.qualificationIds/);
   assert.match(source,/!languageReview\.required\s*&&\s*allAutomatedCertificationGatesPassed/);
 });
 
@@ -43,6 +44,7 @@ test("certification console exposes the conditional language review evidence for
   assert.match(source,/Review basis and limitations/);
   assert.match(source,/Meaning, negation, quantities and modal force are preserved/);
   assert.match(source,/No unresolved semantic ambiguity remains/);
-  assert.match(source,/does not claim a language-qualification registry check/);
+  assert.match(source,/passing review requires active reviewer-registry coverage/);
+  assert.match(source,/Registry entries are project governance evidence, not external accreditation/);
   assert.match(source,/if\(!candidateRuns\.has\(run\.gate\)\)candidateRuns\.set/);
 });

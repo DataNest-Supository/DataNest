@@ -308,7 +308,7 @@ test("active Job context remains visible inside operational evidence views witho
   assert.match(appSource, /data-active-context=\{job\.id===activeJobId\?"true":undefined\}/);
   assert.match(appSource, /data-active-context=\{active\?"true":undefined\}/);
   assert.match(appSource, /ACTIVE CONTEXT/);
-  assert.match(appSource, /const schedulerJobs=requirementFocus\?\(requirementJobs\?\?\[\]\):jobs/);
+  assert.match(appSource, /const schedulerJobs=useMemo\(\(\)=>requirementFocus\?\(requirementJobs\?\?\[\]\):jobs,\[jobs,requirementFocus,requirementJobs\]\)/);
   assert.match(appSource, /const statusVisible=filter==="ALL"\?schedulerJobs:schedulerJobs\.filter\(item=>item\.status===filter\)/);
   assert.doesNotMatch(appSource, /jobs\.filter\(item=>item\.id===activeJobId\)/);
   assert.match(cssSource, /\.schedulerRow\.contextMatch/);

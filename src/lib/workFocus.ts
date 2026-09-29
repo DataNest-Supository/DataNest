@@ -54,3 +54,15 @@ export function workInterestOverlapCount(requirements:unknown,interests:unknown)
 export function workMatchesInterests(requirements:unknown,interests:unknown){
   return workInterestOverlapKeys(requirements,interests).length>0;
 }
+
+export function workInterestCoverage(requirementsList:unknown[],interests:unknown){
+  const selected=normalizeWorkFocusKeys(interests);
+  const coveredSet=new Set<WorkFocusKey>();
+  for(const requirements of requirementsList){
+    for(const key of workInterestOverlapKeys(requirements,selected))coveredSet.add(key);
+  }
+  return {
+    covered:selected.filter(key=>coveredSet.has(key)),
+    gaps:selected.filter(key=>!coveredSet.has(key))
+  };
+}
