@@ -1,7 +1,15 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import {
+  buildUiGovernanceEvidence,
+  hasUiGovernanceEnvironment
+} from "./write-ui-governance-evidence.mjs";
 
 const target=resolve(process.argv[2] || "public/release-manifest.json");
+const uiGovernance=hasUiGovernanceEnvironment(process.env)
+  ? buildUiGovernanceEvidence(process.env)
+  : null;
+
 const manifest={
   project:"Resonance DataNest",
   frontendCommit:process.env.DATANEST_RELEASE_SHA || process.env.GITHUB_SHA || "local",
@@ -22,6 +30,7 @@ const manifest={
     externalAudit:process.env.DATANEST_EDGE_EXTERNAL_AUDIT || "external-audit@1"
   },
   supabaseProject:"sgqdmfgjbprsoqsmgigi",
+  ...(uiGovernance ? {uiGovernance} : {}),
   generatedAt:new Date().toISOString()
 };
 mkdirSync(dirname(target),{recursive:true});

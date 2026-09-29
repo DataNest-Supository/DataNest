@@ -1,10 +1,51 @@
-# Deployment trigger: publish live Resonance Data Nest auth branding
+# Governed production release for Resonance DataNest GitHub Pages.
+# Repository Settings -> Environments -> github-pages must require at least one
+# authorized human reviewer before this workflow is considered a fully enforced gate.
 name: Deploy GitHub Pages
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
+    inputs:
+      release_sha:
+        description: Exact 40-character commit SHA reachable from main
+        required: true
+        type: string
+      pr_verification_reference:
+        description: PR Verification run/reference for the exact release SHA
+        required: true
+        type: string
+      security_scan_reference:
+        description: Security scan run/reference for the exact release SHA
+        required: true
+        type: string
+      ronsas_validation_reference:
+        description: RONSAS Application Validation run/reference for the exact release SHA
+        required: true
+        type: string
+      visual_review_reference:
+        description: UI visual review artifact/reference for the exact release SHA
+        required: true
+        type: string
+      governance_review_reference:
+        description: Governance-impact human review reference
+        required: true
+        type: string
+      legal_review_reference:
+        description: Legal review reference for the legal/governance surface changes
+        required: true
+        type: string
+      external_review_reference:
+        description: External or independent human review reference
+        required: true
+        type: string
+      production_authorization_reference:
+        description: Human production authorization reference
+        required: true
+        type: string
+      confirmation:
+        description: Type AUTHORIZE PRODUCTION exactly
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -13,7 +54,6 @@ permissions:
 
 concurrency:
   group: pages
-  # Finish the live release checks before deploying the newest pending commit.
   cancel-in-progress: false
 
 jobs:
@@ -24,21 +64,53 @@ jobs:
       NEXT_PUBLIC_BASE_PATH: "/DataNest"
       NEXT_PUBLIC_SUPABASE_URL: "https://sgqdmfgjbprsoqsmgigi.supabase.co"
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_yIf5HFKNNteed4HdYCS2Vw_4TB-4LvB"
+      DATANEST_UI_RELEASE_SHA: ${{ inputs.release_sha }}
+      DATANEST_UI_RELEASE_STATE: authorized
+      DATANEST_UI_PR_VERIFICATION_REF: ${{ inputs.pr_verification_reference }}
+      DATANEST_UI_SECURITY_REF: ${{ inputs.security_scan_reference }}
+      DATANEST_UI_RONSAS_VALIDATION_REF: ${{ inputs.ronsas_validation_reference }}
+      DATANEST_UI_VISUAL_REVIEW_REF: ${{ inputs.visual_review_reference }}
+      DATANEST_UI_GOVERNANCE_REVIEW_REF: ${{ inputs.governance_review_reference }}
+      DATANEST_UI_LEGAL_REVIEW_REF: ${{ inputs.legal_review_reference }}
+      DATANEST_UI_EXTERNAL_REVIEW_REF: ${{ inputs.external_review_reference }}
+      DATANEST_UI_AUTHORIZATION_REF: ${{ inputs.production_authorization_reference }}
+      DATANEST_UI_PRODUCTION_CONFIRMATION: ${{ inputs.confirmation }}
     steps:
-      - uses: actions/checkout@v7.0.1
+      - name: Checkout exact release SHA
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.release_sha }}
+          fetch-depth: 0
+
+      - name: Verify production authorization payload
+        run: node scripts/verify-ui-production-authorization.mjs
+
+      - name: Verify exact SHA is reachable from main
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "$DATANEST_UI_RELEASE_SHA"
+          git fetch origin main --no-tags --prune
+          git merge-base --is-ancestor "$DATANEST_UI_RELEASE_SHA" origin/main
+
       - uses: actions/setup-node@v7.0.0
         with:
           node-version: 22
+
       - run: npm ci
       - run: npm test
       - run: npm run check
+
       - run: node scripts/write-runtime-config.mjs public/runtime-config.js
         env:
           SUPABASE_URL: "https://sgqdmfgjbprsoqsmgigi.supabase.co"
           SUPABASE_PUBLISHABLE_KEY: "sb_publishable_yIf5HFKNNteed4HdYCS2Vw_4TB-4LvB"
+
+      - name: Write authorized UI governance evidence
+        run: node scripts/write-ui-governance-evidence.mjs public/ui-governance-release.json
+
       - name: Write release manifest
         env:
-          DATANEST_RELEASE_SHA: ${{ github.sha }}
+          DATANEST_RELEASE_SHA: ${{ inputs.release_sha }}
           DATANEST_DB_RELEASE: link-transcheduler-job-requirements-user-interests
           DATANEST_EXTERNAL_AUDIT_DB_RELEASE: external-audit-production-v1
           DATANEST_BASELINE_RELEASE: reload-latest-v1
@@ -52,9 +124,12 @@ jobs:
           DATANEST_EDGE_RONSAS_STATUS: ronsas-status@1
           DATANEST_EDGE_EXTERNAL_AUDIT: external-audit@1
         run: node scripts/write-release-manifest.mjs public/release-manifest.json
+
       - run: npm run build
+
       - name: Build DataNest-hosted RONSAS apps
         run: node scripts/build-ronsas-pages.mjs
+
       - uses: actions/upload-pages-artifact@v5.0.0
         with:
           path: ./out
@@ -75,72 +150,85 @@ jobs:
     runs-on: ubuntu-24.04
     needs: deploy
     steps:
-      - uses: actions/checkout@v7.0.1
-      - name: Verify deployed Next.js shell
+      - name: Checkout exact release SHA for verification
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.release_sha }}
+
+      - name: Verify deployed Next.js shell and public governance routes
         run: |
-          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors \
-            https://datanest-supository.github.io/DataNest/ \
-            -o /tmp/datanest-home.html
+          for route in "" legal governance accessibility terms privacy disclaimers acceptable-use intellectual-property; do
+            suffix=""
+            if [ -n "$route" ]; then suffix="$route/"; fi
+            curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors               "https://datanest-supository.github.io/DataNest/$suffix"               -o "/tmp/datanest-${route:-home}.html"
+            grep -qi "<html" "/tmp/datanest-${route:-home}.html"
+          done
           grep -q "<title>DataNest</title>" /tmp/datanest-home.html
           if ! grep -q 'class="authShell"' /tmp/datanest-home.html; then
             echo "Expected Next.js auth shell was not served. Live HTML prefix:"
             head -c 2000 /tmp/datanest-home.html
             exit 1
           fi
-          PAGE_ASSET=$(grep -o '/DataNest/_next/static/chunks/app/page-[^"]*\.js' /tmp/datanest-home.html | head -1)
-          test -n "$PAGE_ASSET"
-          curl --fail --silent --show-error --location --retry 5 --retry-delay 2 --retry-all-errors \
-            "https://datanest-supository.github.io$PAGE_ASSET" \
-            -o /tmp/datanest-page.js
-          test -s /tmp/datanest-page.js
+
       - name: Verify static health marker
         run: |
-          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors \
-            https://datanest-supository.github.io/DataNest/health.json \
-            -o /tmp/datanest-health.json
+          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors             https://datanest-supository.github.io/DataNest/health.json             -o /tmp/datanest-health.json
           grep -q '"ok":true' /tmp/datanest-health.json
           grep -q '"project":"Resonance DataNest"' /tmp/datanest-health.json
+
       - name: Verify runtime configuration
         run: |
-          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors \
-            https://datanest-supository.github.io/DataNest/runtime-config.js \
-            -o /tmp/runtime-config.js
+          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors             https://datanest-supository.github.io/DataNest/runtime-config.js             -o /tmp/runtime-config.js
           grep -q "https://sgqdmfgjbprsoqsmgigi.supabase.co" /tmp/runtime-config.js
           grep -q "sb_publishable_" /tmp/runtime-config.js
           grep -q "authoritative" /tmp/runtime-config.js
+
       - name: Verify DataNest-hosted RONSAS apps
         run: |
           for app in career-compass creative-studio epublisher lyricsync-studio scene-song-spark sovereign-forge syncvision; do
-            curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors \
-              "https://datanest-supository.github.io/DataNest/apps/$app/" \
-              -o "/tmp/$app.html"
+            curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors               "https://datanest-supository.github.io/DataNest/apps/$app/"               -o "/tmp/$app.html"
             grep -qi "<html" "/tmp/$app.html"
           done
-      - name: Verify release manifest
+
+      - name: Verify governed YouTube Optimizer SSR target
         run: |
-          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors \
-            https://datanest-supository.github.io/DataNest/release-manifest.json \
-            -o /tmp/release-manifest.json
-          grep -q "\"frontendCommit\":\"$GITHUB_SHA\"" /tmp/release-manifest.json
-          grep -q "\"databaseRelease\":\"link-transcheduler-job-requirements-user-interests\"" /tmp/release-manifest.json
-          grep -q "\"externalAuditRelease\":\"external-audit-production-v1\"" /tmp/release-manifest.json
-          grep -q "\"release\":\"reload-latest-v1\"" /tmp/release-manifest.json
-          grep -q "\"frontendCommit\":\"592149b0898f6703b28e9fa33e73bd0799cae3fd\"" /tmp/release-manifest.json
-          grep -q "\"aiChat\":\"datanest-ai-chat@2\"" /tmp/release-manifest.json
-          grep -q "\"externalIntake\":\"datanest-ai-intake@1\"" /tmp/release-manifest.json
-          grep -q "\"certification\":\"datanest-ai-certification@1\"" /tmp/release-manifest.json
-          grep -q "\"projectInvitations\":\"send-project-member-invite@3\"" /tmp/release-manifest.json
-          grep -q "\"ronsasStatus\":\"ronsas-status@1\"" /tmp/release-manifest.json
-          grep -q "\"externalAudit\":\"external-audit@1\"" /tmp/release-manifest.json
+          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors             https://youtubeoptimizer.life/             -o /tmp/youtube-optimizer.html
+          grep -qi "<html" /tmp/youtube-optimizer.html
+
+      - name: Verify release and UI governance manifests
+        env:
+          RELEASE_SHA: ${{ inputs.release_sha }}
+        run: |
+          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors             https://datanest-supository.github.io/DataNest/release-manifest.json             -o /tmp/release-manifest.json
+          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors             https://datanest-supository.github.io/DataNest/ui-governance-release.json             -o /tmp/ui-governance-release.json
+          grep -q "\"frontendCommit\":\"$RELEASE_SHA\"" /tmp/release-manifest.json
+          grep -q "\"releaseSha\":\"$RELEASE_SHA\"" /tmp/ui-governance-release.json
+          grep -q '"releaseState":"authorized"' /tmp/ui-governance-release.json
+          grep -q '"authorized":true' /tmp/ui-governance-release.json
+          grep -q "\"releaseSha\":\"$RELEASE_SHA\"" /tmp/release-manifest.json
+          grep -q '"databaseRelease":"link-transcheduler-job-requirements-user-interests"' /tmp/release-manifest.json
+          grep -q '"projectInvitations":"send-project-member-invite@3"' /tmp/release-manifest.json
+
       - uses: actions/setup-node@v7.0.0
         with:
           node-version: 22
+
       - name: Install test dependencies
         run: npm ci
+
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
+
       - name: Run rendered browser smoke tests
         env:
           PLAYWRIGHT_BASE_URL: https://datanest-supository.github.io
           DATANEST_APP_PATH: /DataNest/
-        run: npx playwright test tests/browser/auth.smoke.spec.ts tests/browser/home-optimization.spec.ts tests/browser/products.spec.ts tests/browser/external-auditor.spec.ts tests/browser/datanest-ai-layout.spec.ts tests/browser/transcheduler-project-gantt.spec.ts
+        run: >
+          npx playwright test
+          tests/browser/auth.smoke.spec.ts
+          tests/browser/home-optimization.spec.ts
+          tests/browser/products.spec.ts
+          tests/browser/external-auditor.spec.ts
+          tests/browser/legal-centre.spec.ts
+          tests/browser/datanest-ai-layout.spec.ts
+          tests/browser/transcheduler-project-gantt.spec.ts

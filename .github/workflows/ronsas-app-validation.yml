@@ -12,6 +12,7 @@ on:
       - "scripts/build-ronsas-pages.mjs"
       - "src/lib/ronsasApps.ts"
       - ".github/workflows/ronsas-app-validation.yml"
+      - ".github/workflows/pages.yml"
   push:
     branches: [main]
     paths:
@@ -21,6 +22,7 @@ on:
       - "scripts/build-ronsas-pages.mjs"
       - "src/lib/ronsasApps.ts"
       - ".github/workflows/ronsas-app-validation.yml"
+      - ".github/workflows/pages.yml"
   workflow_dispatch:
 
 permissions:
