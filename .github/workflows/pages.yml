@@ -41,6 +41,7 @@ jobs:
           DATANEST_RELEASE_SHA: ${{ github.sha }}
           DATANEST_DB_RELEASE: link-transcheduler-job-requirements-user-interests
           DATANEST_EXTERNAL_AUDIT_DB_RELEASE: external-audit-production-v1
+          DATANEST_PLATFORM_REVIEW_DB_RELEASE: platform-review-dossier-opportunity-v1
           DATANEST_BASELINE_RELEASE: reload-latest-v1
           DATANEST_BASELINE_SHA: 592149b0898f6703b28e9fa33e73bd0799cae3fd
           DATANEST_EDGE_AI: datanest-ai-chat@2
@@ -52,6 +53,10 @@ jobs:
           DATANEST_EDGE_RONSAS_STATUS: ronsas-status@1
           DATANEST_EDGE_EXTERNAL_AUDIT: external-audit@1
         run: node scripts/write-release-manifest.mjs public/release-manifest.json
+      - name: Write platform dossier index
+        env:
+          DATANEST_RELEASE_SHA: ${{ github.sha }}
+        run: node scripts/write-platform-dossier.mjs public/platform-dossier.json
       - run: npm run build
       - name: Build DataNest-hosted RONSAS apps
         run: node scripts/build-ronsas-pages.mjs
@@ -124,6 +129,7 @@ jobs:
           grep -q "\"frontendCommit\":\"$GITHUB_SHA\"" /tmp/release-manifest.json
           grep -q "\"databaseRelease\":\"link-transcheduler-job-requirements-user-interests\"" /tmp/release-manifest.json
           grep -q "\"externalAuditRelease\":\"external-audit-production-v1\"" /tmp/release-manifest.json
+          grep -q "\"platformReviewRelease\":\"platform-review-dossier-opportunity-v1\"" /tmp/release-manifest.json
           grep -q "\"release\":\"reload-latest-v1\"" /tmp/release-manifest.json
           grep -q "\"frontendCommit\":\"592149b0898f6703b28e9fa33e73bd0799cae3fd\"" /tmp/release-manifest.json
           grep -q "\"aiChat\":\"datanest-ai-chat@2\"" /tmp/release-manifest.json
@@ -132,6 +138,14 @@ jobs:
           grep -q "\"projectInvitations\":\"send-project-member-invite@3\"" /tmp/release-manifest.json
           grep -q "\"ronsasStatus\":\"ronsas-status@1\"" /tmp/release-manifest.json
           grep -q "\"externalAudit\":\"external-audit@1\"" /tmp/release-manifest.json
+      - name: Verify platform dossier index
+        run: |
+          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors \
+            https://datanest-supository.github.io/DataNest/platform-dossier.json \
+            -o /tmp/platform-dossier.json
+          grep -q '\"dossierVersion\": \"platform-review-dossier-opportunity-v1\"' /tmp/platform-dossier.json
+          grep -q "\"releaseCommit\": \"$GITHUB_SHA\"" /tmp/platform-dossier.json
+          grep -q '\"path\": \"docs/PLATFORM_REVIEW_DOSSIER_OPPORTUNITY.md\"' /tmp/platform-dossier.json
       - uses: actions/setup-node@v7.0.0
         with:
           node-version: 22
