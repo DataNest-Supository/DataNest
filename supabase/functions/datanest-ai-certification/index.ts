@@ -147,6 +147,46 @@ async function loadCandidateEvidenceIds(staging:AnyClient,candidateId:string):Pr
   if(error)throw error;
   return [...new Set((data||[]).map(item=>String(item.event_id)).filter(Boolean))].sort();
 }
+async function loadLanguageReviewByCandidate(
+  staging:AnyClient,
+  candidateIds:string[]
+):Promise<Map<string,LanguageReviewSummary>>{
+  const summaries=new Map<string,LanguageReviewSummary>();
+  for(const candidateId of candidateIds)summaries.set(candidateId,emptyLanguageReview);
+  if(!candidateIds.length)return summaries;
+
+  const {data:links,error:linksError}=await staging
+    .from("ai_candidate_evidence")
+    .select("candidate_id,event_id")
+    .in("candidate_id",candidateIds);
+  if(linksError)throw linksError;
+  const eventIds=[...new Set((links||[]).map(item=>String(item.event_id)).filter(Boolean))];
+  if(!eventIds.length)return summaries;
+
+  const {data:events,error:eventsError}=await staging
+    .from("ai_intake_events")
+    .select("id,content,metadata")
+    .in("id",eventIds);
+  if(eventsError)throw eventsError;
+  const eventById=new Map((events||[]).map(event=>[
+    String(event.id),
+    {
+      id:String(event.id),
+      content:String(event.content||""),
+      metadata:typeof event.metadata==="object"&&event.metadata!==null
+        ?event.metadata as Record<string,unknown>
+        :{}
+    }
+  ]));
+  for(const candidateId of candidateIds){
+    const evidence=(links||[])
+      .filter(link=>String(link.candidate_id)===candidateId)
+      .map(link=>eventById.get(String(link.event_id)))
+      .filter(Boolean) as Array<{id:string;content:string;metadata:Record<string,unknown>}>;
+    summaries.set(candidateId,summarizeLanguageReviewEvidence(evidence));
+  }
+  return summaries;
+}
 async function currentValidationRuns(staging:AnyClient,candidate:Candidate){
   const [runs,evidenceIds]=await Promise.all([
     loadValidationRuns(staging,candidate.id),
@@ -171,11 +211,16 @@ function latestGateState(runs:Array<{gate:CertificationGate;passed:boolean}>){
   for(const run of runs)state.set(run.gate,run.passed);
   return state;
 }
-function assertGatePrerequisites(gate:CertificationGate,runs:Array<{gate:CertificationGate;passed:boolean}>){
-  const index=gateOrder.indexOf(gate);
+function assertGatePrerequisites(
+  gate:CertificationGate,
+  runs:Array<{gate:CertificationGate;passed:boolean}>,
+  languageReviewRequired:boolean
+){
+  const order=requiredGateOrder(languageReviewRequired);
+  const index=order.indexOf(gate);
   if(index<0)throw new Error("Invalid certification gate.");
   const latest=latestGateState(runs);
-  for(const prior of gateOrder.slice(0,index)){
+  for(const prior of order.slice(0,index)){
     if(latest.get(prior)!==true){
       throw new Error(`${prior} must pass before ${gate}.`);
     }
