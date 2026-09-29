@@ -102,6 +102,7 @@ export default function ExternalAiSidebar({
   const clipboardConsentRef=useRef(false);
   const pendingAutoReturnSession=useRef("");
   const restoreGeneration=useRef(0);
+  const initialRestoreCompleted=useRef(false);
   const companionWindowRef=useRef<Window|null>(null);
   const companionClosePollRef=useRef<number|null>(null);
   const clipboardContextKey=JSON.stringify([projectId,currentUserEmail,selectedJobId,provider,sessionId]);
@@ -279,8 +280,15 @@ export default function ExternalAiSidebar({
     lastClipboardCapture.current="";
     setEmbedUrl("");
     void loadJobContext(selectedJobId);
+  },[selectedJobId,loadJobContext]);
+
+  useEffect(()=>{
+    if(!selectedJobId||initialRestoreCompleted.current)return;
+    const savedProvider=window.localStorage.getItem("datanest.aiSidebar.provider");
+    if(savedProvider&&providers.some(item=>item.key===savedProvider)&&provider!==savedProvider)return;
+    initialRestoreCompleted.current=true;
     void restoreLatestSession(selectedJobId,provider);
-  },[selectedJobId,loadJobContext,provider,restoreLatestSession]);
+  },[selectedJobId,provider,restoreLatestSession]);
 
   useEffect(()=>{
     window.localStorage.setItem("datanest.aiSidebar.width",String(width));
@@ -297,8 +305,7 @@ export default function ExternalAiSidebar({
     setLastImportedId("");
     lastClipboardCapture.current="";
     setEmbedUrl("");
-    void restoreLatestSession(selectedJobId,provider);
-  },[provider,selectedJobId,restoreLatestSession]);
+  },[provider,selectedJobId]);
 
   useEffect(()=>()=>{
     if(companionClosePollRef.current!==null){
