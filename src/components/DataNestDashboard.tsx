@@ -298,7 +298,9 @@ export default function DataNestDashboard({
       </article>
     </section>
 
-    {isOwner&&<OwnerDevelopmentAnalytics projectId={projectId}/>}\n\n    <section className="controlCenterLaunchpad" aria-label="DataNest workspaces">
+    {isOwner&&<OwnerDevelopmentAnalytics projectId={projectId}/>}
+
+    <section className="controlCenterLaunchpad" aria-label="DataNest workspaces">
       <div><p className="eyebrow">QUICK LAUNCH</p><h3>Move from signal to governed action</h3></div>
       <div>
         <button type="button" onClick={()=>onNavigate("ai")}><span>✦</span><b>DataNest AI</b><small>Analyze &amp; collaborate</small></button>
