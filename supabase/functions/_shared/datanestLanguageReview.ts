@@ -14,6 +14,14 @@ export type LanguageReviewSummary={
   evidenceIds:string[];
 };
 
+export type ReviewerQualification={
+  id:string;
+  language_tag:string;
+  qualification_scope:"source_language_review"|"semantic_equivalence";
+  active:boolean;
+};
+
+
 function canonicalLanguageOrNull(value:unknown):string|null{
   if(typeof value!=="string"||!value.trim())return null;
   try{
@@ -116,5 +124,48 @@ export function governedLanguageReviewResult(input:{
     meaningPreserved,
     unresolvedAmbiguity,
     passed:meaningPreserved&&!unresolvedAmbiguity
+  };
+}
+
+export function qualificationCoverageForReviewedLanguages(
+  qualifications:ReviewerQualification[],
+  reviewedLanguages:string[]
+):{
+  covered:boolean;
+  qualificationIds:string[];
+  missingLanguages:string[];
+}{
+  const active=qualifications.filter(item=>item.active!==false);
+  const byBase=new Map<string,string[]>();
+  for(const qualification of active){
+    let canonical:string;
+    try{
+      canonical=canonicalizeDeclaredLanguage(qualification.language_tag);
+    }catch{
+      continue;
+    }
+    const base=canonical.split("-")[0].toLowerCase();
+    const ids=byBase.get(base)||[];
+    ids.push(String(qualification.id));
+    byBase.set(base,[...new Set(ids)].sort());
+  }
+
+  const missingLanguages:string[]=[];
+  const qualificationIds=new Set<string>();
+  for(const language of reviewedLanguages){
+    const canonical=canonicalizeDeclaredLanguage(language);
+    const base=canonical.split("-")[0].toLowerCase();
+    const ids=byBase.get(base)||[];
+    if(!ids.length){
+      missingLanguages.push(canonical);
+      continue;
+    }
+    qualificationIds.add(ids[0]);
+  }
+
+  return {
+    covered:missingLanguages.length===0,
+    qualificationIds:[...qualificationIds].sort(),
+    missingLanguages:missingLanguages.sort()
   };
 }
