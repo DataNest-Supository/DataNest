@@ -12,6 +12,7 @@ import {
 import { callOpenAiCompatibleProvider, type ProviderConnection } from "./provider.ts";
 import { sha256Text } from "./datanestAiRuntime.ts";
 import { updateTrendCandidate } from "./datanestAiLearning.ts";
+import { buildEvidenceLanguageMetadata } from "./datanestLanguageMetadata.ts";
 
 const FILE_ANALYSIS_POLICY_VERSION="datanest-ai-governed-memory-v2";
 const MAX_ANALYSIS_ATTEMPTS=3;
@@ -218,6 +219,7 @@ async function stageDocumentEvidence(input:{
         content:proposition.text,
         content_hash:await sha256Text(proposition.text),
         metadata:{
+          ...buildEvidenceLanguageMetadata({content:proposition.text}),
           trust_state:"uncertified",
           learning_eligible:learningEligible,
           reuse_state:learningReuseState,
