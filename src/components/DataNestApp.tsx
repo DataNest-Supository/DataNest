@@ -760,10 +760,20 @@ export default function DataNestApp({session}:{session:Session}) {
     }
     const query=commandQuery.trim().toLowerCase();
     if(!query)return items;
-    return items.filter(item=>{
-      const haystack=[item.label,item.group,item.description].join(" ").toLowerCase();
-      return haystack.includes(query);
-    });
+    const score=(item:CommandItem)=>{
+      const label=item.label.toLowerCase();
+      if(label===query)return 0;
+      if(label.startsWith(query))return 1;
+      if(label.includes(query))return 2;
+      if(item.group.toLowerCase().includes(query))return 3;
+      return 4;
+    };
+    return items
+      .filter(item=>{
+        const haystack=[item.label,item.group,item.description].join(" ").toLowerCase();
+        return haystack.includes(query);
+      })
+      .sort((a,b)=>score(a)-score(b));
   },[commandQuery,ronsasHubUrl]);
 
   const loadSummary=useCallback(async(projectId:string)=>{
