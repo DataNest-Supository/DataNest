@@ -100,7 +100,7 @@ const appRegistry=readFileSync(new URL("../../src/lib/ronsasApps.ts",import.meta
 test("RONSAS launch registry distinguishes seven DataNest Pages apps from YouTube Optimizer SSR",()=>{
   assert.match(appRegistry,/launchKind:"datanest-pages"\|"external-ssr"/);
   assert.match(appRegistry,/slug:"youtube-optimizer"[\s\S]*launchKind:"external-ssr"[\s\S]*href:/);
-  assert.equal((appRegistry.match(/launchKind:"datanest-pages"/g)||[]).length,7);
+  assert.equal((appRegistry.match(/\{slug:"[^"]+"[^}\n]*launchKind:"datanest-pages"/g)||[]).length,7);
   assert.match(appRegistry,/YouTube Optimizer/);
   assert.match(panel,/External SSR|SSR runtime/);
   assert.match(panel,/YouTube Optimizer/);
