@@ -210,6 +210,64 @@ async function loadReviewerQualifications(
     active:Boolean(item.active)
   }));
 }
+
+async function assertLanguageReviewQualificationsCurrent(
+  staging:AnyClient,
+  projectId:string,
+  runs:Array<{
+    gate:CertificationGate;
+    passed:boolean;
+    results:unknown;
+    actor_user_id:string|null;
+  }>
+){
+  const languageRuns=runs.filter(run=>run.gate==="LANGUAGE_REVIEW");
+  const latestRun=languageRuns.at(-1);
+  if(!latestRun||latestRun.passed!==true){
+    throw new Error("A current passing LANGUAGE_REVIEW is required.");
+  }
+  const results=typeof latestRun.results==="object"&&latestRun.results!==null
+    ?latestRun.results as Record<string,unknown>
+    :{};
+  if(String(results.language_review_policy||"")!=="datanest-language-review-v3"){
+    throw new Error("LANGUAGE_REVIEW predates the current reviewer qualification policy; repeat the review.");
+  }
+  const reviewerUserId=String(latestRun.actor_user_id||"");
+  const qualificationIds=Array.isArray(results.reviewer_qualification_ids)
+    ?[...new Set(results.reviewer_qualification_ids.map(value=>String(value)).filter(Boolean))]
+    :[];
+  const reviewedLanguages=Array.isArray(results.reviewed_languages)
+    ?results.reviewed_languages.map(value=>String(value)).filter(Boolean)
+    :[];
+  if(!reviewerUserId||!qualificationIds.length||!reviewedLanguages.length){
+    throw new Error("LANGUAGE_REVIEW is missing bound reviewer qualification evidence; repeat the review.");
+  }
+
+  const {data,error}=await staging
+    .from("ai_language_reviewer_qualifications")
+    .select("id,language_tag,qualification_scope,active")
+    .eq("project_id",projectId)
+    .eq("user_id",reviewerUserId)
+    .eq("active",true)
+    .in("id",qualificationIds);
+  if(error)throw error;
+
+  const activeQualifications=(data||[]).map(item=>({
+    id:String(item.id),
+    language_tag:String(item.language_tag),
+    qualification_scope:String(item.qualification_scope) as ReviewerQualification["qualification_scope"],
+    active:Boolean(item.active)
+  }));
+  const activeIds=new Set(activeQualifications.map(item=>item.id));
+  const recordedQualificationsStillActive=qualificationIds.every(id=>activeIds.has(id));
+  const coverage=qualificationCoverageForReviewedLanguages(
+    activeQualifications,
+    reviewedLanguages
+  );
+  if(!recordedQualificationsStillActive||!coverage.covered){
+    throw new Error("A reviewer qualification bound to LANGUAGE_REVIEW is no longer active; repeat the review before certification.");
+  }
+}
 async function currentValidationRuns(staging:AnyClient,candidate:Candidate){
   const [runs,evidenceIds]=await Promise.all([
     loadValidationRuns(staging,candidate.id),
@@ -627,9 +685,25 @@ Deno.serve(async(request:Request)=>{
       if(String(evidence.basis||"").trim().length<12){
         return json({error:"Qualification evidence must include a substantive basis."},400,origin);
       }
+      const {data:existingQualification,error:existingQualificationError}=await staging
+        .from("ai_language_reviewer_qualifications")
+        .select("id")
+        .eq("project_id",projectId)
+        .eq("user_id",reviewerUserId)
+        .eq("language_tag",languageTag)
+        .eq("qualification_scope",qualificationScope)
+        .eq("active",true)
+        .maybeSingle();
+      if(existingQualificationError)throw existingQualificationError;
+      if(existingQualification){
+        return json({
+          error:"An active reviewer qualification already exists for this language and scope. Revoke it before registering a replacement."
+        },409,origin);
+      }
+      const now=new Date().toISOString();
       const {data:qualification,error:qualificationError}=await staging
         .from("ai_language_reviewer_qualifications")
-        .upsert({
+        .insert({
           project_id:projectId,
           user_id:reviewerUserId,
           language_tag:languageTag,
@@ -637,9 +711,10 @@ Deno.serve(async(request:Request)=>{
           evidence:{...evidence,recorded_by_owner:user.id},
           active:true,
           verified_by:user.id,
-          verified_at:new Date().toISOString(),
-          updated_at:new Date().toISOString()
-        },{onConflict:"project_id,user_id,language_tag,qualification_scope"})
+          verified_at:now,
+          created_at:now,
+          updated_at:now
+        })
         .select("*")
         .single();
       if(qualificationError||!qualification){
@@ -654,11 +729,19 @@ Deno.serve(async(request:Request)=>{
       }
       const qualificationId=String(body.qualificationId||"");
       if(!qualificationId)return json({error:"qualificationId is required."},400,origin);
+      const now=new Date().toISOString();
       const {data:qualification,error:qualificationError}=await staging
         .from("ai_language_reviewer_qualifications")
-        .update({active:false,updated_at:new Date().toISOString()})
+        .update({
+          active:false,
+          revoked_by:user.id,
+          revoked_at:now,
+          revocation_reason:String(body.reason||"Owner revoked language reviewer qualification.").slice(0,2000),
+          updated_at:now
+        })
         .eq("id",qualificationId)
         .eq("project_id",projectId)
+        .eq("active",true)
         .select("*")
         .single();
       if(qualificationError||!qualification){
@@ -726,7 +809,7 @@ Deno.serve(async(request:Request)=>{
           reviewed_evidence_ids:languageReview.evidenceIds,
           reviewer_qualification_status:"registry_verified",
           reviewer_qualification_ids:qualificationCoverage.qualificationIds,
-          language_review_policy:"datanest-language-review-v2"
+          language_review_policy:"datanest-language-review-v3"
         };
       }
       const {data:run,error:runError}=await staging
@@ -798,6 +881,17 @@ Deno.serve(async(request:Request)=>{
       }
       if(languageReview.required&&member.role!=="owner"){
         return json({error:"Owner authority is required for language-review candidates."},403,origin);
+      }
+      if(languageReview.required){
+        try{
+          await assertLanguageReviewQualificationsCurrent(staging,projectId,runs);
+        }catch(qualificationError){
+          return json({
+            error:qualificationError instanceof Error
+              ?qualificationError.message
+              :"Reviewer qualification is no longer current; repeat LANGUAGE_REVIEW."
+          },409,origin);
+        }
       }
       const policyInput={
         category:candidate.category,
