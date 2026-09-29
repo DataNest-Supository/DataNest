@@ -241,6 +241,39 @@ export function candidateFromRepeatedEvidence(
   };
 }
 
+
+export type CertifiedMemoryRelationKind="none"|"related"|"duplicates"|"contradicts";
+
+export function classifyCertifiedMemoryRelation(
+  candidate:string,
+  existing:string
+):{
+  relation:CertifiedMemoryRelationKind;
+  similarity:number;
+  polarityConflict:boolean;
+  scalarConflict:boolean;
+}{
+  const candidateTokens=normalizeTrendTokens(candidate);
+  const existingTokens=normalizeTrendTokens(existing);
+  const similarity=evidenceSimilarity(candidateTokens,existingTokens);
+  const polarityConflict=negationPolarity(candidate)!==negationPolarity(existing);
+  const scalarConflict=hasScalarConflict([
+    {id:"candidate",content:candidate},
+    {id:"existing",content:existing}
+  ]);
+
+  if(similarity<0.5){
+    return {relation:"none",similarity,polarityConflict,scalarConflict};
+  }
+  if(similarity>=0.55&&(polarityConflict||scalarConflict)){
+    return {relation:"contradicts",similarity,polarityConflict,scalarConflict};
+  }
+  if(similarity>=0.9&&!polarityConflict&&!scalarConflict){
+    return {relation:"duplicates",similarity,polarityConflict,scalarConflict};
+  }
+  return {relation:"related",similarity,polarityConflict,scalarConflict};
+}
+
 export function bestCandidateByEvidenceOverlap(
   links:Array<{candidateId:string;eventId:string}>,
   evidenceIds:string[],
