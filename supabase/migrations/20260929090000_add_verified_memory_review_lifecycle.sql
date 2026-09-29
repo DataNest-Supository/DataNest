@@ -101,7 +101,7 @@ begin
     and pm.status='active'
   limit 1;
 
-  if actor_role not in ('owner','admin') then
+  if actor_role is null or actor_role not in ('owner','admin') then
     raise insufficient_privilege using message='Owner or Admin review authority is required.';
   end if;
 
