@@ -180,35 +180,37 @@ git commit -m "feat: add public DataNest governance disclosures"
 - Until substantive legal review occurs, each route exposes clearly labeled governed-draft content and an approval-state banner.
 - Draft copy may state platform purpose, operator identity, AI-assisted-output review expectations, and links to existing app-specific terms only where those facts are already grounded; it must not invent guarantees, rights waivers, retention promises, or jurisdictional clauses.
 
-- [ ] **Step 1: Add failing legal-state tests**
+- [x] **Step 1: Add failing legal-state tests**
 
 For every route, assert version and status are visible, draft documents do not show an effective date, and generated/current dates are absent from policy status.
 
-- [ ] **Step 2: Run the suite**
+- [x] **Step 2: Run the suite**
 
 Run: `npx playwright test tests/browser/legal-centre.spec.ts`  
 Expected: FAIL on missing routes.
 
-- [ ] **Step 3: Implement review-gated pages**
+- [x] **Step 3: Implement review-gated pages**
 
 Use concise provisional content and explicit review state; do not copy legacy app policy claims wholesale.
 
-- [ ] **Step 4: Verify source-safety rules**
+- [x] **Step 4: Verify source-safety rules**
 
 Run: `node --test tests/unit/legal-centre-source.test.mjs`  
 Expected: PASS, including prohibited-claim checks.
 
-- [ ] **Step 5: Verify browser routes**
+- [x] **Step 5: Verify browser routes**
 
 Run: `npx playwright test tests/browser/legal-centre.spec.ts`  
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/app/terms src/app/privacy src/app/disclaimers src/app/acceptable-use src/app/intellectual-property src/components/legal tests
 git commit -m "feat: add review-gated DataNest legal routes"
 ```
+
+> Task 4 evidence: policy-route browser RED + prohibited-claim source RED → GREEN across Terms, Privacy/POPIA, Disclaimers, Acceptable Use and IP; all remain `0.1-draft`, review-required and not effective.
 
 ### Task 5: Integrate governance/legal navigation into public and authenticated chrome
 
@@ -225,30 +227,32 @@ git commit -m "feat: add review-gated DataNest legal routes"
 - Public and authenticated surfaces expose Legal Centre, Governance, Privacy, Terms, and Disclaimers through consistent navigation.
 - Dense operational headers keep the compact trust marker rather than repeating full legal copy.
 
-- [ ] **Step 1: Add failing cross-surface navigation assertions**
+- [x] **Step 1: Add failing cross-surface navigation assertions**
 
 From signed-out and authenticated fixtures, verify legal/governance links are reachable and preserve app/work context when returning.
 
-- [ ] **Step 2: Run focused suites**
+- [x] **Step 2: Run focused suites**
 
 Run: `npx playwright test tests/browser/auth.smoke.spec.ts tests/browser/home-optimization.spec.ts tests/browser/legal-centre.spec.ts`  
 Expected: FAIL on missing navigation.
 
-- [ ] **Step 3: Wire links and return paths**
+- [x] **Step 3: Wire links and return paths**
 
 Use ordinary hrefs for public legal routes so static export and no-JS navigation remain viable.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run the same command.  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/platform src/components/AuthGate.tsx src/components/DataNestApp.tsx tests/browser
 git commit -m "feat: connect DataNest legal and governance navigation"
 ```
+
+> Task 5 evidence: PR Verification #1170 browser GREEN after RED on missing public/authenticated legal links. Ruling: AuthGate itself was not duplicated with five direct links because it already composes PlatformFooter; shared footer navigation is the public source of truth, while GlobalNavigation provides the authenticated source. Cost if wrong: one additional AuthGate header link group can be added without changing routes.
 
 ### Task 6: Apply the governed-action lifecycle to consequential UI
 
