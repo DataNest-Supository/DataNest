@@ -55,7 +55,7 @@ jobs:
             verify: npm test && npm run build:types && npm run build -- --base=/DataNest/apps/epublisher/
           - name: Creative Studio
             path: apps/ronsas/creative-studio
-            verify: npm test && npm run build -- --base=/DataNest/apps/creative-studio/
+            verify: npm test && npm run build -- --base=/DataNest/apps/creative-studio/ && cd ../../.. && node scripts/validate-ronsas-brand-contract.mjs --app creative-studio
           - name: SyncVision
             path: apps/ronsas/syncvision
             verify: npm run typecheck && npm test && npm run build -- --base=/DataNest/apps/syncvision/
