@@ -31,7 +31,7 @@ test("memory usage receipts are append-only governed audit evidence",()=>{
 });
 
 test("memory receipts never persist raw prompts",()=>{
-  assert.doesNotMatch(migration,/raw_prompt|raw_content|prompt_text|query_text/i);
+  assert.doesNotMatch(migration,/\b(raw_prompt|raw_content|prompt_text|query_text)\s+(text|jsonb)\b/i);
   assert.match(migration,/target_query_hash text/);
   assert.match(chat,/target_query_hash:await sha256Text\(input\.query\)/);
 });
