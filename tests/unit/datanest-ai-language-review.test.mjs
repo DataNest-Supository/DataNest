@@ -71,11 +71,16 @@ test("reviewer qualification coverage follows reviewed language bases and active
   const qualifications=[
     {id:"q1",language_tag:"af",qualification_scope:"source_language_review",active:true},
     {id:"q2",language_tag:"zu-ZA",qualification_scope:"semantic_equivalence",active:true},
-    {id:"q3",language_tag:"xh",qualification_scope:"source_language_review",active:false}
+    {id:"q3",language_tag:"xh",qualification_scope:"source_language_review",active:false},
+    {id:"q4",language_tag:"af-ZA",qualification_scope:"semantic_equivalence",active:true}
   ];
   assert.deepEqual(
     qualificationCoverageForReviewedLanguages(qualifications,["af-ZA","zu"]),
     {covered:true,qualificationIds:["q1","q2"],missingLanguages:[]}
+  );
+  assert.deepEqual(
+    qualificationCoverageForReviewedLanguages(qualifications,["af"]),
+    {covered:true,qualificationIds:["q1"],missingLanguages:[]}
   );
   assert.deepEqual(
     qualificationCoverageForReviewedLanguages(qualifications,["af","xh"]),
