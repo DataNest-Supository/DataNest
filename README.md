@@ -78,6 +78,16 @@ The UI includes authenticated access, an overview dashboard, UNIFI Job Manifest 
 
 The sign-in screen intentionally does not create Supabase Auth users. Create authorized users through Supabase Auth administration, then use password or magic-link sign-in.
 
+## External Audit & Optimizer production status
+
+The **DataNest External Audit & Optimizer** is deployed through the canonical DataNest production path: GitHub Pages for the authenticated UI and Supabase project `sgqdmfgjbprsoqsmgigi` for governed database and Edge Function services.
+
+- Production database release: `external-audit-production-v1`
+- Supabase Edge Function: `external-audit@1`
+- JWT verification: enabled
+- Project-scoped RLS, reviewer gates, evidence traceability, Certified Memory usage receipts, and UNIFI/TranScheduler handoff remain enforced by backend controls.
+- The tool produces assisted assessment evidence and optimization records; it does not claim ISO certification or accreditation.
+
 ## Runtime configuration
 
 Runtime-resolved public configuration uses:
