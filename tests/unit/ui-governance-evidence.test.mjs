@@ -22,9 +22,14 @@ const reviewRefs={
 function runWriter(extraEnv){
   const dir=mkdtempSync(join(tmpdir(),"datanest-ui-evidence-"));
   const target=join(dir,"ui-governance-release.json");
+    const env={...process.env};
+  for (const key of Object.keys(env)) {
+    if (key.startsWith("DATANEST_UI_")) delete env[key];
+  }
+  Object.assign(env,extraEnv);
   const result=spawnSync(process.execPath,[writer,target],{
-    env:{...process.env,...extraEnv},
-    encoding:"utf8"
+    env,
+  encoding:"utf8"
   });
   const json=result.status===0 ? JSON.parse(readFileSync(target,"utf8")) : null;
   rmSync(dir,{recursive:true,force:true});
