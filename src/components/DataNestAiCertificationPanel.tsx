@@ -54,6 +54,51 @@ type MemoryOutcomeItem={
   created_at:string;
 };
 
+type MemoryConsolidationMemory={
+  id:string;
+  normalized_knowledge:string;
+  category:string;
+  effective_version:number;
+  certification_class:string;
+  confidence:number|null;
+  content_hash:string;
+  promoted_at:string;
+};
+
+type MemoryConsolidationSuggestion={
+  id:string;
+  first:MemoryConsolidationMemory;
+  second:MemoryConsolidationMemory;
+  similarity:number;
+  polarityConflict:boolean;
+  scalarConflict:boolean;
+  classifier:string;
+};
+
+type MemoryConsolidationMember={
+  consolidation_id:string;
+  memory_id:string;
+  member_role:"canonical"|"equivalent";
+  normalized_knowledge_snapshot:string;
+  content_hash_snapshot:string;
+  category_snapshot:string;
+  effective_version_snapshot:number;
+  active_snapshot:boolean;
+};
+
+type MemoryConsolidationProposal={
+  id:string;
+  canonical_memory_id:string;
+  status:"proposed"|"executed"|"rejected";
+  reason:string;
+  proposer_role:"owner"|"admin";
+  decision_reason:string|null;
+  proposed_at:string;
+  decided_at:string|null;
+  executed_at:string|null;
+  members:MemoryConsolidationMember[];
+};
+
 type LanguageReviewerQualification={
   id:string;
   project_id:string;
@@ -74,6 +119,8 @@ type WorkspaceResponse={
   languageReviewerQualifications:LanguageReviewerQualification[];
   memoryReviewItems:MemoryReviewItem[];
   memoryOutcomeItems:MemoryOutcomeItem[];
+  memoryConsolidationSuggestions:MemoryConsolidationSuggestion[];
+  memoryConsolidationProposals:MemoryConsolidationProposal[];
 };
 
 type Props={
@@ -120,7 +167,13 @@ function normalizeWorkspaceResponse(data:unknown,fallbackRole:"owner"|"admin"):W
       ?record.languageReviewerQualifications as LanguageReviewerQualification[]
       :[],
     memoryReviewItems:Array.isArray(record.memoryReviewItems)?record.memoryReviewItems as MemoryReviewItem[]:[],
-    memoryOutcomeItems:Array.isArray(record.memoryOutcomeItems)?record.memoryOutcomeItems as MemoryOutcomeItem[]:[]
+    memoryOutcomeItems:Array.isArray(record.memoryOutcomeItems)?record.memoryOutcomeItems as MemoryOutcomeItem[]:[],
+    memoryConsolidationSuggestions:Array.isArray(record.memoryConsolidationSuggestions)
+      ?record.memoryConsolidationSuggestions as MemoryConsolidationSuggestion[]
+      :[],
+    memoryConsolidationProposals:Array.isArray(record.memoryConsolidationProposals)
+      ?record.memoryConsolidationProposals as MemoryConsolidationProposal[]
+      :[]
   };
 }
 
@@ -134,6 +187,7 @@ export default function DataNestAiCertificationPanel({
   const [qualificationLanguage,setQualificationLanguage]=useState("");
   const [qualificationScope,setQualificationScope]=useState<"source_language_review"|"semantic_equivalence">("source_language_review");
   const [qualificationBasis,setQualificationBasis]=useState("");
+  const [busyConsolidationId,setBusyConsolidationId]=useState("");
   const [languageReviewDrafts,setLanguageReviewDrafts]=useState<Record<string,LanguageReviewDraft>>({});
 
   const canReview=role==="owner"||role==="admin";
@@ -314,6 +368,70 @@ export default function DataNestAiCertificationPanel({
     }
   }
 
+  async function proposeMemoryConsolidation(
+    suggestion:MemoryConsolidationSuggestion,
+    canonicalMemoryId:string
+  ){
+    const supabase=getSupabase();
+    if(!supabase)return;
+    setBusyConsolidationId(suggestion.id);
+    setError("");
+    try{
+      const {error}=await supabase.functions.invoke("datanest-ai-certification",{
+        body:{
+          action:"propose_memory_consolidation",
+          projectId,
+          canonicalMemoryId,
+          memoryIds:[suggestion.first.id,suggestion.second.id],
+          reason:"Human-selected canonical candidate for governed consolidation of equivalent Certified Memory."
+        }
+      });
+      if(error)throw error;
+      setNotice("Canonical memory consolidation proposal recorded for governed owner decision.");
+      await load();
+      await onChanged();
+    }catch(actionError){
+      setError(actionError instanceof Error?actionError.message:"Canonical memory consolidation proposal failed.");
+    }finally{
+      setBusyConsolidationId("");
+    }
+  }
+
+  async function decideMemoryConsolidation(
+    proposal:MemoryConsolidationProposal,
+    decision:"execute"|"reject"
+  ){
+    const supabase=getSupabase();
+    if(!supabase)return;
+    setBusyConsolidationId(proposal.id);
+    setError("");
+    try{
+      const {error}=await supabase.functions.invoke("datanest-ai-certification",{
+        body:{
+          action:"decide_memory_consolidation",
+          projectId,
+          consolidationId:proposal.id,
+          decision,
+          reason:decision==="execute"
+            ?"Owner authorized canonical consolidation after reviewing equivalent Certified Memory and preserved lineage."
+            :"Owner rejected canonical consolidation after review."
+        }
+      });
+      if(error)throw error;
+      setNotice(
+        decision==="execute"
+          ?"Canonical consolidation executed. Historical source memories remain traceable."
+          :"Canonical consolidation proposal rejected."
+      );
+      await load();
+      await onChanged();
+    }catch(actionError){
+      setError(actionError instanceof Error?actionError.message:"Canonical memory consolidation decision failed.");
+    }finally{
+      setBusyConsolidationId("");
+    }
+  }
+
   if(!canReview){
     return <section className="panel datanestAiCertificationPanel">
       <div className="panelHead">
@@ -416,6 +534,116 @@ export default function DataNestAiCertificationPanel({
         onClick={()=>void registerLanguageQualification()}
       >Register qualification</button>
     </div>}
+
+    {(workspace?.memoryConsolidationSuggestions.length||0)>0&&<>
+      <div className="rowBetween">
+        <div>
+          <h4>Equivalent Verified Memory</h4>
+          <p className="muted">
+            Similarity creates a review suggestion only. Choose which already-certified memory should remain canonical; DataNest does not synthesize new truth during consolidation.
+          </p>
+        </div>
+        <span className="countPill">{workspace?.memoryConsolidationSuggestions.length||0}</span>
+      </div>
+      <div className="manifestList">
+        {(workspace?.memoryConsolidationSuggestions||[]).map(suggestion=><article className="manifestCard" key={suggestion.id}>
+          <div className="rowBetween">
+            <div>
+              <b>{suggestion.first.category.replaceAll("_"," ")}</b>
+              <small>{"equivalence hint · "+Math.round(suggestion.similarity*100)+"% lexical similarity"}</small>
+            </div>
+            <span className="badge warn">HUMAN CANONICAL CHOICE REQUIRED</span>
+          </div>
+          <div className="plannerForm">
+            <div>
+              <b>{"First · memory v"+suggestion.first.effective_version}</b>
+              <p>{suggestion.first.normalized_knowledge}</p>
+              <div className="manifestMeta">
+                <span>{suggestion.first.certification_class}</span>
+                <span>{suggestion.first.confidence==null?"confidence —":"confidence "+Math.round(suggestion.first.confidence*100)+"%"}</span>
+              </div>
+            </div>
+            <div>
+              <b>{"Second · memory v"+suggestion.second.effective_version}</b>
+              <p>{suggestion.second.normalized_knowledge}</p>
+              <div className="manifestMeta">
+                <span>{suggestion.second.certification_class}</span>
+                <span>{suggestion.second.confidence==null?"confidence —":"confidence "+Math.round(suggestion.second.confidence*100)+"%"}</span>
+              </div>
+            </div>
+          </div>
+          <div className="rowActions">
+            <button
+              className="secondaryButton compact"
+              type="button"
+              disabled={busyConsolidationId===suggestion.id}
+              onClick={()=>void proposeMemoryConsolidation(suggestion,suggestion.first.id)}
+            >Keep first as canonical</button>
+            <button
+              className="secondaryButton compact"
+              type="button"
+              disabled={busyConsolidationId===suggestion.id}
+              onClick={()=>void proposeMemoryConsolidation(suggestion,suggestion.second.id)}
+            >Keep second as canonical</button>
+          </div>
+        </article>)}
+      </div>
+    </>}
+
+    {(workspace?.memoryConsolidationProposals.length||0)>0&&<>
+      <div className="rowBetween">
+        <div>
+          <h4>Canonical consolidation proposals</h4>
+          <p className="muted">
+            Proposals preserve every source record. Only the Owner can execute consolidation; the selected canonical record must already be Certified Memory.
+          </p>
+        </div>
+        <span className="countPill">{workspace?.memoryConsolidationProposals.length||0}</span>
+      </div>
+      <div className="manifestList">
+        {(workspace?.memoryConsolidationProposals||[]).map(proposal=>{
+          const canonical=proposal.members.find(member=>member.member_role==="canonical");
+          const equivalents=proposal.members.filter(member=>member.member_role==="equivalent");
+          return <article className="manifestCard" key={proposal.id}>
+            <div className="rowBetween">
+              <div>
+                <b>{canonical?.category_snapshot.replaceAll("_"," ")||"Certified Memory"}</b>
+                <small>{proposal.status.toUpperCase()+" · proposed "+formatDate(proposal.proposed_at)}</small>
+              </div>
+              <span className={"badge "+(proposal.status==="executed"?"good":proposal.status==="rejected"?"bad":"warn")}>
+                {proposal.status.toUpperCase()}
+              </span>
+            </div>
+            <p><b>Canonical:</b>{" "+(canonical?.normalized_knowledge_snapshot||proposal.canonical_memory_id)}</p>
+            {equivalents.map(member=><p key={member.memory_id}>
+              <b>Equivalent source:</b>{" "+member.normalized_knowledge_snapshot}
+            </p>)}
+            <div className="manifestMeta">
+              <span>{"proposed by "+proposal.proposer_role}</span>
+              <span>{equivalents.length+" historical source"+(equivalents.length===1?"":"s")+" preserved"}</span>
+              {proposal.decision_reason&&<span>{proposal.decision_reason}</span>}
+            </div>
+            {proposal.status==="proposed"&&role==="owner"&&<div className="rowActions">
+              <button
+                className="primaryButton compact"
+                type="button"
+                disabled={busyConsolidationId===proposal.id}
+                onClick={()=>void decideMemoryConsolidation(proposal,"execute")}
+              >Execute canonical consolidation</button>
+              <button
+                className="secondaryButton compact"
+                type="button"
+                disabled={busyConsolidationId===proposal.id}
+                onClick={()=>void decideMemoryConsolidation(proposal,"reject")}
+              >Reject proposal</button>
+            </div>}
+            {proposal.status==="proposed"&&role!=="owner"&&<p className="muted">
+              Awaiting Owner authorization. Admin proposal authority does not include execution authority.
+            </p>}
+          </article>;
+        })}
+      </div>
+    </>}
 
     {(workspace?.memoryReviewItems.length||0)>0&&<>
       <div className="rowBetween">
@@ -625,7 +853,7 @@ export default function DataNestAiCertificationPanel({
         </article>;
       })}
 
-      {workspace&&workspace.candidates.length===0&&workspace.memoryReviewItems.length===0&&workspace.memoryOutcomeItems.length===0&&<div className="emptyState">
+      {workspace&&workspace.candidates.length===0&&workspace.memoryReviewItems.length===0&&workspace.memoryOutcomeItems.length===0&&workspace.memoryConsolidationSuggestions.length===0&&workspace.memoryConsolidationProposals.length===0&&<div className="emptyState">
         <div>◇</div>
         <h3>No learning or memory-review work queued</h3>
         <p>Repeated staged evidence creates learning candidates; Certified Memory enters this queue when its governed review date is due.</p>
