@@ -221,6 +221,7 @@ export default function IntelligenceFabricPanel({
             </div>
             <div className="manifestMeta">
               <span>{txt(item.product_scope)||"datanest_ai"}</span>
+              {Boolean(item.projection_key)&&<span>{txt(item.projection_key)+" v"+(txt(item.projection_version)||"—")}</span>}
               <span>{txt(item.purpose)||"purpose —"}</span>
               <span>{txt(item.applicable_count)||"0"} applicable</span>
               <span>{txt(item.active_count)||"0"} active</span>
