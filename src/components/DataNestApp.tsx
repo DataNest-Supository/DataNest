@@ -16,6 +16,7 @@ import ExecutionAuthorityPanel from "@/components/ExecutionAuthorityPanel";
 import ResourceFabricPanel from "@/components/ResourceFabricPanel";
 import RecoveryDiagnosticsPanel from "@/components/RecoveryDiagnosticsPanel";
 import AccountPasswordPanel from "@/components/AccountPasswordPanel";
+import OwnerDevelopmentAnalytics from "@/components/OwnerDevelopmentAnalytics";
 import ImpactScoringWorkspace from "@/components/ImpactScoringWorkspace";
 import type { ExecutionAuthorityRole } from "@/lib/executionAuthority";
 import { useSessionDraftState } from "@/lib/sessionDraft";
@@ -2547,6 +2548,8 @@ function Settings({
     {project&&<div className="fullWidth" aria-label="AI Administration">
       <AiOperationsDashboard projectId={project.id} currentUserId={currentUserId} canManageAi={canManageAi}/>
     </div>}
+
+    {project&&membership?.role==="owner"&&<div className="fullWidth" aria-label="Owner Development Analytics Administration"><OwnerDevelopmentAnalytics projectId={project.id} compact /></div>}
 
     {project&&membership?.role==="owner"&&<div className="fullWidth" aria-label="Owner Optimizer Administration">
       <OwnerOptimizerDashboard projectId={project.id}/>
