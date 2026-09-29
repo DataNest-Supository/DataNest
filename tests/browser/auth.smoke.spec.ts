@@ -164,7 +164,7 @@ test("public surface exposes canonical operator and governance identity", async 
   const trustMark = page.getByRole("link", { name: "RSGP Governed" });
   await expect(trustMark).toBeVisible();
   await expect(trustMark).toHaveAttribute("data-trust-kind", "governance");
-  await expect(trustMark).toHaveAttribute("href", /view=governance/);
+  await expect(trustMark).toHaveAttribute("href", /\/governance$/);
 
   const footer = page.getByRole("contentinfo");
   await expect(footer).toContainText("Resonance Sole Proprietorship");
