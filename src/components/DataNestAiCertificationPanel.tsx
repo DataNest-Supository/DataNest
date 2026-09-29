@@ -36,11 +36,24 @@ type MemoryReviewItem={
   promoted_at:string;
 };
 
+type MemoryOutcomeItem={
+  id:string;
+  memory_id:string;
+  usage_receipt_id:string;
+  signal:"supported"|"neutral"|"challenged"|"contradicted"|"unknown";
+  outcome_kind:string;
+  summary:string;
+  review_triggered:boolean;
+  recorder_role:"owner"|"admin";
+  created_at:string;
+};
+
 type WorkspaceResponse={
   role:"owner"|"admin";
   candidates:Candidate[];
   validationRuns:ValidationRun[];
   memoryReviewItems:MemoryReviewItem[];
+  memoryOutcomeItems:MemoryOutcomeItem[];
 };
 
 type Props={
@@ -70,7 +83,8 @@ function normalizeWorkspaceResponse(data:unknown,fallbackRole:"owner"|"admin"):W
     role:responseRole,
     candidates:Array.isArray(record.candidates)?record.candidates as Candidate[]:[],
     validationRuns:Array.isArray(record.validationRuns)?record.validationRuns as ValidationRun[]:[],
-    memoryReviewItems:Array.isArray(record.memoryReviewItems)?record.memoryReviewItems as MemoryReviewItem[]:[]
+    memoryReviewItems:Array.isArray(record.memoryReviewItems)?record.memoryReviewItems as MemoryReviewItem[]:[],
+    memoryOutcomeItems:Array.isArray(record.memoryOutcomeItems)?record.memoryOutcomeItems as MemoryOutcomeItem[]:[]
   };
 }
 
@@ -228,6 +242,35 @@ export default function DataNestAiCertificationPanel({
       </div>
     </>}
 
+    {(workspace?.memoryOutcomeItems.length||0)>0&&<>
+      <div className="rowBetween">
+        <div>
+          <h4>Verified Memory outcome evidence</h4>
+          <p className="muted">Outcome signals are audit evidence, not automatic truth. Challenges can accelerate review; positive use never raises certification authority by itself.</p>
+        </div>
+        <span className="countPill">{workspace?.memoryOutcomeItems.length||0}</span>
+      </div>
+      <div className="manifestList">
+        {(workspace?.memoryOutcomeItems||[]).slice(0,12).map(item=><article className="manifestCard" key={item.id}>
+          <div className="rowBetween">
+            <div>
+              <b>{item.signal.replaceAll("_"," ")}</b>
+              <small>{item.outcome_kind.replaceAll("_"," ")+" · "+formatDate(item.created_at)}</small>
+            </div>
+            <span className={"badge "+(item.signal==="contradicted"||item.signal==="challenged"?"warn":"good")}>
+              {item.review_triggered?"REVIEW TRIGGERED":"EVIDENCE ONLY"}
+            </span>
+          </div>
+          <p>{item.summary}</p>
+          <div className="manifestMeta">
+            <span>{"memory "+item.memory_id.slice(0,8)}</span>
+            <span>{"receipt "+item.usage_receipt_id.slice(0,8)}</span>
+            <span>{"recorded by "+item.recorder_role}</span>
+          </div>
+        </article>)}
+      </div>
+    </>}
+
     <div className="manifestList">
       {(workspace?.candidates||[]).map(candidate=>{
         const gateState=runsByCandidate.get(candidate.id)||new Map<string,boolean>();
@@ -295,7 +338,7 @@ export default function DataNestAiCertificationPanel({
         </article>;
       })}
 
-      {workspace&&workspace.candidates.length===0&&workspace.memoryReviewItems.length===0&&<div className="emptyState">
+      {workspace&&workspace.candidates.length===0&&workspace.memoryReviewItems.length===0&&workspace.memoryOutcomeItems.length===0&&<div className="emptyState">
         <div>◇</div>
         <h3>No learning or memory-review work queued</h3>
         <p>Repeated staged evidence creates learning candidates; Certified Memory enters this queue when its governed review date is due.</p>
