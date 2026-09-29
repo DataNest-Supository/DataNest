@@ -2493,7 +2493,7 @@ function Settings({
     <div className="panel"><p className="eyebrow">PROJECT</p><h3>{project?.name||DATANEST_CANONICAL_NAME}</h3><dl className="settingsList"><div><dt>Slug</dt><dd>{project?.slug||"resonance-datanest"}</dd></div><div><dt>Status</dt><dd><Badge value={project?.status||"ACTIVE"}/></dd></div><div><dt>Access role</dt><dd><Badge value={(membership?.role||"viewer").toUpperCase()}/></dd></div><div><dt>GitHub</dt><dd>DataNest-Supository/DataNest</dd></div><div><dt>Supabase</dt><dd>sgqdmfgjbprsoqsmgigi</dd></div><div><dt>Hosting</dt><dd>Provider-agnostic</dd></div><div><dt>Production host</dt><dd>GitHub Pages</dd></div></dl></div>
     <div className="panel"><p className="eyebrow">TOOLS</p><h3>Tool registry</h3>{tools.map(tool=><div className="settingRow" key={tool.id}><div><b>{tool.name}</b><small>{tool.role}</small></div><Badge value={tool.enabled?"ACTIVE":"DISABLED"}/></div>)}</div>
     <RonsasIntegrationPanel/>
-    <div className="fullWidth"><AccountPasswordPanel/></div>
+    <div className="fullWidth">{project&&<AccountPasswordPanel projectId={project.id}/>}</div>
     {project&&<RecoveryDiagnosticsPanel projectId={project.id} hydrated={recoveryHydrated} ledgerError={recoveryLedgerError} lastSyncedAt={recoveryLastSyncedAt} syncing={recoverySyncing} onSync={synchronizeDurableRecoveries}/>}
     {project&&<div className="fullWidth" aria-label="AI Administration">
       <AiOperationsDashboard projectId={project.id} currentUserId={currentUserId} canManageAi={canManageAi}/>
