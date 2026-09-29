@@ -1,5 +1,6 @@
 "use client";
 import type { AssessmentBundle } from "@/lib/externalAuditTypes";
+import EvidencePanel from "@/components/platform/EvidencePanel";
 
 export default function ExternalAuditDocuments({bundle,onPublish}:{bundle:AssessmentBundle;onPublish:()=>void}){
   const download=(kind:"json"|"csv")=>{
@@ -24,6 +25,15 @@ export default function ExternalAuditDocuments({bundle,onPublish}:{bundle:Assess
       </div>
     </div>
     <p className="muted">Assessment {bundle.assessment.id} · revision {bundle.assessment.revision}. This is an assisted assessment record, not an ISO certificate or accreditation decision.</p>
+    <EvidencePanel
+      title="Evidence provenance"
+      items={[
+        {label:"Assessment",value:bundle.assessment.id+" · revision "+bundle.assessment.revision},
+        {label:"Source snapshots",value:String(bundle.sources.length)},
+        {label:"Review / trace events",value:String(bundle.events.length)},
+        {label:"Recovery path",value:"Preserve source → review finding → governed UNIFI handoff → publish immutable version"}
+      ]}
+    />
     <div className="externalAuditGrid">
       <article><b>Evidence register</b><span>{bundle.sources.length} snapshots</span><small>{bundle.sources.filter(s=>s.acquisition_state!=="captured").length} coverage gaps</small></article>
       <article><b>Findings register</b><span>{bundle.findings.length} findings</span><small>{bundle.findings.filter(f=>f.claim_kind!=="observed").length} inferred / unknown</small></article>

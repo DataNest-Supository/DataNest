@@ -8,7 +8,7 @@ import { DATANEST_LOGO_SRC } from "@/lib/brand";
 import { getRonsasStatus } from "@/lib/ronsas";
 import { DATANEST_CANONICAL_NAME, RESON8_HUB_URL } from "@/lib/reson8";
 import { SPARKS_TASK_COMPLETE, SPARKS_TASK_EVIDENCE, SPARKS_TASK_START, SPARKS_WORKSPACE_DESCRIPTION } from "@/lib/ecosystemAuthority";
-import { workflowPhaseForView, workflowPhases } from "@/lib/workflowPhases";
+import { workflowPhaseForView } from "@/lib/workflowPhases";
 import JobInviteForm from "@/components/JobInviteForm";
 import ResonanceHome from "@/components/ResonanceHome";
 import MotionControl from "@/components/MotionControl";
@@ -17,6 +17,11 @@ import ResourceFabricPanel from "@/components/ResourceFabricPanel";
 import RecoveryDiagnosticsPanel from "@/components/RecoveryDiagnosticsPanel";
 import AccountPasswordPanel from "@/components/AccountPasswordPanel";
 import OwnerDevelopmentAnalytics from "@/components/OwnerDevelopmentAnalytics";
+import GlobalNavigation from "@/components/platform/GlobalNavigation";
+import LifecycleRail from "@/components/platform/LifecycleRail";
+import ContextStrip from "@/components/platform/ContextStrip";
+import PlatformShell from "@/components/platform/PlatformShell";
+import type { NavigationItem } from "@/components/platform/navigationTypes";
 import ImpactScoringWorkspace from "@/components/ImpactScoringWorkspace";
 import type { ExecutionAuthorityRole } from "@/lib/executionAuthority";
 import { useSessionDraftState } from "@/lib/sessionDraft";
@@ -113,26 +118,26 @@ const preparedJobStates = new Set(["PLANNED","READY","QUEUED"]);
 const finalStates = new Set(["COMPLETED","FAILED","CANCELLED"]);
 const jobColumns = "id,job_number,title,description,priority,status,required_capabilities,requirements,acceptance,created_at,updated_at,deadline";
 
-const nav:Array<{key:ViewKey;label:string;group:string;glyph:string}> = [
-  {key:"dashboard",label:"Control Center",group:"Core",glyph:"▦"},
-  {key:"overview",label:"AI & I",group:"Core",glyph:"◎"},
-  {key:"ai",label:"DataNest AI",group:"Core",glyph:"✦"},
-  {key:"stakeholder",label:"Stakeholder",group:"Discover",glyph:"◌"},
-  {key:"sparks",label:"Sparks",group:"Discover",glyph:"✧"},
-  {key:"impact",label:"Impact",group:"Discover",glyph:"◉"},
-  {key:"thinktank",label:"Think Tanks",group:"Discover",glyph:"◈"},
-  {key:"governance",label:"Governance",group:"Govern & Build",glyph:"◆"},
-  {key:"products",label:"Products",group:"Govern & Build",glyph:"◉"},
-  {key:"external_auditor",label:"External Auditor",group:"Govern & Build",glyph:"◫"},
-  {key:"productlab",label:"Product Lab",group:"Govern & Build",glyph:"▣"},
-  {key:"unifi",label:"UNIFI Planner",group:"Execute",glyph:"◇"},
-  {key:"scheduler",label:"TranScheduler",group:"Execute",glyph:"⌁"},
-  {key:"runs",label:"Runs",group:"Execute",glyph:"▶"},
-  {key:"checkpoints",label:"Checkpoints",group:"Verify",glyph:"↺"},
-  {key:"audit",label:"Audit",group:"Verify",glyph:"≡"},
-  {key:"transparency",label:"Transparency",group:"Verify",glyph:"◎"},
-  {key:"settings",label:"Settings",group:"System",glyph:"⚙"}
-];
+const nav:Array<NavigationItem & {key:ViewKey;glyph:string}> = [
+  {key:"dashboard",label:"Control Center",group:"Core",glyph:"▦",id:"dashboard",phase:null,keywords:["dashboard","control","operations","governance"]},
+  {key:"overview",label:"AI & I",group:"Core",glyph:"◎",id:"overview",phase:null,keywords:["home","intent","overview"]},
+  {key:"ai",label:"DataNest AI",group:"Core",glyph:"✦",id:"ai",phase:null,keywords:["ai","assistant","core"]},
+  {key:"stakeholder",label:"Stakeholder",group:"Discover",glyph:"◌",id:"stakeholder",phase:"discover",keywords:["stakeholder","contribution"]},
+  {key:"sparks",label:"Sparks",group:"Discover",glyph:"✧",id:"sparks",phase:"discover",keywords:["sparks","ideas"]},
+  {key:"impact",label:"Impact",group:"Discover",glyph:"◉",id:"impact",phase:null,keywords:["impact","verification","scoring"]},
+  {key:"thinktank",label:"Think Tanks",group:"Discover",glyph:"◈",id:"thinktank",phase:"discover",keywords:["think","research","collaboration"]},
+  {key:"governance",label:"Governance",group:"Govern & Build",glyph:"◆",id:"governance",phase:"govern",keywords:["governance","policy","decisions"]},
+  {key:"products",label:"Products",group:"Govern & Build",glyph:"◉",id:"products",phase:"build",keywords:["products","portfolio"]},
+  {key:"external_auditor",label:"External Auditor",group:"Govern & Build",glyph:"◫",id:"external_auditor",phase:null,keywords:["audit","external","review"]},
+  {key:"productlab",label:"Product Lab",group:"Govern & Build",glyph:"▣",id:"productlab",phase:"build",keywords:["product","lab","test"]},
+  {key:"unifi",label:"UNIFI Planner",group:"Execute",glyph:"◇",id:"unifi",phase:"execute",keywords:["unifi","plan","manifest"]},
+  {key:"scheduler",label:"TranScheduler",group:"Execute",glyph:"⌁",id:"scheduler",phase:"execute",keywords:["schedule","gantt","queue"]},
+  {key:"runs",label:"Runs",group:"Execute",glyph:"▶",id:"runs",phase:"execute",keywords:["runs","execution"]},
+  {key:"checkpoints",label:"Checkpoints",group:"Verify",glyph:"↺",id:"checkpoints",phase:"verify",keywords:["checkpoint","resume"]},
+  {key:"audit",label:"Audit",group:"Verify",glyph:"≡",id:"audit",phase:"verify",keywords:["audit","events"]},
+  {key:"transparency",label:"Transparency",group:"Verify",glyph:"◎",id:"transparency",phase:"verify",keywords:["transparency","evidence"]},
+  {key:"settings",label:"Settings",group:"System",glyph:"⚙",id:"settings",phase:null,keywords:["settings","administration"]}
+]
 
 type CommandItem =
   | {kind:"view";id:ViewKey;key:ViewKey;label:string;group:string;glyph:string;description:string}
@@ -1431,7 +1436,6 @@ export default function DataNestApp({session}:{session:Session}) {
   const previousViewKey=workflowPrevious[view]||null;
   const nextViewItem=nextViewKey ? nav.find(item=>item.key===nextViewKey)||null : null;
   const previousViewItem=previousViewKey ? nav.find(item=>item.key===previousViewKey)||null : null;
-  const groups=Array.from(new Set(nav.map(item=>item.group)));
   const healthLabel=health.state==="checking"
     ? "Checking control plane"
     : health.state==="online"
@@ -1444,6 +1448,8 @@ export default function DataNestApp({session}:{session:Session}) {
     className={"appFrame "+(aiSidebarOpen?"aiDockOpen ":"")+(companionReserve>0?"companionRailReserved":"")}
     style={companionReserve>0?({"--companion-reserve":companionReserve+"px"} as CSSProperties):undefined}
   >
+    <PlatformShell
+      navigation={<>
     <a className="skipLink" href="#workspace-title" onClick={event=>{event.preventDefault();workspaceTitleRef.current?.focus();}}>Skip to workspace</a>
     <aside id="datanest-navigation" aria-label="DataNest navigation" className={"sidebar "+(mobileOpen?"open":"")}>
       <div className="sidebarTop">
@@ -1452,20 +1458,12 @@ export default function DataNestApp({session}:{session:Session}) {
         <button className="closeMenu" onClick={()=>setMobileOpen(false)} aria-label="Close menu" aria-controls="datanest-navigation">×</button>
       </div>
       <div className="projectPill"><span className="liveDot"/><div><small>PROJECT</small><strong>{project?.name||DATANEST_CANONICAL_NAME}</strong></div></div>
-      <nav className="navStack" aria-label="Project workspaces">
-        {groups.map(group=><details className="navGroup navDisclosure" key={group+String(nav.some(item=>item.group===group&&item.key===view))} open={group==="Core"||nav.some(item=>item.group===group&&item.key===view)}>
-          <summary>{group}</summary>
-          {nav.filter(item=>item.group===group).map(item=><button
-            key={item.key}
-            className={(view===item.key?"active ":"")+(item.key==="ai"?"aiHeroNav":"")}
-            aria-label={item.label}
-            aria-current={view===item.key?"page":undefined}
-            onClick={()=>{setView(item.key);setMobileOpen(false);}}
-          >
-            <span aria-hidden="true">{item.glyph}</span>{item.label}
-          </button>)}
-        </details>)}
-      </nav>
+      <GlobalNavigation
+        items={nav}
+        currentView={view}
+        onNavigate={next=>{setView(next as ViewKey);setMobileOpen(false);}}
+        onOpenQuickSwitch={openCommandPalette}
+      />
       {ronsasHubUrl&&<a
         className="ronsasNavLaunch"
         href={ronsasHubUrl}
@@ -1556,7 +1554,8 @@ export default function DataNestApp({session}:{session:Session}) {
       </section>
     </div>}
 
-    <main className="mainPane">
+      </>}
+      topbar={
       <header className="topbar">
         <button className="menuButton" onClick={()=>setMobileOpen(true)} aria-label="Open menu" aria-controls="datanest-navigation" aria-expanded={mobileOpen}>☰</button>
         <div className="topbarTitle">
@@ -1621,28 +1620,24 @@ export default function DataNestApp({session}:{session:Session}) {
           </details>
         </div>
       </header>
-
-      <div className="contentPane">
+      }
+      context={project?<ContextStrip
+        projectName={project.name}
+        applicationName={currentLabel}
+        phase={currentPhase}
+        status={project.status}
+        nextAction={nextViewItem?.label}
+      />:undefined}
+    >
         {view!=="overview"&&<nav className="workspaceWayfinding" aria-label="Workspace location">
           <button type="button" onClick={()=>setView("overview")}>← AI &amp; I home</button>
           <span aria-hidden="true">/</span><span aria-current="page">{currentLabel}</span>
         </nav>}
-        {view!=="overview"&&view!=="settings"&&<nav className={"workflowPhaseRail "+(view==="ai"?"aiViewPhaseRail":"")} aria-label="DataNest lifecycle phases">
-          <div className="workflowPhaseSteps">
-            {workflowPhases.map((phase,index)=>{
-              const active=phase.id===currentPhase;
-              return <button
-                key={phase.id}
-                type="button"
-                className={active?"active":""}
-                aria-current={active?"step":undefined}
-                aria-label={active?phase.label+" phase · current": "Go to "+phase.label+" phase"}
-                onClick={()=>setView((active?view:phase.destination) as ViewKey)}
-              ><span>{"0"+(index+1)}</span><b>{phase.label}</b></button>;
-            })}
-          </div>
-          <button className={"workflowPhaseAi "+(view==="ai"?"active":"")} type="button" aria-current={view==="ai"?"page":undefined} onClick={()=>setView("ai")}><span aria-hidden="true">✦</span><b>AI CORE</b><small>cross-phase</small></button>
-        </nav>}
+        {view!=="overview"&&view!=="settings"&&<LifecycleRail
+          currentPhase={currentPhase}
+          aiActive={view==="ai"}
+          onNavigate={destination=>setView(destination as ViewKey)}
+        />}
         {pendingRecoveries.length>0&&<section id="mutation-recovery-center" className="mutationRecoveryCenter" aria-label="Unresolved operations" aria-live="polite">
           <div className="mutationRecoveryHead">
             <div>
@@ -1738,7 +1733,7 @@ export default function DataNestApp({session}:{session:Session}) {
           health={health}
           onNavigate={next=>setView(next)}
         />}
-                {!loadingCore&&project&&view==="overview"&&<ResonanceHome project={project} jobs={recentJobs} counts={summary} canOperate={canOperate} onNavigate={setView}/>}
+        {!loadingCore&&project&&view==="overview"&&<ResonanceHome project={project} jobs={recentJobs} counts={summary} canOperate={canOperate} onNavigate={setView}/>}
         {!loadingCore&&project&&view==="stakeholder"&&<StakeholderWorkspace projectId={project.id} currentUserId={session.user.id} canReview={canManageAi} onOpenMatchedJobs={()=>{setSchedulerRequirementFocus(null);setSchedulerInterestOnly(true);setSchedulerSortMode("interest");setSchedulerFilter("ALL");setSchedulerViewMode("gantt");setJobPage(0);setView("scheduler");}} onOpenRequirementJobs={key=>{setSchedulerRequirementFocus(key);setSchedulerInterestOnly(false);setSchedulerSortMode("priority");setSchedulerFilter("ALL");setSchedulerViewMode("gantt");setJobPage(0);setView("scheduler");}}/>}
         {!loadingCore&&project&&["sparks","productlab","unifi"].includes(view)&&!recoveryHydrated&&<section className="panel" role="status" aria-live="polite">
           <p className="eyebrow">DURABLE RECOVERY</p>
@@ -1773,8 +1768,7 @@ export default function DataNestApp({session}:{session:Session}) {
             {nextViewItem&&<button className="primaryButton compact" type="button" onClick={()=>setView(nextViewItem.key)}>Continue · {nextViewItem.label} →</button>}
           </div>
         </nav>}
-      </div>
-    </main>
+    </PlatformShell>
 
     {!loadingCore&&project&&aiSidebarOpen&&<ExternalAiSidebar
       projectId={project.id}

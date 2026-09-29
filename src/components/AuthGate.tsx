@@ -3,10 +3,12 @@
 import dynamic from "next/dynamic";
 import CollaborationVisual from "./CollaborationVisual";
 import MotionControl from "./MotionControl";
+import ResonanceBrandLockup from "./platform/ResonanceBrandLockup";
+import GovernanceTrustMark from "./platform/GovernanceTrustMark";
+import PlatformFooter from "./platform/PlatformFooter";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
-import { DATANEST_LOGO_SRC } from "@/lib/brand";
 import { DATANEST_CANONICAL_NAME, DATANEST_PUBLIC_URL, RESON8_HUB_URL } from "@/lib/reson8";
 
 const DataNestApp = dynamic(() => import("@/components/DataNestApp"), {
@@ -29,15 +31,6 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
       window.setTimeout(() => reject(new Error("Authentication service did not respond in time.")), timeoutMs);
     })
   ]);
-}
-
-function AuthBrand() {
-  return (
-    <div className="authBrand" aria-label="Resonance Data Nest brand">
-      <span className="authLogo" aria-hidden="true"><img src={DATANEST_LOGO_SRC} alt="" /></span>
-      <span className="authBrandCopy"><strong>Resonance Data Nest</strong></span>
-    </div>
-  );
 }
 
 export default function AuthGate() {
@@ -210,7 +203,7 @@ export default function AuthGate() {
     return (
       <main className="authShell" role="status" aria-live="polite" aria-busy="true">
         <section className="authCard">
-          <AuthBrand />
+          <ResonanceBrandLockup />
           <h1>{DATANEST_CANONICAL_NAME}</h1>
           <div className="bootRow">
             <div className="bootPulse" aria-hidden="true" />
@@ -228,7 +221,7 @@ export default function AuthGate() {
     return (
       <main className="authShell">
         <section className="authCard" role="alert">
-          <AuthBrand />
+          <ResonanceBrandLockup />
           <h1>{DATANEST_CANONICAL_NAME}</h1>
           <p className="lede">{startupMessage}</p>
           <div className="setupBox">
@@ -245,7 +238,7 @@ export default function AuthGate() {
     return (
       <main className="authShell">
         <section className="authCard" role="alert">
-          <AuthBrand />
+          <ResonanceBrandLockup />
           <h1>Connection problem</h1>
           <p className="lede">{startupMessage || "DataNest could not reach the authentication service."}</p>
           <button className="primaryButton" type="button" onClick={() => void initialize()}>
@@ -261,7 +254,7 @@ export default function AuthGate() {
     return (
       <main className="authShell">
         <section className="authCard">
-          <AuthBrand />
+          <ResonanceBrandLockup />
           <h1>Set a new DataNest password</h1>
           <p className="lede">Choose a new password to finish secure account recovery or invitation setup.</p>
           <form onSubmit={submitNewPassword} className="authForm" aria-busy={busy}>
@@ -289,8 +282,8 @@ export default function AuthGate() {
     <main className="authShell authLanding">
       <a className="skipLink" href="#sign-in-email">Skip to sign in</a>
       <header className="landingHeader">
-        <a className="landingBrand" href="#" aria-label="Resonance Data Nest home"><span className="landingLogo" aria-hidden="true"><img src={DATANEST_LOGO_SRC} alt="" /></span><span className="landingBrandText"><b>Resonance Data Nest</b></span></a>
-        <div className="landingHeaderActions"><a className="landingHubLink" href={RESON8_HUB_URL} target="_blank" rel="noreferrer">Reson8 Hub <span aria-hidden="true">↗</span></a><a className="landingHubLink" href="./transparency">Public Audit Library <span aria-hidden="true">↗</span></a><MotionControl/></div>
+        <a className="landingBrand" href="#" aria-label="Resonance DataNest home"><ResonanceBrandLockup compact /></a>
+        <div className="landingHeaderActions"><GovernanceTrustMark/><a className="landingHubLink" href={RESON8_HUB_URL} target="_blank" rel="noreferrer">Reson8 Hub <span aria-hidden="true">↗</span></a><a className="landingHubLink" href="./transparency">Public Audit Library <span aria-hidden="true">↗</span></a><MotionControl/></div>
       </header>
       <div className="landingLayout">
       <section className="landingStory" aria-labelledby="landing-title">
@@ -306,7 +299,7 @@ export default function AuthGate() {
         </ol>
       </section>
       <section className="authCard landingSignIn" aria-labelledby="sign-in-title">
-        <AuthBrand />
+        <ResonanceBrandLockup />
         <h1 id="sign-in-title">{DATANEST_CANONICAL_NAME}</h1>
         <p className="lede">Welcome to your workspace. Sign in to continue.</p>
 
@@ -351,7 +344,7 @@ export default function AuthGate() {
         <p className="securityNote">Sign in with your authorized account. Need access? Ask your project administrator for an invitation.</p>
       </section>
       </div>
-      <footer className="landingFooter"><span>Human direction. Governed intelligence.</span><span>Project access by invitation</span></footer>
+      <PlatformFooter compact />
     </main>
   );
 }

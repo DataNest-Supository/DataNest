@@ -7,6 +7,9 @@ import { useSingleFlight } from "@/lib/singleFlight";
 import { clearPendingMutation, getOrCreatePendingMutation, loadPendingMutation, markPendingMutationDurable, markPendingMutationVerification, type PendingMutationIntent } from "@/lib/pendingMutation";
 import { markDurableRecoveryVerification, registerDurableRecovery, resolveDurableRecovery } from "@/lib/durableRecovery";
 import { reconcileServerMutation, type MutationReconciliationState } from "@/lib/mutationReconciliation";
+import PageHeader from "@/components/platform/PageHeader";
+import StatusIndicator from "@/components/platform/StatusIndicator";
+import EvidencePanel from "@/components/platform/EvidencePanel";
 
 type Surface={
   id:string;project_id:string;name:string;url:string;environment:string;status:string;
@@ -377,6 +380,24 @@ export default function ProductLab({
   }
 
   return <div className="productLab">
+    <section className="panel" aria-label="Product Lab workspace overview">
+      <PageHeader
+        eyebrow="BUILD · PRODUCT LAB"
+        title="Build verification workspace"
+        description="Validate immutable product surfaces and versioned test evidence before release decisions."
+        meta={<StatusIndicator label={realtime==="connected"?"Live evidence connected":"Evidence feed "+realtime} tone={realtime==="connected"?"success":"info"} detail={canOperate?"Operator validation controls available":"Read-only validation evidence"}/>}
+      />
+    </section>
+    <EvidencePanel
+      title="Product Lab evidence"
+      items={surfaces.length||metrics.total?[
+        {label:"Versioned surfaces",value:String(surfaces.length)},
+        {label:"Active test cases",value:String(visibleCases.length)},
+        {label:"Passing results",value:String(metrics.pass)},
+        {label:"Fail / blocked",value:String(metrics.fail+metrics.blocked)}
+      ]:[]}
+      emptyState={<span>No versioned Product Lab evidence exists yet. Register an immutable product surface, then add the first validation case before release review.</span>}
+    />
     {hasSessionDraft&&<p className="muted" role="status">Browser-session draft active · unfinished Product Lab inputs are restored after workspace navigation or reload.</p>}
     <section className="sectionIntro">
       <p className="eyebrow">PRODUCT LAB</p>

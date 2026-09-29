@@ -8,6 +8,9 @@ import PortfolioRegistryPanel from "@/components/PortfolioRegistryPanel";
 import { type PortfolioRegistryRow, type PortfolioRole } from "@/lib/portfolioRegistry";
 import { getRonsasAppLaunch } from "@/lib/ronsasApps";
 import { getRonsasStatus } from "@/lib/ronsas";
+import PageHeader from "@/components/platform/PageHeader";
+import StatusIndicator from "@/components/platform/StatusIndicator";
+import EvidencePanel from "@/components/platform/EvidencePanel";
 
 
 type CatalogProduct = {
@@ -563,6 +566,24 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
   },[catalogRecords]);
 
   return <div className="productsWorkspace">
+    <section className="panel" aria-label="Products workspace overview">
+      <PageHeader
+        eyebrow="BUILD · GOVERNED PRODUCTS"
+        title="Governed product workspace"
+        description="Keep product identity, architecture, controls, evidence and application relationships attached to one governed record."
+        meta={<StatusIndicator label={catalogLoading?"Catalog syncing":catalogError?"Catalog needs attention":"Catalog ready"} tone={catalogError?"warning":catalogLoading?"info":"success"} detail="Free promotion active · paid checkout disabled"/>}
+      />
+    </section>
+    <EvidencePanel
+      title="Product evidence"
+      items={catalogProducts.length||catalogRecords.length||portfolioItems.length?[
+        {label:"Governed products",value:String(catalogProducts.length)},
+        {label:"Linked records",value:String(catalogRecords.length)},
+        {label:"Portfolio items",value:String(portfolioItems.length)},
+        {label:"Commercial state",value:"Free promotion · paid checkout disabled"}
+      ]:[]}
+      emptyState={<span>No governed product evidence is loaded yet. Import or register product records before release review.</span>}
+    />
     <nav className="productsModeTabs" aria-label="Products workspace mode">
       <button type="button" className={productsSection==="products"?"active":""} aria-pressed={productsSection==="products"} onClick={()=>setProductsMode("products")}>Governed Products</button>
       <button type="button" className={productsSection==="portfolio"?"active":""} aria-pressed={productsSection==="portfolio"} onClick={()=>setProductsMode("portfolio")}>Portfolio Registry</button>
@@ -598,7 +619,7 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
       {catalogShareNotice&&<div className="catalogShareNotice" role="status" aria-live="polite">{catalogShareNotice}</div>}
       {catalogError&&<div className="catalogError" role="alert">{catalogError}</div>}
       {catalogLoading&&<div className="catalogLoading" role="status">Loading governed product records…</div>}
-      {!catalogLoading&&!catalogError&&!catalogProducts.length&&<div className="catalogEmpty">No governed products have been imported for this project yet.</div>}
+      {!catalogLoading&&!catalogError&&!catalogProducts.length&&<div className="catalogEmpty"><strong>No governed products have been imported for this project yet.</strong><p>Product architecture, controls and evidence appear here after import. Import or register governed product records before release review.</p></div>}
 
       {catalogProducts.length>0&&<nav className="catalogNavigator" aria-label="Governed products">
         {catalogProducts.map((product,index)=>{

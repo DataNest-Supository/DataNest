@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 import { useSingleFlight } from "@/lib/singleFlight";
+import PageHeader from "@/components/platform/PageHeader";
 import {
   autonomyDescriptions,
   autonomyLabels,
@@ -309,6 +310,12 @@ export default function ExecutionAuthorityPanel({
   if(!workspace)return <section className="panel"><p className="muted">Authority & Execution workspace is unavailable.</p></section>;
 
   return <div className="executionAuthorityWorkspace">
+    <PageHeader
+      eyebrow="EXECUTE · AUTHORITY"
+      title="Governed execution sequence"
+      description="Intent → Plan → Dependencies → Authorization → Execution → Live status → Evidence"
+      meta={<span>Authorization state is evaluated before consequential execution. Availability alone never grants authority.</span>}
+    />
     {activeAction&&<p className="muted" role="status">Authority & Execution action in progress · duplicate submissions are blocked until the request finishes.</p>}
     <section className="executionAuthorityBoundary" aria-label="Execution authority boundaries">
       <p><b>Capacity reservation ≠ authorization lease.</b> A reservation allocates resource capacity; a Capability Lease authorizes a bounded operation.</p>

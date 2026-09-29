@@ -84,6 +84,11 @@ test("DataNest AI keeps the animated hero and a compact command-first workspace"
   await expect(page.getByRole("heading",{name:"DataNest AI",exact:true}).first()).toBeVisible();
   await expect(page.getByRole("heading",{name:"DEVELOPMENT COMMAND CHANNEL",exact:true})).toBeVisible();
   await expect(page.getByText("AI CORE LINKED",{exact:true})).toBeVisible();
+  const objectiveHeader=page.getByRole("region",{name:"DataNest AI objective"});
+  await expect(objectiveHeader).toBeVisible();
+  await expect(objectiveHeader.getByRole("heading",{name:"Governed AI workspace",exact:true})).toBeVisible();
+  await expect(objectiveHeader.getByText("JOB-00099 · AI Hero Layout Fixture",{exact:true})).toBeVisible();
+  await expect(objectiveHeader.getByRole("button",{name:"Open command composer",exact:true})).toBeEnabled();
   await expect(page.locator(".datanestAiHeroV2")).toBeVisible();
   await expect(page.getByText("Hosted CI · Cloud browser",{exact:true})).toBeVisible();
   await expect(page.getByText("Current objective",{exact:true})).toBeVisible();
@@ -177,6 +182,7 @@ test("DataNest AI keeps the animated hero and a compact command-first workspace"
     };
     return {
       workspace:rect(".datanestAiWorkspace"),
+      pageHeader:rect('[aria-label="DataNest AI objective"]'),
       hero:rect(".datanestAiHeroV2"),
       chat:rect(".datanestAiChatStage"),
       objective:rect(".datanestAiCommandSummaryCompact"),
@@ -187,6 +193,7 @@ test("DataNest AI keeps the animated hero and a compact command-first workspace"
     };
   });
 
+  expect(layout.pageHeader.y).toBeLessThanOrEqual(layout.hero.y);
   expect(layout.chat.y).toBeGreaterThanOrEqual(layout.hero.bottom-2);
   expect(layout.objective.y).toBeGreaterThanOrEqual(layout.chat.bottom-2);
   expect(layout.details.y).toBeGreaterThanOrEqual(layout.objective.bottom-2);

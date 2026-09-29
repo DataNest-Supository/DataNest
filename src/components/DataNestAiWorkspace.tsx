@@ -7,6 +7,8 @@ import DataNestAiMemoryPanel,{type CertifiedMemoryItem} from "@/components/DataN
 import DataNestAiCertificationPanel from "@/components/DataNestAiCertificationPanel";
 import IntelligenceFabricPanel from "@/components/IntelligenceFabricPanel";
 import JobInviteForm from "@/components/JobInviteForm";
+import PageHeader from "@/components/platform/PageHeader";
+import StatusIndicator from "@/components/platform/StatusIndicator";
 
 type Role="owner"|"admin"|"operator"|"viewer";
 
@@ -273,6 +275,18 @@ export default function DataNestAiWorkspace({
   const contextStatus=loading?"SYNCING":contextError||jobsError?"NEEDS ATTENTION":contextReady?"CONTEXT READY":"STANDBY";
 
   return <div className="datanestAiWorkspace">
+    <section className="panel" aria-label="DataNest AI objective">
+      <PageHeader
+        eyebrow="DATANEST AI · GOVERNED OBJECTIVE"
+        title="Governed AI workspace"
+        description={selectedJob?selectedJob.description||"Work inside the selected governed Job context.":"Select a governed Job Manifest before continuing."}
+        primaryAction={<button className="primaryButton compact" type="button" disabled={!contextReady} onClick={openAiWorkspace}>Open command composer</button>}
+        meta={<>
+          <StatusIndicator label={contextStatus} tone={contextReady?"success":contextError||jobsError?"warning":"info"} detail={contextReady?"Governed Job context ready":"Human review remains required"}/>
+          {selectedJob&&<span className="badge quiet">{jobCode(selectedJob)+" · "+selectedJob.title}</span>}
+        </>}
+      />
+    </section>
     {jobsError&&<section className="panel" role="alert"><p>{jobsError}</p><button className="secondaryButton" disabled={jobsLoading} onClick={()=>void loadJobs()}>Retry loading jobs</button></section>}
     {contextError&&<section className="panel" role="alert"><h3>Job context needs attention</h3><p>{contextError}</p><p className="muted">Your draft is preserved. Retry context loading before sending another command.</p><button className="secondaryButton" disabled={loading} onClick={()=>void refreshContext()}>Retry AI context</button></section>}
 

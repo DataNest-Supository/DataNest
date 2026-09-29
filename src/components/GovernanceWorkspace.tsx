@@ -9,6 +9,9 @@ import GovernanceImprovementPanel from "@/components/GovernanceImprovementPanel"
 import type { TrustPolicyRole } from "@/lib/trustPolicy";
 import { useSessionDraftState } from "@/lib/sessionDraft";
 import { useSingleFlight } from "@/lib/singleFlight";
+import PageHeader from "@/components/platform/PageHeader";
+import StatusIndicator from "@/components/platform/StatusIndicator";
+import EvidencePanel from "@/components/platform/EvidencePanel";
 
 type Protocol={
   id:string;project_id:string;protocol_key:string;version:number;title:string;mission:string|null;vision:string|null;
@@ -343,10 +346,28 @@ export default function GovernanceWorkspace({
   if(section==="authority")return <div>{governanceModeTabs}<ExecutionAuthorityPanel projectId={projectId} currentUserId={currentUserId} role={role} setNotice={setNotice} setError={setError}/></div>;
   if(section==="improvement")return <div>{governanceModeTabs}<GovernanceImprovementPanel projectId={projectId} setNotice={setNotice} setError={setError}/></div>;
   if(loading)return <section className="panel"><p className="muted">Loading Sovereign Governance…</p></section>;
-  if(!workspace)return <section className="panel"><p className="muted">Governance workspace is unavailable.</p></section>;
+  if(!workspace)return <section className="panel"><h2>Governance workspace unavailable</h2><p>Ratified protocol, proposals, decisions and dispute evidence belong here. Retry before treating any draft as adopted governance.</p><button className="secondaryButton compact" type="button" onClick={()=>void load()}>Retry governance workspace</button></section>;
 
   return <div>
     {governanceModeTabs}
+    <section className="panel" aria-label="Governance workspace overview">
+      <PageHeader
+        eyebrow="GOVERN · SOVEREIGN GOVERNANCE"
+        title="Governance decision workspace"
+        description="Review protocol, proposals and immutable decisions while keeping legal ownership, contracts and financial authority outside participation signals."
+        primaryAction={<button className="secondaryButton compact" type="button" onClick={()=>void load()}>Refresh</button>}
+        meta={<StatusIndicator label={workspace.ratified_protocol?"Ratified protocol active":"Human ratification required"} tone={workspace.ratified_protocol?"success":"warning"} detail={canManage?"Authorized governance controls available":"Governance evidence view"}/>}
+      />
+    </section>
+    <EvidencePanel
+      title="Governance evidence"
+      items={workspace.ratified_protocol||openProposals.length||workspace.decisions.length?[
+        ...(workspace.ratified_protocol?[{label:"Ratified protocol",value:"v"+workspace.ratified_protocol.version+" · "+workspace.ratified_protocol.title}]:[]),
+        ...(openProposals.length?[{label:"Open proposals",value:String(openProposals.length)}]:[]),
+        ...(workspace.decisions.length?[{label:"Immutable decisions",value:String(workspace.decisions.length)}]:[])
+      ]:[]}
+      emptyState={<span>No ratified protocol, open proposal, or immutable decision is recorded yet. Review governance inputs and involve an authorized project member before adopting a change.</span>}
+    />
     {activeAction&&<p className="muted" role="status">Governance action in progress · duplicate submissions are blocked until the request finishes.</p>}
     {hasSessionDraft&&<p className="muted" role="status">Browser-session draft active · unfinished Governance inputs are restored after workspace navigation or reload.</p>}
     <section className="heroPanel">

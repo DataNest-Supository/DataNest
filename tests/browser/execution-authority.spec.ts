@@ -157,7 +157,11 @@ test("TranScheduler keeps Gantt default and shows readiness without equating AVA
   await page.goto(appPath+"?view=scheduler");
 
   await expect(page.getByRole("button",{name:"Gantt chart",exact:true})).toHaveAttribute("aria-pressed","true");
-  await expect(page.getByRole("button",{name:"Authority & Execution",exact:true})).toBeVisible();
+  const authorityButton=page.getByRole("button",{name:"Authority & Execution",exact:true});
+  await expect(authorityButton).toBeVisible();
+  await authorityButton.click();
+  await expect(page.getByRole("heading",{name:"Governed execution sequence",exact:true})).toBeVisible();
+  await expect(page.getByText("Intent → Plan → Dependencies → Authorization → Execution → Live status → Evidence",{exact:true})).toBeVisible();
 
   await page.getByRole("button",{name:"Queue",exact:true}).click();
   await expect(page.getByText("Paused by policy",{exact:true})).toBeVisible();

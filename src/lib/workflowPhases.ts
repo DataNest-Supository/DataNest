@@ -7,7 +7,7 @@ export const workflowPhases = [
 ] as const;
 
 export type WorkflowPhaseId = typeof workflowPhases[number]["id"];
-export type WorkflowDestination = typeof workflowPhases[number]["destination"];
+export type WorkflowDestination = typeof workflowPhases[number]["destination"] | "ai";
 
 export function workflowPhaseForView(view:string):WorkflowPhaseId|null {
   if(["stakeholder","sparks","thinktank"].includes(view))return "discover";

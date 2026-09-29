@@ -163,6 +163,8 @@ test("External Auditor completes a governed traceable assessment flow", async ({
 
   await expect(page.getByText("Assessment created. Capture evidence, approve the standards profile, then analyze.")).toBeVisible();
   await expect(page.getByRole("heading",{name:"Traceable documentation"})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"Evidence provenance",exact:true})).toBeVisible();
+  await expect(page.getByText("Recovery path",{exact:true})).toBeVisible();
   await expect(page.getByText("Revision 1",{exact:true})).toBeVisible();
 
   await page.getByRole("button",{name:"Capture source snapshot"}).click();

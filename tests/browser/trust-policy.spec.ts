@@ -103,6 +103,11 @@ async function setup(page:Page,role:"viewer"|"operator"|"owner"){
 test("Trust & Data Policy deep link preserves Sovereign Governance as default",async({page})=>{
   await setup(page,"viewer");
   await page.goto(appPath+"?view=governance");
+  await expect(page.getByRole("region",{name:"Governance workspace overview"})).toBeVisible();
+  const governanceEvidence=page.getByRole("region",{name:"Governance evidence"});
+  await expect(governanceEvidence).toBeVisible();
+  await expect(governanceEvidence.getByText(/No ratified protocol, open proposal, or immutable decision is recorded yet/)).toBeVisible();
+  await expect(governanceEvidence.getByText(/authorized project member/i)).toBeVisible();
   await expect(page.getByRole("heading",{name:"Project governance"})).toBeVisible();
   await expect(page.getByRole("tab",{name:"Sovereign Governance"})).toHaveAttribute("aria-selected","true");
 

@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 import { WORK_FOCUS_AREAS, normalizeWorkFocusKeys, workFocusKeysFromRequirements, type WorkFocusKey } from "@/lib/workFocus";
+import PageHeader from "@/components/platform/PageHeader";
+import StatusIndicator from "@/components/platform/StatusIndicator";
+import EvidencePanel from "@/components/platform/EvidencePanel";
 
 type Workspace = {
   profile: Record<string,unknown>;
@@ -285,8 +288,8 @@ export default function StakeholderWorkspace({
   }
 
   if(loading)return <section className="panel"><p className="muted">Loading stakeholder workspace…</p></section>;
-  if(error&&!workspace)return <section className="panel"><div className="notice errorNotice">{error}</div></section>;
-  if(!workspace)return <section className="panel"><p className="muted">Stakeholder workspace is unavailable.</p></section>;
+  if(error&&!workspace)return <section className="panel" role="alert"><h2>Stakeholder workspace needs attention</h2><p>Contribution profiles, governed evidence and participation state appear here when the project workspace is available.</p><div className="notice errorNotice">{error}</div><button className="secondaryButton compact" type="button" onClick={()=>void load()}>Retry stakeholder workspace</button></section>;
+  if(!workspace)return <section className="panel"><h2>Stakeholder workspace unavailable</h2><p>Contribution profiles, evidence, reputation and governed participation state belong here. Retry the workspace before making contribution decisions.</p><button className="secondaryButton compact" type="button" onClick={()=>void load()}>Retry stakeholder workspace</button></section>;
 
   const simple=workspace.ui_complexity!=="detailed";
   const stakeholder=workspace.stakeholder||{};
@@ -300,6 +303,25 @@ export default function StakeholderWorkspace({
 
   return <>
     {error&&<div className="notice errorNotice">{error}</div>}
+
+    <section className="panel" aria-label="Stakeholder workspace overview">
+      <PageHeader
+        eyebrow="DISCOVER · STAKEHOLDER"
+        title="Contribution discovery workspace"
+        description="Review contribution evidence, reputation and work interests without conflating participation with legal ownership or authority."
+        primaryAction={<button className="secondaryButton compact" type="button" onClick={()=>void load()}>Refresh</button>}
+        meta={<StatusIndicator label={simple?"Simple view":"Detailed view"} tone="info" detail={canReview?"Human review controls available":"Contribution evidence view"}/>}
+      />
+    </section>
+    <EvidencePanel
+      title="Stakeholder evidence"
+      items={[
+        {label:"Project Sparks",value:fmt(projectSparks)},
+        {label:"Submitted contributions",value:String(Number(counts.submitted||0))},
+        {label:"Verified contributions",value:String(Number(counts.verified||0))},
+        {label:"Certified · rolling 90 days",value:String(Number(rolling.certified_contributions||0))}
+      ]}
+    />
 
     <section className="heroPanel">
       <div>

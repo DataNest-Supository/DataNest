@@ -105,3 +105,74 @@ test("expired stored session returns to a recoverable auth state", async ({ page
   ).toBeVisible();
   await expect(page.locator(".authShell")).toBeVisible();
 });
+
+
+test("theme defaults to Sovereign Dark and persists explicit light selection", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "light" });
+
+  await page.goto(appPath);
+
+  const root = page.locator("html");
+  const themeControl = page.getByRole("combobox", { name: "Theme preference" });
+  await expect(root).toHaveAttribute("data-theme", "dark");
+  await expect(themeControl).toHaveValue("dark");
+
+  await themeControl.selectOption("light");
+  await expect(root).toHaveAttribute("data-theme", "light");
+
+  await page.reload();
+  await expect(root).toHaveAttribute("data-theme", "light");
+  await expect(themeControl).toHaveValue("light");
+});
+
+test("invalid stored theme normalizes to system and follows system color scheme", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.addInitScript(() => localStorage.setItem("datanest-theme", "ultraviolet"));
+
+  await page.goto(appPath);
+
+  const root = page.locator("html");
+  const themeControl = page.getByRole("combobox", { name: "Theme preference" });
+  await expect(root).toHaveAttribute("data-theme", "light");
+  await expect(themeControl).toHaveValue("system");
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("datanest-theme"))).toBe("system");
+});
+
+test("theme layer honors reduced effects and high contrast without hiding sign-in", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce", forcedColors: "active" });
+  await page.goto(appPath);
+
+  await expect(page.getByLabel("Email")).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Theme preference" })).toBeVisible();
+
+  const tokens = await page.locator("html").evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      motionFast: style.getPropertyValue("--motion-duration-fast").trim(),
+      focusWidth: style.getPropertyValue("--focus-ring-width").trim()
+    };
+  });
+  expect(tokens.motionFast).toBe("0.01ms");
+  expect(Number.parseFloat(tokens.focusWidth)).toBeGreaterThanOrEqual(3);
+});
+
+
+test("public surface exposes canonical operator and governance identity", async ({ page }) => {
+  await page.goto(appPath);
+
+  await expect(page.getByText("Resonance DataNest", { exact: true }).first()).toBeVisible();
+  const trustMark = page.getByRole("link", { name: "RSGP Governed" });
+  await expect(trustMark).toBeVisible();
+  await expect(trustMark).toHaveAttribute("data-trust-kind", "governance");
+  await expect(trustMark).toHaveAttribute("href", /view=governance/);
+
+  const footer = page.getByRole("contentinfo");
+  await expect(footer).toContainText("Resonance Sole Proprietorship");
+  await expect(footer).toContainText("Resonance App Development");
+  await expect(footer).toContainText("Resonance DataNest");
+  await expect(footer).toContainText("free promotion");
+
+  await expect(trustMark).not.toContainText(/certif|accredit/i);
+  await expect(page.getByRole("link", { name: /buy|subscribe|checkout/i })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /buy|subscribe|checkout/i })).toHaveCount(0);
+});
