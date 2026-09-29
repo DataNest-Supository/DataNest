@@ -27,8 +27,12 @@ export function validateAuditDraft(raw:unknown,context:{sourceIds:string[];crite
     const observation=String(value.observation||"").trim();
     if(!observation)throw new Error("observation_required");
     const requestedClaim=String(value.claimKind||"unknown");
-    const claimKind:evidenceIds.length===0?"inferred":AuditDraftFinding["claimKind"]=
-      evidenceIds.length===0?"inferred":requestedClaim==="observed"||requestedClaim==="inferred"||requestedClaim==="unknown"?requestedClaim:"unknown";
+    const claimKind:AuditDraftFinding["claimKind"]=
+      evidenceIds.length===0
+        ?"inferred"
+        :requestedClaim==="observed"||requestedClaim==="inferred"||requestedClaim==="unknown"
+          ?requestedClaim
+          :"unknown";
     const severityRaw=String(value.severity||"info");
     const severity=(["info","low","medium","high","critical"].includes(severityRaw)?severityRaw:"info") as AuditDraftFinding["severity"];
     const confidence=Math.max(0,Math.min(1,Number(value.confidence??0)));
