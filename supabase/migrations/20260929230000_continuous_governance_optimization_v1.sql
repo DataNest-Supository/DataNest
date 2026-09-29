@@ -923,11 +923,11 @@ create or replace function public.review_governance_standard_v1(
 language sql
 security invoker
 set search_path=''
-as $
+as $rpc$
   select private.review_governance_standard_v1(
     target_standard,target_applicability_state,target_rationale,target_review_days,target_metadata
   );
-$;
+$rpc$;
 
 create or replace function public.record_governance_observation_v1(
   target_project uuid,
@@ -942,12 +942,12 @@ create or replace function public.record_governance_observation_v1(
 language sql
 security invoker
 set search_path=''
-as $
+as $rpc$
   select private.record_governance_observation_v1(
     target_project,target_source_kind,target_summary,target_severity,target_confidence,
     target_source_ref,target_evidence,target_observed_at
   );
-$;
+$rpc$;
 
 create or replace function public.create_governance_improvement_candidate_v1(
   target_project uuid,
@@ -965,13 +965,13 @@ create or replace function public.create_governance_improvement_candidate_v1(
 language sql
 security invoker
 set search_path=''
-as $
+as $rpc$
   select private.create_governance_improvement_candidate_v1(
     target_project,target_title,target_problem_statement,target_hypothesis,target_desired_outcome,
     target_source_observation_ids,target_standard_refs,target_risk_class,target_confidence,
     target_proposed_change,target_guardrails
   );
-$;
+$rpc$;
 
 create or replace function public.review_governance_improvement_candidate_v1(
   target_candidate uuid,
@@ -982,11 +982,11 @@ create or replace function public.review_governance_improvement_candidate_v1(
 language sql
 security invoker
 set search_path=''
-as $
+as $rpc$
   select private.review_governance_improvement_candidate_v1(
     target_candidate,target_decision,target_rationale,target_evidence
   );
-$;
+$rpc$;
 
 create or replace function public.convert_governance_improvement_to_proposal_v1(
   target_candidate uuid,
@@ -995,11 +995,11 @@ create or replace function public.convert_governance_improvement_to_proposal_v1(
 language sql
 security invoker
 set search_path=''
-as $
+as $rpc$
   select private.convert_governance_improvement_to_proposal_v1(
     target_candidate,target_proposal_type
   );
-$;
+$rpc$;
 
 create or replace function public.run_governance_improvement_cycle_v1(
   target_project uuid,
@@ -1008,9 +1008,9 @@ create or replace function public.run_governance_improvement_cycle_v1(
 language sql
 security invoker
 set search_path=''
-as $
+as $rpc$
   select private.run_governance_improvement_cycle_v1(target_project,target_window_days);
-$;
+$rpc$;
 
 create or replace function public.get_governance_improvement_workspace_v1(
   target_project uuid
@@ -1019,9 +1019,9 @@ language sql
 stable
 security invoker
 set search_path=''
-as $
+as $rpc$
   select private.get_governance_improvement_workspace_v1(target_project);
-$;
+$rpc$;
 
 alter table public.governance_standards_register enable row level security;
 alter table public.governance_observations enable row level security;
