@@ -172,7 +172,7 @@ with check (public.has_project_role(project_id,array['owner','admin','operator']
 revoke all on public.external_audit_events from anon,authenticated;
 grant select on public.external_audit_events to authenticated;
 grant select,insert,update on public.external_audit_assessments,public.external_audit_profiles,public.external_audit_sources,public.external_audit_findings,public.external_audit_actions,public.external_audit_reviewers,public.external_audit_documents to authenticated;
-grant select,insert,update on all tables in schema public to service_role;
+grant select,insert,update on public.external_audit_assessments,public.external_audit_profiles,public.external_audit_sources,public.external_audit_findings,public.external_audit_actions,public.external_audit_reviewers,public.external_audit_events,public.external_audit_documents to service_role;
 
 create or replace function public.create_external_audit_v1(
   target_project uuid,
