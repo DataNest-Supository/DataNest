@@ -414,6 +414,7 @@ export default function DataNestApp({session}:{session:Session}) {
   const [commandActiveIndex,setCommandActiveIndex]=useState(-1);
   const [ronsasHubUrl,setRonsasHubUrl]=useState(RESON8_HUB_URL);
   const commandInputRef=useRef<HTMLInputElement|null>(null);
+  const quickSwitchButtonRef=useRef<HTMLButtonElement|null>(null);
   const commandReturnFocusRef=useRef<HTMLElement|null>(null);
   const [aiSidebarOpen,setAiSidebarOpen]=useState(false);
   const [companionReserve,setCompanionReserve]=useState(0);
@@ -1186,7 +1187,7 @@ export default function DataNestApp({session}:{session:Session}) {
   },[project,checkControlPlane]);
 
   function openCommandPalette(){
-    commandReturnFocusRef.current=document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    commandReturnFocusRef.current=quickSwitchButtonRef.current ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
     setCommandQuery("");
     setCommandActiveIndex(-1);
     setCommandOpen(true);
@@ -1503,6 +1504,7 @@ export default function DataNestApp({session}:{session:Session}) {
             onClick={()=>document.getElementById("mutation-recovery-center")?.scrollIntoView({behavior:"smooth",block:"start"})}
           >Recovery <span>{pendingRecoveries.length}</span></button>}
           <button
+            ref={quickSwitchButtonRef}
             className="secondaryButton compact quickSwitchButton"
             type="button"
             onClick={openCommandPalette}
