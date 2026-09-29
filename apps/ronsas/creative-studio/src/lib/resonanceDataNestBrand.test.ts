@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 
-const appRoot=path.resolve(import.meta.dirname,"../..");
+const appRoot=path.resolve(import.meta.dirname,"..");
 const read=(relative:string)=>fs.existsSync(path.join(appRoot,relative))
   ?fs.readFileSync(path.join(appRoot,relative),"utf8")
   :"";
