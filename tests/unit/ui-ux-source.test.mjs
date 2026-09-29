@@ -10,6 +10,19 @@ const homeSource = fs.readFileSync(path.join(repoRoot, "src/components/Resonance
 const journeySource = fs.readFileSync(path.join(repoRoot, "src/components/PurposeJourney.tsx"), "utf8");
 const aiWorkspaceSource = fs.readFileSync(path.join(repoRoot, "src/components/DataNestAiWorkspace.tsx"), "utf8");
 const workflowPhasesSource = fs.readFileSync(path.join(repoRoot, "src/lib/workflowPhases.ts"), "utf8");
+const globalNavigationSource = fs.readFileSync(path.join(repoRoot, "src/components/platform/GlobalNavigation.tsx"), "utf8");
+const lifecycleRailSource = fs.readFileSync(path.join(repoRoot, "src/components/platform/LifecycleRail.tsx"), "utf8");
+const contextStripSource = fs.readFileSync(path.join(repoRoot, "src/components/platform/ContextStrip.tsx"), "utf8");
+const platformShellSource = fs.readFileSync(path.join(repoRoot, "src/components/platform/PlatformShell.tsx"), "utf8");
+const navigationTypesSource = fs.readFileSync(path.join(repoRoot, "src/components/platform/navigationTypes.ts"), "utf8");
+const readOptionalSource = (relativePath) => {
+  const absolutePath = path.join(repoRoot, relativePath);
+  return fs.existsSync(absolutePath) ? fs.readFileSync(absolutePath, "utf8") : "";
+};
+const pageHeaderSource = readOptionalSource("src/components/platform/PageHeader.tsx");
+const statusIndicatorSource = readOptionalSource("src/components/platform/StatusIndicator.tsx");
+const evidencePanelSource = readOptionalSource("src/components/platform/EvidencePanel.tsx");
+const governedActionSource = readOptionalSource("src/components/platform/GovernedAction.tsx");
 const sessionDraftSource = fs.readFileSync(path.join(repoRoot, "src/lib/sessionDraft.ts"), "utf8");
 const governanceSource = fs.readFileSync(path.join(repoRoot, "src/components/GovernanceWorkspace.tsx"), "utf8");
 const thinkTankSource = fs.readFileSync(path.join(repoRoot, "src/components/ThinkTankWorkspace.tsx"), "utf8");
@@ -31,6 +44,38 @@ const durableRecoveryMigrationSource = fs.readFileSync(path.join(repoRoot, "supa
 const durableRecoveryHardeningSource = fs.readFileSync(path.join(repoRoot, "supabase/migrations/20260927203127_harden_durable_mutation_recovery_idempotency.sql"), "utf8");
 const durableRecoveryObservabilitySource = fs.readFileSync(path.join(repoRoot, "supabase/migrations/20260927213827_add_mutation_recovery_observability.sql"), "utf8");
 const cssSource = fs.readFileSync(path.join(repoRoot, "src/app/globals.css"), "utf8");
+
+test("shared operational primitives require text-bearing semantic state and exact governed stages", () => {
+  assert.notEqual(pageHeaderSource, "", "PageHeader must exist");
+  assert.match(pageHeaderSource, /eyebrow:string/);
+  assert.match(pageHeaderSource, /title:string/);
+  assert.match(pageHeaderSource, /description\?:string/);
+  assert.match(pageHeaderSource, /primaryAction\?:ReactNode/);
+  assert.match(pageHeaderSource, /meta\?:ReactNode/);
+
+  assert.notEqual(statusIndicatorSource, "", "StatusIndicator must exist");
+  assert.match(statusIndicatorSource, /label:string/);
+  assert.match(statusIndicatorSource, /tone:"neutral"\|"info"\|"success"\|"warning"\|"danger"/);
+  assert.match(statusIndicatorSource, /detail\?:string/);
+  assert.match(statusIndicatorSource, /icon\?:ReactNode/);
+  assert.doesNotMatch(statusIndicatorSource, /label\?:string|color\?:string|hex\?:string/);
+
+  assert.notEqual(evidencePanelSource, "", "EvidencePanel must exist");
+  assert.match(evidencePanelSource, /type EvidenceItem = \{/);
+  assert.match(evidencePanelSource, /label:string/);
+  assert.match(evidencePanelSource, /value:string/);
+  assert.match(evidencePanelSource, /href\?:string/);
+  assert.match(evidencePanelSource, /emptyState\?:ReactNode/);
+
+  assert.notEqual(governedActionSource, "", "GovernedAction must exist");
+  assert.match(governedActionSource, /type GovernedActionStage = "proposed"\|"checked"\|"review-required"\|"authorized"\|"scheduled"\|"executed"\|"verified"/);
+  assert.match(governedActionSource, /stage:GovernedActionStage/);
+  assert.match(governedActionSource, /summary:string/);
+  assert.match(governedActionSource, /evidence\?:ReactNode/);
+  assert.match(governedActionSource, /reviewer\?:string/);
+  assert.match(governedActionSource, /onAction\?:\(\)=>void/);
+  assert.doesNotMatch(governedActionSource, /getSupabase|useEffect|fetch\(|\.rpc\(/);
+});
 
 test("mobile navigation keeps refresh and release controls reachable", () => {
   assert.match(appSource, /className="mobileNavActions"/);
@@ -84,7 +129,7 @@ test("workspace navigation canonicalizes overview and invalid view URLs", () => 
 test("mobile navigation exposes menu relationships and closes with Escape", () => {
   assert.match(appSource, /id="datanest-navigation" aria-label="DataNest navigation"/);
   assert.match(appSource, /aria-controls="datanest-navigation" aria-expanded=\{mobileOpen\}/);
-  assert.match(appSource, /aria-label="Project workspaces"/);
+  assert.match(globalNavigationSource, /aria-label="Project workspaces"/);
   assert.match(appSource, /event\.key==="Escape"/);
 });
 
@@ -174,8 +219,11 @@ test("workspace architecture follows the visible DataNest operating lifecycle", 
     assert.match(appSource, new RegExp('group:"'+group.replace("&","\\&")+'"'));
   }
   assert.match(appSource, /key:"ai",label:"DataNest AI",group:"Core"/);
-  assert.match(appSource, /open=\{group==="Core"\|\|nav\.some/);
-  assert.match(appSource, /item\.key==="ai"\?"aiHeroNav"/);
+  assert.match(globalNavigationSource, /open=\{group==="Core"\|\|items\.some/);
+  assert.match(globalNavigationSource, /item\.id==="ai"\?"aiHeroNav"/);
+  assert.match(navigationTypesSource, /export type NavigationItem = \{/);
+  assert.match(navigationTypesSource, /phase:WorkflowPhaseId\|null/);
+  assert.match(navigationTypesSource, /keywords:readonly string\[\]/);
 });
 
 test("workflow continuity maps specialist workspaces without breaking direct navigation", () => {
@@ -261,21 +309,39 @@ test("operational empty states route users to prerequisite workspaces", () => {
 
 test("specialist workspaces retain persistent lifecycle orientation", () => {
   assert.match(appSource, /workflowPhaseForView\(view\)/);
-  assert.match(appSource, /aria-label="DataNest lifecycle phases"/);
-  assert.match(appSource, /workflowPhases\.map/);
-  assert.match(appSource, /aria-current=\{active\?"step":undefined\}/);
-  assert.match(appSource, /Go to "\+phase\.label\+" phase"/);
-  assert.match(appSource, />AI CORE</);
-  assert.match(appSource, />cross-phase</);
+  assert.match(appSource, /<LifecycleRail/);
+  assert.match(lifecycleRailSource, /aria-label="DataNest lifecycle phases"/);
+  assert.match(lifecycleRailSource, /workflowPhases\.map/);
+  assert.match(lifecycleRailSource, /aria-current=\{active\?"step":undefined\}/);
+  assert.match(lifecycleRailSource, /"Go to "\+phase\.label\+" phase"/);
+  assert.match(lifecycleRailSource, />AI CORE</);
+  assert.match(lifecycleRailSource, />cross-phase</);
   assert.match(workflowPhasesSource, /\["stakeholder","sparks","thinktank"\]/);
   assert.match(workflowPhasesSource, /\["products","productlab"\]/);
   assert.match(workflowPhasesSource, /\["unifi","scheduler","runs"\]/);
   assert.match(workflowPhasesSource, /\["checkpoints","audit","transparency"\]/);
+  assert.match(workflowPhasesSource, /WorkflowDestination = typeof workflowPhases\[number\]\["destination"\] \| "ai"/);
   assert.match(cssSource, /\.workflowPhaseRail\{/);
   assert.match(cssSource, /@media\(max-width:860px\)[\s\S]*?\.workflowPhaseRail\{overflow-x:auto/);
   assert.match(cssSource, /@media\(max-width:520px\)[\s\S]*?\.workflowPhaseRail\{margin-top:-2px;overflow:visible;flex-direction:column/);
   assert.match(cssSource, /\.workflowPhaseSteps button>span\{display:none\}/);
 });
+
+test("platform shell extraction keeps layout display-only and phase-safe", () => {
+  assert.match(appSource, /<PlatformShell/);
+  assert.match(appSource, /<GlobalNavigation/);
+  assert.match(appSource, /<ContextStrip/);
+  assert.match(platformShellSource, /navigation:ReactNode/);
+  assert.match(platformShellSource, /topbar:ReactNode/);
+  assert.match(platformShellSource, /context\?:ReactNode/);
+  assert.doesNotMatch(platformShellSource, /useState|useEffect|getSupabase|window\.history/);
+  assert.match(contextStripSource, /aria-label="Workspace context"/);
+  assert.match(contextStripSource, /"Cross-phase"/);
+  assert.match(contextStripSource, /"Next · "\+nextAction/);
+  assert.match(globalNavigationSource, /onNavigate:\(view:string\)=>void/);
+  assert.match(globalNavigationSource, /aria-current=\{currentView===item\.id\?"page":undefined\}/);
+});
+
 
 
 

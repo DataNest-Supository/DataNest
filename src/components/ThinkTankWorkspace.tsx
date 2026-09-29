@@ -4,6 +4,9 @@ import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "re
 import { getSupabase } from "@/lib/supabase";
 import { useSessionDraftState } from "@/lib/sessionDraft";
 import { useSingleFlight } from "@/lib/singleFlight";
+import PageHeader from "@/components/platform/PageHeader";
+import StatusIndicator from "@/components/platform/StatusIndicator";
+import EvidencePanel from "@/components/platform/EvidencePanel";
 
 type Role="owner"|"admin"|"operator"|"viewer";
 type Channel={
@@ -456,6 +459,24 @@ export default function ThinkTankWorkspace({
   if(loading)return <section className="panel"><p className="muted">Loading Think Tanks…</p></section>;
 
   return <div>
+    <section className="panel" aria-label="Think Tank workspace overview">
+      <PageHeader
+        eyebrow="DISCOVER · THINK TANKS"
+        title="Think Tank collaboration workspace"
+        description="Turn scoped discussion into traceable decisions, actions and independently reviewed learning."
+        meta={<StatusIndicator label={canOperate?"Collaboration enabled":"Read-only collaboration"} tone={canOperate?"success":"neutral"} detail={channels.length+" channel"+(channels.length===1?"":"s")+" · "+threads.length+" thread"+(threads.length===1?"":"s")}/>}
+      />
+    </section>
+    <EvidencePanel
+      title="Think Tank evidence"
+      items={channels.length||threads.length||actions.length||learnings.length?[
+        {label:"Channels",value:String(channels.length)},
+        {label:"Threads",value:String(threads.length)},
+        {label:"Open actions",value:String(actions.filter(item=>["open","in_progress"].includes(item.status)).length)},
+        {label:"Learning review",value:String(learnings.filter(item=>item.status==="proposed").length)}
+      ]:[]}
+      emptyState={<span>No governed collaboration evidence yet. An authorized operator can create a Think Tank, then participants can open a thread and attach traceable discussion.</span>}
+    />
     {activeAction&&<p className="muted" role="status">Think Tank action in progress · duplicate submissions are blocked until the request finishes.</p>}
     {hasSessionDraft&&<p className="muted" role="status">Browser-session draft active · unfinished Think Tank inputs are restored after workspace navigation or reload.</p>}
     <section className="heroPanel">
@@ -497,6 +518,7 @@ export default function ThinkTankWorkspace({
           {channel.name}{channel.scope==="job"&&channel.job_id?" · "+(jobLookup.get(channel.job_id)?jobCode(jobLookup.get(channel.job_id)!):"Job"):""}
         </button>)}
       </div>
+      {!channels.length&&<div className="emptyState"><div>◇</div><h3>No Think Tanks yet</h3><p>{canOperate?"Create the first governed channel, then open a thread for traceable discussion.":"An authorized operator can create the first governed channel; return after it is available to participate."}</p></div>}
       {selectedChannel&&<p className="muted">{selectedChannel.description||"No channel description."} · {selectedChannel.scope==="job"?"Job-linked AI collaboration enabled.":"Project-wide discussion; link a channel to a Job to invoke DataNest AI."}</p>}
     </section>
 

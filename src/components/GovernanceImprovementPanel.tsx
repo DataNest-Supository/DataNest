@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 import { useSingleFlight } from "@/lib/singleFlight";
+import GovernedAction, { type GovernedActionStage } from "@/components/platform/GovernedAction";
 
 type StandardItem={
   id:string;
@@ -48,6 +49,13 @@ type Candidate={
   governance_effect:boolean;
   updated_at:string;
 };
+
+
+function candidateGovernedStage(status:Candidate["status"]):GovernedActionStage{
+  if(status==="ready_for_governance"||status==="converted_to_proposal")return "checked";
+  if(status==="dismissed")return "verified";
+  return "review-required";
+}
 
 type Cycle={
   id:string;
@@ -930,14 +938,30 @@ export default function GovernanceImprovementPanel({
     <section className="panel">
       <div className="panelHead"><div><p className="eyebrow">IMPROVEMENT PIPELINE</p><h3>Evidence → human review → formal governance</h3></div><span className="countPill">{workspace.candidates.length}</span></div>
       {workspace.candidates.length?<div className="manifestList">
-        {workspace.candidates.map(candidate=><article className="manifestCard" key={candidate.id}>
+        {workspace.candidates.map(candidate=>{
+          const governedStage=candidate.status==="converted_to_proposal"?"checked":"review-required";
+          return <article className="manifestCard" key={candidate.id}>
           <div className="rowBetween">
             <div><b>{candidate.title}</b><small>{candidate.trace_key} · {candidate.risk_class} risk</small></div>
             <span className={"badge "+(candidate.status==="ready_for_governance"?"good":"neutral")}>{label(candidate.status)}</span>
           </div>
+          <GovernedAction
+            stage={governedStage}
+            summary={candidate.status==="converted_to_proposal"?"The candidate has entered the formal governance process; it is still not deployment authorization.":"This learning candidate remains review-required and has no governance effect on its own."}
+            evidence={<span>{candidate.source_observation_ids.length+" observation refs · "+candidate.standard_refs.length+" standards refs"}</span>}
+          />
           <p><b>Problem:</b> {candidate.problem_statement}</p>
           <p><b>Hypothesis:</b> {candidate.hypothesis}</p>
           <p><b>Desired outcome:</b> {candidate.desired_outcome}</p>
+          <GovernedAction
+            stage={candidateGovernedStage(candidate.status)}
+            summary={candidate.status==="converted_to_proposal"
+              ?"Candidate has entered the formal governance process; this is not production authorization."
+              :candidate.status==="ready_for_governance"
+                ?"Evidence review is sufficient to enter formal governance, which remains the decision authority."
+                :"Human review remains required; continuous learning cannot adopt governance changes autonomously."}
+            evidence={<span>{candidate.trace_key} · governance effect: no</span>}
+          />
           <div className="manifestMeta">
             <span>{candidate.source_observation_ids.length} observation refs</span>
             <span>{candidate.standard_refs.length} standards refs</span>
@@ -953,7 +977,8 @@ export default function GovernanceImprovementPanel({
             </div>
           </>}
           {candidate.linked_governance_proposal_id&&<small>Formal proposal {candidate.linked_governance_proposal_id}</small>}
-        </article>)}
+        </article>;
+        })}
       </div>:<p className="muted">No governance improvement candidates have been recorded.</p>}
     </section>
 

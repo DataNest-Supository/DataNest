@@ -3,6 +3,8 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 import { useSingleFlight } from "@/lib/singleFlight";
+import PageHeader from "@/components/platform/PageHeader";
+import GovernedAction, { type GovernedActionStage } from "@/components/platform/GovernedAction";
 import {
   autonomyDescriptions,
   autonomyLabels,
@@ -309,6 +311,12 @@ export default function ExecutionAuthorityPanel({
   if(!workspace)return <section className="panel"><p className="muted">Authority & Execution workspace is unavailable.</p></section>;
 
   return <div className="executionAuthorityWorkspace">
+    <PageHeader
+      eyebrow="EXECUTE · AUTHORITY"
+      title="Governed execution sequence"
+      description="Intent → Plan → Dependencies → Authorization → Execution → Live status → Evidence"
+      meta={<span>Authorization state is evaluated before consequential execution. Availability alone never grants authority.</span>}
+    />
     {activeAction&&<p className="muted" role="status">Authority & Execution action in progress · duplicate submissions are blocked until the request finishes.</p>}
     <section className="executionAuthorityBoundary" aria-label="Execution authority boundaries">
       <p><b>Capacity reservation ≠ authorization lease.</b> A reservation allocates resource capacity; a Capability Lease authorizes a bounded operation.</p>
@@ -376,8 +384,28 @@ export default function ExecutionAuthorityPanel({
         const isProposer=txt(item.proposed_by)===currentUserId;
         const independent=bool(item.require_independent_approval)||level==="A4";
         const mayApprove=state==="proposed"&&canApprove&&!((independent)&&isProposer);
+        const approval=workspace.approvals.find(approval=>txt(approval.authority_envelope_id)===txt(item.id)&&txt(approval.status)==="approved");
+        const requestedStage:GovernedActionStage=state==="approved"||state==="active"
+          ?(independent&&!approval?"review-required":"authorized")
+          :state==="paused"
+            ?"checked"
+            :["revoked","rejected","expired"].includes(state)
+              ?"verified"
+              :"review-required";
+        const reviewer=requestedStage==="authorized"&&approval?txt(approval.approver_user_id)||undefined:undefined;
+        const approvalEvidence=approval
+          ?<span>{"Approval evidence · "+txt(approval.id)}</span>
+          :requestedStage==="review-required"
+            ?<span>Required authorization evidence has not been recorded for this envelope.</span>
+            :undefined;
         return <article className="manifestCard" key={txt(item.id)}>
           <div className="rowBetween"><b>{level+" · "+txt(item.actor_key)}</b><span className={"badge "+statusTone(state)}>{executionAuthorityLabel(state)}</span></div>
+          <GovernedAction
+            stage={requestedStage}
+            summary={requestedStage==="authorized"?"Recorded authority state and required approval evidence support this authorization presentation.":requestedStage==="review-required"?"Authorization evidence is incomplete or pending; this envelope must not be treated as executable authority.":"This authority record is non-authorizing in its current lifecycle state."}
+            reviewer={reviewer}
+            evidence={approvalEvidence}
+          />
           <p>{txt(item.purpose)}</p>
           <div className="manifestMeta">
             <span>{txt(item.job_id)?"Job "+txt(item.job_id).slice(0,8):"Project scope"}</span>

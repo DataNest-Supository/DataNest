@@ -70,6 +70,15 @@ test("dashboard labels its sample and groups UTC days independently of local tim
     return route.fulfill({contentType:"application/json",body:JSON.stringify(body)});
   });
   await page.goto(appPath);
+  await expect(page.getByRole("region", {name:"Current objective"})).toBeVisible();
+  await expect(page.getByRole("region", {name:"Continue your work"})).toBeVisible();
+  await expect(page.getByRole("region", {name:"Needs attention"})).toBeVisible();
+  await expect(page.getByRole("region", {name:"Applications"})).toBeVisible();
+  const opportunity = page.getByRole("region", {name:"Business opportunity signal"});
+  await expect(opportunity).toHaveAttribute("data-opportunity-state","empty");
+  await expect(opportunity.getByText("No governed opportunity signal yet",{exact:true})).toBeVisible();
+  await expect(opportunity.getByText(/Estimated value|Projected revenue|Guaranteed/i)).toHaveCount(0);
+  await expect(page.getByRole("region", {name:"Workspace context"}).getByText("Next · TranScheduler",{exact:true})).toBeVisible();
   await expect(page.getByRole("heading", {name:"Recent creation signal"})).toBeVisible();
   await expect(page.getByText("LOADED SNAPSHOT · UTC")).toBeVisible();
   await expect(page.getByRole("img", {name:/Loaded jobs created/})).toHaveAttribute("aria-label", /2026-09-25 1, 2026-09-26 1/);
@@ -418,6 +427,50 @@ test("specialist phase rail preserves lifecycle orientation", async ({ page }) =
 
   await page.setViewportSize({width:390,height:844});
   await expect(rail).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+
+test("workspace context is phase-safe and wraps long project identity at 320px", async ({ page }) => {
+  const projectId = "00000000-0000-4000-8000-000000000010";
+  const userId = "00000000-0000-4000-8000-000000000001";
+  const longProjectName = "Resonance DataNest governed transformation programme with a deliberately long project identity for narrow-screen verification";
+
+  await page.setViewportSize({width:320,height:844});
+  await page.route("**/runtime-config.js", route => route.fulfill({
+    contentType: "application/javascript",
+    body: "window.__DATANEST_CONFIG__={supabaseUrl:'https://fixture.supabase.co',supabasePublishableKey:'fixture-key',authoritative:true}"
+  }));
+  await page.addInitScript(({userId}) => {
+    const encode = (data: unknown) => btoa(JSON.stringify(data)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+    localStorage.setItem("sb-fixture-auth-token", JSON.stringify({
+      access_token: `${encode({alg:"HS256",typ:"JWT"})}.${encode({sub:userId,exp:4102444800,role:"authenticated"})}.fixture`,
+      refresh_token: "fixture", token_type:"bearer", expires_at:4102444800,
+      user:{id:userId,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid"}
+    }));
+  }, {userId});
+  await page.route("https://fixture.supabase.co/**", route => {
+    const path = new URL(route.request().url()).pathname;
+    let body: unknown = [];
+    if (path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:longProjectName,description:null,status:"ACTIVE",created_at:"2026-09-26T00:00:00Z"};
+    if (path.endsWith("/project_members")) body = {project_id:projectId,user_id:userId,role:"viewer",status:"active"};
+    if (path.endsWith("/get_project_dashboard_summary")) body = {total_jobs:0,active_jobs:0,running_jobs:0,blocked_jobs:0,available_capabilities:0,registered_capabilities:0};
+    return route.fulfill({contentType:"application/json",body:JSON.stringify(body)});
+  });
+
+  await page.goto(appPath+"?view=external_auditor");
+  const context = page.getByRole("region", {name:"Workspace context"});
+  await expect(context).toBeVisible();
+  await expect(context.getByText(longProjectName, {exact:true})).toBeVisible();
+  await expect(context.getByText("Cross-phase", {exact:true})).toBeVisible();
+  await expect(context.getByText("ACTIVE", {exact:true})).toBeVisible();
+  await expect(context.getByText("Next · Product Lab", {exact:true})).toBeVisible();
+  await expect(page.getByRole("navigation", {name:"DataNest lifecycle phases"}).locator('[aria-current="step"]')).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+
+  await page.goto(appPath+"?view=governance");
+  await expect(page.getByRole("button", {name:"Govern phase · current"})).toHaveAttribute("aria-current","step");
+  await expect(page.getByRole("region", {name:"Workspace context"}).getByText("Govern", {exact:true})).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
@@ -1469,6 +1522,8 @@ test("Spark reservation reconciliation reuses one request identity and recovers 
   });
 
   await page.goto(appPath+"?view=sparks");
+  await expect(page.getByRole("region",{name:"Sparks workspace overview"})).toBeVisible();
+  await expect(page.getByRole("region",{name:"Sparks evidence"})).toBeVisible();
   await expect(page.getByRole("heading",{name:"Earned contribution utility, not money"})).toBeVisible();
 
   const reserve=page.getByRole("button",{name:/Reserve 25 Sparks/});
@@ -1694,4 +1749,25 @@ test("stale recovery stays preserved and user-scoped across account transitions"
 
   const preservedAfterSwitch=await page.evaluate(()=>Object.keys(sessionStorage).filter(key=>key.startsWith("datanest.pendingMutation.")));
   expect(preservedAfterSwitch).toHaveLength(2);
+});
+
+
+test("authenticated legal navigation preserves workspace history", async ({page}) => {
+  await openJourneyFixture(page);
+  await page.goto(appPath+"?view=governance");
+  await expect(page.getByRole("heading",{name:"Governance",level:1,exact:true})).toBeVisible();
+
+  const legalNav=page.getByRole("navigation",{name:"Governance and legal links"});
+  await expect(legalNav).toBeVisible();
+  for(const label of ["Legal Centre","Governance","Privacy","Terms","Disclaimers"]){
+    await expect(legalNav.getByRole("link",{name:label,exact:true})).toBeVisible();
+  }
+
+  await legalNav.getByRole("link",{name:"Legal Centre",exact:true}).click();
+  await expect(page).toHaveURL(/\/legal\/?$/);
+  await expect(page.getByRole("heading",{name:"Governance & Legal Centre",exact:true})).toBeVisible();
+
+  await page.goBack();
+  await expect(page).toHaveURL(/\?view=governance$/);
+  await expect(page.getByRole("heading",{name:"Governance",level:1,exact:true})).toBeVisible();
 });

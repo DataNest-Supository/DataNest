@@ -103,6 +103,8 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
 
   await page.goto(appPath+"?view=products&product=ronsas&recordType=risk&q=runner");
 
+  await expect(page.getByRole("region",{name:"Products workspace overview"})).toBeVisible();
+  await expect(page.getByRole("region",{name:"Product evidence"})).toBeVisible();
   await expect(page.getByRole("heading", {name:"Products that carry their architecture, evidence and decisions with them."})).toBeVisible();
   await expect(page.getByRole("heading",{name:"Live ecosystem state, derived from governed DataNest records."})).toBeVisible();
   await expect(page.getByRole("region",{name:"Products that carry their architecture, evidence and decisions with them."}).getByRole("heading",{name:"RONSAS",exact:true})).toBeVisible();

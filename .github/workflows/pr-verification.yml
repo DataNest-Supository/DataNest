@@ -88,6 +88,8 @@ jobs:
           tests/browser/portfolio-registry.spec.ts
           tests/browser/trust-policy.spec.ts
           tests/browser/execution-authority.spec.ts
+          tests/browser/external-auditor.spec.ts
+          tests/browser/legal-centre.spec.ts
           tests/browser/resource-fabric.spec.ts
           tests/browser/intelligence-fabric.spec.ts
           tests/browser/datanest-ai-layout.spec.ts

@@ -16,7 +16,7 @@ const Privacy = () => (
       </Link>
 
       <h1 className="font-display text-3xl font-bold text-foreground mb-2">Privacy Policy</h1>
-      <p className="text-sm text-muted-foreground mb-10">Last updated: {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p>
+      <p className="text-sm text-muted-foreground mb-4">Review-gated legacy draft · 0.1-draft · effective date not approved.</p>\n      <p className="text-sm text-muted-foreground mb-10">This legacy Creative Studio privacy copy remains review-gated until verified platform data flows and authorized legal review support an approved replacement.</p>
 
       <div className="space-y-8 text-sm text-secondary-foreground leading-relaxed">
         <section>
@@ -29,11 +29,11 @@ const Privacy = () => (
         </section>
         <section>
           <h2 className="font-display text-lg font-semibold text-foreground mb-3">3. Data Storage & Security</h2>
-          <p>Your data is stored securely using industry-standard encryption. We do not sell your personal information to third parties.</p>
+          <p>Storage and security representations remain under review against verified implementation evidence. This draft does not make a platform-wide encryption or security guarantee.</p>
         </section>
         <section>
           <h2 className="font-display text-lg font-semibold text-foreground mb-3">4. Third-Party Services</h2>
-          <p>We use third-party AI services to generate content. Uploaded content may be processed by these services but is not retained beyond the generation session.</p>
+          <p>Some features may use configured third-party AI services. Provider-specific processing, storage, and retention behavior must be documented from verified configuration and contractual evidence rather than assumed in this draft.</p>
         </section>
         <section>
           <h2 className="font-display text-lg font-semibold text-foreground mb-3">5. Your Rights</h2>

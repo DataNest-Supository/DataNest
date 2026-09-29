@@ -6,6 +6,14 @@ const migration=readFileSync(
   new URL("../../supabase/migrations/20260925061327_datanest_project_member_invitations_v1.sql",import.meta.url),
   "utf8"
 );
+const revokedInviteCleanupMigration=readFileSync(
+  new URL("../../supabase/migrations/20260929242500_delete_revoked_project_member_invites.sql",import.meta.url),
+  "utf8"
+);
+const passwordEdge=readFileSync(
+  new URL("../../supabase/functions/manage-user-password/index.ts",import.meta.url),
+  "utf8"
+);
 const edge=readFileSync(
   new URL("../../supabase/functions/send-project-member-invite/index.ts",import.meta.url),
   "utf8"
@@ -113,4 +121,33 @@ test("project membership UI keeps compact responsive row metadata",()=>{
   assert.match(panel,/data-label="Member"/);
   assert.match(panel,/data-label="Invitee"/);
   assert.match(panel,/data-label="Action"/);
+});
+
+
+test("membership table exposes governed password controls",()=>{
+  assert.match(panel,/data-label="Password"/);
+  assert.match(panel,/Email reset/);
+  assert.match(panel,/Set temporary/);
+  assert.match(panel,/manage-user-password/);
+  assert.match(panel,/canManagePassword/);
+  assert.match(passwordEdge,/callerClient\.auth\.getUser\(\)/);
+  assert.match(passwordEdge,/service\.auth\.admin\.updateUserById/);
+  assert.match(passwordEdge,/emailClient\.auth\.resetPasswordForEmail/);
+  assert.match(passwordEdge,/Admins cannot change owner or admin account passwords/);
+});
+
+test("revoked invitations can be deleted only through an audited governed RPC",()=>{
+  assert.match(revokedInviteCleanupMigration,/delete_revoked_project_member_invite_v1/);
+  assert.match(revokedInviteCleanupMigration,/invite_row\.status<>'revoked'/);
+  assert.match(revokedInviteCleanupMigration,/Only the project owner may delete a revoked admin invitation/);
+  assert.match(revokedInviteCleanupMigration,/PROJECT_MEMBER_REVOKED_INVITE_DELETED/);
+  assert.ok(
+    revokedInviteCleanupMigration.indexOf("insert into public.events")
+      < revokedInviteCleanupMigration.indexOf("delete from public.project_member_invitations"),
+    "deletion evidence must be written before the revoked invitation row is removed"
+  );
+  assert.match(panel,/delete_revoked_project_member_invite_v1/);
+  assert.match(panel,/invite\.status==="revoked"/);
+  assert.match(panel,/Confirm delete/);
+  assert.match(panel,/governance event history/);
 });

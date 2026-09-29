@@ -9,6 +9,10 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 import { Helmet, HelmetProvider } from "react-helmet-async";
+import "@fontsource-variable/inter-tight";
+import "@fontsource-variable/inter";
+import "@fontsource/instrument-serif/400-italic.css";
+import "@fontsource-variable/jetbrains-mono";
 
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -19,6 +23,7 @@ import { LazyMotionProvider } from "@/lib/lazy-motion";
 
 
 import appCss from "../styles.css?url";
+import resonanceDataNestCss from "../resonance-datanest-adapter.css?url";
 
 
 const POSTHOG_BOOTSTRAP_SCRIPT = "(function(){var allowed=[\"youtube.reson8.life\",\"youtubeoptimizer.life\",\"www.youtubeoptimizer.life\"];if(allowed.indexOf(window.location.hostname)===-1){return;}var t=document,e=window.posthog||[];if(!e.__SV){window.posthog=e;e._i=[];e.init=function(i,s,a){function g(t,e){var o=e.split(\".\");if(o.length===2){t=t[o[0]];e=o[1];}t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)));};}var p=t.createElement(\"script\");p.type=\"text/javascript\";p.crossOrigin=\"anonymous\";p.async=true;p.src=s.api_host.replace(\".i.posthog.com\",\"-assets.i.posthog.com\")+\"/static/array.js\";var r=t.getElementsByTagName(\"script\")[0];r.parentNode.insertBefore(p,r);var u=e;if(a!==undefined){u=e[a]=[];}else{a=\"posthog\";}u.people=u.people||[];u.toString=function(t){var e=\"posthog\";if(a!==\"posthog\"){e+=\".\"+a;}if(!t){e+=\" (stub)\";}return e;};u.people.toString=function(){return u.toString(1)+\".people (stub)\";};var o=\"init capture register register_once unregister identify set_config get_distinct_id alias setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroups group reset get_feature_flag get_feature_flag_payload is_feature_enabled reload_feature_flags update_early_access_feature_enrollment get_early_access_features on onFeatureFlags onSurveysLoaded onSessionId\".split(\" \");for(var n=0;n<o.length;n++){g(u,o[n]);}e._i.push([i,s,a]);};e.__SV=1;}window.posthog.init(\"phc_wiRCEGhpP86zsw9q2guDXngrr7iU7FHF9dS8sRFAY2xy\",{api_host:\"https://eu.i.posthog.com\",ui_host:\"https://eu.posthog.com\",defaults:\"2026-05-30\",person_profiles:\"identified_only\",capture_pageview:\"history_change\",capture_pageleave:true,capture_dead_clicks:true,capture_exceptions:true,capture_performance:true,enable_recording_console_log:true,session_recording:{maskAllInputs:true},autocapture:true});window.posthog.register({ronsas_app:\"youtube\",ronsas_environment:\"production\"});window.posthog.capture(\"ronsas_observability_boot\",{ronsas_app:\"youtube\"});})();";
@@ -82,6 +87,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // render blocker — is loaded async via media="print" + ASYNC_CSS_SWAP.
       { rel: "preload", as: "style", href: appCss, fetchPriority: "high" },
       { rel: "stylesheet", href: appCss },
+      { rel: "stylesheet", href: resonanceDataNestCss },
       { rel: "icon", href: "/favicon.png", type: "image/png", sizes: "any" },
       { rel: "apple-touch-icon", sizes: "180x180", href: "/favicon.png" },
       { rel: "preload", as: "image", href: "/og-image.png", fetchPriority: "high" },

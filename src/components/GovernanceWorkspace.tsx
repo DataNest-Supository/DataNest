@@ -9,6 +9,10 @@ import GovernanceImprovementPanel from "@/components/GovernanceImprovementPanel"
 import type { TrustPolicyRole } from "@/lib/trustPolicy";
 import { useSessionDraftState } from "@/lib/sessionDraft";
 import { useSingleFlight } from "@/lib/singleFlight";
+import PageHeader from "@/components/platform/PageHeader";
+import StatusIndicator from "@/components/platform/StatusIndicator";
+import EvidencePanel from "@/components/platform/EvidencePanel";
+import GovernedAction, { type GovernedActionStage } from "@/components/platform/GovernedAction";
 
 type Protocol={
   id:string;project_id:string;protocol_key:string;version:number;title:string;mission:string|null;vision:string|null;
@@ -75,6 +79,12 @@ function date(value:string|null){
 }
 function label(value:string){return value.replaceAll("_"," ");}
 function boolText(value:unknown){return value===true?"Yes":"No";}
+function proposalGovernedStage(status:string):GovernedActionStage{
+  if(status==="accepted")return "checked";
+  if(["rejected","withdrawn","closed","dismissed"].includes(status))return "verified";
+  return "review-required";
+}
+
 
 export default function GovernanceWorkspace({
   projectId,currentUserId,role,canManage,setNotice,setError
@@ -343,10 +353,33 @@ export default function GovernanceWorkspace({
   if(section==="authority")return <div>{governanceModeTabs}<ExecutionAuthorityPanel projectId={projectId} currentUserId={currentUserId} role={role} setNotice={setNotice} setError={setError}/></div>;
   if(section==="improvement")return <div>{governanceModeTabs}<GovernanceImprovementPanel projectId={projectId} setNotice={setNotice} setError={setError}/></div>;
   if(loading)return <section className="panel"><p className="muted">Loading Sovereign Governance…</p></section>;
-  if(!workspace)return <section className="panel"><p className="muted">Governance workspace is unavailable.</p></section>;
+  if(!workspace)return <section className="panel"><h2>Governance workspace unavailable</h2><p>Ratified protocol, proposals, decisions and dispute evidence belong here. Retry before treating any draft as adopted governance.</p><button className="secondaryButton compact" type="button" onClick={()=>void load()}>Retry governance workspace</button></section>;
 
   return <div>
     {governanceModeTabs}
+    <section className="panel" aria-label="Governance workspace overview">
+      <PageHeader
+        eyebrow="GOVERN · SOVEREIGN GOVERNANCE"
+        title="Governance decision workspace"
+        description="Review protocol, proposals and immutable decisions while keeping legal ownership, contracts and financial authority outside participation signals."
+        primaryAction={<button className="secondaryButton compact" type="button" onClick={()=>void load()}>Refresh</button>}
+        meta={<StatusIndicator label={workspace.ratified_protocol?"Ratified protocol active":"Human ratification required"} tone={workspace.ratified_protocol?"success":"warning"} detail={canManage?"Authorized governance controls available":"Governance evidence view"}/>}
+      />
+      <GovernedAction
+        stage={openProposals.length?"review-required":"checked"}
+        summary={openProposals.length?"Open governance proposals remain review-required until formal voting and decision evidence is recorded.":"No open proposal is being presented as adopted governance."}
+        evidence={<span>{workspace.decisions.length+" immutable decision record"+(workspace.decisions.length===1?"":"s")+" available"}</span>}
+      />
+    </section>
+    <EvidencePanel
+      title="Governance evidence"
+      items={workspace.ratified_protocol||openProposals.length||workspace.decisions.length?[
+        ...(workspace.ratified_protocol?[{label:"Ratified protocol",value:"v"+workspace.ratified_protocol.version+" · "+workspace.ratified_protocol.title}]:[]),
+        ...(openProposals.length?[{label:"Open proposals",value:String(openProposals.length)}]:[]),
+        ...(workspace.decisions.length?[{label:"Immutable decisions",value:String(workspace.decisions.length)}]:[])
+      ]:[]}
+      emptyState={<span>No ratified protocol, open proposal, or immutable decision is recorded yet. Review governance inputs and involve an authorized project member before adopting a change.</span>}
+    />
     {activeAction&&<p className="muted" role="status">Governance action in progress · duplicate submissions are blocked until the request finishes.</p>}
     {hasSessionDraft&&<p className="muted" role="status">Browser-session draft active · unfinished Governance inputs are restored after workspace navigation or reload.</p>}
     <section className="heroPanel">
@@ -443,6 +476,13 @@ export default function GovernanceWorkspace({
           <div>
             <div className="rowBetween"><b>{item.title}</b><span className="badge neutral">{label(item.status)}</span></div>
             <p>{item.summary}</p>
+            <GovernedAction
+              stage={proposalGovernedStage(item.status)}
+              summary={item.status==="accepted"
+                ?"Project governance decision is recorded; downstream production or legal authority remains separately controlled."
+                :"Human governance review is required before this proposal can become an adopted project decision."}
+              evidence={<span>{item.trace_key} · {label(item.proposal_type)}</span>}
+            />
             <div className="manifestMeta">
               <span>{item.trace_key}</span><span>{label(item.proposal_type)}</span>
               <span>support {item.support_count}</span><span>oppose {item.oppose_count}</span><span>abstain {item.abstain_count}</span>

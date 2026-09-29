@@ -65,12 +65,17 @@ test("failed context is honest, keeps the draft, and recovers",async({page})=>{
   await expect(page.getByRole("heading",{name:"Job context needs attention"})).toBeVisible();
   await expect(page.getByText("AI CORE LINKED",{exact:true})).toHaveCount(0);
   await expect(page.getByText("NEEDS ATTENTION",{exact:true}).first()).toBeVisible();
+  const objectiveHeader=page.getByRole("region",{name:"DataNest AI objective"});
+  await expect(objectiveHeader).toBeVisible();
+  await expect(objectiveHeader.getByRole("button",{name:"Open command composer",exact:true})).toBeDisabled();
+
   const composer=page.getByPlaceholder(/Ask DataNest AI to analyze/i);
   await composer.fill("Preserve this draft while recovering.");
   await expect(page.getByRole("button",{name:"Send command",exact:true})).toBeDisabled();
   state.failContext=false;
   await page.getByRole("button",{name:"Retry AI context"}).click();
   await expect(page.getByRole("button",{name:"Send command",exact:true})).toBeDisabled();
+  await expect(objectiveHeader.getByRole("button",{name:"Open command composer",exact:true})).toBeEnabled();
   await page.getByRole("button",{name:/UI & UX/}).click();
   await expect(page.getByRole("button",{name:"Send command",exact:true})).toBeEnabled();
   await expect(composer).toHaveValue("Preserve this draft while recovering.");

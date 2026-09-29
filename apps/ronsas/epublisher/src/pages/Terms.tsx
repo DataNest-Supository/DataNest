@@ -19,7 +19,8 @@ export default function Terms() {
 
         <article className="prose prose-sm dark:prose-invert max-w-none space-y-6">
           <h1>Terms of Service</h1>
-          <p className="text-muted-foreground">Last updated: March 29, 2026</p>
+          <p className="text-muted-foreground">Review-gated legacy draft · 0.1-draft · effective date not approved.</p>
+          <p className="text-muted-foreground">This legacy ePublisher policy copy remains review-gated under the Resonance DataNest legal process and is not a replacement for the central governed legal record.</p>
 
           <h2>1. Acceptance of Terms</h2>
           <p>By accessing or using Resonance ePublisher ("the Service"), you agree to be bound by these Terms of Service. If you do not agree, please do not use the Service.</p>

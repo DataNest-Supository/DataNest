@@ -1,5 +1,10 @@
 import { getDiagEntries, installPreviewDiag } from "./lib/previewDiag";
+import "@fontsource-variable/inter-tight";
+import "@fontsource-variable/inter";
+import "@fontsource/instrument-serif/400-italic.css";
+import "@fontsource-variable/jetbrains-mono";
 import "./index.css";
+import "./resonance-datanest-adapter.css";
 
 type BootTelemetry = typeof import("./lib/bootTelemetry");
 type BootError = Error | { message?: string; stack?: string } | unknown;

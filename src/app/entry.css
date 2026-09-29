@@ -78,3 +78,45 @@ html[data-motion-paused="true"] *, html[data-motion-paused="true"] *::before, ht
 .landingHubLink:hover,.landingHubLink:focus-visible{border-color:rgba(66,231,255,.38);color:#fff;background:rgba(66,231,255,.07)}
 @media (max-width:700px){.landingHeaderActions{gap:6px}.landingHubLink{min-height:40px;padding:8px 9px;font-size:10px}}
 @media (max-width:430px){.landingHubLink{font-size:0}.landingHubLink span{font-size:14px}}
+
+
+/* Shared Resonance identity, governance trust, and operator footer */
+.resonanceBrandLockup{display:inline-flex;align-items:center;gap:11px;min-width:0;color:var(--text-primary)}
+.resonanceBrandLogo{width:48px;height:34px;display:block;overflow:hidden;border:1px solid var(--line-soft);border-radius:var(--radius-sm);background:var(--surface-canvas-deep);box-shadow:0 8px 22px var(--glow-magenta-token)}
+.resonanceBrandLogo img{display:block;width:100%;height:100%;object-fit:cover}
+.resonanceBrandCopy{display:grid;min-width:0}
+.resonanceBrandCopy strong{font-family:var(--font-heading);font-size:17px;line-height:1.05;letter-spacing:-.025em;color:var(--text-primary);white-space:nowrap}
+.resonanceBrandCopy small{margin-top:4px;font-size:9px;line-height:1.2;letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary)}
+.resonanceBrandLockup.compact .resonanceBrandLogo{width:42px;height:30px}
+.resonanceBrandLockup.compact .resonanceBrandCopy strong{font-size:16px}
+
+.governanceTrustMark{display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:8px 10px;border:1px solid var(--line-soft);border-radius:var(--radius-pill);background:color-mix(in srgb,var(--surface-work) 88%,transparent);color:var(--text-primary);text-decoration:none;font-size:10px;line-height:1;white-space:nowrap}
+.governanceTrustMark>span{color:var(--brand-cyan);font-size:9px}
+.governanceTrustMark strong{font-family:var(--font-heading);font-size:10px;letter-spacing:.05em}
+.governanceTrustMark:hover,.governanceTrustMark:focus-visible{border-color:var(--brand-cyan);background:color-mix(in srgb,var(--brand-cyan) 8%,var(--surface-work));color:var(--text-primary)}
+
+.platformFooter{width:100%;max-width:1320px;margin-inline:auto;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(260px,.8fr);gap:26px;align-items:start;padding-block:24px;border-top:1px solid var(--line-soft);color:var(--text-secondary)}
+.platformFooterIdentity strong{display:block;font-family:var(--font-heading);font-size:14px;color:var(--text-primary)}
+.platformFooterIdentity p{max-width:82ch;margin:7px 0 0;font-size:10px;line-height:1.6}
+.platformFooterPromotion{color:var(--semantic-info)}
+.platformFooterLinks{display:flex;justify-content:flex-end;align-items:center;gap:10px;flex-wrap:wrap}
+.platformFooterLinks>a:not(.governanceTrustMark){min-height:40px;display:inline-flex;align-items:center;padding:7px 2px;color:var(--text-secondary);font-size:10px;font-weight:700;text-decoration:none}
+.platformFooterLinks>a:not(.governanceTrustMark):hover,.platformFooterLinks>a:not(.governanceTrustMark):focus-visible{color:var(--brand-cyan)}
+.platformFooter.compact{padding-block:20px}
+
+@media(max-width:900px){
+  .platformFooter{grid-template-columns:1fr}
+  .platformFooterLinks{justify-content:flex-start}
+}
+@media(max-width:700px){
+  .landingHeader{align-items:flex-start;padding-block:14px;flex-wrap:wrap}
+  .landingHeaderActions{width:100%;justify-content:flex-start;flex-wrap:wrap}
+  .resonanceBrandCopy strong{font-size:15px}
+  .governanceTrustMark{min-height:38px}
+  .platformFooter{gap:14px}
+}
+@media(max-width:430px){
+  .resonanceBrandLockup.compact .resonanceBrandCopy strong{white-space:normal}
+  .platformFooterLinks{display:grid;grid-template-columns:1fr 1fr;align-items:stretch}
+  .platformFooterLinks .governanceTrustMark{grid-column:1/-1;justify-self:start}
+}

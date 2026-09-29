@@ -513,3 +513,16 @@ No title matching, timestamp proximity, row-count guessing or other heuristic is
 1. a client request identity;
 2. server-enforced uniqueness/idempotency for that identity; and
 3. an authenticated deterministic read-back path.
+
+
+## Governance and legal review gate
+
+Public DataNest legal and governance routes use versioned legal metadata and remain review-gated until authorized human/legal review is recorded.
+
+The authoritative review checklist is `docs/governance/legal-review/RESONANCE_DATANEST_LEGAL_REVIEW_CHECKLIST.md`.
+
+- Draft legal documents expose their version and review state.
+- Draft documents do not receive a production effective date automatically.
+- CI, AI assistance, code review, merge readiness, or deployment readiness do not constitute legal approval.
+- Production legal approval requires the document/version, evidence reviewed, review owner, explicit decision, effective date, and traceable approval reference.
+- Any substantive legal-copy change after approval becomes a new review candidate.

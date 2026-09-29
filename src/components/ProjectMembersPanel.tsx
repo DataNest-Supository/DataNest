@@ -80,6 +80,7 @@ export default function ProjectMembersPanel({
   const [temporaryPassword,setTemporaryPassword]=useState("");
   const [confirmTemporaryPassword,setConfirmTemporaryPassword]=useState("");
   const [passwordFeedback,setPasswordFeedback]=useState("");
+  const [deleteConfirmId,setDeleteConfirmId]=useState<string|null>(null);
 
   const load=useCallback(async()=>{
     const supabase=getSupabase();if(!supabase)return;
@@ -262,6 +263,27 @@ export default function ProjectMembersPanel({
     });
   }
 
+  async function deleteRevokedInvite(invite:Invitation){
+    const supabase=getSupabase();
+    if(!supabase||invite.status!=="revoked")return;
+    await runSingleFlight("delete-revoked-invite:"+invite.id,async()=>{
+      setBusy(true);setError("");setNotice("Deleting revoked project invitation…");
+      try{
+        const {error}=await supabase.rpc("delete_revoked_project_member_invite_v1",{
+          target_invite:invite.id
+        });
+        if(error)throw error;
+        setDeleteConfirmId(null);
+        setNotice("Revoked invitation deleted. The deletion remains recorded in the governance event history.");
+        await load();
+      }catch(actionError){
+        setError(actionError instanceof Error?actionError.message:"Unable to delete the revoked project invitation. You can retry safely.");
+      }finally{
+        setBusy(false);
+      }
+    });
+  }
+
   if(loading)return <section className="panel"><p className="muted">Loading project membership…</p></section>;
   if(!workspace)return <section className="panel"><p className="muted">Project membership workspace is unavailable.</p></section>;
 
@@ -411,12 +433,19 @@ export default function ProjectMembersPanel({
               <button className="textButton" type="button" disabled={busy} onClick={()=>void resendInvite(invite)}>Resend</button>
               <button className="textButton dangerTextButton" type="button" disabled={busy} onClick={()=>void revokeInvite(invite.id)}>Revoke</button>
             </>
-            :"—"}</span>
+            :invite.status==="revoked"
+              ?deleteConfirmId===invite.id
+                ?<>
+                  <button className="textButton dangerTextButton" type="button" disabled={busy} onClick={()=>void deleteRevokedInvite(invite)}>Confirm delete</button>
+                  <button className="textButton" type="button" disabled={busy} onClick={()=>setDeleteConfirmId(null)}>Cancel</button>
+                </>
+                :<button className="textButton dangerTextButton" type="button" disabled={busy} onClick={()=>setDeleteConfirmId(invite.id)}>Delete</button>
+              :"—"}</span>
         </div>)}
       </div>:<p className="muted">No project-member invitations have been issued yet.</p>}
     </>}
 
     <p className="muted">Password boundaries: owners may manage active project members; admins may manage active operators and viewers only. Admin and owner accounts remain protected from admin password takeover.</p>
-        <p className="muted">Invite boundaries: no self-invite, no owner invitation, admin invitations require the owner, and acceptance requires the matching authenticated account.</p>
+        <p className="muted">Invite boundaries: no self-invite, no owner invitation, admin invitations require the owner, and acceptance requires the matching authenticated account. Revoked invites may be deleted from this table only by an authorized owner/admin; DataNest writes a governance event with the deleted invite evidence first.</p>
   </section>;
 }

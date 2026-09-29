@@ -88,7 +88,11 @@
         "tailwindcss-animate": "^1.0.7",
         "vaul": "^0.9.9",
         "zod": "^3.25.76",
-        "@ffmpeg/core": "0.12.10"
+        "@ffmpeg/core": "0.12.10",
+        "@fontsource-variable/inter-tight": "5.3.0",
+        "@fontsource-variable/inter": "5.3.0",
+        "@fontsource/instrument-serif": "5.3.0",
+        "@fontsource-variable/jetbrains-mono": "5.3.0"
     },
     "overrides": {
         "dompurify": "^3.4.10"

@@ -6,6 +6,9 @@ import { useSingleFlight } from "@/lib/singleFlight";
 import { clearPendingMutation, getOrCreatePendingMutation, loadPendingMutation, markPendingMutationDurable, markPendingMutationVerification, type PendingMutationIntent } from "@/lib/pendingMutation";
 import { markDurableRecoveryVerification, registerDurableRecovery, resolveDurableRecovery } from "@/lib/durableRecovery";
 import { reconcileServerMutation, type MutationReconciliationState } from "@/lib/mutationReconciliation";
+import PageHeader from "@/components/platform/PageHeader";
+import StatusIndicator from "@/components/platform/StatusIndicator";
+import EvidencePanel from "@/components/platform/EvidencePanel";
 
 type Balance={account_id:string;account_type:"project"|"platform"|"locked";project_id:string|null;balance:number};
 type Service={
@@ -331,12 +334,30 @@ export default function SparksWorkspace({
   }
 
   if(loading)return <section className="panel"><p className="muted">Loading Sparks…</p></section>;
-  if(!workspace)return <section className="panel"><p className="muted">Sparks workspace is unavailable.</p></section>;
+  if(!workspace)return <section className="panel"><h2>Sparks workspace unavailable</h2><p>Governed contribution utility, approved services and reservation evidence belong here. Retry before issuing a new service request.</p><button className="secondaryButton compact" type="button" onClick={()=>void load()}>Retry Sparks workspace</button></section>;
 
   const metrics=workspace.metrics||{};
   const boundaries=workspace.boundaries||{};
 
   return <div>
+    <section className="panel" aria-label="Sparks workspace overview">
+      <PageHeader
+        eyebrow="DISCOVER · SPARKS"
+        title="Sparks contribution workspace"
+        description="Inspect earned project utility, approved services and reservation state without treating Sparks as money, ownership or authority."
+        primaryAction={<button className="secondaryButton compact" type="button" onClick={()=>void load()}>Refresh</button>}
+        meta={<StatusIndicator label={canOperate?"Operator access":"Read-only access"} tone={canOperate?"success":"neutral"} detail="Internal governed utility only"/>}
+      />
+    </section>
+    <EvidencePanel
+      title="Sparks evidence"
+      items={[
+        {label:"Project balance",value:fmt(projectBalance)+" Sparks"},
+        {label:"Locked balance",value:fmt(lockedBalance)+" Sparks"},
+        {label:"Approved services",value:String(workspace.services.length)},
+        {label:"Service requests",value:String(workspace.redemptions.length)}
+      ]}
+    />
     {activeAction&&<p className="muted" role="status">Spark action in progress · duplicate submissions are blocked until the request finishes.</p>}
     {redemptionReconciliation==="pending"&&<div className="notice errorNotice" role="status"><b>Reservation awaiting confirmation.</b> Do not issue another reservation. <button type="button" className="textButton" onClick={()=>{const pending=loadPendingMutation<SparkRedemptionPendingPayload>(redemptionRequestScope);if(pending)void reconcileRedemptionIntent(pending,true);}}>Recheck server state</button></div>}
     {redemptionReconciliation==="not_recorded"&&<div className="notice goodNotice" role="status">Server state confirms the previous reservation was not recorded. Retrying reuses the same request identity. <button type="button" className="textButton" onClick={()=>void startNewRedemptionIntent()}>Change request</button></div>}
