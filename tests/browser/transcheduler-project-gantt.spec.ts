@@ -213,8 +213,14 @@ test("Stakeholder interests drive TranScheduler requirement matching and filteri
   await uiUxInterest.click();
   await expect(uiUxInterest).toBeChecked();
   await expect(page.getByText("1 selected",{exact:true})).toBeVisible();
-  await expect.poll(()=>preferenceWrites).toBe(1);
-  expect(interestKeys).toEqual(["ui_ux"]);
+
+  const securityInterest=page.getByRole("checkbox",{name:/Security & Testing/});
+  await expect(securityInterest).not.toBeChecked();
+  await securityInterest.click();
+  await expect(securityInterest).toBeChecked();
+  await expect(page.getByText("2 selected",{exact:true})).toBeVisible();
+  await expect.poll(()=>preferenceWrites).toBe(2);
+  expect(interestKeys).toEqual(["ui_ux","security_testing"]);
 
   await page.goto(appPath+"?view=scheduler");
 
@@ -226,15 +232,22 @@ test("Stakeholder interests drive TranScheduler requirement matching and filteri
   await expect(page.locator(".jobFocusChip").filter({hasText:"UI/UX"})).toHaveCount(2);
   await expect(page.locator(".jobFocusChip").filter({hasText:"Database & Architecture"})).toHaveCount(1);
 
+  const ganttTitles=page.locator(".ganttJobTitle small");
+  await expect(ganttTitles).toHaveText(["UI polish","Database maintenance","Accessibility review"]);
+
+  await page.getByLabel("Sort project jobs").selectOption("interest");
+  await expect(page).toHaveURL(/sort=interest/);
+  await expect(ganttTitles).toHaveText(["Accessibility review","UI polish","Database maintenance"]);
+
   const interestFilter=page.getByRole("checkbox",{name:"My interests"});
   await expect(interestFilter).toBeEnabled();
   await interestFilter.check();
 
   await expect(page.locator(".ganttRow")).toHaveCount(2);
-  await expect(page.locator(".ganttJobTitle small")).toHaveText(["UI polish","Accessibility review"]);
+  await expect(ganttTitles).toHaveText(["Accessibility review","UI polish"]);
   await expect(page.getByText("Database maintenance",{exact:true})).toHaveCount(0);
 
   await interestFilter.uncheck();
   await expect(page.locator(".ganttRow")).toHaveCount(3);
-  await expect(page.locator(".ganttJobTitle small")).toHaveText(["UI polish","Database maintenance","Accessibility review"]);
+  await expect(ganttTitles).toHaveText(["Accessibility review","UI polish","Database maintenance"]);
 });

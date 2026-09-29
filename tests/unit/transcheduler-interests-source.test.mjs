@@ -45,3 +45,12 @@ test("TranScheduler highlights and optionally filters Jobs by interest intersect
   assert.match(app,/setInterestOnly\(false\)/);
   assert.match(app,/No Jobs on this page match your saved interests/);
 });
+
+
+test("TranScheduler can rank Jobs by interest overlap without changing Job priority",()=>{
+  assert.match(taxonomy,/function workInterestOverlapCount/);
+  assert.match(app,/sortMode==="interest"/);
+  assert.match(app,/workInterestOverlapCount\(right\.requirements,userInterests\)-workInterestOverlapCount\(left\.requirements,userInterests\)/);
+  assert.match(app,/<option value="interest">Interest relevance<\/option>/);
+  assert.match(app,/return right\.priority-left\.priority\|\|left\.job_number-right\.job_number/);
+});
