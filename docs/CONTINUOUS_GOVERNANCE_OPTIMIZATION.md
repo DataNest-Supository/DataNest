@@ -1,7 +1,7 @@
 # Resonance DataNest Continuous Governance Optimization
 
 Status: governed engineering baseline; not a claim of ISO certification, legal compliance, or exhaustive standards conformity.  
-Version: `continuous-governance-v1`.  
+Version: `continuous-governance-v1.1`.  
 Review date: 2026-09-29.
 
 ## Objective
@@ -59,6 +59,11 @@ The register is deliberately versioned and project-scoped. A reference enters th
 | NIST AI RMF 1.0 | Govern → Map → Measure → Manage; continuous lifecycle risk management |
 | NIST CSF 2.0 | Govern plus repeatable cybersecurity risk management |
 | OECD AI Principles, 2024 update | Innovative and trustworthy AI, human-centred values, transparency, robustness and accountability |
+| W3C PROV-O, Recommendation 2013-04 | Interoperable provenance relationships between entities, activities and agents |
+| NIST OSCAL 1.2.2 | Machine-readable control catalogs, implementation and assessment evidence structures |
+| SLSA 1.2 | Approved source/build supply-chain controls and provenance/attestation concepts for release evidence |
+
+As observed on 2026-09-29, NIST states that AI RMF 1.0 is being revised. DataNest therefore treats framework/standard lifecycle state as watch evidence, not as an assumption that a registered edition remains current indefinitely. The standards watch records dated source-backed observations and requires human applicability review before any register change.
 
 The existing `MEMORY_LEARNING_LANGUAGE_STANDARDS.md` remains authoritative for memory/language controls such as BCP 47, Unicode normalization, terminology, provenance and data-quality evidence.
 
@@ -129,6 +134,37 @@ Deterministic signals are intentionally narrow: standards review due, high/criti
 
 Future snapshots link to the previous snapshot, creating longitudinal evidence without rewriting earlier measurements.
 
+### Standards lifecycle watch
+
+`governance_standard_watch_events` records a structured, append-only lifecycle observation against the exact active standards-register version that was checked. Each watch event:
+
+- requires an Owner/Admin and an authoritative HTTPS source;
+- records the issuing authority, event type, observed edition, source URL and supporting evidence;
+- creates a normal `standards_change` governance observation so the existing improvement workflow can use it;
+- never changes standards applicability, edition, certification state or control authority automatically;
+- never creates an improvement candidate automatically.
+
+This implements a governed **watch → evidence → human review** pattern. A source announcing a revision, amendment, withdrawal or new edition is evidence that the project should reassess applicability; it is not itself a DataNest nonconformity finding.
+
+### Control-evidence graph
+
+`governance_control_catalog` and `governance_control_evidence` create a project-scoped graph:
+
+**standards reference → implementation control → source implementation → test/workflow/deployment/operational evidence**
+
+Controls are versioned descriptions of implementation intent. Evidence links are append-only provenance records. Neither table changes Sovereign Governance authority or proves conformity.
+
+The initial graph includes:
+
+- `CGO-AUTH-001` — governance change firewall;
+- `CGO-STD-001` — living standards applicability review;
+- `CGO-PROV-001` — append-only provenance and evidence chain;
+- `CGO-REL-001` — governed release verification.
+
+The model borrows provenance concepts from W3C PROV-O, machine-readable control/assessment structure from NIST OSCAL, and release provenance concepts from SLSA while keeping DataNest's existing ISO/NIST/OECD governance baseline authoritative for project policy.
+
+A control may be versioned by Owner/Admin and control evidence may be recorded by Owner/Admin/Operator. Direct table writes remain unavailable to authenticated clients; mutation occurs through checked RPCs and the tables remain read-only through RLS.
+
 ## Continuous-learning invariants
 
 The following are hard boundaries:
@@ -141,14 +177,17 @@ The following are hard boundaries:
 6. AI-generated or deterministic suggestions remain hypotheses until evidence and human governance act on them.
 7. Disagreement and adverse evidence are preserved; optimization cannot erase dissent to manufacture consensus.
 8. Technical deployment remains separate from governance adoption and must continue to pass DataNest release/security controls.
+9. A standards-watch event cannot alter the standards register or applicability state automatically.
+10. A control-evidence link is provenance, not proof that the control is effective or that a standard is satisfied.
+11. Control-catalog versioning documents implementation intent and cannot grant project, legal, financial or constitutional authority.
 
 ## Innovation roadmap
 
 The next governed extensions should build on this firewall rather than weaken it:
 
-- **standards watch**: ingest authoritative standards-status changes as observations, then require human applicability review;
-- **impact-assessment linkage**: version AI impact assessments and connect material changes to improvement candidates;
-- **control-evidence graph**: connect standards → controls → implementation → tests → production evidence → incidents;
+- **standards watch**: implemented in v1.1 as append-only authoritative-source lifecycle observations with no automatic applicability mutation;
+- **impact-assessment linkage**: next — version AI impact assessments and connect material changes to improvement candidates;
+- **control-evidence graph**: implemented in v1.1 as standards → controls → implementation → evidence provenance, without a conformity score;
 - **outcome feedback integration**: once the separate Verified Memory outcome-evidence work is merged, allow adverse governed outcomes to become governance observations without changing truth status automatically;
 - **multilingual governance review**: once qualified reviewer controls are merged, require language/domain review where governance meaning could materially change;
 - **trend comparison**: compare successive review cycles by metric and uncertainty without collapsing governance quality into a single score;
