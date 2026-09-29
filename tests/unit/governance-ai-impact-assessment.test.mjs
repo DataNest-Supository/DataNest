@@ -99,6 +99,8 @@ test("impact assessment is connected to the control-evidence graph",()=>{
   assert.match(migration,/Versioned AI impact assessment lifecycle/);
   assert.match(migration,/source-artifact-present/);
   assert.match(migration,/'runtime_pass_claim',false/);
+  assert.match(migration,/e\.control_id=v_control_id/);
+  assert.doesNotMatch(migration,/e\.control_id=control_id/);
 });
 
 test("Governance workspace exposes impact authoring, review and explicit routing with pre-migration defaults",()=>{
