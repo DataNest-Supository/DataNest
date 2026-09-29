@@ -79,3 +79,16 @@ Certification establishes that a memory passed the governed evidence and authori
 When `review_after` is reached, the memory remains historically **CERTIFIED** but becomes **REVIEW DUE**. Ranked retrieval applies a review factor so overdue memory is less likely to dominate newer, equally relevant verified knowledge. It is not silently deleted or relabeled as uncertified.
 
 Owner and Admin reviewers can reaffirm review-due memory after human review. Reaffirmation updates `last_verified_at`, schedules the next review, and writes an append-only `certified_memory_reviews` audit record. Only an Owner can retire an active Certified Memory object. Retirement removes it from active retrieval without deleting its provenance or prior review history.
+
+## Verified Memory outcome evidence
+
+Verified Memory usage can generate governed outcome evidence without creating a self-reinforcing truth loop.
+
+- Outcome evidence must reference an exact Certified Memory usage receipt and a memory that was actually selected by that receipt.
+- Supported, neutral, and unknown outcomes are audit evidence only. They do not raise confidence, change certification class, or refresh verification dates automatically.
+- Challenged or contradicted outcomes may accelerate the memory's governed review date, but they do not silently decertify, rewrite, or retire the memory.
+- Owner/Admin actors may record outcome evidence through the certification gateway. Reaffirmation, retirement, supersession, and certification remain separate governed actions.
+- Outcome evidence remains append-only so reviewers can see how operational experience accumulated around a memory over time.
+
+This preserves the separation between **use**, **observed outcome**, **review**, and **authority**: successful use is not proof of truth, while adverse evidence is strong enough to trigger scrutiny.
+
