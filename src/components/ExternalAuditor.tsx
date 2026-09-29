@@ -104,13 +104,14 @@ export default function ExternalAuditor({projectId,role}:ExternalAuditorProps){
         {bundle.findings.length===0?<p className="muted">No findings yet. Capture evidence, approve a standards profile, and run governed analysis.</p>:<div className="externalAuditList">{bundle.findings.map(finding=><article key={finding.id}><div><b>{finding.criterion_id}</b><span className="externalAuditState">{finding.state}</span></div><p>{finding.observation}</p><small>{finding.claim_kind.toUpperCase()} · confidence {Math.round(finding.confidence*100)}% · evidence {finding.evidence_ids.length}</small></article>)}</div>}
         {bundle.actions.length>0&&<div className="externalAuditList">{bundle.actions.map(action=>{
           const approvalEvent=bundle.events.find(event=>event.event_type==="ACTION_APPROVED_TO_UNIFI"&&String(event.payload?.action_id||"")===action.id);
-          const reviewer=approvalEvent?.actor_user_id||undefined;
+          const authorized=action.status==="planned"&&Boolean(action.job_id)&&Boolean(approvalEvent);
+          const reviewer=authorized?(approvalEvent?.actor_user_id||undefined):undefined;
           const evidence=approvalEvent?<span>{"Approval event · "+approvalEvent.id}</span>:<span>{"Finding "+action.finding_id+" · reviewer approval evidence pending"}</span>;
           return <article key={action.id}>
             <div><b>{action.outcome}</b><span className="externalAuditState">{action.status}</span></div>
             <GovernedAction
-              stage={action.job_id?"authorized":"review-required"}
-              summary={action.job_id?"This optimization handoff has recorded human approval evidence.":"This optimization remains review-required before UNIFI handoff."}
+              stage={authorized?"authorized":"review-required"}
+              summary={authorized?"This optimization handoff has recorded human approval evidence.":"This optimization remains review-required before UNIFI handoff."}
               reviewer={reviewer}
               evidence={evidence}
             />
