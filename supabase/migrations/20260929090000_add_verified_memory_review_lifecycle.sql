@@ -40,6 +40,12 @@ create trigger schedule_certified_memory_review_v1
 before insert on public.certified_memory
 for each row execute function private.schedule_certified_memory_review_v1();
 
+revoke execute on function private.certified_memory_review_interval_v1(text)
+from public,anon,authenticated;
+
+revoke execute on function private.schedule_certified_memory_review_v1()
+from public,anon,authenticated;
+
 update public.certified_memory
 set review_after=coalesce(last_verified_at,promoted_at)
   + private.certified_memory_review_interval_v1(category)
