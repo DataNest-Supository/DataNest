@@ -10,6 +10,10 @@ const migration=fs.readFileSync(
   path.join(root,"supabase/migrations/20260929070000_optimize_collective_verified_memory.sql"),
   "utf8"
 );
+const relevanceRepair=fs.readFileSync(
+  path.join(root,"supabase/migrations/20260929081500_fix_verified_memory_relevance_ranking.sql"),
+  "utf8"
+);
 const chat=fs.readFileSync(
   path.join(root,"supabase/functions/datanest-ai-chat/index.ts"),
   "utf8"
@@ -80,4 +84,12 @@ test("promotion blocks unresolved contradictions and duplicate memory pollution"
   assert.match(certification,/service_promote_certified_memory_v2/);
   assert.match(certification,/target_applicability:applicability/);
   assert.match(certification,/target_review_after:reviewAfter/);
+});
+
+
+test("verified memory relevance matches any meaningful query term instead of requiring every term",()=>{
+  assert.match(relevanceRepair,/to_tsquery\('simple',string_agg\(token,' \\| ' order by token\)\)/);
+  assert.match(relevanceRepair,/limit 24/);
+  assert.match(relevanceRepair,/cross join query_terms q/);
+  assert.doesNotMatch(relevanceRepair,/plainto_tsquery/);
 });
