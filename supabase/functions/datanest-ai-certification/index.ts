@@ -336,6 +336,26 @@ async function loadCertifiedMemoryReviewQueue(
   return (data||[]) as Array<Record<string,unknown>>;
 }
 
+async function loadRecentMemoryOutcomes(
+  serviceClient:AnyClient,
+  projectId:string
+){
+  const {data,error}=await serviceClient
+    .from("certified_memory_outcome_evidence")
+    .select("id,memory_id,usage_receipt_id,signal,outcome_kind,summary,review_triggered,recorded_by,recorder_role,created_at")
+    .eq("project_id",projectId)
+    .order("created_at",{ascending:false})
+    .limit(100);
+  if(error){
+    const missingTable=
+      String((error as {code?:unknown}).code||"")==="42P01" ||
+      /certified_memory_outcome_evidence/i.test(String((error as {message?:unknown}).message||""));
+    if(missingTable)return [] as Array<Record<string,unknown>>;
+    throw error;
+  }
+  return (data||[]) as Array<Record<string,unknown>>;
+}
+
 Deno.serve(async(request:Request)=>{
   const origin=request.headers.get("Origin");
   if(request.method==="OPTIONS")return new Response("ok",{headers:cors(origin)});
@@ -376,7 +396,7 @@ Deno.serve(async(request:Request)=>{
     }
 
     if(action==="workspace"){
-      const [candidateResult,memoryReviewItems]=await Promise.all([
+      const [candidateResult,memoryReviewItems,memoryOutcomeItems]=await Promise.all([
         staging
           .from("ai_learning_candidates")
           .select("*")
@@ -384,7 +404,8 @@ Deno.serve(async(request:Request)=>{
           .neq("lifecycle_state","REJECTED")
           .order("updated_at",{ascending:false})
           .limit(100),
-        loadCertifiedMemoryReviewQueue(serviceClient,projectId)
+        loadCertifiedMemoryReviewQueue(serviceClient,projectId),
+        loadRecentMemoryOutcomes(serviceClient,projectId)
       ]);
       const {data:candidates,error:candidatesError}=candidateResult;
       if(candidatesError)throw candidatesError;
@@ -413,7 +434,8 @@ Deno.serve(async(request:Request)=>{
         })),
         validationRuns:runs||[],
         certificationDecisions:decisions||[],
-        memoryReviewItems
+        memoryReviewItems,
+        memoryOutcomeItems
       },200,origin);
     }
 
@@ -446,6 +468,41 @@ Deno.serve(async(request:Request)=>{
       );
       if(reviewError)throw reviewError;
       return json({review},200,origin);
+    }
+
+    if(action==="record_memory_outcome"){
+      const memoryId=String(body.memoryId||"");
+      const usageReceiptId=String(body.usageReceiptId||"");
+      const signal=String(body.signal||"unknown");
+      const outcomeKind=String(body.outcomeKind||"operator_observation");
+      const summary=String(body.summary||"").trim().slice(0,2000);
+      if(!memoryId||!usageReceiptId||!summary){
+        return json({error:"memoryId, usageReceiptId and summary are required."},400,origin);
+      }
+      if(!["supported","neutral","challenged","contradicted","unknown"].includes(signal)){
+        return json({error:"Unsupported Certified Memory outcome signal."},400,origin);
+      }
+      if(!["human_review","external_audit","test_result","job_result","operator_observation"].includes(outcomeKind)){
+        return json({error:"Unsupported Certified Memory outcome kind."},400,origin);
+      }
+      const {data:outcome,error:outcomeError}=await serviceClient.rpc(
+        "service_record_certified_memory_outcome_v1",{
+          target_project:projectId,
+          target_memory:memoryId,
+          target_usage_receipt:usageReceiptId,
+          target_actor:user.id,
+          target_signal:signal,
+          target_outcome_kind:outcomeKind,
+          target_summary:summary,
+          target_evidence:{
+            source:"datanest_ai_certification_gateway",
+            policy_version:currentPolicyVersion,
+            non_authoritative_outcome_signal:true
+          }
+        }
+      );
+      if(outcomeError)throw outcomeError;
+      return json({outcome},200,origin);
     }
 
     const candidateId=String(body.candidateId||"");
