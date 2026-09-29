@@ -63,6 +63,10 @@ type GithubIssueSearch = {
   items: Array<{ number: number; title: string; html_url: string }>;
 };
 
+type GithubCommitSearch = {
+  total_count: number;
+};
+
 type GithubCommit = {
   sha: string;
   html_url: string;
@@ -96,6 +100,8 @@ type GithubSnapshot = {
   openPullCount: number;
   supabaseOpenCount: number;
   supabaseOpenItems: GithubIssueSearch["items"];
+  mergedPullCount30d: number;
+  commitCount30d: number;
   closedPulls: GithubPull[];
   commits: GithubCommit[];
   workflowRuns: GithubWorkflowRun[];
@@ -237,11 +243,16 @@ export default function OwnerDevelopmentAnalytics({
 
   const loadGithub = useCallback(async () => {
     try {
-      const since = new Date(Date.now() - 30 * DAY_MS).toISOString();
-      const [openPulls, openPullSearch, supabasePulls, closedPulls, commits, workflowRuns] = await Promise.all([
+      const sinceDate = new Date(Date.now() - 30 * DAY_MS).toISOString().slice(0, 10);
+      const since = sinceDate + "T00:00:00Z";
+      const mergedQuery = encodeURIComponent("repo:" + GITHUB_REPO + " is:pr is:closed merged:>=" + sinceDate);
+      const commitQuery = encodeURIComponent("repo:" + GITHUB_REPO + " committer-date:>=" + sinceDate);
+      const [openPulls, openPullSearch, supabasePulls, mergedPullSearch, commitSearch, closedPulls, commits, workflowRuns] = await Promise.all([
         githubJson<GithubPull[]>("/repos/" + GITHUB_REPO + "/pulls?state=open&per_page=100&sort=updated&direction=desc"),
         githubJson<GithubIssueSearch>("/search/issues?q=repo%3A" + encodeURIComponent(GITHUB_REPO) + "+is%3Apr+is%3Aopen&per_page=1"),
         githubJson<GithubIssueSearch>("/search/issues?q=repo%3A" + encodeURIComponent(GITHUB_REPO) + "+is%3Apr+is%3Aopen+path%3Asupabase&per_page=100"),
+        githubJson<GithubIssueSearch>("/search/issues?q=" + mergedQuery + "&per_page=1"),
+        githubJson<GithubCommitSearch>("/search/commits?q=" + commitQuery + "&per_page=1"),
         githubJson<GithubPull[]>("/repos/" + GITHUB_REPO + "/pulls?state=closed&per_page=100&sort=updated&direction=desc"),
         githubJson<GithubCommit[]>("/repos/" + GITHUB_REPO + "/commits?since=" + encodeURIComponent(since) + "&per_page=100"),
         githubJson<{ workflow_runs: GithubWorkflowRun[] }>("/repos/" + GITHUB_REPO + "/actions/runs?per_page=50")
@@ -253,6 +264,8 @@ export default function OwnerDevelopmentAnalytics({
         openPullCount: openPullSearch.total_count,
         supabaseOpenCount: supabasePulls.total_count,
         supabaseOpenItems: supabasePulls.items || [],
+        mergedPullCount30d: mergedPullSearch.total_count,
+        commitCount30d: commitSearch.total_count,
         closedPulls,
         commits,
         workflowRuns: workflowRuns.workflow_runs || [],
@@ -279,12 +292,6 @@ export default function OwnerDevelopmentAnalytics({
       window.clearInterval(githubTimer);
     };
   }, [load, loadDatabase, loadGithub]);
-
-  const mergedThirtyDays = useMemo(() => {
-    if (!github) return 0;
-    const cutoff = Date.now() - 30 * DAY_MS;
-    return github.closedPulls.filter((pull) => pull.merged_at && new Date(pull.merged_at).getTime() >= cutoff).length;
-  }, [github]);
 
   const recentWorkflowRuns = useMemo(() => {
     if (!github) return [];
@@ -354,13 +361,13 @@ export default function OwnerDevelopmentAnalytics({
         </article>
         <article className={styles.metric}>
           <span>Commits · 30d</span>
-          <strong>{formatNumber(github?.commits.length || 0)}</strong>
-          <small>GitHub source</small>
+          <strong>{formatNumber(github?.commitCount30d || 0)}</strong>
+          <small>GitHub search count</small>
         </article>
         <article className={styles.metric}>
           <span>Merged PRs · 30d</span>
-          <strong>{formatNumber(mergedThirtyDays)}</strong>
-          <small>closed PR history</small>
+          <strong>{formatNumber(github?.mergedPullCount30d || 0)}</strong>
+          <small>GitHub search count</small>
         </article>
         <article className={styles.metric}>
           <span>CI success</span>
