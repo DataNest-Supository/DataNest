@@ -13,6 +13,11 @@ test("reviewer qualification registry is service-only and scoped",()=>{
   assert.match(migration,/qualification_scope in \('source_language_review','semantic_equivalence'\)/);
   assert.match(migration,/revoke all on table public\.ai_language_reviewer_qualifications from public,anon,authenticated/);
   assert.match(migration,/grant select,insert,update on table public\.ai_language_reviewer_qualifications to service_role/);
+  assert.match(migration,/revoked_by uuid/);
+  assert.match(migration,/revoked_at timestamptz/);
+  assert.match(migration,/revocation_reason text/);
+  assert.match(migration,/where active=true/);
+  assert.doesNotMatch(migration,/unique\(project_id,user_id,language_tag,qualification_scope\)/);
 });
 
 test("certification gateway requires registry coverage for LANGUAGE_REVIEW",()=>{
@@ -24,7 +29,14 @@ test("certification gateway requires registry coverage for LANGUAGE_REVIEW",()=>
   assert.match(source,/Active language reviewer qualification is required for every reviewed language/);
   assert.match(source,/reviewer_qualification_status:"registry_verified"/);
   assert.match(source,/reviewer_qualification_ids:qualificationCoverage\.qualificationIds/);
-  assert.match(source,/language_review_policy:"datanest-language-review-v2"/);
+  assert.match(source,/language_review_policy:"datanest-language-review-v3"/);
+  assert.match(source,/assertLanguageReviewQualificationsCurrent/);
+  assert.match(source,/A reviewer qualification bound to LANGUAGE_REVIEW is no longer active/);
+  assert.match(source,/LANGUAGE_REVIEW predates the current reviewer qualification policy/);
+  assert.match(source,/\.insert\(\{/);
+  assert.doesNotMatch(source,/\.upsert\(\{[\s\S]*ai_language_reviewer_qualifications/);
+  assert.match(source,/revoked_by:user\.id/);
+  assert.match(source,/revoked_at:now/);
 });
 
 test("certification console exposes qualification registry without claiming accreditation",()=>{
