@@ -22,7 +22,7 @@ import { useSingleFlight } from "@/lib/singleFlight";
 import { PENDING_MUTATION_EVENT, classifyPendingMutationAge, clearPendingMutation, getOrCreatePendingMutation, loadPendingMutation, markPendingMutationDurable, markPendingMutationVerification, restorePendingMutation, type PendingMutationAge, type PendingMutationIntent, type PendingMutationVerification } from "@/lib/pendingMutation";
 import { durableRecoveryToPendingIntent, listDurableRecoveries, markDurableRecoveryVerification, registerDurableRecovery, resolveDurableRecovery } from "@/lib/durableRecovery";
 import { reconcileServerMutation, type MutationReconciliationState } from "@/lib/mutationReconciliation";
-import { WORK_FOCUS_AREAS, normalizeWorkFocusKeys, workFocusKeysFromRequirements, workFocusLabel, workMatchesInterests, type WorkFocusKey } from "@/lib/workFocus";
+import { WORK_FOCUS_AREAS, normalizeWorkFocusKeys, workFocusKeysFromRequirements, workFocusLabel, workInterestOverlapCount, workMatchesInterests, type WorkFocusKey } from "@/lib/workFocus";
 
 type Project = { id:string; slug:string; name:string; description:string|null; status:string; created_at:string };
 type Tool = { id:string; tool_key:string; name:string; role:string; enabled:boolean; config:Record<string,unknown> };
@@ -35,7 +35,7 @@ type Policy = { id:string; policy_key:string; value:Record<string,unknown> };
 type ProjectMember = { project_id:string; user_id:string; role:"owner"|"admin"|"operator"|"viewer"; status:string };
 type ViewKey = "overview"|"stakeholder"|"sparks"|"impact"|"governance"|"products"|"thinktank"|"ai"|"productlab"|"unifi"|"scheduler"|"runs"|"checkpoints"|"audit"|"transparency"|"settings";
 type SchedulerViewMode = "queue"|"gantt"|"authority"|"resources";
-type SchedulerSortMode = "priority"|"deadline"|"recent";
+type SchedulerSortMode = "priority"|"deadline"|"recent"|"interest";
 const schedulerFilterOptions=["ALL","PLANNED","READY","QUEUED","RUNNING","MANUAL_ACTION","BLOCKED","COMPLETED"] as const;
 type SchedulerFilter = typeof schedulerFilterOptions[number];
 const operationalUrlStateKeys=["page","mode","filter","sort"] as const;
@@ -61,7 +61,7 @@ function schedulerViewModeFromUrl(url:URL):SchedulerViewMode{
 }
 function schedulerSortModeFromUrl(url:URL):SchedulerSortMode{
   const raw=url.searchParams.get("sort");
-  return raw==="deadline"||raw==="recent"||raw==="priority"?raw:"priority";
+  return raw==="deadline"||raw==="recent"||raw==="interest"||raw==="priority"?raw:"priority";
 }
 function schedulerFilterFromUrl(url:URL):SchedulerFilter{
   const raw=url.searchParams.get("filter");
@@ -2049,6 +2049,11 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
     ? statusVisible.filter(item=>workMatchesInterests(item.requirements,userInterests))
     : statusVisible;
   const orderedVisible=[...visible].sort((left,right)=>{
+    if(sortMode==="interest"){
+      const overlapDifference=workInterestOverlapCount(right.requirements,userInterests)-workInterestOverlapCount(left.requirements,userInterests);
+      if(overlapDifference!==0)return overlapDifference;
+      return right.priority-left.priority||left.job_number-right.job_number;
+    }
     if(sortMode==="deadline"){
       const leftDeadline=ganttTime(left.deadline);
       const rightDeadline=ganttTime(right.deadline);
@@ -2108,6 +2113,7 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
               <option value="priority">Priority scale</option>
               <option value="deadline">Nearest deadline</option>
               <option value="recent">Recently updated</option>
+              <option value="interest">Interest relevance</option>
             </select>
           </label>
           <label className="schedulerInterestToggle">
