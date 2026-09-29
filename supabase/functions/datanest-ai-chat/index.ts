@@ -16,6 +16,7 @@ import {
   type IlmProfile
 } from "../_shared/ilm.ts";
 import { chronologicalFromNewestFirst } from "../_shared/datanestAiContinuity.ts";
+import { buildEvidenceLanguageMetadata } from "../_shared/datanestLanguageMetadata.ts";
 import { updateTrendCandidate } from "../_shared/datanestAiLearning.ts";
 import {
   buildDevelopmentCommandPrompt,
@@ -1074,6 +1075,13 @@ Deno.serve(async(request:Request)=>{
     if(!message||!clientRequestId){
       return json({error:"message and clientRequestId are required."},400,origin);
     }
+    const sourceLanguageProvided=Object.prototype.hasOwnProperty.call(body,"sourceLanguage");
+    const inputLanguageMetadata=buildEvidenceLanguageMetadata({
+      content:message,
+      declaredLanguageProvided:sourceLanguageProvided,
+      declaredLanguage:body.sourceLanguage,
+      declaredBasis:"user_declared"
+    });
     const requestedConnection=typeof body.providerConnectionId==="string"
       ?body.providerConnectionId
       :null;
@@ -1188,6 +1196,7 @@ Deno.serve(async(request:Request)=>{
             content:message,
             content_hash:fingerprint,
             metadata:{
+              ...inputLanguageMetadata,
               request_id:requestId,
               trust_state:"uncertified",
               channel_mode:developmentMode?"development_command":"standard",
@@ -1652,6 +1661,7 @@ Deno.serve(async(request:Request)=>{
             content:provider.content,
             content_hash:contentHash,
             metadata:{
+              ...buildEvidenceLanguageMetadata({content:provider.content}),
               trust_state:"uncertified",
               channel_mode:developmentMode?"development_command":"standard",
               request_status:requestStatus,
