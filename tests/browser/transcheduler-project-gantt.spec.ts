@@ -216,8 +216,7 @@ test("Stakeholder interests drive TranScheduler requirement matching and filteri
   await expect.poll(()=>preferenceWrites).toBe(1);
   expect(interestKeys).toEqual(["ui_ux"]);
 
-  const projectNav=page.getByRole("navigation",{name:"Project workspaces"});
-  await projectNav.getByRole("button",{name:"TranScheduler"}).click();
+  await page.goto(appPath+"?view=scheduler");
 
   await expect(page.getByRole("heading",{name:"Capability-aware project scheduler",exact:true})).toBeVisible();
   await expect(page.locator(".schedulerInterestSummary")).toContainText("UI/UX");
