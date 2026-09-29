@@ -54,7 +54,18 @@ These references complement existing security, privacy, retention and authorizat
 | Translation/source-family lineage | Current traces and independence keys | Partial: enforce derivation families and reviewed semantic mappings in database and certification gateway |
 | Concept registry and shared definitions | Standards and schema requirements in this baseline | Open: scoped registry, reviewed mapping lifecycle, SKOS export |
 | Per-language comprehension evaluation | Release requirements below | Open: reviewed datasets, metrics and human assessment; prompt tests are not quality evidence |
+| Canonical equivalence consolidation | `20260929232000_add_canonical_memory_consolidation.sql`, certification gateway and console | Governed mechanism: heuristic equivalence only proposes review; an already-certified record must be selected as canonical; Owner execution preserves every historical source and blocks known contradictions |
 | Formal standards conformity | Public scopes mapped above | Not assessed: full-text review, control owners, operational evidence and independent assessment as appropriate |
+
+## Canonical memory consolidation
+
+Canonical memory consolidation is governed deduplication of historically equivalent Certified Memory. It does not synthesize or certify new knowledge. The canonical record must already exist as active Certified Memory; if a better or newly synthesized statement is needed, it must first complete the ordinary evidence, validation and certification path before it can be selected as canonical.
+
+The relation classifier may surface same-category equivalence suggestions, but lexical or normalized similarity is only a review hint. A human Owner or Admin may propose a consolidation after inspecting the preserved records, and only the project Owner may execute or reject the proposal. Known contradiction relations block consolidation, and execution revalidates the member set so stale or already-changed proposals cannot silently alter current memory.
+
+When a proposal is executed, equivalent members are retired from active retrieval and linked to the selected canonical memory through `consolidated_into_memory_id` plus the Certified Memory relation graph. Their original rows, content hashes, certification identities, effective versions and immutable proposal snapshots are not deleted; historical source memories remain traceable. Consolidation therefore reduces duplicate retrieval without erasing provenance, dissent history, prior certification, review evidence or usage receipts.
+
+This control does not establish semantic equivalence across languages, domains or jurisdictions. Language-sensitive duplicate hints remain conservative, and a missing contradiction hint is not evidence that two claims are equivalent. Consequential consolidation still requires human review of scope, applicability, validity, jurisdiction, modal force, quantities and source lineage.
 
 ## Release evaluation protocol
 
