@@ -81,6 +81,16 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: ${{ matrix.path }}/package-lock.json
+      - name: Generate Creative Studio lockfile
+        if: matrix.name == 'Creative Studio'
+        run: npm install --package-lock-only --ignore-scripts
+      - name: Upload Creative Studio lockfile
+        if: matrix.name == 'Creative Studio'
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: creative-studio-package-lock-${{ github.run_id }}
+          path: apps/ronsas/creative-studio/package-lock.json
+          retention-days: 1
       - name: Install dependencies
         run: npm ci
       - name: Validate from DataNest source
