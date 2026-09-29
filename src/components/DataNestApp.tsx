@@ -22,10 +22,11 @@ import { useSingleFlight } from "@/lib/singleFlight";
 import { PENDING_MUTATION_EVENT, classifyPendingMutationAge, clearPendingMutation, getOrCreatePendingMutation, loadPendingMutation, markPendingMutationDurable, markPendingMutationVerification, restorePendingMutation, type PendingMutationAge, type PendingMutationIntent, type PendingMutationVerification } from "@/lib/pendingMutation";
 import { durableRecoveryToPendingIntent, listDurableRecoveries, markDurableRecoveryVerification, registerDurableRecovery, resolveDurableRecovery } from "@/lib/durableRecovery";
 import { reconcileServerMutation, type MutationReconciliationState } from "@/lib/mutationReconciliation";
+import { WORK_FOCUS_AREAS, normalizeWorkFocusKeys, workFocusKeysFromRequirements, workFocusLabel, workMatchesInterests, type WorkFocusKey } from "@/lib/workFocus";
 
 type Project = { id:string; slug:string; name:string; description:string|null; status:string; created_at:string };
 type Tool = { id:string; tool_key:string; name:string; role:string; enabled:boolean; config:Record<string,unknown> };
-type Job = { id:string; job_number:number; title:string; description:string|null; priority:number; status:string; required_capabilities:string[]; acceptance:Record<string,unknown>; created_at:string; updated_at:string; deadline:string|null };
+type Job = { id:string; job_number:number; title:string; description:string|null; priority:number; status:string; required_capabilities:string[]; requirements:Record<string,unknown>; acceptance:Record<string,unknown>; created_at:string; updated_at:string; deadline:string|null };
 type Capability = { id:string; account_key:string; connector_kind:string; capability:string; state:string; observed_at:string|null; next_check_at:string|null; confidence:number|null; concurrency_limit:number; running:number; metadata:Record<string,unknown> };
 type Run = { id:string; job_id:string; run_number:number; connector_kind:string; status:string; started_at:string; completed_at:string|null; error_category:string|null };
 type Checkpoint = { id:string; job_id:string; completed:string[]; remaining:string[]; resume_instruction:string|null; created_at:string };
@@ -99,7 +100,7 @@ type MutationRecoveryItem = MutationRecoveryDescriptor & {
 const PAGE_SIZE = 20;
 const preparedJobStates = new Set(["PLANNED","READY","QUEUED"]);
 const finalStates = new Set(["COMPLETED","FAILED","CANCELLED"]);
-const jobColumns = "id,job_number,title,description,priority,status,required_capabilities,acceptance,created_at,updated_at,deadline";
+const jobColumns = "id,job_number,title,description,priority,status,required_capabilities,requirements,acceptance,created_at,updated_at,deadline";
 
 const nav:Array<{key:ViewKey;label:string;group:string;glyph:string}> = [
   {key:"overview",label:"AI & I",group:"Core",glyph:"◎"},
@@ -1759,6 +1760,7 @@ type UnifiPendingPayload={
   capability:string;
   tests:boolean;
   artifact:boolean;
+  focusAreas:WorkFocusKey[];
 };
 
 function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,setError,canOperate,page,total,onPage,activeJobId}:{project:Project;currentUserId:string;jobs:Job[];capabilities:Capability[];reload:()=>Promise<void>;setNotice:(v:string)=>void;setError:(v:string)=>void;canOperate:boolean;page:number;total:number;onPage:(p:number)=>void;activeJobId:string|null}) {
@@ -1770,9 +1772,10 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
   const [capability,setCapability,capabilityDraft]=useSessionDraftState(draftPrefix+"capability","chat");
   const [tests,setTests,testsDraft]=useSessionDraftState(draftPrefix+"tests",true);
   const [artifact,setArtifact,artifactDraft]=useSessionDraftState(draftPrefix+"artifact",true);
+  const [focusAreas,setFocusAreas,focusAreasDraft]=useSessionDraftState<WorkFocusKey[]>(draftPrefix+"focus-areas",[]);
   const {activeAction,busy:saving,run:runSingleFlight}=useSingleFlight();
   const [reconciliationState,setReconciliationState]=useState<MutationReconciliationState|"idle"|"checking">("idle");
-  const hasSessionDraft=[titleDraft,descriptionDraft,priorityDraft,capabilityDraft,testsDraft,artifactDraft].some(item=>item.hasStoredDraft);
+  const hasSessionDraft=[titleDraft,descriptionDraft,priorityDraft,capabilityDraft,testsDraft,artifactDraft,focusAreasDraft].some(item=>item.hasStoredDraft);
   const known=Array.from(new Set(["chat",...capabilities.map(item=>item.capability)]));
   const reconciliationLocked=reconciliationState==="pending"||reconciliationState==="checking";
   const intentEditLocked=reconciliationLocked||reconciliationState==="not_recorded";
@@ -1784,6 +1787,7 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
     setCapability(intent.payload.capability);
     setTests(intent.payload.tests);
     setArtifact(intent.payload.artifact);
+    setFocusAreas(normalizeWorkFocusKeys(intent.payload.focusAreas));
   }
 
   async function startNewUnifiIntent(){
@@ -1832,7 +1836,7 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
         return {state:"pending" as const,value:null,error:ledgerError instanceof Error?ledgerError:new Error("Durable recovery finalization failed.")};
       }
       clearPendingMutation(requestScope,"confirmed");
-      setTitle("");setDescription("");setPriority(50);setCapability("chat");setTests(true);setArtifact(true);
+      setTitle("");setDescription("");setPriority(50);setCapability("chat");setTests(true);setArtifact(true);setFocusAreas([]);
       setReconciliationState("confirmed");
       setError("");
       setNotice("Recovered confirmed JOB-"+String(result.value.job_number).padStart(5,"0")+" from authoritative server state.");
@@ -1885,7 +1889,8 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
       priority,
       capability,
       tests,
-      artifact
+      artifact,
+      focusAreas:normalizeWorkFocusKeys(focusAreas)
     };
     const intent=getOrCreatePendingMutation(requestScope,"unifi_job",payload);
 
@@ -1906,13 +1911,14 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
           return;
         }
         markPendingMutationDurable(requestScope,{attemptCount:durable.attemptCount,lastAttemptAt:durable.lastAttemptAt});
-        const {data,error}=await supabase.rpc("create_job_manifest_v2",{
+        const {data,error}=await supabase.rpc("create_job_manifest_v3",{
           target_project:project.id,
           target_request_key:intent.requestKey,
           job_title:payload.title,
           job_description:payload.description,
           job_priority:payload.priority,
           required_capability:payload.capability,
+          job_focus_areas:payload.focusAreas,
           tests_required:payload.tests,
           artifact_required:payload.artifact
         });
@@ -1922,7 +1928,7 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
         await resolveDurableRecovery(project.id,requestScope,intent.requestKey,"confirmed");
         clearPendingMutation(requestScope,"confirmed");
         setReconciliationState("confirmed");
-        setTitle("");setDescription("");setPriority(50);setCapability("chat");setTests(true);setArtifact(true);
+        setTitle("");setDescription("");setPriority(50);setCapability("chat");setTests(true);setArtifact(true);setFocusAreas([]);setFocusAreas([]);
         setNotice("JOB-"+String(number||"?").padStart(5,"0")+" created transactionally by UNIFI.");
         await reload();
       } catch(createError) {
@@ -1951,12 +1957,19 @@ function UnifiPlanner({project,currentUserId,jobs,capabilities,reload,setNotice,
           <label>Priority<select disabled={intentEditLocked} value={priority} onChange={event=>setPriority(Number(event.target.value))}><option value={100}>100 · Critical</option><option value={80}>80 · High</option><option value={50}>50 · Normal</option><option value={20}>20 · Background</option><option value={5}>5 · Maintenance</option></select></label>
           <label>Required capability<select disabled={intentEditLocked} value={capability} onChange={event=>setCapability(event.target.value)}>{known.map(item=><option key={item}>{item}</option>)}</select></label>
         </div>
+        <fieldset className="workFocusFieldset" disabled={intentEditLocked}>
+          <legend>Job requirement sections</legend>
+          <p className="muted">Tag the work areas this Job needs. TranScheduler uses the same categories as user interests for optional relevance matching.</p>
+          <div className="workFocusGrid">
+            {WORK_FOCUS_AREAS.map(item=><label key={item.key} title={item.description}><input type="checkbox" checked={focusAreas.includes(item.key)} onChange={event=>setFocusAreas(current=>event.target.checked?[...current,item.key]:current.filter(key=>key!==item.key))}/><span><b>{item.label}</b><small>{item.description}</small></span></label>)}
+          </div>
+        </fieldset>
         <div className="checkRow"><label><input disabled={intentEditLocked} type="checkbox" checked={tests} onChange={event=>setTests(event.target.checked)}/> Tests required</label><label><input disabled={intentEditLocked} type="checkbox" checked={artifact} onChange={event=>setArtifact(event.target.checked)}/> Artifact required</label></div>
         <button className="primaryButton" disabled={saving||reconciliationLocked||!canOperate}>{saving?"Creating…":reconciliationState==="checking"?"Checking server state…":"Create Job Manifest"}</button>
       </form>
     </div>
     <div className="panel"><div className="panelHead"><div><p className="eyebrow">PLANNING</p><h3>Prepared jobs</h3></div><span className="countPill">{total+" total"}</span></div><div className="manifestList">
-      {prepared.map(job=>{const active=job.id===activeJobId;return <article className={"manifestCard "+(active?"contextMatch":"")} data-active-context={active?"true":undefined} tabIndex={active?-1:undefined} aria-label={active?"Active work context · "+jobCode(job)+" · "+job.title:undefined} key={job.id}>{active&&<span className="contextMatchTag contextMatchCardTag">ACTIVE CONTEXT</span>}<div className="rowBetween"><b>{jobCode(job)}</b><Badge value={job.status}/></div><h4>{job.title}</h4><p>{job.description||"No description supplied."}</p><div className="manifestMeta"><span>{"Priority "+job.priority}</span><span>{job.required_capabilities?.join(", ")||"chat"}</span><span>{formatDate(job.created_at)}</span></div><JobInviteForm jobId={job.id} canInvite={canOperate} compact onSent={setNotice}/></article>;})}
+      {prepared.map(job=>{const active=job.id===activeJobId;return <article className={"manifestCard "+(active?"contextMatch":"")} data-active-context={active?"true":undefined} tabIndex={active?-1:undefined} aria-label={active?"Active work context · "+jobCode(job)+" · "+job.title:undefined} key={job.id}>{active&&<span className="contextMatchTag contextMatchCardTag">ACTIVE CONTEXT</span>}<div className="rowBetween"><b>{jobCode(job)}</b><Badge value={job.status}/></div><h4>{job.title}</h4><p>{job.description||"No description supplied."}</p><div className="manifestMeta"><span>{"Priority "+job.priority}</span><span>{job.required_capabilities?.join(", ")||"chat"}</span>{workFocusKeysFromRequirements(job.requirements).map(key=><span key={key}>{workFocusLabel(key)}</span>)}<span>{formatDate(job.created_at)}</span></div><JobInviteForm jobId={job.id} canInvite={canOperate} compact onSent={setNotice}/></article>;})}
       {!prepared.length&&<EmptyState title="No prepared jobs on this page" text="Create a job or navigate to another queue page."/>}
     </div><Pagination page={page} total={total} onPage={onPage}/></div>
   </section>;
