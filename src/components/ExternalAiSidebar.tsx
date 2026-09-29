@@ -103,6 +103,7 @@ export default function ExternalAiSidebar({
   const pendingAutoReturnSession=useRef("");
   const sessionRestoreGeneration=useRef(0);
   const sessionRestoreAllowed=useRef(true);
+  const manualJobSelectionRef=useRef(false);
   const companionWindowRef=useRef<Window|null>(null);
   const companionClosePollRef=useRef<number|null>(null);
   const clipboardContextKey=JSON.stringify([projectId,currentUserEmail,selectedJobId,provider,sessionId]);
@@ -274,9 +275,15 @@ export default function ExternalAiSidebar({
 
   useEffect(()=>{
     const activeJobId=activeDataNestAiSession?.jobId||"";
-    // Follow changes to the active AI job, but never revive a prior external
-    // session across an already-hydrated context boundary.
-    if(activeJobId&&activeJobId!==selectedJobId&&jobs.some(job=>job.id===activeJobId)){
+    // Follow active AI context until the user explicitly selects a different
+    // Job in this dock. A manual governed choice must not be snapped back by
+    // the shell's still-active DataNest AI session.
+    if(
+      !manualJobSelectionRef.current&&
+      activeJobId&&
+      activeJobId!==selectedJobId&&
+      jobs.some(job=>job.id===activeJobId)
+    ){
       blockSessionRestore();
       setSelectedJobId(activeJobId);
     }
@@ -336,6 +343,7 @@ export default function ExternalAiSidebar({
     const handle=(event:Event)=>{
       const detail=(event as CustomEvent<{jobId?:string}>).detail;
       if(detail?.jobId&&jobs.some(job=>job.id===detail.jobId)){
+        manualJobSelectionRef.current=true;
         blockSessionRestore();
         setSelectedJobId(detail.jobId);
       }
@@ -880,7 +888,7 @@ export default function ExternalAiSidebar({
       <section className="externalAiDockSection">
         <label>
           Job Manifest
-          <select value={selectedJobId} onChange={event=>{blockSessionRestore();setSelectedJobId(event.target.value);}}>
+          <select value={selectedJobId} onChange={event=>{manualJobSelectionRef.current=true;blockSessionRestore();setSelectedJobId(event.target.value);}}>
             {jobs.map(job=><option value={job.id} key={job.id}>
               {jobCode(job)+" · "+job.title+" · "+job.status}
             </option>)}
