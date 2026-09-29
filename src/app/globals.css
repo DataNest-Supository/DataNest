@@ -67,6 +67,15 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
   font-size:max(11px, .72rem)
 }
 .securityNote,.manifestMeta span,.policyGrid pre,.timelineItem code{font-size:max(10px,.66rem)}
+.accountSecurityPanel{display:grid;gap:12px}
+.accountSecurityForm{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:end}
+.accountSecurityForm label{display:grid;gap:6px;color:#b7cadb;font-size:11px;font-weight:700}
+.accountSecurityActions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;grid-column:1/-1}
+.accountSecurityMessage{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.018);font-size:11px;line-height:1.5}
+.accountSecurityMessage.good{border-color:rgba(124,226,162,.22);background:rgba(124,226,162,.06);color:#b7d9c3}
+.accountSecurityMessage.error{border-color:rgba(242,139,157,.22);background:rgba(242,139,157,.06);color:#f2b1bd}
+@media(max-width:900px){.accountSecurityForm{grid-template-columns:1fr}}
+
 
 @media(max-width:650px){
   .schedulerTable,.jobTable{overflow:visible}
