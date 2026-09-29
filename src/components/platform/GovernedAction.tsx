@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import StatusIndicator from "@/components/platform/StatusIndicator";
 
-type GovernedActionStage = "proposed"|"checked"|"review-required"|"authorized"|"scheduled"|"executed"|"verified";
+export type GovernedActionStage = "proposed"|"checked"|"review-required"|"authorized"|"scheduled"|"executed"|"verified";
 
 const stageCopy:Record<GovernedActionStage,{label:string;tone:"neutral"|"info"|"success"|"warning"|"danger"}> = {
   proposed:{label:"AI proposed",tone:"neutral"},
@@ -13,8 +13,18 @@ const stageCopy:Record<GovernedActionStage,{label:string;tone:"neutral"|"info"|"
   verified:{label:"Verified",tone:"success"}
 };
 
+export function guardGovernedActionStage(
+  requestedStage:GovernedActionStage,
+  {reviewer,evidence}:{reviewer?:string|null;evidence:boolean}
+):GovernedActionStage {
+  if(["authorized","scheduled","executed","verified"].includes(requestedStage)&&(!reviewer||!evidence)) {
+    return "review-required";
+  }
+  return requestedStage;
+}
+
 export default function GovernedAction({
-  stage,summary,evidence,reviewer,onAction
+  stage:requestedStage,summary,evidence,reviewer,onAction
 }:{
   stage:GovernedActionStage;
   summary:string;
@@ -22,8 +32,9 @@ export default function GovernedAction({
   reviewer?:string;
   onAction?:()=>void;
 }) {
+  const stage=guardGovernedActionStage(requestedStage,{reviewer,evidence:Boolean(evidence)});
   const state=stageCopy[stage];
-  return <section className="platformGovernedAction" aria-label="Governed action">
+  return <section className="platformGovernedAction" aria-label="Governed action" data-governed-stage={stage}>
     <div className="platformGovernedActionHead">
       <StatusIndicator label={state.label} tone={state.tone}/>
       {reviewer&&<span className="platformGovernedReviewer"><small>REVIEWER</small><strong>{reviewer}</strong></span>}
