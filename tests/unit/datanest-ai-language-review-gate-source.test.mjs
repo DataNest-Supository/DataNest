@@ -44,4 +44,5 @@ test("certification console exposes the conditional language review evidence for
   assert.match(source,/Meaning, negation, quantities and modal force are preserved/);
   assert.match(source,/No unresolved semantic ambiguity remains/);
   assert.match(source,/does not claim a language-qualification registry check/);
+  assert.match(source,/if\(!candidateRuns\.has\(run\.gate\)\)candidateRuns\.set/);
 });
