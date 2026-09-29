@@ -374,3 +374,9 @@ git commit -m "docs: add DataNest legal review gate"
 
 > Task 8 evidence: checklist-missing RED → focused GREEN; exact-head CI #2319 PASS and PR Verification #1199 PASS cover unit tests, TypeScript, production build and browser verification. Checklist keeps all documents review-required until an authorized human/legal reviewer records decision, effective date and approval reference.
 
+
+## Final execution review
+
+- Final review: self-review (no subagent tool available).
+- Final: fixed Legal Centre hardcoded draft label — regression test `Legal Centre policy cards derive review labels from registry status` RED→GREEN; exact-head CI #2325 and PR Verification #1205 passed after the fix.
+- Final review result: no remaining Critical or Important findings identified in the Governance & Legal plan scope.
