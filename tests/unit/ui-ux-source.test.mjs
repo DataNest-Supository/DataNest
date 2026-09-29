@@ -441,7 +441,7 @@ test("active Job evidence locator spans paginated Runs, Checkpoints, and Audit w
 
 
 test("workspace presentation state is URL-addressable without exposing active Job identity", () => {
-  assert.match(appSource, /const operationalUrlStateKeys=\["page","mode","filter","sort"\] as const/);
+  assert.match(appSource, /const operationalUrlStateKeys=\["page","mode","filter","sort","interests"\] as const/);
   assert.match(appSource, /const workspaceScopedUrlStateKeys=\[\.\.\.operationalUrlStateKeys,"section"\] as const/);
   assert.match(appSource, /const paginatedWorkspaceViews=new Set<ViewKey>\(\["unifi","scheduler","runs","checkpoints","audit"\]\)/);
   assert.match(appSource, /function scopeUrlToWorkspace\(url:URL,view:ViewKey\)/);
@@ -449,6 +449,7 @@ test("workspace presentation state is URL-addressable without exposing active Jo
   assert.match(appSource, /function schedulerViewModeFromUrl\(url:URL\):SchedulerViewMode/);
   assert.match(appSource, /function schedulerFilterFromUrl\(url:URL\):SchedulerFilter/);
   assert.match(appSource, /function schedulerSortModeFromUrl\(url:URL\):SchedulerSortMode/);
+  assert.match(appSource, /function schedulerInterestOnlyFromUrl\(url:URL\)/);
   assert.match(appSource, /workspaceScopedUrlStateKeys\.forEach\(key=>url\.searchParams\.delete\(key\)\)/);
   assert.match(appSource, /operationalUrlStateKeys\.forEach\(key=>url\.searchParams\.delete\(key\)\)/);
   assert.match(appSource, /if\(view!=="governance"&&view!=="products"\)url\.searchParams\.delete\("section"\)/);
@@ -456,6 +457,7 @@ test("workspace presentation state is URL-addressable without exposing active Jo
   assert.match(appSource, /if\(schedulerViewMode!=="gantt"\)url\.searchParams\.set\("mode",schedulerViewMode\)/);
   assert.match(appSource, /if\(schedulerFilter!=="ALL"\)url\.searchParams\.set\("filter",schedulerFilter\)/);
   assert.match(appSource, /if\(schedulerSortMode!=="priority"\)url\.searchParams\.set\("sort",schedulerSortMode\)/);
+  assert.match(appSource, /if\(schedulerInterestOnly\)url\.searchParams\.set\("interests","1"\)/);
   assert.match(appSource, /window\.history\.replaceState\(window\.history\.state,"",nextUrl\)/);
   assert.match(appSource, /filter=\{schedulerFilter\} viewMode=\{schedulerViewMode\} sortMode=\{schedulerSortMode\}/);
   assert.doesNotMatch(appSource, /searchParams\.set\("job(?:Id|_id)"/i);

@@ -222,32 +222,40 @@ test("Stakeholder interests drive TranScheduler requirement matching and filteri
   await expect.poll(()=>preferenceWrites).toBe(2);
   expect(interestKeys).toEqual(["ui_ux","security_testing"]);
 
-  await page.goto(appPath+"?view=scheduler");
+  const openMatchedJobs=page.getByRole("button",{name:"Open matched Jobs",exact:true});
+  await expect(openMatchedJobs).toBeEnabled();
+  await openMatchedJobs.click();
 
   await expect(page.getByRole("heading",{name:"Capability-aware project scheduler",exact:true})).toBeVisible();
+  await expect(page).toHaveURL(/view=scheduler/);
+  await expect(page).toHaveURL(/sort=interest/);
+  await expect(page).toHaveURL(/interests=1/);
   await expect(page.locator(".schedulerInterestSummary")).toContainText("UI/UX");
   await expect(page.getByText("2 interest matches",{exact:true})).toBeVisible();
   await expect(page.getByText("INTEREST MATCH",{exact:true})).toHaveCount(2);
   await expect(page.locator(".ganttRow.interestMatch")).toHaveCount(2);
+  await expect(page.getByText("Matched 2 · UI/UX · Security & Testing",{exact:true})).toHaveCount(1);
+  await expect(page.getByText("Matched 1 · UI/UX",{exact:true})).toHaveCount(1);
+  await expect(page.getByLabel("Matched interests: UI/UX, Security & Testing")).toHaveCount(1);
+  await expect(page.getByLabel("Matched interests: UI/UX",{exact:true})).toHaveCount(1);
   await expect(page.locator(".jobFocusChip").filter({hasText:"UI/UX"})).toHaveCount(2);
-  await expect(page.locator(".jobFocusChip").filter({hasText:"Database & Architecture"})).toHaveCount(1);
 
   const ganttTitles=page.locator(".ganttJobTitle small");
-  await expect(ganttTitles).toHaveText(["UI polish","Database maintenance","Accessibility review"]);
-
-  await page.getByLabel("Sort project jobs").selectOption("interest");
-  await expect(page).toHaveURL(/sort=interest/);
-  await expect(ganttTitles).toHaveText(["Accessibility review","UI polish","Database maintenance"]);
-
   const interestFilter=page.getByRole("checkbox",{name:"My interests"});
-  await expect(interestFilter).toBeEnabled();
-  await interestFilter.check();
-
+  await expect(interestFilter).toBeChecked();
+  await expect(page.getByLabel("Sort project jobs")).toHaveValue("interest");
   await expect(page.locator(".ganttRow")).toHaveCount(2);
   await expect(ganttTitles).toHaveText(["Accessibility review","UI polish"]);
   await expect(page.getByText("Database maintenance",{exact:true})).toHaveCount(0);
 
-  await interestFilter.uncheck();
+  await page.reload();
+  await expect(page.getByRole("heading",{name:"Capability-aware project scheduler",exact:true})).toBeVisible();
+  await expect(page.getByRole("checkbox",{name:"My interests"})).toBeChecked();
+  await expect(page.getByLabel("Sort project jobs")).toHaveValue("interest");
+  await expect(page.locator(".ganttJobTitle small")).toHaveText(["Accessibility review","UI polish"]);
+
+  await page.getByRole("checkbox",{name:"My interests"}).uncheck();
+  await expect(page).not.toHaveURL(/interests=1/);
   await expect(page.locator(".ganttRow")).toHaveCount(3);
-  await expect(ganttTitles).toHaveText(["Accessibility review","UI polish","Database maintenance"]);
+  await expect(page.locator(".ganttJobTitle small")).toHaveText(["Accessibility review","UI polish","Database maintenance"]);
 });

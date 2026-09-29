@@ -22,7 +22,7 @@ import { useSingleFlight } from "@/lib/singleFlight";
 import { PENDING_MUTATION_EVENT, classifyPendingMutationAge, clearPendingMutation, getOrCreatePendingMutation, loadPendingMutation, markPendingMutationDurable, markPendingMutationVerification, restorePendingMutation, type PendingMutationAge, type PendingMutationIntent, type PendingMutationVerification } from "@/lib/pendingMutation";
 import { durableRecoveryToPendingIntent, listDurableRecoveries, markDurableRecoveryVerification, registerDurableRecovery, resolveDurableRecovery } from "@/lib/durableRecovery";
 import { reconcileServerMutation, type MutationReconciliationState } from "@/lib/mutationReconciliation";
-import { WORK_FOCUS_AREAS, normalizeWorkFocusKeys, workFocusKeysFromRequirements, workFocusLabel, workInterestOverlapCount, workMatchesInterests, type WorkFocusKey } from "@/lib/workFocus";
+import { WORK_FOCUS_AREAS, normalizeWorkFocusKeys, workFocusKeysFromRequirements, workFocusLabel, workInterestOverlapCount, workInterestOverlapKeys, workMatchesInterests, type WorkFocusKey } from "@/lib/workFocus";
 
 type Project = { id:string; slug:string; name:string; description:string|null; status:string; created_at:string };
 type Tool = { id:string; tool_key:string; name:string; role:string; enabled:boolean; config:Record<string,unknown> };
@@ -38,7 +38,7 @@ type SchedulerViewMode = "queue"|"gantt"|"authority"|"resources";
 type SchedulerSortMode = "priority"|"deadline"|"recent"|"interest";
 const schedulerFilterOptions=["ALL","PLANNED","READY","QUEUED","RUNNING","MANUAL_ACTION","BLOCKED","COMPLETED"] as const;
 type SchedulerFilter = typeof schedulerFilterOptions[number];
-const operationalUrlStateKeys=["page","mode","filter","sort"] as const;
+const operationalUrlStateKeys=["page","mode","filter","sort","interests"] as const;
 const workspaceScopedUrlStateKeys=[...operationalUrlStateKeys,"section"] as const;
 const paginatedWorkspaceViews=new Set<ViewKey>(["unifi","scheduler","runs","checkpoints","audit"]);
 function scopeUrlToWorkspace(url:URL,view:ViewKey){
@@ -47,6 +47,7 @@ function scopeUrlToWorkspace(url:URL,view:ViewKey){
     url.searchParams.delete("mode");
     url.searchParams.delete("filter");
     url.searchParams.delete("sort");
+    url.searchParams.delete("interests");
   }
   if(view!=="governance"&&view!=="products")url.searchParams.delete("section");
   return url;
@@ -66,6 +67,9 @@ function schedulerSortModeFromUrl(url:URL):SchedulerSortMode{
 function schedulerFilterFromUrl(url:URL):SchedulerFilter{
   const raw=url.searchParams.get("filter");
   return schedulerFilterOptions.includes(raw as SchedulerFilter)?raw as SchedulerFilter:"ALL";
+}
+function schedulerInterestOnlyFromUrl(url:URL){
+  return url.searchParams.get("interests")==="1";
 }
 type HealthState = { state:"checking"|"online"|"degraded"|"offline"; checkedAt:string|null; message:string };
 type Summary = { total:number; active:number; running:number; blocked:number; available:number; registered:number };
@@ -426,6 +430,7 @@ export default function DataNestApp({session}:{session:Session}) {
   const [schedulerViewMode,setSchedulerViewMode]=useState<SchedulerViewMode>("gantt");
   const [schedulerFilter,setSchedulerFilter]=useState<SchedulerFilter>("ALL");
   const [schedulerSortMode,setSchedulerSortMode]=useState<SchedulerSortMode>("priority");
+  const [schedulerInterestOnly,setSchedulerInterestOnly]=useState(false);
   const [loadingCore,setLoadingCore]=useState(true);
   const [loadingView,setLoadingView]=useState(false);
   const [notice,setNotice]=useState("");
@@ -1019,6 +1024,7 @@ export default function DataNestApp({session}:{session:Session}) {
         setSchedulerViewMode(schedulerViewModeFromUrl(url));
         setSchedulerFilter(schedulerFilterFromUrl(url));
         setSchedulerSortMode(schedulerSortModeFromUrl(url));
+        setSchedulerInterestOnly(schedulerInterestOnlyFromUrl(url));
       }
       setView(next);
       setViewReady(true);
@@ -1064,10 +1070,11 @@ export default function DataNestApp({session}:{session:Session}) {
       if(schedulerViewMode!=="gantt")url.searchParams.set("mode",schedulerViewMode);
       if(schedulerFilter!=="ALL")url.searchParams.set("filter",schedulerFilter);
       if(schedulerSortMode!=="priority")url.searchParams.set("sort",schedulerSortMode);
+      if(schedulerInterestOnly)url.searchParams.set("interests","1");
     }
     const nextUrl=url.toString();
     if(nextUrl!==window.location.href)window.history.replaceState(window.history.state,"",nextUrl);
-  },[view,viewReady,jobPage,runPage,checkpointPage,eventPage,schedulerViewMode,schedulerFilter,schedulerSortMode]);
+  },[view,viewReady,jobPage,runPage,checkpointPage,eventPage,schedulerViewMode,schedulerFilter,schedulerSortMode,schedulerInterestOnly]);
   useEffect(()=>{
     if(!viewReady||commandOpen)return;
     if(previousViewRef.current===view)return;
@@ -1640,7 +1647,7 @@ export default function DataNestApp({session}:{session:Session}) {
 
         <div key={view} className="viewStage workspaceArrival">
         {!loadingCore&&project&&view==="overview"&&<ResonanceHome project={project} jobs={recentJobs} counts={summary} canOperate={canOperate} onNavigate={setView}/>}
-        {!loadingCore&&project&&view==="stakeholder"&&<StakeholderWorkspace projectId={project.id} currentUserId={session.user.id} canReview={canManageAi}/>}
+        {!loadingCore&&project&&view==="stakeholder"&&<StakeholderWorkspace projectId={project.id} currentUserId={session.user.id} canReview={canManageAi} onOpenMatchedJobs={()=>{setSchedulerInterestOnly(true);setSchedulerSortMode("interest");setSchedulerFilter("ALL");setSchedulerViewMode("gantt");setView("scheduler");}}/>}
         {!loadingCore&&project&&["sparks","productlab","unifi"].includes(view)&&!recoveryHydrated&&<section className="panel" role="status" aria-live="polite">
           <p className="eyebrow">DURABLE RECOVERY</p>
           <h2>Synchronizing mutation continuity</h2>
@@ -1655,7 +1662,7 @@ export default function DataNestApp({session}:{session:Session}) {
         {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace key={project.id+":"+session.user.id} projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError} preferredJobId={activeDataNestAiSession?.jobId||null} onActiveSessionChange={updateActiveWorkContext}/>}
         {!loadingCore&&project&&view==="productlab"&&recoveryHydrated&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate} setNotice={setNotice} setError={setError}/>}
         {!loadingCore&&project&&view==="unifi"&&recoveryHydrated&&<UnifiPlanner project={project} currentUserId={session.user.id} jobs={jobs} capabilities={capabilities} reload={async()=>{await loadJobsPage(jobPage);await loadSummary(project.id);await loadRecentJobs(project.id);}} setNotice={setNotice} setError={setError} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} activeJobId={activeDataNestAiSession?.jobId||null}/>}
-        {!loadingCore&&view==="scheduler"&&project&&<Scheduler projectId={project.id} projectName={project?.name||DATANEST_CANONICAL_NAME} projectSlug={project?.slug||"resonance-datanest"} currentUserId={session.user.id} role={membership?.role||"viewer"} jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null} setNotice={setNotice} setError={setError} filter={schedulerFilter} viewMode={schedulerViewMode} sortMode={schedulerSortMode} onFilter={setSchedulerFilter} onViewMode={setSchedulerViewMode} onSortMode={setSchedulerSortMode}/>} 
+        {!loadingCore&&view==="scheduler"&&project&&<Scheduler projectId={project.id} projectName={project?.name||DATANEST_CANONICAL_NAME} projectSlug={project?.slug||"resonance-datanest"} currentUserId={session.user.id} role={membership?.role||"viewer"} jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null} setNotice={setNotice} setError={setError} filter={schedulerFilter} viewMode={schedulerViewMode} sortMode={schedulerSortMode} interestOnly={schedulerInterestOnly} onFilter={setSchedulerFilter} onViewMode={setSchedulerViewMode} onSortMode={setSchedulerSortMode} onInterestOnly={setSchedulerInterestOnly}/>} 
         {!loadingCore&&view==="runs"&&<Runs runs={runs} jobLookup={jobLookup} page={runPage} total={runCount} onPage={setRunPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
         {!loadingCore&&view==="checkpoints"&&<Checkpoints checkpoints={checkpoints} jobLookup={jobLookup} page={checkpointPage} total={checkpointCount} onPage={setCheckpointPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
         {!loadingCore&&view==="audit"&&<Audit events={events} jobLookup={jobLookup} page={eventPage} total={eventCount} onPage={setEventPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
@@ -2004,13 +2011,13 @@ function formatGanttTick(value:number,span:number) {
   return new Intl.DateTimeFormat(undefined,options).format(new Date(value));
 }
 
-function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,capabilities,onStatus,canOperate,page,total,onPage,onNavigate,activeJobId,setNotice,setError,filter,viewMode,sortMode,onFilter,onViewMode,onSortMode}:{projectId:string;projectName:string;projectSlug:string;currentUserId:string;role:ExecutionAuthorityRole;jobs:Job[];capabilities:Capability[];onStatus:(j:Job,s:string)=>Promise<void>;canOperate:boolean;page:number;total:number;onPage:(p:number)=>void;onNavigate:(v:ViewKey)=>void;activeJobId:string|null;setNotice:(value:string)=>void;setError:(value:string)=>void;filter:SchedulerFilter;viewMode:SchedulerViewMode;sortMode:SchedulerSortMode;onFilter:(value:SchedulerFilter)=>void;onViewMode:(value:SchedulerViewMode)=>void;onSortMode:(value:SchedulerSortMode)=>void}) {
+function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,capabilities,onStatus,canOperate,page,total,onPage,onNavigate,activeJobId,setNotice,setError,filter,viewMode,sortMode,interestOnly,onFilter,onViewMode,onSortMode,onInterestOnly}:{projectId:string;projectName:string;projectSlug:string;currentUserId:string;role:ExecutionAuthorityRole;jobs:Job[];capabilities:Capability[];onStatus:(j:Job,s:string)=>Promise<void>;canOperate:boolean;page:number;total:number;onPage:(p:number)=>void;onNavigate:(v:ViewKey)=>void;activeJobId:string|null;setNotice:(value:string)=>void;setError:(value:string)=>void;filter:SchedulerFilter;viewMode:SchedulerViewMode;sortMode:SchedulerSortMode;interestOnly:boolean;onFilter:(value:SchedulerFilter)=>void;onViewMode:(value:SchedulerViewMode)=>void;onSortMode:(value:SchedulerSortMode)=>void;onInterestOnly:(value:boolean)=>void}) {
   const setFilter=onFilter;
   const setViewMode=onViewMode;
   const setSortMode=onSortMode;
+  const setInterestOnly=onInterestOnly;
   const [authoritySummary,setAuthoritySummary]=useState<Record<string,JobExecutionAuthorityState>>({});
   const [userInterests,setUserInterests]=useState<WorkFocusKey[]>([]);
-  const [interestOnly,setInterestOnly]=useState(false);
   const filterOptions=schedulerFilterOptions;
 
   useEffect(()=>{
@@ -2155,7 +2162,7 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
             <ProjectGroupHeader projectName={projectName} projectSlug={projectSlug} jobs={orderedVisible}/>
             <div className="schedulerTable"><div className="schedulerRow headerRow"><span>Job</span><span>Priority</span><span>Capability</span><span>Status</span><span>Controls</span></div>
             {orderedVisible.map(job=><div className={"schedulerRow "+(job.id===activeJobId?"contextMatch ":"")+(workMatchesInterests(job.requirements,userInterests)?"interestMatch":"")} data-active-context={job.id===activeJobId?"true":undefined} tabIndex={job.id===activeJobId?-1:undefined} aria-label={job.id===activeJobId?"Active work context · "+jobCode(job)+" · "+job.title:undefined} key={job.id}>
-              <div data-label="Job"><b>{jobCode(job)}</b><small>{job.title}</small>{job.id===activeJobId&&<span className="contextMatchTag">ACTIVE CONTEXT</span>}{workMatchesInterests(job.requirements,userInterests)&&<span className="interestMatchTag">INTEREST MATCH</span>}{workFocusKeysFromRequirements(job.requirements).length>0&&<span className="jobFocusTags">{workFocusKeysFromRequirements(job.requirements).map(key=><small key={key}>{workFocusLabel(key)}</small>)}</span>}</div>
+              <div data-label="Job"><b>{jobCode(job)}</b><small>{job.title}</small>{job.id===activeJobId&&<span className="contextMatchTag">ACTIVE CONTEXT</span>}{workMatchesInterests(job.requirements,userInterests)&&<><span className="interestMatchTag">INTEREST MATCH</span><span className="interestMatchDetail" aria-label={"Matched interests: "+workInterestOverlapKeys(job.requirements,userInterests).map(workFocusLabel).join(", ")}>{"Matched "+workInterestOverlapKeys(job.requirements,userInterests).length+" · "+workInterestOverlapKeys(job.requirements,userInterests).map(workFocusLabel).join(" · ")}</span></>}{workFocusKeysFromRequirements(job.requirements).length>0&&<span className="jobFocusTags">{workFocusKeysFromRequirements(job.requirements).map(key=><small key={key}>{workFocusLabel(key)}</small>)}</span>}</div>
               <span data-label="Priority" className="schedulerPriorityCell"><b>{"P"+job.priority}</b><PriorityScale value={job.priority}/></span>
               <span data-label="Capability">{job.required_capabilities?.join(", ")||"chat"}</span>
               <span data-label="Status"><Badge value={job.status}/><small className="schedulerAuthorityState">{jobAuthorityReadinessLabel(authoritySummary[job.id])}</small></span>
@@ -2281,7 +2288,7 @@ function SchedulerGantt({projectName,projectSlug,jobs,onStatus,canOperate,active
           return <article className={"ganttRow "+(job.id===activeJobId?"contextMatch ":"")+(workMatchesInterests(job.requirements,userInterests)?"interestMatch":"")} data-active-context={job.id===activeJobId?"true":undefined} tabIndex={job.id===activeJobId?-1:undefined} aria-label={job.id===activeJobId?"Active work context · "+jobCode(job)+" · "+job.title:undefined} key={job.id}>
             <div className="ganttJobLabel">
               <div className="ganttJobTitle">
-                <div><b>{jobCode(job)}</b><small title={job.title}>{job.title}</small>{job.id===activeJobId&&<span className="contextMatchTag">ACTIVE CONTEXT</span>}{workMatchesInterests(job.requirements,userInterests)&&<span className="interestMatchTag">INTEREST MATCH</span>}</div>
+                <div><b>{jobCode(job)}</b><small title={job.title}>{job.title}</small>{job.id===activeJobId&&<span className="contextMatchTag">ACTIVE CONTEXT</span>}{workMatchesInterests(job.requirements,userInterests)&&<><span className="interestMatchTag">INTEREST MATCH</span><span className="interestMatchDetail" aria-label={"Matched interests: "+workInterestOverlapKeys(job.requirements,userInterests).map(workFocusLabel).join(", ")}>{"Matched "+workInterestOverlapKeys(job.requirements,userInterests).length+" · "+workInterestOverlapKeys(job.requirements,userInterests).map(workFocusLabel).join(" · ")}</span></>}</div>
                 <Badge value={job.status}/>
               </div>
               <div className="ganttMeta">

@@ -54,3 +54,24 @@ test("TranScheduler can rank Jobs by interest overlap without changing Job prior
   assert.match(app,/<option value="interest">Interest relevance<\/option>/);
   assert.match(app,/return right\.priority-left\.priority\|\|left\.job_number-right\.job_number/);
 });
+
+
+test("interest-only scheduler state is shareable and Stakeholder can open it directly",()=>{
+  assert.match(app,/operationalUrlStateKeys=\["page","mode","filter","sort","interests"\]/);
+  assert.match(app,/function schedulerInterestOnlyFromUrl/);
+  assert.match(app,/url\.searchParams\.get\("interests"\)==="1"/);
+  assert.match(app,/url\.searchParams\.set\("interests","1"\)/);
+  assert.match(app,/interestOnly=\{schedulerInterestOnly\}/);
+  assert.match(stakeholder,/Open matched Jobs/);
+  assert.match(stakeholder,/onOpenMatchedJobs:\(\)=>void/);
+});
+
+
+test("TranScheduler explains why each Job matches the user's interests",()=>{
+  assert.match(taxonomy,/function workInterestOverlapKeys/);
+  assert.match(taxonomy,/workFocusKeysFromRequirements\(requirements\)\.filter\(key=>selected\.has\(key\)\)/);
+  assert.match(app,/Matched interests:/);
+  assert.match(app,/"Matched "\+workInterestOverlapKeys\(job\.requirements,userInterests\)\.length/);
+  assert.match(app,/workInterestOverlapKeys\(job\.requirements,userInterests\)\.map\(workFocusLabel\)\.join\(" · "\)/);
+  assert.match(app,/className="interestMatchDetail"/);
+});
