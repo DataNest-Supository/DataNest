@@ -103,11 +103,13 @@ function label(value:unknown){
 export default function StakeholderWorkspace({
   projectId,
   currentUserId,
-  canReview
+  canReview,
+  onOpenMatchedJobs
 }:{
   projectId:string;
   currentUserId:string;
   canReview:boolean;
+  onOpenMatchedJobs:()=>void;
 }) {
   const [workspace,setWorkspace]=useState<Workspace|null>(null);
   const [intelligence,setIntelligence]=useState<IntelligenceWorkspace|null>(null);
@@ -339,6 +341,10 @@ export default function StakeholderWorkspace({
       <p className="muted">These interests connect directly to UNIFI Job requirement sections and TranScheduler relevance matching. They do not change Job priority, execution authority, contribution scores, or access permissions.</p>
       <div className="workFocusGrid stakeholderInterestGrid">
         {WORK_FOCUS_AREAS.map(item=><label key={item.key} title={item.description}><input type="checkbox" disabled={savingPreference} checked={interestKeys.includes(item.key)} onChange={()=>void toggleInterest(item.key)}/><span><b>{item.label}</b><small>{item.description}</small></span></label>)}
+      </div>
+      <div className="heroActions">
+        <button className="primaryButton compact" type="button" disabled={interestKeys.length===0||savingPreference} onClick={onOpenMatchedJobs}>Open matched Jobs</button>
+        <span className="muted">{interestKeys.length===0?"Select at least one interest to open a matched TranScheduler view.":"Opens TranScheduler with My interests enabled and Interest relevance selected."}</span>
       </div>
     </section>
 
