@@ -205,6 +205,22 @@ async function loadSessionEvents(input:{
   });
 }
 
+type CertifiedMemorySelection={
+  items:Array<Record<string,unknown>>;
+  strategy:string;
+  summary:{
+    active_count:number;
+    applicable_count:number;
+    selected_count:number;
+    review_due_count:number;
+  };
+};
+
+function nonNegativeCount(value:unknown,fallback=0):number{
+  const parsed=Number(value);
+  return Number.isFinite(parsed)&&parsed>=0?Math.floor(parsed):fallback;
+}
+
 async function loadCertifiedMemory(input:{
   client:AnyClient;
   projectId:string;
@@ -215,7 +231,7 @@ async function loadCertifiedMemory(input:{
   jurisdiction:string|null;
   visibilityClass:string;
   limit?:number;
-}):Promise<Array<Record<string,unknown>>>{
+}):Promise<CertifiedMemorySelection>{
   const ranked=await input.client.rpc("get_ranked_certified_memory_context_v2",{
     target_project:input.projectId,
     target_job:input.jobId,
@@ -227,8 +243,23 @@ async function loadCertifiedMemory(input:{
     target_limit:input.limit||24
   });
   if(!ranked.error){
-    const items=(ranked.data as {items?:unknown[]}|null)?.items;
-    return Array.isArray(items)?items as Array<Record<string,unknown>>:[];
+    const payload=(ranked.data||{}) as Record<string,unknown>;
+    const rawItems=Array.isArray(payload.items)?payload.items:[];
+    const items=rawItems as Array<Record<string,unknown>>;
+    const rawSummary=
+      payload.summary&&typeof payload.summary==="object"&&!Array.isArray(payload.summary)
+        ?payload.summary as Record<string,unknown>
+        :{};
+    return {
+      items,
+      strategy:String(payload.strategy||"verified-memory-ranked-v1"),
+      summary:{
+        active_count:nonNegativeCount(rawSummary.active_count,items.length),
+        applicable_count:nonNegativeCount(rawSummary.applicable_count,items.length),
+        selected_count:items.length,
+        review_due_count:nonNegativeCount(rawSummary.review_due_count,0)
+      }
+    };
   }
 
   const missingRankedFunction=
@@ -244,10 +275,61 @@ async function loadCertifiedMemory(input:{
     target_limit:Math.min(input.limit||24,50)
   });
   if(fallback.error)throw fallback.error;
-  const items=(fallback.data as {items?:unknown[]}|null)?.items;
-  return Array.isArray(items)?items as Array<Record<string,unknown>>:[];
+  const rawItems=(fallback.data as {items?:unknown[]}|null)?.items;
+  const items=Array.isArray(rawItems)?rawItems as Array<Record<string,unknown>>:[];
+  return {
+    items,
+    strategy:"legacy-recency-fallback",
+    summary:{
+      active_count:items.length,
+      applicable_count:items.length,
+      selected_count:items.length,
+      review_due_count:0
+    }
+  };
 }
 
+async function recordCertifiedMemoryUsage(input:{
+  serviceClient:AnyClient;
+  projectId:string;
+  jobId:string;
+  requestId:string;
+  traceId:string;
+  query:string;
+  purpose:string;
+  productScope:string|null;
+  visibilityClass:string;
+  selection:CertifiedMemorySelection;
+}):Promise<"recorded"|"not_available">{
+  const selectedMemoryIds=input.selection.items
+    .map(item=>String(item.id||""))
+    .filter(Boolean);
+  const {error}=await input.serviceClient.rpc("service_record_certified_memory_usage_v1",{
+    target_project:input.projectId,
+    target_job:input.jobId,
+    target_ai_usage_request:input.requestId,
+    target_trace_id:input.traceId,
+    target_strategy:input.selection.strategy,
+    target_purpose:input.purpose,
+    target_product_scope:input.productScope,
+    target_visibility_class:input.visibilityClass,
+    target_query_hash:await sha256Text(input.query),
+    target_active_count:input.selection.summary.active_count,
+    target_applicable_count:input.selection.summary.applicable_count,
+    target_selected_count:selectedMemoryIds.length,
+    target_review_due_count:input.selection.summary.review_due_count,
+    target_selected_memory_ids:selectedMemoryIds
+  });
+  if(!error)return "recorded";
+
+  const missingReceiptFunction=
+    String((error as {code?:unknown}).code||"")==="PGRST202" ||
+    /service_record_certified_memory_usage_v1|could not find the function/i.test(
+      String((error as {message?:unknown}).message||"")
+    );
+  if(missingReceiptFunction)return "not_available";
+  throw error;
+}
 
 async function loadDevelopmentWorkingMemory(
   serviceClient:AnyClient,
@@ -856,7 +938,7 @@ Deno.serve(async(request:Request)=>{
         userId:user.id,
         existingSessionId:typeof body.sessionId==="string"&&body.sessionId?body.sessionId:null
       });
-      const [events,certifiedMemory]=await Promise.all([
+      const [events,certifiedMemorySelection]=await Promise.all([
         loadSessionEvents({
           staging:stagingClient,
           projectId:job.project_id,
@@ -879,7 +961,9 @@ Deno.serve(async(request:Request)=>{
         sessionId:session.id,
         job,
         events,
-        certifiedMemory
+        certifiedMemory:certifiedMemorySelection.items,
+        certifiedMemoryStrategy:certifiedMemorySelection.strategy,
+        certifiedMemorySummary:certifiedMemorySelection.summary
       },200,origin);
     }
 
@@ -927,6 +1011,8 @@ Deno.serve(async(request:Request)=>{
     let developmentProviderLabel:string|null=null;
     let developmentModelLabel:string|null=null;
     let contributionTracking:{status:"not_applicable"|"staged"|"failed";contributionId?:string|null;error?:string}={status:"not_applicable"};
+    let memoryReceiptStatus:"not_recorded"|"recorded"|"not_available"="not_recorded";
+    let memorySelectionStrategy:string|null=null;
 
     const result=await executeChatTurn({
       beginRequest:async()=>{
@@ -1072,14 +1158,16 @@ Deno.serve(async(request:Request)=>{
           :null
       }),
       callProvider:async()=>{
-        const [certifiedMemory,events,developmentMemory]=await Promise.all([
+        const productScope=legalMode?"legal_eagle":developmentMode?"development_command":"datanest_ai";
+        const memoryQuery=[message,job.title,job.description,legalTask,jurisdiction].filter(Boolean).join(" ");
+        const [memorySelection,events,developmentMemory]=await Promise.all([
           loadCertifiedMemory({
             client:userClient,
             projectId:job.project_id,
             jobId:job.id,
-            query:[message,job.title,job.description,legalTask,jurisdiction].filter(Boolean).join(" "),
+            query:memoryQuery,
             purpose:policyPurpose,
-            productScope:legalMode?"legal_eagle":developmentMode?"development_command":"datanest_ai",
+            productScope,
             jurisdiction:legalMode?jurisdiction:null,
             visibilityClass,
             limit:24
@@ -1094,7 +1182,21 @@ Deno.serve(async(request:Request)=>{
             ?loadDevelopmentWorkingMemory(serviceClient,job.project_id,user.id)
             :Promise.resolve([] as string[])
         ]);
+        const certifiedMemory=memorySelection.items;
         certifiedMemoryIds=certifiedMemory.map(item=>String(item.id||"")).filter(Boolean);
+        memorySelectionStrategy=memorySelection.strategy;
+        memoryReceiptStatus=await recordCertifiedMemoryUsage({
+          serviceClient,
+          projectId:job.project_id,
+          jobId:job.id,
+          requestId:activeRequestId,
+          traceId:stagedInputTraceId,
+          query:memoryQuery,
+          purpose:policyPurpose,
+          productScope,
+          visibilityClass,
+          selection:memorySelection
+        });
         provisionalIds=events.map(item=>item.id);
         const governanceRules=[
           "DATANEST AI GOVERNANCE",
@@ -1574,6 +1676,8 @@ Deno.serve(async(request:Request)=>{
       cumulativeWorkingMemory:workingMemoryStatus==="recorded",
       workingMemoryStatus,
       certifiedMemoryIds,
+      memorySelectionStrategy,
+      memoryReceiptStatus,
       requestStatus,
       trendAnalysis,
       productMode:legalMode?"legal_eagle":null,
