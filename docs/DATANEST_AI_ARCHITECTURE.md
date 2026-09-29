@@ -67,6 +67,11 @@ Every new governed AI execution records a Verified Memory usage receipt for the 
 
 These receipts let Intelligence Fabric answer which governed memory objects influenced a request without exposing chain-of-thought. Receipt creation is service-only and idempotent per project trace. Project members can inspect the receipt evidence through the existing Intelligence Fabric workspace.
 
+
+## Memory, learning and language standards
+
+The [memory and language control baseline](MEMORY_LEARNING_LANGUAGE_STANDARDS.md) maps ISO and open standards to implementation evidence, required controls, multilingual evaluation gates and outstanding gaps. All three reasoning modes include the shared `memory-language-v1` policy. This is partial standards alignment, not assessed ISO conformity or demonstrated multilingual learning parity.
+
 ### Verified Memory review lifecycle
 
 Certification establishes that a memory passed the governed evidence and authority gates at a point in time; it does not assert that the knowledge is timeless. Active Certified Memory therefore receives a category-based review schedule. Security, authorization, destructive, and legal knowledge use shorter default horizons than architecture, governance, workflow, and general knowledge.
@@ -74,4 +79,3 @@ Certification establishes that a memory passed the governed evidence and authori
 When `review_after` is reached, the memory remains historically **CERTIFIED** but becomes **REVIEW DUE**. Ranked retrieval applies a review factor so overdue memory is less likely to dominate newer, equally relevant verified knowledge. It is not silently deleted or relabeled as uncertified.
 
 Owner and Admin reviewers can reaffirm review-due memory after human review. Reaffirmation updates `last_verified_at`, schedules the next review, and writes an append-only `certified_memory_reviews` audit record. Only an Owner can retire an active Certified Memory object. Retirement removes it from active retrieval without deleting its provenance or prior review history.
-
