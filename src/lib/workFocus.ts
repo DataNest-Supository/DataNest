@@ -36,12 +36,16 @@ export function workFocusKeysFromRequirements(requirements:unknown):WorkFocusKey
   return normalizeWorkFocusKeys((requirements as Record<string,unknown>).focus_areas);
 }
 
-export function workInterestOverlapCount(requirements:unknown,interests:unknown){
+export function workInterestOverlapKeys(requirements:unknown,interests:unknown):WorkFocusKey[] {
   const selected=new Set(normalizeWorkFocusKeys(interests));
-  if(selected.size===0)return 0;
-  return workFocusKeysFromRequirements(requirements).reduce((count,key)=>count+(selected.has(key)?1:0),0);
+  if(selected.size===0)return [];
+  return workFocusKeysFromRequirements(requirements).filter(key=>selected.has(key));
+}
+
+export function workInterestOverlapCount(requirements:unknown,interests:unknown){
+  return workInterestOverlapKeys(requirements,interests).length;
 }
 
 export function workMatchesInterests(requirements:unknown,interests:unknown){
-  return workInterestOverlapCount(requirements,interests)>0;
+  return workInterestOverlapKeys(requirements,interests).length>0;
 }
