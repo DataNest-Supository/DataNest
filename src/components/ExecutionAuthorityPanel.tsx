@@ -385,14 +385,24 @@ export default function ExecutionAuthorityPanel({
         const independent=bool(item.require_independent_approval)||level==="A4";
         const mayApprove=state==="proposed"&&canApprove&&!((independent)&&isProposer);
         const approval=workspace.approvals.find(approval=>txt(approval.authority_envelope_id)===txt(item.id)&&txt(approval.status)==="approved");
-        const requestedStage=state==="proposed"?"review-required":(["approved","active"].includes(state)?"authorized":"checked");
-        const reviewer=approval?txt(approval.approver_user_id):undefined;
-        const approvalEvidence=approval?<span>{"Approval evidence · "+txt(approval.id)}</span>:state==="proposed"?<span>Reviewer approval evidence has not been recorded for this proposal.</span>:undefined;
+        const requestedStage:GovernedActionStage=state==="approved"||state==="active"
+          ?(independent&&!approval?"review-required":"authorized")
+          :state==="paused"
+            ?"checked"
+            :["revoked","rejected","expired"].includes(state)
+              ?"verified"
+              :"review-required";
+        const reviewer=requestedStage==="authorized"&&approval?txt(approval.approver_user_id)||undefined:undefined;
+        const approvalEvidence=approval
+          ?<span>{"Approval evidence · "+txt(approval.id)}</span>
+          :requestedStage==="review-required"
+            ?<span>Required authorization evidence has not been recorded for this envelope.</span>
+            :undefined;
         return <article className="manifestCard" key={txt(item.id)}>
           <div className="rowBetween"><b>{level+" · "+txt(item.actor_key)}</b><span className={"badge "+statusTone(state)}>{executionAuthorityLabel(state)}</span></div>
           <GovernedAction
             stage={requestedStage}
-            summary={state==="proposed"?"This authority proposal remains review-required until the applicable human review is recorded.":"Presentation follows the recorded authority-envelope state and never upgrades missing review evidence."}
+            summary={requestedStage==="authorized"?"Recorded authority state and required approval evidence support this authorization presentation.":requestedStage==="review-required"?"Authorization evidence is incomplete or pending; this envelope must not be treated as executable authority.":"This authority record is non-authorizing in its current lifecycle state."}
             reviewer={reviewer}
             evidence={approvalEvidence}
           />
