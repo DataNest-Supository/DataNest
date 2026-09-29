@@ -62,3 +62,28 @@ test("review-gated policy routes avoid generated dates and unverified guarantees
   const combined=[noticeSource,...routeSources].join("\n");
   assert.doesNotMatch(combined,/industry[- ]standard encryption|not retained beyond|fully compliant|guaranteed secure|all data (?:is )?encrypted/i);
 });
+
+
+test("cross-app legal contract is structural and review-gated",()=>{
+  const contractSource=readSource("apps/ronsas/shared/legal-contract.json");
+  assert.notEqual(contractSource,"","apps/ronsas/shared/legal-contract.json must exist");
+  const contract=JSON.parse(contractSource);
+  assert.equal(contract.legalOperator,"Resonance Sole Proprietorship");
+  assert.equal(contract.businessBrand,"Resonance App Development");
+  assert.equal(contract.platform,"Resonance DataNest");
+  assert.equal(contract.governanceLabel,"RSGP Governed");
+  assert.equal(contract.policyState,"review-gated");
+  assert.deepEqual(contract.routes,{
+    legal:"/legal",
+    governance:"/governance",
+    privacy:"/privacy",
+    terms:"/terms",
+    disclaimers:"/disclaimers",
+    acceptableUse:"/acceptable-use",
+    intellectualProperty:"/intellectual-property",
+    accessibility:"/accessibility"
+  });
+  assert.doesNotMatch(contractSource,/RSGP\s+(?:means|stands for|is short for)/i);
+  assert.doesNotMatch(contractSource,/"policyState"\s*:\s*"approved"/i);
+  assert.doesNotMatch(contractSource,/encryption|retention|jurisdiction|waiver|indemnif|liabilit/i);
+});
