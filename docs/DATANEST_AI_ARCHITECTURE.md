@@ -46,3 +46,18 @@ As of 2026-09-28, the preferred zero-dedicated-GPU bootstrap route is Cloudflare
 - High-sensitivity and local-only workloads should remain on an appropriately approved private/local route rather than being assumed safe for hosted inference.
 
 The production provider-domain allowlist includes `api.cloudflare.com`; activation still requires a valid account-specific endpoint and server-side credential.
+
+## Collective Memory and Verified Memory
+
+DataNest separates collective learning from trusted operational memory.
+
+- **Collective Knowledge Pool** is the governed discovery layer formed from eligible human, AI companion, and document evidence. Trends and learning candidates may emerge here, but collective repetition alone is not authority.
+- **Verified/Certified Memory** is the operational trust layer. Only knowledge that passes the required evidence, validation, stress, authority, and promotion gates becomes reusable project memory.
+- **ILM-1** consumes Certified Memory; it does not treat raw collective evidence as authoritative memory.
+
+Certified Memory retrieval uses the `verified-memory-ranked-v1` strategy. The runtime ranks applicable active memory using task relevance, certification confidence, applicability specificity, and verification freshness instead of relying only on promotion recency.
+
+Certified Memory may declare applicability for product scopes, purposes, jurisdictions, and visibility classes, plus validity and review dates. Existing memories with no applicability metadata remain project-wide for backwards compatibility.
+
+Before a newly certified candidate is promoted, DataNest compares it with active Certified Memory in the same category. Near-duplicates are held back to prevent memory pollution, while deterministic contradiction hints require explicit Owner supersession. Supersession creates a durable memory relationship rather than deleting history.
+
