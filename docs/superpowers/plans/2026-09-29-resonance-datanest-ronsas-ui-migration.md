@@ -143,29 +143,32 @@ git commit -m "feat: align Creative Studio with Resonance DataNest"
 - Preserve ePublisher’s existing light theme support, RTL behavior, StoryForge components, and routes.
 - Adapter must map existing `--font-display/body/accent/mono` variables to the approved canonical families and keep ePublisher’s approved magenta accent.
 
-- [ ] **Step 1: Add failing tests for attribution, typography, theme, and legal-state behavior**
+- [x] **Step 1: Add failing tests for attribution, typography, theme, and legal-state behavior**
 
-- [ ] **Step 2: Run app verification**
+- [x] **Step 2: Run app verification**
 
 Run: `cd apps/ronsas/epublisher && npm test && npm run build:types`  
 Expected: FAIL on new migration assertions.
 
-- [ ] **Step 3: Implement adapter/footer/legal changes**
+- [x] **Step 3: Implement adapter/footer/legal changes**
 
 Load the four canonical families through app-local `@fontsource` imports before the adapter. Remove or relabel legacy Hub pricing links that imply paid access; keep free-promotion language.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run: `cd apps/ronsas/epublisher && npm test && npm run build:types && npm run build -- --base=/DataNest/apps/epublisher/`  
 Run: `node scripts/validate-ronsas-brand-contract.mjs --app epublisher`  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/ronsas/epublisher scripts/validate-ronsas-brand-contract.mjs
 git commit -m "feat: align ePublisher with Resonance DataNest"
 ```
+
+
+> Task 3 evidence: RONSAS Application Validation ePublisher job PASS; Vitest 44 files / 413 tests passed, build:types passed, and Vite production build passed with base /DataNest/apps/epublisher/.
 
 ### Task 4: Migrate SyncVision without weakening sovereign/local behavior
 
