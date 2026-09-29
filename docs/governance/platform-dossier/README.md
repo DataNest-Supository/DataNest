@@ -11,3 +11,5 @@ Use:
 - `UI_GOVERNANCE_RELEASE_REVIEW.md` for the human/external review record for one exact candidate SHA.
 
 Production remains gated by the exact-SHA Pages workflow, the complete review-reference payload, and the `github-pages` environment reviewer protection.
+
+- `UI_GOVERNANCE_CANDIDATE_88945f1.md` records the exact-head automated certification evidence for the merged production-gate candidate and the remaining human/environment blockers.
