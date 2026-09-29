@@ -3,6 +3,7 @@ import { resolveDataNestAiStaging } from "../_shared/datanestAiStaging.ts";
 import { sha256Text } from "../_shared/datanestAiRuntime.ts";
 import { replayContentMatches } from "../_shared/datanestAiContinuity.ts";
 import { buildEvidenceLanguageMetadata } from "../_shared/datanestLanguageMetadata.ts";
+import { selectLatestAuthorizedSessionId } from "../_shared/datanestAiSessionSelection.ts";
 
 declare const Deno:{
   env:{get:(name:string)=>string|undefined};
@@ -100,9 +101,15 @@ async function ensureCompanionSession(input:{
     if(candidateSessionsError)throw candidateSessionsError;
 
     const allowedSessionIds=new Set((candidateSessions||[]).map(row=>String(row.id)));
-    const latestPopulatedSession=(recentEvents||[]).find(row=>allowedSessionIds.has(String(row.session_id||"")));
-    if(latestPopulatedSession?.session_id){
-      return {id:String(latestPopulatedSession.session_id)};
+    const latestPopulatedSessionId=selectLatestAuthorizedSessionId(
+      (recentEvents||[]).map(row=>({
+        session_id:row.session_id?String(row.session_id):null,
+        created_at:String(row.created_at||"")
+      })),
+      allowedSessionIds
+    );
+    if(latestPopulatedSessionId){
+      return {id:latestPopulatedSessionId};
     }
   }
 
