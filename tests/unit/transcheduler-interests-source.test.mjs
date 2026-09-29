@@ -57,7 +57,7 @@ test("TranScheduler can rank Jobs by interest overlap without changing Job prior
 
 
 test("interest-only scheduler state is shareable and Stakeholder can open it directly",()=>{
-  assert.match(app,/operationalUrlStateKeys=\["page","mode","filter","sort","interests"\]/);
+  assert.match(app,/operationalUrlStateKeys=\["page","mode","filter","sort","interests","focus"\]/);
   assert.match(app,/function schedulerInterestOnlyFromUrl/);
   assert.match(app,/url\.searchParams\.get\("interests"\)==="1"/);
   assert.match(app,/url\.searchParams\.set\("interests","1"\)/);
@@ -97,4 +97,18 @@ test("Stakeholder shows current open Job demand for each interest area",()=>{
   assert.match(stakeholder,/open Jobs mapped across requirement sections/);
   assert.match(stakeholder,/open Jobs require /);
   assert.match(stakeholder,/className="interestDemandBadge"/);
+});
+
+
+test("Stakeholder demand badges drill into a shareable open-Job requirement focus",()=>{
+  assert.match(stakeholder,/onOpenRequirementJobs:\(key:WorkFocusKey\)=>void/);
+  assert.match(stakeholder,/className="interestDemandBadge" type="button"/);
+  assert.match(stakeholder,/disabled=\{interestDemand\[item\.key\]===0\}/);
+  assert.match(stakeholder,/onOpenRequirementJobs\(item\.key\)/);
+  assert.match(app,/function schedulerRequirementFocusFromUrl/);
+  assert.match(app,/url\.searchParams\.get\("focus"\)/);
+  assert.match(app,/url\.searchParams\.set\("focus",schedulerRequirementFocus\)/);
+  assert.match(app,/!finalStates\.has\(item\.status\)&&workFocusKeysFromRequirements\(item\.requirements\)\.includes\(requirementFocus\)/);
+  assert.match(app,/Requirement focus/);
+  assert.match(app,/open Jobs only/);
 });
