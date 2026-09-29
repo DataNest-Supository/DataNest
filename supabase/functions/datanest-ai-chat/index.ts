@@ -681,7 +681,8 @@ async function resolveActiveIlmRoute(input:{
       if(providerPolicyError)throw providerPolicyError;
       const providerPolicy=(providerPolicyData||{}) as Record<string,unknown>;
       selectedPhaseCDecisionRecordId=providerPolicy.decision_record_id?String(providerPolicy.decision_record_id):null;
-      if(String(providerPolicy.outcome||"deny")!=="allow")return null;
+      const providerPolicyEnforced=String(providerPolicy.enforcement_mode||"report_only")==="enforced";
+      if(providerPolicyEnforced&&String(providerPolicy.outcome||"deny")!=="allow")return null;
 
       selectedConnection=connection;
       const candidate=routeInput.resources.eligibleCandidates[0]||null;
@@ -696,6 +697,9 @@ async function resolveActiveIlmRoute(input:{
           provider_decision_trace:providerPolicy.decision_trace||null,
           provider_decision_record_id:providerPolicy.decision_record_id||null,
           provider_profile_id:providerPolicy.provider_profile_id||null,
+          provider_processing_region:providerPolicy.provider_processing_region||null,
+          provider_allowed_regions:providerPolicy.provider_allowed_regions||[],
+          provider_reason_code:providerPolicy.reason_code||null,
           provider_policy_version:providerPolicy.policy_version||null,
           provider_enforcement_mode:providerPolicy.enforcement_mode||null
         }
