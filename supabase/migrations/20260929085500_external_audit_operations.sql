@@ -20,10 +20,10 @@ begin
   select * into a from public.external_audit_assessments where id=target_assessment;
   if not found then raise exception 'Assessment not found.'; end if;
   if a.revision<>target_revision then raise exception 'Assessment revision is stale.'; end if;
-  if not public.has_project_role(a.project_id,array['owner','admin','operator']) then
+  if not private.has_project_role(a.project_id,array['owner','admin','operator']) then
     raise insufficient_privilege using message='Operator access is required.';
   end if;
-  if target_approve and not public.has_project_role(a.project_id,array['owner','admin']) then
+  if target_approve and not private.has_project_role(a.project_id,array['owner','admin']) then
     raise insufficient_privilege using message='Owner or admin access is required to approve a standards profile.';
   end if;
   select coalesce(max(profile_version),0)+1 into next_version from public.external_audit_profiles where assessment_id=a.id and revision=a.revision;
@@ -57,9 +57,9 @@ declare reviewer_ok boolean;
 begin
   select * into f from public.external_audit_findings where id=target_finding for update;
   if not found then raise exception 'Finding not found.'; end if;
-  reviewer_ok := public.has_project_role(f.project_id,array['owner','admin'])
+  reviewer_ok := private.has_project_role(f.project_id,array['owner','admin'])
     or (
-      public.has_project_role(f.project_id,array['operator'])
+      private.has_project_role(f.project_id,array['operator'])
       and exists(select 1 from public.external_audit_reviewers r where r.assessment_id=f.assessment_id and r.reviewer_user_id=auth.uid() and r.active)
     );
   if not reviewer_ok then raise insufficient_privilege using message='Authorized reviewer access is required.'; end if;
@@ -92,9 +92,9 @@ begin
   select * into act from public.external_audit_actions where id=target_action for update;
   if not found then raise exception 'Action not found.'; end if;
   select * into f from public.external_audit_findings where id=act.finding_id;
-  reviewer_ok := public.has_project_role(act.project_id,array['owner','admin'])
+  reviewer_ok := private.has_project_role(act.project_id,array['owner','admin'])
     or (
-      public.has_project_role(act.project_id,array['operator'])
+      private.has_project_role(act.project_id,array['operator'])
       and exists(select 1 from public.external_audit_reviewers r where r.assessment_id=act.assessment_id and r.reviewer_user_id=auth.uid() and r.active)
     );
   if not reviewer_ok then raise insufficient_privilege using message='Authorized reviewer access is required.'; end if;
@@ -145,8 +145,8 @@ declare reviewer_ok boolean;
 begin
   select * into act from public.external_audit_actions where id=target_action for update;
   if not found then raise exception 'Action not found.'; end if;
-  reviewer_ok := public.has_project_role(act.project_id,array['owner','admin'])
-    or (public.has_project_role(act.project_id,array['operator']) and exists(select 1 from public.external_audit_reviewers r where r.assessment_id=act.assessment_id and r.reviewer_user_id=auth.uid() and r.active));
+  reviewer_ok := private.has_project_role(act.project_id,array['owner','admin'])
+    or (private.has_project_role(act.project_id,array['operator']) and exists(select 1 from public.external_audit_reviewers r where r.assessment_id=act.assessment_id and r.reviewer_user_id=auth.uid() and r.active));
   if not reviewer_ok then raise insufficient_privilege using message='Authorized reviewer access is required.'; end if;
   select * into src from public.external_audit_sources where id=target_verification_source and assessment_id=act.assessment_id and project_id=act.project_id and acquisition_state='captured';
   if not found then raise exception 'Same-assessment captured verification evidence is required.'; end if;
@@ -177,7 +177,7 @@ begin
   select * into a from public.external_audit_assessments where id=target_assessment;
   if not found then raise exception 'Assessment not found.'; end if;
   if a.revision<>target_revision then raise exception 'Assessment revision is stale.'; end if;
-  if not public.has_project_role(a.project_id,array['owner','admin','operator']) then raise insufficient_privilege; end if;
+  if not private.has_project_role(a.project_id,array['owner','admin','operator']) then raise insufficient_privilege; end if;
   if coalesce(target_content,'')='' then raise exception 'Document content is required.'; end if;
   content_hash_value:=encode(digest(convert_to(target_content,'UTF8'),'sha256'),'hex');
   insert into public.external_audit_documents(assessment_id,project_id,revision,kind,format,content_hash,content_text,storage_reference,visibility,generated_by)
