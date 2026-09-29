@@ -4,6 +4,7 @@ import type { ExternalAuditorProps,AssessmentBundle } from "@/lib/externalAuditT
 import { STANDARDS_REGISTER,selectSuggestedStandards } from "@/lib/externalAuditStandards";
 import { analyzeAssessment,approveAction,createAssessment,loadAssessment,publishAuditDocument,saveStandardsProfile,snapshotSource } from "@/lib/externalAuditClient";
 import ExternalAuditDocuments from "@/components/ExternalAuditDocuments";
+import GovernedAction from "@/components/platform/GovernedAction";
 
 const DEFAULT_DOMAINS=["audit","software","ux","security"];
 
@@ -101,7 +102,22 @@ export default function ExternalAuditor({projectId,role}:ExternalAuditorProps){
       <section className="externalAuditSection">
         <p className="eyebrow">FINDINGS & OPTIMIZATION</p><h3>Evidence-linked draft</h3>
         {bundle.findings.length===0?<p className="muted">No findings yet. Capture evidence, approve a standards profile, and run governed analysis.</p>:<div className="externalAuditList">{bundle.findings.map(finding=><article key={finding.id}><div><b>{finding.criterion_id}</b><span className="externalAuditState">{finding.state}</span></div><p>{finding.observation}</p><small>{finding.claim_kind.toUpperCase()} · confidence {Math.round(finding.confidence*100)}% · evidence {finding.evidence_ids.length}</small></article>)}</div>}
-        {bundle.actions.length>0&&<div className="externalAuditList">{bundle.actions.map(action=><article key={action.id}><div><b>{action.outcome}</b><span className="externalAuditState">{action.status}</span></div><small>{action.job_id?"UNIFI Job "+action.job_id:"Awaiting reviewer approval"}</small>{!action.job_id&&<button className="secondaryButton compact" disabled={!canApprove||Boolean(busy)} onClick={()=>handoff(action.id)}>Approve → UNIFI</button>}</article>)}</div>}
+        {bundle.actions.length>0&&<div className="externalAuditList">{bundle.actions.map(action=>{
+          const approvalEvent=bundle.events.find(event=>event.event_type==="ACTION_APPROVED_TO_UNIFI"&&String(event.payload?.action_id||"")===action.id);
+          const reviewer=approvalEvent?.actor_user_id||undefined;
+          const evidence=approvalEvent?<span>{"Approval event · "+approvalEvent.id}</span>:<span>{"Finding "+action.finding_id+" · reviewer approval evidence pending"}</span>;
+          return <article key={action.id}>
+            <div><b>{action.outcome}</b><span className="externalAuditState">{action.status}</span></div>
+            <GovernedAction
+              stage={action.job_id?"authorized":"review-required"}
+              summary={action.job_id?"This optimization handoff has recorded human approval evidence.":"This optimization remains review-required before UNIFI handoff."}
+              reviewer={reviewer}
+              evidence={evidence}
+            />
+            <small>{action.job_id?"UNIFI Job "+action.job_id:"Awaiting reviewer approval"}</small>
+            {!action.job_id&&<button className="secondaryButton compact" disabled={!canApprove||Boolean(busy)} onClick={()=>handoff(action.id)}>Approve → UNIFI</button>}
+          </article>;
+        })}</div>}
       </section>
       <ExternalAuditDocuments bundle={bundle} onPublish={publishReport}/>
     </>}
