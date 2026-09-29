@@ -22,7 +22,7 @@
 - Existing app routing, startup recovery, local/sovereign guards, auth, data processing, and specialist workflow behavior must not be rewritten for visual consistency.
 - Free-promotion/no-paid-checkout remains active; migration must not introduce paid CTAs.
 - App legal pages remain review-gated until the central legal review process approves replacement text.
-- DataNest Pages must publish all supported user-facing apps under `/DataNest/apps/<slug>/`.
+- DataNest Pages continues to publish apps that already support static hosting under `/DataNest/apps/<slug>/`; YouTube Optimizer remains a DataNest-governed SSR runtime unless a separate runtime-conversion design is approved.
 
 ## Review Focus
 
@@ -30,7 +30,7 @@
 - **Deep links under GitHub Pages base paths:** app routes and static assets continue to work beneath `/DataNest/apps/<slug>/`.
 - **Legacy pricing/checkout copy:** any visible pricing-era CTA that contradicts free promotion is removed or relabeled.
 - **Dynamic legal dates or unverified privacy claims:** migrated legal pages expose review state and do not manufacture approval/effective dates.
-- **YouTube Optimizer bundle gap:** validation and production Pages output both include the app, not just its standalone build.
+- **YouTube Optimizer runtime mismatch:** do not force its TanStack Start/Nitro SSR runtime into a static Pages bundle; DataNest must still surface it as a governed application with an explicit runtime/launch contract.
 
 ---
 
@@ -200,7 +200,7 @@ git commit -m "feat: align SyncVision with Resonance DataNest"
 
 **Files:**
 - Create: `apps/ronsas/youtube-optimizer/src/resonance-datanest-adapter.css`
-- Modify: the YouTube Optimizer application entry module that currently imports `src/styles.css`
+- Modify: `apps/ronsas/youtube-optimizer/src/routes/__root.tsx`
 - Modify: `apps/ronsas/youtube-optimizer/src/components/SiteHeader.tsx`
 - Modify: `apps/ronsas/youtube-optimizer/src/components/SiteFooter.tsx`
 - Modify: `apps/ronsas/youtube-optimizer/src/pages/Terms.tsx`
@@ -223,20 +223,22 @@ Expected: identify the exact entry module; update this plan’s working notes if
 
 Require no billing/cancellation SEO description, no unsupported security guarantee, DataNest attribution, and legal/governance links.
 
-- [ ] **Step 3: Run tests**
+- [ ] **Step 2: Run tests**
 
 Run: `cd apps/ronsas/youtube-optimizer && bun run typecheck && bun run test`  
 Expected: FAIL on migration assertions.
 
-- [ ] **Step 4: Implement adapter/header/footer/legal changes**
+- [ ] **Step 3: Implement adapter/header/footer/legal changes**
 
-- [ ] **Step 5: Verify app**
+Import `resonance-datanest-adapter.css?url` from `src/routes/__root.tsx` and add it as a stylesheet link after the existing `appCss` link so the adapter is explicit and compatible with TanStack Start SSR.
+
+- [ ] **Step 4: Verify app**
 
 Run: `cd apps/ronsas/youtube-optimizer && bun run typecheck && bun run test && bun run build -- --base=/DataNest/apps/youtube-optimizer/`  
 Run: `node scripts/validate-ronsas-brand-contract.mjs --app youtube-optimizer`  
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add apps/ronsas/youtube-optimizer scripts/validate-ronsas-brand-contract.mjs
@@ -295,43 +297,43 @@ git add apps/ronsas/career-compass apps/ronsas/sovereign-forge apps/ronsas/lyric
 git commit -m "feat: align simple RONSAS apps with Resonance DataNest"
 ```
 
-### Task 7: Make YouTube Optimizer a DataNest-hosted Pages application
+### Task 7: Register YouTube Optimizer as a governed SSR launch target
 
 **Files:**
-- Modify: `scripts/build-ronsas-pages.mjs`
-- Modify: `.github/workflows/ronsas-app-validation.yml`
-- Modify: `.github/workflows/pages.yml`
 - Modify: `src/lib/ronsasApps.ts`
+- Modify: `src/components/RonsasIntegrationPanel.tsx`
 - Modify: `tests/unit/ronsas-cloud-integration.test.mjs`
 - Modify: `scripts/validate-ronsas-imports.mjs`
 
 **Interfaces:**
-- `RONSAS_HOSTED_APPS` includes `{slug:"youtube-optimizer",name:"YouTube Optimizer",...}`.
-- Bundler supports a Bun-built app kind and emits `out/apps/youtube-optimizer/index.html`.
-- Both validation and live verification loops include `youtube-optimizer`.
+- Extend the launch model with `launchKind:"datanest-pages"|"external-ssr"` and optional explicit `href`.
+- Existing seven Pages-hosted apps keep generated `/DataNest/apps/<slug>/` launch URLs.
+- YouTube Optimizer is registered as `launchKind:"external-ssr"` with its canonical SSR URL from the existing YouTube Optimizer configuration; DataNest displays the runtime distinction rather than pretending it is statically hosted.
+- A future move of YouTube Optimizer into static Pages requires a separate runtime-conversion design because its current Nitro server functions and SSR checks are functional requirements.
 
-- [ ] **Step 1: Add failing source tests**
+- [ ] **Step 1: Add failing launch-contract tests**
 
-Assert YouTube Optimizer is in the hosted-app registry, bundle app list, validation loop, and Pages verification loop.
+Assert seven apps resolve to DataNest Pages paths, YouTube Optimizer resolves to the explicit SSR URL, and the UI labels external SSR launch state accessibly.
 
 - [ ] **Step 2: Run focused tests**
 
 Run: `node --test tests/unit/ronsas-cloud-integration.test.mjs && node scripts/validate-ronsas-imports.mjs`  
-Expected: FAIL because the app is not currently bundled/registered.
+Expected: FAIL because the current launch model has no SSR runtime distinction.
 
-- [ ] **Step 3: Extend the bundler for Bun**
+- [ ] **Step 3: Extend the launch contract and integration panel**
 
-Use `bun install --frozen-lockfile` and `bun run build -- --base=/DataNest/apps/youtube-optimizer/`. Add `oven-sh/setup-bun@v2` to jobs that invoke the combined bundler.
+Preserve all existing aliases and static launch paths. Do not modify YouTube Optimizer's Nitro runtime or server functions in this UI migration.
 
-- [ ] **Step 4: Verify the complete Pages bundle locally/CI-equivalent**
+- [ ] **Step 4: Verify**
 
-Run root build, then `node scripts/build-ronsas-pages.mjs`; assert all eight user-facing app `index.html` files and manifest entries exist.
+Run: `node --test tests/unit/ronsas-cloud-integration.test.mjs && node scripts/validate-ronsas-imports.mjs && npm run check`  
+Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add scripts/build-ronsas-pages.mjs .github/workflows/ronsas-app-validation.yml .github/workflows/pages.yml src/lib/ronsasApps.ts tests/unit/ronsas-cloud-integration.test.mjs scripts/validate-ronsas-imports.mjs
-git commit -m "feat: host YouTube Optimizer inside DataNest Pages"
+git add src/lib/ronsasApps.ts src/components/RonsasIntegrationPanel.tsx tests/unit/ronsas-cloud-integration.test.mjs scripts/validate-ronsas-imports.mjs
+git commit -m "feat: register YouTube Optimizer governed SSR launch"
 ```
 
 ### Task 8: Enforce cross-app contract completeness
@@ -342,7 +344,7 @@ git commit -m "feat: host YouTube Optimizer inside DataNest Pages"
 - Modify: `tests/unit/ronsas-cloud-integration.test.mjs`
 
 **Interfaces:**
-- Validator fails unless all eight user-facing apps are marked migrated and satisfy operator/platform/governance/free-promotion contract checks.
+- Validator fails unless all eight user-facing apps are marked migrated and satisfy operator/platform/governance/free-promotion contract checks, regardless of whether runtime hosting is Pages or external SSR.
 - Backend-only `sovereign-backend` is validated for repository/legal metadata only; it is not required to render UI tokens.
 
 - [ ] **Step 1: Flip validator from incremental to complete mode**
@@ -355,10 +357,10 @@ Run: `node scripts/validate-ronsas-brand-contract.mjs --complete`
 Run each app command from `.github/workflows/ronsas-app-validation.yml`.  
 Expected: PASS.
 
-- [ ] **Step 3: Run bundled output verification**
+- [ ] **Step 3: Run bundled-output and launch-contract verification**
 
 Run: `npm run build && node scripts/build-ronsas-pages.mjs`  
-Expected: `out/apps/manifest.json` includes all eight user-facing apps.
+Expected: `out/apps/manifest.json` contains the seven static Pages-hosted apps, while the DataNest application registry exposes YouTube Optimizer as the eighth governed user-facing app through its SSR launch contract.
 
 - [ ] **Step 4: Commit**
 
