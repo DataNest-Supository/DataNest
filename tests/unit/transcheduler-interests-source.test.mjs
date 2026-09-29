@@ -125,4 +125,9 @@ test("Stakeholder demand badges drill into a shareable open-Job requirement focu
   assert.match(app,/!finalStates\.has\(item\.status\)&&workFocusKeysFromRequirements\(item\.requirements\)\.includes\(requirementFocus\)/);
   assert.match(app,/Requirement focus/);
   assert.match(app,/open Jobs only/);
+  assert.match(app,/const requirementFocusBatchSize=200/);
+  assert.match(app,/\.range\(offset,offset\+requirementFocusBatchSize-1\)/);
+  assert.match(app,/const schedulerJobs=useMemo\(\(\)=>requirementFocus\?\(requirementJobs\?\?\[\]\):jobs,\[jobs,requirementFocus,requirementJobs\]\)/);
+  assert.match(app,/setRequirementJobs\(allJobs\.filter\(item=>!finalStates\.has\(item\.status\)&&workFocusKeysFromRequirements\(item\.requirements\)\.includes\(requirementFocus\)\)\)/);
+  assert.match(app,/!requirementFocus&&<Pagination page=\{page\} total=\{total\} onPage=\{onPage\}\/>/);
 });

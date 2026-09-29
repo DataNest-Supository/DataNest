@@ -2040,6 +2040,8 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
   const setRequirementFocus=onRequirementFocus;
   const [authoritySummary,setAuthoritySummary]=useState<Record<string,JobExecutionAuthorityState>>({});
   const [userInterests,setUserInterests]=useState<WorkFocusKey[]>([]);
+  const [requirementJobs,setRequirementJobs]=useState<Job[]|null>(null);
+  const [requirementJobsLoading,setRequirementJobsLoading]=useState(false);
   const filterOptions=schedulerFilterOptions;
 
   useEffect(()=>{
@@ -2060,19 +2062,65 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
 
   useEffect(()=>{
     let cancelled=false;
+    if(!requirementFocus){
+      setRequirementJobs(null);
+      setRequirementJobsLoading(false);
+      return ()=>{cancelled=true;};
+    }
     const supabase=getSupabase();
-    if(!supabase||jobs.length===0){setAuthoritySummary({});return ()=>{cancelled=true;};}
+    if(!supabase){
+      setRequirementJobs([]);
+      setRequirementJobsLoading(false);
+      return ()=>{cancelled=true;};
+    }
+    setRequirementJobs(null);
+    setRequirementJobsLoading(true);
+    void (async()=>{
+      const requirementFocusBatchSize=200;
+      const allJobs:Job[]=[];
+      for(let offset=0;;offset+=requirementFocusBatchSize){
+        const {data,error}=await supabase
+          .from("jobs")
+          .select(jobColumns)
+          .eq("project_id",projectId)
+          .order("priority",{ascending:false})
+          .order("created_at",{ascending:false})
+          .range(offset,offset+requirementFocusBatchSize-1);
+        if(cancelled)return;
+        if(error){
+          setRequirementJobs([]);
+          setRequirementJobsLoading(false);
+          setError("Requirement focus could not load all project Jobs: "+error.message);
+          return;
+        }
+        const batch=(data||[]) as Job[];
+        allJobs.push(...batch);
+        if(batch.length<requirementFocusBatchSize)break;
+      }
+      if(cancelled)return;
+      setRequirementJobs(allJobs.filter(item=>!finalStates.has(item.status)&&workFocusKeysFromRequirements(item.requirements).includes(requirementFocus)));
+      setRequirementJobsLoading(false);
+    })();
+    return ()=>{cancelled=true;};
+  },[projectId,requirementFocus,setError]);
+
+  const schedulerJobs=useMemo(()=>requirementFocus?(requirementJobs??[]):jobs,[jobs,requirementFocus,requirementJobs]);
+
+  useEffect(()=>{
+    let cancelled=false;
+    const supabase=getSupabase();
+    if(!supabase||schedulerJobs.length===0){setAuthoritySummary({});return ()=>{cancelled=true;};}
     void supabase.rpc("get_job_execution_authority_summary_v1",{
       target_project:projectId,
-      target_jobs:jobs.map(job=>job.id)
+      target_jobs:schedulerJobs.map(job=>job.id)
     }).then(({data,error})=>{
       if(cancelled)return;
       if(error||!data){setAuthoritySummary({});return;}
       setAuthoritySummary(data as Record<string,JobExecutionAuthorityState>);
     });
     return ()=>{cancelled=true;};
-  },[projectId,jobs]);
-  const statusVisible=filter==="ALL"?jobs:jobs.filter(item=>item.status===filter);
+  },[projectId,schedulerJobs]);
+  const statusVisible=filter==="ALL"?schedulerJobs:schedulerJobs.filter(item=>item.status===filter);
   const requirementVisible=requirementFocus
     ? statusVisible.filter(item=>!finalStates.has(item.status)&&workFocusKeysFromRequirements(item.requirements).includes(requirementFocus))
     : statusVisible;
@@ -2195,7 +2243,7 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
 
           {!orderedVisible.length?<div className="schedulerEmptyState"><EmptyState
             title={total===0?"No project jobs yet":"No jobs match this filter"}
-            text={total===0?"Create a complete Job Manifest in UNIFI before scheduling execution.":requirementFocus?"No open Jobs on this page match "+workFocusLabel(requirementFocus)+". Clear the requirement focus to return to the project queue.":interestOnly?"No Jobs on this page match your saved interests. Turn off the interest filter or update your interests in Stakeholder.":"Clear the current status filter to return to the project queue."}
+            text={total===0?"Create a complete Job Manifest in UNIFI before scheduling execution.":requirementFocus?requirementJobsLoading?"Loading all open Jobs for "+workFocusLabel(requirementFocus)+"…":"No open Jobs match "+workFocusLabel(requirementFocus)+". Clear the requirement focus to return to the project queue.":interestOnly?"No Jobs on this page match your saved interests. Turn off the interest filter or update your interests in Stakeholder.":"Clear the current status filter to return to the project queue."}
             actionLabel={total===0?"Open UNIFI Planner":requirementFocus?"Clear requirement focus":interestOnly?"Show all interests":"Show all jobs"}
             onAction={()=>{if(total===0)onNavigate("unifi");else if(requirementFocus)setRequirementFocus(null);else if(interestOnly)setInterestOnly(false);else setFilter("ALL");}}
           /></div>:viewMode==="queue"?<div className="schedulerProjectGroup">
@@ -2215,7 +2263,7 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
               </div>
             </div>)}
           </div></div>:<SchedulerGantt projectName={projectName} projectSlug={projectSlug} jobs={orderedVisible} onStatus={onStatus} canOperate={canOperate} activeJobId={activeJobId} userInterests={userInterests}/>}
-          <Pagination page={page} total={total} onPage={onPage}/>
+          {!requirementFocus&&<Pagination page={page} total={total} onPage={onPage}/>} 
         </>}
     </section>
   </>;
