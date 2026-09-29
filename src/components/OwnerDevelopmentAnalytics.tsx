@@ -93,6 +93,7 @@ type GithubRepository = {
 type GithubSnapshot = {
   repository: GithubRepository;
   openPulls: GithubPull[];
+  openPullCount: number;
   supabaseOpenCount: number;
   supabaseOpenItems: GithubIssueSearch["items"];
   closedPulls: GithubPull[];
@@ -237,9 +238,10 @@ export default function OwnerDevelopmentAnalytics({
   const loadGithub = useCallback(async () => {
     try {
       const since = new Date(Date.now() - 30 * DAY_MS).toISOString();
-      const [repository, openPulls, supabasePulls, closedPulls, commits, workflowRuns] = await Promise.all([
+      const [repository, openPulls, openPullSearch, supabasePulls, closedPulls, commits, workflowRuns] = await Promise.all([
         githubJson<GithubRepository>("/repos/" + GITHUB_REPO),
         githubJson<GithubPull[]>("/repos/" + GITHUB_REPO + "/pulls?state=open&per_page=100&sort=updated&direction=desc"),
+        githubJson<GithubIssueSearch>("/search/issues?q=repo%3A" + encodeURIComponent(GITHUB_REPO) + "+is%3Apr+is%3Aopen&per_page=1"),
         githubJson<GithubIssueSearch>("/search/issues?q=repo%3A" + encodeURIComponent(GITHUB_REPO) + "+is%3Apr+is%3Aopen+path%3Asupabase&per_page=100"),
         githubJson<GithubPull[]>("/repos/" + GITHUB_REPO + "/pulls?state=closed&per_page=100&sort=updated&direction=desc"),
         githubJson<GithubCommit[]>("/repos/" + GITHUB_REPO + "/commits?since=" + encodeURIComponent(since) + "&per_page=100"),
@@ -249,6 +251,7 @@ export default function OwnerDevelopmentAnalytics({
       setGithub({
         repository,
         openPulls,
+        openPullCount: openPullSearch.total_count,
         supabaseOpenCount: supabasePulls.total_count,
         supabaseOpenItems: supabasePulls.items || [],
         closedPulls,
@@ -342,7 +345,7 @@ export default function OwnerDevelopmentAnalytics({
       <div className={styles.kpis}>
         <article className={styles.metric}>
           <span>Open GitHub PRs</span>
-          <strong>{formatNumber(github?.openPulls.length || 0)}</strong>
+          <strong>{formatNumber(github?.openPullCount || 0)}</strong>
           <small>{github?.repository.default_branch || "main"} branch</small>
         </article>
         <article className={styles.metric}>
