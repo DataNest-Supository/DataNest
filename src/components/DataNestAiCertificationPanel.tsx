@@ -24,10 +24,23 @@ type ValidationRun={
   created_at:string;
 };
 
+type MemoryReviewItem={
+  id:string;
+  normalized_knowledge:string;
+  category:string;
+  effective_version:number;
+  certification_class:string;
+  confidence:number|null;
+  review_after:string;
+  last_verified_at:string|null;
+  promoted_at:string;
+};
+
 type WorkspaceResponse={
   role:"owner"|"admin";
   candidates:Candidate[];
   validationRuns:ValidationRun[];
+  memoryReviewItems:MemoryReviewItem[];
 };
 
 type Props={
@@ -40,6 +53,12 @@ type Props={
 
 const gateOrder=["AUDIT","VERIFY","VALIDATE","STRESS_TEST"] as const;
 
+function formatDate(value:string){
+  return new Intl.DateTimeFormat(undefined,{
+    month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit"
+  }).format(new Date(value));
+}
+
 function normalizeWorkspaceResponse(data:unknown,fallbackRole:"owner"|"admin"):WorkspaceResponse{
   const record=data&&typeof data==="object"&&!Array.isArray(data)
     ?data as Record<string,unknown>
@@ -50,7 +69,8 @@ function normalizeWorkspaceResponse(data:unknown,fallbackRole:"owner"|"admin"):W
   return {
     role:responseRole,
     candidates:Array.isArray(record.candidates)?record.candidates as Candidate[]:[],
-    validationRuns:Array.isArray(record.validationRuns)?record.validationRuns as ValidationRun[]:[]
+    validationRuns:Array.isArray(record.validationRuns)?record.validationRuns as ValidationRun[]:[],
+    memoryReviewItems:Array.isArray(record.memoryReviewItems)?record.memoryReviewItems as MemoryReviewItem[]:[]
   };
 }
 
@@ -59,6 +79,7 @@ export default function DataNestAiCertificationPanel({
 }:Props){
   const [workspace,setWorkspace]=useState<WorkspaceResponse|null>(null);
   const [busyId,setBusyId]=useState("");
+  const [busyMemoryId,setBusyMemoryId]=useState("");
 
   const canReview=role==="owner"||role==="admin";
 
@@ -72,7 +93,7 @@ export default function DataNestAiCertificationPanel({
     if(error){setError(error.message);return;}
     const fallbackRole:"owner"|"admin"=role==="owner"?"owner":"admin";
     setWorkspace(normalizeWorkspaceResponse(data,fallbackRole));
-  },[canReview,projectId,setError]);
+  },[canReview,projectId,role,setError]);
 
   useEffect(()=>{void load()},[load]);
 
@@ -111,6 +132,38 @@ export default function DataNestAiCertificationPanel({
     }
   }
 
+  async function reviewMemory(memory:MemoryReviewItem,decision:"reaffirmed"|"retired"){
+    const supabase=getSupabase();
+    if(!supabase)return;
+    setBusyMemoryId(memory.id);
+    setError("");
+    try{
+      const {error}=await supabase.functions.invoke("datanest-ai-certification",{
+        body:{
+          action:"review_memory",
+          projectId,
+          memoryId:memory.id,
+          decision,
+          reason:decision==="reaffirmed"
+            ?"Human review reaffirmed active Certified Memory under the governed review lifecycle."
+            :"Owner retired Certified Memory after governed review."
+        }
+      });
+      if(error)throw error;
+      setNotice(
+        decision==="reaffirmed"
+          ?"Verified Memory reaffirmed and its review schedule refreshed."
+          :"Verified Memory retired from active project context."
+      );
+      await load();
+      await onChanged();
+    }catch(actionError){
+      setError(actionError instanceof Error?actionError.message:"Verified Memory review failed.");
+    }finally{
+      setBusyMemoryId("");
+    }
+  }
+
   if(!canReview){
     return <section className="panel datanestAiCertificationPanel">
       <div className="panelHead">
@@ -133,6 +186,47 @@ export default function DataNestAiCertificationPanel({
       </div>
       <button className="textButton" type="button" onClick={()=>void load()}>Refresh</button>
     </div>
+
+    {(workspace?.memoryReviewItems.length||0)>0&&<>
+      <div className="rowBetween">
+        <div>
+          <h4>Verified Memory review queue</h4>
+          <p className="muted">Review-due memory stays historically certified, but receives a lower retrieval weight until it is reaffirmed or retired.</p>
+        </div>
+        <span className="countPill">{workspace?.memoryReviewItems.length||0}</span>
+      </div>
+      <div className="manifestList">
+        {(workspace?.memoryReviewItems||[]).map(memory=><article className="manifestCard" key={memory.id}>
+          <div className="rowBetween">
+            <div>
+              <b>{memory.category.replaceAll("_"," ")}</b>
+              <small>{"Memory v"+memory.effective_version+" · review due "+formatDate(memory.review_after)}</small>
+            </div>
+            <span className="badge warn">CERTIFIED · REVIEW DUE</span>
+          </div>
+          <p>{memory.normalized_knowledge}</p>
+          <div className="manifestMeta">
+            <span>{memory.certification_class}</span>
+            <span>{memory.confidence==null?"confidence —":"confidence "+Math.round(memory.confidence*100)+"%"}</span>
+            <span>{memory.last_verified_at?"last reviewed "+formatDate(memory.last_verified_at):"initial certification "+formatDate(memory.promoted_at)}</span>
+          </div>
+          <div className="rowActions">
+            <button
+              className="primaryButton compact"
+              type="button"
+              disabled={busyMemoryId===memory.id}
+              onClick={()=>void reviewMemory(memory,"reaffirmed")}
+            >Reaffirm reviewed memory</button>
+            {role==="owner"&&<button
+              className="secondaryButton compact"
+              type="button"
+              disabled={busyMemoryId===memory.id}
+              onClick={()=>void reviewMemory(memory,"retired")}
+            >Retire from active memory</button>}
+          </div>
+        </article>)}
+      </div>
+    </>}
 
     <div className="manifestList">
       {(workspace?.candidates||[]).map(candidate=>{
@@ -201,10 +295,10 @@ export default function DataNestAiCertificationPanel({
         </article>;
       })}
 
-      {workspace&&workspace.candidates.length===0&&<div className="emptyState">
+      {workspace&&workspace.candidates.length===0&&workspace.memoryReviewItems.length===0&&<div className="emptyState">
         <div>◇</div>
-        <h3>No learning candidates yet</h3>
-        <p>Repeated staged evidence will create candidates for governed review.</p>
+        <h3>No learning or memory-review work queued</h3>
+        <p>Repeated staged evidence creates learning candidates; Certified Memory enters this queue when its governed review date is due.</p>
       </div>}
     </div>
   </section>;
