@@ -6,7 +6,7 @@
 
 **Architecture:** Keep normal CI, PR verification, RONSAS validation, and security scans as independent evidence producers. Add a UI-governance evidence manifest and visual/accessibility review suite, then change GitHub Pages from automatic push-to-production into an explicit exact-SHA workflow-dispatch release that requires review references and the GitHub Pages environment gate. The deployed release manifest records the review chain so production evidence can be traced back to the candidate.
 
-**Tech Stack:** GitHub Actions, Next.js static export, Playwright, Node test runner, optional `@axe-core/playwright`, GitHub Pages.
+**Tech Stack:** GitHub Actions, Next.js static export, Playwright, Node test runner, `@axe-core/playwright`, GitHub Pages.
 
 **Spec:** `docs/superpowers/specs/2026-09-29-resonance-datanest-ui-governance-system-design.md`
 
@@ -18,7 +18,7 @@
 - GitHub Pages deployment must no longer happen automatically from every `main` push once this gate is active.
 - Production deployment requires human action plus review references; do not fabricate or auto-fill approval references.
 - Legal review is mandatory for this redesign because it changes legal/governance surfaces.
-- All eight user-facing consolidated applications must be verified live under `/DataNest/apps/<slug>/`.
+- Seven static user-facing applications must be verified live under `/DataNest/apps/<slug>/`; YouTube Optimizer must be verified through its DataNest-governed external SSR launch contract and canonical live SSR URL.
 - Release evidence must identify the approved design spec and all four implementation plans.
 - Free-promotion/no-paid-checkout remains active.
 - Do not weaken existing security-scan thresholds to make the UI release pass.
@@ -92,7 +92,7 @@ git commit -m "feat: add UI governance release evidence manifest"
 - Modify: `tests/browser/legal-centre.spec.ts`
 
 **Interfaces:**
-- If `@axe-core/playwright` is introduced, run WCAG 2A/2AA-relevant checks on stable public/root surfaces and document any intentionally excluded third-party/widget region by selector and reason.
+- Add `@axe-core/playwright` as a dev dependency and run WCAG 2A/2AA-relevant checks on stable public/root surfaces; any intentionally excluded third-party/widget region must be listed by selector and reason in the test.
 - Responsive certification widths: **320, 390, 768, 1440**.
 - Accessibility tests must cover visible focus, keyboard access, semantic landmark/headings, no color-only status, reduced motion, and no page-level horizontal overflow.
 
@@ -105,7 +105,7 @@ Cover signed-out entry, Legal Centre, Governance page, authenticated Home fixtur
 Run: `npx playwright test tests/browser/ui-governance-accessibility.spec.ts`  
 Expected: FAIL on current unmigrated UI issues or missing dependency.
 
-- [ ] **Step 3: Add the minimum test dependency and fix violations in owning components**
+- [ ] **Step 3: Add `@axe-core/playwright` and fix violations in owning components**
 
 Do not suppress a violation globally when it can be fixed in DataNest-owned markup.
 
@@ -244,7 +244,11 @@ Build and test the requested SHA, write authorized evidence, bundle all eight ap
 
 Add assertions in `ui-production-authorization.test.mjs` that no automatic push deploy remains, all required inputs exist, exact-SHA checkout is used, and `environment.name` remains `github-pages`.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 6: Configure the GitHub `github-pages` environment review gate**
+
+Require at least one authorized human reviewer in repository Settings → Environments → `github-pages`. If the connected GitHub tooling can configure required reviewers, apply and read back the setting; otherwise stop before production use and have the repository owner configure it manually. The workflow must not be described as a fully enforced human gate until this readback is confirmed.
+
+- [ ] **Step 7: Commit**
 
 ```bash
 git add .github/workflows/pages.yml scripts/verify-ui-production-authorization.mjs tests/unit/ui-production-authorization.test.mjs
@@ -267,11 +271,11 @@ git commit -m "feat: gate DataNest production Pages releases"
   - `/accessibility/`;
   - release manifest;
   - UI governance evidence;
-  - all eight user-facing app roots.
+  - the seven static app roots plus the YouTube Optimizer canonical SSR URL/launch contract.
 - Release manifest `frontendCommit` must match `release_sha`, not workflow-file `GITHUB_SHA`.
 - Post-deploy Playwright runs against the live Pages base URL.
 
-- [ ] **Step 1: Add failing workflow/source assertions for all eight app slugs and legal routes**
+- [ ] **Step 1: Add failing workflow/source assertions for the seven static app slugs, the YouTube Optimizer SSR launch target, and legal routes**
 
 - [ ] **Step 2: Update live curl checks and Playwright smoke set**
 
@@ -353,7 +357,7 @@ Expected: PASS.
 
 - [ ] **Step 3: Run RONSAS validation**
 
-Run `node scripts/validate-ronsas-imports.mjs`, `node scripts/validate-ronsas-brand-contract.mjs --complete`, and every application command encoded in `.github/workflows/ronsas-app-validation.yml`.  
+Run `node scripts/validate-ronsas-imports.mjs`, `node scripts/validate-ronsas-brand-contract.mjs --complete`, and every application command encoded in `.github/workflows/ronsas-app-validation.yml`. Confirm the seven static apps bundle successfully and YouTube Optimizer passes its SSR build/gate plus DataNest launch-contract tests.  
 Expected: PASS.
 
 - [ ] **Step 4: Run security invariants locally where supported**
