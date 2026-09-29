@@ -35,7 +35,8 @@ export default function GlobalNavigation({
 }) {
   void onOpenQuickSwitch;
   const groups=Array.from(new Set(items.map(item=>item.group)));
-  return <nav className="navStack" aria-label="Project workspaces">
+  return <>
+    <nav className="navStack" aria-label="Project workspaces">
     {groups.map(group=><details
       className="navGroup navDisclosure"
       key={group+String(items.some(item=>item.group===group&&item.id===currentView))}
