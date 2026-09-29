@@ -188,31 +188,34 @@ git commit -m "feat: align ePublisher with Resonance DataNest"
 - Adapter uses SyncVision pink accent and DataNest shared semantics.
 - Global footer/legal/governance links must not replace specialist scene/action controls.
 
-- [ ] **Step 1: Add failing brand and sovereign-preservation tests**
+- [x] **Step 1: Add failing brand and sovereign-preservation tests**
 
 Assert the startup network guard remains called before React mount, adapter is imported, attribution exists, and no paid CTA appears.
 
-- [ ] **Step 2: Run app verification**
+- [x] **Step 2: Run app verification**
 
 Run: `cd apps/ronsas/syncvision && npm run typecheck && npm test`  
 Expected: FAIL on new migration assertions only.
 
-- [ ] **Step 3: Implement UI adapter changes**
+- [x] **Step 3: Implement UI adapter changes**
 
 Load the four canonical families through app-local `@fontsource` imports before the adapter. Do not alter FFmpeg package pins, local service endpoints, or sovereign guard behavior.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run: `cd apps/ronsas/syncvision && npm run typecheck && npm test && npm run build -- --base=/DataNest/apps/syncvision/`  
 Run: `node scripts/validate-ronsas-imports.mjs && node scripts/validate-ronsas-brand-contract.mjs --app syncvision`  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/ronsas/syncvision scripts/validate-ronsas-brand-contract.mjs
 git commit -m "feat: align SyncVision with Resonance DataNest"
 ```
+
+
+> Task 4 evidence: SyncVision RONSAS validation job PASS on exact head after two RED blockers were fixed: unused promotion import, then missing canonical font dependencies. Typecheck passed; 6 test files / 17 tests passed including sovereign-local and FFmpeg contracts; production build passed with governed @ffmpeg/core 0.12.10 vendoring preserved.
 
 ### Task 5: Migrate YouTube Optimizer and remove stale legal/commercial presentation
 
