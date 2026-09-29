@@ -1012,10 +1012,10 @@ Deno.serve(async(request:Request)=>{
       :(requestedReuseState||"project_learning_eligible");
     const policyPurpose=legalMode?"user_requested_analysis":"job_execution";
     const projectionKey=legalMode
-      ?"legal-eagle-v1"
+      ?"legal_eagle"
       :developmentMode
-        ?"development-command-v1"
-        :"datanest-ai-v1";
+        ?"development_command"
+        :"datanest_ai";
     const learningEligible=!legalMode&&!developmentMode&&reuseState==="project_learning_eligible";
 
     const job=await loadAuthorizedJob(userClient,jobId);
