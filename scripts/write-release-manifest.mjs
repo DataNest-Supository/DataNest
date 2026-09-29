@@ -7,6 +7,7 @@ const manifest={
   frontendCommit:process.env.DATANEST_RELEASE_SHA || process.env.GITHUB_SHA || "local",
   databaseRelease:process.env.DATANEST_DB_RELEASE || "link-transcheduler-job-requirements-user-interests",
   externalAuditRelease:process.env.DATANEST_EXTERNAL_AUDIT_DB_RELEASE || "external-audit-production-v1",
+  platformReviewRelease:process.env.DATANEST_PLATFORM_REVIEW_DB_RELEASE || "platform-review-dossier-opportunity-v1",
   baseline:{
     release:process.env.DATANEST_BASELINE_RELEASE || "reload-latest-v1",
     frontendCommit:process.env.DATANEST_BASELINE_SHA || "592149b0898f6703b28e9fa33e73bd0799cae3fd"
