@@ -28,6 +28,7 @@ jobs:
           - datanest-ai-file-worker
           - send-project-member-invite
           - ronsas-status
+          - external-audit
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: denoland/setup-deno@v2
