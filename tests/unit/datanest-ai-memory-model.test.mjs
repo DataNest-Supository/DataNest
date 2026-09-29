@@ -7,7 +7,7 @@ import { classifyCertifiedMemoryRelation } from "../../supabase/functions/_share
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
 const migration=fs.readFileSync(
-  path.join(root,"supabase/migrations/20260929230000_optimize_collective_verified_memory.sql"),
+  path.join(root,"supabase/migrations/20260929070000_optimize_collective_verified_memory.sql"),
   "utf8"
 );
 const chat=fs.readFileSync(
