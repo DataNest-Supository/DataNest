@@ -209,14 +209,42 @@ async function loadCertifiedMemory(input:{
   client:AnyClient;
   projectId:string;
   jobId:string;
+  query:string;
+  purpose:string;
+  productScope:string|null;
+  jurisdiction:string|null;
+  visibilityClass:string;
+  limit?:number;
 }):Promise<Array<Record<string,unknown>>>{
-  const {data,error}=await input.client.rpc("get_certified_memory_context",{
+  const ranked=await input.client.rpc("get_ranked_certified_memory_context_v2",{
     target_project:input.projectId,
     target_job:input.jobId,
-    target_limit:50
+    target_query:input.query,
+    target_purpose:input.purpose,
+    target_product_scope:input.productScope,
+    target_jurisdiction:input.jurisdiction,
+    target_visibility_class:input.visibilityClass,
+    target_limit:input.limit||24
   });
-  if(error)throw error;
-  const items=(data as {items?:unknown[]}|null)?.items;
+  if(!ranked.error){
+    const items=(ranked.data as {items?:unknown[]}|null)?.items;
+    return Array.isArray(items)?items as Array<Record<string,unknown>>:[];
+  }
+
+  const missingRankedFunction=
+    String((ranked.error as {code?:unknown}).code||"")==="PGRST202" ||
+    /get_ranked_certified_memory_context_v2|could not find the function/i.test(
+      String((ranked.error as {message?:unknown}).message||"")
+    );
+  if(!missingRankedFunction)throw ranked.error;
+
+  const fallback=await input.client.rpc("get_certified_memory_context",{
+    target_project:input.projectId,
+    target_job:input.jobId,
+    target_limit:Math.min(input.limit||24,50)
+  });
+  if(fallback.error)throw fallback.error;
+  const items=(fallback.data as {items?:unknown[]}|null)?.items;
   return Array.isArray(items)?items as Array<Record<string,unknown>>:[];
 }
 
@@ -838,7 +866,13 @@ Deno.serve(async(request:Request)=>{
         loadCertifiedMemory({
           client:userClient,
           projectId:job.project_id,
-          jobId:job.id
+          jobId:job.id,
+          query:[job.title,job.description,legalTask,jurisdiction].filter(Boolean).join(" "),
+          purpose:policyPurpose,
+          productScope:legalMode?"legal_eagle":developmentMode?"development_command":"datanest_ai",
+          jurisdiction:legalMode?jurisdiction:null,
+          visibilityClass,
+          limit:24
         })
       ]);
       return json({
@@ -1042,7 +1076,13 @@ Deno.serve(async(request:Request)=>{
           loadCertifiedMemory({
             client:userClient,
             projectId:job.project_id,
-            jobId:job.id
+            jobId:job.id,
+            query:[message,job.title,job.description,legalTask,jurisdiction].filter(Boolean).join(" "),
+            purpose:policyPurpose,
+            productScope:legalMode?"legal_eagle":developmentMode?"development_command":"datanest_ai",
+            jurisdiction:legalMode?jurisdiction:null,
+            visibilityClass,
+            limit:24
           }),
           loadSessionEvents({
             staging:stagingClient,
