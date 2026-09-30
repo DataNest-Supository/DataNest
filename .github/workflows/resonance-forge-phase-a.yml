@@ -44,3 +44,9 @@ jobs:
           }
           console.log("Registry snapshot valid.");
           NODE
+
+  gate-timeframe:
+    name: DataNest AI worktree gate timeframe
+    uses: ./.github/workflows/worktree-gate-timeframe.yml
+    with:
+      gate_id: "resonance-forge-phase-a"
