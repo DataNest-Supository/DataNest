@@ -26,6 +26,7 @@ if(!backupFile||!targetRef||!expectedSourceRef){
 if(!url||!serviceKey||!configuredStagingRef){
   throw new Error("Staging URL, service-role key and staging project ref are required.");
 }
+const staging=assertDedicatedDataNestAiStaging({url,projectRef:configuredStagingRef,productionRef});
 const encrypted=await fs.readFile(backupFile,"utf8");
 const payload=JSON.parse(decryptBackup(encrypted,backupKey).toString("utf8"));
 if(payload?.formatVersion!==1)throw new Error("Unsupported backup formatVersion.");
@@ -38,7 +39,7 @@ validateRestoreRefs({
   productionRef
 });
 
-const admin=createClient(url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
+const admin=createClient(staging.url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
 const tableOrder=[
   ["ai_sessions",["id"],"id"],
   ["ai_intake_events",["id"],"id"],
