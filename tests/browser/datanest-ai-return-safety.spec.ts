@@ -126,7 +126,7 @@ test("switching jobs replaces the tracked handoff with the newly selected manife
   await expect(page.getByRole("button",{name:"Enable session auto-return",exact:true})).toBeDisabled();
 });
 
-test("provider launch preloads traced work without user email and sidebar resizing works by keyboard",async({page,context})=>{
+test("provider launch keeps traced work out of the provider URL and sidebar resizing works by keyboard",async({page,context})=>{
   await page.setViewportSize({width:1600,height:1000});
   await signIn(page);
   await openAiSidebar(page);
@@ -138,13 +138,10 @@ test("provider launch preloads traced work without user email and sidebar resizi
   const popupReady=page.waitForEvent("popup");
   await page.getByRole("button",{name:/^Open companion \+/}).click();
   const popup=await popupReady;
-  await popup.waitForURL(url=>url.hostname==="chatgpt.com"&&Boolean(url.searchParams.get("q")));
+  await popup.waitForURL(url=>url.hostname==="chatgpt.com");
   const providerUrl=new URL(popup.url());
-  const prompt=providerUrl.searchParams.get("q")||"";
-  expect(prompt).toContain("RESONANCE DATANEST — LIVE EXTERNAL AI HANDOFF");
-  expect(prompt).toContain("[DATANEST TRACKING HEADER]");
-  expect(prompt).toContain("Trace Key: DN-");
-  expect(prompt).not.toContain(process.env.DATANEST_AI_E2E_EMAIL!);
+  expect(providerUrl.searchParams.get("q")).toBeNull();
+  expect(providerUrl.search).toBe("");
   expect(providerUrl.hash).toBe("");
   await popup.close();
   await page.bringToFront();
@@ -155,6 +152,8 @@ test("provider launch preloads traced work without user email and sidebar resizi
   }).toBeLessThanOrEqual(2);
 
   const handoff=page.locator("details.externalAiHandoff textarea");
+  await expect(handoff).toHaveValue(/RESONANCE DATANEST — LIVE EXTERNAL AI HANDOFF/);
+  await expect(handoff).toHaveValue(/\[DATANEST TRACKING HEADER\]/);
   await expect(handoff).toHaveValue(/Trace Key: DN-/);
   expect(await handoff.inputValue()).not.toContain(process.env.DATANEST_AI_E2E_EMAIL!);
   const dock=page.locator("aside.externalAiDock");
