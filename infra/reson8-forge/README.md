@@ -1,16 +1,42 @@
-# Reson8 Forge
+# DataNest Supository Forge
 
-Reson8 Forge is the self-hosted Git foundation for Reson8 and DataNest.
+Reson8 Forge is the sovereign Git, registry and automation extension for the canonical **DataNest Supository**.
 
-## Public identity
+It exists to strengthen `DataNest-Supository/DataNest` and the Resonance AppDev portfolio. It is not a parallel source of truth and does not silently replace the current GitHub Pages production route.
 
-- Git forge: **https://git.reson8.life**
-- Main site: **https://reson8.life**
-- DataNest: **https://datanest.reson8.life**
-- Apps: **https://apps.reson8.life**
-- Future project/user spaces: **https://<name>.reson8.life**
+## Canonical identity
 
-GitHub remains an optional mirror/bootstrap remote, not the public identity.
+- Current public DataNest: **https://datanest-supository.github.io/DataNest/**
+- Current canonical repository: **DataNest-Supository/DataNest**
+- Target sovereign forge namespace: **https://git.reson8.life/DataNest-Supository/DataNest**
+- Reson8 ecosystem hub: **https://reson8.life**
+
+Initial mode:
+
+```text
+DataNest-Supository/DataNest (GitHub authority)
+              |
+              | governed replication
+              v
+git.reson8.life/DataNest-Supository/DataNest
+```
+
+The public DataNest URL remains unchanged when the Forge is first deployed.
+
+## Purpose
+
+The Forge gives the DataNest Supository a sovereign environment for:
+
+- Git repository replication and recovery;
+- Resonance AppDev project/product/service namespaces;
+- Forgejo package and container registries;
+- isolated CI/CD runners;
+- human and AI-agent identities with scoped permissions;
+- auditable changes, releases and approvals;
+- private development repositories cataloged by DataNest;
+- provider-independent continuity.
+
+See `docs/DATANEST_SUPOSITORY_ARCHITECTURE.md` and `config/supository.catalog.json`.
 
 ## Stack
 
@@ -37,28 +63,28 @@ GitHub remains an optional mirror/bootstrap remote, not the public identity.
 
 Caddy obtains and renews TLS automatically when the hostname resolves publicly to the host and ports 80/443 are reachable.
 
-## Git migration
+## Initial replication
 
-After the Forge is live, mirror an existing repository:
+After the Forge is live, create the `DataNest-Supository` namespace and mirror the canonical repository:
 
 ```sh
 git clone --mirror https://github.com/DataNest-Supository/DataNest.git
 cd DataNest.git
-git remote set-url --push origin https://git.reson8.life/DataNest/DataNest.git
-git push --mirror
+git remote add forge https://git.reson8.life/DataNest-Supository/DataNest.git
+git push --mirror forge
 ```
 
-Then keep GitHub as an optional secondary remote rather than the canonical host.
+During the initial phase GitHub remains canonical. Mirror direction, release authority and production delivery must only change through an explicit governed migration.
 
 ## Registry
 
-Forgejo's OCI/container registry can use the same hostname:
+Forgejo's OCI/container registry can initially use the forge hostname:
 
 ```text
-git.reson8.life/<owner>/<image>:<tag>
+git.reson8.life/DataNest-Supository/<image>:<tag>
 ```
 
-A separate `registry.reson8.life` gateway can be added later without changing repository URLs.
+A dedicated `registry.reson8.life` gateway may be introduced later.
 
 ## Backups
 
@@ -70,15 +96,20 @@ Run:
 
 The script captures PostgreSQL plus the complete Forgejo `/data` tree. If `DROPBOX_REMOTE` is configured with rclone, it also copies each timestamped backup to Dropbox.
 
-## Railway status
+## Deployment status
 
-The current connected Railway account is at its free-plan provisioning limit, so no existing active service has been overwritten or deleted. This stack is intentionally provider-neutral so it can be deployed unchanged on another Docker host, or adapted to Railway when capacity becomes available.
+The stack is provider-neutral. Railway provisioning is currently constrained by its resource limit, and DigitalOcean provisioning requires a funded account/payment method before resource creation.
+
+No existing DataNest production service needs to be overwritten for the Forge deployment.
 
 ## Next infrastructure phase
 
-1. Deploy the core Forge.
-2. Attach `git.reson8.life`.
-3. Create the initial Reson8 administrator.
-4. Mirror DataNest into the Forge.
-5. Add a hardened Forgejo Actions runner.
-6. Add wildcard project publishing for `*.reson8.life`.
+1. Provision a dedicated Docker host.
+2. Deploy Forgejo/PostgreSQL/Caddy.
+3. Attach `git.reson8.life`.
+4. Create the `DataNest-Supository` Forge namespace.
+5. Mirror `DataNest-Supository/DataNest` without changing canonical authority.
+6. Add a hardened Forgejo Actions runner.
+7. Connect the Supository catalog to repository/project/service discovery.
+8. Validate backup + restore.
+9. Consider an authority cutover only as a separate governed migration.
