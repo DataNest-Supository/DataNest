@@ -10,6 +10,16 @@ on:
         description: Exact 40-character commit SHA reachable from main
         required: true
         type: string
+      database_migration_head:
+        description: Expected production database migration head; the live database is queried and must match exactly
+        required: true
+        default: 20260930071134
+        type: string
+      database_migration_name:
+        description: Expected production database migration name paired with the migration head
+        required: true
+        default: enable_admin_system_optimizer_collaboration
+        type: string
       release_mode:
         description: Fully authorized production or temporary Owner live test mode
         required: true
@@ -139,6 +149,8 @@ jobs:
       DATANEST_UI_OWNER_TEST_MODE_EXPIRES_AT: ${{ inputs.owner_test_mode_expires_at }}
       DATANEST_UI_OWNER_TEST_MODE_REASON: ${{ inputs.owner_test_mode_reason }}
       DATANEST_UI_OWNER_TEST_MODE_ACTOR: ${{ github.actor }}
+      DATANEST_EXPECTED_DB_MIGRATION_HEAD: ${{ inputs.database_migration_head }}
+      DATANEST_EXPECTED_DB_MIGRATION_NAME: ${{ inputs.database_migration_name }}
     steps:
       - name: Checkout exact release SHA
         uses: actions/checkout@v7.0.1
@@ -170,6 +182,9 @@ jobs:
           git fetch origin main --no-tags --prune
           git merge-base --is-ancestor "$DATANEST_UI_RELEASE_SHA" origin/main
 
+      - name: Verify live production database release attestation
+        run: node scripts/verify-production-release-attestation.mjs .datanest/release-attestation.json
+
       - uses: ./.github/actions/node-project-setup
       - run: npm test
       - run: npm run check
@@ -197,6 +212,7 @@ jobs:
           DATANEST_EDGE_PROJECT_INVITES: send-project-member-invite@3
           DATANEST_EDGE_RONSAS_STATUS: ronsas-status@1
           DATANEST_EDGE_EXTERNAL_AUDIT: external-audit@1
+          DATANEST_DB_ATTESTATION_FILE: .datanest/release-attestation.json
         run: node scripts/write-release-manifest.mjs public/release-manifest.json
 
       - run: npm run build
@@ -316,6 +332,13 @@ jobs:
           grep -q "\"releaseSha\":\"$RELEASE_SHA\"" /tmp/release-manifest.json
           grep -q '"databaseRelease":"link-transcheduler-job-requirements-user-interests"' /tmp/release-manifest.json
           grep -q '"projectInvitations":"send-project-member-invite@3"' /tmp/release-manifest.json
+          node - <<'NODE'
+          const fs=require("fs");
+          const manifest=JSON.parse(fs.readFileSync("/tmp/release-manifest.json","utf8"));
+          if(manifest.releaseAttestation?.database?.status!=="verified") throw new Error("Live release must carry a verified production database attestation");
+          if(!/^[0-9a-f]{64}$/i.test(String(manifest.releaseAttestation.database.fingerprint||""))) throw new Error("Production database attestation fingerprint is missing");
+          if(manifest.releaseAttestation.edgeFunctions?.status!=="unverified") throw new Error("Edge-function attestation must not be overstated");
+          NODE
 
       - uses: ./.github/actions/node-project-setup
 
