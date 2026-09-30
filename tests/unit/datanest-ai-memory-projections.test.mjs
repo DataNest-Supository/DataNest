@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
 const migration=fs.readFileSync(
-  path.join(root,"supabase/migrations/20260929091000_add_verified_memory_product_projections.sql"),
+  path.join(root,"supabase/migrations/20260929084713_add_verified_memory_product_projections.sql"),
   "utf8"
 );
 const chat=fs.readFileSync(

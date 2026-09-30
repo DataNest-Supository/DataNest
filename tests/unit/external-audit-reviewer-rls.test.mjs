@@ -3,11 +3,11 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 
 const foundation=fs.readFileSync(
-  "supabase/migrations/20260929090000_external_audit_foundations.sql",
+  "supabase/migrations/20260929073824_external_audit_foundations.sql",
   "utf8"
 );
 const migration=fs.readFileSync(
-  "supabase/migrations/20260929234000_split_external_audit_reviewer_rls_policies.sql",
+  "supabase/migrations/20260929092807_split_external_audit_reviewer_rls_policies.sql",
   "utf8"
 );
 
