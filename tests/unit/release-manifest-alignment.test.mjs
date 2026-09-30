@@ -110,7 +110,17 @@ test("file worker production deployment is bound to an exact SHA and protected e
   assert.match(workflow,/git merge-base --is-ancestor/);
   assert.match(workflow,/environment:\n      name: github-pages/);
   assert.match(workflow,/--no-verify-jwt/);
+  assert.match(workflow,/needs: \[validate, gate-timeframe\]/);
 });
+
+test("governed Edge Function deployment is blocked until its timeframe gate passes",()=>{
+  const workflow=readFileSync(
+    new URL("../../.github/workflows/production-edge-function-release.yml",import.meta.url),
+    "utf8"
+  );
+  assert.match(workflow,/  deploy:\n    name: Deploy governed Edge Functions from exact release SHA\n    needs: gate-timeframe/);
+});
+
 
 test("Pages workflow stays within GitHub workflow_dispatch input limit",()=>{
   const dispatchBlock=pagesWorkflow.split("\npermissions:\n",1)[0];
