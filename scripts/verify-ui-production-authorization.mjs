@@ -3,6 +3,7 @@ import { pathToFileURL } from "node:url";
 import { buildUiGovernanceEvidence } from "./write-ui-governance-evidence.mjs";
 
 export const REQUIRED_CONFIRMATION="AUTHORIZE PRODUCTION";
+export const REQUIRED_OWNER_TEST_MODE_CONFIRMATION="AUTHORIZE OWNER TEST MODE";
 
 export function verifyUiProductionAuthorization(env=process.env){
   const releaseSha=(env.DATANEST_UI_RELEASE_SHA || "").trim();
@@ -10,18 +11,33 @@ export function verifyUiProductionAuthorization(env=process.env){
     throw new Error("DATANEST_UI_RELEASE_SHA must be an exact 40-character Git commit SHA");
   }
 
-  if ((env.DATANEST_UI_PRODUCTION_CONFIRMATION || "").trim()!==REQUIRED_CONFIRMATION) {
-    throw new Error(`DATANEST_UI_PRODUCTION_CONFIRMATION must equal ${REQUIRED_CONFIRMATION}`);
+  const releaseState=(env.DATANEST_UI_RELEASE_STATE || "authorized").trim();
+  const expectedConfirmation=releaseState==="owner_test_mode"
+    ? REQUIRED_OWNER_TEST_MODE_CONFIRMATION
+    : REQUIRED_CONFIRMATION;
+
+  if ((env.DATANEST_UI_PRODUCTION_CONFIRMATION || "").trim()!==expectedConfirmation) {
+    throw new Error(`DATANEST_UI_PRODUCTION_CONFIRMATION must equal ${expectedConfirmation}`);
   }
 
   const evidence=buildUiGovernanceEvidence({
     ...env,
     DATANEST_UI_RELEASE_SHA:releaseSha,
-    DATANEST_UI_RELEASE_STATE:"authorized"
+    DATANEST_UI_RELEASE_STATE:releaseState
   });
 
-  if (!evidence.authorized) {
-    throw new Error("Production authorization payload did not resolve to authorized state");
+  if (!evidence.productionDeploymentAllowed) {
+    throw new Error("Production authorization payload did not allow production deployment");
+  }
+
+  if (releaseState==="authorized" && !evidence.authorized) {
+    throw new Error("Production authorization payload did not resolve to fully authorized state");
+  }
+
+  if (releaseState==="owner_test_mode") {
+    if (!evidence.ownerTestMode?.active || evidence.authorized) {
+      throw new Error("Owner Test Mode payload did not resolve to a temporary production exception");
+    }
   }
 
   return evidence;
@@ -33,5 +49,5 @@ const directInvocation=
 
 if (directInvocation) {
   const evidence=verifyUiProductionAuthorization();
-  console.log("Validated UI production authorization payload for",evidence.releaseSha);
+  console.log("Validated UI production authorization payload for",evidence.releaseSha,evidence.releaseState);
 }
