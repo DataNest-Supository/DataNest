@@ -98,7 +98,11 @@ export function proposeWorktreeGateTimeframe({
   let acceptedHours=recommendedHours;
   let ownerOverride=false;
   let overrideDeltaHours=0;
-  if(clean(overrideHours)){
+  const hasOverride=
+    overrideHours!==undefined &&
+    overrideHours!==null &&
+    String(overrideHours).trim()!=="";
+  if(hasOverride){
     const parsed=Number(overrideHours);
     if(!Number.isFinite(parsed) || parsed<0.5 || parsed>CONFIG.maxHours){
       throw new Error(`overrideHours must be between 0.5 and ${CONFIG.maxHours}`);
