@@ -267,17 +267,17 @@ test("automatic clipboard capture accepts only text bound to the tracked DataNes
   const { selectExternalAiClipboardCandidate: select } = await import("../../src/lib/externalAiClipboard.ts");
   assert.equal(
     select({
-      clipboardText: "DN-TRACE-1234\nCompleted result",
+      clipboardText: "trace-demo-1234\nCompleted result",
       currentResponse: "",
-      expectedTraceKey: "DN-TRACE-1234"
+      traceBinding: "trace-demo-1234"
     }),
-    "DN-TRACE-1234\nCompleted result"
+    "trace-demo-1234\nCompleted result"
   );
   assert.equal(
     select({
       clipboardText: "Unrelated copied text",
       currentResponse: "",
-      expectedTraceKey: "DN-TRACE-1234"
+      traceBinding: "trace-demo-1234"
     }),
     null
   );
@@ -286,7 +286,7 @@ test("automatic clipboard capture accepts only text bound to the tracked DataNes
       clipboardText: "Replacement response without trace",
       currentResponse: "Existing draft",
       allowReplace: true,
-      expectedTraceKey: "DN-TRACE-1234"
+      traceBinding: "trace-demo-1234"
     }),
     "Replacement response without trace"
   );
