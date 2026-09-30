@@ -273,7 +273,12 @@ test("Think Tanks expose project-scoped collaboration and reviewed-memory bounda
 
 test("Sparks workspace exposes internal utility boundaries",async({page})=>{
   await signIn(page);
-  await page.getByRole("navigation",{name:"Project workspaces"}).getByText("Discover",{exact:true}).click();
+  const discover=page.getByRole("navigation",{name:"Project workspaces"}).getByText("Discover",{exact:true});
+  await discover.evaluate(summary=>{
+    const details=summary.parentElement;
+    if(!(details instanceof HTMLDetailsElement))throw new Error("Discover disclosure is required.");
+    details.open=true;
+  });
   await page.getByRole("button",{name:"Sparks",exact:true}).click();
 
   await expect(page.getByText("SPARKS · INTERNAL UTILITY",{exact:true})).toBeVisible();
