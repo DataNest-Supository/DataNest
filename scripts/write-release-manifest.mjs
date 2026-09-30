@@ -12,9 +12,16 @@ const uiGovernance=hasUiGovernanceEnvironment(process.env)
 const attestationFile=resolve(
   process.env.DATANEST_DB_ATTESTATION_FILE || ".datanest/release-attestation.json"
 );
+const edgeAttestationFile=resolve(
+  process.env.DATANEST_EDGE_ATTESTATION_FILE || ".datanest/edge-function-attestation.json"
+);
 let databaseAttestation=null;
 if(existsSync(attestationFile)){
   databaseAttestation=JSON.parse(readFileSync(attestationFile,"utf8"));
+}
+let edgeFunctionAttestation=null;
+if(existsSync(edgeAttestationFile)){
+  edgeFunctionAttestation=JSON.parse(readFileSync(edgeAttestationFile,"utf8"));
 }
 
 const manifest={
@@ -50,10 +57,18 @@ const manifest={
           status:"not_collected",
           source:"live-production-database"
         },
-    edgeFunctions:{
-      status:"unverified",
-      reason:"Pages build does not query Supabase Edge Function deployment metadata."
-    }
+    edgeFunctions:edgeFunctionAttestation
+      ? {
+          status:edgeFunctionAttestation.status,
+          source:edgeFunctionAttestation.source,
+          verifiedAt:edgeFunctionAttestation.verifiedAt,
+          baselineFingerprint:edgeFunctionAttestation.baselineFingerprint,
+          functionCount:Object.keys(edgeFunctionAttestation.functions||{}).length
+        }
+      : {
+          status:"not_collected",
+          source:"supabase-management-api"
+        }
   },
   generatedAt:new Date().toISOString()
 };
