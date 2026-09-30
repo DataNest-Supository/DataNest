@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
+import { workFocusKeysFromRequirements, workFocusLabel, type WorkFocusKey } from "@/lib/workFocus";
 
 export type DataNestAiEvent = {
   id:string;
@@ -17,6 +18,7 @@ type Props = {
   draftScope:string;
   jobId:string;
   jobCode:string;
+  jobRequirements:Record<string,unknown>;
   sessionId:string;
   contextReady:boolean;
   events:DataNestAiEvent[];
@@ -70,17 +72,17 @@ function parseDualAdvocacy(content:string){
 }
 
 type ExpertiseKey="ui_ux"|"frontend"|"backend"|"data"|"ai"|"testing"|"security"|"infrastructure"|"documentation"|"product_planning";
-const developmentWorkSections:Array<{key:ExpertiseKey;label:string;verificationTrack:string;description:string}>=[
-  {key:"ui_ux",label:"UI & UX",verificationTrack:"ui_ux",description:"Interface structure, interaction design, accessibility and visual hierarchy."},
-  {key:"frontend",label:"Frontend",verificationTrack:"frontend",description:"Client application behavior, components, state and browser integration."},
-  {key:"backend",label:"Backend",verificationTrack:"backend",description:"Services, APIs, business logic, permissions and server-side behavior."},
-  {key:"data",label:"Data",verificationTrack:"data",description:"Schemas, migrations, queries, integrity, lineage and data quality."},
-  {key:"ai",label:"AI",verificationTrack:"ai",description:"Models, prompts, routing, reasoning, memory and governed learning."},
-  {key:"testing",label:"Testing",verificationTrack:"testing",description:"Unit, browser, integration, stress and acceptance verification."},
-  {key:"security",label:"Security",verificationTrack:"security",description:"Authentication, authorization, policy enforcement, privacy and security gates."},
-  {key:"infrastructure",label:"Infrastructure",verificationTrack:"infrastructure",description:"CI/CD, deployment, hosting, domains, runtime and operational resilience."},
-  {key:"documentation",label:"Documentation",verificationTrack:"documentation",description:"Architecture records, guides, runbooks, evidence and change documentation."},
-  {key:"product_planning",label:"Product Planning",verificationTrack:"product_planning",description:"Requirements, scope, prioritization, acceptance criteria and product decisions."}
+const developmentWorkSections:Array<{key:ExpertiseKey;label:string;verificationTrack:string;description:string;requirementFocusKeys:WorkFocusKey[]}>=[
+  {key:"ui_ux",label:"UI & UX",verificationTrack:"ui_ux",description:"Interface structure, interaction design, accessibility and visual hierarchy.",requirementFocusKeys:["ui_ux"]},
+  {key:"frontend",label:"Frontend",verificationTrack:"frontend",description:"Client application behavior, components, state and browser integration.",requirementFocusKeys:["workflow_functionality","ui_ux"]},
+  {key:"backend",label:"Backend",verificationTrack:"backend",description:"Services, APIs, business logic, permissions and server-side behavior.",requirementFocusKeys:["workflow_functionality","database_architecture"]},
+  {key:"data",label:"Data",verificationTrack:"data",description:"Schemas, migrations, queries, integrity, lineage and data quality.",requirementFocusKeys:["database_architecture"]},
+  {key:"ai",label:"AI",verificationTrack:"ai",description:"Models, prompts, routing, reasoning, memory and governed learning.",requirementFocusKeys:["datanest_ai_learning","workflow_functionality"]},
+  {key:"testing",label:"Testing",verificationTrack:"testing",description:"Unit, browser, integration, stress and acceptance verification.",requirementFocusKeys:["security_testing","workflow_functionality"]},
+  {key:"security",label:"Security",verificationTrack:"security",description:"Authentication, authorization, policy enforcement, privacy and security gates.",requirementFocusKeys:["security_testing","governance_process"]},
+  {key:"infrastructure",label:"Infrastructure",verificationTrack:"infrastructure",description:"CI/CD, deployment, hosting, domains, runtime and operational resilience.",requirementFocusKeys:["database_architecture","cost_saving"]},
+  {key:"documentation",label:"Documentation",verificationTrack:"documentation",description:"Architecture records, guides, runbooks, evidence and change documentation.",requirementFocusKeys:["documentation_mentoring"]},
+  {key:"product_planning",label:"Product Planning",verificationTrack:"product_planning",description:"Requirements, scope, prioritization, acceptance criteria and product decisions.",requirementFocusKeys:["workflow_functionality","governance_process"]}
 ];
 
 const quickCommands=[
@@ -120,6 +122,7 @@ export default function DataNestAiChatPanel({
   draftScope,
   jobId,
   jobCode,
+  jobRequirements,
   sessionId,
   contextReady,
   events,
@@ -141,6 +144,7 @@ export default function DataNestAiChatPanel({
   const composerRef=useRef<HTMLTextAreaElement|null>(null);
   const transcriptRef=useRef<HTMLDivElement|null>(null);
   const busy=busyJobs.has(draftIdentity);
+  const jobRequirementFocusKeys=workFocusKeysFromRequirements(jobRequirements);
 
   useEffect(()=>{
     setDisplayTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone||"UTC");
@@ -207,6 +211,7 @@ export default function DataNestAiChatPanel({
     const message=draft.trim();
     const expertise=developmentWorkSections.find(item=>item.key===selectedExpertise)||null;
     if(!message||busy||!contextReady||!expertise)return;
+    const matchedRequirementFocusKeys=expertise.requirementFocusKeys.filter(key=>jobRequirementFocusKeys.includes(key));
     const supabase=getSupabase();
     if(!supabase)return;
 
@@ -232,6 +237,10 @@ export default function DataNestAiChatPanel({
         expertise_section:expertise.key,
         expertise_label:expertise.label,
         verification_track:expertise.verificationTrack,
+        requirement_focus_keys:expertise.requirementFocusKeys,
+        job_requirement_focus_keys:jobRequirementFocusKeys,
+        matched_requirement_focus_keys:matchedRequirementFocusKeys,
+        requirement_focus_match:matchedRequirementFocusKeys.length>0,
         routing_version:"development-work-expertise-v1"
       }
     });
@@ -385,22 +394,26 @@ export default function DataNestAiChatPanel({
         <b>{selectedExpertise?"ROUTE LOCKED":"ROUTE REQUIRED"}</b>
       </div>
       <div className="datanestAiExpertiseGrid">
-        {developmentWorkSections.map(section=><button
-          key={section.key}
-          type="button"
-          className={"datanestAiExpertiseOption "+(selectedExpertise===section.key?"active":"")}
-          aria-pressed={selectedExpertise===section.key}
-          onClick={()=>setSelectedExpertise(section.key)}
-          disabled={busy}
-          title={section.description}
-        >
-          <strong>{section.label}</strong>
-          <small>{section.description}</small>
-        </button>)}
+        {developmentWorkSections.map(section=>{
+          const matched=section.requirementFocusKeys.filter(key=>jobRequirementFocusKeys.includes(key));
+          return <button
+            key={section.key}
+            type="button"
+            className={"datanestAiExpertiseOption "+(selectedExpertise===section.key?"active ":"")+(matched.length?"requirementMatch":"")}
+            aria-pressed={selectedExpertise===section.key}
+            onClick={()=>setSelectedExpertise(section.key)}
+            disabled={busy}
+            title={section.description}
+          >
+            <strong>{section.label}</strong>
+            <small>{section.description}</small>
+            <small className="datanestAiExpertiseFocus">{matched.length?"Job requirement · "+matched.map(workFocusLabel).join(" · "):"Requirement focus · "+section.requirementFocusKeys.map(workFocusLabel).join(" · ")}</small>
+          </button>;
+        })}
       </div>
       {selectedExpertise&&<p className="datanestAiExpertiseRoute">
         <span aria-hidden="true">◇</span>
-        Routed as <b>{developmentWorkSections.find(item=>item.key===selectedExpertise)?.label}</b> · working memory + verification + impact
+        Routed as <b>{developmentWorkSections.find(item=>item.key===selectedExpertise)?.label}</b> · {developmentWorkSections.find(item=>item.key===selectedExpertise)?.requirementFocusKeys.filter(key=>jobRequirementFocusKeys.includes(key)).length?"matches current Job requirements":"cross-functional route"} · working memory + verification + impact
       </p>}
     </section>
 

@@ -48,19 +48,36 @@ const rawReuseStates=new Set([
 ]);
 type DevelopmentWorkExpertiseKey=
   "ui_ux"|"frontend"|"backend"|"data"|"ai"|"testing"|"security"|"infrastructure"|"documentation"|"product_planning";
-type DevelopmentWorkExpertiseRoute={label:string;verificationTrack:DevelopmentWorkExpertiseKey};
-const developmentWorkExpertise=new Map<DevelopmentWorkExpertiseKey,DevelopmentWorkExpertiseRoute>([
-  ["ui_ux",{label:"UI & UX",verificationTrack:"ui_ux"}],
-  ["frontend",{label:"Frontend",verificationTrack:"frontend"}],
-  ["backend",{label:"Backend",verificationTrack:"backend"}],
-  ["data",{label:"Data",verificationTrack:"data"}],
-  ["ai",{label:"AI",verificationTrack:"ai"}],
-  ["testing",{label:"Testing",verificationTrack:"testing"}],
-  ["security",{label:"Security",verificationTrack:"security"}],
-  ["infrastructure",{label:"Infrastructure",verificationTrack:"infrastructure"}],
-  ["documentation",{label:"Documentation",verificationTrack:"documentation"}],
-  ["product_planning",{label:"Product Planning",verificationTrack:"product_planning"}]
+type WorkFocusKey=
+  "ui_ux"|"database_architecture"|"workflow_functionality"|"cost_saving"|"brand_promotion"|"user_acquisition"|"datanest_ai_learning"|"governance_process"|"security_testing"|"documentation_mentoring";
+const workFocusKeySet=new Set<WorkFocusKey>([
+  "ui_ux","database_architecture","workflow_functionality","cost_saving","brand_promotion","user_acquisition","datanest_ai_learning","governance_process","security_testing","documentation_mentoring"
 ]);
+type DevelopmentWorkExpertiseRoute={label:string;verificationTrack:DevelopmentWorkExpertiseKey;requirementFocusKeys:readonly WorkFocusKey[]};
+const developmentWorkExpertise=new Map<DevelopmentWorkExpertiseKey,DevelopmentWorkExpertiseRoute>([
+  ["ui_ux",{label:"UI & UX",verificationTrack:"ui_ux",requirementFocusKeys:["ui_ux"]}],
+  ["frontend",{label:"Frontend",verificationTrack:"frontend",requirementFocusKeys:["workflow_functionality","ui_ux"]}],
+  ["backend",{label:"Backend",verificationTrack:"backend",requirementFocusKeys:["workflow_functionality","database_architecture"]}],
+  ["data",{label:"Data",verificationTrack:"data",requirementFocusKeys:["database_architecture"]}],
+  ["ai",{label:"AI",verificationTrack:"ai",requirementFocusKeys:["datanest_ai_learning","workflow_functionality"]}],
+  ["testing",{label:"Testing",verificationTrack:"testing",requirementFocusKeys:["security_testing","workflow_functionality"]}],
+  ["security",{label:"Security",verificationTrack:"security",requirementFocusKeys:["security_testing","governance_process"]}],
+  ["infrastructure",{label:"Infrastructure",verificationTrack:"infrastructure",requirementFocusKeys:["database_architecture","cost_saving"]}],
+  ["documentation",{label:"Documentation",verificationTrack:"documentation",requirementFocusKeys:["documentation_mentoring"]}],
+  ["product_planning",{label:"Product Planning",verificationTrack:"product_planning",requirementFocusKeys:["workflow_functionality","governance_process"]}]
+]);
+
+function requirementFocusKeys(requirements:unknown):WorkFocusKey[]{
+  if(!requirements||typeof requirements!=="object"||Array.isArray(requirements))return [];
+  const raw=(requirements as Record<string,unknown>).focus_areas;
+  if(!Array.isArray(raw))return [];
+  const seen=new Set<WorkFocusKey>();
+  for(const value of raw){
+    const key=String(value||"").trim().toLowerCase() as WorkFocusKey;
+    if(workFocusKeySet.has(key))seen.add(key);
+  }
+  return [...seen];
+}
 
 type AnyClient=SupabaseClient<any>;
 
@@ -454,6 +471,9 @@ async function recordDevelopmentWorkingMemory(input:{
   expertiseSection:string|null;
   expertiseLabel:string|null;
   verificationTrack:string|null;
+  requirementFocusKeys:readonly WorkFocusKey[];
+  jobRequirementFocusKeys:readonly WorkFocusKey[];
+  matchedRequirementFocusKeys:readonly WorkFocusKey[];
 }){
   const commandHash=await sha256Text(input.userId+"|"+input.command);
   const synthesisHash=await sha256Text(input.userId+"|"+input.dual.synthesis);
@@ -478,6 +498,10 @@ async function recordDevelopmentWorkingMemory(input:{
           expertise_section:input.expertiseSection,
           expertise_label:input.expertiseLabel,
           verification_track:input.verificationTrack,
+          requirement_focus_keys:input.requirementFocusKeys,
+          job_requirement_focus_keys:input.jobRequirementFocusKeys,
+          matched_requirement_focus_keys:input.matchedRequirementFocusKeys,
+          requirement_focus_match:input.matchedRequirementFocusKeys.length>0,
           routing_version:input.expertiseSection?"development-work-expertise-v1":null
         },
         active:true,
@@ -500,6 +524,10 @@ async function recordDevelopmentWorkingMemory(input:{
           expertise_section:input.expertiseSection,
           expertise_label:input.expertiseLabel,
           verification_track:input.verificationTrack,
+          requirement_focus_keys:input.requirementFocusKeys,
+          job_requirement_focus_keys:input.jobRequirementFocusKeys,
+          matched_requirement_focus_keys:input.matchedRequirementFocusKeys,
+          requirement_focus_match:input.matchedRequirementFocusKeys.length>0,
           routing_version:input.expertiseSection?"development-work-expertise-v1":null
         },
         active:true,
@@ -1073,6 +1101,9 @@ Deno.serve(async(request:Request)=>{
     if(requestedExpertiseSection&&!expertise){
       return json({error:"Unsupported Development Work expertise section."},400,origin);
     }
+    const jobRequirementFocusKeys=requirementFocusKeys(job.requirements);
+    const expertiseRequirementFocusKeys=expertise?[...expertise.requirementFocusKeys]:[];
+    const matchedRequirementFocusKeys=expertiseRequirementFocusKeys.filter(key=>jobRequirementFocusKeys.includes(key));
 
     const message=String(body.message||"").trim();
     const clientRequestId=String(body.clientRequestId||"");
@@ -1221,6 +1252,10 @@ Deno.serve(async(request:Request)=>{
               expertise_section:requestedExpertiseSection||null,
               expertise_label:expertise?.label||null,
               verification_track:expertise?.verificationTrack||null,
+              requirement_focus_keys:expertiseRequirementFocusKeys,
+              job_requirement_focus_keys:jobRequirementFocusKeys,
+              matched_requirement_focus_keys:matchedRequirementFocusKeys,
+              requirement_focus_match:matchedRequirementFocusKeys.length>0,
               routing_version:expertise?"development-work-expertise-v1":null
             }
           })
@@ -1231,7 +1266,7 @@ Deno.serve(async(request:Request)=>{
 
         if(developmentMode&&expertise){
           const {data:contributionId,error:contributionError}=await userClient.rpc(
-            "submit_development_work_contribution_v1",{
+            "submit_development_work_contribution_v2",{
               target_project:job.project_id,
               target_job:job.id,
               target_source_ref:String(data.id),
@@ -1725,7 +1760,10 @@ Deno.serve(async(request:Request)=>{
               modelLabel:developmentModelLabel,
               expertiseSection:requestedExpertiseSection||null,
               expertiseLabel:expertise?.label||null,
-              verificationTrack:expertise?.verificationTrack||null
+              verificationTrack:expertise?.verificationTrack||null,
+              requirementFocusKeys:expertiseRequirementFocusKeys,
+              jobRequirementFocusKeys,
+              matchedRequirementFocusKeys
             });
             workingMemoryStatus="recorded";
             return;
@@ -1797,6 +1835,10 @@ Deno.serve(async(request:Request)=>{
       expertiseSection:requestedExpertiseSection||null,
       impactArea:expertise?.label||null,
       verificationTrack:expertise?.verificationTrack||null,
+      requirementFocusKeys:expertiseRequirementFocusKeys,
+      jobRequirementFocusKeys,
+      matchedRequirementFocusKeys,
+      requirementFocusMatch:matchedRequirementFocusKeys.length>0,
       contributionTracking
     },200,origin);
   }catch(error){

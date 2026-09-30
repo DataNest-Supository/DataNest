@@ -21,6 +21,7 @@ type Job={
   priority:number;
   status:string;
   required_capabilities:string[];
+  requirements:Record<string,unknown>;
   created_at:string;
   updated_at:string;
 };
@@ -45,7 +46,7 @@ type Props={
   onActiveSessionChange:(session:{jobId:string;sessionId:string|null;jobNumber:number;title:string;status:string}|null)=>void;
 };
 
-const jobColumns="id,job_number,title,description,priority,status,required_capabilities,created_at,updated_at";
+const jobColumns="id,job_number,title,description,priority,status,required_capabilities,requirements,created_at,updated_at";
 
 function jobCode(job:Job){
   return "JOB-"+String(job.job_number).padStart(5,"0");
@@ -394,6 +395,7 @@ export default function DataNestAiWorkspace({
           draftScope={projectId+":"+currentUserId}
           jobId={selectedJob.id}
           jobCode={jobCode(selectedJob)}
+          jobRequirements={selectedJob.requirements||{}}
           sessionId={sessionId}
           contextReady={contextReady}
           events={context?.events||[]}
