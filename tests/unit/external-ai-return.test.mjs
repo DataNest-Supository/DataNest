@@ -218,12 +218,12 @@ test("explicit paste may replace a draft but still rejects copied handoff instru
   assert.equal(select({ clipboardText: "RESONANCE DATANEST — LIVE EXTERNAL AI HANDOFF\n[DATANEST TRACKING HEADER]", currentResponse: "Existing draft", allowReplace: true }), null);
 });
 
-test("ChatGPT companion preloads the tracked handoff while omitting user email", () => {
+test("ChatGPT companion keeps the tracked handoff out of the provider URL", () => {
   const source = fs.readFileSync(
     path.join(repoRoot, "src/components/ExternalAiSidebar.tsx"),
     "utf8"
   );
-  assert.match(source, /searchParams\.set\("q",promptText\)/);
+  assert.doesNotMatch(source, /searchParams\.set\("q",promptText\)/);
   assert.match(source, /providerLaunchUrl\(trackedHandoff\)/);
   assert.match(source, /openCompanionShell\(\)/);
   assert.match(source, /popup\.resizeTo\(placement\.width,placement\.height\)/);
