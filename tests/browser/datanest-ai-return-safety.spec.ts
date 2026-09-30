@@ -24,10 +24,10 @@ async function openWorkspace(page:import("@playwright/test").Page,label:string){
   // Dynamic workspace bundles can resolve after the quick-switch dialog closes.
   // Wait for the target surface before interacting with controls inside it.
   if(label==="DataNest AI"){
-    await expect(page).toHaveURL(/(?:\\?|&)view=ai(?:&|$)/,{timeout:15000});
+    await expect(page).toHaveURL(/(?:\?|&)view=ai(?:&|$)/,{timeout:15000});
     await expect(page.getByLabel("Active Job context",{exact:true})).toBeVisible({timeout:15000});
   }else if(label==="Governance"){
-    await expect(page).toHaveURL(/(?:\\?|&)view=governance(?:&|$)/,{timeout:15000});
+    await expect(page).toHaveURL(/(?:\?|&)view=governance(?:&|$)/,{timeout:15000});
     await expect(page.getByText("Project members and invitations",{exact:true})).toBeVisible({timeout:15000});
   }
 }
