@@ -25,6 +25,10 @@ on:
         description: Candidate purpose and optimization summary
         required: true
         type: string
+      gate_timeframe_override_hours:
+        description: Optional Owner planning-window override in hours (0.5-72)
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -201,3 +205,10 @@ jobs:
             echo
             echo "Live deployment remains blocked until Audit Optimizer evidence and governance/human approval are supplied to the canonical production release gate."
           } >> "$GITHUB_STEP_SUMMARY"
+
+  gate-timeframe:
+    name: DataNest AI worktree gate timeframe
+    uses: ./.github/workflows/worktree-gate-timeframe.yml
+    with:
+      gate_id: "mirror-production-import"
+      override_hours: ${{ github.event.client_payload.gate_timeframe_override_hours || inputs.gate_timeframe_override_hours || '' }}
