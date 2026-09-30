@@ -92,3 +92,11 @@
   text-decoration: none;
   border-bottom: 1px solid color-mix(in srgb, currentColor 35%, transparent);
 }
+
+.previewNote {
+  display: block;
+  font-size: .68rem;
+  line-height: 1.35;
+  opacity: .6;
+  overflow-wrap: anywhere;
+}
