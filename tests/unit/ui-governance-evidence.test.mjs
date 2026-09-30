@@ -126,3 +126,31 @@ test("human review dossier covers every production-chain stage without default a
   assert.match(review,/Empty fields mean \*\*not yet reviewed or approved\*\*/i);
   assert.doesNotMatch(review,/Decision:\s*(approved|accepted|authorized)/i);
 });
+
+
+test("Owner Live Test Mode preserves pending human reviews and temporary deployment authority",()=>{
+  const expiry=new Date(Date.now()+60*60*1000).toISOString();
+  const {result,json}=runWriter({
+    DATANEST_UI_RELEASE_SHA:sha,
+    DATANEST_UI_RELEASE_STATE:"owner_test_mode",
+    DATANEST_UI_PR_VERIFICATION_REF:"PR Verification #1340",
+    DATANEST_UI_SECURITY_REF:"Security scan #882",
+    DATANEST_UI_RONSAS_VALIDATION_REF:"RONSAS Application Validation #186",
+    DATANEST_UI_VISUAL_REVIEW_REF:"ui-governance-review-36686578542",
+    DATANEST_UI_AUTHORIZATION_REF:"operator authorization",
+    DATANEST_UI_OWNER_TEST_MODE_REF:"owner temporary exception",
+    DATANEST_UI_OWNER_TEST_MODE_OWNER_LOGIN:"ResonanceAppDev",
+    DATANEST_UI_OWNER_TEST_MODE_ACTOR:"ResonanceAppDev",
+    DATANEST_UI_OWNER_TEST_MODE_EXPIRES_AT:expiry,
+    DATANEST_UI_OWNER_TEST_MODE_REASON:"Gather live evidence needed to complete human governance review gates."
+  });
+  assert.equal(result.status,0,result.stderr);
+  assert.equal(json.releaseState,"owner_test_mode");
+  assert.equal(json.authorized,false);
+  assert.equal(json.fullyGoverned,false);
+  assert.equal(json.productionDeploymentAllowed,true);
+  assert.equal(json.ownerTestMode.active,true);
+  assert.equal(json.evidence.governanceReview.status,"pending");
+  assert.equal(json.evidence.legalReview.status,"pending");
+  assert.equal(json.evidence.externalReview.status,"pending");
+});

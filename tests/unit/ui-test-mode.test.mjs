@@ -14,6 +14,10 @@ const ronsasWorkflow=readFileSync(
   new URL("../../.github/workflows/ronsas-app-validation.yml",import.meta.url),
   "utf8"
 );
+const expiryWorkflow=readFileSync(
+  new URL("../../.github/workflows/ui-owner-test-mode-expiry.yml",import.meta.url),
+  "utf8"
+);
 
 test("UI Test Mode is explicit, candidate-only, and produces review evidence",()=>{
   assert.match(testModeWorkflow,/name: DataNest UI Test Mode/);
@@ -66,4 +70,25 @@ test("RONSAS validation follows Test Mode workflow changes",()=>{
     ronsasWorkflow,
     /push:[\s\S]*?paths:[\s\S]*?"\.github\/workflows\/ui-test-mode\.yml"/
   );
+});
+
+
+test("Owner Live Test Mode is time bounded and explicitly temporary",()=>{
+  assert.match(productionWorkflow,/release_mode:/);
+  assert.match(productionWorkflow,/owner_test_mode/);
+  assert.match(productionWorkflow,/owner_test_mode_expires_at:/);
+  assert.match(productionWorkflow,/owner_test_mode_owner_login:/);
+  assert.match(productionWorkflow,/owner_test_mode_reference:/);
+  assert.match(productionWorkflow,/AUTHORIZE OWNER TEST MODE/);
+  assert.match(productionWorkflow,/collaborators\/\$GITHUB_ACTOR\/permission/);
+});
+
+test("expired Owner Live Test Mode is automatically replaced by a holding page",()=>{
+  assert.match(expiryWorkflow,/schedule:/);
+  assert.match(expiryWorkflow,/17 \* \* \* \*/);
+  assert.match(expiryWorkflow,/owner_test_mode_expired/);
+  assert.match(expiryWorkflow,/productionDeploymentAllowed:false/);
+  assert.match(expiryWorkflow,/actions\/upload-pages-artifact/);
+  assert.match(expiryWorkflow,/actions\/deploy-pages/);
+  assert.match(expiryWorkflow,/Full governance review is required/);
 });
