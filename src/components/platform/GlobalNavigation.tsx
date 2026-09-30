@@ -62,7 +62,7 @@ export default function GlobalNavigation({
       {groups.map(group=><details
         className="navGroup navDisclosure"
         key={group}
-        open={openGroups.has(group)}
+        open={group==="Core"||items.some(item=>item.group===group&&item.id===currentView)||openGroups.has(group)}
         onToggle={event=>{
           const isOpen=event.currentTarget.open;
           setOpenGroups(previous=>{
