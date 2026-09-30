@@ -2,19 +2,21 @@
 
 Recovery is a separate infrastructure gate from release certification.
 
-## Backup integrity
+## Offline bundle gate
 
-After running `scripts/backup.sh`, verify the generated manifest:
+Before an isolated restore drill, validate the backup bundle without modifying
+any service:
 
 ```sh
-./scripts/verify-backup.sh backups/<UTC-STAMP>
+./scripts/validate-recovery-bundle.sh backups/<UTC-STAMP>
 ```
 
-The manifest covers the PostgreSQL dump and complete Forgejo data archive.
+This verifies the PostgreSQL dump, Forgejo data archive and SHA-256 manifest.
+It does not claim that the services themselves have been restored.
 
 ## Restore drill
 
-Perform a restore drill on an isolated Docker host or isolated volumes:
+Perform the actual restore on an isolated Docker host or isolated volumes:
 
 1. Stop the test Forge stack.
 2. Restore PostgreSQL into a test database instance from
@@ -32,8 +34,13 @@ Perform a restore drill on an isolated Docker host or isolated volumes:
 
 ## Authority boundary
 
-A successful backup or restore drill proves recoverability/integrity only. It
-does **not** authorize a production deployment or a Forge authority cutover.
+A successful offline integrity check or restore drill proves recoverability and
+integrity only. It does **not** authorize a production deployment or a Forge
+authority cutover.
 
 Production authority remains with DataNest until a separate governed migration
 is explicitly approved.
+
+An actual host restore is intentionally not represented as complete by source
+control alone; it requires execution on the isolated Forge infrastructure and
+an operator/test record.
