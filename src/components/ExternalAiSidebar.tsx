@@ -370,7 +370,7 @@ export default function ExternalAiSidebar({
         currentResponse:responseTextRef.current,
         allowReplace:announce,
         blockedTexts:[handoff,preparedHandoff,lastClipboardCapture.current],
-        expectedTraceKey:traceKey
+        traceBinding:traceKey
       });
 
       if(!candidate){
