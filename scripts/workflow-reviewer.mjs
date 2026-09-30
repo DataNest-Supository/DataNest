@@ -80,10 +80,12 @@ export function safeNormalizeText(text, extension = "") {
     }
   }
 
-  const terminal = value.replace(/\n*$/u, "") + "\n";
-  if (terminal !== value) {
-    value = terminal;
-    refinements.push("normalized_terminal_newline");
+  if (value.length > 0) {
+    const terminal = value.replace(/\n*$/u, "") + "\n";
+    if (terminal !== value) {
+      value = terminal;
+      refinements.push("normalized_terminal_newline");
+    }
   }
 
   return { text: value, changed: refinements.length > 0, refinements };
@@ -92,7 +94,7 @@ export function safeNormalizeText(text, extension = "") {
 export function findLongFunctions(text, maxFunctionLines = 90) {
   const lines = String(text || "").split("\n");
   const candidates = [];
-  const starter = /\b(?:function\s+[\w$]+\s*\(|(?:const|let|var)\s+[\w$]+\s*=\s*(?:async\s*)?\([^)]*\)\s*=>|(?:async\s+)?[\w$]+\s*\([^;]*\)\s*\{)/;
+  const starter = /\b(?:function\s+[\w$]+\s*\(|(?:const|let|var)\s+[\w$]+\s*=\s*(?:async\s*)?\([^)]*\)\s*=>|(?!(?:if|for|while|switch|catch)\b)(?:async\s+)?[\w$]+\s*\([^;]*\)\s*\{)/;
 
   for (let i = 0; i < lines.length; i++) {
     if (!starter.test(lines[i])) continue;
