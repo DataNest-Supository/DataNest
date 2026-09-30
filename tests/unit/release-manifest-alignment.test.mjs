@@ -100,6 +100,12 @@ test("release manifest embeds UI governance traceability when UI release environ
 });
 
 
+test("Pages workflow stays within GitHub workflow_dispatch input limit",()=>{
+  const dispatchBlock=pagesWorkflow.split("\npermissions:\n",1)[0];
+  const inputs=dispatchBlock.match(/^      [A-Za-z0-9_-]+:$/gm)||[];
+  assert.equal(inputs.length,25);
+});
+
 test("Pages release wiring requires live database and Edge Function attestation",()=>{
   assert.match(pagesWorkflow,/database_migration_reference:/);
   assert.match(pagesWorkflow,/default: '\{"head":"20260930105423","name":"datanest_release_attestation_v1"\}'/);
