@@ -15,7 +15,10 @@
     "branch-cleaner": "node scripts/branch-cleaner.mjs",
     "branch-cleaner:strict": "node scripts/branch-cleaner.mjs --strict",
     "test:branch-cleaner": "node --test tests/unit/branch-cleaner.test.mjs",
-    "test:stress:datanest-ai-files": "node tests/stress/datanest-ai-file-stress.mjs"
+    "test:stress:datanest-ai-files": "node tests/stress/datanest-ai-file-stress.mjs",
+    "workflow-review": "node scripts/workflow-reviewer.mjs",
+    "workflow-review:clean": "node scripts/workflow-reviewer.mjs --apply",
+    "test:workflow-reviewer": "node --test tests/unit/workflow-reviewer.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
