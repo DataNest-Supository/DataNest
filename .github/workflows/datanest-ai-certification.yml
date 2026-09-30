@@ -178,6 +178,8 @@ jobs:
           test "$DATANEST_AI_STAGING_URL" = "https://qchttpcyqlqnhvahprhz.supabase.co"
 
       - name: Validate canonical schema
+        env:
+          PGSSLMODE: disable
         shell: bash
         run: |
           set -euo pipefail
