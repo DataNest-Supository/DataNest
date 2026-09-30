@@ -19,7 +19,7 @@
     "workflow-review": "node scripts/workflow-reviewer.mjs",
     "workflow-review:clean": "node scripts/workflow-reviewer.mjs --apply",
     "test:workflow-reviewer": "node --test tests/unit/workflow-reviewer.test.mjs",
-    "test:forge": "node --test tests/unit/resonance-forge-phase-a.test.mjs"
+    "test:forge": "node --test tests/unit/resonance-forge-phase-a.test.mjs tests/unit/resonance-forge-event-projection.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
