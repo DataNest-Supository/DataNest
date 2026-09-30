@@ -508,15 +508,11 @@ export default function ExternalAiSidebar({
     });
   }
 
-  function providerLaunchUrl(promptText=""){
-    const url=new URL(selectedProvider.url);
-    if(selectedProvider.key==="chatgpt"&&promptText.trim()){
-      // q currently launches ChatGPT with the prompt populated. Keep the full
-      // governed handoff on the clipboard as fallback because provider URL
-      // behavior is outside DataNest's control.
-      url.searchParams.set("q",promptText);
-    }
-    return url.toString();
+  function providerLaunchUrl(_promptText=""){
+    // Never place the governed Job Manifest or other work context into a
+    // third-party provider URL. The handoff is copied to the clipboard after
+    // the tracked session is created and can be reviewed/pasted by the user.
+    return new URL(selectedProvider.url).toString();
   }
 
   function clearCompanionTracking(){
@@ -685,7 +681,7 @@ export default function ExternalAiSidebar({
             ? selectedProvider.label+
               " session is tracked, but the browser blocked the new window. Use Reopen tracked prompt; the governed handoff is already copied."
             : selectedProvider.key==="chatgpt"&&mode==="companion"
-              ? "ChatGPT companion opened on the reserved right rail with the tracked Job Manifest requested as a prefill. "+
+              ? "ChatGPT companion opened on the reserved right rail. The tracked Job Manifest is copied for review/paste without placing work context in the provider URL. "+
                 (autoReturnAccess==="granted"
                   ?"Session auto-return is armed: copy the completed response in ChatGPT, then return to DataNest for review and import."
                   :"For automatic return, enable session auto-return once in DataNest. Manual paste remains available.")

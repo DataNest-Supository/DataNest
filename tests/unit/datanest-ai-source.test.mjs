@@ -370,3 +370,12 @@ test("certification accepts only validation runs for the current candidate evide
   assert.match(source,/loadCandidateEvidenceIds[\s\S]{0,1800}sha256Text\(evidenceIds\.join\("\\n"\)\)/);
   assert.match(source,/results:\{\.\.\.governedResults,\.\.\.current\.seal\}/);
 });
+
+
+test("External AI handoff never places governed work context in a provider URL", () => {
+  const source=fs.readFileSync(path.join(root,"src/components/ExternalAiSidebar.tsx"),"utf8");
+  assert.doesNotMatch(source,/searchParams\.set\(["']q["']/);
+  assert.match(source,/function providerLaunchUrl\(_promptText=""/);
+  assert.match(source,/Never place the governed Job Manifest or other work context into a/);
+  assert.match(source,/The tracked Job Manifest is copied for review\/paste/);
+});
