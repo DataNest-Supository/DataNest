@@ -56,6 +56,8 @@ test("production authorization rejects wrong confirmation text",()=>{
 
 test("production authorization rejects missing and placeholder references",()=>{
   for (const [key,value] of [
+    ["DATANEST_UI_MIRROR_PROMOTION_REF",""],
+    ["DATANEST_UI_AUDIT_OPTIMIZER_REF","pending"],
     ["DATANEST_UI_SECURITY_REF",""],
     ["DATANEST_UI_RONSAS_VALIDATION_REF","pending"],
     ["DATANEST_UI_LEGAL_REVIEW_REF","todo"],
