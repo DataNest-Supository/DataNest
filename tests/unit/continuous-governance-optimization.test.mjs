@@ -6,11 +6,11 @@ import { fileURLToPath } from "node:url";
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
 const migration=fs.readFileSync(
-  path.join(root,"supabase/migrations/20260929230000_continuous_governance_optimization_v1.sql"),
+  path.join(root,"supabase/migrations/20260929083316_continuous_governance_optimization_v1.sql"),
   "utf8"
 );
 const performanceMigration=fs.readFileSync(
-  path.join(root,"supabase/migrations/20260929231000_optimize_continuous_governance_fk_indexes.sql"),
+  path.join(root,"supabase/migrations/20260929084736_optimize_continuous_governance_fk_indexes.sql"),
   "utf8"
 );
 const panel=fs.readFileSync(

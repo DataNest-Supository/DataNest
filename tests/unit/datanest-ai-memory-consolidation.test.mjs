@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
 const migration=fs.readFileSync(
-  path.join(root,"supabase/migrations/20260929232000_add_canonical_memory_consolidation.sql"),
+  path.join(root,"supabase/migrations/20260929090517_add_canonical_memory_consolidation.sql"),
   "utf8"
 );
 const certification=fs.readFileSync(

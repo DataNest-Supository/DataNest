@@ -5,7 +5,7 @@ import fs from "node:fs";
 const analysis=fs.readFileSync("supabase/functions/_shared/externalAuditAnalysis.ts","utf8");
 const fetchSource=fs.readFileSync("supabase/functions/_shared/externalAuditFetch.ts","utf8");
 const api=fs.readFileSync("supabase/functions/external-audit/index.ts","utf8");
-const hardening=fs.readFileSync("supabase/migrations/20260929090600_external_audit_release_hardening.sql","utf8");
+const hardening=fs.readFileSync("supabase/migrations/20260929090134_external_audit_release_hardening.sql","utf8");
 
 test("audit analysis rejects unknown source and criterion identities",()=>{
   assert.match(analysis,/invalid_criterion_id/);

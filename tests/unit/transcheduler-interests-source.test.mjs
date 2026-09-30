@@ -6,7 +6,7 @@ const app = readFileSync(new URL("../../src/components/DataNestApp.tsx", import.
 const stakeholder = readFileSync(new URL("../../src/components/StakeholderWorkspace.tsx", import.meta.url),"utf8");
 const taxonomy = readFileSync(new URL("../../src/lib/workFocus.ts", import.meta.url),"utf8");
 const migration = readFileSync(
-  new URL("../../supabase/migrations/20260929062000_link_transcheduler_job_requirements_user_interests.sql", import.meta.url),
+  new URL("../../supabase/migrations/20260929042816_link_transcheduler_job_requirements_user_interests.sql", import.meta.url),
   "utf8"
 );
 

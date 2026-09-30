@@ -6,11 +6,11 @@ import { fileURLToPath } from "node:url";
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
 const migration=fs.readFileSync(
-  path.join(root,"supabase/migrations/20260929083000_add_certified_memory_usage_receipts.sql"),
+  path.join(root,"supabase/migrations/20260929053617_add_certified_memory_usage_receipts.sql"),
   "utf8"
 );
 const requestIndex=fs.readFileSync(
-  path.join(root,"supabase/migrations/20260929084500_index_certified_memory_usage_receipts_request.sql"),
+  path.join(root,"supabase/migrations/20260929095401_index_certified_memory_usage_receipts_request.sql"),
   "utf8"
 );
 const chat=fs.readFileSync(
