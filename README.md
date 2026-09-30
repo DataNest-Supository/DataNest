@@ -57,6 +57,8 @@ The Supository scope includes source/provenance, lifecycle state, delivery route
 - Architecture contract: [`docs/DATANEST_SUPOSITORY_ARCHITECTURE.md`](docs/DATANEST_SUPOSITORY_ARCHITECTURE.md)
 - Machine-readable catalog: [`config/supository.catalog.json`](config/supository.catalog.json)
 - Sovereign Forge bootstrap: [`infra/reson8-forge/`](infra/reson8-forge/)
+- Ungated R&D mirror: `DataNest-Supository/Mirror-DataNest`
+- Mirror promotion contract: [`docs/MIRROR_DATANEST_PROMOTION.md`](docs/MIRROR_DATANEST_PROMOTION.md)
 - Target Forge namespace: `git.reson8.life/DataNest-Supository/DataNest`
 
 New Resonance AppDev projects, products and services should be registered through the Supository catalog even when their source or runtime lives in a separate repository or provider.
