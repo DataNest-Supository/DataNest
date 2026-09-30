@@ -1,14 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
 import crypto from "node:crypto";
 
-const url=process.env.DATANEST_CERTIFICATION_URL;
-const publishableKey=process.env.DATANEST_CERTIFICATION_PUBLISHABLE_KEY;
-const serviceKey=process.env.DATANEST_CERTIFICATION_SERVICE_ROLE_KEY;
+const url=process.env.DATANEST_AI_STAGING_URL;
+const publishableKey=process.env.DATANEST_AI_STAGING_PUBLISHABLE_KEY;
+const serviceKey=process.env.DATANEST_AI_STAGING_SERVICE_ROLE_KEY;
 const email=process.env.DATANEST_AI_E2E_EMAIL;
 const password=process.env.DATANEST_AI_E2E_PASSWORD;
 
 if(!url||!publishableKey||!serviceKey||!email||!password){
-  throw new Error("Certification URL, publishable/service keys, and E2E credentials are required.");
+  throw new Error("Staging URL, publishable/service keys, and E2E credentials are required.");
 }
 
 const client=createClient(url,publishableKey,{auth:{persistSession:false,autoRefreshToken:false}});
@@ -126,7 +126,7 @@ if(!secondJob.data){
     priority:10,
     status:"READY",
     required_capabilities:["chat"],
-    requirements:{environment:"certification"},
+    requirements:{environment:"staging"},
     acceptance:{cross_job_isolation:true}
   }).select("id").single();
   if(inserted.error)throw inserted.error;
