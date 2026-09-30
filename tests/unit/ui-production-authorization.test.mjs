@@ -24,6 +24,7 @@ const valid={
   DATANEST_UI_RELEASE_STATE:"authorized",
   DATANEST_UI_PRODUCTION_CONFIRMATION:"AUTHORIZE PRODUCTION",
   DATANEST_UI_MIRROR_PROMOTION_REF:"Mirror-DataNest candidate run #42",
+  DATANEST_UI_MIRROR_LIVE_EVIDENCE_REF:"Mirror live verification #42",
   DATANEST_UI_AUDIT_OPTIMIZER_REF:"Audit Optimizer review AO-2026-09-30-001",
   DATANEST_UI_PR_VERIFICATION_REF:"PR Verification #1293",
   DATANEST_UI_SECURITY_REF:"Security scan #820",
@@ -57,6 +58,7 @@ test("production authorization rejects wrong confirmation text",()=>{
 test("production authorization rejects missing and placeholder references",()=>{
   for (const [key,value] of [
     ["DATANEST_UI_MIRROR_PROMOTION_REF",""],
+    ["DATANEST_UI_MIRROR_LIVE_EVIDENCE_REF","pending"],
     ["DATANEST_UI_AUDIT_OPTIMIZER_REF","pending"],
     ["DATANEST_UI_SECURITY_REF",""],
     ["DATANEST_UI_RONSAS_VALIDATION_REF","pending"],
@@ -94,6 +96,7 @@ test("Pages production deployment is manual exact-SHA and environment gated",()=
   for (const input of [
     "release_sha",
     "mirror_promotion_reference",
+    "mirror_live_evidence_reference",
     "audit_optimizer_reference",
     "pr_verification_reference",
     "security_scan_reference",
@@ -167,6 +170,7 @@ test("Owner Live Test Mode allows temporary production while human review refs r
     DATANEST_UI_RELEASE_STATE:"owner_test_mode",
     DATANEST_UI_PRODUCTION_CONFIRMATION:"AUTHORIZE OWNER TEST MODE",
     DATANEST_UI_MIRROR_PROMOTION_REF:"Mirror-DataNest owner-test candidate",
+    DATANEST_UI_MIRROR_LIVE_EVIDENCE_REF:"Mirror owner-test live verification",
     DATANEST_UI_AUDIT_OPTIMIZER_REF:"Audit Optimizer owner-test review",
     DATANEST_UI_GOVERNANCE_REVIEW_REF:"",
     DATANEST_UI_LEGAL_REVIEW_REF:"",
@@ -190,6 +194,7 @@ test("Owner Live Test Mode rejects actor mismatch and excessive duration",()=>{
     DATANEST_UI_RELEASE_STATE:"owner_test_mode",
     DATANEST_UI_PRODUCTION_CONFIRMATION:"AUTHORIZE OWNER TEST MODE",
     DATANEST_UI_MIRROR_PROMOTION_REF:"Mirror-DataNest owner-test candidate",
+    DATANEST_UI_MIRROR_LIVE_EVIDENCE_REF:"Mirror owner-test live verification",
     DATANEST_UI_AUDIT_OPTIMIZER_REF:"Audit Optimizer owner-test review",
     DATANEST_UI_GOVERNANCE_REVIEW_REF:"",
     DATANEST_UI_LEGAL_REVIEW_REF:"",
@@ -218,6 +223,7 @@ test("Owner Live Test Mode AI-proposed strategy does not require an explicit exp
     DATANEST_UI_RELEASE_STATE:"owner_test_mode",
     DATANEST_UI_PRODUCTION_CONFIRMATION:"AUTHORIZE OWNER TEST MODE",
     DATANEST_UI_MIRROR_PROMOTION_REF:"Mirror-DataNest owner-test candidate",
+    DATANEST_UI_MIRROR_LIVE_EVIDENCE_REF:"Mirror owner-test live verification",
     DATANEST_UI_AUDIT_OPTIMIZER_REF:"Audit Optimizer owner-test review",
     DATANEST_UI_GOVERNANCE_REVIEW_REF:"",
     DATANEST_UI_LEGAL_REVIEW_REF:"",
