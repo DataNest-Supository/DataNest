@@ -120,7 +120,7 @@ The first production objective is **sovereign replication and extension**. Repla
 
 The canonical DataNest UI exposes an **R&D Test Mode** toggle only to authenticated project members whose server-backed role is `owner` or `admin`.
 
-Enabling the toggle opens the separate `Mirror-DataNest` preview workspace. The toggle:
+Enabling the toggle opens the live `DataNest-Supository/Mirror-DataNest` R&D repository. The prepared GitHub Pages preview becomes the preferred launch target after Pages is enabled for that repository. The toggle:
 
 - does not change the user's canonical DataNest role;
 - does not grant production deployment authority;
