@@ -136,3 +136,9 @@ jobs:
           path: test-results/
           if-no-files-found: ignore
           retention-days: 7
+
+  gate-timeframe:
+    name: DataNest AI worktree gate timeframe
+    uses: ./.github/workflows/worktree-gate-timeframe.yml
+    with:
+      gate_id: "pr-verification"

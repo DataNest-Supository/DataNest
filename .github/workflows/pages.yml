@@ -98,6 +98,10 @@ on:
         description: Type AUTHORIZE PRODUCTION or AUTHORIZE OWNER TEST MODE as required by release_mode
         required: true
         type: string
+      gate_timeframe_override_hours:
+        description: Optional Owner worktree-gate planning-window override in hours (0.5-72)
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -331,3 +335,10 @@ jobs:
           tests/browser/legal-centre.spec.ts
           tests/browser/datanest-ai-layout.spec.ts
           tests/browser/transcheduler-project-gantt.spec.ts
+
+  gate-timeframe:
+    name: DataNest AI worktree gate timeframe
+    uses: ./.github/workflows/worktree-gate-timeframe.yml
+    with:
+      gate_id: "pages"
+      override_hours: ${{ inputs.gate_timeframe_override_hours || '' }}

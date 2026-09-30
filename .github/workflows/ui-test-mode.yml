@@ -236,3 +236,9 @@ jobs:
             public/release-manifest.json
           if-no-files-found: warn
           retention-days: 30
+
+  gate-timeframe:
+    name: DataNest AI worktree gate timeframe
+    uses: ./.github/workflows/worktree-gate-timeframe.yml
+    with:
+      gate_id: "ui-test-mode"

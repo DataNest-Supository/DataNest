@@ -15,6 +15,9 @@ on:
       - ".github/workflows/pages.yml"
       - ".github/workflows/ui-test-mode.yml"
       - ".github/workflows/ui-owner-test-mode-expiry.yml"
+      - ".github/workflows/worktree-gate-timeframe.yml"
+      - "config/worktree-gate-timeframes.json"
+      - "scripts/propose-worktree-gate-timeframe.mjs"
       - ".github/actions/node-project-setup/**"
       - ".github/actions/ronsas-bun-app-validation/**"
       - ".github/actions/ronsas-python-backend-validation/**"
@@ -30,6 +33,9 @@ on:
       - ".github/workflows/pages.yml"
       - ".github/workflows/ui-test-mode.yml"
       - ".github/workflows/ui-owner-test-mode-expiry.yml"
+      - ".github/workflows/worktree-gate-timeframe.yml"
+      - "config/worktree-gate-timeframes.json"
+      - "scripts/propose-worktree-gate-timeframe.mjs"
       - ".github/actions/node-project-setup/**"
       - ".github/actions/ronsas-bun-app-validation/**"
       - ".github/actions/ronsas-python-backend-validation/**"
@@ -133,3 +139,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: ./.github/actions/ronsas-python-backend-validation
+
+  gate-timeframe:
+    name: DataNest AI worktree gate timeframe
+    uses: ./.github/workflows/worktree-gate-timeframe.yml
+    with:
+      gate_id: "ronsas-app-validation"

@@ -46,3 +46,9 @@ jobs:
           else
             deno check "$FUNCTION_DIR/index.ts"
           fi
+
+  gate-timeframe:
+    name: DataNest AI worktree gate timeframe
+    uses: ./.github/workflows/worktree-gate-timeframe.yml
+    with:
+      gate_id: "edge-function-validation"
