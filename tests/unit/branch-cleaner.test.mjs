@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  advisorList,
+  buildArchiveTips,
   classifyBranch,
   evaluateSupabaseProject,
   extractAuditIds,
@@ -8,7 +10,9 @@ import {
   migrationNameFromFile,
   compareMigrationParity,
   normalizeBranchFamily,
+  indexPullRequestsByBranch,
   isArchivedPruneTarget,
+  normalizeSupabaseProjectPayload,
 } from "../../scripts/branch-cleaner.mjs";
 
 const config = {
@@ -25,6 +29,42 @@ test("normalizes iterative branch families without conflating the feature stem",
 
 test("extracts unique audit IDs", () => {
   assert.deepEqual(extractAuditIds("AUD-003 then AUD-010 and AUD-003"), ["AUD-003", "AUD-010"]);
+});
+
+test("indexes only pull requests from the audited repository", () => {
+  const indexed = indexPullRequestsByBranch([
+    { id:1, head:{ ref:"feat/local", repo:{ full_name:"DataNest-Supository/DataNest" } } },
+    { id:2, head:{ ref:"feat/local", repo:{ full_name:"DataNest-Supository/DataNest" } } },
+    { id:3, head:{ ref:"feat/fork", repo:{ full_name:"external/fork" } } },
+    { id:4, head:{ repo:{ full_name:"DataNest-Supository/DataNest" } } },
+  ], "DataNest-Supository/DataNest");
+  assert.deepEqual(indexed.get("feat/local").map((pr) => pr.id), [1, 2]);
+  assert.equal(indexed.has("feat/fork"), false);
+});
+
+test("maps only exact archive refs to branch tips", () => {
+  const tips = buildArchiveTips([
+    { ref:"refs/tags/branch-archive/feat/example", object:{ sha:"abc123" } },
+    { ref:"refs/tags/unrelated/feat/example", object:{ sha:"skip" } },
+    { ref:"refs/tags/branch-archive/", object:{ sha:"skip-empty" } },
+  ], "branch-archive/");
+  assert.equal(tips.get("feat/example"), "abc123");
+  assert.equal(tips.size, 1);
+});
+
+test("normalizes Supabase advisor and collection payloads", () => {
+  assert.deepEqual(advisorList({ lints:[{ name:"lint" }] }), [{ name:"lint" }]);
+  assert.deepEqual(advisorList({ advisors:[{ name:"advisor" }] }), [{ name:"advisor" }]);
+  const project = normalizeSupabaseProjectPayload({
+    branches:{ branches:[{ name:"main" }] },
+    securityAdvisors:{ lints:[{ name:"security" }] },
+    performanceAdvisors:{ advisors:[{ name:"performance" }] },
+    migrations:{ migrations:[{ name:"migration" }] },
+  });
+  assert.deepEqual(project.branches, [{ name:"main" }]);
+  assert.deepEqual(project.securityAdvisors, [{ name:"security" }]);
+  assert.deepEqual(project.performanceAdvisors, [{ name:"performance" }]);
+  assert.deepEqual(project.migrations, [{ name:"migration" }]);
 });
 
 test("never marks the base branch for deletion", () => {
