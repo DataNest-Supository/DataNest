@@ -18,6 +18,22 @@ on:
         options:
           - authorized
           - owner_test_mode
+      mirror_promotion_reference:
+        description: Mirror-DataNest production-candidate artifact/run/commit reference
+        required: true
+        type: string
+      mirror_live_evidence_reference:
+        description: Successful live Mirror visual/functional verification run or evidence artifact for the exact candidate
+        required: true
+        type: string
+      datanest_ai_certification_reference:
+        description: DataNest AI Certification run/artifact for the exact candidate SHA and governed staging backend
+        required: true
+        type: string
+      audit_optimizer_reference:
+        description: DataNest Audit Optimizer review/evidence reference for this production candidate
+        required: true
+        type: string
       pr_verification_reference:
         description: PR Verification run/reference for the exact release SHA
         required: true
@@ -122,6 +138,10 @@ jobs:
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_yIf5HFKNNteed4HdYCS2Vw_4TB-4LvB"
       DATANEST_UI_RELEASE_SHA: ${{ inputs.release_sha }}
       DATANEST_UI_RELEASE_STATE: ${{ inputs.release_mode }}
+      DATANEST_UI_MIRROR_PROMOTION_REF: ${{ inputs.mirror_promotion_reference }}
+      DATANEST_UI_MIRROR_LIVE_EVIDENCE_REF: ${{ inputs.mirror_live_evidence_reference }}
+      DATANEST_UI_DATANEST_AI_CERTIFICATION_REF: ${{ inputs.datanest_ai_certification_reference }}
+      DATANEST_UI_AUDIT_OPTIMIZER_REF: ${{ inputs.audit_optimizer_reference }}
       DATANEST_UI_PR_VERIFICATION_REF: ${{ inputs.pr_verification_reference }}
       DATANEST_UI_SECURITY_REF: ${{ inputs.security_scan_reference }}
       DATANEST_UI_RONSAS_VALIDATION_REF: ${{ inputs.ronsas_validation_reference }}
