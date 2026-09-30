@@ -244,9 +244,11 @@ Build and test the requested SHA, write authorized evidence, bundle all eight ap
 
 Add assertions in `ui-production-authorization.test.mjs` that no automatic push deploy remains, all required inputs exist, exact-SHA checkout is used, and `environment.name` remains `github-pages`.
 
-- [ ] **Step 6: Configure the GitHub `github-pages` environment review gate**
+- [x] **Step 6: Configure the GitHub `github-pages` environment review gate**
 
 Require at least one authorized human reviewer in repository Settings → Environments → `github-pages`. If the connected GitHub tooling can configure required reviewers, apply and read back the setting; otherwise stop before production use and have the repository owner configure it manually. The workflow must not be described as a fully enforced human gate until this readback is confirmed.
+
+Read-only GitHub REST verification on 2026-09-30 confirmed the existing required-reviewer rule for `DataNest-Supository`, administrator bypass disabled, and a deployment branch policy restricted to `main`. No environment settings were changed. See the dated verification update below and `docs/governance/platform-dossier/UI_GOVERNANCE_CANDIDATE_88945f1.md` for the evidence and remaining review requirements.
 
 - [x] **Step 7: Commit**
 
@@ -402,7 +404,7 @@ Exact candidate workflow evidence:
   - artifact `datanest-ai-certification-2d3a5571d0e02b1c41ba7a719035d02f95ffaf06`
   - artifact `datanest-ai-backend-acceptance-2d3a5571d0e02b1c41ba7a719035d02f95ffaf06`
 
-### Remaining production blocker
+### Production blockers recorded on 2026-09-29
 
 Task 5 Step 6 remains open. The repository workflow retains `environment.name: github-pages`, but the connected GitHub tooling available for this execution cannot read or configure the repository environment's required-reviewer protection. Therefore the human environment gate is **not claimed as verified**.
 
@@ -414,3 +416,17 @@ Production deployment remains blocked until:
 4. post-deployment verification passes and the dossier is updated.
 
 No production deployment was triggered while recording this evidence.
+
+## Verification update — 2026-09-30
+
+Task 5 Step 6 is now verified through read-only GitHub REST responses:
+
+- [Environment protection](https://api.github.com/repos/DataNest-Supository/DataNest/environments/github-pages): `required_reviewers` names `DataNest-Supository`; `can_admins_bypass` is `false`; `prevent_self_review` is `false`.
+- [Deployment branch policy](https://api.github.com/repos/DataNest-Supository/DataNest/environments/github-pages/deployment-branch-policies): the sole allowed policy is branch `main`.
+- The five candidate workflows listed above still report `success` for `88945f1002e96d0ca0d9c139d37e86c4fa32b1a1`. The PR Verification visual-review and candidate artifacts are available and unexpired.
+
+This resolves the environment-readback blocker recorded on 2026-09-29. It does not constitute an environment approval for a particular deployment or replace governance, legal, external/human, or production-authorization review references. Those references remain unrecorded in the release dossier.
+
+The [live release manifest](https://datanest-supository.github.io/DataNest/release-manifest.json) reports `e0f35c7e11b23c11eafd14a96ce288dc6fd702ba`. Git ancestry confirms it contains UI optimization PRs #50 and #115 and UI/governance PR #258, but predates production-gate PR #282. The root auth shell, legal page, governance page, and health marker return HTTP 200. The later `ui-governance-release.json` returns HTTP 404 on this older release; it must not be represented as an authorized release under the new workflow.
+
+Existing UI source checks (63) and release-evidence/authorization checks (16) pass on current main `d0fd26f6931f94bbca2677a11e1ac939bd4b2f2f`. These focused checks do not certify every subsequent mainline change or substitute for exact-candidate workflow evidence. No production workflow was dispatched and no approval reference was created.
