@@ -3,6 +3,10 @@ import { resolveDataNestAiStaging } from "../_shared/datanestAiStaging.ts";
 import { sha256Text } from "../_shared/datanestAiRuntime.ts";
 import { replayContentMatches } from "../_shared/datanestAiContinuity.ts";
 import { buildEvidenceLanguageMetadata } from "../_shared/datanestLanguageMetadata.ts";
+import {
+  canonicalDerivationKind,
+  type EvidenceDerivationKind
+} from "../_shared/datanestEvidenceDerivation.ts";
 import { selectLatestAuthorizedSessionId } from "../_shared/datanestAiSessionSelection.ts";
 
 declare const Deno:{
@@ -46,6 +50,101 @@ function stagingConfig(supabaseUrl:string,serviceKey:string){
     configuredUrl:Deno.env.get("DATANEST_AI_STAGING_URL"),
     configuredKey:Deno.env.get("DATANEST_AI_STAGING_SERVICE_ROLE_KEY")
   });
+}
+type EvidenceDerivationRequest={
+  parentEventId:string;
+  kind:EvidenceDerivationKind;
+  transformationVersion:string;
+};
+
+function evidenceDerivationRequest(body:Record<string,unknown>):EvidenceDerivationRequest|null{
+  const keys=["derivedFromEventId","derivationKind","transformationVersion"];
+  const supplied=keys.filter(key=>Object.prototype.hasOwnProperty.call(body,key));
+  if(!supplied.length)return null;
+  if(supplied.length!==keys.length){
+    throw new Error("derivedFromEventId, derivationKind and transformationVersion must be supplied together.");
+  }
+  const parentEventId=String(body.derivedFromEventId||"").trim();
+  const transformationVersion=String(body.transformationVersion||"").trim();
+  if(!parentEventId||!transformationVersion){
+    throw new Error("Evidence derivation lineage requires a parent event and transformation version.");
+  }
+  return {
+    parentEventId,
+    kind:canonicalDerivationKind(body.derivationKind),
+    transformationVersion:transformationVersion.slice(0,200)
+  };
+}
+
+async function ensureEvidenceDerivation(input:{
+  staging:AnyClient;
+  projectId:string;
+  childEventId:string;
+  request:EvidenceDerivationRequest|null;
+  createdBy:string;
+}):Promise<{id:string;rootEventId:string}|null>{
+  if(!input.request)return null;
+  if(input.childEventId===input.request.parentEventId){
+    throw new Error("Derived evidence cannot reference itself as its source.");
+  }
+
+  const {data:parent,error:parentError}=await input.staging
+    .from("ai_intake_events")
+    .select("id,project_id")
+    .eq("id",input.request.parentEventId)
+    .eq("project_id",input.projectId)
+    .maybeSingle();
+  if(parentError)throw parentError;
+  if(!parent)throw new Error("Derived evidence source event was not found in this project.");
+
+  const {data:parentLineage,error:parentLineageError}=await input.staging
+    .from("ai_evidence_derivations")
+    .select("root_event_id")
+    .eq("project_id",input.projectId)
+    .eq("child_event_id",input.request.parentEventId)
+    .maybeSingle();
+  if(parentLineageError)throw parentLineageError;
+  const rootEventId=String(parentLineage?.root_event_id||parent.id);
+  if(rootEventId===input.childEventId){
+    throw new Error("Evidence derivation lineage cannot form a cycle.");
+  }
+
+  const {data:existing,error:existingError}=await input.staging
+    .from("ai_evidence_derivations")
+    .select("id,parent_event_id,root_event_id,derivation_kind,transformation_version")
+    .eq("project_id",input.projectId)
+    .eq("child_event_id",input.childEventId)
+    .maybeSingle();
+  if(existingError)throw existingError;
+  if(existing){
+    const same=
+      String(existing.parent_event_id)===input.request.parentEventId &&
+      String(existing.root_event_id)===rootEventId &&
+      String(existing.derivation_kind)===input.request.kind &&
+      String(existing.transformation_version)===input.request.transformationVersion;
+    if(!same){
+      throw new Error("This evidence event is already bound to different immutable derivation lineage.");
+    }
+    return {id:String(existing.id),rootEventId};
+  }
+
+  const {data:created,error:createError}=await input.staging
+    .from("ai_evidence_derivations")
+    .insert({
+      project_id:input.projectId,
+      child_event_id:input.childEventId,
+      parent_event_id:input.request.parentEventId,
+      root_event_id:rootEventId,
+      derivation_kind:input.request.kind,
+      transformation_version:input.request.transformationVersion,
+      created_by:input.createdBy
+    })
+    .select("id,root_event_id")
+    .single();
+  if(createError||!created){
+    throw createError||new Error("Unable to preserve evidence derivation lineage.");
+  }
+  return {id:String(created.id),rootEventId:String(created.root_event_id)};
 }
 async function ensureCompanionSession(input:{
   staging:AnyClient;
@@ -169,6 +268,7 @@ Deno.serve(async(request:Request)=>{
     const externalAiSessionId=String(body.externalAiSessionId||"");
     const datanestAiSessionId=String(body.datanestAiSessionId||"").trim();
     const content=String(body.content||"").trim();
+    const derivationRequest=evidenceDerivationRequest(body);
     if(!externalAiSessionId||!content){
       return json({error:"externalAiSessionId and content are required."},400,origin);
     }
@@ -258,12 +358,20 @@ Deno.serve(async(request:Request)=>{
       ){
         return json({error:"This external AI evidence is already staged with different language metadata."},409,origin);
       }
+      const derivationLineage=await ensureEvidenceDerivation({
+        staging,
+        projectId:String(session.project_id),
+        childEventId:String(linkedEvent.id),
+        request:derivationRequest,
+        createdBy:user.id
+      });
       return json({
         eventId:String(linkedEvent.id),
         traceId:String(linkedEvent.trace_id||session.staging_trace_id||""),
         sessionId:String(linkedEvent.session_id||""),
         jobId:String(session.job_id),
         trustState:"UNCERTIFIED",
+        derivationLineage,
         idempotent:true
       },200,origin);
     }
@@ -317,7 +425,12 @@ Deno.serve(async(request:Request)=>{
             ...sourceLanguageMetadata,
             trace_key:traceKey,
             trust_state:"uncertified",
-            source:"external_ai_companion"
+            source:"external_ai_companion",
+            ...(derivationRequest?{
+              derived_from_event_id:derivationRequest.parentEventId,
+              derivation_kind:derivationRequest.kind,
+              transformation_version:derivationRequest.transformationVersion
+            }:{})
           })
         })
         .select("id,trace_id,content_hash,session_id")
@@ -325,6 +438,14 @@ Deno.serve(async(request:Request)=>{
       if(createError||!created)throw createError||new Error("Unable to stage external AI evidence.");
       staged=created as Record<string,unknown>;
     }
+
+    const derivationLineage=await ensureEvidenceDerivation({
+      staging,
+      projectId:String(session.project_id),
+      childEventId:String(staged.id),
+      request:derivationRequest,
+      createdBy:user.id
+    });
 
     const {data:linked,error:linkError}=await userClient.rpc(
       "mark_external_ai_session_staged",{
@@ -341,6 +462,7 @@ Deno.serve(async(request:Request)=>{
       sessionId:String(staged.session_id||stagingSession.id),
       jobId:String(session.job_id),
       trustState:"UNCERTIFIED",
+      derivationLineage,
       idempotent:Boolean((linked as Record<string,unknown>|null)?.idempotent)
     },200,origin);
   }catch(error){

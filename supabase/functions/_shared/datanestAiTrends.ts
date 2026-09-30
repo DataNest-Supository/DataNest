@@ -1,3 +1,5 @@
+import { derivationRequiresHumanReview, evidenceIndependenceIdentity, type EvidenceDerivationKind } from "./datanestEvidenceDerivation.ts";
+
 const stopWords=new Set([
   "the","a","an","and","or","to","of","for","in","on","with","is","be","as",
   "this","that","these","those","it","its","from","by","at","into","than","then",
@@ -30,6 +32,8 @@ export type LearningEvidence={
   sourceType?:string|null;
   sourceUserId?:string|null;
   independenceKey?:string|null;
+  derivationFamilyId?:string|null;
+  derivationKind?:EvidenceDerivationKind|null;
   metadata?:Record<string,unknown>|null;
 };
 
@@ -112,13 +116,7 @@ export function isUsefulLearningEvidence(event:LearningEvidence):boolean {
 }
 
 function evidenceIdentity(event:LearningEvidence):string{
-  if(event.independenceKey?.trim())return event.independenceKey.trim();
-  return [
-    event.jobId||"",
-    event.sessionId||"",
-    event.sourceUserId||"",
-    event.sourceType||""
-  ].join("|");
+  return evidenceIndependenceIdentity(event);
 }
 
 function scalarSignatures(value:string):string[]{
@@ -224,6 +222,7 @@ export function candidateFromRepeatedEvidence(
   hasConflict:boolean;
   independentEvidenceCount:number;
   languageReviewRequired:boolean;
+  derivationReviewRequired:boolean;
 }|null {
   if(events.length<2)return null;
   const anchor=events[0];
@@ -250,20 +249,22 @@ export function candidateFromRepeatedEvidence(
   const hasConflict=polarities.size>1||hasScalarConflict(similar)||explicitConflict;
   const risk=classifyLearningRisk(similar.map(item=>item.content).join(" "));
   const languageReviewRequired=similar.some(requiresLanguageReview);
+  const derivationReviewRequired=similar.some(derivationRequiresHumanReview);
   const normalizedKnowledge=representative.content.trim().replace(/\s+/g," ");
   const independentEvidenceCount=new Set(similar.map(evidenceIdentity)).size;
 
   return {
     normalizedKnowledge,
     category:risk.category,
-    riskClass:languageReviewRequired?"high":risk.riskClass,
+    riskClass:languageReviewRequired||derivationReviewRequired?"high":risk.riskClass,
     lifecycleState:"INTAKE",
     evidenceIds:similar.map(item=>item.id),
     trendKey:trendKeyForTokens(trendTokens),
     confidence:candidateConfidence(similar,representative,hasConflict),
     hasConflict,
     independentEvidenceCount,
-    languageReviewRequired
+    languageReviewRequired,
+    derivationReviewRequired
   };
 }
 

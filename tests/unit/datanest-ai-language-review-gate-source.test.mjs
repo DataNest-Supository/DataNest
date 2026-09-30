@@ -21,10 +21,11 @@ test("certification requires language review only for evidence that signals it",
   assert.match(source,/loadLanguageReviewByCandidate/);
   assert.match(source,/summarizeLanguageReviewEvidence/);
   assert.match(source,/languageReview\.required&&latest\.get\("LANGUAGE_REVIEW"\)!==true/);
-  assert.match(source,/Owner authority is required for language-review candidates/);
+  assert.match(source,/Owner authority is required for language or derivation-review candidates/);
   assert.match(source,/reviewer_qualification_status:"registry_verified"/);
   assert.match(source,/reviewer_qualification_ids:qualificationCoverage\.qualificationIds/);
-  assert.match(source,/!languageReview\.required\s*&&\s*allAutomatedCertificationGatesPassed/);
+  assert.match(source,/review\.reviewedLanguages,\s*"source_language_review"/);
+  assert.match(source,/!languageReview\.required\s*&&\s*!refreshedDerivationReview\.required\s*&&\s*allAutomatedCertificationGatesPassed/);
 });
 
 test("language review evidence is derived from reviewer inputs rather than a generic pass button",()=>{

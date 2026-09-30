@@ -199,6 +199,14 @@ test("analysis prompt treats document text as untrusted and uses frozen memory",
 test("shared learning excludes evidence without governed project-learning eligibility",async()=>{
   const makeClient=(metadata)=>({
     from(table){
+      if(table==="ai_evidence_derivations"){
+        const query={
+          select(){return query;},
+          eq(){return query;},
+          in(){return Promise.resolve({data:[],error:null});}
+        };
+        return query;
+      }
       assert.equal(table,"ai_intake_events");
       const query={
         select(){return query;},

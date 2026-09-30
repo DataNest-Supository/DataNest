@@ -20,6 +20,10 @@ import {
   type ReviewerQualification
 } from "../_shared/datanestLanguageReview.ts";
 import { canonicalizeDeclaredLanguage } from "../_shared/datanestLanguageMetadata.ts";
+import {
+  canonicalEvidenceLanguage,
+  semanticReviewStatus
+} from "../_shared/datanestEvidenceDerivation.ts";
 import { resolveDataNestAiStaging } from "../_shared/datanestAiStaging.ts";
 import {
   candidateValidationSeal,
@@ -73,6 +77,40 @@ type Candidate={
   policy_version:string;
   content_hash:string;
   certified_at:string|null;
+};
+
+type DerivationReviewStatus=
+  "unreviewed"|"reviewed_equivalent"|"reviewed_changed"|"stale_review";
+
+type CandidateDerivationReviewItem={
+  id:string;
+  childEventId:string;
+  parentEventId:string;
+  rootEventId:string;
+  derivationKind:string;
+  transformationVersion:string;
+  sourceLanguage:string|null;
+  targetLanguage:string|null;
+  status:DerivationReviewStatus;
+  reviewId:string|null;
+  reviewBasis:string|null;
+  reviewedBy:string|null;
+  reviewedAt:string|null;
+  qualificationIds:string[];
+};
+
+type CandidateDerivationReviewSummary={
+  required:boolean;
+  blocked:boolean;
+  reviewHash:string;
+  items:CandidateDerivationReviewItem[];
+};
+
+const emptyDerivationReview:CandidateDerivationReviewSummary={
+  required:false,
+  blocked:false,
+  reviewHash:"",
+  items:[]
 };
 
 function cors(origin:string|null){
@@ -191,6 +229,137 @@ async function loadLanguageReviewByCandidate(
   }
   return summaries;
 }
+async function loadDerivationReviewByCandidate(
+  staging:AnyClient,
+  projectId:string,
+  candidateIds:string[]
+):Promise<Map<string,CandidateDerivationReviewSummary>>{
+  const summaries=new Map<string,CandidateDerivationReviewSummary>();
+  for(const candidateId of candidateIds){
+    summaries.set(candidateId,{...emptyDerivationReview,items:[]});
+  }
+  if(!candidateIds.length)return summaries;
+
+  const {data:links,error:linksError}=await staging
+    .from("ai_candidate_evidence")
+    .select("candidate_id,event_id")
+    .in("candidate_id",candidateIds);
+  if(linksError)throw linksError;
+  const eventIds=[...new Set((links||[]).map(item=>String(item.event_id)).filter(Boolean))];
+  if(!eventIds.length)return summaries;
+
+  const {data:derivations,error:derivationsError}=await staging
+    .from("ai_evidence_derivations")
+    .select("id,child_event_id,parent_event_id,root_event_id,derivation_kind,transformation_version")
+    .eq("project_id",projectId)
+    .in("child_event_id",eventIds);
+  if(derivationsError)throw derivationsError;
+  if(!(derivations||[]).length)return summaries;
+
+  const derivationIds=(derivations||[]).map(item=>String(item.id));
+  const lineageEventIds=[...new Set((derivations||[]).flatMap(item=>[
+    String(item.child_event_id),
+    String(item.parent_event_id)
+  ]).filter(Boolean))];
+
+  const [eventsResult,reviewsResult,qualificationsResult]=await Promise.all([
+    staging
+      .from("ai_intake_events")
+      .select("id,metadata")
+      .eq("project_id",projectId)
+      .in("id",lineageEventIds),
+    staging
+      .from("ai_evidence_derivation_reviews")
+      .select("id,derivation_id,decision,review_basis,language_tags,qualification_ids,reviewer_user_id,created_at")
+      .eq("project_id",projectId)
+      .in("derivation_id",derivationIds)
+      .order("created_at",{ascending:false}),
+    staging
+      .from("ai_language_reviewer_qualifications")
+      .select("id")
+      .eq("project_id",projectId)
+      .eq("active",true)
+  ]);
+  if(eventsResult.error)throw eventsResult.error;
+  if(reviewsResult.error)throw reviewsResult.error;
+  if(qualificationsResult.error)throw qualificationsResult.error;
+
+  const eventLanguage=new Map<string,string|null>();
+  for(const event of eventsResult.data||[]){
+    eventLanguage.set(String(event.id),canonicalEvidenceLanguage(event.metadata));
+  }
+  const activeQualificationIds=new Set(
+    (qualificationsResult.data||[]).map(item=>String(item.id))
+  );
+  const latestReviewByDerivation=new Map<string,Record<string,unknown>>();
+  for(const review of reviewsResult.data||[]){
+    const derivationId=String(review.derivation_id);
+    if(!latestReviewByDerivation.has(derivationId)){
+      latestReviewByDerivation.set(derivationId,review as Record<string,unknown>);
+    }
+  }
+  const derivationByChild=new Map(
+    (derivations||[]).map(item=>[String(item.child_event_id),item] as const)
+  );
+
+  for(const candidateId of candidateIds){
+    const candidateEventIds=new Set(
+      (links||[])
+        .filter(link=>String(link.candidate_id)===candidateId)
+        .map(link=>String(link.event_id))
+    );
+    const items:CandidateDerivationReviewItem[]=[];
+    for(const childEventId of candidateEventIds){
+      const derivation=derivationByChild.get(childEventId);
+      if(!derivation)continue;
+      const derivationId=String(derivation.id);
+      const latest=latestReviewByDerivation.get(derivationId)||null;
+      const qualificationIds=latest&&Array.isArray(latest.qualification_ids)
+        ?[...new Set(latest.qualification_ids.map(value=>String(value)).filter(Boolean))].sort()
+        :[];
+      const qualificationsCurrent=
+        qualificationIds.length>0&&qualificationIds.every(id=>activeQualificationIds.has(id));
+      items.push({
+        id:derivationId,
+        childEventId:String(derivation.child_event_id),
+        parentEventId:String(derivation.parent_event_id),
+        rootEventId:String(derivation.root_event_id),
+        derivationKind:String(derivation.derivation_kind),
+        transformationVersion:String(derivation.transformation_version),
+        sourceLanguage:eventLanguage.get(String(derivation.parent_event_id))||null,
+        targetLanguage:eventLanguage.get(String(derivation.child_event_id))||null,
+        status:semanticReviewStatus(latest?.decision,qualificationsCurrent),
+        reviewId:latest?String(latest.id):null,
+        reviewBasis:latest?String(latest.review_basis||""):null,
+        reviewedBy:latest?String(latest.reviewer_user_id||""):null,
+        reviewedAt:latest?String(latest.created_at||""):null,
+        qualificationIds
+      });
+    }
+    items.sort((a,b)=>a.id.localeCompare(b.id));
+    const reviewHash=items.length
+      ?await sha256Text(JSON.stringify(items.map(item=>({
+        id:item.id,
+        childEventId:item.childEventId,
+        parentEventId:item.parentEventId,
+        rootEventId:item.rootEventId,
+        derivationKind:item.derivationKind,
+        transformationVersion:item.transformationVersion,
+        status:item.status,
+        reviewId:item.reviewId,
+        qualificationIds:item.qualificationIds
+      }))))
+      :"";
+    summaries.set(candidateId,{
+      required:items.length>0,
+      blocked:items.some(item=>item.status!=="reviewed_equivalent"),
+      reviewHash,
+      items
+    });
+  }
+  return summaries;
+}
+
 async function loadReviewerQualifications(
   staging:AnyClient,
   projectId:string,
@@ -262,28 +431,33 @@ async function assertLanguageReviewQualificationsCurrent(
   const recordedQualificationsStillActive=qualificationIds.every(id=>activeIds.has(id));
   const coverage=qualificationCoverageForReviewedLanguages(
     activeQualifications,
-    reviewedLanguages
+    reviewedLanguages,
+    "source_language_review"
   );
   if(!recordedQualificationsStillActive||!coverage.covered){
     throw new Error("A reviewer qualification bound to LANGUAGE_REVIEW is no longer active; repeat the review before certification.");
   }
 }
 async function currentValidationRuns(staging:AnyClient,candidate:Candidate){
-  const [runs,evidenceIds]=await Promise.all([
+  const [runs,evidenceIds,derivationReviews]=await Promise.all([
     loadValidationRuns(staging,candidate.id),
-    loadCandidateEvidenceIds(staging,candidate.id)
+    loadCandidateEvidenceIds(staging,candidate.id),
+    loadDerivationReviewByCandidate(staging,candidate.project_id,[candidate.id])
   ]);
   const evidenceHash=await sha256Text(evidenceIds.join("\n"));
+  const derivationReview=derivationReviews.get(candidate.id)||emptyDerivationReview;
   const seal=candidateValidationSeal({
     contentHash:candidate.content_hash,
     policyVersion:candidate.policy_version,
     evidenceHash,
     evidenceCount:candidate.evidence_count,
     riskClass:candidate.risk_class,
-    hasConflict:candidate.has_conflict
+    hasConflict:candidate.has_conflict,
+    derivationReviewHash:derivationReview.reviewHash
   });
   return {
     seal,
+    derivationReview,
     runs:runs.filter(run=>validationRunMatchesSeal(run.results,seal))
   };
 }
@@ -326,10 +500,15 @@ async function certifyCandidate(input:{
   actorUserId:string|null;
   reason:string;
   runs:Array<{id:string;gate:CertificationGate;passed:boolean}>;
+  derivationReviewHash:string;
 }){
   const existing=await existingCertification(input.staging,input.candidate.id);
   if(existing){
-    assertCertificationDecisionCurrent(existing,input.candidate);
+    assertCertificationDecisionCurrent(
+      existing,
+      input.candidate,
+      input.derivationReviewHash
+    );
     const {error:updateError}=await input.staging
       .from("ai_learning_candidates")
       .update({
@@ -360,6 +539,10 @@ async function certifyCandidate(input:{
           riskClass:input.candidate.risk_class,
           hasConflict:input.candidate.has_conflict
         })
+      },
+      evidence_context:{
+        derivation_review_hash:input.derivationReviewHash||null,
+        derivation_review_policy:"datanest-evidence-derivation-v1"
       }
     })
     .select("*")
@@ -379,7 +562,8 @@ async function certifyCandidate(input:{
 }
 function assertCertificationDecisionCurrent(
   decision:Record<string,unknown>,
-  candidate:Candidate
+  candidate:Candidate,
+  derivationReviewHash=""
 ){
   const required=requiredCertificationAuthority({
     category:candidate.category,
@@ -394,10 +578,18 @@ function assertCertificationDecisionCurrent(
         ?authority==="owner"||authority==="admin"
         :authority==="owner"||authority==="admin"||authority==="automation";
 
+  const evidenceContext=
+    typeof decision.evidence_context==="object"&&decision.evidence_context!==null
+      ?decision.evidence_context as Record<string,unknown>
+      :{};
   if(
     String(decision.content_hash||"")!==candidate.content_hash ||
     String(decision.policy_version||"")!==candidate.policy_version ||
     String(decision.risk_class||"")!==candidate.risk_class ||
+    (
+      derivationReviewHash &&
+      String(evidenceContext.derivation_review_hash||"")!==derivationReviewHash
+    ) ||
     !authorityValid
   ){
     throw new Error("Certification decision is stale for the current candidate seal or required authority.");
@@ -650,26 +842,31 @@ Deno.serve(async(request:Request)=>{
       let runs:Record<string,unknown>[]=[];
       let decisions:Record<string,unknown>[]=[];
       let languageReviews=new Map<string,LanguageReviewSummary>();
+      let derivationReviews=new Map<string,CandidateDerivationReviewSummary>();
       if(candidateIds.length){
-        const [runsResult,decisionsResult,loadedLanguageReviews]=await Promise.all([
+        const [runsResult,decisionsResult,loadedLanguageReviews,loadedDerivationReviews]=await Promise.all([
           staging.from("ai_validation_runs").select("*").in("candidate_id",candidateIds).order("created_at",{ascending:false}).limit(500),
           staging.from("ai_certification_decisions").select("*").in("candidate_id",candidateIds).order("created_at",{ascending:false}).limit(500),
-          loadLanguageReviewByCandidate(staging,candidateIds)
+          loadLanguageReviewByCandidate(staging,candidateIds),
+          loadDerivationReviewByCandidate(staging,projectId,candidateIds)
         ]);
         if(runsResult.error)throw runsResult.error;
         if(decisionsResult.error)throw decisionsResult.error;
         runs=(runsResult.data||[]) as Record<string,unknown>[];
         decisions=(decisionsResult.data||[]) as Record<string,unknown>[];
         languageReviews=loadedLanguageReviews;
+        derivationReviews=loadedDerivationReviews;
       }
       return json({
         role:member.role,
         candidates:(candidates||[]).map(candidate=>{
           const languageReview=languageReviews.get(String(candidate.id))||emptyLanguageReview;
+          const derivationReview=derivationReviews.get(String(candidate.id))||emptyDerivationReview;
           return {
             ...candidate,
             language_review:languageReview,
-            required_authority:languageReview.required
+            derivation_review:derivationReview,
+            required_authority:languageReview.required||derivationReview.required
               ?"owner"
               :requiredCertificationAuthority({
                 category:String(candidate.category),
@@ -940,6 +1137,80 @@ Deno.serve(async(request:Request)=>{
       return json({result},200,origin);
     }
 
+    if(action==="review_evidence_derivation"){
+      const derivationId=String(body.derivationId||"").trim();
+      const decision=String(body.decision||"").trim();
+      const reviewBasis=String(body.reviewBasis||"").trim().slice(0,2000);
+      if(!derivationId||!["equivalent","changed"].includes(decision)){
+        return json({error:"derivationId and an equivalent or changed decision are required."},400,origin);
+      }
+      if(reviewBasis.length<12){
+        return json({error:"Semantic-equivalence review requires a substantive review basis."},400,origin);
+      }
+
+      const {data:derivation,error:derivationError}=await staging
+        .from("ai_evidence_derivations")
+        .select("id,child_event_id,parent_event_id,root_event_id,derivation_kind,transformation_version")
+        .eq("id",derivationId)
+        .eq("project_id",projectId)
+        .single();
+      if(derivationError||!derivation){
+        throw derivationError||new Error("Evidence derivation was not found.");
+      }
+
+      const eventIds=[String(derivation.parent_event_id),String(derivation.child_event_id)];
+      const {data:events,error:eventsError}=await staging
+        .from("ai_intake_events")
+        .select("id,metadata")
+        .eq("project_id",projectId)
+        .in("id",eventIds);
+      if(eventsError)throw eventsError;
+      const languageByEvent=new Map(
+        (events||[]).map(event=>[
+          String(event.id),
+          canonicalEvidenceLanguage(event.metadata)
+        ] as const)
+      );
+      const sourceLanguage=languageByEvent.get(String(derivation.parent_event_id))||null;
+      const targetLanguage=languageByEvent.get(String(derivation.child_event_id))||null;
+      if(!sourceLanguage||!targetLanguage){
+        return json({
+          error:"Semantic-equivalence review requires explicit source-language metadata on both source and derived evidence."
+        },409,origin);
+      }
+      const reviewedLanguages=[...new Set([sourceLanguage,targetLanguage])];
+      const qualifications=await loadReviewerQualifications(staging,projectId,user.id);
+      const coverage=qualificationCoverageForReviewedLanguages(
+        qualifications,
+        reviewedLanguages,
+        "semantic_equivalence"
+      );
+      if(!coverage.covered){
+        return json({
+          error:"Active semantic-equivalence reviewer qualification is required for every source/target language.",
+          missingLanguages:coverage.missingLanguages
+        },403,origin);
+      }
+
+      const {data:review,error:reviewError}=await staging
+        .from("ai_evidence_derivation_reviews")
+        .insert({
+          project_id:projectId,
+          derivation_id:derivationId,
+          decision,
+          review_basis:reviewBasis,
+          language_tags:reviewedLanguages,
+          qualification_ids:coverage.qualificationIds,
+          reviewer_user_id:user.id
+        })
+        .select("*")
+        .single();
+      if(reviewError||!review){
+        throw reviewError||new Error("Unable to record semantic-equivalence review.");
+      }
+      return json({review},200,origin);
+    }
+
     const candidateId=String(body.candidateId||"");
     if(!candidateId)return json({error:"candidateId is required."},400,origin);
     const candidate=await loadCandidate(staging,projectId,candidateId);
@@ -979,7 +1250,8 @@ Deno.serve(async(request:Request)=>{
         const qualifications=await loadReviewerQualifications(staging,projectId,user.id);
         const qualificationCoverage=qualificationCoverageForReviewedLanguages(
           qualifications,
-          review.reviewedLanguages
+          review.reviewedLanguages,
+          "source_language_review"
         );
         if(!qualificationCoverage.covered){
           return json({
@@ -1030,8 +1302,10 @@ Deno.serve(async(request:Request)=>{
       const refreshedValidation=await currentValidationRuns(staging,refreshedCandidate);
       const refreshedRuns=refreshedValidation.runs;
       let autoCertification:Record<string,unknown>|null=null;
+      const refreshedDerivationReview=refreshedValidation.derivationReview;
       if(
         !languageReview.required &&
+        !refreshedDerivationReview.required &&
         allAutomatedCertificationGatesPassed(refreshedRuns) &&
         canAutoCertify({
           category:refreshedCandidate.category,
@@ -1048,14 +1322,15 @@ Deno.serve(async(request:Request)=>{
           authority:"automation",
           actorUserId:null,
           reason:"All automated gates passed for repeated low-risk non-conflicting evidence.",
-          runs:refreshedRuns
+          runs:refreshedRuns,
+          derivationReviewHash:refreshedDerivationReview.reviewHash
         });
       }
       return json({run,autoCertification},200,origin);
     }
 
     if(action==="certify"){
-      const [{runs},languageReviews]=await Promise.all([
+      const [{runs,derivationReview},languageReviews]=await Promise.all([
         currentValidationRuns(staging,candidate),
         loadLanguageReviewByCandidate(staging,[candidate.id])
       ]);
@@ -1069,8 +1344,14 @@ Deno.serve(async(request:Request)=>{
           error:"All required audit, verify, language-review, validate and stress-test gates must pass before certification."
         },409,origin);
       }
-      if(languageReview.required&&member.role!=="owner"){
-        return json({error:"Owner authority is required for language-review candidates."},403,origin);
+      if((languageReview.required||derivationReview.required)&&member.role!=="owner"){
+        return json({error:"Owner authority is required for language or derivation-review candidates."},403,origin);
+      }
+      if(derivationReview.required&&derivationReview.blocked){
+        return json({
+          error:"All derived evidence must have a current qualified semantic-equivalence review before certification.",
+          derivationReview
+        },409,origin);
       }
       if(languageReview.required){
         try{
@@ -1097,7 +1378,8 @@ Deno.serve(async(request:Request)=>{
         authority:member.role==="owner"?"owner":"admin",
         actorUserId:user.id,
         reason:String(body.reason||"Human certification after required gates passed.").slice(0,2000),
-        runs
+        runs,
+        derivationReviewHash:derivationReview.reviewHash
       });
       return json({decision},200,origin);
     }
@@ -1117,7 +1399,20 @@ Deno.serve(async(request:Request)=>{
       }
       const decision=await existingCertification(staging,candidate.id);
       if(!decision)return json({error:"Certified candidate has no certification decision."},409,origin);
-      assertCertificationDecisionCurrent(decision,candidate);
+      const promotionDerivationReview=(
+        await loadDerivationReviewByCandidate(staging,projectId,[candidate.id])
+      ).get(candidate.id)||emptyDerivationReview;
+      if(promotionDerivationReview.required&&promotionDerivationReview.blocked){
+        return json({
+          error:"Derived evidence review is no longer current; recertification is required before promotion.",
+          derivationReview:promotionDerivationReview
+        },409,origin);
+      }
+      assertCertificationDecisionCurrent(
+        decision,
+        candidate,
+        promotionDerivationReview.reviewHash
+      );
 
       const activeMemory=await loadActiveCertifiedMemory(
         serviceClient,

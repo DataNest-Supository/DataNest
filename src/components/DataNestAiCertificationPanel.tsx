@@ -19,7 +19,30 @@ type Candidate={
     reasons:string[];
     evidenceIds:string[];
   };
+  derivation_review:{
+    required:boolean;
+    blocked:boolean;
+    reviewHash:string;
+    items:DerivationReviewItem[];
+  };
   updated_at:string;
+};
+
+type DerivationReviewItem={
+  id:string;
+  childEventId:string;
+  parentEventId:string;
+  rootEventId:string;
+  derivationKind:string;
+  transformationVersion:string;
+  sourceLanguage:string|null;
+  targetLanguage:string|null;
+  status:"unreviewed"|"reviewed_equivalent"|"reviewed_changed"|"stale_review";
+  reviewId:string|null;
+  reviewBasis:string|null;
+  reviewedBy:string|null;
+  reviewedAt:string|null;
+  qualificationIds:string[];
 };
 
 type ValidationRun={
@@ -184,6 +207,8 @@ export default function DataNestAiCertificationPanel({
   const [busyId,setBusyId]=useState("");
   const [busyMemoryId,setBusyMemoryId]=useState("");
   const [busyQualificationId,setBusyQualificationId]=useState("");
+  const [busyDerivationId,setBusyDerivationId]=useState("");
+  const [derivationReviewDrafts,setDerivationReviewDrafts]=useState<Record<string,string>>({});
   const [qualificationLanguage,setQualificationLanguage]=useState("");
   const [qualificationScope,setQualificationScope]=useState<"source_language_review"|"semantic_equivalence">("source_language_review");
   const [qualificationBasis,setQualificationBasis]=useState("");
@@ -319,6 +344,41 @@ export default function DataNestAiCertificationPanel({
     }
   }
 
+  async function reviewEvidenceDerivation(
+    derivation:DerivationReviewItem,
+    decision:"equivalent"|"changed"
+  ){
+    const supabase=getSupabase();
+    if(!supabase)return;
+    const reviewBasis=(derivationReviewDrafts[derivation.id]||"").trim();
+    setBusyDerivationId(derivation.id);
+    setError("");
+    try{
+      const {error}=await supabase.functions.invoke("datanest-ai-certification",{
+        body:{
+          action:"review_evidence_derivation",
+          projectId,
+          derivationId:derivation.id,
+          decision,
+          reviewBasis
+        }
+      });
+      if(error)throw error;
+      setNotice(
+        decision==="equivalent"
+          ?"Qualified semantic-equivalence review recorded. The evidence remains in its original source family."
+          :"Material semantic change recorded. The derived evidence remains blocked from certification as equivalent support."
+      );
+      setDerivationReviewDrafts(current=>({...current,[derivation.id]:""}));
+      await load();
+      await onChanged();
+    }catch(actionError){
+      setError(actionError instanceof Error?actionError.message:"Semantic-equivalence review failed.");
+    }finally{
+      setBusyDerivationId("");
+    }
+  }
+
   async function recordLanguageReview(candidate:Candidate){
     const draft=languageReviewDraft(candidate);
     const reviewedLanguages=draft.languages
@@ -450,7 +510,7 @@ export default function DataNestAiCertificationPanel({
     <div className="panelHead">
       <div>
         <p className="eyebrow">LEARNING & CERTIFICATION</p>
-        <h3>Audit → verify → language review when required → validate → stress-test → certify</h3>
+        <h3>Audit → verify → source-family and language review when required → validate → stress-test → certify</h3>
       </div>
       <button className="textButton" type="button" onClick={()=>void load()}>Refresh</button>
     </div>
@@ -739,6 +799,66 @@ export default function DataNestAiCertificationPanel({
             <span>{"requires "+candidate.required_authority}</span>
             <span>{candidate.confidence==null?"confidence —":"confidence "+Math.round(candidate.confidence*100)+"%"}</span>
           </div>
+
+          {candidate.derivation_review?.required&&<div className="plannerForm">
+            <div>
+              <b>Source-family derivation review required</b>
+              <p className="muted">
+                Translations, paraphrases, summaries and other declared derivations remain dependent evidence from one root source. Certification requires a current qualified semantic-equivalence review; review never makes a derivation independent corroboration.
+              </p>
+            </div>
+            {(candidate.derivation_review.items||[]).map(derivation=>{
+              const basis=derivationReviewDrafts[derivation.id]||"";
+              const languagesReady=Boolean(derivation.sourceLanguage&&derivation.targetLanguage);
+              return <div className="manifestCard" key={derivation.id}>
+                <div className="rowBetween">
+                  <div>
+                    <b>{derivation.derivationKind.replaceAll("_"," ")}</b>
+                    <small>
+                      {(derivation.sourceLanguage||"source language missing")+" → "+(derivation.targetLanguage||"target language missing")}
+                    </small>
+                  </div>
+                  <span className={"badge "+(derivation.status==="reviewed_equivalent"?"good":derivation.status==="reviewed_changed"?"bad":"warn")}>
+                    {derivation.status.replaceAll("_"," ").toUpperCase()}
+                  </span>
+                </div>
+                <div className="manifestMeta">
+                  <span>{"family "+derivation.rootEventId.slice(0,8)}</span>
+                  <span>{"transform "+derivation.transformationVersion}</span>
+                  {derivation.reviewedAt&&<span>{"reviewed "+formatDate(derivation.reviewedAt)}</span>}
+                </div>
+                <label>
+                  Semantic-equivalence review basis
+                  <textarea
+                    rows={3}
+                    value={basis}
+                    placeholder="Compare source and derived evidence; note terminology, negation, quantities, modal force, and limitations."
+                    onChange={event=>setDerivationReviewDrafts(current=>({
+                      ...current,
+                      [derivation.id]:event.target.value
+                    }))}
+                  />
+                </label>
+                {!languagesReady&&<p className="muted">
+                  Explicit BCP 47 language metadata is required on both source and derived evidence before semantic-equivalence review can be recorded.
+                </p>}
+                <div className="rowActions">
+                  <button
+                    className="secondaryButton compact"
+                    type="button"
+                    disabled={busyDerivationId===derivation.id||basis.trim().length<12||!languagesReady}
+                    onClick={()=>void reviewEvidenceDerivation(derivation,"equivalent")}
+                  >Confirm semantic equivalence</button>
+                  <button
+                    className="secondaryButton compact"
+                    type="button"
+                    disabled={busyDerivationId===derivation.id||basis.trim().length<12||!languagesReady}
+                    onClick={()=>void reviewEvidenceDerivation(derivation,"changed")}
+                  >Record material change</button>
+                </div>
+              </div>;
+            })}
+          </div>}
 
           {candidate.language_review?.required&&<div className="plannerForm">
             <div>
