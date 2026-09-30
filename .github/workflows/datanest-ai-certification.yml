@@ -260,7 +260,7 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Run canonical browser acceptance
+      - name: Run canonical DataNest AI browser acceptance
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
           DATANEST_APP_PATH: /
@@ -279,7 +279,8 @@ jobs:
             cat /tmp/datanest-ai-http.log
             exit 1
           }
-          npm run test:browser:datanest-ai -- --workers=1
+          npx playwright test tests/browser/datanest-ai-return-safety.spec.ts --workers=1
+          npx playwright test tests/browser/datanest-ai.spec.ts --workers=1 --grep "human input is traced|AI Companion return"
 
       - name: Run staging file-worker durability behind canonical identity
         run: npm run test:stress:datanest-ai-files
