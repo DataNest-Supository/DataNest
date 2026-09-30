@@ -31,7 +31,20 @@ const valid={
 
 function verify(extra={}){
   return spawnSync(process.execPath,[verifier],{
-    env:{...process.env,...valid,...extra},
+    env:{
+      ...process.env,
+      DATANEST_UI_RELEASE_STATE:"authorized",
+      DATANEST_UI_OWNER_TEST_MODE_REF:"",
+      DATANEST_UI_OWNER_TEST_MODE_OWNER_LOGIN:"",
+      DATANEST_UI_OWNER_TEST_MODE_ACTOR:"",
+      DATANEST_UI_OWNER_TEST_MODE_WINDOW_STRATEGY:"",
+      DATANEST_UI_OWNER_TEST_MODE_TASK_COMPLEXITY:"",
+      DATANEST_UI_OWNER_TEST_MODE_REPORTING_COMPLEXITY:"",
+      DATANEST_UI_OWNER_TEST_MODE_EXPIRES_AT:"",
+      DATANEST_UI_OWNER_TEST_MODE_REASON:"",
+      ...valid,
+      ...extra
+    },
     encoding:"utf8"
   });
 }
