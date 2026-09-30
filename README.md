@@ -48,6 +48,19 @@ Standalone Node/Docker runtimes continue to expose the server health endpoint at
 
 GitHub and Supabase remain the required source/CI and backend authorities. Dropbox is continuity storage for governed release and recovery artifacts; it is not the request-serving production web runtime. Hosting remains replaceable delivery infrastructure, not system authority.
 
+## Resonance AppDev Supository scope
+
+`DataNest-Supository/DataNest` is the canonical Resonance AppDev **Supository**: the governed parent index for Resonance application-development projects, products and services.
+
+The Supository scope includes source/provenance, lifecycle state, delivery routes, release evidence, service relationships and future sovereign Git/registry replication. The current production authority model remains GitHub + GitHub Pages + Supabase; deploying Reson8 Forge does not silently replace it.
+
+- Architecture contract: [`docs/DATANEST_SUPOSITORY_ARCHITECTURE.md`](docs/DATANEST_SUPOSITORY_ARCHITECTURE.md)
+- Machine-readable catalog: [`config/supository.catalog.json`](config/supository.catalog.json)
+- Sovereign Forge bootstrap: [`infra/reson8-forge/`](infra/reson8-forge/)
+- Target Forge namespace: `git.reson8.life/DataNest-Supository/DataNest`
+
+New Resonance AppDev projects, products and services should be registered through the Supository catalog even when their source or runtime lives in a separate repository or provider.
+
 ## Target-state architecture concepts
 
 The approved 27 Sep 2026 ecosystem design extends DataNest with target-state concepts that are intentionally separate from current production capability claims:
