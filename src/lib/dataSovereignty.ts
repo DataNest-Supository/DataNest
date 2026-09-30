@@ -45,6 +45,34 @@ function reusePosture(value:string):SovereigntyReusePosture{
   return "restricted_by_default";
 }
 
+function activeHoldCount(retentionHolds:Row[]){
+  return retentionHolds.filter(item=>text(item.status)!=="released").length;
+}
+
+function unresolvedDataSovereigntyModel(retentionHolds:Row[]):DataSovereigntyModel{
+  return {
+    rollout:"unresolved",
+    boundary:"unresolved",
+    externalProcessing:"unresolved",
+    crossBorder:"unresolved",
+    reusePosture:"restricted_by_default",
+    authorityModel:"project_governed",
+    platformOwnershipEffect:"none",
+    visibilityClass:"unknown",
+    reuseState:"unknown",
+    exportPolicy:"unknown",
+    evidenceState:"unknown",
+    approvedProviderKeys:[],
+    activeApprovedProviderKeys:[],
+    unresolvedProviderKeys:[],
+    allowedRegions:[],
+    retentionPolicyKey:null,
+    retentionDisposition:null,
+    activeHoldCount:activeHoldCount(retentionHolds),
+    knownLimitations:null
+  };
+}
+
 export function deriveDataSovereigntyModel({
   manifest,
   providerProfiles,
@@ -56,29 +84,7 @@ export function deriveDataSovereigntyModel({
   retentionPolicies:Row[];
   retentionHolds:Row[];
 }):DataSovereigntyModel{
-  if(!manifest){
-    return {
-      rollout:"unresolved",
-      boundary:"unresolved",
-      externalProcessing:"unresolved",
-      crossBorder:"unresolved",
-      reusePosture:"restricted_by_default",
-      authorityModel:"project_governed",
-      platformOwnershipEffect:"none",
-      visibilityClass:"unknown",
-      reuseState:"unknown",
-      exportPolicy:"unknown",
-      evidenceState:"unknown",
-      approvedProviderKeys:[],
-      activeApprovedProviderKeys:[],
-      unresolvedProviderKeys:[],
-      allowedRegions:[],
-      retentionPolicyKey:null,
-      retentionDisposition:null,
-      activeHoldCount:retentionHolds.filter(item=>text(item.status)!=="released").length,
-      knownLimitations:null
-    };
-  }
+  if(!manifest)return unresolvedDataSovereigntyModel(retentionHolds);
 
   const visibilityClass=text(manifest.default_visibility_class)||"unknown";
   const reuseState=text(manifest.default_reuse_state)||"unknown";
@@ -142,7 +148,7 @@ export function deriveDataSovereigntyModel({
     allowedRegions,
     retentionPolicyKey:retentionPolicy?text(retentionPolicy.policy_key)||null:null,
     retentionDisposition:retentionPolicy?text(retentionPolicy.default_disposition_intent)||null:null,
-    activeHoldCount:retentionHolds.filter(item=>text(item.status)!=="released").length,
+    activeHoldCount:activeHoldCount(retentionHolds),
     knownLimitations:text(manifest.known_limitations)||null
   };
 }
