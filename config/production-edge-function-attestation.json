@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "project": "Resonance DataNest",
+  "supabase_project": "sgqdmfgjbprsoqsmgigi",
+  "functions": {
+    "datanest-ai-chat": {
+      "version": 255,
+      "ezbr_sha256": "e991d4bc72eb372a9f93712a0c59dd5660bb9f78b8197f803c43ce446f27da39"
+    },
+    "datanest-ai-intake": {
+      "version": 217,
+      "ezbr_sha256": "a86d9e5f97f64ce487c1a8a5654086a99a8f9a1a001436898d474156e8424fea"
+    },
+    "send-project-member-invite": {
+      "version": 221,
+      "ezbr_sha256": "d0e7a8851ed7414e15a06c7f23cbc06896788d485f5b471225fddb1ed2b2b78a"
+    },
+    "datanest-ai-certification": {
+      "version": 226,
+      "ezbr_sha256": "67639bbd9eb6ceaf0766e8e58ea594afa329d83536c85c24c4d3a604ab390308"
+    },
+    "manage-ai-provider-v2": {
+      "version": 18,
+      "ezbr_sha256": "5f6e06644e5a0681bf00d1dd9de2a9542c897d2c2ec8c5c70f17bdcaf47eff53"
+    },
+    "send-job-invite": {
+      "version": 3,
+      "ezbr_sha256": "da767243f62bb83bd4734e9da367f12beea3970de3cc3b8261e842fd0dab939b"
+    },
+    "ronsas-status": {
+      "version": 231,
+      "ezbr_sha256": "cc367af4a56a9cdc4b93e985deb6806af12e48d4e4b3e225215c8b686a0a06b5"
+    },
+    "external-audit": {
+      "version": 2,
+      "ezbr_sha256": "a2ed0115a1abbaeaf2af068561ef6e8f41863770420af9ac8e168286f926e2"
+    }
+  }
+}
