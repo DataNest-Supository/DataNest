@@ -375,6 +375,6 @@ test("External AI handoff never places governed work context in a provider URL",
   const source=fs.readFileSync(path.join(root,"src/components/ExternalAiSidebar.tsx"),"utf8");
   assert.doesNotMatch(source,/searchParams\.set\(["']q["']/);
   assert.match(source,/function providerLaunchUrl\(_promptText=""/);
-  assert.match(source,/Never place the governed Job Manifest .* third-party provider URL/);
+  assert.match(source,/Never place the governed Job Manifest[\\s\\S]*third-party provider URL/);
   assert.match(source,/The tracked Job Manifest is copied for review\/paste/);
 });
