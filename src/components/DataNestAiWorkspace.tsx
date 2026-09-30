@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 import DataNestAiChatPanel,{type DataNestAiEvent} from "@/components/DataNestAiChatPanel";
+import DevelopmentWorkContributionDashboard from "@/components/DevelopmentWorkContributionDashboard";
 import DataNestAiMemoryPanel,{type CertifiedMemoryItem} from "@/components/DataNestAiMemoryPanel";
 import DataNestAiCertificationPanel from "@/components/DataNestAiCertificationPanel";
 import IntelligenceFabricPanel from "@/components/IntelligenceFabricPanel";
@@ -441,6 +442,11 @@ export default function DataNestAiWorkspace({
         </button>
       </div>
     </section>
+
+    {selectedJob&&<DevelopmentWorkContributionDashboard
+      projectId={projectId}
+      refreshToken={(context?.events?.length||0)+":"+sessionId}
+    />}
 
     {selectedJob&&<details className="datanestAiContextDetails">
       <summary>
