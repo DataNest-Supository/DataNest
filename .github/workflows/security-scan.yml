@@ -59,12 +59,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: actions/setup-node@v7.0.0
-        with:
-          node-version: 22
-          cache: npm
-      - name: Install locked dependencies
-        run: npm ci
+      - uses: ./.github/actions/node-project-setup
       - name: npm audit (high+)
         run: npm audit --omit=dev --audit-level=high
 
