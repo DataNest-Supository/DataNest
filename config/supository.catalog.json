@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "catalogId": "resonance-appdev-supository",
+  "name": "DataNest Supository",
+  "canonicalRepository": "DataNest-Supository/DataNest",
+  "canonicalPublicUrl": "https://datanest-supository.github.io/DataNest/",
+  "authority": {
+    "appdevControlPlane": "DataNest",
+    "sourceCiEvidence": "GitHub:DataNest-Supository/DataNest",
+    "publicDelivery": "GitHub Pages",
+    "backend": "Supabase:sgqdmfgjbprsoqsmgigi",
+    "backupArtifacts": "Dropbox:/DataNest-AI-Backups",
+    "sovereignForge": {
+      "target": "https://git.reson8.life/DataNest-Supository/DataNest",
+      "mode": "governed-mirror",
+      "authorityCutoverApproved": false
+    }
+  },
+  "entries": [
+    {
+      "id": "datanest",
+      "name": "DataNest",
+      "type": "product-platform",
+      "sourcePath": ".",
+      "deliveryPath": "/DataNest/",
+      "lifecycle": "production"
+    },
+    {
+      "id": "ronsas-career-compass",
+      "name": "Career Compass",
+      "type": "app",
+      "portfolio": "RONSAS",
+      "sourcePath": "apps/ronsas/career-compass",
+      "deliveryPath": "/DataNest/apps/career-compass/",
+      "lifecycle": "governed"
+    },
+    {
+      "id": "ronsas-creative-studio",
+      "name": "Creative Studio",
+      "type": "app",
+      "portfolio": "RONSAS",
+      "sourcePath": "apps/ronsas/creative-studio",
+      "deliveryPath": "/DataNest/apps/creative-studio/",
+      "lifecycle": "governed"
+    },
+    {
+      "id": "ronsas-epublisher",
+      "name": "ePublisher",
+      "type": "app",
+      "portfolio": "RONSAS",
+      "sourcePath": "apps/ronsas/epublisher",
+      "deliveryPath": "/DataNest/apps/epublisher/",
+      "lifecycle": "governed"
+    },
+    {
+      "id": "ronsas-lyricsync-studio",
+      "name": "LyricSync Studio",
+      "type": "app",
+      "portfolio": "RONSAS",
+      "sourcePath": "apps/ronsas/lyricsync-studio",
+      "deliveryPath": "/DataNest/apps/lyricsync-studio/",
+      "lifecycle": "governed"
+    },
+    {
+      "id": "ronsas-scene-song-spark",
+      "name": "Scene Song Spark",
+      "type": "app",
+      "portfolio": "RONSAS",
+      "sourcePath": "apps/ronsas/scene-song-spark",
+      "deliveryPath": "/DataNest/apps/scene-song-spark/",
+      "lifecycle": "governed"
+    },
+    {
+      "id": "ronsas-sovereign-forge",
+      "name": "Sovereign Forge",
+      "type": "app",
+      "portfolio": "RONSAS",
+      "sourcePath": "apps/ronsas/sovereign-forge",
+      "deliveryPath": "/DataNest/apps/sovereign-forge/",
+      "lifecycle": "governed"
+    },
+    {
+      "id": "ronsas-syncvision",
+      "name": "SyncVision",
+      "type": "app",
+      "portfolio": "RONSAS",
+      "sourcePath": "apps/ronsas/syncvision",
+      "deliveryPath": "/DataNest/apps/syncvision/",
+      "lifecycle": "governed"
+    },
+    {
+      "id": "ronsas-youtube-optimizer",
+      "name": "YouTube Optimizer",
+      "type": "app",
+      "portfolio": "RONSAS",
+      "sourcePath": "apps/ronsas/youtube-optimizer",
+      "deliveryUrl": "https://youtubeoptimizer.life/",
+      "lifecycle": "governed"
+    },
+    {
+      "id": "ronsas-sovereign-backend",
+      "name": "Sovereign Backend",
+      "type": "service",
+      "portfolio": "RONSAS",
+      "sourcePath": "apps/ronsas/sovereign-backend",
+      "lifecycle": "governed"
+    },
+    {
+      "id": "ronsas-shared",
+      "name": "RONSAS Shared",
+      "type": "package-set",
+      "portfolio": "RONSAS",
+      "sourcePath": "apps/ronsas/shared",
+      "lifecycle": "governed"
+    }
+  ]
+}
