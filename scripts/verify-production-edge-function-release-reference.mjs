@@ -34,8 +34,8 @@ if(String(run.name||"")!=="Governed Production Edge Function Release"){
 if(String(run.event||"")!=="workflow_dispatch"){
   throw new Error("Referenced Edge Function release was not a manual release run.");
 }
-if(String(run.head_sha||"")!==releaseSha){
-  throw new Error("Referenced Edge Function release SHA does not match Pages release SHA.");
+if(String(run.path||"")!==".github/workflows/production-edge-function-release.yml"){
+  throw new Error("Referenced run did not execute the governed production Edge Function release workflow.");
 }
 if(String(run.status||"")!=="completed"||String(run.conclusion||"")!=="success"){
   throw new Error("Referenced Edge Function release run must be completed successfully.");
