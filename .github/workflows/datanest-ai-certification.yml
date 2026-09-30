@@ -106,7 +106,7 @@ jobs:
         with:
           version: 2.118.0
 
-      - name: Create ephemeral canonical collaborator credential
+      - name: Create ephemeral governed E2E credentials
         if: steps.applicability.outputs.applicable == 'true'
         shell: bash
         run: |
