@@ -1,13 +1,48 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getSupabase } from "@/lib/supabase";
 import styles from "./AdminRndModeToggle.module.css";
 
-export const MIRROR_DATANEST_REPOSITORY_URL = "https://github.com/DataNest-Supository/Mirror-DataNest";\nexport const MIRROR_DATANEST_PREVIEW_URL = "https://datanest-supository.github.io/Mirror-DataNest/";
+export const MIRROR_DATANEST_REPOSITORY_URL = "https://github.com/DataNest-Supository/Mirror-DataNest";
+export const MIRROR_DATANEST_PREVIEW_URL = "https://datanest-supository.github.io/Mirror-DataNest/";
+export const MIRROR_DATANEST_RELEASE_MANIFEST_URL = MIRROR_DATANEST_PREVIEW_URL + "mirror-release.json";
 const STORAGE_KEY = "datanest:admin-rd-test-mode";
+const MIRROR_SURFACE_NAME = "Mirror-DataNest Production Candidate";
 
-export default function AdminRndModeToggle({role}:{role:"owner"|"admin"}) {
+type MirrorRelease = {
+  schemaVersion:string;
+  mode:string;
+  repository:string;
+  commit:string;
+  releaseId:string;
+  publicUrl:string;
+  canonicalRepository:string;
+  canonicalPublicUrl:string;
+  backend?:{project?:string;mode?:string};
+  observations?:Record<string,string>;
+  workflowRun:string;
+  authority?:Record<string,boolean>;
+  evidencePurpose?:string;
+  generatedAt:string;
+};
+
+function shortCommit(value:string){
+  return value.length>12?value.slice(0,12):value;
+}
+
+export default function AdminRndModeToggle({
+  role,projectId,currentUserId,onOpenProductLab
+}:{
+  role:"owner"|"admin";
+  projectId:string;
+  currentUserId:string;
+  onOpenProductLab:()=>void;
+}) {
   const [enabled,setEnabled]=useState(false);
+  const [release,setRelease]=useState<MirrorRelease|null>(null);
+  const [syncState,setSyncState]=useState<"idle"|"syncing"|"ready"|"error">("idle");
+  const [message,setMessage]=useState("");
 
   useEffect(()=>{
     try {
@@ -17,30 +52,138 @@ export default function AdminRndModeToggle({role}:{role:"owner"|"admin"}) {
     }
   },[]);
 
+  async function loadAndSynchronizeMirror(){
+    const supabase=getSupabase();
+    if(!supabase){
+      setSyncState("error");
+      setMessage("DataNest backend is unavailable; Mirror evidence could not be synchronized.");
+      return;
+    }
+
+    setSyncState("syncing");
+    setMessage("Synchronizing Mirror release evidence…");
+
+    try{
+      const response=await fetch(MIRROR_DATANEST_RELEASE_MANIFEST_URL,{
+        cache:"no-store",
+        headers:{"Cache-Control":"no-cache"}
+      });
+      if(!response.ok)throw new Error("Live Mirror release manifest is not available yet.");
+
+      const manifest=await response.json() as MirrorRelease;
+      if(!/^[0-9a-f]{40}$/i.test(manifest.commit||""))throw new Error("Mirror release manifest has an invalid commit identity.");
+      if(!manifest.releaseId||manifest.repository!=="DataNest-Supository/Mirror-DataNest"){
+        throw new Error("Mirror release manifest identity is incomplete.");
+      }
+
+      const surfacePayload={
+        name:MIRROR_SURFACE_NAME,
+        url:manifest.publicUrl||MIRROR_DATANEST_PREVIEW_URL,
+        environment:"staging",
+        status:"active",
+        description:"Production-parity Mirror deployment used for governed visual and functional testing before canonical DataNest certification.",
+        build_commit:manifest.commit,
+        release_id:manifest.releaseId,
+        build_label:"Mirror "+manifest.releaseId,
+        updated_by:currentUserId
+      };
+
+      const {data:existing,error:lookupError}=await supabase
+        .from("product_surfaces")
+        .select("id,build_commit,release_id,url")
+        .eq("project_id",projectId)
+        .eq("name",MIRROR_SURFACE_NAME)
+        .order("updated_at",{ascending:false})
+        .limit(1)
+        .maybeSingle();
+      if(lookupError)throw lookupError;
+
+      if(existing?.id){
+        const {error:updateError}=await supabase
+          .from("product_surfaces")
+          .update(surfacePayload)
+          .eq("id",existing.id);
+        if(updateError)throw updateError;
+      }else{
+        const {error:insertError}=await supabase.from("product_surfaces").insert({
+          project_id:projectId,
+          ...surfacePayload,
+          created_by:currentUserId
+        });
+        if(insertError)throw insertError;
+      }
+
+      const sourceRef=(manifest.workflowRun||MIRROR_DATANEST_RELEASE_MANIFEST_URL)+"#"+manifest.commit;
+      const {data:observation,error:observationLookupError}=await supabase
+        .from("governance_observations")
+        .select("id")
+        .eq("project_id",projectId)
+        .eq("source_ref",sourceRef)
+        .limit(1)
+        .maybeSingle();
+      if(observationLookupError)throw observationLookupError;
+
+      if(!observation){
+        const {error:observationError}=await supabase.rpc("record_governance_observation_v1",{
+          target_project:projectId,
+          target_source_kind:"metric",
+          target_summary:"Mirror production-parity candidate "+manifest.releaseId+" is available for visual and functional governance testing.",
+          target_severity:"info",
+          target_confidence:1,
+          target_source_ref:sourceRef,
+          target_evidence:{
+            kind:"mirror_live_candidate",
+            repository:manifest.repository,
+            commit:manifest.commit,
+            release_id:manifest.releaseId,
+            live_url:manifest.publicUrl||MIRROR_DATANEST_PREVIEW_URL,
+            workflow_run:manifest.workflowRun,
+            backend:manifest.backend||{},
+            observations:manifest.observations||{},
+            production_authority:false,
+            certification_required:true
+          },
+          target_observed_at:manifest.generatedAt||new Date().toISOString()
+        });
+        if(observationError)throw observationError;
+      }
+
+      setRelease(manifest);
+      setSyncState("ready");
+      setMessage("Mirror "+manifest.releaseId+" synchronized to Product Lab and governance evidence.");
+    }catch(error){
+      setSyncState("error");
+      setMessage(error instanceof Error?error.message:"Unable to synchronize the live Mirror release.");
+    }
+  }
+
   function setMode(next:boolean){
     setEnabled(next);
     try {
       window.localStorage.setItem(STORAGE_KEY,next?"enabled":"disabled");
     } catch {
-      // Local preference storage is optional; access still works from this control.
+      // Local preference storage is optional.
     }
+
     if(next){
-      window.open(MIRROR_DATANEST_REPOSITORY_URL,"_blank","noopener,noreferrer");
+      window.open(MIRROR_DATANEST_PREVIEW_URL,"_blank","noopener,noreferrer");
+      void loadAndSynchronizeMirror();
     }
   }
 
   return <section className={styles.control} aria-label="R&D Test Mode access">
     <div className={styles.copy}>
-      <span className={styles.eyebrow}>ADMIN · R&D</span>
+      <span className={styles.eyebrow}>ADMIN · R&D LIVE MIRROR</span>
       <b>R&D Test Mode</b>
-      <small>Open the Mirror-DataNest R&D workspace for ungated experimentation. Production remains governed.</small>
+      <small>Open the production-parity Mirror UI against isolated staging data. The exact build is synchronized into Product Lab and governance evidence for certification review.</small>
     </div>
+
     <button
       className={styles.switch}
       type="button"
       role="switch"
       aria-checked={enabled}
-      aria-label={enabled?"Disable R&D Test Mode shortcut":"Enable R&D Test Mode and open Mirror-DataNest"}
+      aria-label={enabled?"Disable R&D Test Mode shortcut":"Enable R&D Test Mode and open live Mirror"}
       title={role.toUpperCase()+" access · Mirror-DataNest"}
       onClick={()=>setMode(!enabled)}
     >
@@ -49,8 +192,23 @@ export default function AdminRndModeToggle({role}:{role:"owner"|"admin"}) {
       </span>
       <span className={styles.state}>{enabled?"ON":"OFF"}</span>
     </button>
-    {enabled&&<a className={styles.openLink} href={MIRROR_DATANEST_REPOSITORY_URL} target="_blank" rel="noreferrer">
-      Open R&D workspace <span aria-hidden="true">↗</span>
-    </a>}
+
+    {enabled&&<div className={styles.actions}>
+      <a className={styles.openLink} href={MIRROR_DATANEST_PREVIEW_URL} target="_blank" rel="noreferrer">
+        Open live Mirror UI <span aria-hidden="true">↗</span>
+      </a>
+      <button className={styles.inlineButton} type="button" onClick={onOpenProductLab}>
+        Review in Product Lab
+      </button>
+      <button className={styles.inlineButton} type="button" disabled={syncState==="syncing"} onClick={()=>void loadAndSynchronizeMirror()}>
+        {syncState==="syncing"?"Synchronizing…":"Sync latest build"}
+      </button>
+      {release&&<small className={styles.release}>
+        {release.releaseId} · {shortCommit(release.commit)} · {release.backend?.mode||"isolated-staging"}
+      </small>}
+      {message&&<small className={syncState==="error"?styles.error:styles.status}>{message}</small>}
+      <small className={styles.previewNote}>Canonical production remains DataNest-Supository/DataNest; Mirror evidence supports certification but does not authorize release.</small>
+      {syncState==="error"&&<a className={styles.openLink} href={MIRROR_DATANEST_REPOSITORY_URL} target="_blank" rel="noreferrer">Open Mirror repository <span aria-hidden="true">↗</span></a>}
+    </div>}
   </section>;
 }
