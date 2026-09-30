@@ -1,6 +1,8 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import AccountPasswordForm from "@/components/AccountPasswordForm";
+import { validatePasswordChange } from "@/lib/accountPasswordValidation";
 import { getSupabase } from "@/lib/supabase";
 
 async function actionErrorMessage(error:unknown){
@@ -30,24 +32,10 @@ export default function AccountPasswordPanel({projectId}:{projectId:string}) {
     const supabase=getSupabase();
     if(!supabase)return;
 
-    if(newPassword.length<12){
+    const validationError=validatePasswordChange({currentPassword,newPassword,confirmPassword});
+    if(validationError){
       setMessageTone("error");
-      setMessage("Use a new password with at least 12 characters.");
-      return;
-    }
-    if(newPassword.length>128){
-      setMessageTone("error");
-      setMessage("Use a new password with 128 characters or fewer.");
-      return;
-    }
-    if(newPassword!==confirmPassword){
-      setMessageTone("error");
-      setMessage("The new passwords do not match.");
-      return;
-    }
-    if(currentPassword===newPassword){
-      setMessageTone("error");
-      setMessage("Choose a new password that differs from your current password.");
+      setMessage(validationError);
       return;
     }
 
@@ -116,19 +104,16 @@ export default function AccountPasswordPanel({projectId}:{projectId:string}) {
     <p className="muted">Confirm your current password before replacing it. Password material is processed only by Supabase Auth and is never written to DataNest project data or the security audit trail.</p>
 
     <form className="accountSecurityForm" onSubmit={changePassword} aria-busy={busy}>
-      <label>Current password
-        <input type="password" required autoComplete="current-password" value={currentPassword} onChange={event=>setCurrentPassword(event.target.value)} placeholder="Current password"/>
-      </label>
-      <label>New password
-        <input type="password" required minLength={12} maxLength={128} autoComplete="new-password" value={newPassword} onChange={event=>setNewPassword(event.target.value)} placeholder="At least 12 characters"/>
-      </label>
-      <label>Confirm new password
-        <input type="password" required minLength={12} maxLength={128} autoComplete="new-password" value={confirmPassword} onChange={event=>setConfirmPassword(event.target.value)} placeholder="Re-enter new password"/>
-      </label>
-      <div className="accountSecurityActions">
-        <button className="primaryButton compact" type="submit" disabled={busy}>{busy?"Working…":"Change password"}</button>
-        <button className="secondaryButton compact" type="button" disabled={busy} onClick={()=>void sendRecoveryEmail()}>Email reset link</button>
-      </div>
+      <AccountPasswordForm
+        busy={busy}
+        currentPassword={currentPassword}
+        newPassword={newPassword}
+        confirmPassword={confirmPassword}
+        onCurrentPasswordChange={setCurrentPassword}
+        onNewPasswordChange={setNewPassword}
+        onConfirmPasswordChange={setConfirmPassword}
+        onRecovery={()=>void sendRecoveryEmail()}
+      />
     </form>
 
     {message&&<div className={"accountSecurityMessage "+messageTone} role={messageTone==="error"?"alert":"status"} aria-live="polite">{message}</div>}
