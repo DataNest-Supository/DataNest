@@ -141,3 +141,9 @@ jobs:
           path: certification-artifacts/datanest-ai-backend-acceptance.json
           if-no-files-found: warn
           retention-days: 7
+
+  gate-timeframe:
+    name: DataNest AI worktree gate timeframe
+    uses: ./.github/workflows/worktree-gate-timeframe.yml
+    with:
+      gate_id: "datanest-ai-certification"
