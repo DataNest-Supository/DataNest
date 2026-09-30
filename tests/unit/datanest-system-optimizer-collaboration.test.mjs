@@ -21,6 +21,10 @@ const app=fs.readFileSync(
   path.join(root,"src/components/DataNestApp.tsx"),
   "utf8"
 );
+const controlCenter=fs.readFileSync(
+  path.join(root,"src/components/DataNestDashboard.tsx"),
+  "utf8"
+);
 
 test("DataNest AI coordinates the three governed optimization lanes",()=>{
   assert.match(optimizer,/DataNest AI System Optimizer/);
@@ -49,4 +53,6 @@ test("system optimizer is visible in Admin settings with owner-only review contr
   assert.match(dashboard,/workspace\?\.can_approve\?<\>/);
   assert.match(dashboard,/Admin review is read-only at this gate/);
   assert.match(dashboard,/Code Cleaner produces evidence-linked patch plans only/);
+  assert.match(controlCenter,/Admin can configure and run the DataNest AI System Optimizer in Admin settings/);
+  assert.match(controlCenter,/\(role==="owner"\|\|role==="admin"\)/);
 });
