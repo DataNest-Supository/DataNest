@@ -21,6 +21,10 @@ on:
         description: Mirror production-candidate workflow/artifact reference
         required: true
         type: string
+      mirror_live_evidence_reference:
+        description: Successful live Mirror visual/functional verification reference
+        required: true
+        type: string
       summary:
         description: Candidate purpose and optimization summary
         required: true
@@ -47,6 +51,7 @@ jobs:
       BASE_SHA: ${{ github.event.client_payload.canonical_base_sha || inputs.canonical_base_sha }}
       CANDIDATE_NAME: ${{ github.event.client_payload.candidate_name || inputs.candidate_name }}
       CANDIDATE_RUN: ${{ github.event.client_payload.candidate_run || inputs.candidate_run }}
+      MIRROR_LIVE_EVIDENCE: ${{ github.event.client_payload.mirror_live_evidence || inputs.mirror_live_evidence_reference }}
       CANDIDATE_SUMMARY: ${{ github.event.client_payload.summary || inputs.summary }}
     steps:
       - name: Validate handoff payload
@@ -63,6 +68,7 @@ jobs:
           done
           test -n "$CANDIDATE_NAME"
           test -n "$CANDIDATE_RUN"
+          test -n "$MIRROR_LIVE_EVIDENCE"
           test -n "$CANDIDATE_SUMMARY"
 
       - uses: actions/checkout@v7.0.1
@@ -118,6 +124,7 @@ jobs:
               canonicalBaseSha:$canonicalBaseSha,
               candidateName:$candidateName,
               candidateRun:$candidateRun,
+              mirrorLiveEvidence:$mirrorLiveEvidence,
               summary:$summary,
               importedBy:$importedBy,
               importedAt:$importedAt,
@@ -152,6 +159,7 @@ jobs:
           - Mirror source SHA: `$MIRROR_SHA`
           - Canonical base SHA: `$BASE_SHA`
           - Candidate run/evidence: $CANDIDATE_RUN
+          - Live Mirror visual/functional evidence: $MIRROR_LIVE_EVIDENCE
           - Promotion manifest: `$PROMOTION_MANIFEST`
 
           ### Candidate summary
@@ -160,6 +168,7 @@ jobs:
 
           ### Required canonical gates
 
+          - [ ] Live Mirror visual/functional evidence verified
           - [ ] Canonical PR Verification
           - [ ] Canonical Security Scan
           - [ ] RONSAS validation where applicable
