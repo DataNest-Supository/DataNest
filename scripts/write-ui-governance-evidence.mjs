@@ -2,7 +2,8 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-export const UI_GOVERNANCE_SCHEMA_VERSION="ui-governance-release-v1";
+export const UI_GOVERNANCE_SCHEMA_VERSION="ui-governance-release-v2";
+export const OWNER_TEST_MODE_MAX_HOURS=72;
 export const UI_GOVERNANCE_DESIGN_SPEC=
   "docs/superpowers/specs/2026-09-29-resonance-datanest-ui-governance-system-design.md";
 export const UI_GOVERNANCE_IMPLEMENTATION_PLANS=[
@@ -23,6 +24,67 @@ const REVIEW_ENV=[
   ["productionAuthorization","DATANEST_UI_AUTHORIZATION_REF"]
 ];
 
+const OWNER_TEST_MODE_REQUIRED_REVIEW_KEYS=new Set([
+  "prVerification",
+  "securityScan",
+  "ronsasValidation",
+  "visualReview",
+  "productionAuthorization"
+]);
+
+function parseIsoDate(value,label){
+  const raw=clean(value);
+  if (!raw) throw new Error(`${label} is required`);
+  const millis=Date.parse(raw);
+  if (!Number.isFinite(millis)) throw new Error(`${label} must be a valid ISO-8601 date/time`);
+  return {raw,millis};
+}
+
+function buildOwnerTestMode(env,generatedAt){
+  const ownerLogin=clean(env.DATANEST_UI_OWNER_TEST_MODE_OWNER_LOGIN);
+  const actor=clean(env.DATANEST_UI_OWNER_TEST_MODE_ACTOR);
+  const authorizationReference=clean(env.DATANEST_UI_OWNER_TEST_MODE_REF);
+  const reason=clean(env.DATANEST_UI_OWNER_TEST_MODE_REASON);
+  if (!ownerLogin) throw new Error("DATANEST_UI_OWNER_TEST_MODE_OWNER_LOGIN is required");
+  if (!actor) throw new Error("DATANEST_UI_OWNER_TEST_MODE_ACTOR is required");
+  if (ownerLogin.toLowerCase()!==actor.toLowerCase()) {
+    throw new Error("Owner Test Mode actor must match the declared Owner login");
+  }
+  if (isPlaceholder(authorizationReference)) {
+    throw new Error("DATANEST_UI_OWNER_TEST_MODE_REF must contain a non-placeholder Owner authorization reference");
+  }
+  if (reason.length<20) {
+    throw new Error("DATANEST_UI_OWNER_TEST_MODE_REASON must explain the evidence-gathering purpose");
+  }
+
+  const now=Date.parse(generatedAt);
+  const expiry=parseIsoDate(env.DATANEST_UI_OWNER_TEST_MODE_EXPIRES_AT,"DATANEST_UI_OWNER_TEST_MODE_EXPIRES_AT");
+  if (expiry.millis<=now) throw new Error("Owner Test Mode expiry must be in the future");
+  const durationHours=(expiry.millis-now)/3_600_000;
+  if (durationHours>OWNER_TEST_MODE_MAX_HOURS) {
+    throw new Error(`Owner Test Mode cannot exceed ${OWNER_TEST_MODE_MAX_HOURS} hours`);
+  }
+  if (durationHours<0.5) {
+    throw new Error("Owner Test Mode must allow at least 30 minutes for evidence gathering");
+  }
+
+  return {
+    active:true,
+    temporaryException:true,
+    ownerAuthorized:true,
+    ownerLogin,
+    actor,
+    authorizationReference,
+    reason,
+    startedAt:generatedAt,
+    expiresAt:new Date(expiry.millis).toISOString(),
+    maxHours:OWNER_TEST_MODE_MAX_HOURS,
+    durationHours:Number(durationHours.toFixed(3)),
+    evidencePurpose:"Gather production evidence required to complete outstanding human governance review gates.",
+    automaticExpiryAction:"Replace live Pages site with an Owner Test Mode expired holding page unless a fully authorized release supersedes it."
+  };
+}
+
 function clean(value){
   return typeof value==="string" ? value.trim() : "";
 }
@@ -42,8 +104,8 @@ export function hasUiGovernanceEnvironment(env=process.env){
 
 export function buildUiGovernanceEvidence(env=process.env){
   const releaseState=clean(env.DATANEST_UI_RELEASE_STATE) || "candidate";
-  if (releaseState!=="candidate" && releaseState!=="authorized") {
-    throw new Error("DATANEST_UI_RELEASE_STATE must be candidate or authorized");
+  if (!["candidate","authorized","owner_test_mode"].includes(releaseState)) {
+    throw new Error("DATANEST_UI_RELEASE_STATE must be candidate, authorized, or owner_test_mode");
   }
 
   const releaseSha=clean(env.DATANEST_UI_RELEASE_SHA);
@@ -59,6 +121,16 @@ export function buildUiGovernanceEvidence(env=process.env){
     }
   }
 
+  if (releaseState==="owner_test_mode") {
+    for (const [key,envName] of REVIEW_ENV) {
+      if (OWNER_TEST_MODE_REQUIRED_REVIEW_KEYS.has(key) && isPlaceholder(env[envName])) {
+        throw new Error(`${envName} must contain a non-placeholder reference for Owner Test Mode`);
+      }
+    }
+  }
+
+  const generatedAt=new Date().toISOString();
+  const ownerTestMode=releaseState==="owner_test_mode" ? buildOwnerTestMode(env,generatedAt) : null;
   const evidence={};
   for (const [key,envName] of REVIEW_ENV) {
     const raw=clean(env[envName]);
@@ -76,10 +148,13 @@ export function buildUiGovernanceEvidence(env=process.env){
     releaseSha,
     releaseState,
     authorized:releaseState==="authorized",
+    fullyGoverned:releaseState==="authorized",
+    productionDeploymentAllowed:releaseState==="authorized" || releaseState==="owner_test_mode",
+    ownerTestMode,
     designSpec:UI_GOVERNANCE_DESIGN_SPEC,
     implementationPlans:UI_GOVERNANCE_IMPLEMENTATION_PLANS,
     evidence,
-    generatedAt:new Date().toISOString()
+    generatedAt
   };
 }
 
