@@ -356,6 +356,7 @@ export default function GovernanceWorkspace({
   if(section==="trust")return <div>{governanceModeTabs}<TrustPolicyPanel projectId={projectId} currentUserId={currentUserId} role={role} setNotice={setNotice} setError={setError}/></div>;
   if(section==="authority")return <div>{governanceModeTabs}<ExecutionAuthorityPanel projectId={projectId} currentUserId={currentUserId} role={role} setNotice={setNotice} setError={setError}/></div>;
   if(section==="improvement")return <div>{governanceModeTabs}<GovernanceImprovementPanel projectId={projectId} setNotice={setNotice} setError={setError}/></div>;
+  if(section==="release")return <div>{governanceModeTabs}<GovernanceReleaseEvidencePanel/></div>;
   if(loading)return <section className="panel"><p className="muted">Loading Sovereign Governance…</p></section>;
   if(!workspace)return <section className="panel"><h2>Governance workspace unavailable</h2><p>Ratified protocol, proposals, decisions and dispute evidence belong here. Retry before treating any draft as adopted governance.</p><button className="secondaryButton compact" type="button" onClick={()=>void load()}>Retry governance workspace</button></section>;
 
