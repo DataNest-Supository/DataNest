@@ -55,3 +55,12 @@ The suite writes `certification-artifacts/datanest-governance-boundary-acceptanc
 A passing staging run plus the production/staging function-definition parity above establishes behavioral evidence for the deployed governance RPC implementation without writing production records.
 
 It does **not** prove resistance to a privileged database administrator, nor does it replace exact production release attestation. REL-01 remains handled separately by the live database and Edge Function release-attestation gate.
+
+
+## First behavioral run finding and repair
+
+The first exact-head behavioral run exposed a real implementation defect rather than an authorization bypass. The Governance workspace returned `member_role = "postgres"` for an authenticated project Owner because the PL/pgSQL local variable was named `current_role`; PostgreSQL interpreted the unqualified expression in the JSON result as the reserved `CURRENT_ROLE` session-role expression.
+
+The failed run retained its evidence artifact and cleaned up both temporary projects and all five synthetic users with no cleanup errors.
+
+The corrective migration renames the local variable to `member_role_value` and keeps the membership lookup, role gates, RLS rules and mutation authority unchanged. The correction was applied first to the dedicated DataNest AI Staging project through the governed migration path. Production remains unchanged until the corrected candidate passes the full gate set.
