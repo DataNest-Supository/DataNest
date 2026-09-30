@@ -4,9 +4,9 @@
 
 This handoff addresses the external-audit finding **SEC-01**: backend enforcement and cross-project isolation for the sovereign-governance surface.
 
-The behavioral test is deliberately run only against the dedicated **DataNest AI Staging** project. Production is not mutated by the acceptance test.
+The behavioral test now runs against an **isolated local canonical Supabase stack** reconstructed from the exact candidate migrations. Production is not mutated by the acceptance test, and Mirror-DataNest staging is not used for the multi-collaborator authorization matrix.
 
-## Production ↔ staging implementation parity observed before the test
+## Historical production ↔ staging implementation parity observation
 
 A read-only inspection on 30 September 2026 compared `pg_get_functiondef` MD5 values for the governance and membership RPCs in:
 
@@ -52,7 +52,7 @@ The suite writes `certification-artifacts/datanest-governance-boundary-acceptanc
 
 ## Evidence boundary
 
-A passing staging run plus the production/staging function-definition parity above establishes behavioral evidence for the deployed governance RPC implementation without writing production records.
+The retained staging observation above remains useful historical implementation-parity evidence. Current SEC-01 behavioral evidence is instead generated from the exact candidate source on an isolated local canonical Supabase stack, while REL-01 separately attests the production release identity. Together these avoid writing production records or weakening Mirror's owner-only R&D boundary.
 
 It does **not** prove resistance to a privileged database administrator, nor does it replace exact production release attestation. REL-01 remains handled separately by the live database and Edge Function release-attestation gate.
 
@@ -63,9 +63,16 @@ The first exact-head behavioral run exposed a real implementation defect rather 
 
 The failed run retained its evidence artifact and cleaned up both temporary projects and all five synthetic users with no cleanup errors.
 
-The corrective migration renames the local variable to `member_role_value` and keeps the membership lookup, role gates, RLS rules and mutation authority unchanged. The correction was applied first to the dedicated DataNest AI Staging project through the governed migration path. Production remains unchanged until the corrected candidate passes the full gate set.
+The corrective migration renames the local variable to `member_role_value` and keeps the membership lookup, role gates, RLS rules and mutation authority unchanged. The correction was first exercised in the earlier dedicated staging run, where all six SEC-01 behavioral cases passed before the Mirror owner-only isolation policy became authoritative for that environment. Production remains unchanged until the corrected canonical candidate passes the full gate set.
 
 
-## Backend acceptance fixture isolation
+## Environment boundary correction
 
-Dedicated DataNest AI Staging currently applies the restrictive `mirror_owner_only` RLS boundary to authenticated table reads. The backend acceptance harness therefore uses the service role only to locate the pre-seeded `resonance-datanest` project and `DataNest AI E2E Job` fixture identifiers. Governed RPC and Edge Function calls continue to execute with the synthetic user's authenticated session token. This keeps the behavioral acceptance path user-scoped while respecting the Mirror staging isolation policy.
+Mirror-DataNest and canonical DataNest have different security envelopes:
+
+- **Mirror-DataNest** is the single-user owner R&D/live-candidate surface. Its owner-only staging restriction is intentional.
+- **DataNest-Supository/DataNest** is the multi-collaborator governed platform. SEC-01 therefore exercises anonymous, viewer, operator, admin, owner and outsider behavior only against a canonical certification environment.
+
+The certification workflow now starts a fresh local Supabase stack, replays the candidate migrations, creates synthetic users/projects, and runs the same user-scoped RPC/Data API checks there. Service-role access is limited to fixture creation, inspection and cleanup. User-facing governance and Edge Function calls execute with the synthetic collaborators' authenticated sessions.
+
+This removes the previous architectural conflict where canonical multi-role acceptance was incorrectly coupled to Mirror's single-owner staging policy. No temporary hosted Supabase branch is required for the default SEC-01 gate; a hosted branch remains an optional final assurance step if an external reviewer specifically requires hosted-environment behavioral evidence.
