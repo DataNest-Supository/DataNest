@@ -81,3 +81,32 @@ Every Owner Test Mode release records:
 - the override delta.
 
 As real review timestamps accumulate, these planning assumptions should be recalibrated from observed repository-specific response times. Until sufficient evidence exists, the defaults above remain conservative planning heuristics rather than empirical claims.
+
+
+## Gate sequencing
+
+Owner Live Test Mode intentionally separates **evidence generation** from **final governance closure**.
+
+Before temporary live production begins, the release must have:
+
+- an exact candidate SHA reachable from `main`;
+- PR Verification evidence for the candidate;
+- Security scan evidence for the candidate;
+- RONSAS validation evidence for the candidate;
+- an explicit Owner Test Mode authorization reference;
+- an Owner actor whose GitHub identity matches the declared Owner login and has repository admin permission; and
+- the exact confirmation `AUTHORIZE OWNER TEST MODE`.
+
+The human visual/UX, governance-impact, legal, external/independent, and final production-authorization records may remain open while the bounded live test runs. Their default closure targets are measured from live-test start:
+
+- human visual / UX review: within 24 hours;
+- governance-impact review: within 48 hours;
+- legal review: by the live-test expiry;
+- external / independent review: by the live-test expiry;
+- final production authorization: by the live-test expiry.
+
+The final three deadlines can never extend past the accepted Owner Test Mode window, and the total live-test window can never exceed 72 hours.
+
+If the required human evidence is not closed by expiry, the Owner Test Mode expiry workflow replaces the live site with a holding page. A normal production release can resume only after the complete human authorization record is supplied.
+
+The fully authorized production path continues to use the protected `github-pages` environment. Owner Live Test Mode uses the dedicated `github-pages-owner-test-mode` environment so evidence can be gathered before human-review closure while retaining the Owner-only actor check, exact-SHA requirement, bounded expiry, and explicit test-mode confirmation.

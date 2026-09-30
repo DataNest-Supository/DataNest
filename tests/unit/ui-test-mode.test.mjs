@@ -57,7 +57,8 @@ test("production governance remains fail-closed after Test Mode is enabled",()=>
   }
   assert.match(productionWorkflow,/Verify production authorization payload/);
   assert.match(productionWorkflow,/verify-ui-production-authorization\.mjs/);
-  assert.match(productionWorkflow,/name: github-pages/);
+  assert.match(productionWorkflow,/'github-pages'/);
+  assert.match(productionWorkflow,/'github-pages-owner-test-mode'/);
   assert.match(productionWorkflow,/actions\/deploy-pages/);
 });
 

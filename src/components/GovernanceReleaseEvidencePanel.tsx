@@ -59,7 +59,7 @@ export default function GovernanceReleaseEvidencePanel(){
       <div>
         <p className="eyebrow">PRODUCTION EVIDENCE</p>
         <h2>Release evidence and due dates</h2>
-        <p>Review the current live-test window and the outstanding human evidence records.</p>
+        <p>Live production testing gathers evidence first; outstanding human reviews close against that evidence within the bounded window.</p>
       </div>
       <button className="secondaryButton compact" type="button" onClick={()=>void load()}>Refresh</button>
     </div>
@@ -69,6 +69,7 @@ export default function GovernanceReleaseEvidencePanel(){
         <article className="metricCard"><span>Release state</span><strong>{release.releaseState.replaceAll("_"," ").toUpperCase()}</strong><small>{release.authorized?"Authorized":"Closure pending"}</small></article>
         <article className="metricCard"><span>Open human items</span><strong>{open}</strong><small>Outstanding evidence records</small></article>
         <article className="metricCard"><span>Live Test Mode</span><strong>{mode?.active?"ACTIVE":"—"}</strong><small>{mode?.expiresAt?"Ends "+formatDate(mode.expiresAt):"No active window"}</small></article>
+        <article className="metricCard"><span>Closure phase</span><strong>{mode?.active?"POST-TEST":"STANDARD"}</strong><small>{mode?.active?"Human evidence closes after live observation":"Normal governed release flow"}</small></article>
         <article className="metricCard"><span>Candidate</span><strong>{release.releaseSha.slice(0,8)}</strong><small title={release.releaseSha}>{release.releaseSha}</small></article>
       </div>
       {mode&&<dl className="settingsList">
