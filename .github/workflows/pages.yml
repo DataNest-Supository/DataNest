@@ -151,6 +151,7 @@ jobs:
       DATANEST_UI_OWNER_TEST_MODE_ACTOR: ${{ github.actor }}
       DATANEST_EXPECTED_DB_MIGRATION_HEAD: ${{ inputs.database_migration_head }}
       DATANEST_EXPECTED_DB_MIGRATION_NAME: ${{ inputs.database_migration_name }}
+      DATANEST_EDGE_ATTESTATION_BASELINE: config/production-edge-function-attestation.json
     steps:
       - name: Checkout exact release SHA
         uses: actions/checkout@v7.0.1
@@ -185,6 +186,12 @@ jobs:
       - name: Verify live production database release attestation
         run: node scripts/verify-production-release-attestation.mjs .datanest/release-attestation.json
 
+      - name: Verify live production Edge Function deployment attestation
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          DATANEST_SUPABASE_PROJECT: sgqdmfgjbprsoqsmgigi
+        run: node scripts/verify-production-edge-function-attestation.mjs .datanest/edge-function-attestation.json
+
       - uses: ./.github/actions/node-project-setup
       - run: npm test
       - run: npm run check
@@ -213,6 +220,7 @@ jobs:
           DATANEST_EDGE_RONSAS_STATUS: ronsas-status@1
           DATANEST_EDGE_EXTERNAL_AUDIT: external-audit@1
           DATANEST_DB_ATTESTATION_FILE: .datanest/release-attestation.json
+          DATANEST_EDGE_ATTESTATION_FILE: .datanest/edge-function-attestation.json
         run: node scripts/write-release-manifest.mjs public/release-manifest.json
 
       - run: npm run build
@@ -337,7 +345,8 @@ jobs:
           const manifest=JSON.parse(fs.readFileSync("/tmp/release-manifest.json","utf8"));
           if(manifest.releaseAttestation?.database?.status!=="verified") throw new Error("Live release must carry a verified production database attestation");
           if(!/^[0-9a-f]{64}$/i.test(String(manifest.releaseAttestation.database.fingerprint||""))) throw new Error("Production database attestation fingerprint is missing");
-          if(manifest.releaseAttestation.edgeFunctions?.status!=="unverified") throw new Error("Edge-function attestation must not be overstated");
+          if(manifest.releaseAttestation.edgeFunctions?.status!=="verified") throw new Error("Live release must carry a verified Edge Function attestation");
+          if(manifest.releaseAttestation.edgeFunctions?.functionCount<1) throw new Error("Edge-function attestation function count is missing");
           NODE
 
       - uses: ./.github/actions/node-project-setup
