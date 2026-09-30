@@ -3,7 +3,7 @@ export type ExternalAiClipboardCandidateInput = {
   currentResponse:string;
   blockedTexts?:string[];
   allowReplace?:boolean;
-  expectedTraceKey?:string;
+  traceBinding?:string;
 };
 
 export function selectExternalAiClipboardCandidate({
@@ -11,7 +11,7 @@ export function selectExternalAiClipboardCandidate({
   currentResponse,
   blockedTexts=[],
   allowReplace=false,
-  expectedTraceKey=""
+  traceBinding=""
 }:ExternalAiClipboardCandidateInput):string|null{
   // Automatic capture must never replace a response already under review.
   if(!allowReplace&&currentResponse.trim())return null;
@@ -25,8 +25,8 @@ export function selectExternalAiClipboardCandidate({
 
   if(blocked.includes(candidate))return null;
 
-  if(!allowReplace&&expectedTraceKey.trim()){
-    const trace=expectedTraceKey.trim();
+  if(!allowReplace&&traceBinding.trim()){
+    const trace=traceBinding.trim();
     if(!candidate.split(/\\r?\\n/)[0].includes(trace))return null;
   }
 
