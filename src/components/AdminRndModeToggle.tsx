@@ -98,6 +98,7 @@ export default function AdminRndModeToggle({
         .maybeSingle();
       if(lookupError)throw lookupError;
 
+      let surfaceId=existing?.id||"";
       if(existing?.id){
         const {error:updateError}=await supabase
           .from("product_surfaces")
@@ -105,12 +106,59 @@ export default function AdminRndModeToggle({
           .eq("id",existing.id);
         if(updateError)throw updateError;
       }else{
-        const {error:insertError}=await supabase.from("product_surfaces").insert({
+        const {data:inserted,error:insertError}=await supabase.from("product_surfaces").insert({
           project_id:projectId,
           ...surfacePayload,
           created_by:currentUserId
-        });
+        }).select("id").single();
         if(insertError)throw insertError;
+        surfaceId=String(inserted?.id||"");
+      }
+
+      if(surfaceId){
+        const certificationCases=[
+          {
+            title:"Mirror visual shell and navigation",
+            description:"Review the production-parity Mirror shell, responsive navigation, layout, visual regressions and primary workspace rendering.",
+            expected_result:"The Mirror UI renders correctly at the tested viewport with no material visual regression or broken primary navigation."
+          },
+          {
+            title:"Mirror authenticated functional flow",
+            description:"Exercise authenticated DataNest workspace behavior against the isolated DataNest AI Staging backend.",
+            expected_result:"Authentication and the reviewed functional workflow complete against staging without unintended canonical production writes."
+          },
+          {
+            title:"Mirror governed routes and hosted applications",
+            description:"Review governance/legal routes and applicable DataNest-hosted RONSAS application pages from the live Mirror build.",
+            expected_result:"Required governance/legal routes and applicable hosted application pages render and function for the exact Mirror release."
+          }
+        ];
+
+        const {data:existingCases,error:caseLookupError}=await supabase
+          .from("product_test_cases")
+          .select("id,title")
+          .eq("project_id",projectId)
+          .eq("surface_id",surfaceId)
+          .eq("status","active");
+        if(caseLookupError)throw caseLookupError;
+
+        const existingTitles=new Set((existingCases||[]).map(item=>String(item.title)));
+        const missingCases=certificationCases
+          .filter(item=>!existingTitles.has(item.title))
+          .map(item=>({
+            project_id:projectId,
+            surface_id:surfaceId,
+            title:item.title,
+            description:item.description,
+            expected_result:item.expected_result,
+            status:"active",
+            created_by:currentUserId
+          }));
+
+        if(missingCases.length){
+          const {error:caseInsertError}=await supabase.from("product_test_cases").insert(missingCases);
+          if(caseInsertError)throw caseInsertError;
+        }
       }
 
       const sourceRef=(manifest.workflowRun||MIRROR_DATANEST_RELEASE_MANIFEST_URL)+"#"+manifest.commit;
@@ -150,7 +198,7 @@ export default function AdminRndModeToggle({
 
       setRelease(manifest);
       setSyncState("ready");
-      setMessage("Mirror "+manifest.releaseId+" synchronized to Product Lab and governance evidence.");
+      setMessage("Mirror "+manifest.releaseId+" synchronized to Product Lab, certification cases and governance evidence.");
     }catch(error){
       setSyncState("error");
       setMessage(error instanceof Error?error.message:"Unable to synchronize the live Mirror release.");
