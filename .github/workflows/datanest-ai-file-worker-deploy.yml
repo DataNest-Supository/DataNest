@@ -30,11 +30,13 @@ jobs:
           persist-credentials: false
       - name: Verify exact SHA is reachable from main
         shell: bash
+        env:
+          DATANEST_RELEASE_SHA: ${{ inputs.release_sha }}
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${{ inputs.release_sha }}"
+          test "$(git rev-parse HEAD)" = "$DATANEST_RELEASE_SHA"
           git fetch origin main --no-tags --prune
-          git merge-base --is-ancestor "${{ inputs.release_sha }}" origin/main
+          git merge-base --is-ancestor "$DATANEST_RELEASE_SHA" origin/main
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.9.7
