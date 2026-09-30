@@ -211,4 +211,4 @@ jobs:
     uses: ./.github/workflows/worktree-gate-timeframe.yml
     with:
       gate_id: "mirror-production-import"
-      override_hours: ${{ github.event.client_payload.gate_timeframe_override_hours || inputs.gate_timeframe_override_hours || '' }}
+      override_hours: ${{ inputs.gate_timeframe_override_hours || '' }}
