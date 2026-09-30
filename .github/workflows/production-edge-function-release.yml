@@ -7,6 +7,10 @@ on:
         description: Exact 40-character commit SHA reachable from main
         required: true
         type: string
+      gate_timeframe_override_hours:
+        description: Optional Owner worktree-gate planning-window override in hours (0.5-72)
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -115,3 +119,10 @@ jobs:
           path: .datanest/edge-function-release.json
           if-no-files-found: error
           retention-days: 90
+
+  gate-timeframe:
+    name: DataNest AI worktree gate timeframe
+    uses: ./.github/workflows/worktree-gate-timeframe.yml
+    with:
+      gate_id: "production-edge-function-release"
+      override_hours: ${{ inputs.gate_timeframe_override_hours || '' }}
