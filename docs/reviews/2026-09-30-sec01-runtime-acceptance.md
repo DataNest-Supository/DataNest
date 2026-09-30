@@ -64,3 +64,8 @@ The first exact-head behavioral run exposed a real implementation defect rather 
 The failed run retained its evidence artifact and cleaned up both temporary projects and all five synthetic users with no cleanup errors.
 
 The corrective migration renames the local variable to `member_role_value` and keeps the membership lookup, role gates, RLS rules and mutation authority unchanged. The correction was applied first to the dedicated DataNest AI Staging project through the governed migration path. Production remains unchanged until the corrected candidate passes the full gate set.
+
+
+## Backend acceptance fixture isolation
+
+Dedicated DataNest AI Staging currently applies the restrictive `mirror_owner_only` RLS boundary to authenticated table reads. The backend acceptance harness therefore uses the service role only to locate the pre-seeded `resonance-datanest` project and `DataNest AI E2E Job` fixture identifiers. Governed RPC and Edge Function calls continue to execute with the synthetic user's authenticated session token. This keeps the behavioral acceptance path user-scoped while respecting the Mirror staging isolation policy.
