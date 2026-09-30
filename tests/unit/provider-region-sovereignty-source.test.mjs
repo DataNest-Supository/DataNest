@@ -6,7 +6,7 @@ import {fileURLToPath} from "node:url";
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
 const migration=fs.readFileSync(
-  path.join(root,"supabase/migrations/20260930002000_provider_region_sovereignty_enforcement.sql"),
+  path.join(root,"supabase/migrations/20260929190612_provider_region_sovereignty_enforcement.sql"),
   "utf8"
 );
 const manager=fs.readFileSync(

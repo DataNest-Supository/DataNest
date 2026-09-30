@@ -10,7 +10,7 @@ const optimizer=fs.readFileSync(
   "utf8"
 );
 const migration=fs.readFileSync(
-  path.join(root,"supabase/migrations/20260930003000_enable_admin_system_optimizer_collaboration.sql"),
+  path.join(root,"supabase/migrations/20260930071134_enable_admin_system_optimizer_collaboration.sql"),
   "utf8"
 );
 const dashboard=fs.readFileSync(
