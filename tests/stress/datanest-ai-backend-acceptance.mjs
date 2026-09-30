@@ -23,7 +23,12 @@ const signed = dataOf(await client.auth.signInWithPassword({
   password: process.env.DATANEST_AI_E2E_PASSWORD
 }), "Synthetic sign-in");
 assert.ok(signed.session?.access_token, "An authenticated user token is required.");
-// Fixture metadata is resolved with the service-role client because the acceptance user token\n// is intentionally exercised only against the application RPC/Edge Function surface below.\n// This avoids coupling fixture discovery to browser-facing RLS while keeping all behavioural\n// calls user-authenticated.\nconst project = dataOf(await admin.from("projects").select("id").eq("slug", "resonance-datanest").single(), "Fixture project lookup");\nconst job = dataOf(await admin.from("jobs").select("id,requirements").eq("project_id", project.id).eq("title", "DataNest AI E2E Job").single(), "Fixture job lookup");
+// Fixture metadata is resolved with the service-role client because the acceptance user token
+// is intentionally exercised only against the application RPC/Edge Function surface below.
+// This avoids coupling fixture discovery to browser-facing RLS while keeping all behavioural
+// calls user-authenticated.
+const project = dataOf(await admin.from("projects").select("id").eq("slug", "resonance-datanest").single(), "Fixture project lookup");
+const job = dataOf(await admin.from("jobs").select("id,requirements").eq("project_id", project.id).eq("title", "DataNest AI E2E Job").single(), "Fixture job lookup");
 assert.equal(job.requirements?.environment, "staging", "The job must be an explicit staging fixture.");
 const fixtureMarker = "backend-acceptance-" + randomUUID();
 const results = [];
