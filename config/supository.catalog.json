@@ -116,28 +116,57 @@
   ],
   "rdMirror": {
     "repository": "DataNest-Supository/Mirror-DataNest",
-    "mode": "ungated-rd-test",
+    "mode": "production-parity-rd-test",
     "sourceOfTruth": false,
-    "productionAuthority": false,
+    "canonicalProductionAuthority": false,
+    "mirrorCandidateDeploymentAuthority": true,
+    "canonicalLiveDeploymentAuthority": false,
     "previewUrl": "https://datanest-supository.github.io/Mirror-DataNest/",
-    "promotion": "promotion branch in DataNest -> pull request -> human reviewer approval -> main",
-    "directSyncToMainAllowed": false,
+    "backend": {
+      "project": "Supabase:qchttpcyqlqnhvahprhz",
+      "name": "DataNest AI Staging",
+      "mode": "isolated-staging"
+    },
     "adminAccess": {
       "canonicalUiToggle": true,
       "allowedRoles": [
         "owner",
         "admin"
       ],
-      "changesProductionAuthority": false,
+      "opensLiveMirrorUi": true,
+      "synchronizesExactBuildEvidence": true,
+      "changesCanonicalProductionAuthority": false,
       "networkAccessControl": false
+    },
+    "updateManagement": {
+      "reuseExistingDatabaseModels": true,
+      "models": [
+        "product_surfaces",
+        "product_test_cases",
+        "product_test_runs",
+        "governance_observations",
+        "optimizer_runs",
+        "optimizer_suggestions",
+        "governance_improvement_candidates",
+        "security_acceptance_runs",
+        "portfolio_lifecycle_events",
+        "ai_development_updates",
+        "artifacts",
+        "events"
+      ],
+      "surfaceName": "Mirror-DataNest Production Candidate",
+      "releaseManifest": "/Mirror-DataNest/mirror-release.json",
+      "liveVerificationArtifact": "mirror-live-evidence-<run>-<sha>"
     },
     "productionPromotion": {
       "allProductionCandidatesMustReturnToCanonical": true,
+      "mirrorLiveWorkflow": "Mirror-DataNest/.github/workflows/pages.yml",
       "candidateWorkflow": "Mirror-DataNest/.github/workflows/production-candidate.yml",
       "canonicalImportWorkflow": ".github/workflows/mirror-production-import.yml",
       "canonicalBranchPrefix": "mirror-promotion/",
       "requiredBeforeLive": [
         "mirror promotion reference",
+        "live Mirror visual/functional evidence reference",
         "Audit Optimizer reference",
         "canonical PR verification",
         "security scan",
@@ -146,8 +175,7 @@
         "human reviewer approval",
         "production authorization"
       ],
-      "liveDeploymentAuthority": "DataNest-Supository/DataNest",
-      "mirrorLiveDeploymentAuthority": false
+      "liveDeploymentAuthority": "DataNest-Supository/DataNest"
     }
   }
 }
