@@ -75,6 +75,20 @@ jobs:
             --no-verify-jwt \
             --use-docker
 
+      - name: Write file worker production release attestation
+        shell: bash
+        run: |
+          mkdir -p .datanest
+          node scripts/write-production-file-worker-release-attestation.mjs .datanest/datanest-ai-file-worker-release.json
+
+      - name: Preserve file worker production release evidence
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: datanest-ai-file-worker-release-${{ inputs.release_sha }}
+          path: .datanest/datanest-ai-file-worker-release.json
+          if-no-files-found: error
+          retention-days: 90
+
   gate-timeframe:
     name: DataNest AI worktree gate timeframe
     uses: ./.github/workflows/worktree-gate-timeframe.yml
