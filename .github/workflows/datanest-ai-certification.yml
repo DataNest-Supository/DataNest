@@ -138,7 +138,7 @@ jobs:
         with:
           version: 2.118.0
 
-      - name: Create ephemeral canonical collaborator credential
+      - name: Create ephemeral governed E2E credentials
         shell: bash
         run: |
           PASSWORD="$(node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('hex'))")"
