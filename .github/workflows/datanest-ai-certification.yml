@@ -65,6 +65,11 @@ jobs:
       - name: Seed governed E2E fixtures
         run: npm run seed:e2e:datanest-ai
 
+      - name: Run governance authorization boundary acceptance
+        env:
+          DATANEST_CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node tests/stress/datanest-governance-boundary-acceptance.mjs
+
       - name: Run candidate backend acceptance
         env:
           DATANEST_CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -132,6 +137,15 @@ jobs:
           name: datanest-ai-certification-${{ github.sha }}
           path: certification-artifacts/datanest-ai-certification.json
           if-no-files-found: error
+
+      - name: Preserve governance boundary acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: datanest-governance-boundary-acceptance-${{ github.sha }}
+          path: certification-artifacts/datanest-governance-boundary-acceptance.json
+          if-no-files-found: warn
+          retention-days: 30
 
       - name: Preserve backend acceptance evidence
         if: always()
