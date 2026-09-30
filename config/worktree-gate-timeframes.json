@@ -251,6 +251,17 @@
         "operationsReview"
       ],
       "machineBaselineMinutes": 10
+    },
+    "sec01-governance-certification.yml": {
+      "gateId": "sec01-governance-certification",
+      "gateType": "automated_validation",
+      "taskComplexity": "complex",
+      "reportingComplexity": "audit_grade",
+      "reviewDomains": [
+        "securityReview",
+        "governanceReview"
+      ],
+      "machineBaselineMinutes": 20
     }
   }
 }
