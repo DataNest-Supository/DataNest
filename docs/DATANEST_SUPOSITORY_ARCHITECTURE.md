@@ -116,6 +116,20 @@ Deploying Reson8 Forge must not:
 
 The first production objective is **sovereign replication and extension**. Replacement is a separate migration decision.
 
+## DataNest admin R&D access
+
+The canonical DataNest UI exposes an **R&D Test Mode** toggle only to authenticated project members whose server-backed role is `owner` or `admin`.
+
+Enabling the toggle opens the separate `Mirror-DataNest` preview workspace. The toggle:
+
+- does not change the user's canonical DataNest role;
+- does not grant production deployment authority;
+- does not bypass canonical review or release gates;
+- does not synchronize code automatically;
+- is a navigation/access affordance into the ungated R&D environment.
+
+Operators and viewers do not receive the toggle in the canonical UI. Because the initial Mirror preview is delivered through public GitHub Pages, this UI control is not itself a network-level confidentiality boundary; private R&D access requires a separately authenticated hosting layer.
+
 ## MIRROR-DATANEST R&D lane
 
 `DataNest-Supository/Mirror-DataNest` is the designated ungated R&D clone of the canonical DataNest Supository.
