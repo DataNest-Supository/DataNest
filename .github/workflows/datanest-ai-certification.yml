@@ -22,6 +22,8 @@ jobs:
       DATANEST_AI_STAGING_PUBLISHABLE_KEY: sb_publishable_spZZYssbgfnC0qecAPLPVQ_ZqAyugqS
       DATANEST_AI_STAGING_SERVICE_ROLE_KEY: ${{ secrets.DATANEST_AI_STAGING_SERVICE_ROLE_KEY }}
       DATANEST_AI_STAGING_DB_PASSWORD: ${{ secrets.DATANEST_AI_STAGING_DB_PASSWORD }}
+      DATANEST_AI_STAGING_PROJECT_REF: qchttpcyqlqnhvahprhz
+      DATANEST_AI_STAGING_ACCESS_TOKEN: ${{ secrets.DATANEST_AI_STAGING_ACCESS_TOKEN }}
       PGHOST: aws-0-eu-central-1.pooler.supabase.com
       PGPORT: "5432"
       PGDATABASE: postgres
@@ -48,6 +50,19 @@ jobs:
           test -n "$DATANEST_AI_STAGING_DB_PASSWORD" || { echo "DATANEST_AI_STAGING_DB_PASSWORD is required"; exit 1; }
           test -n "$DATANEST_AI_E2E_EMAIL" || { echo "DATANEST_AI_E2E_EMAIL is required"; exit 1; }
           test -n "$DATANEST_AI_E2E_PASSWORD" || { echo "DATANEST_AI_E2E_PASSWORD is required"; exit 1; }
+
+      - name: Deploy candidate AI Edge Functions to governed staging
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ env.DATANEST_AI_STAGING_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_ID: ${{ env.DATANEST_AI_STAGING_PROJECT_REF }}
+        shell: bash
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN" || {
+            echo "DATANEST_AI_STAGING_ACCESS_TOKEN is required; refusing to test an undeployed candidate."
+            exit 1
+          }
+          supabase functions deploy datanest-ai-intake --project-ref "$SUPABASE_PROJECT_ID"
+          supabase functions deploy datanest-ai-chat --project-ref "$SUPABASE_PROJECT_ID"
 
       - name: Run staging schema acceptance
         env:
