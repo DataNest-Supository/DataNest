@@ -369,7 +369,8 @@ export default function ExternalAiSidebar({
         clipboardText,
         currentResponse:responseTextRef.current,
         allowReplace:announce,
-        blockedTexts:[handoff,preparedHandoff,lastClipboardCapture.current]
+        blockedTexts:[handoff,preparedHandoff,lastClipboardCapture.current],
+        expectedTraceKey:traceKey
       });
 
       if(!candidate){
