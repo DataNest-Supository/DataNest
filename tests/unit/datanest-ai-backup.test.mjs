@@ -5,6 +5,7 @@ import {
   decryptBackup,
   validateRestoreRefs
 } from "../../scripts/lib/encrypted-backup.mjs";
+import { assertDedicatedDataNestAiStaging } from "../../scripts/lib/datanest-ai-staging-environment.mjs";
 
 test("staging backup encryption round-trips and does not expose plaintext", () => {
   const key=Buffer.alloc(32,7);
@@ -51,4 +52,39 @@ test("restore ref validation still rejects production and source mismatches", ()
     configuredStagingRef:"staging-replacement",
     productionRef:"production"
   }),/source/i);
+});
+
+
+test("staging backup environment requires the canonical dedicated project and origin",()=>{
+  assert.deepEqual(
+    assertDedicatedDataNestAiStaging({
+      url:"https://qchttpcyqlqnhvahprhz.supabase.co/",
+      projectRef:"qchttpcyqlqnhvahprhz"
+    }),
+    {
+      url:"https://qchttpcyqlqnhvahprhz.supabase.co",
+      projectRef:"qchttpcyqlqnhvahprhz"
+    }
+  );
+  assert.throws(
+    ()=>assertDedicatedDataNestAiStaging({
+      url:"https://sgqdmfgjbprsoqsmgigi.supabase.co",
+      projectRef:"sgqdmfgjbprsoqsmgigi"
+    }),
+    /must not target the production project/i
+  );
+  assert.throws(
+    ()=>assertDedicatedDataNestAiStaging({
+      url:"https://evil.example.com",
+      projectRef:"qchttpcyqlqnhvahprhz"
+    }),
+    /canonical dedicated staging origin/i
+  );
+  assert.throws(
+    ()=>assertDedicatedDataNestAiStaging({
+      url:"https://qchttpcyqlqnhvahprhz.supabase.co",
+      projectRef:"sgqdmfgjbprsoqsmgigi"
+    }),
+    /dedicated staging project/i
+  );
 });
