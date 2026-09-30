@@ -25,13 +25,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
         with:
-          ref: \${{ inputs.release_sha }}
+          ref: ${{ inputs.release_sha }}
           fetch-depth: 0
           persist-credentials: false
       - name: Verify exact SHA is reachable from main
         shell: bash
         env:
-          DATANEST_RELEASE_SHA: \${{ inputs.release_sha }}
+          DATANEST_RELEASE_SHA: ${{ inputs.release_sha }}
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$DATANEST_RELEASE_SHA"
@@ -49,12 +49,12 @@ jobs:
       name: github-pages
     runs-on: ubuntu-24.04
     env:
-      SUPABASE_ACCESS_TOKEN: \${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_ID: sgqdmfgjbprsoqsmgigi
     steps:
       - uses: actions/checkout@v7.0.1
         with:
-          ref: \${{ inputs.release_sha }}
+          ref: ${{ inputs.release_sha }}
           fetch-depth: 0
           persist-credentials: false
       - uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2.1.1
@@ -84,7 +84,7 @@ jobs:
       - name: Preserve file worker production release evidence
         uses: actions/upload-artifact@v4.6.2
         with:
-          name: datanest-ai-file-worker-release-\${{ inputs.release_sha }}
+          name: datanest-ai-file-worker-release-${{ inputs.release_sha }}
           path: .datanest/datanest-ai-file-worker-release.json
           if-no-files-found: error
           retention-days: 90
@@ -94,4 +94,4 @@ jobs:
     uses: ./.github/workflows/worktree-gate-timeframe.yml
     with:
       gate_id: "datanest-ai-file-worker-deploy"
-      override_hours: \${{ inputs.gate_timeframe_override_hours || '' }}
+      override_hours: ${{ inputs.gate_timeframe_override_hours || '' }}
