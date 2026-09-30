@@ -24,11 +24,6 @@ jobs:
       DATANEST_AI_STAGING_URL: https://qchttpcyqlqnhvahprhz.supabase.co
       DATANEST_AI_STAGING_SERVICE_ROLE_KEY: ${{ secrets.DATANEST_AI_STAGING_SERVICE_ROLE_KEY }}
       DATANEST_AI_STAGING_DB_PASSWORD: ${{ secrets.DATANEST_AI_STAGING_DB_PASSWORD }}
-      PGHOST: aws-0-eu-central-1.pooler.supabase.com
-      PGPORT: "5432"
-      PGDATABASE: postgres
-      PGUSER: postgres.qchttpcyqlqnhvahprhz
-      PGSSLMODE: require
       DATANEST_CERTIFICATION_TARGET: local-canonical
 
     steps:
@@ -204,6 +199,11 @@ jobs:
         if: steps.applicability.outputs.applicable == 'true'
         env:
           PGPASSWORD: ${{ env.DATANEST_AI_STAGING_DB_PASSWORD }}
+          PGHOST: aws-0-eu-central-1.pooler.supabase.com
+          PGPORT: "5432"
+          PGDATABASE: postgres
+          PGUSER: postgres.qchttpcyqlqnhvahprhz
+          PGSSLMODE: require
         shell: bash
         run: |
           # Read-only schema contracts only. No synthetic collaborator signs in
