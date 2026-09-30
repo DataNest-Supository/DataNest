@@ -88,3 +88,9 @@ jobs:
       - name: Replace expired Owner Test Mode deployment
         id: deployment
         uses: actions/deploy-pages@v5.0.1
+
+  gate-timeframe:
+    name: DataNest AI worktree gate timeframe
+    uses: ./.github/workflows/worktree-gate-timeframe.yml
+    with:
+      gate_id: "ui-owner-test-mode-expiry"

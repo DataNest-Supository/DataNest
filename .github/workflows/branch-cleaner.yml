@@ -18,6 +18,10 @@ on:
         required: true
         default: false
         type: boolean
+      gate_timeframe_override_hours:
+        description: Optional Owner planning-window override in hours (0.5-72)
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -57,3 +61,10 @@ jobs:
           name: branch-cleaner-report
           path: artifacts/branch-cleaner/
           if-no-files-found: warn
+
+  gate-timeframe:
+    name: DataNest AI worktree gate timeframe
+    uses: ./.github/workflows/worktree-gate-timeframe.yml
+    with:
+      gate_id: "branch-cleaner"
+      override_hours: ${{ inputs.gate_timeframe_override_hours || '' }}

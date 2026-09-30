@@ -2,6 +2,11 @@ name: DataNest File Worker Deploy
 
 on:
   workflow_dispatch:
+    inputs:
+      gate_timeframe_override_hours:
+        description: Optional Owner planning-window override in hours (0.5-72)
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -48,3 +53,10 @@ jobs:
             --project-ref "$SUPABASE_PROJECT_ID" \
             --no-verify-jwt \
             --use-docker
+
+  gate-timeframe:
+    name: DataNest AI worktree gate timeframe
+    uses: ./.github/workflows/worktree-gate-timeframe.yml
+    with:
+      gate_id: "datanest-ai-file-worker-deploy"
+      override_hours: ${{ inputs.gate_timeframe_override_hours || '' }}

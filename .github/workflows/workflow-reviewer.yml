@@ -11,6 +11,9 @@ on:
       - ".github/workflows/**"
       - "docs/**"
       - "workflow-reviewer.config.json"
+      - "config/worktree-gate-timeframes.json"
+      - "scripts/propose-worktree-gate-timeframe.mjs"
+      - ".github/workflows/worktree-gate-timeframe.yml"
       - "package.json"
   workflow_dispatch:
     inputs:
@@ -71,3 +74,9 @@ jobs:
           name: workflow-reviewer-report
           path: artifacts/workflow-reviewer/
           if-no-files-found: error
+
+  gate-timeframe:
+    name: DataNest AI worktree gate timeframe
+    uses: ./.github/workflows/worktree-gate-timeframe.yml
+    with:
+      gate_id: "workflow-reviewer"
