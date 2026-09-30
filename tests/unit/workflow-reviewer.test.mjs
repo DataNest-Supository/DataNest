@@ -66,6 +66,15 @@ test("repeated workflow steps become consolidation candidates", () => {
   assert.equal(findings.every((finding) => finding.code === "reusable_step_candidate"), true);
 });
 
+test("already-centralized local actions are not re-reported as dedup candidates", () => {
+  const workflows = ["a.yml", "b.yml", "c.yml"].map((name) => ({
+    file: `.github/workflows/${name}`,
+    metrics: { uses: ["./.github/actions/node-project-setup"], runs: [] },
+  }));
+  const findings = buildReusableWorkflowFindings(workflows, 3);
+  assert.equal(findings.length, 0);
+});
+
 test("priority ordering puts high-severity findings before lower levels", () => {
   const ordered = prioritizeFindings([
     { severity: "low", category: "z", file: "b" },
