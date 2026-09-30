@@ -35,16 +35,34 @@ const results = [];
 // Functions are invoked with the USER token, never the service-role key.
 // Privileged access below is restricted to creating/reading synthetic fixtures.
 async function invoke(slug, body) {
-  const response = await fetch(`${target.origin}/functions/v1/${slug}`, {
-    method: "POST", redirect: "error", signal: AbortSignal.timeout(20000),
-    headers: {
-      "Content-Type": "application/json",
-      apikey: process.env.DATANEST_CERTIFICATION_PUBLISHABLE_KEY,
-      Authorization: `Bearer ${signed.session.access_token}`
-    },
-    body: JSON.stringify(body)
-  });
-  return { status: response.status, body: await response.json() };
+  const headers = {
+    "Content-Type": "application/json",
+    apikey: process.env.DATANEST_CERTIFICATION_PUBLISHABLE_KEY,
+    Authorization: `Bearer ${signed.session.access_token}`
+  };
+  let last = null;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const response = await fetch(`${target.origin}/functions/v1/${slug}`, {
+      method: "POST", redirect: "error", signal: AbortSignal.timeout(20000),
+      headers,
+      body: JSON.stringify(body)
+    });
+    const text = await response.text();
+    let parsed;
+    try {
+      parsed = text ? JSON.parse(text) : {};
+    } catch {
+      parsed = { raw: text };
+    }
+    last = {
+      status: response.status,
+      body: parsed,
+      edgeErrorCode: response.headers.get("sb-error-code")
+    };
+    if (![502, 503, 504].includes(response.status) || attempt === 4) return last;
+    await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+  }
+  return last;
 }
 async function runCase(id, check) {
   try {
