@@ -151,3 +151,17 @@ test("revoked invitations can be deleted only through an audited governed RPC",(
   assert.match(panel,/Confirm delete/);
   assert.match(panel,/governance event history/);
 });
+
+test("project invitation registration precedes any email delivery side effect",()=>{
+  const registrationIndex=edge.indexOf("service_register_project_member_invite_v1");
+  const inviteEmailIndex=edge.indexOf("service.auth.admin.inviteUserByEmail");
+  const recoveryEmailIndex=edge.indexOf("emailClient.auth.resetPasswordForEmail");
+
+  assert.ok(registrationIndex>=0,"durable invitation registration must exist");
+  assert.ok(inviteEmailIndex<0 || registrationIndex<inviteEmailIndex,"invitation email must follow durable registration");
+  assert.ok(recoveryEmailIndex<0 || registrationIndex<recoveryEmailIndex,"recovery email must follow durable registration");
+
+  assert.match(edge,/admin\.createUser\(\{[\s\S]{0,500}email_confirm:false/);
+  assert.match(edge,/retryable:true/);
+  assert.match(edge,/Project invitation was registered, but email delivery failed/);
+});
