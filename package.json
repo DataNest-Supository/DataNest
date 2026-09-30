@@ -19,7 +19,7 @@
     "workflow-review": "node scripts/workflow-reviewer.mjs",
     "workflow-review:clean": "node scripts/workflow-reviewer.mjs --apply",
     "test:workflow-reviewer": "node --test tests/unit/workflow-reviewer.test.mjs",
-    "test:forge": "node --test tests/unit/resonance-forge-phase-a.test.mjs tests/unit/resonance-forge-event-projection.test.mjs tests/unit/resonance-forge-event-ingestion.test.mjs tests/unit/resonance-forge-evidence-ingestion.test.mjs tests/unit/resonance-forge-registry.test.mjs tests/unit/resonance-forge-promotion-lineage.test.mjs tests/unit/resonance-forge-reconciliation.test.mjs tests/unit/resonance-forge-sync-dry-run.test.mjs tests/unit/forge-phase-a-cli.test.mjs",
+    "test:forge": "node --test tests/unit/resonance-forge-phase-a.test.mjs tests/unit/resonance-forge-event-projection.test.mjs tests/unit/resonance-forge-event-ingestion.test.mjs tests/unit/resonance-forge-evidence-ingestion.test.mjs tests/unit/resonance-forge-registry.test.mjs tests/unit/resonance-forge-promotion-lineage.test.mjs tests/unit/resonance-forge-reconciliation.test.mjs tests/unit/resonance-forge-sync-dry-run.test.mjs tests/unit/forge-phase-a-cli.test.mjs tests/unit/resonance-forge-recovery.test.mjs",
     "forge:validate": "node scripts/forge-phase-a.mjs",
     "forge:sync-dry-run": "node scripts/forge-sync-dry-run.mjs"
   },
