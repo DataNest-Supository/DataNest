@@ -121,6 +121,15 @@
     "productionAuthority": false,
     "previewUrl": "https://datanest-supository.github.io/Mirror-DataNest/",
     "promotion": "promotion branch in DataNest -> pull request -> human reviewer approval -> main",
-    "directSyncToMainAllowed": false
+    "directSyncToMainAllowed": false,
+    "adminAccess": {
+      "canonicalUiToggle": true,
+      "allowedRoles": [
+        "owner",
+        "admin"
+      ],
+      "changesProductionAuthority": false,
+      "networkAccessControl": false
+    }
   }
 }
