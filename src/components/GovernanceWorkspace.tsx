@@ -6,6 +6,7 @@ import ProjectMembersPanel from "@/components/ProjectMembersPanel";
 import TrustPolicyPanel from "@/components/TrustPolicyPanel";
 import ExecutionAuthorityPanel from "@/components/ExecutionAuthorityPanel";
 import GovernanceImprovementPanel from "@/components/GovernanceImprovementPanel";
+import GovernanceReleaseEvidencePanel from "@/components/GovernanceReleaseEvidencePanel";
 import type { TrustPolicyRole } from "@/lib/trustPolicy";
 import { useSessionDraftState } from "@/lib/sessionDraft";
 import { useSingleFlight } from "@/lib/singleFlight";
@@ -100,12 +101,13 @@ export default function GovernanceWorkspace({
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
   const {activeAction,run:runSingleFlight}=useSingleFlight();
-  const [section,setSection]=useState<"sovereign"|"trust"|"authority"|"improvement">(()=>{
+  const [section,setSection]=useState<"sovereign"|"trust"|"authority"|"improvement"|"release">(()=>{
     if(typeof window==="undefined")return "sovereign";
     const requested=new URL(window.location.href).searchParams.get("section");
     if(requested==="trust")return "trust";
     if(requested==="authority")return "authority";
     if(requested==="improvement")return "improvement";
+    if(requested==="release")return "release";
     return "sovereign";
   });
 
@@ -113,8 +115,8 @@ export default function GovernanceWorkspace({
     const sync=()=>{
       const url=new URL(window.location.href);
       const requested=url.searchParams.get("section");
-      const next=requested==="trust"?"trust":requested==="authority"?"authority":requested==="improvement"?"improvement":"sovereign";
-      if(requested&&requested!=="trust"&&requested!=="authority"&&requested!=="improvement"){
+      const next=requested==="trust"?"trust":requested==="authority"?"authority":requested==="improvement"?"improvement":requested==="release"?"release":"sovereign";
+      if(requested&&requested!=="trust"&&requested!=="authority"&&requested!=="improvement"&&requested!=="release"){
         url.searchParams.delete("section");
         window.history.replaceState(window.history.state,"",url.toString());
       }
@@ -332,11 +334,12 @@ export default function GovernanceWorkspace({
     });
   }
 
-  function selectSection(next:"sovereign"|"trust"|"authority"|"improvement"){
+  function selectSection(next:"sovereign"|"trust"|"authority"|"improvement"|"release"){
     const url=new URL(window.location.href);
     if(next==="trust")url.searchParams.set("section","trust");
     else if(next==="authority")url.searchParams.set("section","authority");
     else if(next==="improvement")url.searchParams.set("section","improvement");
+    else if(next==="release")url.searchParams.set("section","release");
     else url.searchParams.delete("section");
     window.history.pushState(window.history.state,"",url.toString());
     setSection(next);
@@ -347,11 +350,13 @@ export default function GovernanceWorkspace({
     <button type="button" role="tab" aria-selected={section==="trust"} className={section==="trust"?"active":""} onClick={()=>selectSection("trust")}>Trust & Data Policy</button>
     <button type="button" role="tab" aria-selected={section==="authority"} className={section==="authority"?"active":""} onClick={()=>selectSection("authority")}>Authority & Execution</button>
     <button type="button" role="tab" aria-selected={section==="improvement"} className={section==="improvement"?"active":""} onClick={()=>selectSection("improvement")}>Learning & Improvement</button>
+    <button type="button" role="tab" aria-selected={section==="release"} className={section==="release"?"active":""} onClick={()=>selectSection("release")}>Production Evidence</button>
   </div>;
 
   if(section==="trust")return <div>{governanceModeTabs}<TrustPolicyPanel projectId={projectId} currentUserId={currentUserId} role={role} setNotice={setNotice} setError={setError}/></div>;
   if(section==="authority")return <div>{governanceModeTabs}<ExecutionAuthorityPanel projectId={projectId} currentUserId={currentUserId} role={role} setNotice={setNotice} setError={setError}/></div>;
   if(section==="improvement")return <div>{governanceModeTabs}<GovernanceImprovementPanel projectId={projectId} setNotice={setNotice} setError={setError}/></div>;
+  if(section==="release")return <div>{governanceModeTabs}<GovernanceReleaseEvidencePanel/></div>;
   if(loading)return <section className="panel"><p className="muted">Loading Sovereign Governance…</p></section>;
   if(!workspace)return <section className="panel"><h2>Governance workspace unavailable</h2><p>Ratified protocol, proposals, decisions and dispute evidence belong here. Retry before treating any draft as adopted governance.</p><button className="secondaryButton compact" type="button" onClick={()=>void load()}>Retry governance workspace</button></section>;
 

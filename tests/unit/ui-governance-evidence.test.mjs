@@ -136,8 +136,8 @@ test("Owner Live Test Mode preserves pending human reviews and temporary deploym
     DATANEST_UI_PR_VERIFICATION_REF:"PR Verification #1340",
     DATANEST_UI_SECURITY_REF:"Security scan #882",
     DATANEST_UI_RONSAS_VALIDATION_REF:"RONSAS Application Validation #186",
-    DATANEST_UI_VISUAL_REVIEW_REF:"ui-governance-review-36686578542",
-    DATANEST_UI_AUTHORIZATION_REF:"operator authorization",
+    DATANEST_UI_VISUAL_REVIEW_REF:"pending",
+    DATANEST_UI_AUTHORIZATION_REF:"pending",
     DATANEST_UI_OWNER_TEST_MODE_REF:"owner temporary exception",
     DATANEST_UI_OWNER_TEST_MODE_OWNER_LOGIN:"ResonanceAppDev",
     DATANEST_UI_OWNER_TEST_MODE_ACTOR:"ResonanceAppDev",
@@ -150,6 +150,13 @@ test("Owner Live Test Mode preserves pending human reviews and temporary deploym
   assert.equal(json.fullyGoverned,false);
   assert.equal(json.productionDeploymentAllowed,true);
   assert.equal(json.ownerTestMode.active,true);
+  assert.equal(json.evidence.visualReview.status,"pending");
+  assert.equal(json.evidence.productionAuthorization.status,"pending");
+  assert.ok(json.ownerTestMode.evidenceDeadlines.visualReview);
+  assert.ok(json.ownerTestMode.evidenceDeadlines.governanceReview);
+  assert.equal(json.ownerTestMode.evidenceDeadlines.legalReview,json.ownerTestMode.expiresAt);
+  assert.equal(json.ownerTestMode.evidenceDeadlines.externalReview,json.ownerTestMode.expiresAt);
+  assert.equal(json.ownerTestMode.evidenceDeadlines.productionAuthorization,json.ownerTestMode.expiresAt);
   assert.equal(json.evidence.governanceReview.status,"pending");
   assert.equal(json.evidence.legalReview.status,"pending");
   assert.equal(json.evidence.externalReview.status,"pending");
