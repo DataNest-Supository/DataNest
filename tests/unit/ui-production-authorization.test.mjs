@@ -17,6 +17,8 @@ const ronsasWorkflow=readFileSync(
 );
 
 const valid={
+  // Keep the authorized-production baseline isolated from ambient release workflow mode.
+  DATANEST_UI_RELEASE_STATE:"authorized",
   DATANEST_UI_RELEASE_SHA:"c".repeat(40),
   DATANEST_UI_PRODUCTION_CONFIRMATION:"AUTHORIZE PRODUCTION",
   DATANEST_UI_PR_VERIFICATION_REF:"PR Verification #1293",
@@ -29,9 +31,9 @@ const valid={
   DATANEST_UI_AUTHORIZATION_REF:"DN-PROD-AUTH-001"
 };
 
-function verify(extra={}){
+function verify(extra={},ambientEnv=process.env){
   return spawnSync(process.execPath,[verifier],{
-    env:{...process.env,...valid,...extra},
+    env:{...ambientEnv,...valid,...extra},
     encoding:"utf8"
   });
 }
@@ -65,6 +67,16 @@ test("production authorization accepts a complete structural payload",()=>{
   const result=verify();
   assert.equal(result.status,0,result.stderr);
   assert.match(result.stdout,/Validated UI production authorization payload/);
+});
+
+test("authorized production fixture overrides ambient Owner Test Mode release state",()=>{
+  const result=verify({},{
+    ...process.env,
+    DATANEST_UI_RELEASE_STATE:"owner_test_mode",
+    DATANEST_UI_PRODUCTION_CONFIRMATION:"AUTHORIZE OWNER TEST MODE"
+  });
+  assert.equal(result.status,0,result.stderr);
+  assert.match(result.stdout,/authorized/);
 });
 
 test("Pages production deployment is manual exact-SHA and environment gated",()=>{
