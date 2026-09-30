@@ -17,6 +17,7 @@ import ResourceFabricPanel from "@/components/ResourceFabricPanel";
 import RecoveryDiagnosticsPanel from "@/components/RecoveryDiagnosticsPanel";
 import AccountPasswordPanel from "@/components/AccountPasswordPanel";
 import OwnerDevelopmentAnalytics from "@/components/OwnerDevelopmentAnalytics";
+import RndDeviceAdministration from "@/components/RndDeviceAdministration";
 import GlobalNavigation from "@/components/platform/GlobalNavigation";
 import LifecycleRail from "@/components/platform/LifecycleRail";
 import ContextStrip from "@/components/platform/ContextStrip";
@@ -2539,6 +2540,7 @@ function Settings({
     <div className="panel"><p className="eyebrow">PROJECT</p><h3>{project?.name||DATANEST_CANONICAL_NAME}</h3><dl className="settingsList"><div><dt>Slug</dt><dd>{project?.slug||"resonance-datanest"}</dd></div><div><dt>Status</dt><dd><Badge value={project?.status||"ACTIVE"}/></dd></div><div><dt>Access role</dt><dd><Badge value={(membership?.role||"viewer").toUpperCase()}/></dd></div><div><dt>GitHub</dt><dd>DataNest-Supository/DataNest</dd></div><div><dt>Supabase</dt><dd>sgqdmfgjbprsoqsmgigi</dd></div><div><dt>Hosting</dt><dd>Provider-agnostic</dd></div><div><dt>Production host</dt><dd>GitHub Pages</dd></div></dl></div>
     <div className="panel"><p className="eyebrow">TOOLS</p><h3>Tool registry</h3>{tools.map(tool=><div className="settingRow" key={tool.id}><div><b>{tool.name}</b><small>{tool.role}</small></div><Badge value={tool.enabled?"ACTIVE":"DISABLED"}/></div>)}</div>
     <RonsasIntegrationPanel/>
+    {project&&(membership?.role==="owner"||membership?.role==="admin")&&<div className="fullWidth" aria-label="R&D Device Administration"><RndDeviceAdministration projectId={project.id} role={membership.role}/></div>}
     <div className="fullWidth accountSecurityAnchor" id="account-security" tabIndex={-1}>{project&&<AccountPasswordPanel projectId={project.id}/>}</div>
     {project&&<RecoveryDiagnosticsPanel projectId={project.id} hydrated={recoveryHydrated} ledgerError={recoveryLedgerError} lastSyncedAt={recoveryLastSyncedAt} syncing={recoverySyncing} onSync={synchronizeDurableRecoveries}/>}
     {project&&<div className="fullWidth" aria-label="AI Administration">
