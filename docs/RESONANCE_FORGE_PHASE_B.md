@@ -89,7 +89,7 @@ The synchronization layer is therefore replayable without making replay an autho
 1. Phase A read-only contracts and dashboard — complete.
 2. Phase B deterministic reconciliation contract — this document.
 3. Phase B read-only reconciliation planner and tests.
-4. Evidence-backed synchronization dry runs.
+4. Evidence-backed synchronization dry runs — implemented as a deterministic, read-only CLI/library path.
 5. Review of recovery, retention, and interoperability controls.
 6. Only after explicit governance and human approval may later phases consider deployment authority.
 
@@ -100,3 +100,20 @@ This phase does not change the current authority model:
 **GitHub remains canonical and production-authoritative.**
 
 No Forge implementation in Phase B may infer or grant an authority transition.
+
+
+## Phase B dry-run implementation
+
+The read-only dry-run path accepts a candidate, GitHub event inputs, and evidence inputs. It:
+
+1. validates and deduplicates event envelopes;
+2. validates and deduplicates evidence envelopes against the exact candidate SHA;
+3. pairs compatible event/evidence identities into deterministic synchronization observations;
+4. reconciles those observations using the Phase B reconciliation contract; and
+5. emits a deterministic report containing accepted/rejected inputs and conflict/block reasons.
+
+The CLI is:
+
+`node scripts/forge-sync-dry-run.mjs config/forge-sync-dry-run.example.json`
+
+The dry-run contract explicitly reports `authorizationGranted: false` and `productionMutation: false`. It has no network, database, deployment, merge, governance-approval, or production-authorization capability.
