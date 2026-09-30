@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import {
   buildUiGovernanceEvidence,
@@ -9,6 +9,13 @@ const target=resolve(process.argv[2] || "public/release-manifest.json");
 const uiGovernance=hasUiGovernanceEnvironment(process.env)
   ? buildUiGovernanceEvidence(process.env)
   : null;
+const attestationFile=resolve(
+  process.env.DATANEST_DB_ATTESTATION_FILE || ".datanest/release-attestation.json"
+);
+let databaseAttestation=null;
+if(existsSync(attestationFile)){
+  databaseAttestation=JSON.parse(readFileSync(attestationFile,"utf8"));
+}
 
 const manifest={
   project:"Resonance DataNest",
@@ -31,6 +38,23 @@ const manifest={
   },
   supabaseProject:"sgqdmfgjbprsoqsmgigi",
   ...(uiGovernance ? {uiGovernance} : {}),
+  releaseAttestation:{
+    database:databaseAttestation
+      ? {
+          status:databaseAttestation.status,
+          source:databaseAttestation.source,
+          verifiedAt:databaseAttestation.verifiedAt,
+          fingerprint:databaseAttestation.fingerprint
+        }
+      : {
+          status:"not_collected",
+          source:"live-production-database"
+        },
+    edgeFunctions:{
+      status:"unverified",
+      reason:"Pages build does not query Supabase Edge Function deployment metadata."
+    }
+  },
   generatedAt:new Date().toISOString()
 };
 mkdirSync(dirname(target),{recursive:true});
