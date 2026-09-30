@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
 import { encryptBackup, parseBackupKey } from "./lib/encrypted-backup.mjs";
+import { assertDedicatedDataNestAiStaging } from "./lib/datanest-ai-staging-environment.mjs";
 
 const url=process.env.DATANEST_AI_STAGING_URL;
 const serviceKey=process.env.DATANEST_AI_STAGING_SERVICE_ROLE_KEY;
@@ -12,7 +13,8 @@ if(!url||!serviceKey||!projectRef){
   throw new Error("DATANEST_AI_STAGING_URL, DATANEST_AI_STAGING_SERVICE_ROLE_KEY and DATANEST_AI_STAGING_PROJECT_REF are required.");
 }
 
-const admin=createClient(url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
+const staging=assertDedicatedDataNestAiStaging({url,projectRef});
+const admin=createClient(staging.url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
 
 const tableOrder=[
   ["ai_sessions",["id"]],
@@ -49,7 +51,7 @@ for(const [table,orderColumns] of tableOrder){
 const payload={
   formatVersion:1,
   exportedAt:new Date().toISOString(),
-  projectRef,
+  projectRef:staging.projectRef,
   tables
 };
 
