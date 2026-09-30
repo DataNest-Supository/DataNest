@@ -4,21 +4,14 @@ set -eu
 # Forge Phase A ingestion boundary.
 # Raw envelopes are archived immutably by content address; the existing
 # Node adapter then builds/updates the read-only provenance projection.
-#
-# Required:
-#   SOURCE_ENVELOPE=/path/to/release-evidence-envelope.json
-# Optional:
-#   ARCHIVE_DIR=./evidence/archive
-#   INDEX_PATH=./evidence/forge-evidence-index.json
-#   EXPECTED_SHA256=<64 lowercase hex characters>
-#
-# This script never changes production authority.
 
 SOURCE_ENVELOPE=${SOURCE_ENVELOPE:?Set SOURCE_ENVELOPE to a release-evidence-envelope-v1 JSON file}
 ARCHIVE_DIR=${ARCHIVE_DIR:-./evidence/archive}
 INDEX_PATH=${INDEX_PATH:-./evidence/forge-evidence-index.json}
+ADAPTER_PATH=${ADAPTER_PATH:-$(CDPATH= cd -- "$(dirname "$0")/../../../scripts" && pwd)/forge-index-release-evidence.mjs}
 
 [ -f "$SOURCE_ENVELOPE" ] || { echo "Source envelope not found: $SOURCE_ENVELOPE" >&2; exit 1; }
+[ -f "$ADAPTER_PATH" ] || { echo "Forge adapter not found: $ADAPTER_PATH" >&2; exit 1; }
 
 SCHEMA_VERSION=$(node -e 'const fs=require("fs");const x=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));process.stdout.write(String(x.schemaVersion||""))' "$SOURCE_ENVELOPE")
 [ "$SCHEMA_VERSION" = "release-evidence-envelope-v1" ] || {
@@ -47,7 +40,7 @@ else
   chmod 0444 "$ARCHIVE_PATH"
 fi
 
-node /workspace/scripts/forge-index-release-evidence.mjs "$ARCHIVE_PATH" "$INDEX_PATH"
+node "$ADAPTER_PATH" "$ARCHIVE_PATH" "$INDEX_PATH"
 
 echo "Forge evidence accepted: $SHA256"
 echo "Production authority was not changed."
