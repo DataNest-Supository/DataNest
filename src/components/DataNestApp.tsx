@@ -1476,7 +1476,13 @@ export default function DataNestApp({session}:{session:Session}) {
       ><span aria-hidden="true">◉</span><span><b>RONSAS</b><small>Open governed application hub</small></span><strong aria-hidden="true">↗</strong></a>}
       <div className="sidebarFooter">
         <div className="userMini"><div className="avatar">{(session.user.email||"U").slice(0,1).toUpperCase()}</div><div><b>{session.user.email?.split("@")[0]||"Authorized user"}</b><small>{membership ? membership.role.toUpperCase()+" · Authenticated" : "Authenticated"}</small></div></div>
-        {membership&&(membership.role==="owner"||membership.role==="admin")&&<AdminRndModeToggle role={membership.role}/>}\n        <button className="accountSecurityShortcut" type="button" onClick={openAccountSecurity}><span aria-hidden="true">◈</span><span><b>Account security</b><small>Change password or email a reset link</small></span></button>
+        {project&&membership&&(membership.role==="owner"||membership.role==="admin")&&<AdminRndModeToggle
+          role={membership.role}
+          projectId={project.id}
+          currentUserId={session.user.id}
+          onOpenProductLab={()=>{setView("productlab");setMobileOpen(false);}}
+        />}
+        <button className="accountSecurityShortcut" type="button" onClick={openAccountSecurity}><span aria-hidden="true">◈</span><span><b>Account security</b><small>Change password or email a reset link</small></span></button>
         <div className="mobileNavActions" aria-label="Mobile workspace actions">
           <div className={"mobileSystemStatus "+health.state} title={health.message}>
             <span className={"statusDot "+health.state}/>
