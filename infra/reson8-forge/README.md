@@ -113,3 +113,17 @@ No existing DataNest production service needs to be overwritten for the Forge de
 7. Connect the Supository catalog to repository/project/service discovery.
 8. Validate backup + restore.
 9. Consider an authority cutover only as a separate governed migration.
+
+## Phase A: read-only evidence ingestion
+
+The Forge evidence adapter consumes only the versioned `release-evidence-envelope-v1` contract. It builds a local `forge-evidence-index-v1` projection for provenance correlation and recovery discovery.
+
+This adapter is deliberately **read-only with respect to release authority**:
+
+- it cannot set or elevate production authority;
+- it preserves `productionAuthority` and `productionDeploymentAllowed` exactly as supplied;
+- it does not deploy, merge, approve, certify or rewrite DataNest releases;
+- identical repository/SHA/release evidence is deduplicated;
+- DataNest remains the canonical authority during Phase A.
+
+The intended next integration is a Forge-hosted ingestion job that calls the same adapter against signed/immutable envelopes after repository replication. That integration must remain observational until a separately governed authority migration is approved.
