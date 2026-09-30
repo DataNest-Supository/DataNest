@@ -1,5 +1,5 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 const artifactPath=resolve(process.argv[2] || ".datanest/edge-function-release.json");
 const releaseSha=(process.env.DATANEST_RELEASE_SHA || "").trim();
@@ -118,11 +118,28 @@ for(const slug of requiredFunctions){
   if(observed.verify_jwt!==true)throw new Error("Live production Edge Function "+slug+" JWT verification is not enabled.");
 }
 
-console.log(JSON.stringify({
+const verifiedAttestation={
   schemaVersion:"edge-function-release-attestation-v2",
   status:"verified",
+  source:attestation.source,
+  repository,
+  project:projectRef,
   sourceCommit:releaseSha,
   workflowRunId:reference,
   sourceTreeSha256:attestation.sourceTreeSha256,
+  functions:attestedFunctions,
+  verifiedAt:new Date().toISOString()
+};
+
+const target=resolve(".datanest/edge-function-attestation.json");
+mkdirSync(dirname(target),{recursive:true});
+writeFileSync(target,JSON.stringify(verifiedAttestation,null,2)+"\n","utf8");
+
+console.log(JSON.stringify({
+  schemaVersion:verifiedAttestation.schemaVersion,
+  status:verifiedAttestation.status,
+  sourceCommit:verifiedAttestation.sourceCommit,
+  workflowRunId:verifiedAttestation.workflowRunId,
+  sourceTreeSha256:verifiedAttestation.sourceTreeSha256,
   functionCount:requiredFunctions.length
 },null,2));
