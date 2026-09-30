@@ -119,8 +119,10 @@ test("Pages post-deployment verification covers all public legal routes and gove
 
   assert.match(pagesWorkflow,/https:\/\/youtubeoptimizer\.life\//);
   assert.match(pagesWorkflow,/ui-governance-release\.json/);
-  assert.match(pagesWorkflow,/"releaseState":"authorized"/);
-  assert.match(pagesWorkflow,/"authorized":true/);
+  assert.match(pagesWorkflow,/release_mode:/);
+  assert.match(pagesWorkflow,/owner_test_mode/);
+  assert.match(pagesWorkflow,/evidence\.releaseState!==mode/);
+  assert.match(pagesWorkflow,/evidence\.productionDeploymentAllowed!==true/);
 });
 
 test("RONSAS validation is required when the Pages release gate changes",()=>{
@@ -132,4 +134,46 @@ test("RONSAS validation is required when the Pages release gate changes",()=>{
     ronsasWorkflow,
     /push:[\s\S]*?paths:[\s\S]*?"\.github\/workflows\/pages\.yml"/
   );
+});
+
+
+test("Owner Live Test Mode allows temporary production while human review refs remain pending",()=>{
+  const expiry=new Date(Date.now()+2*60*60*1000).toISOString();
+  const result=verify({
+    DATANEST_UI_RELEASE_STATE:"owner_test_mode",
+    DATANEST_UI_PRODUCTION_CONFIRMATION:"AUTHORIZE OWNER TEST MODE",
+    DATANEST_UI_GOVERNANCE_REVIEW_REF:"",
+    DATANEST_UI_LEGAL_REVIEW_REF:"",
+    DATANEST_UI_EXTERNAL_REVIEW_REF:"",
+    DATANEST_UI_OWNER_TEST_MODE_REF:"PR #291 owner authorization",
+    DATANEST_UI_OWNER_TEST_MODE_OWNER_LOGIN:"ResonanceAppDev",
+    DATANEST_UI_OWNER_TEST_MODE_ACTOR:"ResonanceAppDev",
+    DATANEST_UI_OWNER_TEST_MODE_EXPIRES_AT:expiry,
+    DATANEST_UI_OWNER_TEST_MODE_REASON:"Gather live production evidence required for outstanding governance review."
+  });
+  assert.equal(result.status,0,result.stderr);
+  assert.match(result.stdout,/owner_test_mode/);
+});
+
+test("Owner Live Test Mode rejects actor mismatch and excessive duration",()=>{
+  const expiry=new Date(Date.now()+73*60*60*1000).toISOString();
+  const base={
+    DATANEST_UI_RELEASE_STATE:"owner_test_mode",
+    DATANEST_UI_PRODUCTION_CONFIRMATION:"AUTHORIZE OWNER TEST MODE",
+    DATANEST_UI_GOVERNANCE_REVIEW_REF:"",
+    DATANEST_UI_LEGAL_REVIEW_REF:"",
+    DATANEST_UI_EXTERNAL_REVIEW_REF:"",
+    DATANEST_UI_OWNER_TEST_MODE_REF:"owner authorization",
+    DATANEST_UI_OWNER_TEST_MODE_OWNER_LOGIN:"ResonanceAppDev",
+    DATANEST_UI_OWNER_TEST_MODE_ACTOR:"AnotherAdmin",
+    DATANEST_UI_OWNER_TEST_MODE_EXPIRES_AT:expiry,
+    DATANEST_UI_OWNER_TEST_MODE_REASON:"Gather live production evidence required for outstanding governance review."
+  };
+  const mismatch=verify(base);
+  assert.notEqual(mismatch.status,0);
+  assert.match(mismatch.stderr,/actor must match/i);
+
+  const tooLong=verify({...base,DATANEST_UI_OWNER_TEST_MODE_ACTOR:"ResonanceAppDev"});
+  assert.notEqual(tooLong.status,0);
+  assert.match(tooLong.stderr,/72 hours/i);
 });
