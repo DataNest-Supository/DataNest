@@ -23,8 +23,11 @@ const signed = dataOf(await client.auth.signInWithPassword({
   password: process.env.DATANEST_AI_E2E_PASSWORD
 }), "Synthetic sign-in");
 assert.ok(signed.session?.access_token, "An authenticated user token is required.");
-const project = dataOf(await client.from("projects").select("id").eq("slug", "resonance-datanest").single(), "Fixture project lookup");
-const job = dataOf(await client.from("jobs").select("id,requirements").eq("project_id", project.id).eq("title", "DataNest AI E2E Job").single(), "Fixture job lookup");
+// Dedicated staging can enforce a restrictive Mirror owner-only RLS policy. Use the
+// service role only to locate the pre-seeded governed fixture identities; every
+// user-facing RPC and Edge Function below still runs with the synthetic user's token.
+const project = dataOf(await admin.from("projects").select("id").eq("slug", "resonance-datanest").single(), "Fixture project lookup");
+const job = dataOf(await admin.from("jobs").select("id,requirements").eq("project_id", project.id).eq("title", "DataNest AI E2E Job").single(), "Fixture job lookup");
 assert.equal(job.requirements?.environment, "staging", "The job must be an explicit staging fixture.");
 const fixtureMarker = "backend-acceptance-" + randomUUID();
 const results = [];
