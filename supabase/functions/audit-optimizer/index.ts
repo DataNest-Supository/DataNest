@@ -13,6 +13,7 @@ const allowedOrigins=new Set([
 ]);
 
 const riskClasses=new Set(["low","moderate","high","critical"]);
+const reviewLanes=new Set(["audit_optimizer","workflow_reviewer","code_cleaner","cross_system"]);
 
 function cors(origin:string|null){
   const safe=origin&&allowedOrigins.has(origin)?origin:"https://datanest-supository.github.io";
@@ -210,6 +211,17 @@ async function validateDraft(
 
     const proposedChange=objectValue(value.proposedChange);
     const guardrails=objectValue(value.guardrails);
+    const laneRaw=String(proposedChange.lane||"cross_system").trim().toLowerCase();
+    const lane=reviewLanes.has(laneRaw)?laneRaw:"cross_system";
+    const normalizedProposedChange={...proposedChange,lane};
+    const normalizedGuardrails={
+      ...guardrails,
+      collaboration:{
+        controller:"DataNest AI",
+        reviewers:["Audit Optimizer","Workflow Reviewer","Code Cleaner"]
+      },
+      noAutomaticCodeChanges:true
+    };
     const evidenceRefs=stringArray(value.evidenceRefs).filter(ref=>allowedEvidenceRefs.has(ref));
     if(evidenceRefs.length===0)continue;
     if(evidenceRefs.every(ref=>passingControlEvidenceRefs.has(ref)))continue;
@@ -219,11 +231,13 @@ async function validateDraft(
     const confidenceRaw=Number(value.confidence);
     const confidence=Number.isFinite(confidenceRaw)?Math.max(0,Math.min(1,confidenceRaw)):null;
     const fingerprint=await sha256Text([
-      title.toLowerCase(),problemStatement.toLowerCase(),JSON.stringify(proposedChange)
+      title.toLowerCase(),problemStatement.toLowerCase(),JSON.stringify(normalizedProposedChange)
     ].join("\n"));
 
     suggestions.push({
-      fingerprint,title,problemStatement,hypothesis,desiredOutcome,proposedChange,guardrails,
+      fingerprint,title,problemStatement,hypothesis,desiredOutcome,
+      proposedChange:normalizedProposedChange,
+      guardrails:normalizedGuardrails,
       evidenceRefs,standardRefs,riskClass,confidence
     });
   }
@@ -256,7 +270,7 @@ Deno.serve(async(request)=>{
     if(!projectId)return json({error:"projectId_required"},400,origin);
 
     let actorUserId="";
-    let triggerKind:"owner"|"cron";
+    let triggerKind:"owner"|"admin"|"cron";
 
     if(action==="cron"){
       triggerKind="cron";
@@ -280,7 +294,6 @@ Deno.serve(async(request)=>{
       actorUserId=String(owners?.[0]?.user_id||"");
       if(!actorUserId)return json({error:"active_owner_required"},409,origin);
     }else if(action==="run"){
-      triggerKind="owner";
       const authHeader=request.headers.get("authorization")||"";
       if(!authHeader)return json({error:"authentication_required"},401,origin);
       const userClient=createClient(url,anon,{
@@ -298,9 +311,13 @@ Deno.serve(async(request)=>{
         .eq("user_id",actorUserId)
         .maybeSingle();
       if(membershipError)throw membershipError;
-      if(membership?.status!=="active"||membership.role!=="owner"){
-        return json({error:"owner_access_required"},403,origin);
+      if(
+        membership?.status!=="active"||
+        !["owner","admin"].includes(String(membership.role||""))
+      ){
+        return json({error:"optimizer_admin_access_required"},403,origin);
       }
+      triggerKind=membership.role==="owner"?"owner":"admin";
     }else{
       return json({error:"unsupported_action"},400,origin);
     }
@@ -397,11 +414,17 @@ Deno.serve(async(request)=>{
     }
 
     const governedPrompt=[
-      "You are the Resonance DataNest Audit Optimizer.",
-      "Your only authority is to SUGGEST optimizations for human owner review.",
-      "Never approve, vote, ratify, deploy, mutate production, alter roles, or claim certification.",
+      "You are the Resonance DataNest AI System Optimizer.",
+      "Coordinate three explicit review lanes for the entire governed system:",
+      "1. Audit Optimizer — inspect evidence, controls, governance, security, compliance, reliability, cost and operational anomalies.",
+      "2. Workflow Reviewer — inspect Job flow, queues, handoffs, approvals, blocked work, traceability, scheduling and process friction.",
+      "3. Code Cleaner — identify evidence-supported maintainability, duplication, test, configuration, performance or cleanup opportunities. Code Cleaner may propose patch plans and verification steps, but must never edit, merge or deploy code.",
+      "Use cross_system when a suggestion materially spans more than one lane.",
+      "Your only authority is to SUGGEST optimizations for Admin/Owner review. Only an Owner may approve a suggestion into formal governance.",
+      "Never approve, vote, ratify, deploy, mutate production, alter roles, weaken controls, edit source code, or claim certification.",
       "Analyze the supplied DataNest governance, audit, operational, AI-usage, impact-assessment, and control evidence.",
       "Prefer concrete, reversible, testable improvements. Preserve dissent, uncertainty, provenance, privacy, security, accessibility, and existing governance boundaries.",
+      "Do not invent source-code defects. Code Cleaner suggestions require evidence that supports a code, configuration, test, or maintainability implication; otherwise record the limitation and use another lane or return no suggestion.",
       "Each suggestion must cite evidenceRefs using identifiers or trace keys present in the supplied evidence. Use standardRefs only from the supplied active standard_key values.",
       "For monitored governance controls, control_evidence contains only the latest applicable state per control/check. Superseded monitor failures are intentionally omitted from active-problem evidence.",
       "Never propose remediation from a superseded failed monitor record when the latest evidence for that same control/check is passed or resolved. Do not infer an active problem from a current passed/resolved control state.",
@@ -414,8 +437,18 @@ Deno.serve(async(request)=>{
           problemStatement:"string",
           hypothesis:"string",
           desiredOutcome:"string",
-          proposedChange:{description:"string",implementationOutline:["string"],verification:["string"],rollback:"string"},
-          guardrails:{humanApproval:true,noAutomaticDeployment:true},
+          proposedChange:{
+            lane:"audit_optimizer|workflow_reviewer|code_cleaner|cross_system",
+            description:"string",
+            implementationOutline:["string"],
+            verification:["string"],
+            rollback:"string"
+          },
+          guardrails:{
+            humanApproval:true,
+            noAutomaticDeployment:true,
+            noAutomaticCodeChanges:true
+          },
           evidenceRefs:["string"],
           standardRefs:["active-standard-key"],
           riskClass:"low|moderate|high|critical",
