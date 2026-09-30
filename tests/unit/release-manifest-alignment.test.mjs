@@ -101,10 +101,10 @@ test("release manifest embeds UI governance traceability when UI release environ
 
 
 test("Pages release wiring requires live database and Edge Function attestation",()=>{
-  assert.match(pagesWorkflow,/database_migration_head:/);
-  assert.match(pagesWorkflow,/default:\s*20260930105423/);
-  assert.match(pagesWorkflow,/database_migration_name:/);
-  assert.match(pagesWorkflow,/default:\s*datanest_release_attestation_v1/);
+  assert.match(pagesWorkflow,/database_migration_reference:/);
+  assert.match(pagesWorkflow,/default: '\{"head":"20260930105423","name":"datanest_release_attestation_v1"\}'/);
+  assert.doesNotMatch(pagesWorkflow,/database_migration_head:/);
+  assert.doesNotMatch(pagesWorkflow,/database_migration_name:/);
   assert.match(pagesWorkflow,/verify-production-release-attestation\.mjs/);
   assert.match(pagesWorkflow,/verify-production-edge-function-release-reference\.mjs/);
   assert.match(pagesWorkflow,/edge_function_release_reference:/);
