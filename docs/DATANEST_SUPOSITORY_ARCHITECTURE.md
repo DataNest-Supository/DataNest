@@ -115,3 +115,32 @@ Deploying Reson8 Forge must not:
 - create a second conflicting source of truth.
 
 The first production objective is **sovereign replication and extension**. Replacement is a separate migration decision.
+
+## MIRROR-DATANEST R&D lane
+
+`DataNest-Supository/Mirror-DataNest` is the designated ungated R&D clone of the canonical DataNest Supository.
+
+Its role is to optimize application code, user experience, build behavior, deployment design and infrastructure without imposing canonical production approval gates on every experimental iteration.
+
+Authority boundary:
+
+- Mirror-DataNest is not source-of-truth authority.
+- Mirror-DataNest does not receive production deployment authority.
+- Mirror-DataNest must not directly synchronize to `DataNest/main`.
+- Production secrets and privileged production write paths do not belong in the mirror.
+- Automated checks in the mirror are advisory R&D evidence rather than governance gates.
+
+Promotion path:
+
+```text
+DataNest/main
+    -> Mirror-DataNest R&D
+    -> selected candidate + evidence
+    -> promotion branch in DataNest
+    -> canonical pull request
+    -> human reviewer approval
+    -> DataNest/main
+    -> governed production deployment
+```
+
+The synchronization boundary is therefore where production governance resumes. A successful mirror preview is evidence for review, not authorization to release.
