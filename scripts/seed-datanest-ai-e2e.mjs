@@ -1,15 +1,19 @@
 import { createClient } from "@supabase/supabase-js";
 
-const url=process.env.DATANEST_AI_STAGING_URL;
-const serviceKey=process.env.DATANEST_AI_STAGING_SERVICE_ROLE_KEY;
+const url=process.env.DATANEST_CERTIFICATION_URL;
+const serviceKey=process.env.DATANEST_CERTIFICATION_SERVICE_ROLE_KEY;
 const email=process.env.DATANEST_AI_E2E_EMAIL;
 const password=process.env.DATANEST_AI_E2E_PASSWORD;
 
 if(!url||!serviceKey||!email||!password){
-  throw new Error("DATANEST_AI_STAGING_URL, DATANEST_AI_STAGING_SERVICE_ROLE_KEY, DATANEST_AI_E2E_EMAIL and DATANEST_AI_E2E_PASSWORD are required.");
+  throw new Error("DATANEST_CERTIFICATION_URL, DATANEST_CERTIFICATION_SERVICE_ROLE_KEY, DATANEST_AI_E2E_EMAIL and DATANEST_AI_E2E_PASSWORD are required.");
+}
+const target=new URL(url);
+if(!["127.0.0.1","localhost"].includes(target.hostname)){
+  throw new Error("DataNest AI canonical E2E fixtures must be seeded only into the loopback-local certification stack.");
 }
 
-const admin=createClient(url,serviceKey,{
+const admin=createClient(target.origin,serviceKey,{
   auth:{persistSession:false,autoRefreshToken:false}
 });
 
@@ -52,7 +56,7 @@ async function ensureProject(userId){
     const inserted=await admin.from("projects").insert({
       slug:"resonance-datanest",
       name:"Resonance DataNest",
-      description:"Governed DataNest AI staging acceptance project.",
+      description:"Governed DataNest AI canonical certification project.",
       status:"ACTIVE"
     }).select("id,slug").single();
     if(inserted.error)throw inserted.error;
@@ -87,7 +91,7 @@ async function ensureJob(projectId,{title,description,priority}){
     priority,
     status:"READY",
     required_capabilities:["chat"],
-    requirements:{environment:"staging"},
+    requirements:{environment:"certification"},
     acceptance:{traceable:true,uncertified_session:true}
   }).select("id,job_number,title").single();
   if(inserted.error)throw inserted.error;
@@ -99,16 +103,17 @@ if(!user)throw new Error("Unable to resolve E2E user.");
 const project=await ensureProject(user.id);
 const job=await ensureJob(project.id,{
   title:"DataNest AI E2E Job",
-  description:"Deterministic staging-only Job Manifest for governed DataNest AI acceptance.",
+  description:"Deterministic canonical-only Job Manifest for governed DataNest AI certification.",
   priority:70
 });
 const switchJob=await ensureJob(project.id,{
   title:"DataNest AI E2E Job B",
-  description:"Second deterministic staging-only Job Manifest for governed context-switch acceptance.",
+  description:"Second deterministic canonical-only Job Manifest for governed context-switch certification.",
   priority:60
 });
 
 console.log(JSON.stringify({
+  certificationTarget:target.origin,
   projectId:project.id,
   jobId:job.id,
   jobNumber:job.job_number,
