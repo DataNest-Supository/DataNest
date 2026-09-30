@@ -29,7 +29,7 @@ const manifest={
     ronsasStatus:process.env.DATANEST_EDGE_RONSAS_STATUS || "ronsas-status@1",
     externalAudit:process.env.DATANEST_EDGE_EXTERNAL_AUDIT || "external-audit@1"
   },
-  supabaseProject:"sgqdmfgjbprsoqsmgigi",
+  supabaseProject:process.env.DATANEST_SUPABASE_PROJECT || "sgqdmfgjbprsoqsmgigi",
   ...(uiGovernance ? {uiGovernance} : {}),
   generatedAt:new Date().toISOString()
 };
