@@ -28,9 +28,7 @@ const REVIEW_ENV=[
 const OWNER_TEST_MODE_REQUIRED_REVIEW_KEYS=new Set([
   "prVerification",
   "securityScan",
-  "ronsasValidation",
-  "visualReview",
-  "productionAuthorization"
+  "ronsasValidation"
 ]);
 
 function parseIsoDate(value,label){
@@ -80,6 +78,10 @@ function buildOwnerTestMode(env,generatedAt){
 
   const acceptedHours=Number(durationHours.toFixed(3));
   const deltaHours=Number((acceptedHours-proposal.recommendedHours).toFixed(3));
+  const boundedDeadline=(hours)=>{
+    const desired=now+hours*3_600_000;
+    return new Date(Math.min(desired,expiry.millis)).toISOString();
+  };
 
   return {
     active:true,
@@ -94,6 +96,13 @@ function buildOwnerTestMode(env,generatedAt){
     maxHours:OWNER_TEST_MODE_MAX_HOURS,
     durationHours:acceptedHours,
     evidencePurpose:"Gather production evidence required to complete outstanding human governance review gates.",
+    evidenceDeadlines:{
+      visualReview:boundedDeadline(24),
+      governanceReview:boundedDeadline(48),
+      legalReview:new Date(expiry.millis).toISOString(),
+      externalReview:new Date(expiry.millis).toISOString(),
+      productionAuthorization:new Date(expiry.millis).toISOString()
+    },
     automaticExpiryAction:"Replace live Pages site with an Owner Test Mode expired holding page unless a fully authorized release supersedes it.",
     timeframeProposal:{
       ...proposal,
