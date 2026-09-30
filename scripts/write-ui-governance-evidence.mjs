@@ -17,6 +17,7 @@ export const UI_GOVERNANCE_IMPLEMENTATION_PLANS=[
 const REVIEW_ENV=[
   ["mirrorPromotion","DATANEST_UI_MIRROR_PROMOTION_REF"],
   ["mirrorLiveEvidence","DATANEST_UI_MIRROR_LIVE_EVIDENCE_REF"],
+  ["datanestAiCertification","DATANEST_UI_DATANEST_AI_CERTIFICATION_REF"],
   ["auditOptimizer","DATANEST_UI_AUDIT_OPTIMIZER_REF"],
   ["prVerification","DATANEST_UI_PR_VERIFICATION_REF"],
   ["securityScan","DATANEST_UI_SECURITY_REF"],
