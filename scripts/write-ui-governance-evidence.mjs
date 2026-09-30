@@ -31,6 +31,8 @@ const REVIEW_ENV=[
 
 const OWNER_TEST_MODE_REQUIRED_REVIEW_KEYS=new Set([
   "mirrorPromotion",
+  "mirrorLiveEvidence",
+  "datanestAiCertification",
   "auditOptimizer",
   "prVerification",
   "securityScan",
