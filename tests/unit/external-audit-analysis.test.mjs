@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import { validateAuditDraft } from "../../supabase/functions/_shared/externalAuditAnalysis.ts";
 
 const analysis=fs.readFileSync("supabase/functions/_shared/externalAuditAnalysis.ts","utf8");
 const fetchSource=fs.readFileSync("supabase/functions/_shared/externalAuditFetch.ts","utf8");
@@ -43,4 +44,27 @@ test("authenticated assessment creation can append its governed event atomically
   assert.match(hardening,/Authentication is required/);
   assert.match(hardening,/insert into public\.external_audit_events/);
   assert.match(hardening,/external_audit_assessment_identity_guard/);
+});
+
+
+test("non-numeric provider confidence is normalized to a finite value",()=>{
+  const draft=validateAuditDraft({
+    summary:"test",
+    limitations:[],
+    findings:[{
+      criterionId:"ISO 19011",
+      evidenceIds:["11111111-1111-4111-8111-111111111111"],
+      observation:"Observed test condition.",
+      limitation:null,
+      claimKind:"observed",
+      severity:"info",
+      confidence:"unknown",
+      draftAction:null
+    }]
+  },{
+    sourceIds:["11111111-1111-4111-8111-111111111111"],
+    criterionIds:["ISO 19011"]
+  });
+  assert.equal(Number.isFinite(draft.findings[0].confidence),true);
+  assert.equal(draft.findings[0].confidence,0);
 });
