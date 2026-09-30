@@ -94,9 +94,9 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p /tmp/mirror-promotion
-          git diff --binary "$BASE_SHA" "$MIRROR_SHA" -- .             ':(exclude).github/workflows/ci.yml'             ':(exclude).github/workflows/pages.yml'             ':(exclude).github/workflows/production-candidate.yml'             ':(exclude)config/mirror-rd-policy.json'             ':(exclude)docs/MIRROR_DATANEST_RD_MODE.md'             ':(exclude)docs/PRODUCTION_CANDIDATE_HANDOFF.md'             ':(exclude)README.md'             > /tmp/mirror-promotion/candidate.patch
+          git diff --binary "$BASE_SHA" "$MIRROR_SHA" -- .             ':(exclude).github/workflows/ci.yml'             ':(exclude).github/workflows/pages.yml'             ':(exclude).github/workflows/production-candidate.yml'             ':(exclude)config/mirror-rd-policy.json'             ':(exclude)docs/MIRROR_DATANEST_RD_MODE.md'             ':(exclude)docs/PRODUCTION_CANDIDATE_HANDOFF.md'             ':(exclude)scripts/mirror-test-suite.mjs'             ':(exclude)README.md'             > /tmp/mirror-promotion/candidate.patch
 
-          git diff --name-status "$BASE_SHA" "$MIRROR_SHA" -- .             ':(exclude).github/workflows/ci.yml'             ':(exclude).github/workflows/pages.yml'             ':(exclude).github/workflows/production-candidate.yml'             ':(exclude)config/mirror-rd-policy.json'             ':(exclude)docs/MIRROR_DATANEST_RD_MODE.md'             ':(exclude)docs/PRODUCTION_CANDIDATE_HANDOFF.md'             ':(exclude)README.md'             > /tmp/mirror-promotion/changed-files.txt
+          git diff --name-status "$BASE_SHA" "$MIRROR_SHA" -- .             ':(exclude).github/workflows/ci.yml'             ':(exclude).github/workflows/pages.yml'             ':(exclude).github/workflows/production-candidate.yml'             ':(exclude)config/mirror-rd-policy.json'             ':(exclude)docs/MIRROR_DATANEST_RD_MODE.md'             ':(exclude)docs/PRODUCTION_CANDIDATE_HANDOFF.md'             ':(exclude)scripts/mirror-test-suite.mjs'             ':(exclude)README.md'             > /tmp/mirror-promotion/changed-files.txt
 
           if [ ! -s /tmp/mirror-promotion/candidate.patch ]; then
             echo "::error::Mirror candidate contains no promotable changes after R&D-only exclusions."
