@@ -100,6 +100,18 @@ test("release manifest embeds UI governance traceability when UI release environ
 });
 
 
+test("file worker production deployment is bound to an exact SHA and protected environment",()=>{
+  const workflow=readFileSync(
+    new URL("../../.github/workflows/datanest-ai-file-worker-deploy.yml",import.meta.url),
+    "utf8"
+  );
+  assert.match(workflow,/release_sha:/);
+  assert.match(workflow,/ref: \$\{\{ inputs\.release_sha \}\}/);
+  assert.match(workflow,/git\.merge-base --is-ancestor/);
+  assert.match(workflow,/environment:\n      name: github-pages/);
+  assert.match(workflow,/--no-verify-jwt/);
+});
+
 test("Pages workflow stays within GitHub workflow_dispatch input limit",()=>{
   const dispatchBlock=pagesWorkflow.split("\npermissions:\n",1)[0];
   const inputs=dispatchBlock.match(/^      [A-Za-z0-9_-]+:$/gm)||[];
