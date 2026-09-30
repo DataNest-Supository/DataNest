@@ -1,18 +1,20 @@
 import { createClient } from "@supabase/supabase-js";
 import crypto from "node:crypto";
 
-const url=process.env.DATANEST_AI_STAGING_URL;
-const publishableKey=process.env.DATANEST_AI_STAGING_PUBLISHABLE_KEY;
-const serviceKey=process.env.DATANEST_AI_STAGING_SERVICE_ROLE_KEY;
+const url=process.env.DATANEST_CERTIFICATION_URL;
+const publishableKey=process.env.DATANEST_CERTIFICATION_PUBLISHABLE_KEY;
+const serviceKey=process.env.DATANEST_CERTIFICATION_SERVICE_ROLE_KEY;
+const stagingUrl=process.env.DATANEST_AI_STAGING_URL;
+const stagingServiceKey=process.env.DATANEST_AI_STAGING_SERVICE_ROLE_KEY;
 const email=process.env.DATANEST_AI_E2E_EMAIL;
 const password=process.env.DATANEST_AI_E2E_PASSWORD;
 
-if(!url||!publishableKey||!serviceKey||!email||!password){
-  throw new Error("Staging URL, publishable/service keys, and E2E credentials are required.");
+if(!url||!publishableKey||!serviceKey||!stagingUrl||!stagingServiceKey||!email||!password){
+  throw new Error("Canonical certification URL/keys, staging service credentials, and E2E credentials are required.");
 }
 
 const client=createClient(url,publishableKey,{auth:{persistSession:false,autoRefreshToken:false}});
-const admin=createClient(url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
+const admin=createClient(stagingUrl,stagingServiceKey,{auth:{persistSession:false,autoRefreshToken:false}});
 const signed=await client.auth.signInWithPassword({email,password});
 if(signed.error||!signed.data.user)throw signed.error||new Error("E2E sign-in failed.");
 const userId=signed.data.user.id;
@@ -90,11 +92,11 @@ try{
   }
 
   for(let pass=0;pass<3;pass++){
-    const response=await fetch(url.replace(/\/$/,"")+"/functions/v1/datanest-ai-file-worker",{
+    const response=await fetch(stagingUrl.replace(/\/$/,"")+"/functions/v1/datanest-ai-file-worker",{
       method:"POST",
       headers:{
         "Content-Type":"application/json",
-        "x-datanest-worker-auth":serviceKey
+        "x-datanest-worker-auth":stagingServiceKey
       },
       body:JSON.stringify({action:"drain"})
     });
@@ -136,9 +138,9 @@ try{
   });
   if(redelivery.error)throw redelivery.error;
 
-  const redeliveryResponse=await fetch(url.replace(/\/$/,"")+"/functions/v1/datanest-ai-file-worker",{
+  const redeliveryResponse=await fetch(stagingUrl.replace(/\/$/,"")+"/functions/v1/datanest-ai-file-worker",{
     method:"POST",
-    headers:{"Content-Type":"application/json","x-datanest-worker-auth":serviceKey},
+    headers:{"Content-Type":"application/json","x-datanest-worker-auth":stagingServiceKey},
     body:JSON.stringify({action:"drain"})
   });
   if(!redeliveryResponse.ok)throw new Error("READY redelivery drain failed.");
