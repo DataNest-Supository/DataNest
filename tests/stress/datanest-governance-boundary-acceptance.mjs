@@ -2,16 +2,17 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 
-const target=new URL(process.env.DATANEST_AI_STAGING_URL || "https://invalid.invalid");
-assert.equal(target.href,"https://qchttpcyqlqnhvahprhz.supabase.co/","SEC-01 acceptance is dedicated-staging-only.");
-for(const name of ["DATANEST_AI_STAGING_PUBLISHABLE_KEY","DATANEST_AI_STAGING_SERVICE_ROLE_KEY","DATANEST_AI_E2E_PASSWORD"]){
+const target=new URL(process.env.DATANEST_CERTIFICATION_URL || "https://invalid.invalid");
+assert.equal(process.env.DATANEST_CERTIFICATION_TARGET,"local-canonical","SEC-01 acceptance must run on the isolated canonical certification target.");
+assert.ok(["127.0.0.1","localhost"].includes(target.hostname),"SEC-01 acceptance must remain loopback-local.");
+for(const name of ["DATANEST_CERTIFICATION_PUBLISHABLE_KEY","DATANEST_CERTIFICATION_SERVICE_ROLE_KEY","DATANEST_AI_E2E_PASSWORD"]){
   assert.ok(process.env[name],`${name} is required.`);
 }
 
 const {createClient}=await import("@supabase/supabase-js");
 const options={auth:{persistSession:false,autoRefreshToken:false}};
-const publishableKey=process.env.DATANEST_AI_STAGING_PUBLISHABLE_KEY;
-const admin=createClient(target.origin,process.env.DATANEST_AI_STAGING_SERVICE_ROLE_KEY,options);
+const publishableKey=process.env.DATANEST_CERTIFICATION_PUBLISHABLE_KEY;
+const admin=createClient(target.origin,process.env.DATANEST_CERTIFICATION_SERVICE_ROLE_KEY,options);
 const anonymous=createClient(target.origin,publishableKey,options);
 const password=process.env.DATANEST_AI_E2E_PASSWORD;
 const marker=randomUUID().replaceAll("-","").slice(0,16);
@@ -53,7 +54,7 @@ async function createIdentity(role){
 async function insertProject(slug,name){
   const inserted=await admin.from("projects").insert({
     slug,name,
-    description:"SEC-01 governed staging authorization-boundary fixture.",
+    description:"SEC-01 isolated canonical authorization-boundary fixture.",
     status:"ACTIVE"
   }).select("id,slug").single();
   if(inserted.error)throw new Error(`Create fixture project: ${inserted.error.message}`);
@@ -208,7 +209,7 @@ try{
     draftId=dataOf(await owner.client.rpc("create_governance_protocol_draft_v1",{
       target_project:projectA.id,
       target_title:"SEC-01 Protocol",
-      target_mission:"Exercise governed staging authorization boundaries.",
+      target_mission:"Exercise canonical multi-collaborator authorization boundaries.",
       target_vision:"Independently supported and reviewable governance.",
       target_body:"SEC-01 synthetic protocol body.",
       target_principles:["authorization","independence","append-only evidence"]
@@ -362,7 +363,7 @@ try{
   const evidence={
     suite:"datanest-governance-boundary-acceptance-v1",
     auditFinding:"SEC-01",
-    stagingProject:"qchttpcyqlqnhvahprhz",
+    certificationTarget:"local-canonical",
     candidateCommit:process.env.DATANEST_CANDIDATE_SHA||null,
     checkoutCommit:process.env.GITHUB_SHA||null,
     fixtureMarker:marker,
@@ -379,7 +380,8 @@ try{
       "governance operations do not alter membership roles"
     ],
     productionParityReference:"docs/reviews/2026-09-30-sec01-runtime-acceptance.md",
-    productionTested:false,
+    mirrorStagingUsed:false,
+    productionMutated:false,
     cleanup,
     completedAt:new Date().toISOString(),
     results,
