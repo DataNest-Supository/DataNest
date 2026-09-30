@@ -246,15 +246,7 @@ async function mapLimit(items, limit, fn) {
   return out;
 }
 
-async function githubAudit(repo, token, config) {
-  const archiveTagPrefix = String(config.archiveTagPrefix || "branch-archive/");
-  const archiveEndpoint = "/git/matching-refs/tags/" +
-    archiveTagPrefix.split("/").map(encodeURIComponent).join("/");
-  const [branches, prs, archiveRefsRaw] = await Promise.all([
-    paginate(repo, "/branches", token),
-    paginate(repo, "/pulls?state=all&sort=updated&direction=desc", token),
-    gh(repo, archiveEndpoint, token).catch(() => [])
-  ]);
+export function buildArchiveTips(archiveRefsRaw, archiveTagPrefix) {
   const archiveRefs = Array.isArray(archiveRefsRaw) ? archiveRefsRaw : [];
   const archiveRefPrefix = "refs/tags/" + archiveTagPrefix;
   const archiveTips = new Map();
@@ -264,30 +256,32 @@ async function githubAudit(repo, token, config) {
     if (!branchName) continue;
     archiveTips.set(branchName, ref?.object?.sha || null);
   }
+  return archiveTips;
+}
 
+export function indexPullRequestsByBranch(prs, repo) {
   const prsByBranch = new Map();
-  for (const pr of prs) {
+  for (const pr of prs || []) {
     if (pr.head?.repo?.full_name && pr.head.repo.full_name !== repo) continue;
     if (!pr.head?.ref) continue;
     prsByBranch.set(pr.head.ref, [...(prsByBranch.get(pr.head.ref) || []), pr]);
   }
+  return prsByBranch;
+}
 
-  const facts = await mapLimit(branches, 6, async (b) => {
+async function collectBranchFacts(repo, token, branches, prsByBranch, archiveTips, config, archiveTagPrefix) {
+  return mapLimit(branches, 6, async (branch) => {
     const [commit, compare] = await Promise.allSettled([
-      gh(repo, "/commits/" + b.commit.sha, token),
-      b.name === config.baseBranch
+      gh(repo, "/commits/" + branch.commit.sha, token),
+      branch.name === config.baseBranch
         ? Promise.resolve({ status:"identical", ahead_by:0, behind_by:0 })
-        : gh(repo, "/compare/" + encodeURIComponent(config.baseBranch) + "..." + encodeURIComponent(b.name), token)
+        : gh(repo, "/compare/" + encodeURIComponent(config.baseBranch) + "..." + encodeURIComponent(branch.name), token)
     ]);
-    const c = commit.status === "fulfilled" ? commit.value : {};
-    const d = compare.status === "fulfilled" ? compare.value : { status:"unknown" };
-    const linked = prsByBranch.get(b.name) || [];
-    const updatedAt = c.commit?.committer?.date || c.commit?.author?.date || null;
-    const mergedAt = linked
-      .map((p) => p.merged_at)
-      .filter(Boolean)
-      .sort()
-      .at(-1) || null;
+    const commitData = commit.status === "fulfilled" ? commit.value : {};
+    const compareData = compare.status === "fulfilled" ? compare.value : { status:"unknown" };
+    const linked = prsByBranch.get(branch.name) || [];
+    const updatedAt = commitData.commit?.committer?.date || commitData.commit?.author?.date || null;
+    const mergedAt = linked.map((pr) => pr.merged_at).filter(Boolean).sort().at(-1) || null;
     const postMergeActivity = !!(
       mergedAt &&
       updatedAt &&
@@ -296,30 +290,40 @@ async function githubAudit(repo, token, config) {
       Date.parse(updatedAt) > Date.parse(mergedAt)
     );
     return {
-      name:b.name,
-      sha:b.commit.sha,
-      protected:!!b.protected,
+      name:branch.name,
+      sha:branch.commit.sha,
+      protected:!!branch.protected,
       updatedAt,
       mergedAt,
       postMergeActivity,
-      compare:{ status:d.status || "unknown", ahead_by:d.ahead_by ?? null, behind_by:d.behind_by ?? null },
-      openPr:linked.some((p) => p.state === "open"),
-      mergedPr:linked.some((p) => !!p.merged_at),
-      archiveTag:archiveTips.has(b.name) ? archiveTagPrefix + b.name : null,
-      archiveMatchesTip:archiveTips.get(b.name) === b.commit.sha,
-      auditIds:extractAuditIds(linked.map((p) => (p.title || "") + "\n" + (p.body || "")).join("\n"))
+      compare:{
+        status:compareData.status || "unknown",
+        ahead_by:compareData.ahead_by ?? null,
+        behind_by:compareData.behind_by ?? null
+      },
+      openPr:linked.some((pr) => pr.state === "open"),
+      mergedPr:linked.some((pr) => !!pr.merged_at),
+      archiveTag:archiveTips.has(branch.name) ? archiveTagPrefix + branch.name : null,
+      archiveMatchesTip:archiveTips.get(branch.name) === branch.commit.sha,
+      auditIds:extractAuditIds(linked.map((pr) => (pr.title || "") + "\n" + (pr.body || "")).join("\n"))
     };
   });
+}
 
+function groupBranchFamilies(facts) {
   const families = new Map();
-  for (const b of facts) {
-    const family = normalizeBranchFamily(b.name);
-    families.set(family, [...(families.get(family) || []), b]);
+  for (const branch of facts) {
+    const family = normalizeBranchFamily(branch.name);
+    families.set(family, [...(families.get(family) || []), branch]);
   }
+  return families;
+}
+
+async function analyzeBranchFamilies(repo, token, facts) {
   const superseded = new Set();
   const containedBy = new Map();
   const divergedFrom = new Map();
-  for (const group of families.values()) {
+  for (const group of groupBranchFamilies(facts).values()) {
     const ordered = [...group]
       .sort((a,b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
     const newest = ordered[0];
@@ -346,19 +350,46 @@ async function githubAudit(repo, token, config) {
       }
     }
   }
+  return { superseded, containedBy, divergedFrom };
+}
 
+function classifyBranchFacts(facts, familyState, config) {
+  return facts.map((branch) => ({
+    ...branch,
+    family:normalizeBranchFamily(branch.name),
+    classification:classifyBranch({
+      ...branch,
+      familyHasNewerSibling:familyState.superseded.has(branch.name),
+      familyContainedBy:familyState.containedBy.get(branch.name) || null,
+      familyDivergedFrom:familyState.divergedFrom.get(branch.name) || null
+    }, config)
+  }));
+}
+
+async function githubAudit(repo, token, config) {
+  const archiveTagPrefix = String(config.archiveTagPrefix || "branch-archive/");
+  const archiveEndpoint = "/git/matching-refs/tags/" +
+    archiveTagPrefix.split("/").map(encodeURIComponent).join("/");
+  const [branches, prs, archiveRefsRaw] = await Promise.all([
+    paginate(repo, "/branches", token),
+    paginate(repo, "/pulls?state=all&sort=updated&direction=desc", token),
+    gh(repo, archiveEndpoint, token).catch(() => [])
+  ]);
+  const archiveTips = buildArchiveTips(archiveRefsRaw, archiveTagPrefix);
+  const prsByBranch = indexPullRequestsByBranch(prs, repo);
+  const facts = await collectBranchFacts(
+    repo,
+    token,
+    branches,
+    prsByBranch,
+    archiveTips,
+    config,
+    archiveTagPrefix
+  );
+  const familyState = await analyzeBranchFamilies(repo, token, facts);
   return {
     pullRequestCount:prs.length,
-    branches:facts.map((b) => ({
-      ...b,
-      family:normalizeBranchFamily(b.name),
-      classification:classifyBranch({
-        ...b,
-        familyHasNewerSibling:superseded.has(b.name),
-        familyContainedBy:containedBy.get(b.name) || null,
-        familyDivergedFrom:divergedFrom.get(b.name) || null
-      }, config)
-    }))
+    branches:classifyBranchFacts(facts, familyState, config)
   };
 }
 
@@ -396,11 +427,115 @@ async function learn(config) {
   };
 }
 
-const advisorList = (data) =>
-  Array.isArray(data) ? data :
-  Array.isArray(data?.lints) ? data.lints :
-  Array.isArray(data?.advisors) ? data.advisors : [];
+export function advisorList(data) {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.lints)) return data.lints;
+  if (Array.isArray(data?.advisors)) return data.advisors;
+  return [];
+}
 
+export function normalizeSupabaseProjectPayload(project) {
+  project.branches = Array.isArray(project.branches) ? project.branches : project.branches?.branches || [];
+  project.securityAdvisors = advisorList(project.securityAdvisors);
+  project.performanceAdvisors = advisorList(project.performanceAdvisors);
+  project.migrations = Array.isArray(project.migrations) ? project.migrations : project.migrations?.migrations || [];
+  return project;
+}
+
+function migrationParityHasDrift(parity) {
+  return !!(
+    parity.repoOnly.length ||
+    parity.liveOnly.length ||
+    parity.versionMismatches.length
+  );
+}
+
+function appendMigrationHistoryDriftCheck(project, historyLabel) {
+  if (!project.migrationParity || !migrationParityHasDrift(project.migrationParity)) return;
+  project.checks.push({
+    level:"blocker",
+    code:"migration_history_drift",
+    detail:"Git migration history does not reproduce " + historyLabel + " migration history: " +
+      project.migrationParity.repoCount + " repo files vs " +
+      project.migrationParity.liveCount + " applied migrations; " +
+      project.migrationParity.liveOnly.length + " live-only, " +
+      project.migrationParity.repoOnly.length + " repo-only, " +
+      project.migrationParity.versionMismatches.length + " version mismatches",
+  });
+}
+
+async function attachMigrationParity(project, entry, historyLabel, captureErrors) {
+  if (!entry.migrationSourceDir) return;
+  const verify = async () => {
+    if (project.errors.some((error) => error.key === "migrations")) {
+      throw new Error("Supabase migration history could not be retrieved");
+    }
+    const repoFiles = await readdir(entry.migrationSourceDir);
+    project.migrationParity = compareMigrationParity(repoFiles, project.migrations);
+    if (entry.enforceMigrationParity) appendMigrationHistoryDriftCheck(project, historyLabel);
+  };
+  if (!captureErrors) {
+    await verify();
+    return;
+  }
+  try {
+    await verify();
+  } catch (error) {
+    project.errors.push({ key:"migrationParity", status:null, message:error.message });
+    if (entry.enforceMigrationParity) {
+      project.checks.push({
+        level:"blocker",
+        code:"migration_parity_unresolved",
+        detail:"Could not verify migration parity from " + entry.migrationSourceDir,
+      });
+    }
+  }
+}
+
+function requiredSupabaseAuditFailures(project) {
+  return project.errors.filter((error) =>
+    ["project", "branches", "securityAdvisors", "migrations"].includes(error.key)
+  );
+}
+
+function appendSupabaseAuditCompletenessCheck(project) {
+  const requiredFailures = requiredSupabaseAuditFailures(project);
+  if (!requiredFailures.length) return;
+  project.checks.push({
+    level:"blocker",
+    code:"supabase_audit_incomplete",
+    detail:"Required Supabase checks failed: " +
+      requiredFailures.map((error) => error.key).join(", "),
+  });
+}
+
+function supabaseProjectCalls(entry) {
+  return [
+    ["project", "/v1/projects/" + entry.ref],
+    ["branches", "/v1/projects/" + entry.ref + "/branches"],
+    ["securityAdvisors", "/v1/projects/" + entry.ref + "/advisors/security"],
+    ["performanceAdvisors", "/v1/projects/" + entry.ref + "/advisors/performance"],
+    ...(entry.migrationSourceDir
+      ? [["migrations", "/v1/projects/" + entry.ref + "/database/migrations"]]
+      : [])
+  ];
+}
+
+async function fetchSupabaseProject(entry, token) {
+  const project = { ref:entry.ref, role:entry.role, errors:[] };
+  await Promise.all(supabaseProjectCalls(entry).map(async ([key, endpoint]) => {
+    try {
+      project[key] = await sb(endpoint, token);
+    } catch (error) {
+      project.errors.push({ key, status:error.status || null, message:error.message });
+    }
+  }));
+  normalizeSupabaseProjectPayload(project);
+  project.checks = evaluateSupabaseProject(project, entry);
+  await attachMigrationParity(project, entry, "live", true);
+  appendSupabaseAuditCompletenessCheck(project);
+  return project;
+}
 
 async function supabaseAuditFromEvidence(config) {
   const file = config.supabaseEvidenceFile;
@@ -432,7 +567,7 @@ async function supabaseAuditFromEvidence(config) {
       if (!snapshot?.project?.status)
         throw new Error("Supabase evidence is incomplete for " + entry.ref);
 
-      const p = {
+      const project = {
         ref:entry.ref,
         role:entry.role,
         errors:[],
@@ -442,28 +577,9 @@ async function supabaseAuditFromEvidence(config) {
         performanceAdvisors:[],
         migrations:Array.isArray(snapshot.migrations) ? snapshot.migrations : [],
       };
-      p.checks = evaluateSupabaseProject(p, entry);
-
-      if (entry.migrationSourceDir) {
-        const repoFiles = await readdir(entry.migrationSourceDir);
-        p.migrationParity = compareMigrationParity(repoFiles, p.migrations);
-        if (entry.enforceMigrationParity &&
-            (p.migrationParity.repoOnly.length ||
-             p.migrationParity.liveOnly.length ||
-             p.migrationParity.versionMismatches.length)) {
-          p.checks.push({
-            level:"blocker",
-            code:"migration_history_drift",
-            detail:"Git migration history does not reproduce verified migration history: " +
-              p.migrationParity.repoCount + " repo files vs " +
-              p.migrationParity.liveCount + " applied migrations; " +
-              p.migrationParity.liveOnly.length + " live-only, " +
-              p.migrationParity.repoOnly.length + " repo-only, " +
-              p.migrationParity.versionMismatches.length + " version mismatches",
-          });
-        }
-      }
-      projects.push(p);
+      project.checks = evaluateSupabaseProject(project, entry);
+      await attachMigrationParity(project, entry, "verified", false);
+      projects.push(project);
     }
 
     return {
@@ -509,80 +625,10 @@ async function supabaseAudit(config, token) {
 
   const projects = [];
   for (const entry of config.supabaseProjects || []) {
-    const p = { ref:entry.ref, role:entry.role, errors:[] };
-    const calls = [
-      ["project", "/v1/projects/" + entry.ref],
-      ["branches", "/v1/projects/" + entry.ref + "/branches"],
-      ["securityAdvisors", "/v1/projects/" + entry.ref + "/advisors/security"],
-      ["performanceAdvisors", "/v1/projects/" + entry.ref + "/advisors/performance"],
-      ...(entry.migrationSourceDir
-        ? [["migrations", "/v1/projects/" + entry.ref + "/database/migrations"]]
-        : [])
-    ];
-    await Promise.all(calls.map(async ([key, endpoint]) => {
-      try { p[key] = await sb(endpoint, token); }
-      catch (error) { p.errors.push({ key, status:error.status || null, message:error.message }); }
-    }));
-    p.branches = Array.isArray(p.branches) ? p.branches : p.branches?.branches || [];
-    p.securityAdvisors = advisorList(p.securityAdvisors);
-    p.performanceAdvisors = advisorList(p.performanceAdvisors);
-    p.migrations = Array.isArray(p.migrations) ? p.migrations : p.migrations?.migrations || [];
-    p.checks = evaluateSupabaseProject(p, entry);
-
-    if (entry.migrationSourceDir) {
-      try {
-        if (p.errors.some((error) => error.key === "migrations")) {
-          throw new Error("Supabase migration history could not be retrieved");
-        }
-        const repoFiles = await readdir(entry.migrationSourceDir);
-        p.migrationParity = compareMigrationParity(repoFiles, p.migrations);
-        if (entry.enforceMigrationParity &&
-            (p.migrationParity.repoOnly.length ||
-             p.migrationParity.liveOnly.length ||
-             p.migrationParity.versionMismatches.length)) {
-          p.checks.push({
-            level:"blocker",
-            code:"migration_history_drift",
-            detail:"Git migration history does not reproduce live migration history: " +
-              p.migrationParity.repoCount + " repo files vs " +
-              p.migrationParity.liveCount + " applied migrations; " +
-              p.migrationParity.liveOnly.length + " live-only, " +
-              p.migrationParity.repoOnly.length + " repo-only, " +
-              p.migrationParity.versionMismatches.length + " version mismatches",
-          });
-        }
-      } catch (error) {
-        p.errors.push({
-          key:"migrationParity",
-          status:null,
-          message:error.message,
-        });
-        if (entry.enforceMigrationParity) {
-          p.checks.push({
-            level:"blocker",
-            code:"migration_parity_unresolved",
-            detail:"Could not verify migration parity from " + entry.migrationSourceDir,
-          });
-        }
-      }
-    }
-
-    const requiredFailures = p.errors.filter((error) =>
-      ["project", "branches", "securityAdvisors", "migrations"].includes(error.key)
-    );
-    if (requiredFailures.length) {
-      p.checks.push({
-        level:"blocker",
-        code:"supabase_audit_incomplete",
-        detail:"Required Supabase checks failed: " +
-          requiredFailures.map((error) => error.key).join(", "),
-      });
-    }
-
-    projects.push(p);
+    projects.push(await fetchSupabaseProject(entry, token));
   }
 
-  const refs = new Set(projects.map((p) => p.ref));
+  const refs = new Set(projects.map((project) => project.ref));
   return {
     skipped:false,
     projects,
