@@ -33,7 +33,22 @@ export async function updateTrendCandidate(input:{
     .limit(250);
   if(error)throw error;
 
-  const evidence=(data||[]).map((item:any)=>({
+  const rawEvidence=data||[];
+  const eventIds=rawEvidence.map((item:any)=>String(item.id)).filter(Boolean);
+  const derivationByChild=new Map<string,Record<string,unknown>>();
+  if(eventIds.length){
+    const {data:derivations,error:derivationsError}=await input.staging
+      .from("ai_evidence_derivations")
+      .select("child_event_id,root_event_id,derivation_kind")
+      .eq("project_id",input.projectId)
+      .in("child_event_id",eventIds);
+    if(derivationsError)throw derivationsError;
+    for(const row of derivations||[]){
+      derivationByChild.set(String(row.child_event_id),row as Record<string,unknown>);
+    }
+  }
+
+  const evidence=rawEvidence.map((item:any)=>({
     id:String(item.id),
     content:String(item.content),
     jobId:String(item.job_id||""),
@@ -42,6 +57,12 @@ export async function updateTrendCandidate(input:{
     sourceUserId:item.source_user_id?String(item.source_user_id):null,
     independenceKey:typeof item.metadata?.independence_key==="string"
       ?String(item.metadata.independence_key)
+      :null,
+    derivationFamilyId:derivationByChild.has(String(item.id))
+      ?String(derivationByChild.get(String(item.id))?.root_event_id||"")
+      :null,
+    derivationKind:derivationByChild.has(String(item.id))
+      ?String(derivationByChild.get(String(item.id))?.derivation_kind||"") as any
       :null,
     metadata:typeof item.metadata==="object"&&item.metadata!==null
       ?item.metadata as Record<string,unknown>
@@ -259,7 +280,8 @@ export async function updateTrendCandidate(input:{
         results:{
           ...run.checks,
           ...seal,
-          automation_version:"datanest-ai-learning-validation-v2"
+          automation_version:"datanest-ai-learning-validation-v3",
+          derivation_family_independence:true
         },
         actor_type:"automation",
         actor_user_id:null

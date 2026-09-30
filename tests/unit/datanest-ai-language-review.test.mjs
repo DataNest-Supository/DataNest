@@ -86,4 +86,28 @@ test("reviewer qualification coverage follows reviewed language bases and active
     qualificationCoverageForReviewedLanguages(qualifications,["af","xh"]),
     {covered:false,qualificationIds:["q1"],missingLanguages:["xh"]}
   );
+  assert.deepEqual(
+    qualificationCoverageForReviewedLanguages(
+      qualifications,
+      ["af-ZA"],
+      "source_language_review"
+    ),
+    {covered:true,qualificationIds:["q1"],missingLanguages:[]}
+  );
+  assert.deepEqual(
+    qualificationCoverageForReviewedLanguages(
+      qualifications,
+      ["af-ZA","zu"],
+      "semantic_equivalence"
+    ),
+    {covered:true,qualificationIds:["q2","q4"],missingLanguages:[]}
+  );
+  assert.deepEqual(
+    qualificationCoverageForReviewedLanguages(
+      qualifications,
+      ["zu"],
+      "source_language_review"
+    ),
+    {covered:false,qualificationIds:[],missingLanguages:["zu"]}
+  );
 });

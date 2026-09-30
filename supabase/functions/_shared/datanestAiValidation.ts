@@ -7,6 +7,7 @@ export type CandidateValidationSeal={
   candidate_evidence_count:number;
   candidate_risk_class:string;
   candidate_has_conflict:boolean;
+  candidate_derivation_review_hash:string;
 };
 
 export type AutomatedLearningAssessment={
@@ -19,13 +20,14 @@ export type AutomatedLearningAssessment={
   contentHash:string;
   policyVersion:string;
   evidenceHash:string;
+  derivationReviewHash?:string;
 };
 
 export function candidateValidationSeal(
   input:Pick<
     AutomatedLearningAssessment,
     "contentHash"|"policyVersion"|"evidenceHash"|"evidenceCount"|"riskClass"|"hasConflict"
-  >
+  > & {derivationReviewHash?:string}
 ):CandidateValidationSeal{
   return {
     candidate_content_hash:input.contentHash,
@@ -33,7 +35,8 @@ export function candidateValidationSeal(
     candidate_evidence_hash:input.evidenceHash,
     candidate_evidence_count:input.evidenceCount,
     candidate_risk_class:input.riskClass,
-    candidate_has_conflict:input.hasConflict
+    candidate_has_conflict:input.hasConflict,
+    candidate_derivation_review_hash:input.derivationReviewHash||""
   };
 }
 
@@ -86,6 +89,10 @@ export function validationRunMatchesSeal(
     String(value.candidate_evidence_hash||"")===seal.candidate_evidence_hash &&
     Number(value.candidate_evidence_count)===seal.candidate_evidence_count &&
     String(value.candidate_risk_class||"")===seal.candidate_risk_class &&
-    Boolean(value.candidate_has_conflict)===seal.candidate_has_conflict
+    Boolean(value.candidate_has_conflict)===seal.candidate_has_conflict &&
+    (
+      !seal.candidate_derivation_review_hash ||
+      String(value.candidate_derivation_review_hash||"")===seal.candidate_derivation_review_hash
+    )
   );
 }

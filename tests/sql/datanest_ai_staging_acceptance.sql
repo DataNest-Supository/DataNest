@@ -16,6 +16,8 @@ begin
     'ai_candidate_evidence',
     'ai_validation_runs',
     'ai_language_reviewer_qualifications',
+    'ai_evidence_derivations',
+    'ai_evidence_derivation_reviews',
     'ai_certification_decisions',
     'ai_memory_supersessions'
   ]) required_name
@@ -40,6 +42,7 @@ begin
       'ai_sessions','ai_intake_events','ai_reasoning_envelopes',
       'ai_trend_clusters','ai_trend_evidence','ai_learning_candidates',
       'ai_candidate_evidence','ai_validation_runs','ai_language_reviewer_qualifications',
+      'ai_evidence_derivations','ai_evidence_derivation_reviews',
       'ai_certification_decisions','ai_memory_supersessions'
     )
     and not c.relrowsecurity;
@@ -69,6 +72,40 @@ begin
      or not has_table_privilege('service_role','public.ai_language_reviewer_qualifications','INSERT')
      or not has_table_privilege('service_role','public.ai_language_reviewer_qualifications','UPDATE') then
     raise exception 'service_role must manage language reviewer qualifications';
+  end if;
+end $datanest$;
+
+
+do $datanest$
+begin
+  if has_table_privilege('authenticated','public.ai_evidence_derivations','SELECT')
+     or has_table_privilege('anon','public.ai_evidence_derivation_reviews','SELECT') then
+    raise exception 'browser roles must not read derivation lineage or review evidence directly';
+  end if;
+
+  if not has_table_privilege('service_role','public.ai_evidence_derivations','SELECT')
+     or not has_table_privilege('service_role','public.ai_evidence_derivations','INSERT')
+     or has_table_privilege('service_role','public.ai_evidence_derivations','UPDATE')
+     or has_table_privilege('service_role','public.ai_evidence_derivations','DELETE') then
+    raise exception 'derivation lineage must be service-only and immutable after insert';
+  end if;
+
+  if not has_table_privilege('service_role','public.ai_evidence_derivation_reviews','SELECT')
+     or not has_table_privilege('service_role','public.ai_evidence_derivation_reviews','INSERT')
+     or has_table_privilege('service_role','public.ai_evidence_derivation_reviews','UPDATE')
+     or has_table_privilege('service_role','public.ai_evidence_derivation_reviews','DELETE') then
+    raise exception 'derivation reviews must be append-only service evidence';
+  end if;
+
+  if not exists (
+    select 1
+    from information_schema.columns
+    where table_schema='public'
+      and table_name='ai_certification_decisions'
+      and column_name='evidence_context'
+      and data_type='jsonb'
+  ) then
+    raise exception 'certification decisions must preserve evidence_context';
   end if;
 end $datanest$;
 

@@ -191,7 +191,7 @@ test("existing certification decisions must still match the candidate seal", () 
   const source=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-certification/index.ts"),"utf8");
   assert.match(
     source,
-    /if\(existing\)[\s\S]{0,500}assertCertificationDecisionCurrent\(existing,input\.candidate\)/
+    /if\(existing\)[\s\S]{0,650}assertCertificationDecisionCurrent\([\s\S]{0,160}existing,[\s\S]{0,120}input\.candidate,[\s\S]{0,120}input\.derivationReviewHash[\s\S]{0,40}\)/
   );
 });
 
@@ -204,7 +204,7 @@ test("promotion revalidates certification seal and required authority", () => {
   );
   assert.match(
     source,
-    /if\(action==="promote"\|\|action==="supersede"\)[\s\S]{0,1600}assertCertificationDecisionCurrent\(decision,candidate\)/
+    /if\(action==="promote"\|\|action==="supersede"\)[\s\S]{0,2600}assertCertificationDecisionCurrent\([\s\S]{0,120}decision,[\s\S]{0,120}candidate,[\s\S]{0,120}promotionDerivationReview\.reviewHash[\s\S]{0,40}\)/
   );
 });
 

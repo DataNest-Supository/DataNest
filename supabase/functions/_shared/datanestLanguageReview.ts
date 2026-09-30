@@ -129,13 +129,16 @@ export function governedLanguageReviewResult(input:{
 
 export function qualificationCoverageForReviewedLanguages(
   qualifications:ReviewerQualification[],
-  reviewedLanguages:string[]
+  reviewedLanguages:string[],
+  requiredScope?:"source_language_review"|"semantic_equivalence"
 ):{
   covered:boolean;
   qualificationIds:string[];
   missingLanguages:string[];
 }{
-  const active=qualifications.filter(item=>item.active!==false);
+  const active=qualifications.filter(item=>
+    item.active!==false&&(!requiredScope||item.qualification_scope===requiredScope)
+  );
   const byBase=new Map<string,string[]>();
   for(const qualification of active){
     let canonical:string;
