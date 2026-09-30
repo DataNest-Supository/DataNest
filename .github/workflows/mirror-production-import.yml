@@ -169,6 +169,7 @@ jobs:
           ### Required canonical gates
 
           - [ ] Live Mirror visual/functional evidence verified
+          - [ ] DataNest AI Certification recorded for the governed staging backend
           - [ ] Canonical PR Verification
           - [ ] Canonical Security Scan
           - [ ] RONSAS validation where applicable
