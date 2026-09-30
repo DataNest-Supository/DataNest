@@ -178,38 +178,34 @@ Deno.serve(async (req: Request) => {
     }
   };
   let invitedUserId: string | null = existingUserId ? String(existingUserId) : null;
-  let delivery: "invite" | "reinvite" | "recovery" = "invite";
 
-  if (invitedUserId && !existingAuthUser?.email_confirmed_at) {
-    delivery = "reinvite";
-    const { data: inviteData, error: inviteError } =
-      await service.auth.admin.inviteUserByEmail(email, inviteOptions);
+  // Establish durable Auth identity before the governed invitation record.
+  // Supabase's admin createUser creates an unconfirmed account without
+  // sending email; the actual invitation/recovery message is attempted only
+  // after project invitation registration succeeds.
+  if (!invitedUserId) {
+    const { data: createdUser, error: createUserError } =
+      await service.auth.admin.createUser({
+        email,
+        email_confirm: false,
+        user_metadata: inviteOptions.data
+      });
 
-    if (inviteError || !inviteData.user) {
-      return json(req, { error: inviteError?.message || "Unable to resend project invitation." }, 400);
+    if (createUserError || !createdUser.user) {
+      return json(req, {
+        error: createUserError?.message || "Unable to create project-member account."
+      }, 400);
     }
 
-    invitedUserId = inviteData.user.id;
-  } else if (invitedUserId) {
-    delivery = "recovery";
-    const { error: recoveryError } = await emailClient.auth.resetPasswordForEmail(email, {
-      redirectTo
-    });
-
-    if (recoveryError) {
-      return json(req, { error: recoveryError.message }, 400);
-    }
-  } else {
-    const { data: inviteData, error: inviteError } =
-      await service.auth.admin.inviteUserByEmail(email, inviteOptions);
-
-    if (inviteError || !inviteData.user) {
-      return json(req, { error: inviteError?.message || "Unable to send project invitation." }, 400);
-    }
-
-    invitedUserId = inviteData.user.id;
+    invitedUserId = createdUser.user.id;
+    existingAuthUser = {
+      email_confirmed_at: createdUser.user.email_confirmed_at
+    };
   }
 
+  // The governed invitation and invited project-membership state are committed
+  // before any email side effect. Delivery can therefore fail independently
+  // while leaving a durable, retryable invitation record behind.
   const { data: registration, error: registrationError } = await service.rpc(
     "service_register_project_member_invite_v1",
     {
@@ -223,6 +219,53 @@ Deno.serve(async (req: Request) => {
 
   if (registrationError) {
     return json(req, { error: registrationError.message }, 400);
+  }
+
+  let delivery: "invite" | "reinvite" | "recovery" = "invite";
+
+  if (!existingAuthUser?.email_confirmed_at) {
+    delivery = existingUserId ? "reinvite" : "invite";
+    const { data: inviteData, error: inviteError } =
+      await service.auth.admin.inviteUserByEmail(email, inviteOptions);
+
+    if (inviteError || !inviteData.user) {
+      return json(req, {
+        ok: false,
+        delivery: "failed",
+        error: inviteError?.message || "Project invitation was registered, but email delivery failed.",
+        retryable: true,
+        project: {
+          id: project.id,
+          slug: project.slug,
+          name: project.name
+        },
+        invitation: registration,
+        formalVotingEligible: false,
+        acceptanceRequired: true
+      }, 502);
+    }
+  } else {
+    delivery = "recovery";
+    const { error: recoveryError } = await emailClient.auth.resetPasswordForEmail(email, {
+      redirectTo
+    });
+
+    if (recoveryError) {
+      return json(req, {
+        ok: false,
+        delivery: "failed",
+        error: recoveryError.message || "Project invitation was registered, but recovery email delivery failed.",
+        retryable: true,
+        project: {
+          id: project.id,
+          slug: project.slug,
+          name: project.name
+        },
+        invitation: registration,
+        formalVotingEligible: false,
+        acceptanceRequired: true
+      }, 502);
+    }
   }
 
   return json(req, {
