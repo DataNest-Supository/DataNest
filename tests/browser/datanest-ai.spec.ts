@@ -123,15 +123,21 @@ test("quick switch traps focus and restores the opening control",async({page})=>
   await expect(dialog).toBeVisible();
 
   const close=dialog.getByRole("button",{name:"Close quick switch"});
+  const search=dialog.getByLabel("Search DataNest workspaces");
   const options=dialog.getByRole("option");
   const lastOption=options.last();
 
-  await lastOption.focus();
-  await page.keyboard.press("Tab");
+  // Let the palette's intentional initial-focus effect settle, then exercise
+  // the trap through keyboard navigation rather than racing it with .focus().
+  await expect(search).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
   await expect(close).toBeFocused();
 
   await page.keyboard.press("Shift+Tab");
   await expect(lastOption).toBeFocused();
+
+  await page.keyboard.press("Tab");
+  await expect(close).toBeFocused();
 
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
@@ -273,8 +279,7 @@ test("Think Tanks expose project-scoped collaboration and reviewed-memory bounda
 
 test("Sparks workspace exposes internal utility boundaries",async({page})=>{
   await signIn(page);
-  await page.getByRole("navigation",{name:"Project workspaces"}).getByText("Discover",{exact:true}).click();
-  await page.getByRole("button",{name:"Sparks",exact:true}).click();
+  await openWorkspace(page,"Sparks");
 
   await expect(page.getByText("SPARKS · INTERNAL UTILITY",{exact:true})).toBeVisible();
   await expect(page.getByText("Earned contribution utility, not money",{exact:true})).toBeVisible();
