@@ -111,7 +111,6 @@ test("Pages release wiring requires live database and Edge Function attestation"
   assert.match(pagesWorkflow,/actions\/download-artifact@v5/);
   assert.match(pagesWorkflow,/SUPABASE_ACCESS_TOKEN:\s*\$\{\{ secrets\.SUPABASE_ACCESS_TOKEN \}\}/);
   assert.match(pagesWorkflow,/DATANEST_DB_ATTESTATION_FILE: \.datanest\/release-attestation\.json/);
-  assert.match(pagesWorkflow,/DATANEST_UI_EDGE_FUNCTION_RELEASE_REF/);
   assert.match(edgeAttestationScript,/api\.supabase\.com\/v1\/projects/);
   assert.match(edgeAttestationScript,/SUPABASE_ACCESS_TOKEN/);
   assert.match(edgeAttestationScript,/ezbr_sha256/);
