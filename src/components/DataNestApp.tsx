@@ -1279,15 +1279,14 @@ export default function DataNestApp({session}:{session:Session}) {
       'button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])'
     )).filter(element=>!element.hasAttribute("hidden"));
     if(!focusable.length)return;
-    const first=focusable[0];
-    const last=focusable[focusable.length-1];
-    if(event.shiftKey&&document.activeElement===first){
-      event.preventDefault();
-      last.focus();
-    }else if(!event.shiftKey&&document.activeElement===last){
-      event.preventDefault();
-      first.focus();
-    }
+    const active=document.activeElement as HTMLElement|null;
+    const activeIndex=active?focusable.indexOf(active):-1;
+    if(activeIndex===-1)return;
+    event.preventDefault();
+    const nextIndex=event.shiftKey
+      ? (activeIndex-1+focusable.length)%focusable.length
+      : (activeIndex+1)%focusable.length;
+    focusable[nextIndex].focus();
   }
 
   function handleCommandSearchKeyDown(event:import("react").KeyboardEvent<HTMLInputElement>){
