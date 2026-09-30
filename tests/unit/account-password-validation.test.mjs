@@ -14,6 +14,7 @@ test("accepts a valid password change", () => {
   );
 });
 
+// These messages are part of the account-security UX contract and must remain stable.
 test("preserves password validation messages", () => {
   assert.equal(
     validatePasswordChange({
