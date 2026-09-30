@@ -10,6 +10,7 @@ const writer=fileURLToPath(new URL("../../scripts/write-ui-governance-evidence.m
 const sha="a".repeat(40);
 const reviewRefs={
   DATANEST_UI_MIRROR_PROMOTION_REF:"Mirror-DataNest candidate run #42 @ abcdef1234567890abcdef1234567890abcdef12",
+  DATANEST_UI_MIRROR_LIVE_EVIDENCE_REF:"Mirror live verification #42",
   DATANEST_UI_AUDIT_OPTIMIZER_REF:"Audit Optimizer review AO-2026-09-30-001",
   DATANEST_UI_PR_VERIFICATION_REF:"PR Verification #1291",
   DATANEST_UI_SECURITY_REF:"Security scan #817",
@@ -136,6 +137,7 @@ test("Owner Live Test Mode preserves pending human reviews and temporary deploym
     DATANEST_UI_RELEASE_SHA:sha,
     DATANEST_UI_RELEASE_STATE:"owner_test_mode",
     DATANEST_UI_MIRROR_PROMOTION_REF:"Mirror-DataNest candidate run #43",
+    DATANEST_UI_MIRROR_LIVE_EVIDENCE_REF:"Mirror live verification #43",
     DATANEST_UI_AUDIT_OPTIMIZER_REF:"Audit Optimizer review AO-TEST-001",
     DATANEST_UI_PR_VERIFICATION_REF:"PR Verification #1340",
     DATANEST_UI_SECURITY_REF:"Security scan #882",
@@ -172,6 +174,7 @@ test("Owner Test Mode evidence records the AI proposal and accepted recommendati
     DATANEST_UI_RELEASE_SHA:sha,
     DATANEST_UI_RELEASE_STATE:"owner_test_mode",
     DATANEST_UI_MIRROR_PROMOTION_REF:"Mirror-DataNest candidate run #44",
+    DATANEST_UI_MIRROR_LIVE_EVIDENCE_REF:"Mirror live verification #44",
     DATANEST_UI_AUDIT_OPTIMIZER_REF:"Audit Optimizer review AO-TEST-002",
     DATANEST_UI_PR_VERIFICATION_REF:"PR Verification #1340",
     DATANEST_UI_SECURITY_REF:"Security scan #882",
@@ -205,6 +208,7 @@ test("explicit Owner override preserves the AI recommendation and deviation",()=
     DATANEST_UI_RELEASE_SHA:sha,
     DATANEST_UI_RELEASE_STATE:"owner_test_mode",
     DATANEST_UI_MIRROR_PROMOTION_REF:"Mirror-DataNest candidate run #45",
+    DATANEST_UI_MIRROR_LIVE_EVIDENCE_REF:"Mirror live verification #45",
     DATANEST_UI_AUDIT_OPTIMIZER_REF:"Audit Optimizer review AO-TEST-003",
     DATANEST_UI_PR_VERIFICATION_REF:"PR Verification #1340",
     DATANEST_UI_SECURITY_REF:"Security scan #882",
