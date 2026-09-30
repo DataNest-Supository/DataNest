@@ -33,6 +33,7 @@ test("Mirror-only R&D controls are excluded from canonical production patch",()=
     "config/mirror-rd-policy.json",
     "docs/MIRROR_DATANEST_RD_MODE.md",
     "docs/PRODUCTION_CANDIDATE_HANDOFF.md",
+    "scripts/mirror-test-suite.mjs",
     "README.md"
   ]){
     assert.ok(importWorkflow.includes(`':(exclude)${path}'`),path);
