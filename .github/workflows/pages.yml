@@ -331,3 +331,9 @@ jobs:
           tests/browser/legal-centre.spec.ts
           tests/browser/datanest-ai-layout.spec.ts
           tests/browser/transcheduler-project-gantt.spec.ts
+
+  gate-timeframe:
+    name: DataNest AI worktree gate timeframe
+    uses: ./.github/workflows/worktree-gate-timeframe.yml
+    with:
+      gate_id: "pages"
