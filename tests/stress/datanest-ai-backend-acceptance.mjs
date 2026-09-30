@@ -3,17 +3,18 @@ import { createHash, randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 
 // Fail closed BEFORE loading a client or issuing any request.
-const target = new URL(process.env.DATANEST_AI_STAGING_URL || "https://invalid.invalid");
-assert.equal(target.href, "https://qchttpcyqlqnhvahprhz.supabase.co/", "Backend acceptance is dedicated-staging-only.");
+const target = new URL(process.env.DATANEST_CERTIFICATION_URL || "https://invalid.invalid");
+assert.equal(process.env.DATANEST_CERTIFICATION_TARGET, "local-canonical", "Backend acceptance must run on the isolated canonical certification target.");
+assert.ok(["127.0.0.1", "localhost"].includes(target.hostname), "Backend acceptance must remain loopback-local.");
 assert.equal(process.env.DATANEST_AI_E2E_EMAIL, "datanest-ai-e2e@resonance.invalid", "Only the governed synthetic E2E identity may run this suite.");
-for (const name of ["DATANEST_AI_STAGING_PUBLISHABLE_KEY", "DATANEST_AI_STAGING_SERVICE_ROLE_KEY", "DATANEST_AI_E2E_PASSWORD"]) {
+for (const name of ["DATANEST_CERTIFICATION_PUBLISHABLE_KEY", "DATANEST_CERTIFICATION_SERVICE_ROLE_KEY", "DATANEST_AI_E2E_PASSWORD"]) {
   assert.ok(process.env[name], `${name} is required.`);
 }
 
 const { createClient } = await import("@supabase/supabase-js");
 const options = { auth: { persistSession: false, autoRefreshToken: false } };
-const client = createClient(target.origin, process.env.DATANEST_AI_STAGING_PUBLISHABLE_KEY, options);
-const admin = createClient(target.origin, process.env.DATANEST_AI_STAGING_SERVICE_ROLE_KEY, options);
+const client = createClient(target.origin, process.env.DATANEST_CERTIFICATION_PUBLISHABLE_KEY, options);
+const admin = createClient(target.origin, process.env.DATANEST_CERTIFICATION_SERVICE_ROLE_KEY, options);
 function dataOf(result, label) {
   if (result.error || !result.data) throw new Error(`${label} failed.`);
   return result.data;
@@ -23,12 +24,11 @@ const signed = dataOf(await client.auth.signInWithPassword({
   password: process.env.DATANEST_AI_E2E_PASSWORD
 }), "Synthetic sign-in");
 assert.ok(signed.session?.access_token, "An authenticated user token is required.");
-// Dedicated staging can enforce a restrictive Mirror owner-only RLS policy. Use the
-// service role only to locate the pre-seeded governed fixture identities; every
-// user-facing RPC and Edge Function below still runs with the synthetic user's token.
+// Service-role access is limited to fixture setup/inspection. Every user-facing
+// RPC and Edge Function below still runs with the synthetic collaborator token.
 const project = dataOf(await admin.from("projects").select("id").eq("slug", "resonance-datanest").single(), "Fixture project lookup");
 const job = dataOf(await admin.from("jobs").select("id,requirements").eq("project_id", project.id).eq("title", "DataNest AI E2E Job").single(), "Fixture job lookup");
-assert.equal(job.requirements?.environment, "staging", "The job must be an explicit staging fixture.");
+assert.equal(job.requirements?.environment, "certification", "The job must be an explicit isolated certification fixture.");
 const fixtureMarker = "backend-acceptance-" + randomUUID();
 const results = [];
 
@@ -39,7 +39,7 @@ async function invoke(slug, body) {
     method: "POST", redirect: "error", signal: AbortSignal.timeout(20000),
     headers: {
       "Content-Type": "application/json",
-      apikey: process.env.DATANEST_AI_STAGING_PUBLISHABLE_KEY,
+      apikey: process.env.DATANEST_CERTIFICATION_PUBLISHABLE_KEY,
       Authorization: `Bearer ${signed.session.access_token}`
     },
     body: JSON.stringify(body)
@@ -116,9 +116,9 @@ await runCase("AUD-004-recent-130-event-window", async () => {
 });
 
 // Retain synthetic intake evidence; never delete or rewrite append-only records.
-// This is behavioural staging evidence, NOT deployed-source digest attestation.
+// This is isolated candidate behavioural evidence, NOT deployed-source digest attestation.
 const evidence = {
-  suite: "datanest-ai-backend-acceptance-v1", stagingProject: "qchttpcyqlqnhvahprhz",
+  suite: "datanest-ai-backend-acceptance-v1", certificationTarget: "local-canonical",
   candidateCommit: process.env.DATANEST_CANDIDATE_SHA || null,
   checkoutCommit: process.env.GITHUB_SHA || null,
   fixtureMarker, completedAt: new Date().toISOString(), results,
