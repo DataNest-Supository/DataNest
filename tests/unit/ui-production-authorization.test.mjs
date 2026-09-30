@@ -70,6 +70,19 @@ test("production authorization accepts a complete structural payload",()=>{
   assert.match(result.stdout,/Validated UI production authorization payload/);
 });
 
+test("authorized fixture ignores parent candidate Test Mode state",()=>{
+  const previous=process.env.DATANEST_UI_RELEASE_STATE;
+  process.env.DATANEST_UI_RELEASE_STATE="candidate";
+  try{
+    const result=verify();
+    assert.equal(result.status,0,result.stderr);
+    assert.match(result.stdout,/authorized/);
+  }finally{
+    if(previous===undefined) delete process.env.DATANEST_UI_RELEASE_STATE;
+    else process.env.DATANEST_UI_RELEASE_STATE=previous;
+  }
+});
+
 test("Pages production deployment is manual exact-SHA and environment gated",()=>{
   assert.doesNotMatch(pagesWorkflow,/\n\s+push:\s*\n/);
   assert.match(pagesWorkflow,/workflow_dispatch:/);
