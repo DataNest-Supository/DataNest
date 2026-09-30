@@ -35,7 +35,8 @@ export function validateAuditDraft(raw:unknown,context:{sourceIds:string[];crite
           :"unknown";
     const severityRaw=String(value.severity||"info");
     const severity=(["info","low","medium","high","critical"].includes(severityRaw)?severityRaw:"info") as AuditDraftFinding["severity"];
-    const confidence=Math.max(0,Math.min(1,Number(value.confidence??0)));
+    const confidenceRaw=Number(value.confidence??0);
+    const confidence=Number.isFinite(confidenceRaw)?Math.max(0,Math.min(1,confidenceRaw)):0;
     return {
       criterionId,evidenceIds,observation,
       limitation:value.limitation==null?null:String(value.limitation).trim()||null,
