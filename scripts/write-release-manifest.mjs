@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import {
   buildUiGovernanceEvidence,
@@ -9,6 +9,10 @@ const target=resolve(process.argv[2] || "public/release-manifest.json");
 const uiGovernance=hasUiGovernanceEnvironment(process.env)
   ? buildUiGovernanceEvidence(process.env)
   : null;
+const dbAttestationFile=resolve(process.env.DATANEST_DB_ATTESTATION_FILE || ".datanest/release-attestation.json");
+const edgeAttestationFile=resolve(process.env.DATANEST_EDGE_ATTESTATION_FILE || ".datanest/edge-function-attestation.json");
+const databaseAttestation=existsSync(dbAttestationFile)?JSON.parse(readFileSync(dbAttestationFile,"utf8")):null;
+const edgeFunctionAttestation=existsSync(edgeAttestationFile)?JSON.parse(readFileSync(edgeAttestationFile,"utf8")):null;
 
 const manifest={
   project:"Resonance DataNest",
@@ -31,6 +35,25 @@ const manifest={
   },
   supabaseProject:process.env.DATANEST_SUPABASE_PROJECT || "sgqdmfgjbprsoqsmgigi",
   ...(uiGovernance ? {uiGovernance} : {}),
+  releaseAttestation:{
+    database:databaseAttestation
+      ? {
+          status:databaseAttestation.status,
+          source:databaseAttestation.source,
+          verifiedAt:databaseAttestation.verifiedAt,
+          fingerprint:databaseAttestation.fingerprint
+        }
+      : {status:"not_collected",source:"live-production-database"},
+    edgeFunctions:edgeFunctionAttestation
+      ? {
+          status:edgeFunctionAttestation.status,
+          source:edgeFunctionAttestation.source,
+          verifiedAt:edgeFunctionAttestation.verifiedAt,
+          baselineFingerprint:edgeFunctionAttestation.baselineFingerprint,
+          functionCount:Object.keys(edgeFunctionAttestation.functions||{}).length
+        }
+      : {status:"not_collected",source:"supabase-management-api"}
+  },
   generatedAt:new Date().toISOString()
 };
 mkdirSync(dirname(target),{recursive:true});
