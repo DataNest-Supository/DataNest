@@ -31,6 +31,59 @@ jobs:
       - uses: actions/checkout@v7.0.1
       - uses: ./.github/actions/node-project-setup
 
+      - name: Determine canonical certification applicability
+        id: applicability
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "applicable=true" >> "$GITHUB_OUTPUT"
+            echo "reason=workflow_dispatch" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git fetch --no-tags --prune origin "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
+          mapfile -t changed < <(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}")
+          applicable=false
+          for file in "${changed[@]}"; do
+            case "$file" in
+              .github/workflows/sec01-governance-certification.yml|config/worktree-gate-timeframes.json|docs/reviews/*sec01*|supabase/migrations/*governance*|tests/sql/datanest_sovereign_governance_acceptance.sql|tests/stress/datanest-governance-boundary-acceptance.mjs|tests/unit/worktree-gate-timeframes.test.mjs)
+                ;;
+              *)
+                applicable=true
+                break
+                ;;
+            esac
+          done
+          if [ "${#changed[@]}" -eq 0 ]; then
+            applicable=true
+          fi
+          echo "applicable=$applicable" >> "$GITHUB_OUTPUT"
+          if [ "$applicable" = "true" ]; then
+            echo "reason=canonical-data-plane-or-unknown-scope-change" >> "$GITHUB_OUTPUT"
+          else
+            echo "reason=canonical-governance-only-change" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Record explicit non-applicability
+        if: steps.applicability.outputs.applicable != 'true'
+        shell: bash
+        run: |
+          mkdir -p certification-artifacts
+          node -e 'const fs=require("fs"); fs.writeFileSync("certification-artifacts/datanest-ai-certification.json", JSON.stringify({
+            commit:process.env.DATANEST_CERTIFICATION_CANDIDATE_SHA,
+            candidateCommit:process.env.DATANEST_CERTIFICATION_CANDIDATE_SHA,
+            status:"not-applicable",
+            reason:process.env.DATANEST_AI_CERTIFICATION_NON_APPLICABLE_REASON,
+            target:"canonical-governance",
+            mirrorStagingUsed:false,
+            productionMutated:false,
+            completedAt:new Date().toISOString()
+          })+"\n")'
+        env:
+          DATANEST_AI_CERTIFICATION_NON_APPLICABLE_REASON: ${{ steps.applicability.outputs.reason }}
+          DATANEST_CERTIFICATION_CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
       - name: Create ephemeral governed E2E credentials
         if: steps.applicability.outputs.applicable == 'true'
         shell: bash
@@ -157,59 +210,7 @@ jobs:
     name: DataNest AI worktree gate timeframe
     uses: ./.github/workflows/worktree-gate-timeframe.yml
     with:
-      gate_id: "datanest-ai-certification"      - name: Determine canonical certification applicability
-        id: applicability
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ "${{ github.event_name }}" != "pull_request" ]; then
-            echo "applicable=true" >> "$GITHUB_OUTPUT"
-            echo "reason=workflow_dispatch" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          git fetch --no-tags --prune origin "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
-          mapfile -t changed < <(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}")
-          applicable=false
-          for file in "${changed[@]}"; do
-            case "$file" in
-              .github/workflows/sec01-governance-certification.yml|config/worktree-gate-timeframes.json|docs/reviews/*sec01*|supabase/migrations/*governance*|tests/sql/datanest_sovereign_governance_acceptance.sql|tests/stress/datanest-governance-boundary-acceptance.mjs|tests/unit/worktree-gate-timeframes.test.mjs)
-                ;;
-              *)
-                applicable=true
-                break
-                ;;
-            esac
-          done
-          if [ "${#changed[@]}" -eq 0 ]; then
-            applicable=true
-          fi
-          echo "applicable=$applicable" >> "$GITHUB_OUTPUT"
-          if [ "$applicable" = "true" ]; then
-            echo "reason=canonical-data-plane-or-unknown-scope-change" >> "$GITHUB_OUTPUT"
-          else
-            echo "reason=canonical-governance-only-change" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Record explicit non-applicability
-        if: steps.applicability.outputs.applicable != 'true'
-        shell: bash
-        run: |
-          mkdir -p certification-artifacts
-          node -e 'const fs=require("fs"); fs.writeFileSync("certification-artifacts/datanest-ai-certification.json", JSON.stringify({
-            commit:process.env.DATANEST_CERTIFICATION_CANDIDATE_SHA,
-            candidateCommit:process.env.DATANEST_CERTIFICATION_CANDIDATE_SHA,
-            status:"not-applicable",
-            reason:process.env.DATANEST_AI_CERTIFICATION_NON_APPLICABLE_REASON,
-            target:"canonical-governance",
-            mirrorStagingUsed:false,
-            productionMutated:false,
-            completedAt:new Date().toISOString()
-          })+"\n")'
-        env:
-          DATANEST_AI_CERTIFICATION_NON_APPLICABLE_REASON: ${{ steps.applicability.outputs.reason }}
-          DATANEST_CERTIFICATION_CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-
+      gate_id: "datanest-ai-certification"
       - name: Create ephemeral governed E2E credentials
         shell: bash
         run: |
