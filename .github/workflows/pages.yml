@@ -26,6 +26,10 @@ on:
         description: Successful live Mirror visual/functional verification run or evidence artifact for the exact candidate
         required: true
         type: string
+      datanest_ai_certification_reference:
+        description: DataNest AI Certification run/artifact for the exact candidate SHA and governed staging backend
+        required: true
+        type: string
       audit_optimizer_reference:
         description: DataNest Audit Optimizer review/evidence reference for this production candidate
         required: true
@@ -136,6 +140,7 @@ jobs:
       DATANEST_UI_RELEASE_STATE: ${{ inputs.release_mode }}
       DATANEST_UI_MIRROR_PROMOTION_REF: ${{ inputs.mirror_promotion_reference }}
       DATANEST_UI_MIRROR_LIVE_EVIDENCE_REF: ${{ inputs.mirror_live_evidence_reference }}
+      DATANEST_UI_DATANEST_AI_CERTIFICATION_REF: ${{ inputs.datanest_ai_certification_reference }}
       DATANEST_UI_AUDIT_OPTIMIZER_REF: ${{ inputs.audit_optimizer_reference }}
       DATANEST_UI_PR_VERIFICATION_REF: ${{ inputs.pr_verification_reference }}
       DATANEST_UI_SECURITY_REF: ${{ inputs.security_scan_reference }}
