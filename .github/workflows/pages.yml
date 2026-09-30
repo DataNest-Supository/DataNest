@@ -10,6 +10,14 @@ on:
         description: Exact 40-character commit SHA reachable from main
         required: true
         type: string
+      release_mode:
+        description: Fully authorized production or temporary Owner live test mode
+        required: true
+        default: authorized
+        type: choice
+        options:
+          - authorized
+          - owner_test_mode
       pr_verification_reference:
         description: PR Verification run/reference for the exact release SHA
         required: true
@@ -28,22 +36,38 @@ on:
         type: string
       governance_review_reference:
         description: Governance-impact human review reference
-        required: true
+        required: false
         type: string
       legal_review_reference:
         description: Legal review reference for the legal/governance surface changes
-        required: true
+        required: false
         type: string
       external_review_reference:
         description: External or independent human review reference
-        required: true
+        required: false
         type: string
       production_authorization_reference:
         description: Human production authorization reference
         required: true
         type: string
+      owner_test_mode_reference:
+        description: Owner authorization reference for temporary live Test Mode
+        required: false
+        type: string
+      owner_test_mode_owner_login:
+        description: GitHub login of the Owner invoking temporary live Test Mode
+        required: false
+        type: string
+      owner_test_mode_expires_at:
+        description: ISO-8601 expiry; must be 30 minutes to 72 hours in the future
+        required: false
+        type: string
+      owner_test_mode_reason:
+        description: Evidence-gathering reason for the temporary production exception
+        required: false
+        type: string
       confirmation:
-        description: Type AUTHORIZE PRODUCTION exactly
+        description: Type AUTHORIZE PRODUCTION or AUTHORIZE OWNER TEST MODE as required by release_mode
         required: true
         type: string
 
@@ -65,7 +89,7 @@ jobs:
       NEXT_PUBLIC_SUPABASE_URL: "https://sgqdmfgjbprsoqsmgigi.supabase.co"
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_yIf5HFKNNteed4HdYCS2Vw_4TB-4LvB"
       DATANEST_UI_RELEASE_SHA: ${{ inputs.release_sha }}
-      DATANEST_UI_RELEASE_STATE: authorized
+      DATANEST_UI_RELEASE_STATE: ${{ inputs.release_mode }}
       DATANEST_UI_PR_VERIFICATION_REF: ${{ inputs.pr_verification_reference }}
       DATANEST_UI_SECURITY_REF: ${{ inputs.security_scan_reference }}
       DATANEST_UI_RONSAS_VALIDATION_REF: ${{ inputs.ronsas_validation_reference }}
@@ -75,12 +99,27 @@ jobs:
       DATANEST_UI_EXTERNAL_REVIEW_REF: ${{ inputs.external_review_reference }}
       DATANEST_UI_AUTHORIZATION_REF: ${{ inputs.production_authorization_reference }}
       DATANEST_UI_PRODUCTION_CONFIRMATION: ${{ inputs.confirmation }}
+      DATANEST_UI_OWNER_TEST_MODE_REF: ${{ inputs.owner_test_mode_reference }}
+      DATANEST_UI_OWNER_TEST_MODE_OWNER_LOGIN: ${{ inputs.owner_test_mode_owner_login }}
+      DATANEST_UI_OWNER_TEST_MODE_EXPIRES_AT: ${{ inputs.owner_test_mode_expires_at }}
+      DATANEST_UI_OWNER_TEST_MODE_REASON: ${{ inputs.owner_test_mode_reason }}
+      DATANEST_UI_OWNER_TEST_MODE_ACTOR: ${{ github.actor }}
     steps:
       - name: Checkout exact release SHA
         uses: actions/checkout@v7.0.1
         with:
           ref: ${{ inputs.release_sha }}
           fetch-depth: 0
+
+      - name: Verify Owner Test Mode actor authority
+        if: ${{ inputs.release_mode == 'owner_test_mode' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          test "$DATANEST_UI_OWNER_TEST_MODE_OWNER_LOGIN" = "$GITHUB_ACTOR"
+          permission="$(gh api "repos/$GITHUB_REPOSITORY/collaborators/$GITHUB_ACTOR/permission" --jq '.permission')"
+          test "$permission" = "admin"
 
       - name: Verify production authorization payload
         run: node scripts/verify-ui-production-authorization.mjs
@@ -101,7 +140,7 @@ jobs:
           SUPABASE_URL: "https://sgqdmfgjbprsoqsmgigi.supabase.co"
           SUPABASE_PUBLISHABLE_KEY: "sb_publishable_yIf5HFKNNteed4HdYCS2Vw_4TB-4LvB"
 
-      - name: Write authorized UI governance evidence
+      - name: Write UI governance release evidence
         run: node scripts/write-ui-governance-evidence.mjs public/ui-governance-release.json
 
       - name: Write release manifest
@@ -129,6 +168,16 @@ jobs:
       - uses: actions/upload-pages-artifact@v5.0.0
         with:
           path: ./out
+
+      - name: Upload Owner Live Test Mode evidence
+        if: ${{ inputs.release_mode == 'owner_test_mode' }}
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: ui-owner-live-test-mode-${{ github.run_id }}
+          path: |
+            public/ui-governance-release.json
+            public/release-manifest.json
+          retention-days: 90
 
   deploy:
     environment:
@@ -194,13 +243,30 @@ jobs:
       - name: Verify release and UI governance manifests
         env:
           RELEASE_SHA: ${{ inputs.release_sha }}
+          RELEASE_MODE: ${{ inputs.release_mode }}
+          TEST_MODE_EXPIRES_AT: ${{ inputs.owner_test_mode_expires_at }}
         run: |
           curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors             https://datanest-supository.github.io/DataNest/release-manifest.json             -o /tmp/release-manifest.json
           curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors             https://datanest-supository.github.io/DataNest/ui-governance-release.json             -o /tmp/ui-governance-release.json
           grep -q "\"frontendCommit\":\"$RELEASE_SHA\"" /tmp/release-manifest.json
           grep -q "\"releaseSha\":\"$RELEASE_SHA\"" /tmp/ui-governance-release.json
-          grep -q '"releaseState":"authorized"' /tmp/ui-governance-release.json
-          grep -q '"authorized":true' /tmp/ui-governance-release.json
+          node <<'NODE'
+          const fs=require("fs");
+          const evidence=JSON.parse(fs.readFileSync("/tmp/ui-governance-release.json","utf8"));
+          const mode=process.env.RELEASE_MODE;
+          if(evidence.releaseState!==mode) throw new Error(`Expected releaseState ${mode}, got ${evidence.releaseState}`);
+          if(evidence.productionDeploymentAllowed!==true) throw new Error("Production deployment must be explicitly allowed");
+          if(mode==="authorized"){
+            if(evidence.authorized!==true || evidence.fullyGoverned!==true) throw new Error("Authorized release must be fully governed");
+          }else if(mode==="owner_test_mode"){
+            if(evidence.authorized!==false || evidence.fullyGoverned!==false) throw new Error("Owner Test Mode must not claim full authorization");
+            if(!evidence.ownerTestMode?.active || evidence.ownerTestMode.temporaryException!==true) throw new Error("Owner Test Mode metadata is required");
+            const expected=new Date(process.env.TEST_MODE_EXPIRES_AT).toISOString();
+            if(evidence.ownerTestMode.expiresAt!==expected) throw new Error("Owner Test Mode expiry mismatch");
+          }else{
+            throw new Error(`Unsupported release mode ${mode}`);
+          }
+          NODE
           grep -q "\"releaseSha\":\"$RELEASE_SHA\"" /tmp/release-manifest.json
           grep -q '"databaseRelease":"link-transcheduler-job-requirements-user-interests"' /tmp/release-manifest.json
           grep -q '"projectInvitations":"send-project-member-invite@3"' /tmp/release-manifest.json
