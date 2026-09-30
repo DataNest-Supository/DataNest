@@ -187,7 +187,7 @@ test("Owner Test Mode evidence records the AI proposal and accepted recommendati
 });
 
 test("explicit Owner override preserves the AI recommendation and deviation",()=>{
-  const expiry=new Date(Date.now()+24*60*60*1000).toISOString();
+  const expiry=new Date(Date.now()+36*60*60*1000).toISOString();
   const {result,json}=runWriter({
     DATANEST_UI_RELEASE_SHA:sha,
     DATANEST_UI_RELEASE_STATE:"owner_test_mode",
@@ -212,7 +212,7 @@ test("explicit Owner override preserves the AI recommendation and deviation",()=
   const proposal=json.ownerTestMode.timeframeProposal;
   assert.equal(proposal.strategy,"explicit");
   assert.equal(proposal.ownerOverride,true);
-  assert.ok(proposal.acceptedHours>23.9 && proposal.acceptedHours<=24);
-  assert.equal(proposal.recommendedHours,12);
+  assert.ok(proposal.acceptedHours>35.9 && proposal.acceptedHours<=36);
+  assert.equal(proposal.recommendedHours,24);
   assert.ok(proposal.overrideDeltaHours>11);
 });
