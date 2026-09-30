@@ -3,17 +3,20 @@ import { createHash, randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 
 // Fail closed BEFORE loading a client or issuing any request.
-const target = new URL(process.env.DATANEST_AI_STAGING_URL || "https://invalid.invalid");
-assert.equal(target.href, "https://qchttpcyqlqnhvahprhz.supabase.co/", "Backend acceptance is dedicated-staging-only.");
+const target = new URL(process.env.DATANEST_CERTIFICATION_URL || "https://invalid.invalid");
+const stagingTarget = new URL(process.env.DATANEST_AI_STAGING_URL || "https://invalid.invalid");
+assert.ok(["127.0.0.1","localhost"].includes(target.hostname), "Backend acceptance must authenticate against the isolated canonical stack.");
+assert.equal(stagingTarget.href, "https://qchttpcyqlqnhvahprhz.supabase.co/", "The AI data plane must remain the dedicated staging project.");
 assert.equal(process.env.DATANEST_AI_E2E_EMAIL, "datanest-ai-e2e@resonance.invalid", "Only the governed synthetic E2E identity may run this suite.");
-for (const name of ["DATANEST_AI_STAGING_PUBLISHABLE_KEY", "DATANEST_AI_STAGING_SERVICE_ROLE_KEY", "DATANEST_AI_E2E_PASSWORD"]) {
+for (const name of ["DATANEST_CERTIFICATION_PUBLISHABLE_KEY", "DATANEST_CERTIFICATION_SERVICE_ROLE_KEY", "DATANEST_AI_STAGING_SERVICE_ROLE_KEY", "DATANEST_AI_E2E_PASSWORD"]) {
   assert.ok(process.env[name], `${name} is required.`);
 }
 
 const { createClient } = await import("@supabase/supabase-js");
 const options = { auth: { persistSession: false, autoRefreshToken: false } };
-const client = createClient(target.origin, process.env.DATANEST_AI_STAGING_PUBLISHABLE_KEY, options);
-const admin = createClient(target.origin, process.env.DATANEST_AI_STAGING_SERVICE_ROLE_KEY, options);
+const client = createClient(target.origin, process.env.DATANEST_CERTIFICATION_PUBLISHABLE_KEY, options);
+const admin = createClient(target.origin, process.env.DATANEST_CERTIFICATION_SERVICE_ROLE_KEY, options);
+const stagingAdmin = createClient(stagingTarget.origin, process.env.DATANEST_AI_STAGING_SERVICE_ROLE_KEY, options);
 function dataOf(result, label) {
   if (result.error || !result.data) throw new Error(`${label} failed.`);
   return result.data;
@@ -25,7 +28,7 @@ const signed = dataOf(await client.auth.signInWithPassword({
 assert.ok(signed.session?.access_token, "An authenticated user token is required.");
 const project = dataOf(await client.from("projects").select("id").eq("slug", "resonance-datanest").single(), "Fixture project lookup");
 const job = dataOf(await client.from("jobs").select("id,requirements").eq("project_id", project.id).eq("title", "DataNest AI E2E Job").single(), "Fixture job lookup");
-assert.equal(job.requirements?.environment, "staging", "The job must be an explicit staging fixture.");
+assert.equal(job.requirements?.environment, "certification", "The job must be an explicit canonical certification fixture.");
 const fixtureMarker = "backend-acceptance-" + randomUUID();
 const results = [];
 
@@ -36,7 +39,7 @@ async function invoke(slug, body) {
     method: "POST", redirect: "error", signal: AbortSignal.timeout(20000),
     headers: {
       "Content-Type": "application/json",
-      apikey: process.env.DATANEST_AI_STAGING_PUBLISHABLE_KEY,
+      apikey: process.env.DATANEST_CERTIFICATION_PUBLISHABLE_KEY,
       Authorization: `Bearer ${signed.session.access_token}`
     },
     body: JSON.stringify(body)
@@ -70,7 +73,7 @@ await runCase("AUD-003-content-bound-replay", async () => {
   const changed = await invoke("datanest-ai-intake", { ...input, content: fixtureMarker + "-changed-B" });
   assert.equal(changed.status, 409, "A/B must conflict; old code falsely returns 200.");
   assert.equal(replay.body.sessionId, first.body.sessionId, "A/A must preserve the original DataNest session.");
-  const stored = dataOf(await admin.from("ai_intake_events")
+  const stored = dataOf(await stagingAdmin.from("ai_intake_events")
     .select("id,content,content_hash,session_id")
     .eq("project_id", project.id).eq("job_id", job.id)
     .eq("source_type", "ai_companion").eq("external_ai_session_id", external.session_id), "Replay fixture inspection");
@@ -99,7 +102,7 @@ await runCase("AUD-004-recent-130-event-window", async () => {
       metadata: { test_fixture: fixtureMarker, trust_state: "uncertified" }
     };
   });
-  const inserted = await admin.from("ai_intake_events").insert(rows);
+  const inserted = await stagingAdmin.from("ai_intake_events").insert(rows);
   if (inserted.error) throw new Error("Seeding the isolated 130-event fixture failed.");
   const context = await invoke("datanest-ai-chat", { action: "context", jobId: job.id, sessionId });
   assert.equal(context.status, 200, "Retrieving the long session must succeed.");
@@ -113,9 +116,13 @@ await runCase("AUD-004-recent-130-event-window", async () => {
 });
 
 // Retain synthetic intake evidence; never delete or rewrite append-only records.
-// This is behavioural staging evidence, NOT deployed-source digest attestation.
+// The collaborator is authenticated only by canonical DataNest. Staging is a
+// service-role data plane and is never used as the synthetic user's auth authority.
 const evidence = {
-  suite: "datanest-ai-backend-acceptance-v1", stagingProject: "qchttpcyqlqnhvahprhz",
+  suite: "datanest-ai-backend-acceptance-v2",
+  certificationTarget: "local-canonical",
+  stagingDataPlane: "qchttpcyqlqnhvahprhz",
+  syntheticStagingSignIn: false,
   candidateCommit: process.env.DATANEST_CANDIDATE_SHA || null,
   checkoutCommit: process.env.GITHUB_SHA || null,
   fixtureMarker, completedAt: new Date().toISOString(), results,
