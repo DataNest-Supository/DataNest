@@ -250,7 +250,13 @@ export default function DataNestDashboard({
 
         {!isOwner&&<div className="controlCenterRestricted">
           <span>◆</span>
-          <div><b>Owner controls restricted</b><p>Your {role} role can work in DataNest without receiving owner-only optimizer or control-monitor administration.</p></div>
+          <div>
+            <b>{role==="admin"?"Owner approval and control monitor restricted":"Owner controls restricted"}</b>
+            <p>{role==="admin"
+              ?"Admin can configure and run the DataNest AI System Optimizer in Admin settings. Owner approval and control-monitor administration remain restricted."
+              :`Your ${role} role can work in DataNest without receiving optimizer or owner-only control-monitor administration.`}
+            </p>
+          </div>
         </div>}
 
         {isOwner&&adminLoading&&!optimizer&&!monitor&&<p className="muted">Loading owner governance state…</p>}
@@ -280,7 +286,7 @@ export default function DataNestDashboard({
 
         <div className="rowActions">
           <button className="secondaryButton compact" type="button" onClick={()=>onNavigate("governance")}>Governance workspace</button>
-          {isOwner&&<button className="secondaryButton compact" type="button" onClick={()=>onNavigate("settings")}>Owner admin</button>}
+          {(role==="owner"||role==="admin")&&<button className="secondaryButton compact" type="button" onClick={()=>onNavigate("settings")}>Admin settings</button>}
         </div>
       </article>
 

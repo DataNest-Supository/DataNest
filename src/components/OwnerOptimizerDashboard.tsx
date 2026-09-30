@@ -18,7 +18,7 @@ type OptimizerSettings={
 type OptimizerRun={
   id:string;
   request_key:string;
-  trigger_kind:"cron"|"owner";
+  trigger_kind:"cron"|"owner"|"admin";
   status:"running"|"succeeded"|"failed"|"denied";
   summary:string|null;
   limitations:string[];
@@ -55,7 +55,9 @@ type OptimizerSuggestion={
 };
 
 type OptimizerWorkspace={
-  role:"owner";
+  role:"owner"|"admin";
+  can_manage:boolean;
+  can_approve:boolean;
   settings:OptimizerSettings;
   runs:OptimizerRun[];
   suggestions:OptimizerSuggestion[];
@@ -72,6 +74,17 @@ function date(value:string|null|undefined){
 
 function label(value:string){
   return value.replaceAll("_"," ");
+}
+
+function suggestionLane(item:OptimizerSuggestion){
+  const lane=String(item.proposed_change?.lane||"cross_system");
+  const labels:Record<string,string>={
+    audit_optimizer:"Audit Optimizer",
+    workflow_reviewer:"Workflow Reviewer",
+    code_cleaner:"Code Cleaner",
+    cross_system:"Cross-system"
+  };
+  return labels[lane]||label(lane);
 }
 
 export default function OwnerOptimizerDashboard({projectId}:{projectId:string}){
@@ -191,15 +204,37 @@ export default function OwnerOptimizerDashboard({projectId}:{projectId:string}){
   return <section className="panel" aria-label="Owner Optimizer Console">
     <div className="panelHead">
       <div>
-        <p className="eyebrow">OWNER ADMIN · HUMAN APPROVAL GATE</p>
-        <h2>DataNest Audit Optimizer</h2>
-        <p className="muted">DataNest AI continuously reviews governed evidence and proposes reversible optimizations. AI cannot approve, vote, ratify, or deploy changes.</p>
+        <p className="eyebrow">ADMIN · DATANEST AI SYSTEM OPTIMIZATION</p>
+        <h2>DataNest AI System Optimizer</h2>
+        <p className="muted">DataNest AI coordinates Audit Optimizer, Workflow Reviewer, and Code Cleaner across governed system evidence. Admins can configure and run reviews; only Owners can approve suggestions into formal governance.</p>
       </div>
       <span className="countPill">{workspace?.pending_count||0} pending</span>
     </div>
 
     {error&&<div className="errorBanner" role="alert">{error}</div>}
     {notice&&<div className="noticeBanner" role="status">{notice}</div>}
+
+    <div className="settingsGrid">
+      <div className="panel">
+        <p className="eyebrow">COLLABORATION</p>
+        <h3>DataNest AI controller</h3>
+        <div className="settingsList">
+          <div><dt>Audit Optimizer</dt><dd>Evidence · controls · risk</dd></div>
+          <div><dt>Workflow Reviewer</dt><dd>Flow · handoffs · scheduling</dd></div>
+          <div><dt>Code Cleaner</dt><dd>Maintainability · tests · cleanup</dd></div>
+        </div>
+        <p className="securityNote">Code Cleaner produces evidence-linked patch plans only. It cannot edit, merge, deploy, or weaken controls automatically.</p>
+      </div>
+      <div className="panel">
+        <p className="eyebrow">ACCESS BOUNDARY</p>
+        <h3>{workspace?.role==="owner"?"Owner":"Admin"} session</h3>
+        <div className="settingsList">
+          <div><dt>Configure optimizer</dt><dd>{workspace?.can_manage?"Allowed":"Restricted"}</dd></div>
+          <div><dt>Run system review</dt><dd>{workspace?.can_manage?"Allowed":"Restricted"}</dd></div>
+          <div><dt>Approve to governance</dt><dd>{workspace?.can_approve?"Owner allowed":"Owner required"}</dd></div>
+        </div>
+      </div>
+    </div>
 
     <div className="settingsGrid">
       <div className="panel">
@@ -211,7 +246,7 @@ export default function OwnerOptimizerDashboard({projectId}:{projectId:string}){
           <div><dt>Next due</dt><dd>{date(workspace?.settings?.next_run_after)}</dd></div>
         </div>
         <div className="rowActions">
-          <button className="primaryButton" type="button" disabled={Boolean(busy)} onClick={runNow}>
+          <button className="primaryButton" type="button" disabled={Boolean(busy)||!workspace?.can_manage} onClick={runNow}>
             {busy==="run"?"Analyzing…":"Run optimization now"}
           </button>
           <button className="secondaryButton" type="button" disabled={Boolean(busy)} onClick={()=>void load()}>
@@ -248,14 +283,14 @@ export default function OwnerOptimizerDashboard({projectId}:{projectId:string}){
             {[1,2,3,4,5,6,7,8,9,10].map(value=><option key={value} value={value}>{value}</option>)}
           </select>
         </label>
-        <button className="primaryButton" type="button" disabled={Boolean(busy)} onClick={saveSettings}>
+        <button className="primaryButton" type="button" disabled={Boolean(busy)||!workspace?.can_manage} onClick={saveSettings}>
           {busy==="settings"?"Saving…":"Save optimizer policy"}
         </button>
       </div>
     </div>
 
     <div className="panelHead">
-      <div><p className="eyebrow">APPROVAL QUEUE</p><h3>Human review required</h3></div>
+      <div><p className="eyebrow">APPROVAL QUEUE</p><h3>Owner review required</h3></div>
       <span className="countPill">{pending.length}</span>
     </div>
 
@@ -267,7 +302,7 @@ export default function OwnerOptimizerDashboard({projectId}:{projectId:string}){
           <div>
             <div className="rowBetween">
               <div><b>{item.title}</b><small>{item.trace_key}</small></div>
-              <span className="badge neutral">{label(item.risk_class)} · {item.confidence==null?"confidence n/a":Math.round(item.confidence*100)+"%"}</span>
+              <span className="badge neutral">{suggestionLane(item)} · {label(item.risk_class)} · {item.confidence==null?"confidence n/a":Math.round(item.confidence*100)+"%"}</span>
             </div>
             <p><b>Problem:</b> {item.problem_statement}</p>
             <p><b>Hypothesis:</b> {item.hypothesis}</p>
@@ -278,33 +313,35 @@ export default function OwnerOptimizerDashboard({projectId}:{projectId:string}){
               <p className="muted">Evidence: {item.evidence_refs.length?item.evidence_refs.join(" · "):"No explicit evidence refs returned; review carefully."}</p>
               {item.standard_refs.length>0&&<p className="muted">Standards: {item.standard_refs.join(" · ")}</p>}
             </details>
-            <label>
-              Owner rationale
-              <textarea
-                rows={3}
-                value={rationales[item.id]||""}
-                onChange={event=>setRationales(current=>({...current,[item.id]:event.target.value}))}
-                placeholder="Why should this move forward, or why should it be rejected?"
-              />
-            </label>
-            <div className="rowActions">
-              <button
-                className="primaryButton"
-                type="button"
-                disabled={Boolean(busy)||(rationales[item.id]||"").trim().length<3}
-                onClick={()=>review(item,"approve")}
-              >
-                {busy===`review:${item.id}`?"Recording…":"Approve → Governance"}
-              </button>
-              <button
-                className="secondaryButton"
-                type="button"
-                disabled={Boolean(busy)||(rationales[item.id]||"").trim().length<3}
-                onClick={()=>review(item,"reject")}
-              >
-                Reject
-              </button>
-            </div>
+            {workspace?.can_approve?<>
+              <label>
+                Owner rationale
+                <textarea
+                  rows={3}
+                  value={rationales[item.id]||""}
+                  onChange={event=>setRationales(current=>({...current,[item.id]:event.target.value}))}
+                  placeholder="Why should this move forward, or why should it be rejected?"
+                />
+              </label>
+              <div className="rowActions">
+                <button
+                  className="primaryButton"
+                  type="button"
+                  disabled={Boolean(busy)||(rationales[item.id]||"").trim().length<3}
+                  onClick={()=>review(item,"approve")}
+                >
+                  {busy===`review:${item.id}`?"Recording…":"Approve → Governance"}
+                </button>
+                <button
+                  className="secondaryButton"
+                  type="button"
+                  disabled={Boolean(busy)||(rationales[item.id]||"").trim().length<3}
+                  onClick={()=>review(item,"reject")}
+                >
+                  Reject
+                </button>
+              </div>
+            </>:<p className="securityNote">Admin review is read-only at this gate. An Owner must approve or reject this suggestion before it can enter formal governance.</p>}
           </div>
         </article>)}
       </div>
@@ -330,6 +367,6 @@ export default function OwnerOptimizerDashboard({projectId}:{projectId:string}){
 
     <GovernanceControlMonitor projectId={projectId}/>
 
-    <p className="securityNote">Owner approval creates an evidence-linked governance improvement candidate marked ready for formal governance. It does not deploy code, change production, cast votes, or ratify a decision.</p>
+    <p className="securityNote">Admin/Owner runs create evidence-linked proposals only. Owner approval creates a governance improvement candidate; no optimizer lane can deploy code, change production, cast votes, or ratify a decision.</p>
   </section>;
 }

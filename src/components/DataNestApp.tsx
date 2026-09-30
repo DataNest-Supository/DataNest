@@ -2547,7 +2547,7 @@ function Settings({
 
     {project&&membership?.role==="owner"&&<div className="fullWidth" aria-label="Owner Development Analytics Administration"><OwnerDevelopmentAnalytics projectId={project.id} compact /></div>}
 
-    {project&&membership?.role==="owner"&&<div className="fullWidth" aria-label="Owner Optimizer Administration">
+    {project&&membership&&["owner","admin"].includes(membership.role)&&<div className="fullWidth" aria-label="DataNest AI System Optimizer Administration">
       <OwnerOptimizerDashboard projectId={project.id}/>
     </div>}
 
