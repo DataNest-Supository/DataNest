@@ -369,6 +369,7 @@ export default function ExternalAiSidebar({
         clipboardText,
         currentResponse:responseTextRef.current,
         allowReplace:announce,
+        traceBinding:traceKey,
         blockedTexts:[handoff,preparedHandoff,lastClipboardCapture.current]
       });
 
