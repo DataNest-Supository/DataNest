@@ -9,6 +9,8 @@ import { spawnSync } from "node:child_process";
 const writer=fileURLToPath(new URL("../../scripts/write-ui-governance-evidence.mjs",import.meta.url));
 const sha="a".repeat(40);
 const reviewRefs={
+  DATANEST_UI_MIRROR_PROMOTION_REF:"Mirror-DataNest candidate run #42 @ abcdef1234567890abcdef1234567890abcdef12",
+  DATANEST_UI_AUDIT_OPTIMIZER_REF:"Audit Optimizer review AO-2026-09-30-001",
   DATANEST_UI_PR_VERIFICATION_REF:"PR Verification #1291",
   DATANEST_UI_SECURITY_REF:"Security scan #817",
   DATANEST_UI_RONSAS_VALIDATION_REF:"RONSAS Application Validation #156",
@@ -133,6 +135,12 @@ test("Owner Live Test Mode preserves pending human reviews and temporary deploym
   const {result,json}=runWriter({
     DATANEST_UI_RELEASE_SHA:sha,
     DATANEST_UI_RELEASE_STATE:"owner_test_mode",
+    DATANEST_UI_MIRROR_PROMOTION_REF:"Mirror-DataNest candidate run #43",
+    DATANEST_UI_AUDIT_OPTIMIZER_REF:"Audit Optimizer review AO-TEST-001",
+    DATANEST_UI_MIRROR_PROMOTION_REF:"Mirror-DataNest candidate run #44",
+    DATANEST_UI_AUDIT_OPTIMIZER_REF:"Audit Optimizer review AO-TEST-002",
+    DATANEST_UI_MIRROR_PROMOTION_REF:"Mirror-DataNest candidate run #45",
+    DATANEST_UI_AUDIT_OPTIMIZER_REF:"Audit Optimizer review AO-TEST-003",
     DATANEST_UI_PR_VERIFICATION_REF:"PR Verification #1340",
     DATANEST_UI_SECURITY_REF:"Security scan #882",
     DATANEST_UI_RONSAS_VALIDATION_REF:"RONSAS Application Validation #186",
