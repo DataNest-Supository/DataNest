@@ -13,6 +13,8 @@ on:
       - "src/lib/ronsasApps.ts"
       - ".github/workflows/ronsas-app-validation.yml"
       - ".github/workflows/pages.yml"
+      - ".github/workflows/ui-test-mode.yml"
+      - ".github/workflows/ui-test-mode.yml"
   push:
     branches: [main]
     paths:
