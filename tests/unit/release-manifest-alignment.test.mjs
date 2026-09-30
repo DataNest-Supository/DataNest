@@ -122,6 +122,47 @@ test("release manifest carries verified database attestation without overstating
   assert.equal(result.status,0,result.stderr);
   assert.equal(json.releaseAttestation.database.status,"verified");
   assert.equal(json.releaseAttestation.database.fingerprint,"a".repeat(64));
-  assert.equal(json.releaseAttestation.edgeFunctions.status,"unverified");
+  assert.equal(json.releaseAttestation.edgeFunctions.status,"not_collected");
+  rmSync(dir,{recursive:true,force:true});
+});
+
+
+test("Pages release requires read-only Edge Function attestation",()=>{
+  const baseline=JSON.parse(readFileSync(
+    new URL("../../config/production-edge-function-attestation.json",import.meta.url),
+    "utf8"
+  ));
+  assert.equal(Object.keys(baseline.functions).length,8);
+  assert.match(pagesWorkflow,/SUPABASE_ACCESS_TOKEN:\s*\$\{\{ secrets\.SUPABASE_ACCESS_TOKEN \}\}/);
+  assert.match(pagesWorkflow,/verify-production-edge-function-attestation\.mjs/);
+  assert.match(pagesWorkflow,/DATANEST_EDGE_ATTESTATION_FILE: \.datanest\/edge-function-attestation\.json/);
+  assert.match(pagesWorkflow,/edgeFunctions\?\.status!==\"verified\"/);
+  assert.match(pagesWorkflow,/edge_functions_read|edge_functions_read/);
+});
+
+test("release manifest embeds verified Edge Function attestation metadata",()=>{
+  const dir=mkdtempSync(join(tmpdir(),"datanest-edge-attestation-"));
+  const target=join(dir,"release-manifest.json");
+  const attestationPath=join(dir,"edge.json");
+  writeFileSync(attestationPath,JSON.stringify({
+    schemaVersion:"edge-function-attestation-v1",
+    status:"verified",
+    source:"supabase-management-api",
+    verifiedAt:"2026-09-30T11:00:00.000Z",
+    baselineFingerprint:"b".repeat(64),
+    functions:{
+      "datanest-ai-chat":{version:255,ezbr_sha256:"c".repeat(64)}
+    }
+  }));
+  const env={...process.env,DATANEST_EDGE_ATTESTATION_FILE:attestationPath};
+  for(const key of Object.keys(env)){
+    if(key.startsWith("DATANEST_UI_"))delete env[key];
+  }
+  const result=spawnSync(process.execPath,[manifestWriter,target],{env,encoding:"utf8"});
+  const json=result.status===0?JSON.parse(readFileSync(target,"utf8")):null;
+  assert.equal(result.status,0,result.stderr);
+  assert.equal(json.releaseAttestation.edgeFunctions.status,"verified");
+  assert.equal(json.releaseAttestation.edgeFunctions.functionCount,1);
+  assert.equal(json.releaseAttestation.edgeFunctions.baselineFingerprint,"b".repeat(64));
   rmSync(dir,{recursive:true,force:true});
 });
