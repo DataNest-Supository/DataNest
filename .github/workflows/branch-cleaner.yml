@@ -57,3 +57,9 @@ jobs:
           name: branch-cleaner-report
           path: artifacts/branch-cleaner/
           if-no-files-found: warn
+
+  gate-timeframe:
+    name: DataNest AI worktree gate timeframe
+    uses: ./.github/workflows/worktree-gate-timeframe.yml
+    with:
+      gate_id: "branch-cleaner"
