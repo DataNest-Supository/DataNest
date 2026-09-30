@@ -251,6 +251,18 @@
         "operationsReview"
       ],
       "machineBaselineMinutes": 10
+    },
+    "production-edge-function-release.yml": {
+      "gateId": "production-edge-function-release",
+      "gateType": "manual_mutation",
+      "taskComplexity": "cross_system",
+      "reportingComplexity": "audit_grade",
+      "reviewDomains": [
+        "engineeringReview",
+        "securityReview",
+        "operationsReview"
+      ],
+      "machineBaselineMinutes": 30
     }
   }
 }
