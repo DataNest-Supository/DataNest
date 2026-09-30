@@ -92,3 +92,14 @@ test("expired Owner Live Test Mode is automatically replaced by a holding page",
   assert.match(expiryWorkflow,/actions\/deploy-pages/);
   assert.match(expiryWorkflow,/Full governance review is required/);
 });
+
+
+test("Owner Live Test Mode exposes AI proposal controls while preserving bounded overrides",()=>{
+  assert.match(productionWorkflow,/owner_test_mode_window_strategy:/);
+  assert.match(productionWorkflow,/owner_test_mode_task_complexity:/);
+  assert.match(productionWorkflow,/owner_test_mode_reporting_complexity:/);
+  assert.match(productionWorkflow,/ai_proposed/);
+  assert.match(productionWorkflow,/explicit/);
+  assert.match(productionWorkflow,/propose-owner-test-mode-window\.mjs/);
+  assert.match(productionWorkflow,/timeframeProposal/);
+});
