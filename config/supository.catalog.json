@@ -113,5 +113,14 @@
       "sourcePath": "apps/ronsas/shared",
       "lifecycle": "governed"
     }
-  ]
+  ],
+  "rdMirror": {
+    "repository": "DataNest-Supository/Mirror-DataNest",
+    "mode": "ungated-rd-test",
+    "sourceOfTruth": false,
+    "productionAuthority": false,
+    "previewUrl": "https://datanest-supository.github.io/Mirror-DataNest/",
+    "promotion": "promotion branch in DataNest -> pull request -> human reviewer approval -> main",
+    "directSyncToMainAllowed": false
+  }
 }
