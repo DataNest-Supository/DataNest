@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -89,4 +89,39 @@ test("release manifest embeds UI governance traceability when UI release environ
     json.uiGovernance.evidence.prVerification.reference,
     "PR Verification #1291"
   );
+});
+
+
+test("Pages release requires live database migration attestation inputs",()=>{
+  assert.match(pagesWorkflow,/database_migration_head:/);
+  assert.match(pagesWorkflow,/database_migration_name:/);
+  assert.match(pagesWorkflow,/DATANEST_EXPECTED_DB_MIGRATION_HEAD:/);
+  assert.match(pagesWorkflow,/DATANEST_EXPECTED_DB_MIGRATION_NAME:/);
+  assert.match(pagesWorkflow,/verify-production-release-attestation\.mjs/);
+  assert.match(pagesWorkflow,/DATANEST_DB_ATTESTATION_FILE: \.datanest\/release-attestation\.json/);
+  assert.match(pagesWorkflow,/releaseAttestation\?\.database\?\.status!==\"verified\"/);
+});
+
+test("release manifest carries verified database attestation without overstating edge-function state",()=>{
+  const dir=mkdtempSync(join(tmpdir(),"datanest-release-attestation-"));
+  const target=join(dir,"release-manifest.json");
+  const attestationPath=join(dir,"attestation.json");
+  writeFileSync(attestationPath,JSON.stringify({
+    schemaVersion:"release-attestation-v1",
+    status:"verified",
+    source:"live-production-database",
+    verifiedAt:"2026-09-30T11:00:00.000Z",
+    fingerprint:"a".repeat(64)
+  }));
+  const env={...process.env,DATANEST_DB_ATTESTATION_FILE:attestationPath};
+  for(const key of Object.keys(env)){
+    if(key.startsWith("DATANEST_UI_"))delete env[key];
+  }
+  const result=spawnSync(process.execPath,[manifestWriter,target],{env,encoding:"utf8"});
+  const json=result.status===0?JSON.parse(readFileSync(target,"utf8")):null;
+  assert.equal(result.status,0,result.stderr);
+  assert.equal(json.releaseAttestation.database.status,"verified");
+  assert.equal(json.releaseAttestation.database.fingerprint,"a".repeat(64));
+  assert.equal(json.releaseAttestation.edgeFunctions.status,"unverified");
+  rmSync(dir,{recursive:true,force:true});
 });
