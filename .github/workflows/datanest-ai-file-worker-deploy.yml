@@ -44,7 +44,7 @@ jobs:
         run: deno check --config supabase/functions/datanest-ai-file-worker/deno.json supabase/functions/datanest-ai-file-worker/index.ts
 
   deploy:
-    needs: validate
+    needs: [validate, gate-timeframe]
     environment:
       name: github-pages
     runs-on: ubuntu-24.04
