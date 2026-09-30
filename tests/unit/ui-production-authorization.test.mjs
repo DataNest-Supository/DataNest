@@ -21,6 +21,7 @@ const valid={
   // workflow exports candidate/test-mode state into process.env.
   DATANEST_UI_RELEASE_STATE:"authorized",
   DATANEST_UI_RELEASE_SHA:"c".repeat(40),
+  DATANEST_UI_RELEASE_STATE:"authorized",
   DATANEST_UI_PRODUCTION_CONFIRMATION:"AUTHORIZE PRODUCTION",
   DATANEST_UI_PR_VERIFICATION_REF:"PR Verification #1293",
   DATANEST_UI_SECURITY_REF:"Security scan #820",
