@@ -217,3 +217,27 @@ test("Pages workflow exposes AI timeframe complexity controls",()=>{
   assert.match(pagesWorkflow,/propose-owner-test-mode-window\.mjs/);
   assert.match(pagesWorkflow,/proposal\.strategy==="ai_proposed"/);
 });
+
+
+test("Owner Live Test Mode keeps post-test human gates open while authorized production remains protected",()=>{
+  const visualBlock=pagesWorkflow.match(/visual_review_reference:\n([\s\S]*?)(?=\n      governance_review_reference:)/)?.[1]||"";
+  const authBlock=pagesWorkflow.match(/production_authorization_reference:\n([\s\S]*?)(?=\n      owner_test_mode_reference:)/)?.[1]||"";
+  assert.match(visualBlock,/required: false/);
+  assert.match(authBlock,/required: false/);
+  assert.match(
+    pagesWorkflow,
+    /name: \$\{\{ inputs\.release_mode == 'owner_test_mode' && 'github-pages-owner-test-mode' \|\| 'github-pages' \}\}/
+  );
+  assert.match(pagesWorkflow,/Verify Owner Test Mode actor authority/);
+  assert.match(pagesWorkflow,/AUTHORIZE OWNER TEST MODE/);
+});
+
+test("Owner Live Test Mode expiry can fail closed without waiting on protected production review",()=>{
+  const expiryWorkflow=readFileSync(
+    new URL("../../.github/workflows/ui-owner-test-mode-expiry.yml",import.meta.url),
+    "utf8"
+  );
+  assert.match(expiryWorkflow,/name: github-pages-owner-test-mode/);
+  assert.match(expiryWorkflow,/owner_test_mode_expired/);
+  assert.match(expiryWorkflow,/actions\/deploy-pages/);
+});

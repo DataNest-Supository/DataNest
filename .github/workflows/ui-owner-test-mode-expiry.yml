@@ -81,7 +81,7 @@ jobs:
     if: ${{ needs.inspect.outputs.expired == 'true' }}
     needs: [inspect, build-expired-marker]
     environment:
-      name: github-pages
+      name: github-pages-owner-test-mode
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-24.04
     steps:
