@@ -11,6 +11,7 @@ on:
       - ".github/workflows/**"
       - "docs/**"
       - "workflow-reviewer.config.json"
+      - "config/worktree-gate-timeframes.json"
       - "package.json"
   workflow_dispatch:
     inputs:
