@@ -258,6 +258,7 @@ export function buildReusableWorkflowFindings(workflows, minWorkflows = 3) {
   const usage = new Map();
   for (const workflow of workflows) {
     for (const action of new Set(workflow.metrics.uses || [])) {
+      if (action.startsWith("./")) continue;
       const key = `uses:${action}`;
       usage.set(key, [...(usage.get(key) || []), workflow.file]);
     }
