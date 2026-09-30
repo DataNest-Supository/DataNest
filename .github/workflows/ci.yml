@@ -10,10 +10,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: actions/setup-node@v7.0.0
-        with:
-          node-version: 22
-      - run: npm ci
+      - uses: ./.github/actions/node-project-setup
       - run: npm test
       - name: Governance control effectiveness contract
         run: node --test tests/unit/governance-control-effectiveness-monitoring.test.mjs
