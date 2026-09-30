@@ -144,17 +144,20 @@ Authority boundary:
 - Production secrets and privileged production write paths do not belong in the mirror.
 - Automated checks in the mirror are advisory R&D evidence rather than governance gates.
 
-Promotion path:
+Production promotion path:
 
 ```text
-DataNest/main
+DataNest/main baseline
     -> Mirror-DataNest R&D
-    -> selected candidate + evidence
-    -> promotion branch in DataNest
-    -> canonical pull request
-    -> human reviewer approval
+    -> Package Production Candidate
+    -> mirror-promotion/* branch in DataNest
+    -> canonical CI / security / RONSAS validation
+    -> DataNest Audit Optimizer evidence review
+    -> formal governance + human reviewer approval
     -> DataNest/main
-    -> governed production deployment
+    -> exact-SHA governed production deployment
 ```
 
-The synchronization boundary is therefore where production governance resumes. A successful mirror preview is evidence for review, not authorization to release.
+All production-bound work must return through the canonical Supository. Mirror never receives live deployment authority. The synchronization boundary is where production governance resumes; a successful mirror preview or candidate package is evidence for review, not authorization to release.
+
+The live release payload requires both a Mirror promotion reference and an Audit Optimizer reference before production authorization can resolve.
