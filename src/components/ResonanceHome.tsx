@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { DATANEST_PLATFORM_DEFINITION } from "@/lib/ecosystemAuthority";
 import CollaborationVisual, { type ProductHeroTarget } from "./CollaborationVisual";
 import PurposeJourney from "./PurposeJourney";
 import PageHeader from "@/components/platform/PageHeader";
@@ -126,7 +127,7 @@ export default function ResonanceHome({
       <div className="aiIHeroCopy">
         <div className="aiIEyebrow"><span className="signalDot"/> RESONANCE DATANEST · AI &amp; I</div>
         <h2 id="ai-i-title">Human intent.<br/><span>AI amplification.</span></h2>
-        <p>{project.description||"A governed workspace where human direction and DataNest AI meet in one traceable operating system."}</p>
+        <p>{project.description||DATANEST_PLATFORM_DEFINITION}</p>
         <div className="aiIHeroActions">
           <button className="aiIPrimary" type="button" onClick={()=>onNavigate("ai")}>
             <span>Enter DataNest AI</span><b aria-hidden="true">↗</b>

@@ -1,4 +1,7 @@
 export const DATANEST_PLATFORM_NAME = "Resonance DataNest";
+export const DATANEST_OPERATING_MODEL = "Business, Intelligence, Collaboration, and Expansion Operating System";
+export const DATANEST_PLATFORM_DEFINITION = "Resonance DataNest is the governed Business, Intelligence, Collaboration, and Expansion Operating System for the Resonance ecosystem.";
+export const DATANEST_BUSINESS_OS_SPEC_PATH = "docs/superpowers/specs/2026-09-29-datanest-business-os-collective-intelligence-design.md";
 export const RONSAS_PRODUCT_NAME = "RONSAS";
 export const RONSAS_FULL_NAME = "Resonance Open Nova Sovereign Application Suite";
 export const RONSAS_PRODUCT_PATH = "DataNest > Products > RONSAS";

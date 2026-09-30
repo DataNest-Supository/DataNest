@@ -120,23 +120,23 @@ const finalStates = new Set(["COMPLETED","FAILED","CANCELLED"]);
 const jobColumns = "id,job_number,title,description,priority,status,required_capabilities,requirements,acceptance,created_at,updated_at,deadline";
 
 const nav:Array<NavigationItem & {key:ViewKey;glyph:string}> = [
-  {key:"dashboard",label:"Control Center",group:"Core",glyph:"▦",id:"dashboard",phase:null,keywords:["dashboard","control","operations","governance"]},
-  {key:"overview",label:"AI & I",group:"Core",glyph:"◎",id:"overview",phase:null,keywords:["home","intent","overview"]},
-  {key:"ai",label:"DataNest AI",group:"Core",glyph:"✦",id:"ai",phase:null,keywords:["ai","assistant","core"]},
-  {key:"stakeholder",label:"Stakeholder",group:"Discover",glyph:"◌",id:"stakeholder",phase:"discover",keywords:["stakeholder","contribution"]},
-  {key:"sparks",label:"Sparks",group:"Discover",glyph:"✧",id:"sparks",phase:"discover",keywords:["sparks","ideas"]},
-  {key:"impact",label:"Impact",group:"Discover",glyph:"◉",id:"impact",phase:null,keywords:["impact","verification","scoring"]},
-  {key:"thinktank",label:"Think Tanks",group:"Discover",glyph:"◈",id:"thinktank",phase:"discover",keywords:["think","research","collaboration"]},
-  {key:"governance",label:"Governance",group:"Govern & Build",glyph:"◆",id:"governance",phase:"govern",keywords:["governance","policy","decisions"]},
-  {key:"products",label:"Products",group:"Govern & Build",glyph:"◉",id:"products",phase:"build",keywords:["products","portfolio"]},
-  {key:"external_auditor",label:"External Auditor",group:"Govern & Build",glyph:"◫",id:"external_auditor",phase:null,keywords:["audit","external","review"]},
-  {key:"productlab",label:"Product Lab",group:"Govern & Build",glyph:"▣",id:"productlab",phase:"build",keywords:["product","lab","test"]},
-  {key:"unifi",label:"UNIFI Planner",group:"Execute",glyph:"◇",id:"unifi",phase:"execute",keywords:["unifi","plan","manifest"]},
-  {key:"scheduler",label:"TranScheduler",group:"Execute",glyph:"⌁",id:"scheduler",phase:"execute",keywords:["schedule","gantt","queue"]},
-  {key:"runs",label:"Runs",group:"Execute",glyph:"▶",id:"runs",phase:"execute",keywords:["runs","execution"]},
-  {key:"checkpoints",label:"Checkpoints",group:"Verify",glyph:"↺",id:"checkpoints",phase:"verify",keywords:["checkpoint","resume"]},
-  {key:"audit",label:"Audit",group:"Verify",glyph:"≡",id:"audit",phase:"verify",keywords:["audit","events"]},
-  {key:"transparency",label:"Transparency",group:"Verify",glyph:"◎",id:"transparency",phase:"verify",keywords:["transparency","evidence"]},
+  {key:"dashboard",label:"Control Center",group:"Home",glyph:"▦",id:"dashboard",phase:null,keywords:["dashboard","control","operations","governance"]},
+  {key:"overview",label:"AI & I",group:"Home",glyph:"◎",id:"overview",phase:null,keywords:["home","intent","overview"]},
+  {key:"ai",label:"DataNest AI",group:"Intelligence",glyph:"✦",id:"ai",phase:null,keywords:["ai","assistant","core"]},
+  {key:"stakeholder",label:"Stakeholder",group:"Explore",glyph:"◌",id:"stakeholder",phase:"discover",keywords:["stakeholder","contribution"]},
+  {key:"sparks",label:"Sparks",group:"Explore",glyph:"✧",id:"sparks",phase:"discover",keywords:["sparks","ideas"]},
+  {key:"impact",label:"Impact",group:"Explore",glyph:"◉",id:"impact",phase:null,keywords:["impact","verification","scoring"]},
+  {key:"thinktank",label:"Think Tanks",group:"Explore",glyph:"◈",id:"thinktank",phase:"discover",keywords:["think","research","collaboration"]},
+  {key:"governance",label:"Governance",group:"Governance",glyph:"◆",id:"governance",phase:"govern",keywords:["governance","policy","decisions"]},
+  {key:"products",label:"Products",group:"Portfolio",glyph:"◉",id:"products",phase:"build",keywords:["products","portfolio"]},
+  {key:"external_auditor",label:"External Audit & Optimizer",group:"Assurance",glyph:"◫",id:"external_auditor",phase:null,keywords:["audit","external","review"]},
+  {key:"productlab",label:"Product Lab",group:"Assurance",glyph:"▣",id:"productlab",phase:"build",keywords:["product","lab","test"]},
+  {key:"unifi",label:"UNIFI Planner",group:"Projects",glyph:"◇",id:"unifi",phase:"execute",keywords:["unifi","plan","manifest"]},
+  {key:"scheduler",label:"TranScheduler",group:"Projects",glyph:"⌁",id:"scheduler",phase:"execute",keywords:["schedule","gantt","queue"]},
+  {key:"runs",label:"Runs",group:"Projects",glyph:"▶",id:"runs",phase:"execute",keywords:["runs","execution"]},
+  {key:"checkpoints",label:"Checkpoints",group:"Assurance",glyph:"↺",id:"checkpoints",phase:"verify",keywords:["checkpoint","resume"]},
+  {key:"audit",label:"Audit",group:"Assurance",glyph:"≡",id:"audit",phase:"verify",keywords:["audit","events"]},
+  {key:"transparency",label:"Transparency",group:"Assurance",glyph:"◎",id:"transparency",phase:"verify",keywords:["transparency","evidence"]},
   {key:"settings",label:"Settings",group:"System",glyph:"⚙",id:"settings",phase:null,keywords:["settings","administration"]}
 ]
 
@@ -1425,7 +1425,7 @@ export default function DataNestApp({session}:{session:Session}) {
   const currentNavItem=nav.find(item=>item.key===view);
   const currentLabel=currentNavItem?.label||"Overview";
   const currentDescription=viewDescriptions[view];
-  const currentGroup=currentNavItem?.group||"Core";
+  const currentGroup=currentNavItem?.group||"Home";
   const currentPhase=workflowPhaseForView(view);
   const activeContextAction=activeContextActionForView(view);
   const activeJobJourneyCurrent=activeJobJourneySteps.some(step=>step.key===view)?view:null;

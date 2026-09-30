@@ -2,17 +2,30 @@
 
 ## Platform authority
 
-**Resonance DataNest** is the parent platform and web control plane. **RONSAS** is a governed product under `DataNest > Products > RONSAS`; it is not DataNest's parent or DataNest AI authority.
+**Resonance DataNest** is the parent platform and web control plane. It is the governed Business, Intelligence, Collaboration, and Expansion Operating System for the Resonance ecosystem. **RONSAS** is a governed product under `DataNest > Products > RONSAS`; it is not DataNest's parent or DataNest AI authority.
 
-The current target-state architecture authority is `docs/superpowers/specs/2026-09-27-datanest-ecosystem-business-operating-architecture-design.md`. Design approval does not itself prove implementation status.
+The approved target architecture authority is `docs/superpowers/specs/2026-09-29-datanest-business-os-collective-intelligence-design.md`. Design approval does not itself prove implementation status.
 
-### Target-state concepts
+### Current implementation vs approved target architecture
 
-- **Cloud-Nest** — governed workspace abstraction planned for a later implementation phase.
-- **Supository** — governed knowledge and provenance abstraction planned for a later implementation phase.
-- **ILM (Inclusive Language Model)** — governed intelligence abstraction planned first as orchestration rather than a proprietary foundation-model claim.
+The **current implementation** includes governed Products and Portfolio foundations, Think Tanks, Stakeholder contribution context, Sparks internal utility, Sovereign Governance, Trust & Data Policy, Authority & Execution, Legal Eagle, UNIFI, TranScheduler, Certified Memory, Product Lab, External Audit & Optimizer, Audit, Transparency, Resource Fabric foundations and recovery/reconciliation controls.
 
-These concepts require separately implemented controls and evidence before they are treated as available product capabilities.
+Approved **target architecture** that is not yet live merely because it is documented includes:
+
+- **Cloud-Nest** — target governed workspace abstraction.
+- **Supository** — target governed knowledge and provenance abstraction.
+- **ILM (Inclusive Language Model)** — partially implemented ILM-1 orchestration foundation; later ILM maturity remains target architecture rather than a proprietary foundation-model claim.
+- **ALL (Amalgamated Learning Language)** — target language-evolution layer.
+- **CSL (Collective Source Language)** — target versioned collective semantic layer.
+- **GAL / GALUX** — target group-aligned learning and adaptive experience layers.
+- **RATB (Resonance Allowance Tolerance Boundaries)** — target participation-boundary model.
+- **iBank** — target governed value/resource parent layer; current **Sparks remain internal utility**.
+- **External Value Rail** — target, separately gated future rail; it is not enabled by current Sparks.
+- **Barterer Tender** — target iBank AI Representative.
+- **Project Director** — target governed AI orchestration representative.
+- **Conversation Specialist** and **Growth Spark** — target relationship and business-development capabilities.
+
+These target-state concepts require separately implemented controls, tests, security/governance evidence and promotion before they are treated as available product capabilities.
 
 
 ## Portfolio Registry authority

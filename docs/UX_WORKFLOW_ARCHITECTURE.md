@@ -8,29 +8,37 @@ Reduce cognitive load across DataNest without removing specialist workspaces or 
 
 ## Information architecture
 
-### Core
-- AI & I — project orientation and current operating signal.
-- DataNest AI — governed intelligence core and primary AI collaboration surface.
+The current shell uses mission-oriented workspace groups while preserving every existing `?view=` deep link.
 
-### Discover
+### Home
+- AI & I — project orientation and current operating signal.
+
+### Explore
 - Stakeholder — capture stakeholder context.
 - Sparks — earned contribution utility for approved project services.
+- Impact — inspect live input quality, verification and project impact.
 - Think Tanks — expand and structure research.
 
-### Govern & Build
-- Governance — apply policy and accountability controls.
+### Portfolio
 - Products — inspect governed product architecture and evidence.
-- Product Lab — validate product surfaces before release.
 
-### Execute
+### Projects
 - UNIFI Planner — turn intent into complete Job Manifests.
 - TranScheduler — route work through capability-aware execution.
 - Runs — observe execution history and outcomes.
 
-### Verify
+### Intelligence
+- DataNest AI — governed intelligence core and primary AI collaboration surface.
+
+### Governance
+- Governance — apply sovereign governance, trust/data policy and execution-authority controls.
+
+### Assurance
+- External Audit & Optimizer — assess external projects/products with evidence-linked findings and governed optimization handoff.
+- Product Lab — validate product surfaces before release.
 - Checkpoints — resume durable work states.
 - Audit — inspect traceable operational events.
-- Transparency — review published evidence, methodology, and findings.
+- Transparency — review published architecture, evidence, methodology and findings.
 
 ### System
 - Settings — administration, policies, tools, and project configuration.
@@ -62,17 +70,19 @@ Authority copy follows these boundaries:
 
 Discover → Govern → Build → Execute → Verify
 
+This is the current DataNest **workspace workflow** and navigation-orientation model. It is **not the target Resonance Project Lifecycle** defined in the 2026-09-29 Business OS architecture; the target lifecycle is separately specified in the master Business OS design.
+
 DataNest AI is cross-cutting rather than a single step. It is visually privileged in navigation and remains accessible from the global shell and AI companion controls.
 
 ## Shell behavior
 
 - Existing ?view= deep links remain compatible.
 - Navigation groups automatically expand for the active workspace.
-- Core remains open so AI & I and DataNest AI are always one click away.
-- The page header shows the current lifecycle group.
+- Home remains open so AI & I is always directly visible; DataNest AI remains available through the Intelligence group, quick switch and AI companion controls.
+- The page header shows the current mission-oriented workspace group.
 - Every eligible workspace ends with a workflow-continuity control that offers the previous and suggested next workspace.
 - View changes receive a short entrance transition; reduced-motion preferences disable it.
-- The command palette continues to index all workspaces using the new lifecycle groups.
+- The command palette continues to index all workspaces using the mission-oriented workspace groups.
 
 ## Home behavior
 

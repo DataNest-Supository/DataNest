@@ -1,6 +1,6 @@
 # DataNest
 
-**DataNest** is the canonical Resonance AppDev web control plane. It governs product execution intent, promotion, evidence and lifecycle state while preserving separate source, backend and delivery authorities.
+**Resonance DataNest** is the parent platform and web control plane. It is the governed Business, Intelligence, Collaboration, and Expansion Operating System for the Resonance ecosystem. The current release provides the governed control-plane foundations for product execution intent, promotion, evidence and lifecycle state while preserving separate source, backend and delivery authorities.\n\nThe approved 29 Sep 2026 Business OS specification defines additional target-state capabilities. Those capabilities require separate implementation, verification and promotion before DataNest presents them as live. See [the master Business OS specification](docs/superpowers/specs/2026-09-29-datanest-business-os-collective-intelligence-design.md) and the public Transparency surface.
 
 It combines two first-class tools:
 

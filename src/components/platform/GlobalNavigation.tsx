@@ -47,7 +47,7 @@ export default function GlobalNavigation({
       {groups.map(group=><details
         className="navGroup navDisclosure"
         key={group+String(items.some(item=>item.group===group&&item.id===currentView))}
-        open={group==="Core"||items.some(item=>item.group===group&&item.id===currentView)}
+        open={group==="Home"||items.some(item=>item.group===group&&item.id===currentView)}
       >
         <summary>{group}</summary>
         {items.filter(item=>item.group===group).map(item=><button

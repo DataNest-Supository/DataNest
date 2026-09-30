@@ -214,12 +214,12 @@ test("quick switch supports arrow-key result selection before Enter", () => {
 });
 
 
-test("workspace architecture follows the visible DataNest operating lifecycle", () => {
-  for (const group of ["Core","Discover","Govern & Build","Execute","Verify","System"]) {
-    assert.match(appSource, new RegExp('group:"'+group.replace("&","\\&")+'"'));
+test("workspace architecture uses the mission-oriented Business OS groups", () => {
+  for (const group of ["Home","Explore","Portfolio","Projects","Intelligence","Governance","Assurance","System"]) {
+    assert.match(appSource, new RegExp('group:"'+group+'"'));
   }
-  assert.match(appSource, /key:"ai",label:"DataNest AI",group:"Core"/);
-  assert.match(globalNavigationSource, /open=\{group==="Core"\|\|items\.some/);
+  assert.match(appSource, /key:"ai",label:"DataNest AI",group:"Intelligence"/);
+  assert.match(globalNavigationSource, /open=\{group==="Home"\|\|items\.some/);
   assert.match(globalNavigationSource, /item\.id==="ai"\?"aiHeroNav"/);
   assert.match(navigationTypesSource, /export type NavigationItem = \{/);
   assert.match(navigationTypesSource, /phase:WorkflowPhaseId\|null/);
@@ -238,7 +238,7 @@ test("workflow continuity maps specialist workspaces without breaking direct nav
 });
 
 test("page header exposes current lifecycle phase and preserves quick switching", () => {
-  assert.match(appSource, /currentGroup=currentNavItem\?\.group\|\|"Core"/);
+  assert.match(appSource, /currentGroup=currentNavItem\?\.group\|\|"Home"/);
   assert.match(appSource, /DATANEST_CANONICAL_NAME\.toUpperCase\(\)\} · \{currentGroup\.toUpperCase\(\)\}/);
   assert.match(appSource, /Ctrl\/Cmd \+ K to toggle/);
 });
