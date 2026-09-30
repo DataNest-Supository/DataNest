@@ -1,4 +1,5 @@
 name: RONSAS Application Validation
+# Release-candidate note: comment-only changes to this workflow may be used to request exact-head RONSAS validation when automated workflow_dispatch is unavailable.
 
 on:
   pull_request:
