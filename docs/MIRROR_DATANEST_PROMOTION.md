@@ -116,10 +116,11 @@ The import writes a promotion manifest with all downstream authority fields init
 
 ## Required certification evidence
 
-An authorized canonical release requires non-placeholder references for all three Mirror/Audit stages:
+An authorized canonical release requires non-placeholder references for the complete candidate-certification chain:
 
 - `mirror_promotion_reference`;
 - `mirror_live_evidence_reference`;
+- `datanest_ai_certification_reference`;
 - `audit_optimizer_reference`.
 
 Missing, blank, `pending`, `todo` or `tbd` values fail closed in the canonical release evidence writer.
@@ -148,6 +149,7 @@ Audit Optimizer remains advisory and evidence-producing. It cannot approve, merg
 The existing canonical review chain still applies, including:
 
 - live Mirror visual/functional evidence;
+- DataNest AI Certification against the governed staging backend;
 - canonical PR Verification;
 - Security Scan;
 - RONSAS validation when applicable;
