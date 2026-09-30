@@ -154,3 +154,65 @@ test("Owner Live Test Mode preserves pending human reviews and temporary deploym
   assert.equal(json.evidence.legalReview.status,"pending");
   assert.equal(json.evidence.externalReview.status,"pending");
 });
+
+
+test("Owner Test Mode evidence records the AI proposal and accepted recommendation",()=>{
+  const {result,json}=runWriter({
+    DATANEST_UI_RELEASE_SHA:sha,
+    DATANEST_UI_RELEASE_STATE:"owner_test_mode",
+    DATANEST_UI_PR_VERIFICATION_REF:"PR Verification #1340",
+    DATANEST_UI_SECURITY_REF:"Security scan #882",
+    DATANEST_UI_RONSAS_VALIDATION_REF:"RONSAS Application Validation #186",
+    DATANEST_UI_VISUAL_REVIEW_REF:"ui-governance-review",
+    DATANEST_UI_GOVERNANCE_REVIEW_REF:"",
+    DATANEST_UI_LEGAL_REVIEW_REF:"",
+    DATANEST_UI_EXTERNAL_REVIEW_REF:"",
+    DATANEST_UI_AUTHORIZATION_REF:"operator authorization",
+    DATANEST_UI_OWNER_TEST_MODE_REF:"owner temporary exception",
+    DATANEST_UI_OWNER_TEST_MODE_OWNER_LOGIN:"ResonanceAppDev",
+    DATANEST_UI_OWNER_TEST_MODE_ACTOR:"ResonanceAppDev",
+    DATANEST_UI_OWNER_TEST_MODE_WINDOW_STRATEGY:"ai_proposed",
+    DATANEST_UI_OWNER_TEST_MODE_TASK_COMPLEXITY:"cross_system",
+    DATANEST_UI_OWNER_TEST_MODE_REPORTING_COMPLEXITY:"audit_grade",
+    DATANEST_UI_OWNER_TEST_MODE_REASON:"Gather live evidence needed to complete human governance review gates."
+  });
+  assert.equal(result.status,0,result.stderr);
+  const proposal=json.ownerTestMode.timeframeProposal;
+  assert.equal(proposal.strategy,"ai_proposed");
+  assert.equal(proposal.recommendedHours,72);
+  assert.equal(proposal.acceptedHours,72);
+  assert.equal(proposal.ownerOverride,false);
+  assert.equal(proposal.pendingReviewCount,3);
+  assert.equal(json.ownerTestMode.expiresAt,proposal.recommendedExpiresAt);
+});
+
+test("explicit Owner override preserves the AI recommendation and deviation",()=>{
+  const expiry=new Date(Date.now()+24*60*60*1000).toISOString();
+  const {result,json}=runWriter({
+    DATANEST_UI_RELEASE_SHA:sha,
+    DATANEST_UI_RELEASE_STATE:"owner_test_mode",
+    DATANEST_UI_PR_VERIFICATION_REF:"PR Verification #1340",
+    DATANEST_UI_SECURITY_REF:"Security scan #882",
+    DATANEST_UI_RONSAS_VALIDATION_REF:"RONSAS Application Validation #186",
+    DATANEST_UI_VISUAL_REVIEW_REF:"ui-governance-review",
+    DATANEST_UI_GOVERNANCE_REVIEW_REF:"",
+    DATANEST_UI_LEGAL_REVIEW_REF:"complete",
+    DATANEST_UI_EXTERNAL_REVIEW_REF:"complete",
+    DATANEST_UI_AUTHORIZATION_REF:"operator authorization",
+    DATANEST_UI_OWNER_TEST_MODE_REF:"owner temporary exception",
+    DATANEST_UI_OWNER_TEST_MODE_OWNER_LOGIN:"ResonanceAppDev",
+    DATANEST_UI_OWNER_TEST_MODE_ACTOR:"ResonanceAppDev",
+    DATANEST_UI_OWNER_TEST_MODE_WINDOW_STRATEGY:"explicit",
+    DATANEST_UI_OWNER_TEST_MODE_TASK_COMPLEXITY:"routine",
+    DATANEST_UI_OWNER_TEST_MODE_REPORTING_COMPLEXITY:"summary",
+    DATANEST_UI_OWNER_TEST_MODE_EXPIRES_AT:expiry,
+    DATANEST_UI_OWNER_TEST_MODE_REASON:"Gather live evidence needed to complete the remaining governance review."
+  });
+  assert.equal(result.status,0,result.stderr);
+  const proposal=json.ownerTestMode.timeframeProposal;
+  assert.equal(proposal.strategy,"explicit");
+  assert.equal(proposal.ownerOverride,true);
+  assert.ok(proposal.acceptedHours>23.9 && proposal.acceptedHours<=24);
+  assert.equal(proposal.recommendedHours,12);
+  assert.ok(proposal.overrideDeltaHours>11);
+});
