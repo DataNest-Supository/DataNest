@@ -22,6 +22,7 @@ concurrency:
 jobs:
   deploy:
     name: Deploy governed Edge Functions from exact release SHA
+    needs: gate-timeframe
     environment:
       name: github-pages
     runs-on: ubuntu-24.04
