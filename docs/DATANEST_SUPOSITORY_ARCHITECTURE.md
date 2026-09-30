@@ -120,44 +120,63 @@ The first production objective is **sovereign replication and extension**. Repla
 
 The canonical DataNest UI exposes an **R&D Test Mode** toggle only to authenticated project members whose server-backed role is `owner` or `admin`.
 
-Enabling the toggle opens the live `DataNest-Supository/Mirror-DataNest` R&D repository. The prepared GitHub Pages preview becomes the preferred launch target after Pages is enabled for that repository. The toggle:
+Enabling it opens the live production-parity Mirror UI:
+
+- `https://datanest-supository.github.io/Mirror-DataNest/`
+
+The toggle also reads the Mirror's immutable `mirror-release.json` and synchronizes that exact build into the current Product Lab and governance evidence models. Reviewers can immediately open Product Lab to record visual and functional evidence against the same build SHA/release ID.
+
+The toggle:
 
 - does not change the user's canonical DataNest role;
-- does not grant production deployment authority;
-- does not bypass canonical review or release gates;
-- does not synchronize code automatically;
-- is a navigation/access affordance into the ungated R&D environment.
+- does not grant canonical production deployment authority;
+- does not merge or synchronize source automatically;
+- does not bypass Audit Optimizer or human governance;
+- does provide direct access to the live candidate UI and evidence-registration path.
 
-Operators and viewers do not receive the toggle in the canonical UI. Because the initial Mirror preview is delivered through public GitHub Pages, this UI control is not itself a network-level confidentiality boundary; private R&D access requires a separately authenticated hosting layer.
+Operators and viewers do not receive the admin toggle.
 
-## MIRROR-DATANEST R&D lane
+## MIRROR-DATANEST production-parity R&D lane
 
-`DataNest-Supository/Mirror-DataNest` is the designated ungated R&D clone of the canonical DataNest Supository.
+`DataNest-Supository/Mirror-DataNest` is the designated ungated R&D repository and production-parity candidate deployment environment.
 
-Its role is to optimize application code, user experience, build behavior, deployment design and infrastructure without imposing canonical production approval gates on every experimental iteration.
+Its two authorities are deliberately separated:
 
-Authority boundary:
+- **Mirror candidate deployment authority: YES** — it may deploy its own `/Mirror-DataNest/` site for testing.
+- **Canonical DataNest deployment authority: NO** — it may not deploy or replace `/DataNest/`.
 
-- Mirror-DataNest is not source-of-truth authority.
-- Mirror-DataNest does not receive production deployment authority.
-- Mirror-DataNest must not directly synchronize to `DataNest/main`.
-- Production secrets and privileged production write paths do not belong in the mirror.
-- Automated checks in the mirror are advisory R&D evidence rather than governance gates.
+The Mirror candidate uses the **DataNest AI Staging** Supabase project (`qchttpcyqlqnhvahprhz`) so reviewers can exercise real functional paths without defaulting writes to the canonical production backend.
 
-Production promotion path:
+Each Mirror live release has an immutable commit and release ID. The Pages workflow verifies the public routes and runs browser-level visual/functional checks against the deployed site.
+
+### Database-aligned evidence model
+
+The Mirror workflow reuses the current production governance schema rather than introducing a parallel update-management database.
+
+- `product_surfaces` registers the Mirror live candidate URL + exact build/release identity.
+- `product_test_cases` defines reusable certification checks.
+- `product_test_runs` stores pass/fail/blocked evidence with immutable URL/build/release snapshots plus browser/viewport context.
+- `governance_observations` exposes the candidate evidence to the current Audit Optimizer evidence snapshot.
+- `optimizer_runs` / `optimizer_suggestions` continue the current AI audit/optimization model.
+- `governance_improvement_candidates` carries owner-approved optimizer suggestions into formal governance.
+- `security_acceptance_runs`, `portfolio_lifecycle_events`, `ai_development_updates`, `artifacts` and `events` remain the corresponding security, lifecycle, update and provenance records.
+
+### Production certification path
 
 ```text
 DataNest/main baseline
     -> Mirror-DataNest R&D
+    -> live Mirror production-parity deployment
+    -> visual + functional evidence
     -> Package Production Candidate
     -> mirror-promotion/* branch in DataNest
     -> canonical CI / security / RONSAS validation
     -> DataNest Audit Optimizer evidence review
     -> formal governance + human reviewer approval
     -> DataNest/main
-    -> exact-SHA governed production deployment
+    -> exact-SHA governed canonical production deployment
 ```
 
-All production-bound work must return through the canonical Supository. Mirror never receives live deployment authority. The synchronization boundary is where production governance resumes; a successful mirror preview or candidate package is evidence for review, not authorization to release.
+The canonical release payload requires a Mirror promotion reference, a successful live Mirror evidence reference, and an Audit Optimizer reference before production authorization can resolve.
 
-The live release payload requires both a Mirror promotion reference and an Audit Optimizer reference before production authorization can resolve.
+A Mirror deployment is therefore **live evidence**, not canonical production authority.
