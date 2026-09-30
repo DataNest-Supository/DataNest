@@ -83,7 +83,7 @@ test("staging backup environment requires the canonical dedicated project and or
   assert.throws(
     ()=>assertDedicatedDataNestAiStaging({
       url:"https://qchttpcyqlqnhvahprhz.supabase.co",
-      projectRef:"sgqdmfgjbprsoqsmgigi"
+      projectRef:"foreign-staging-project"
     }),
     /dedicated staging project/i
   );
