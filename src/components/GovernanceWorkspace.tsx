@@ -6,6 +6,7 @@ import ProjectMembersPanel from "@/components/ProjectMembersPanel";
 import TrustPolicyPanel from "@/components/TrustPolicyPanel";
 import ExecutionAuthorityPanel from "@/components/ExecutionAuthorityPanel";
 import GovernanceImprovementPanel from "@/components/GovernanceImprovementPanel";
+import GovernanceReleaseEvidencePanel from "@/components/GovernanceReleaseEvidencePanel";
 import type { TrustPolicyRole } from "@/lib/trustPolicy";
 import { useSessionDraftState } from "@/lib/sessionDraft";
 import { useSingleFlight } from "@/lib/singleFlight";
