@@ -162,6 +162,6 @@ test("project invitation registration precedes any email delivery side effect",(
   assert.ok(recoveryEmailIndex<0 || registrationIndex<recoveryEmailIndex,"recovery email must follow durable registration");
 
   assert.match(edge,/admin\.createUser\(\{[\s\S]*?email_confirm:\s*false/);
-  assert.match(edge,/retryable:\s*true/);
+  assert.match(edge,/[\"\']retryable[\"\']\s*:\s*true/);
   assert.match(edge,/Project invitation was registered, but email delivery failed/);
 });
