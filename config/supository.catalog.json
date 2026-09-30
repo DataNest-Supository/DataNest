@@ -130,6 +130,24 @@
       ],
       "changesProductionAuthority": false,
       "networkAccessControl": false
+    },
+    "productionPromotion": {
+      "allProductionCandidatesMustReturnToCanonical": true,
+      "candidateWorkflow": "Mirror-DataNest/.github/workflows/production-candidate.yml",
+      "canonicalImportWorkflow": ".github/workflows/mirror-production-import.yml",
+      "canonicalBranchPrefix": "mirror-promotion/",
+      "requiredBeforeLive": [
+        "mirror promotion reference",
+        "Audit Optimizer reference",
+        "canonical PR verification",
+        "security scan",
+        "RONSAS validation where applicable",
+        "governance review",
+        "human reviewer approval",
+        "production authorization"
+      ],
+      "liveDeploymentAuthority": "DataNest-Supository/DataNest",
+      "mirrorLiveDeploymentAuthority": false
     }
   }
 }
