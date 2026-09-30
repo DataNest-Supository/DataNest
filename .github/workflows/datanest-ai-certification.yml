@@ -197,8 +197,8 @@ jobs:
         run: |
           mkdir -p certification-artifacts
           node -e 'const fs=require("fs"); fs.writeFileSync("certification-artifacts/datanest-ai-certification.json", JSON.stringify({
-            commit:process.env.GITHUB_SHA,
-            candidateCommit:process.env.GITHUB_SHA,
+            commit:process.env.DATANEST_CERTIFICATION_CANDIDATE_SHA,
+            candidateCommit:process.env.DATANEST_CERTIFICATION_CANDIDATE_SHA,
             status:"not-applicable",
             reason:process.env.DATANEST_AI_CERTIFICATION_NON_APPLICABLE_REASON,
             target:"canonical-governance",
@@ -208,6 +208,7 @@ jobs:
           })+"\n")'
         env:
           DATANEST_AI_CERTIFICATION_NON_APPLICABLE_REASON: ${{ steps.applicability.outputs.reason }}
+          DATANEST_CERTIFICATION_CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Create ephemeral governed E2E credentials
         shell: bash
