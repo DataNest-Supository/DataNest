@@ -19,81 +19,96 @@ async function actionErrorMessage(error:unknown){
   return fallback;
 }
 
+type MessageTone = "neutral"|"good"|"error";
+type PasswordActionState = {
+  setBusy: (value:boolean)=>void;
+  setMessage: (value:string)=>void;
+  setMessageTone: (value:MessageTone)=>void;
+};
+
+async function runPasswordChange({
+  event,projectId,currentPassword,newPassword,confirmPassword,
+  setBusy,setMessage,setMessageTone,onSuccess
+}:{
+  event:FormEvent;projectId:string;currentPassword:string;newPassword:string;confirmPassword:string;
+  onSuccess:()=>void;
+}&PasswordActionState){
+  event.preventDefault();
+  const supabase=getSupabase();
+  if(!supabase)return;
+
+  const validationError=validatePasswordChange({currentPassword,newPassword,confirmPassword});
+  if(validationError){
+    setMessageTone("error");
+    setMessage(validationError);
+    return;
+  }
+
+  setBusy(true);
+  setMessage("");
+  setMessageTone("neutral");
+  try{
+    const {data,error}=await supabase.functions.invoke("manage-own-password",{
+      body:{projectId,action:"change",currentPassword,newPassword}
+    });
+    if(error)throw error;
+    const payload=(data||{}) as {auditRecorded?:boolean};
+    onSuccess();
+    setMessageTone("good");
+    setMessage(payload.auditRecorded===false
+      ?"Password changed successfully. The security event could not be recorded; an owner can review the service logs."
+      :"Password changed successfully and recorded in the security audit trail."
+    );
+  }catch(error){
+    setMessageTone("error");
+    setMessage(await actionErrorMessage(error));
+  }finally{
+    setBusy(false);
+  }
+}
+
+async function runRecoveryEmail({projectId,setBusy,setMessage,setMessageTone}:{
+  projectId:string;
+}&PasswordActionState){
+  const supabase=getSupabase();
+  if(!supabase)return;
+
+  setBusy(true);
+  setMessage("");
+  setMessageTone("neutral");
+  try{
+    const redirectTo=window.location.href.split("#")[0].split("?")[0];
+    const {data,error}=await supabase.functions.invoke("manage-own-password",{
+      body:{projectId,action:"email_reset",redirectTo}
+    });
+    if(error)throw error;
+    const payload=(data||{}) as {auditRecorded?:boolean};
+    setMessageTone("good");
+    setMessage(payload.auditRecorded===false
+      ?"Password reset email requested. The security event could not be recorded; an owner can review the service logs."
+      :"Password reset email requested and recorded. Follow the secure link in your inbox to choose a new password."
+    );
+  }catch(error){
+    setMessageTone("error");
+    setMessage(await actionErrorMessage(error));
+  }finally{
+    setBusy(false);
+  }
+}
+
 export default function AccountPasswordPanel({projectId}:{projectId:string}) {
   const [currentPassword,setCurrentPassword]=useState("");
   const [newPassword,setNewPassword]=useState("");
   const [confirmPassword,setConfirmPassword]=useState("");
   const [busy,setBusy]=useState(false);
   const [message,setMessage]=useState("");
-  const [messageTone,setMessageTone]=useState<"neutral"|"good"|"error">("neutral");
+  const [messageTone,setMessageTone]=useState<MessageTone>("neutral");
+  const actionState={setBusy,setMessage,setMessageTone};
 
-  async function changePassword(event:FormEvent){
-    event.preventDefault();
-    const supabase=getSupabase();
-    if(!supabase)return;
-
-    const validationError=validatePasswordChange({currentPassword,newPassword,confirmPassword});
-    if(validationError){
-      setMessageTone("error");
-      setMessage(validationError);
-      return;
-    }
-
-    setBusy(true);
-    setMessage("");
-    setMessageTone("neutral");
-    try{
-      const {data,error}=await supabase.functions.invoke("manage-own-password",{
-        body:{
-          projectId,
-          action:"change",
-          currentPassword,
-          newPassword
-        }
-      });
-      if(error)throw error;
-      const payload=(data||{}) as {auditRecorded?:boolean};
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      setMessageTone("good");
-      setMessage(payload.auditRecorded===false
-        ?"Password changed successfully. The security event could not be recorded; an owner can review the service logs."
-        :"Password changed successfully and recorded in the security audit trail."
-      );
-    }catch(error){
-      setMessageTone("error");
-      setMessage(await actionErrorMessage(error));
-    }finally{
-      setBusy(false);
-    }
-  }
-
-  async function sendRecoveryEmail(){
-    const supabase=getSupabase();
-    if(!supabase)return;
-
-    setBusy(true);
-    setMessage("");
-    setMessageTone("neutral");
-    try{
-      const redirectTo=window.location.href.split("#")[0].split("?")[0];
-      const {data,error}=await supabase.functions.invoke("manage-own-password",{
-        body:{projectId,action:"email_reset",redirectTo}
-      });
-      if(error)throw error;
-      const payload=(data||{}) as {auditRecorded?:boolean};
-      setMessageTone("good");
-      setMessage(payload.auditRecorded===false
-        ?"Password reset email requested. The security event could not be recorded; an owner can review the service logs."
-        :"Password reset email requested and recorded. Follow the secure link in your inbox to choose a new password."
-      );
-    }catch(error){
-      setMessageTone("error");
-      setMessage(await actionErrorMessage(error));
-    }finally{
-      setBusy(false);
-    }
+  function clearPasswords(){
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
   }
 
   return <section className="panel accountSecurityPanel">
@@ -103,7 +118,9 @@ export default function AccountPasswordPanel({projectId}:{projectId:string}) {
     </div>
     <p className="muted">Confirm your current password before replacing it. Password material is processed only by Supabase Auth and is never written to DataNest project data or the security audit trail.</p>
 
-    <form className="accountSecurityForm" onSubmit={changePassword} aria-busy={busy}>
+    <form className="accountSecurityForm" onSubmit={event=>void runPasswordChange({
+      event,projectId,currentPassword,newPassword,confirmPassword,...actionState,onSuccess:clearPasswords
+    })} aria-busy={busy}>
       <AccountPasswordForm
         busy={busy}
         currentPassword={currentPassword}
@@ -112,7 +129,7 @@ export default function AccountPasswordPanel({projectId}:{projectId:string}) {
         onCurrentPasswordChange={setCurrentPassword}
         onNewPasswordChange={setNewPassword}
         onConfirmPasswordChange={setConfirmPassword}
-        onRecovery={()=>void sendRecoveryEmail()}
+        onRecovery={()=>void runRecoveryEmail({projectId,...actionState})}
       />
     </form>
 
