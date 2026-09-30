@@ -100,3 +100,43 @@
   opacity: .6;
   overflow-wrap: anywhere;
 }
+
+.actions {
+  display: grid;
+  gap: .45rem;
+}
+
+.inlineButton {
+  width: fit-content;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: .76rem;
+  font-weight: 700;
+  cursor: pointer;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+}
+
+.inlineButton:disabled {
+  cursor: wait;
+  opacity: .55;
+}
+
+.release,
+.status,
+.error {
+  display: block;
+  font-size: .68rem;
+  line-height: 1.35;
+}
+
+.release,
+.status {
+  opacity: .72;
+}
+
+.error {
+  opacity: .9;
+}
