@@ -164,6 +164,18 @@
       ],
       "machineBaselineMinutes": 20
     },
+    "mirror-production-import.yml": {
+      "gateId": "mirror-production-import",
+      "gateType": "manual_mutation",
+      "taskComplexity": "cross_system",
+      "reportingComplexity": "audit_grade",
+      "reviewDomains": [
+        "engineeringReview",
+        "governanceReview",
+        "operationsReview"
+      ],
+      "machineBaselineMinutes": 30
+    },
     "pages.yml": {
       "gateId": "pages",
       "gateType": "manual_mutation",
