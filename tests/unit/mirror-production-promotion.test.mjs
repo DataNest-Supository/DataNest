@@ -46,12 +46,15 @@ test("promotion manifest starts with zero production authority",()=>{
   assert.match(importWorkflow,/productionDeploymentAllowed:false/);
 });
 
-test("live Pages authorization requires Mirror and Audit Optimizer references",()=>{
+test("live Pages authorization requires Mirror package, live verification, and Audit Optimizer evidence",()=>{
   assert.match(pagesWorkflow,/mirror_promotion_reference:/);
+  assert.match(pagesWorkflow,/mirror_live_evidence_reference:/);
   assert.match(pagesWorkflow,/audit_optimizer_reference:/);
   assert.match(pagesWorkflow,/DATANEST_UI_MIRROR_PROMOTION_REF/);
+  assert.match(pagesWorkflow,/DATANEST_UI_MIRROR_LIVE_EVIDENCE_REF/);
   assert.match(pagesWorkflow,/DATANEST_UI_AUDIT_OPTIMIZER_REF/);
   assert.match(governanceWriter,/\["mirrorPromotion","DATANEST_UI_MIRROR_PROMOTION_REF"\]/);
+  assert.match(governanceWriter,/\["mirrorLiveEvidence","DATANEST_UI_MIRROR_LIVE_EVIDENCE_REF"\]/);
   assert.match(governanceWriter,/\["auditOptimizer","DATANEST_UI_AUDIT_OPTIMIZER_REF"\]/);
 });
 
