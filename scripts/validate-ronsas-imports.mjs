@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
+import { validateRonsasLaunchRegistryText } from "./lib/ronsas-import-validation.mjs";
 
 const root = process.cwd();
 
@@ -57,12 +58,9 @@ const failures = [];
 
 const launchRegistryPath = resolve(root, "src/lib/ronsasApps.ts");
 if (existsSync(launchRegistryPath)) {
-  const launchRegistry = readFileSync(launchRegistryPath, "utf8");
-  const staticLaunches = launchRegistry.match(/\{slug:"[^"]+"[^}\n]*launchKind:"datanest-pages"/g) || [];
-  if (staticLaunches.length !== 7) failures.push(`RONSAS launch registry must expose exactly seven DataNest Pages apps; found ${staticLaunches.length}`);
-  if (!/slug:"youtube-optimizer"[\s\S]*launchKind:"external-ssr"[\s\S]*href:"https:\/\/youtubeoptimizer\.life"/.test(launchRegistry)) {
-    failures.push("YouTube Optimizer must remain a governed external SSR launch at https://youtubeoptimizer.life");
-  }
+  failures.push(
+    ...validateRonsasLaunchRegistryText(readFileSync(launchRegistryPath, "utf8"))
+  );
 }
 
 
