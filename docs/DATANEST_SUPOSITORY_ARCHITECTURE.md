@@ -170,6 +170,7 @@ DataNest/main baseline
     -> visual + functional evidence
     -> Package Production Candidate
     -> mirror-promotion/* branch in DataNest
+    -> DataNest AI Certification against governed staging
     -> canonical CI / security / RONSAS validation
     -> DataNest Audit Optimizer evidence review
     -> formal governance + human reviewer approval
@@ -177,6 +178,6 @@ DataNest/main baseline
     -> exact-SHA governed canonical production deployment
 ```
 
-The canonical release payload requires a Mirror promotion reference, a successful live Mirror evidence reference, and an Audit Optimizer reference before production authorization can resolve.
+The canonical release payload requires a Mirror promotion reference, successful live Mirror evidence, DataNest AI Certification evidence for the governed staging backend, and an Audit Optimizer reference before production authorization can resolve.
 
 A Mirror deployment is therefore **live evidence**, not canonical production authority.
