@@ -71,3 +71,9 @@ jobs:
           name: workflow-reviewer-report
           path: artifacts/workflow-reviewer/
           if-no-files-found: error
+
+  gate-timeframe:
+    name: DataNest AI worktree gate timeframe
+    uses: ./.github/workflows/worktree-gate-timeframe.yml
+    with:
+      gate_id: "workflow-reviewer"
