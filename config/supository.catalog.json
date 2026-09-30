@@ -156,7 +156,9 @@
       ],
       "surfaceName": "Mirror-DataNest Production Candidate",
       "releaseManifest": "/Mirror-DataNest/mirror-release.json",
-      "liveVerificationArtifact": "mirror-live-evidence-<run>-<sha>"
+      "liveVerificationArtifact": "mirror-live-evidence-<run>-<sha>",
+      "certificationWorkflow": ".github/workflows/datanest-ai-certification.yml",
+      "stagingSchemaPolicy": "Certification workflow validates governed staging schema and backend acceptance before canonical release."
     },
     "productionPromotion": {
       "allProductionCandidatesMustReturnToCanonical": true,
@@ -167,6 +169,7 @@
       "requiredBeforeLive": [
         "mirror promotion reference",
         "live Mirror visual/functional evidence reference",
+        "DataNest AI Certification reference",
         "Audit Optimizer reference",
         "canonical PR verification",
         "security scan",
