@@ -4,6 +4,10 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+const edgeAttestationScript=readFileSync(
+  new URL("../../scripts/verify-production-edge-function-attestation.mjs",import.meta.url),
+  "utf8"
+);
 import { spawnSync } from "node:child_process";
 
 const manifestScript=readFileSync(
@@ -137,7 +141,8 @@ test("Pages release requires read-only Edge Function attestation",()=>{
   assert.match(pagesWorkflow,/verify-production-edge-function-attestation\.mjs/);
   assert.match(pagesWorkflow,/DATANEST_EDGE_ATTESTATION_FILE: \.datanest\/edge-function-attestation\.json/);
   assert.match(pagesWorkflow,/edgeFunctions\?\.status!==\"verified\"/);
-  assert.match(pagesWorkflow,/edge_functions_read|edge_functions_read/);
+  assert.match(edgeAttestationScript,/edge_functions_read/);
+  assert.match(edgeAttestationScript,/api\.supabase\.com\/v1\/projects/);
 });
 
 test("release manifest embeds verified Edge Function attestation metadata",()=>{
