@@ -219,7 +219,7 @@ jobs:
               --header "Authorization: Bearer $DATANEST_CERTIFICATION_PUBLISHABLE_KEY" \
               --header "Content-Type: application/json" \
               --data '{}' || true)"
-            if [ "$code" != "000" ] && [ "$code" != "404" ]; then
+            if [ "$code" != "000" ] && [ "$code" != "404" ] && [ "$code" -lt 500 ]; then
               ready=true
               break
             fi
@@ -337,6 +337,15 @@ jobs:
           tail -n 300 /tmp/datanest-ai-functions.log || true
           echo "### Local Supabase status"
           supabase status || true
+
+      - name: Preserve local Edge Function diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: datanest-ai-function-diagnostics-${{ github.event.pull_request.head.sha || github.sha }}
+          path: /tmp/datanest-ai-functions.log
+          if-no-files-found: warn
+          retention-days: 30
 
       - name: Stop isolated canonical Supabase stack
         if: always()
