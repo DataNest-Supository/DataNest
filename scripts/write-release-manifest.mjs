@@ -49,10 +49,12 @@ const manifest={
           status:edgeFunctionAttestation.status,
           source:edgeFunctionAttestation.source,
           verifiedAt:edgeFunctionAttestation.verifiedAt,
-          baselineFingerprint:edgeFunctionAttestation.baselineFingerprint,
+          releaseReference:edgeFunctionAttestation.workflowRunId,
+          sourceCommit:edgeFunctionAttestation.sourceCommit,
+          sourceTreeSha256:edgeFunctionAttestation.sourceTreeSha256,
           functionCount:Object.keys(edgeFunctionAttestation.functions||{}).length
         }
-      : {status:"not_collected",source:"supabase-management-api"}
+      : {status:"not_collected",source:"governed-production-edge-function-release"}
   },
   generatedAt:new Date().toISOString()
 };
