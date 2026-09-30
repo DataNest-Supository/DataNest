@@ -201,8 +201,8 @@ export function analyzeWorkflowText(file, text, config = DEFAULTS) {
   const value = String(text || "");
   const findings = [];
   const stepCount = (value.match(/^\s*-\s+(?:name|uses|run):/gm) || []).length;
-  const uses = [...value.matchAll(/^\s*uses:\s*([^\s#]+)/gm)].map((m) => m[1]);
-  const runs = [...value.matchAll(/^\s*run:\s*(.+)$/gm)].map((m) => m[1].trim());
+  const uses = [...value.matchAll(/^\s*-?\s*uses:\s*([^\s#]+)/gm)].map((m) => m[1]);
+  const runs = [...value.matchAll(/^\s*-?\s*run:\s*(.+)$/gm)].map((m) => m[1].trim());
 
   if (stepCount > (config.maxWorkflowSteps ?? DEFAULTS.maxWorkflowSteps)) {
     findings.push({
