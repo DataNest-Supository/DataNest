@@ -19,6 +19,13 @@ docker compose exec -T db pg_dump   -U "${POSTGRES_USER:-forgejo}"   "${POSTGRES
 echo "Backing up Forgejo data..."
 docker compose exec -T forgejo tar -C /data -czf - . > "$DEST/forgejo-data.tar.gz"
 
+# Record cryptographic digests beside the backup. This is an integrity
+# manifest, not an authorization or release certificate.
+(
+  cd "$DEST"
+  sha256sum forgejo-db.sql.gz forgejo-data.tar.gz > SHA256SUMS
+)
+
 if [ -n "${DROPBOX_REMOTE:-}" ] && command -v rclone >/dev/null 2>&1; then
   echo "Copying backup to ${DROPBOX_REMOTE}..."
   rclone copy "$DEST" "${DROPBOX_REMOTE}/$STAMP"
@@ -27,3 +34,4 @@ else
 fi
 
 echo "Backup complete: $DEST"
+echo "Integrity manifest: $DEST/SHA256SUMS"
