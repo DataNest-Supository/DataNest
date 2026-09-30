@@ -387,7 +387,7 @@ export default function ExternalAiSidebar({
         onError("Clipboard access was blocked. Paste the external AI response into Return to DataNest manually.");
       }
     }
-  },[sessionId,responseText,handoff,preparedHandoff,onNotice,onError,clipboardContextKey,isCurrentClipboardRead]);
+  },[sessionId,responseText,handoff,preparedHandoff,traceKey,onNotice,onError,clipboardContextKey,isCurrentClipboardRead]);
 
   useEffect(()=>{
     if(!sessionId)return;
@@ -766,6 +766,7 @@ export default function ExternalAiSidebar({
       const candidate=selectExternalAiClipboardCandidate({
         clipboardText,
         currentResponse:responseTextRef.current,
+        traceBinding:traceKey,
         blockedTexts:[handoff,preparedHandoff,lastClipboardCapture.current]
       });
 
