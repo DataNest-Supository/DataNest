@@ -58,8 +58,36 @@ on:
         description: GitHub login of the Owner invoking temporary live Test Mode
         required: false
         type: string
+      owner_test_mode_window_strategy:
+        description: Use DataNest AI proposed window or an explicit Owner override
+        required: false
+        default: ai_proposed
+        type: choice
+        options:
+          - ai_proposed
+          - explicit
+      owner_test_mode_task_complexity:
+        description: Task complexity used by DataNest AI to propose the live evidence window
+        required: false
+        default: standard
+        type: choice
+        options:
+          - routine
+          - standard
+          - complex
+          - cross_system
+      owner_test_mode_reporting_complexity:
+        description: Reporting complexity used by DataNest AI to propose the live evidence window
+        required: false
+        default: standard
+        type: choice
+        options:
+          - summary
+          - standard
+          - detailed
+          - audit_grade
       owner_test_mode_expires_at:
-        description: ISO-8601 expiry; must be 30 minutes to 72 hours in the future
+        description: Optional explicit ISO-8601 expiry; required only when window_strategy=explicit; must be 30 minutes to 72 hours in the future
         required: false
         type: string
       owner_test_mode_reason:
@@ -101,6 +129,9 @@ jobs:
       DATANEST_UI_PRODUCTION_CONFIRMATION: ${{ inputs.confirmation }}
       DATANEST_UI_OWNER_TEST_MODE_REF: ${{ inputs.owner_test_mode_reference }}
       DATANEST_UI_OWNER_TEST_MODE_OWNER_LOGIN: ${{ inputs.owner_test_mode_owner_login }}
+      DATANEST_UI_OWNER_TEST_MODE_WINDOW_STRATEGY: ${{ inputs.owner_test_mode_window_strategy }}
+      DATANEST_UI_OWNER_TEST_MODE_TASK_COMPLEXITY: ${{ inputs.owner_test_mode_task_complexity }}
+      DATANEST_UI_OWNER_TEST_MODE_REPORTING_COMPLEXITY: ${{ inputs.owner_test_mode_reporting_complexity }}
       DATANEST_UI_OWNER_TEST_MODE_EXPIRES_AT: ${{ inputs.owner_test_mode_expires_at }}
       DATANEST_UI_OWNER_TEST_MODE_REASON: ${{ inputs.owner_test_mode_reason }}
       DATANEST_UI_OWNER_TEST_MODE_ACTOR: ${{ github.actor }}
@@ -120,6 +151,10 @@ jobs:
           test "$DATANEST_UI_OWNER_TEST_MODE_OWNER_LOGIN" = "$GITHUB_ACTOR"
           permission="$(gh api "repos/$GITHUB_REPOSITORY/collaborators/$GITHUB_ACTOR/permission" --jq '.permission')"
           test "$permission" = "admin"
+
+      - name: Show DataNest AI proposed Owner Test Mode timeframe
+        if: ${{ inputs.release_mode == 'owner_test_mode' }}
+        run: node scripts/propose-owner-test-mode-window.mjs
 
       - name: Verify production authorization payload
         run: node scripts/verify-ui-production-authorization.mjs
@@ -245,6 +280,7 @@ jobs:
           RELEASE_SHA: ${{ inputs.release_sha }}
           RELEASE_MODE: ${{ inputs.release_mode }}
           TEST_MODE_EXPIRES_AT: ${{ inputs.owner_test_mode_expires_at }}
+          TEST_MODE_WINDOW_STRATEGY: ${{ inputs.owner_test_mode_window_strategy }}
         run: |
           curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors             https://datanest-supository.github.io/DataNest/release-manifest.json             -o /tmp/release-manifest.json
           curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors             https://datanest-supository.github.io/DataNest/ui-governance-release.json             -o /tmp/ui-governance-release.json
@@ -261,8 +297,14 @@ jobs:
           }else if(mode==="owner_test_mode"){
             if(evidence.authorized!==false || evidence.fullyGoverned!==false) throw new Error("Owner Test Mode must not claim full authorization");
             if(!evidence.ownerTestMode?.active || evidence.ownerTestMode.temporaryException!==true) throw new Error("Owner Test Mode metadata is required");
-            const expected=new Date(process.env.TEST_MODE_EXPIRES_AT).toISOString();
-            if(evidence.ownerTestMode.expiresAt!==expected) throw new Error("Owner Test Mode expiry mismatch");
+            const proposal=evidence.ownerTestMode.timeframeProposal;
+            if(!proposal || proposal.strategy!==process.env.TEST_MODE_WINDOW_STRATEGY) throw new Error("Owner Test Mode timeframe proposal is required");
+            if(proposal.strategy==="explicit"){
+              const expected=new Date(process.env.TEST_MODE_EXPIRES_AT).toISOString();
+              if(evidence.ownerTestMode.expiresAt!==expected) throw new Error("Owner Test Mode explicit expiry mismatch");
+            }else if(proposal.strategy==="ai_proposed"){
+              if(evidence.ownerTestMode.expiresAt!==proposal.recommendedExpiresAt) throw new Error("Owner Test Mode AI proposal was not applied");
+            }
           }else{
             throw new Error(`Unsupported release mode ${mode}`);
           }

@@ -148,7 +148,10 @@ test("Owner Live Test Mode allows temporary production while human review refs r
     DATANEST_UI_OWNER_TEST_MODE_REF:"PR #291 owner authorization",
     DATANEST_UI_OWNER_TEST_MODE_OWNER_LOGIN:"ResonanceAppDev",
     DATANEST_UI_OWNER_TEST_MODE_ACTOR:"ResonanceAppDev",
-    DATANEST_UI_OWNER_TEST_MODE_EXPIRES_AT:expiry,
+    DATANEST_UI_OWNER_TEST_MODE_WINDOW_STRATEGY:"ai_proposed",
+    DATANEST_UI_OWNER_TEST_MODE_TASK_COMPLEXITY:"standard",
+    DATANEST_UI_OWNER_TEST_MODE_REPORTING_COMPLEXITY:"standard",
+    DATANEST_UI_OWNER_TEST_MODE_EXPIRES_AT:"",
     DATANEST_UI_OWNER_TEST_MODE_REASON:"Gather live production evidence required for outstanding governance review."
   });
   assert.equal(result.status,0,result.stderr);
@@ -166,6 +169,9 @@ test("Owner Live Test Mode rejects actor mismatch and excessive duration",()=>{
     DATANEST_UI_OWNER_TEST_MODE_REF:"owner authorization",
     DATANEST_UI_OWNER_TEST_MODE_OWNER_LOGIN:"ResonanceAppDev",
     DATANEST_UI_OWNER_TEST_MODE_ACTOR:"AnotherAdmin",
+    DATANEST_UI_OWNER_TEST_MODE_WINDOW_STRATEGY:"explicit",
+    DATANEST_UI_OWNER_TEST_MODE_TASK_COMPLEXITY:"standard",
+    DATANEST_UI_OWNER_TEST_MODE_REPORTING_COMPLEXITY:"standard",
     DATANEST_UI_OWNER_TEST_MODE_EXPIRES_AT:expiry,
     DATANEST_UI_OWNER_TEST_MODE_REASON:"Gather live production evidence required for outstanding governance review."
   };
@@ -176,4 +182,38 @@ test("Owner Live Test Mode rejects actor mismatch and excessive duration",()=>{
   const tooLong=verify({...base,DATANEST_UI_OWNER_TEST_MODE_ACTOR:"ResonanceAppDev"});
   assert.notEqual(tooLong.status,0);
   assert.match(tooLong.stderr,/72 hours/i);
+});
+
+
+test("Owner Live Test Mode AI-proposed strategy does not require an explicit expiry",()=>{
+  const result=verify({
+    DATANEST_UI_RELEASE_STATE:"owner_test_mode",
+    DATANEST_UI_PRODUCTION_CONFIRMATION:"AUTHORIZE OWNER TEST MODE",
+    DATANEST_UI_GOVERNANCE_REVIEW_REF:"",
+    DATANEST_UI_LEGAL_REVIEW_REF:"",
+    DATANEST_UI_EXTERNAL_REVIEW_REF:"",
+    DATANEST_UI_OWNER_TEST_MODE_REF:"operator authorization",
+    DATANEST_UI_OWNER_TEST_MODE_OWNER_LOGIN:"ResonanceAppDev",
+    DATANEST_UI_OWNER_TEST_MODE_ACTOR:"ResonanceAppDev",
+    DATANEST_UI_OWNER_TEST_MODE_WINDOW_STRATEGY:"ai_proposed",
+    DATANEST_UI_OWNER_TEST_MODE_TASK_COMPLEXITY:"cross_system",
+    DATANEST_UI_OWNER_TEST_MODE_REPORTING_COMPLEXITY:"audit_grade",
+    DATANEST_UI_OWNER_TEST_MODE_EXPIRES_AT:"",
+    DATANEST_UI_OWNER_TEST_MODE_REASON:"Gather evidence from live production behavior for governance reviewers."
+  });
+  assert.equal(result.status,0,result.stderr);
+  assert.match(result.stdout,/owner_test_mode/);
+});
+
+test("Pages workflow exposes AI timeframe complexity controls",()=>{
+  for(const input of [
+    "owner_test_mode_window_strategy",
+    "owner_test_mode_task_complexity",
+    "owner_test_mode_reporting_complexity"
+  ]){
+    assert.match(pagesWorkflow,new RegExp(`\\n      ${input}:\\n`));
+  }
+  assert.match(pagesWorkflow,/Show DataNest AI proposed Owner Test Mode timeframe/);
+  assert.match(pagesWorkflow,/propose-owner-test-mode-window\.mjs/);
+  assert.match(pagesWorkflow,/proposal\.strategy==="ai_proposed"/);
 });

@@ -1,6 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { proposeOwnerTestModeWindow } from "./propose-owner-test-mode-window.mjs";
 
 export const UI_GOVERNANCE_SCHEMA_VERSION="ui-governance-release-v2";
 export const OWNER_TEST_MODE_MAX_HOURS=72;
@@ -58,7 +59,16 @@ function buildOwnerTestMode(env,generatedAt){
   }
 
   const now=Date.parse(generatedAt);
-  const expiry=parseIsoDate(env.DATANEST_UI_OWNER_TEST_MODE_EXPIRES_AT,"DATANEST_UI_OWNER_TEST_MODE_EXPIRES_AT");
+  const proposal=proposeOwnerTestModeWindow(env,new Date(generatedAt));
+  const windowStrategy=clean(env.DATANEST_UI_OWNER_TEST_MODE_WINDOW_STRATEGY) || "ai_proposed";
+  if (!["ai_proposed","explicit"].includes(windowStrategy)) {
+    throw new Error("DATANEST_UI_OWNER_TEST_MODE_WINDOW_STRATEGY must be ai_proposed or explicit");
+  }
+
+  const expiry=windowStrategy==="ai_proposed"
+    ? {raw:proposal.recommendedExpiresAt,millis:Date.parse(proposal.recommendedExpiresAt)}
+    : parseIsoDate(env.DATANEST_UI_OWNER_TEST_MODE_EXPIRES_AT,"DATANEST_UI_OWNER_TEST_MODE_EXPIRES_AT");
+
   if (expiry.millis<=now) throw new Error("Owner Test Mode expiry must be in the future");
   const durationHours=(expiry.millis-now)/3_600_000;
   if (durationHours>OWNER_TEST_MODE_MAX_HOURS) {
@@ -67,6 +77,9 @@ function buildOwnerTestMode(env,generatedAt){
   if (durationHours<0.5) {
     throw new Error("Owner Test Mode must allow at least 30 minutes for evidence gathering");
   }
+
+  const acceptedHours=Number(durationHours.toFixed(3));
+  const deltaHours=Number((acceptedHours-proposal.recommendedHours).toFixed(3));
 
   return {
     active:true,
@@ -79,9 +92,17 @@ function buildOwnerTestMode(env,generatedAt){
     startedAt:generatedAt,
     expiresAt:new Date(expiry.millis).toISOString(),
     maxHours:OWNER_TEST_MODE_MAX_HOURS,
-    durationHours:Number(durationHours.toFixed(3)),
+    durationHours:acceptedHours,
     evidencePurpose:"Gather production evidence required to complete outstanding human governance review gates.",
-    automaticExpiryAction:"Replace live Pages site with an Owner Test Mode expired holding page unless a fully authorized release supersedes it."
+    automaticExpiryAction:"Replace live Pages site with an Owner Test Mode expired holding page unless a fully authorized release supersedes it.",
+    timeframeProposal:{
+      ...proposal,
+      strategy:windowStrategy,
+      acceptedHours,
+      acceptedExpiresAt:new Date(expiry.millis).toISOString(),
+      ownerOverride:windowStrategy==="explicit" && Math.abs(deltaHours)>0.01,
+      overrideDeltaHours:deltaHours
+    }
   };
 }
 
