@@ -141,6 +141,8 @@ Resonance Forge indexes DataNest specialized trees through `specialized-trees.js
 - **GUARDIAN** — health/drift/healing evidence observation.
 - **CONDUCTOR** — orchestration timing and command-lineage observation.
 - **SUGGESTER** — optimization-suggestion and bounded automation-queue observation.
+- **CALMER** — minimum-friction governance and STONE/GOLD/DIAMOND tier-evidence observation.
+- **REGULATOR** — transparent harmony requirements and BOTSQUAD regulation-evidence observation.
 - **FREETREE** — no automatic Forge replication or synchronization.
 
 Forge may preserve branch, evidence, identity, and compatibility lineage for these trees. It must not convert an AI recommendation, environment finding, or mirrored branch into production authorization.
