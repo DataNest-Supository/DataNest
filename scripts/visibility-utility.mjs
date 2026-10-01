@@ -58,9 +58,14 @@ export function assessVisibility({
   add("transparency-link",/System Charter|system-charter/i.test(transparencySource),5,"Transparency UI links the public system charter.");
 
   const entries=Array.isArray(catalog?.entries)?catalog.entries:[];
-  const visibleEntries=entries.filter(item=>item?.deliveryPath||item?.deliveryUrl);
-  const platformCoverage=entries.length?Math.round(visibleEntries.length/entries.length*100):0;
-  add("catalog-delivery-coverage",platformCoverage>=80,7,`${visibleEntries.length}/${entries.length} catalog entries expose a delivery path or URL.`);
+  const publicEligibleEntries=entries.filter(item=>
+    item?.publicDeliveryRequired===true ||
+    item?.type==="product-platform" ||
+    item?.type==="app"
+  );
+  const visibleEntries=publicEligibleEntries.filter(item=>item?.deliveryPath||item?.deliveryUrl);
+  const platformCoverage=publicEligibleEntries.length?Math.round(visibleEntries.length/publicEligibleEntries.length*100):0;
+  add("catalog-delivery-coverage",platformCoverage>=95,7,`${visibleEntries.length}/${publicEligibleEntries.length} intentionally public catalog entries expose a delivery path or URL.`);
 
   const globalSignal=weightedTrendSignal(globalTrends);
   const localSignal=weightedTrendSignal(localTrends);
@@ -73,7 +78,12 @@ export function assessVisibility({
   return {
     generatedAt,
     seo:{score:seoScore,checks},
-    platform:{catalogEntries:entries.length,publicDeliveryEntries:visibleEntries.length,coveragePercent:platformCoverage},
+    platform:{
+      catalogEntries:entries.length,
+      publicEligibleEntries:publicEligibleEntries.length,
+      publicDeliveryEntries:visibleEntries.length,
+      coveragePercent:platformCoverage
+    },
     trends:{global:globalSignal,local:localSignal},
     inputs:{
       analyticsAvailable,
