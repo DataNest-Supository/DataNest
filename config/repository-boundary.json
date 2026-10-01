@@ -69,7 +69,13 @@
         "scripts/enforcer-monitor.mjs",
         "tests/unit/enforcer.test.mjs",
         "public/transparency/enforcer/**",
-        "public/transparency/audits/index.json"
+        "public/transparency/audits/index.json",
+        ".github/workflows/guardian.yml",
+        "guardian/**",
+        "config/guardian.tree.json",
+        "config/guardian.blueprint.json",
+        "scripts/guardian-health.mjs",
+        "tests/unit/guardian.test.mjs"
       ]
     },
     {
