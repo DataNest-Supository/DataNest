@@ -16,7 +16,7 @@ export function assess(policy){
     if(b[key]!==value) failures.push({id:"boundary:"+key,expected:value,received:b[key]??null});
   }
   const ids=new Set((policy?.acceptanceCriteria||[]).map(x=>x.id));
-  for(let i=1;i<=8;i++){
+  for(let i=1;i<=10;i++){
     const id="BND-"+String(i).padStart(3,"0");
     if(!ids.has(id)) failures.push({id:"acceptance:"+id,expected:"present",received:"missing"});
   }
