@@ -75,7 +75,17 @@
         "config/guardian.tree.json",
         "config/guardian.blueprint.json",
         "scripts/guardian-health.mjs",
-        "tests/unit/guardian.test.mjs"
+        "tests/unit/guardian.test.mjs",
+        ".github/workflows/conductor.yml",
+        ".github/workflows/suggester.yml",
+        "conductor/**",
+        "suggester/**",
+        "config/conductor.tree.json",
+        "config/suggester.tree.json",
+        "scripts/conductor-orchestrator.mjs",
+        "scripts/suggester-engine.mjs",
+        "tests/unit/conductor.test.mjs",
+        "tests/unit/suggester.test.mjs"
       ]
     },
     {
