@@ -80,6 +80,6 @@ test("specialized automation workflows are wired to the reusable annotation acti
   for(const [file,ids] of Object.entries(workflows)){
     const source=readFileSync(new URL("../../.github/workflows/"+file,import.meta.url),"utf8");
     assert.match(source,/uses:\s+\.\/\.github\/actions\/automation-x-annotation/);
-    for(const id of ids) assert.match(source,new RegExp("automation_id:\\s+"+id.replace(/[.*+?^${}()|[\\]\\]/g,"\\\\$&")));
+    for(const id of ids) assert.ok(source.includes("automation_id: "+id),file+" missing "+id);
   }
 });
