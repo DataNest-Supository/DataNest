@@ -6,7 +6,9 @@
     "^main$",
     "^production$",
     "^release/",
-    "^automation/knowledge-feed$"
+    "^automation/knowledge-feed$",
+    "^automation/botsquad/",
+    "^automation/environment-feed$"
   ],
   "supabaseProjects": [
     {
