@@ -18,6 +18,12 @@ It combines two first-class tools:
 - **UNIFI** — project orchestration, planning, Job Manifests, context, checkpoints, artifacts and audit.
 - **TranScheduler** — capability-aware scheduling, dependencies, reservations, retry/backoff, execution history and human controls.
 
+## Production-inclusive baseline
+
+DataNest uses an **inclusive production contract**: every approved production-capable public surface, governed external production target, and production-support component is included in the canonical release manifest and release verification. Mirror-DataNest, staging backends, FREETREE, automation branches, and candidate branches remain explicitly non-production-authoritative.
+
+Contract: [`docs/PRODUCTION_INCLUSION_CONTRACT.md`](docs/PRODUCTION_INCLUSION_CONTRACT.md)
+
 ## Canonical public identity
 
 DataNest uses its current GitHub Pages project-path deployment as the canonical public endpoint. There is no active DNS/custom-domain cutover or branded-host redirect. Reson8 remains an ecosystem Hub link rather than a routing target.
