@@ -20,7 +20,7 @@ test("every active worktree workflow gate is covered by the shared timeframe reg
     })
     .sort();
   assert.deepEqual(Object.keys(profiles).sort(),files);
-  assert.equal(files.length,20);
+  assert.equal(files.length,22);
 });
 
 test("every worktree gate invokes the reusable DataNest AI timeframe policy",()=>{
