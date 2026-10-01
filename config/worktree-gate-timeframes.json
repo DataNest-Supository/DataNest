@@ -427,6 +427,18 @@
         "governanceReview"
       ],
       "machineBaselineMinutes": 20
+    },
+    "liberty-in-all.yml": {
+      "gateId": "liberty-in-all",
+      "gateType": "automated_evidence",
+      "taskComplexity": "complex",
+      "reportingComplexity": "audit_grade",
+      "reviewDomains": [
+        "engineeringReview",
+        "securityReview",
+        "governanceReview"
+      ],
+      "machineBaselineMinutes": 20
     }
   }
 }

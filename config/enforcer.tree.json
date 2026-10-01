@@ -27,7 +27,8 @@
     "suggester-optimization-state",
     "calmer-softening-state",
     "regulator-harmony-state",
-    "visibility-utility-market-state"
+    "visibility-utility-market-state",
+    "liberty-in-all-traceability-state"
   ],
   "enforcement": {
     "mayFailOwnSecurityCheck": true,

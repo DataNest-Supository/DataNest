@@ -868,3 +868,17 @@ DataNest intends to make its operating model understandable enough that a user, 
 - what remains provisional, pending or uncertified.
 
 That visibility is itself part of the system's quality model.
+
+---
+
+## 32. LIBERTY-IN-ALL continuous traceability standard
+
+DataNest adopts **LIBERTY-IN-ALL** as its internal continuous indexing and traceability standard: maximum legitimate visibility with minimum necessary restriction. The standard hashes attributable records, binds indexes to exact Git source refs, exposes missing evidence, and publishes sanitized metadata for interested individuals, stakeholders, auditors and regulators.
+
+LIBERTY-IN-ALL does **not** publish arbitrary record contents, secrets, private authentication material or protected personal data. Disclosure, retention and sensitivity-policy changes remain human-reviewed. The standard cannot approve, merge, deploy production, rewrite historical evidence or change production authority.
+
+Its standards mapping includes ISO 15489-1:2016, ISO 23081-1:2017 and W3C PROV, together with the charter's existing information-security, privacy and governance mappings. These are alignment references only and do not constitute certification or a legal-compliance determination.
+
+Public descriptor: /DataNest/transparency/liberty-in-all/index.json
+
+Continuous public snapshot: /DataNest/transparency/liberty-in-all/latest.json

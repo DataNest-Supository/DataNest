@@ -18,7 +18,9 @@
     "public/.well-known/reson8-app.json",
     "src/app/transparency/page.tsx",
     "src/app/system-charter/page.tsx",
-    "docs/DATANEST_SYSTEM_CHARTER.md"
+    "docs/DATANEST_SYSTEM_CHARTER.md",
+    "docs/LIBERTY_IN_ALL_STANDARD.md",
+    "public/transparency/liberty-in-all/index.json"
   ],
   "monitorDomains": [
     "technical-seo",
@@ -32,7 +34,8 @@
     "sales-readiness",
     "global-trends",
     "local-trends",
-    "route-to-market"
+    "route-to-market",
+    "traceability-discoverability"
   ],
   "trendInputs": {
     "global": {

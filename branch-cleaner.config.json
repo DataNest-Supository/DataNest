@@ -15,7 +15,8 @@
     "^automation/suggester$",
     "^automation/calmer$",
     "^automation/regulator$",
-    "^automation/visibility-utility$"
+    "^automation/visibility-utility$",
+    "^automation/liberty-in-all$"
   ],
   "supabaseProjects": [
     {

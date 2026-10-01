@@ -23,6 +23,26 @@ type FindingsDocument = {
   findings:Finding[];
 };
 
+type LibertyIndexDocument = {
+  generatedAt:string;
+  status:string;
+  headSha:string;
+  coverage:{
+    indexedRecords:number;
+    publicRecords:number;
+    controlledRecords:number;
+    restrictedRecords:number;
+    missingEvidenceSources:number;
+  };
+  missingEvidenceSources:string[];
+  disclosure:{
+    recordContentsPublished:boolean;
+    secretsPublished:boolean;
+    privateAuthenticationMaterialPublished:boolean;
+    protectedPersonalDataPublished:boolean;
+  };
+};
+
 const auditDomains = [
   "UI / UX / information architecture",
   "Accessibility and interaction quality",
@@ -62,6 +82,8 @@ const findingsUrl=auditReturnBase+"/findings.json";
 const backlogUrl=auditReturnBase+"/remediation-backlog.json";
 const systemCharterUrl=`${publicBasePath}/system-charter/`;
 const visibilityUtilityIndexUrl=`${publicBasePath}/transparency/visibility-utility/index.json`;
+const libertyIndexUrl=`${publicBasePath}/transparency/liberty-in-all/index.json`;
+const libertyLiveUrl="https://raw.githubusercontent.com/DataNest-Supository/DataNest/automation/liberty-in-all/public/transparency/liberty-in-all/latest.json";
 
 function downloadText(filename:string,text:string){
   const blob=new Blob([text],{type:"text/plain;charset=utf-8"});
@@ -84,6 +106,8 @@ export default function TransparencyWorkspace(){
   const [auditReturnError,setAuditReturnError]=useState("");
   const [findings,setFindings]=useState<FindingsDocument|null>(null);
   const [findingsError,setFindingsError]=useState("");
+  const [libertyIndex,setLibertyIndex]=useState<LibertyIndexDocument|null>(null);
+  const [libertyIndexError,setLibertyIndexError]=useState("");
 
   useEffect(()=>{
     let cancelled=false;
@@ -94,6 +118,18 @@ export default function TransparencyWorkspace(){
       })
       .then(data=>{if(!cancelled)setFindings(data);})
       .catch(error=>{if(!cancelled)setFindingsError(error instanceof Error?error.message:"Unable to load audit findings.");});
+    return()=>{cancelled=true;};
+  },[]);
+
+  useEffect(()=>{
+    let cancelled=false;
+    void fetch(libertyLiveUrl,{cache:"no-store"})
+      .then(response=>{
+        if(!response.ok)throw new Error(`Live traceability snapshot is not initialized (${response.status}).`);
+        return response.json() as Promise<LibertyIndexDocument>;
+      })
+      .then(data=>{if(!cancelled)setLibertyIndex(data);})
+      .catch(error=>{if(!cancelled)setLibertyIndexError(error instanceof Error?error.message:"Live traceability snapshot is unavailable.");});
     return()=>{cancelled=true;};
   },[]);
 
@@ -189,6 +225,27 @@ export default function TransparencyWorkspace(){
             <a className="primaryButton compact linkButton" href={systemCharterUrl}>Open System Charter</a>
             <a className="secondaryButton compact linkButton" href="https://github.com/DataNest-Supository/DataNest/blob/main/docs/DATANEST_SYSTEM_CHARTER.md">Source on GitHub</a>
             <a className="textButton linkButton" href={visibilityUtilityIndexUrl}>Visibility intelligence index</a>
+          </div>
+        </article>
+        <article className="transparencyDocCard">
+          <div className="transparencyDocHeader">
+            <div><p className="eyebrow">LIBERTY-IN-ALL · CONTINUOUS TRACEABILITY</p><h3>On-demand provenance, indexing &amp; evidence visibility</h3></div>
+            <span className="badge good">PUBLISHED</span>
+          </div>
+          <p>Continuously refreshed, source-attributable traceability metadata for interested individuals, stakeholders, auditors and regulators. Public output contains digests and lineage, not protected record contents.</p>
+          <dl className="transparencyMeta">
+            <div><dt>Operating rule</dt><dd>Maximum legitimate visibility · minimum necessary restriction</dd></div>
+            <div><dt>Authority</dt><dd>Evidence/indexing only · no production authorization</dd></div>
+            <div><dt>Live status</dt><dd>{libertyIndex?libertyIndex.status.toUpperCase():libertyIndexError?"NOT INITIALIZED":"LOADING"}</dd></div>
+            <div><dt>Indexed evidence</dt><dd>{libertyIndex?`${libertyIndex.coverage.indexedRecords} records · ${libertyIndex.coverage.publicRecords} public metadata records`:"Awaiting current sanitized snapshot"}</dd></div>
+            <div><dt>Source lineage</dt><dd>{libertyIndex?.headSha?<code>{libertyIndex.headSha.slice(0,12)}</code>:"Automation branch initializes after canonical activation"}</dd></div>
+            <div><dt>Generated</dt><dd>{libertyIndex?.generatedAt?new Date(libertyIndex.generatedAt).toLocaleString():"Not yet available"}</dd></div>
+          </dl>
+          {libertyIndexError&&<p className="muted">Live index status: {libertyIndexError} The source-controlled descriptor and standard remain available.</p>}
+          <div className="heroActions">
+            <a className="primaryButton compact linkButton" href={libertyLiveUrl}>Open live traceability snapshot</a>
+            <a className="secondaryButton compact linkButton" href={libertyIndexUrl}>Open index descriptor</a>
+            <a className="secondaryButton compact linkButton" href="https://github.com/DataNest-Supository/DataNest/blob/main/docs/LIBERTY_IN_ALL_STANDARD.md">Read standard</a>
           </div>
         </article>
         <article className="transparencyDocCard"><div className="transparencyDocHeader"><div><p className="eyebrow">DATA NEST ARCHITECTURE · 28 SEP 2026</p><h3>Architecture &amp; Infrastructure Audit / Stakeholder Document</h3></div><span className="badge good">PUBLISHED</span></div><p>Current architecture authority, infrastructure boundaries, governed AI lifecycle, execution controls, security model, CI/CD evidence and clearly separated target-state capabilities.</p><dl className="transparencyMeta"><div><dt>Audience</dt><dd>Audit + stakeholder presentation</dd></div><div><dt>Status</dt><dd>Published reference; claims remain evidence-bound</dd></div></dl><div className="heroActions"><a className="primaryButton compact linkButton" href="./architecture">Open architecture document</a><a className="secondaryButton compact linkButton" href="https://github.com/DataNest-Supository/DataNest/blob/main/docs/ARCHITECTURE.md">Source on GitHub</a></div></article>

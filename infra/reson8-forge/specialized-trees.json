@@ -92,6 +92,12 @@
       "ref": "automation/visibility-utility",
       "productionAuthority": false,
       "forgeMode": "observe-seo-market-and-projection-evidence"
+    },
+    "liberty-in-all": {
+      "role": "continuous-indexing-traceability-and-public-assurance",
+      "ref": "automation/liberty-in-all",
+      "productionAuthority": false,
+      "forgeMode": "observe-provenance-and-sanitized-traceability"
     }
   },
   "rules": [
@@ -105,6 +111,7 @@
     "SUGGESTER may emit only allowlisted reversible autonomous commands; all other optimizations remain review-required.",
     "CALMER may soften planning friction only above non-negotiable Boundaries, ENFORCER, security and human-authority floors.",
     "REGULATOR may use BOTSQUAD to audit, stress-test and plan approved/free/open requirements but cannot spend, acquire credentials or gain production authority.",
-    "VISIBILITY-UTILITY may model SEO, market presence and routes to market but cannot spend, change pricing, make binding sales commitments or publish unverified claims."
+    "VISIBILITY-UTILITY may model SEO, market presence and routes to market but cannot spend, change pricing, make binding sales commitments or publish unverified claims.",
+    "LIBERTY-IN-ALL may index and publish sanitized provenance metadata but cannot expose secrets/private data, rewrite history, approve, merge, or deploy production."
   ]
 }

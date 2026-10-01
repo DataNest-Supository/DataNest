@@ -17,7 +17,8 @@
     "suggester",
     "calmer",
     "regulator",
-    "visibility-utility"
+    "visibility-utility",
+    "liberty-in-all"
   ],
   "exclude": [
     "node_modules",
