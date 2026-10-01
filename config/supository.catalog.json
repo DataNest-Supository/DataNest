@@ -230,6 +230,29 @@
       "branch": "automation/enforcer",
       "knowledgeAccess": "all-approved-knowledge-no-category-filter",
       "transparencyEvidence": true
+    },
+    "guardian": {
+      "path": "guardian/",
+      "mode": "event-driven-health-and-safe-healing",
+      "productionAuthority": false,
+      "branch": "automation/guardian",
+      "blueprint": "config/guardian.blueprint.json",
+      "heals": "proven-branch-redundancy-and-byte-safe-source-noise",
+      "mirrorFeed": true
+    },
+    "conductor": {
+      "path": "conductor/",
+      "mode": "event-driven-process-synchronization",
+      "productionAuthority": false,
+      "branch": "automation/conductor",
+      "purpose": "timing-dependency-and-pull-push-coordination"
+    },
+    "suggester": {
+      "path": "suggester/",
+      "mode": "continuous-optimization-suggestions",
+      "productionAuthority": false,
+      "branch": "automation/suggester",
+      "purpose": "continuous-optimization-and-bounded-autonomous-update-queue"
     }
   }
 }
