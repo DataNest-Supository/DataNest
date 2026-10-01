@@ -36,7 +36,7 @@ on:
         required: true
         type: string
       edge_function_release_reference:
-        description: Successful Governed Production Edge Function Release workflow run for the exact release SHA
+        description: Governed Edge release workflow run ID or connector:<source-sha> attestation reference
         required: true
         type: string
       audit_optimizer_reference:
@@ -205,6 +205,7 @@ jobs:
         run: node scripts/verify-production-release-attestation.mjs .datanest/release-attestation.json
 
       - name: Download referenced governed Edge Function release evidence
+        if: ${{ !startsWith(inputs.edge_function_release_reference, 'connector:') }}
         uses: actions/download-artifact@v5
         with:
           name: datanest-edge-function-release-${{ inputs.release_sha }}
@@ -212,6 +213,14 @@ jobs:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ inputs.edge_function_release_reference }}
+
+      - name: Stage Supabase connector Edge Function evidence
+        if: ${{ startsWith(inputs.edge_function_release_reference, 'connector:') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${{ runner.temp }}/datanest-edge-function-release"
+          cp config/production-edge-function-attestation.json             "${{ runner.temp }}/datanest-edge-function-release/edge-function-release.json"
 
       - name: Verify referenced governed Edge Function release
         env:
