@@ -199,6 +199,18 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
       }
       return false;
     };
+    const isInsideOffscreenFixedShell=(element:Element)=>{
+      let current:Element|null=element;
+      while(current&&current!==document.body){
+        const style=getComputedStyle(current);
+        if(style.position==="fixed"){
+          const rect=current.getBoundingClientRect();
+          if(rect.right<=0||rect.left>=viewportWidth)return true;
+        }
+        current=current.parentElement;
+      }
+      return false;
+    };
     return Array.from(document.querySelectorAll<HTMLElement>("body *"))
       .map(element=>{
         const rect=element.getBoundingClientRect();
@@ -214,11 +226,7 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
       })
       .filter(item=>item.right>viewportWidth+1||item.left< -1)
       .filter(item=>!isClipped(item.element))
-      .filter(item=>{
-        const style=getComputedStyle(item.element);
-        const completelyOffscreen=item.right<=0||item.left>=viewportWidth;
-        return !(completelyOffscreen && style.position==="fixed");
-      })
+      .filter(item=>!isInsideOffscreenFixedShell(item.element))
       .map(({element,...item})=>item)
       .slice(0,12);
   });
