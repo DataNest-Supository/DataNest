@@ -230,6 +230,15 @@
       "branch": "automation/enforcer",
       "knowledgeAccess": "all-approved-knowledge-no-category-filter",
       "transparencyEvidence": true
+    },
+    "guardian": {
+      "path": "guardian/",
+      "mode": "event-driven-health-and-safe-healing",
+      "productionAuthority": false,
+      "branch": "automation/guardian",
+      "blueprint": "config/guardian.blueprint.json",
+      "heals": "proven-branch-redundancy-and-byte-safe-source-noise",
+      "mirrorFeed": true
     }
   }
 }
