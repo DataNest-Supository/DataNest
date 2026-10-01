@@ -96,6 +96,7 @@ async function main(){
     await jsonFile("config/suggester.tree.json"),
     await jsonFile("config/calmer.tree.json"),
     await jsonFile("config/regulator.tree.json"),
+    await jsonFile("config/visibility-utility.tree.json"),
     config
   ];
 
