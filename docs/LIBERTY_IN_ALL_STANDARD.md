@@ -56,6 +56,8 @@ The LIBERTY-IN-ALL workflow runs on relevant repository changes, selected specia
 The indexer must:
 
 - classify sensitive-looking paths as restricted metadata;
+- exclude restricted record names and details from published traceability indexes;
+- expose only a restricted-record count and aggregate digest for that class;
 - exclude restricted records from the public record list;
 - never publish record contents through the public index;
 - never publish secrets, passwords, tokens, credentials, private keys, private authentication material or protected personal data;
@@ -100,7 +102,7 @@ A conforming LIBERTY-IN-ALL run must show:
 
 1. production authorization is false;
 2. indexed records carry SHA-256 digests and a source ref;
-3. sensitive records are excluded from the public record list;
+3. sensitive record names/details are excluded from published indexes and represented only by an aggregate restricted-evidence count/digest;
 4. public output contains no record contents;
 5. missing configured evidence is explicit;
 6. disclosure-policy changes remain human-reviewed;
