@@ -147,7 +147,7 @@
       "status": "published",
       "audit_result_status": "public_management_system_reference",
       "published_at": "2026-10-01",
-      "source": "../../system-charter/index.json",
+      "source": "../system-charter/index.json",
       "coverage": {
         "mission": true,
         "vision": true,
