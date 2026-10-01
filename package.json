@@ -26,7 +26,9 @@
     "botsquad:ux-workorder": "node scripts/botsquad-orchestrator.mjs --bot ux-ease",
     "environment:assess": "node scripts/environment-assessor.mjs",
     "enforcer:assess": "node scripts/enforcer-monitor.mjs",
-    "guardian:health": "node scripts/guardian-health.mjs"
+    "guardian:health": "node scripts/guardian-health.mjs",
+    "conductor:sync": "node scripts/conductor-orchestrator.mjs",
+    "suggester:build": "node scripts/suggester-engine.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
