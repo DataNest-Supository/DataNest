@@ -30,7 +30,12 @@
         "function-evolution",
         "integration-scout",
         "quality-observer",
-        "environment-liaison"
+        "environment-liaison",
+        "regulator-auditor",
+        "regulator-stress-tester",
+        "regulator-acquisition-scout",
+        "regulator-supply-coordinator",
+        "regulator-action-planner"
       ]
     },
     "environment": {
