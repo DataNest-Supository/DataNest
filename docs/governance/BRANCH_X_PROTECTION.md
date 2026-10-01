@@ -22,7 +22,10 @@ A failed GitHub-native administration attempt is recorded as a protection gap; B
 
 ## Free host-level closure
 
-GitHub confirms that repository rulesets and protected branches are available for public repositories on GitHub Free. citeturn718149search4turn718149search6
+GitHub documents repository rulesets and protected branches as available for public repositories on GitHub Free:
+
+- [Available rules for rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets)
+- [Managing protected branches](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches)
 
 Import `.github/rulesets/BRANCH-X-Canonical.json` and set it to **Active** for `main` and `release/**`. The definition enforces pull requests, one approval, stale-review dismissal, conversation resolution, required status checks, linear history, no force pushes, and no deletions.
 
