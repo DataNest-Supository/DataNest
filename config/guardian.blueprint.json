@@ -148,7 +148,7 @@
   },
   "marketVisibility": {
     "minimumSeoScore": 80,
-    "minimumPlatformCoveragePercent": 70
+    "minimumPlatformCoveragePercent": 95
   },
   "traceabilityAssurance": {
     "required": true,
