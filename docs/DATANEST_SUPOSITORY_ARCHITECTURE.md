@@ -197,6 +197,8 @@ DataNest
 ├── GUARDIAN        -> blueprint snapshots, health drift + safe healing
 ├── CONDUCTOR       -> workflow timing, dependencies + pull/push coordination
 ├── SUGGESTER       -> continuous optimization + bounded automation queue
+├── CALMER          -> minimum-friction pass floors + STONE/GOLD/DIAMOND incentives
+├── REGULATOR       -> transparent requirements + BOTSQUAD audit/stress/supply/action
 ├── Mirror-DataNest -> ungated R&D candidate workspace
 └── FREETREE        -> isolated open-development repository, no synchronization
 ```
@@ -242,3 +244,18 @@ reviewed or reversible update path
 ```
 
 Mirror-DataNest consumes designated public feeds through Mirror-owned workflows. FREETREE remains outside automatic synchronization and automatic healing.
+
+
+### CALMER and REGULATOR relationship
+
+CALMER continuously searches for the least restrictive **planning and evidence-routing** configuration that still satisfies the DataNest pass floor. It may reduce response windows, duplicated evidence requests, redundant review handoffs, stale-evidence refreshes and low-risk queue friction. It does **not** remove automated checks, hard Boundaries, ENFORCER security blockers, production authorization, secret protections, unique-history protections or mandatory human approval. Shared gate-timeframe proposals now use CALMER's computed minimum-pass floor by default and reject owner overrides below that floor.
+
+CALMER also publishes incentive packages for functions, processes and builds:
+
+- **STONE** — baseline passing evidence and minimum-friction routing.
+- **GOLD** — stronger accuracy/performance/security/contribution evidence with accelerated low-risk routing and longer evidence reuse.
+- **DIAMOND** — maximum non-authorizing softening and fast-lane treatment when all high thresholds, including full security evidence, are satisfied.
+
+REGULATOR converts unresolved health, security, environment, governance and optimization requirements into transparent requirement packets. Those packets are consumable by dedicated BOTSQUAD roles for audit, stress-testing, free/open/already-authorized acquisition scouting, supply-readiness analysis and bounded action planning. "Acquisition" does not authorize purchases, financial commitments, credential acquisition or provider authority.
+
+REGULATOR publishes a sanitized transparency surface and feeds its requirements back into SUGGESTER. CONDUCTOR manages freshness for CALMER and REGULATOR before completing the synchronized SUGGESTER cycle.
