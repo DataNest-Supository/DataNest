@@ -60,6 +60,31 @@
       "id": "environment-liaison",
       "branch": "automation/botsquad/environment-liaison",
       "purpose": "Translate ENVIRONMENT constraints and opportunities into implementable tree-level recommendations."
+    },
+    {
+      "id": "regulator-auditor",
+      "branch": "automation/botsquad/regulator-auditor",
+      "purpose": "Audit REGULATOR requirements, evidence completeness, transparency, control consistency and unresolved obligations."
+    },
+    {
+      "id": "regulator-stress-tester",
+      "branch": "automation/botsquad/regulator-stress-tester",
+      "purpose": "Stress-test REGULATOR requirements, limits, failure modes, recovery paths and operating assumptions."
+    },
+    {
+      "id": "regulator-acquisition-scout",
+      "branch": "automation/botsquad/regulator-acquisition-scout",
+      "purpose": "Identify free/open or already-authorized resources, tools, dependencies and evidence required by REGULATOR without purchases or credential acquisition."
+    },
+    {
+      "id": "regulator-supply-coordinator",
+      "branch": "automation/botsquad/regulator-supply-coordinator",
+      "purpose": "Assess supply readiness of approved internal/free/open resources, evidence, capabilities and dependencies required by REGULATOR."
+    },
+    {
+      "id": "regulator-action-planner",
+      "branch": "automation/botsquad/regulator-action-planner",
+      "purpose": "Translate validated REGULATOR requirements into bounded SUGGESTER/CONDUCTOR or human-review action plans."
     }
   ],
   "feedTargets": [
@@ -83,5 +108,11 @@
     "mayHandleProductionSecrets": false,
     "proposalsRequireTraceableInputs": true,
     "canonicalChangesRequireHumanReview": true
+  },
+  "regulatorInput": {
+    "branch": "automation/regulator",
+    "path": "regulator/requirements/botsquad.json",
+    "authority": "requirement-request",
+    "productionAuthorization": false
   }
 }
