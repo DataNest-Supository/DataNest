@@ -55,3 +55,16 @@ An authorized production release must:
 6. Verify the governed external YouTube Optimizer target.
 7. Publish a release manifest whose `productionInclusion.inclusive` value is `true`.
 8. Preserve the lawful boundary of the Assurance service: independent private assurance/oversight, not statutory regulator authority or unauthorized surveillance.
+
+
+## Supabase connector-attested Edge release
+
+When the repository does not hold a Supabase Management API access token, DataNest may use the authenticated Supabase connector as a free production deployment authority. This path is not a bypass: it must deploy from an exact canonical source commit and record a machine-readable `edge-function-connector-attestation-v1` containing the live function versions, deployment digests, ACTIVE/JWT state, and a SHA-256 digest of the complete `supabase/functions` source tree.
+
+The Pages release accepts a `connector:<source-sha>` Edge reference only when:
+- the connector deployment source commit is an ancestor of the Pages release SHA;
+- the complete Edge source-tree digest matches the Pages checkout;
+- all eight governed production functions are present, ACTIVE, JWT-protected, versioned, and digest-attested; and
+- the attestation carries a non-empty external connector evidence reference.
+
+The existing GitHub-token production Edge release remains supported when `SUPABASE_ACCESS_TOKEN` is configured.
