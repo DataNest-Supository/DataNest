@@ -36,7 +36,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        run: node scripts/branch-cleaner.mjs --apply
+        run: node scripts/branch-cleaner.mjs --git-only-safe-apply
       - uses: actions/upload-artifact@v4
         if: always()
         with:
