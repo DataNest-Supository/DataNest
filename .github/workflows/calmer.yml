@@ -13,8 +13,6 @@ on:
     workflows:
       - "GUARDIAN Health & Healing Tree"
       - "ENFORCER Defence Tree"
-      - "CONDUCTOR Process Synchronization Tree"
-      - "SUGGESTER Optimization Tree"
     types: [completed]
 
 permissions:
