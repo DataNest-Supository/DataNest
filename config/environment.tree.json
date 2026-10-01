@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "datanest-environment-tree-v1",
+  "authority": "DataNest-Supository/DataNest",
+  "purpose": "Assess and adapt the shared operating environment so DataNest trees can function, remain compatible, and grow without implicit authority changes.",
+  "trees": [
+    {
+      "id": "datanest",
+      "repository": "DataNest-Supository/DataNest",
+      "mode": "canonical"
+    },
+    {
+      "id": "mirror",
+      "repository": "DataNest-Supository/Mirror-DataNest",
+      "mode": "rnd"
+    },
+    {
+      "id": "knowledge",
+      "repository": "DataNest-Supository/DataNest",
+      "mode": "specialized"
+    },
+    {
+      "id": "boundaries",
+      "repository": "DataNest-Supository/DataNest",
+      "mode": "specialized"
+    },
+    {
+      "id": "botsquad",
+      "repository": "DataNest-Supository/DataNest",
+      "mode": "specialized"
+    },
+    {
+      "id": "environment",
+      "repository": "DataNest-Supository/DataNest",
+      "mode": "specialized"
+    },
+    {
+      "id": "freetree",
+      "repository": "DataNest-Supository/FREETREE",
+      "mode": "isolated-no-sync",
+      "writeAccess": false
+    }
+  ],
+  "dimensions": [
+    "source-control",
+    "runtime",
+    "ci-runner",
+    "delivery",
+    "backend",
+    "ai-inference",
+    "registry",
+    "backup-recovery",
+    "dependency-posture",
+    "branch-hygiene",
+    "evidence-observability"
+  ],
+  "expected": {
+    "nodeMajor": 22,
+    "ciRunner": "ubuntu-24.04",
+    "canonicalDelivery": "GitHub Pages",
+    "backendAuthority": "Supabase",
+    "canonicalRepository": "DataNest-Supository/DataNest",
+    "forgeMode": "governed-mirror"
+  },
+  "adaptationPolicy": {
+    "safeAuto": [
+      "generated environment state and compatibility feeds",
+      "non-authorizing automation-branch refresh",
+      "deterministic metadata normalization"
+    ],
+    "humanReviewRequired": [
+      "runtime major changes",
+      "dependency upgrades",
+      "hosting/provider changes",
+      "backend changes",
+      "repository permission changes",
+      "production workflow changes",
+      "Forge authority changes",
+      "secret or credential changes"
+    ],
+    "forbidden": [
+      "implicit production authority transfer",
+      "automatic governance weakening",
+      "automatic secret disclosure",
+      "automatic FREETREE synchronization"
+    ]
+  },
+  "feeds": [
+    {
+      "target": "datanest",
+      "path": "environment/feeds/datanest.json"
+    },
+    {
+      "target": "mirror",
+      "path": "environment/feeds/mirror-datanest.json"
+    },
+    {
+      "target": "botsquad",
+      "path": "environment/feeds/botsquad.json"
+    },
+    {
+      "target": "forge",
+      "path": "environment/feeds/resonance-forge.json"
+    }
+  ]
+}
