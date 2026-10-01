@@ -100,6 +100,14 @@
     {
       "target": "forge",
       "path": "environment/feeds/resonance-forge.json"
+    },
+    {
+      "target": "knowledge",
+      "path": "environment/feeds/knowledge.json"
+    },
+    {
+      "target": "boundaries",
+      "path": "environment/feeds/boundaries.json"
     }
   ]
 }
