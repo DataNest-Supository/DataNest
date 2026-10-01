@@ -12,7 +12,13 @@ test("boundary protects explicit canonical-only release/governance files", () =>
   for (const path of [
     "scripts/write-release-manifest.mjs",
     "scripts/write-ui-governance-evidence.mjs",
-    "config/worktree-gate-timeframes.json"
+    "config/worktree-gate-timeframes.json",
+    "config/repository-boundary.json",
+    "schemas/release-evidence-envelope-v1.schema.json",
+    "scripts/lib/repository-boundary.mjs",
+    "scripts/validate-mirror-candidate-boundary.mjs",
+    "tests/unit/mirror-production-promotion.test.mjs",
+    "tests/unit/mirror-product-surface-immutability.test.mjs"
   ]) {
     assert.equal(classifyPath(path, boundary).policy, "canonical_only");
   }
