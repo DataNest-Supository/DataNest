@@ -98,7 +98,19 @@
         "scripts/regulator-engine.mjs",
         "tests/unit/calmer.test.mjs",
         "tests/unit/regulator.test.mjs",
-        "public/transparency/regulator/**"
+        "public/transparency/regulator/**",
+        ".github/workflows/visibility-utility.yml",
+        "visibility-utility/**",
+        "config/visibility-utility.tree.json",
+        "scripts/visibility-utility.mjs",
+        "tests/unit/visibility-utility.test.mjs",
+        "docs/DATANEST_SYSTEM_CHARTER.md",
+        "src/app/system-charter/**",
+        "public/transparency/system-charter/**",
+        "public/transparency/visibility-utility/**",
+        "public/robots.txt",
+        "public/sitemap.xml",
+        "public/site.webmanifest"
       ]
     },
     {
