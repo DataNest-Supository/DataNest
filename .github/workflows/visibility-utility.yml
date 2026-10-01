@@ -34,6 +34,15 @@ jobs:
           ref: ${{ github.event_name == 'workflow_run' && 'main' || '' }}
           fetch-depth: 0
 
+      - uses: ./.github/actions/automation-x-annotation
+        with:
+          automation_id: visibility-utility
+          automation_class: analysis
+          automation_action: recommend
+          automation_target: visibility-utility/
+          automation_effect: proposal
+          human_review_required: "true"
+
       - uses: ./.github/actions/node-project-setup
 
       - name: Validate VISIBILITY-UTILITY and public charter contracts
