@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "datanest-liberty-in-all-entrypoint-v1",
+  "title": "DataNest LIBERTY-IN-ALL Continuous Indexing & Traceability",
+  "status": "published",
+  "publishedAt": "2026-10-01",
+  "latest": "./latest.json",
+  "standard": "https://github.com/DataNest-Supository/DataNest/blob/main/docs/LIBERTY_IN_ALL_STANDARD.md",
+  "audiences": ["public","stakeholders","auditors","regulators"],
+  "disclosure": {
+    "publicMetadata": true,
+    "contentDigests": true,
+    "sourceCommitLineage": true,
+    "recordContents": false,
+    "secrets": false,
+    "privateAuthenticationMaterial": false,
+    "protectedPersonalData": false
+  },
+  "assurance": {
+    "productionAuthorization": false,
+    "isoCertified": false,
+    "legalComplianceCertified": false
+  }
+}
