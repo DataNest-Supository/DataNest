@@ -165,7 +165,9 @@
         "enforcer/**",
         "config/enforcer.tree.json",
         "scripts/enforcer-monitor.mjs",
-        ".github/workflows/enforcer.yml"
+        ".github/workflows/enforcer.yml",
+        "public/transparency/enforcer/**",
+        "public/transparency/audits/index.json"
       ],
       "acceptance": [
         "ENFORCER consumes the complete approved Knowledge corpus without category or topic filtering",
