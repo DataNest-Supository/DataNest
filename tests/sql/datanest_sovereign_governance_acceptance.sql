@@ -203,6 +203,12 @@ begin
     'public.get_governance_workspace_v1(uuid)'::regprocedure
   ) into workspace_def;
 
+  if workspace_def ilike '%current_role text%'
+     or workspace_def not ilike '%member_role_value text%'
+     or workspace_def not ilike '%''member_role'',member_role_value%' then
+    raise exception 'Governance workspace member role must come from project membership, not PostgreSQL CURRENT_ROLE.';
+  end if;
+
   if workspace_def not ilike '%''sparks_weight_votes'',false%'
      or workspace_def not ilike '%''reputation_weight_votes'',false%'
      or workspace_def not ilike '%''governance_changes_legal_ownership'',false%'
