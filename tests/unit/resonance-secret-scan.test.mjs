@@ -12,14 +12,14 @@ test("detects high-confidence secret forms", () => {
     [
       "AWS_ACCESS_KEY_ID=" + "AKIA" + "1234567890ABCDEF",
       "-----BEGIN " + "PRIVATE KEY-----",
-      "client_secret = " + String.fromCharCode(34) + "this-is-a-real-looking-secret-value-123" + String.fromCharCode(34),
+      "client_secret = " + String.fromCharCode(34) + ["this","is","a","real","looking","secret","value","123"].join("-") + String.fromCharCode(34),
     ].join("\n"),
     "fixture/example.txt"
   );
   assert.ok(findings.some((item) => item.rule === "secret:aws-access-key"));
   assert.ok(findings.some((item) => item.rule === "secret:private-key-block"));
   assert.ok(findings.some((item) => item.rule === "secret:generic-assignment"));
-  assert.ok(findings.every((item) => !item.detail.includes("this-is-a-real-looking-secret-value-123")));
+  assert.ok(findings.every((item) => !item.detail.includes("real-looking-secret-value")));
 });
 
 test("ignores explicit placeholder credentials", () => {
