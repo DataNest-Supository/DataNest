@@ -15,9 +15,11 @@ const dimensions=[
 const blueprint={
   schemaVersion:"datanest-guardian-blueprint-v1",
   blueprintVersion:1,
-  requiredTrees:[{id:"knowledge"},{id:"boundaries"},{id:"botsquad"},{id:"environment"},{id:"enforcer"},{id:"guardian"},{id:"conductor"},{id:"suggester"}],
+  requiredTrees:[{id:"knowledge"},{id:"boundaries"},{id:"botsquad"},{id:"environment"},{id:"enforcer"},{id:"guardian"},{id:"conductor"},{id:"suggester"},{id:"calmer"},{id:"regulator"}],
   environment:{requiredDimensions:dimensions,requiredStatus:"compatible",requiredCompatible:true},
   coordination:{conductorMaxAgeMinutes:30,suggesterMaxAgeMinutes:30,requiredConductorAuthority:"process-synchronization",requiredSuggesterAuthority:"optimization-advisory"},
+  feedFreshness:{calmerMinutes:45,regulatorMinutes:45},
+  governanceHarmony:{calmerHardControlsRemoved:0,regulatorFinancialCommitmentsAuthorized:false},
   knowledge:{minimumApprovedItems:1},
   sourceHealth:{maximumHighReviewerFindings:0},
   healthThresholds:{healthy:90,criticalBelow:70}
@@ -49,9 +51,11 @@ const botsquad={
   productionAuthorization:false,
   botCount:9
 };
-const treeContracts={knowledge:true,boundaries:true,botsquad:true,environment:true,enforcer:true,guardian:true,conductor:true,suggester:true};
+const treeContracts={knowledge:true,boundaries:true,botsquad:true,environment:true,enforcer:true,guardian:true,conductor:true,suggester:true,calmer:true,regulator:true};
 const conductorState={schemaVersion:"datanest-conductor-state-v1",productionAuthorization:false,generatedAt:"2026-10-01T07:50:00.000Z",authority:"process-synchronization",allProcessesFresh:true,nextCommand:{type:"trigger-suggester"}};
 const suggesterFeed={schemaVersion:"datanest-suggester-feed-v1",productionAuthorization:false,generatedAt:"2026-10-01T07:55:00.000Z",authority:"optimization-advisory",summary:{total:0,autonomousSafe:0}};
+const calmerState={schemaVersion:"datanest-calmer-state-v1",productionAuthorization:false,generatedAt:"2026-10-01T07:55:00.000Z",status:"softening-active",tier:"GOLD",summary:{hardControlsRemoved:0}};
+const regulatorState={schemaVersion:"datanest-regulator-state-v1",productionAuthorization:false,generatedAt:"2026-10-01T07:55:00.000Z",status:"harmonized",transparency:{requirementCount:0,financialCommitmentsAuthorized:false}};
 const sourceState={"config/a.json":{sha256:"sha256:a",bytes:1}};
 const reviewerReport={summary:{filesReviewed:20,high:0,medium:0,low:0,findings:0},refinements:[],nextSteps:[]};
 const branchReport={github:{branches:[
@@ -78,7 +82,7 @@ test("GUARDIAN CLI binds snapshots to checkout rather than an unrelated event SH
 
 function snapshot(overrides={}){
   return buildGuardianSnapshot({
-    config,blueprint,environment,enforcer,knowledge,botsquad,conductorState,suggesterFeed,branchReport,reviewerReport,
+    config,blueprint,environment,enforcer,knowledge,botsquad,conductorState,suggesterFeed,calmerState,regulatorState,branchReport,reviewerReport,
     previousSnapshot:null,sourceState,treeContracts,headSha:"a".repeat(40),
     generatedAt:"2026-10-01T08:00:00.000Z",
     ...overrides
@@ -184,4 +188,11 @@ test("GUARDIAN degrades when coordination state is stale",()=>{
   });
   assert.equal(result.status,"degraded");
   assert.ok(result.drift.optimalConditionDrift.some(x=>x.control==="coordination"));
+});
+
+test("GUARDIAN treats explicit CALMER or REGULATOR boundary violation as critical",()=>{
+  const calmerViolation=snapshot({calmerState:{...calmerState,summary:{hardControlsRemoved:1}}});
+  assert.equal(calmerViolation.status,"critical");
+  const regulatorViolation=snapshot({regulatorState:{...regulatorState,transparency:{financialCommitmentsAuthorized:true}}});
+  assert.equal(regulatorViolation.status,"critical");
 });
