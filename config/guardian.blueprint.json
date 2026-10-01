@@ -48,6 +48,10 @@
     {
       "id": "visibility-utility",
       "contract": "config/visibility-utility.tree.json"
+    },
+    {
+      "id": "liberty-in-all",
+      "contract": "config/liberty-in-all.standard.json"
     }
   ],
   "environment": {
@@ -90,7 +94,8 @@
       "^automation/suggester$",
       "^automation/calmer$",
       "^automation/regulator$",
-      "^automation/visibility-utility$"
+      "^automation/visibility-utility$",
+      "^automation/liberty-in-all$"
     ],
     "autonomousDeletion": "no-unique-commits-only"
   },
@@ -118,7 +123,8 @@
     "config/calmer.tree.json",
     "config/regulator.tree.json",
     "config/visibility-utility.tree.json",
-    "docs/DATANEST_SYSTEM_CHARTER.md"
+    "docs/DATANEST_SYSTEM_CHARTER.md",
+    "config/liberty-in-all.standard.json"
   ],
   "coordination": {
     "conductorMaxAgeMinutes": 30,
@@ -133,7 +139,8 @@
     "botsquadMinutes": 420,
     "calmerMinutes": 45,
     "regulatorMinutes": 45,
-    "visibilityUtilityMinutes": 240
+    "visibilityUtilityMinutes": 240,
+    "libertyInAllMinutes": 20
   },
   "governanceHarmony": {
     "calmerHardControlsRemoved": 0,
@@ -142,5 +149,10 @@
   "marketVisibility": {
     "minimumSeoScore": 80,
     "minimumPlatformCoveragePercent": 70
+  },
+  "traceabilityAssurance": {
+    "required": true,
+    "publicMetadataOnly": true,
+    "contentDigestsRequired": true
   }
 }
