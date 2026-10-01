@@ -34,7 +34,8 @@ test("specialized tree projection remains non-authorizing", () => {
     conductor: { authority: "process-synchronization", productionAuthority: false, ref: "automation/conductor" },
     suggester: { authority: "optimization-advisory", productionAuthority: false, ref: "automation/suggester" },
     calmer: { authority: "governance-friction-optimization", productionAuthority: false, ref: "automation/calmer" },
-    regulator: { authority: "transparent-system-regulation", productionAuthority: false, ref: "automation/regulator" }
+    regulator: { authority: "transparent-system-regulation", productionAuthority: false, ref: "automation/regulator" },
+    "visibility-utility": { authority: "visibility-market-intelligence-advisory", productionAuthority: false, ref: "automation/visibility-utility" }
   }}, "2026-10-01T00:00:00.000Z");
   assert.equal(validateRegistrySnapshot(snapshot).valid, true);
   assert.equal(snapshot.trees.botsquad.productionAuthority, false);
