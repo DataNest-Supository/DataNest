@@ -94,6 +94,8 @@ async function main(){
     await jsonFile("config/guardian.tree.json"),
     await jsonFile("config/conductor.tree.json"),
     await jsonFile("config/suggester.tree.json"),
+    await jsonFile("config/calmer.tree.json"),
+    await jsonFile("config/regulator.tree.json"),
     config
   ];
 
