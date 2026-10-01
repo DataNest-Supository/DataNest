@@ -24,4 +24,4 @@ The protocol applies to DataNest, Mirror-DataNest, and the FREETREE repository o
 
 ## Specialized automation branches
 
-`automation/knowledge-feed`, `automation/botsquad/*`, and `automation/environment-feed` are protected automation state. Their owning workflows may refresh them, but generic branch cleanup must not delete them. Mirror inbox branches are separately protected inside Mirror-DataNest.
+`automation/knowledge-feed`, `automation/botsquad/*`, `automation/environment-feed`, and `automation/enforcer` are protected automation state. Their owning workflows may refresh them, but generic branch cleanup must not delete them. Mirror inbox branches are separately protected inside Mirror-DataNest.
