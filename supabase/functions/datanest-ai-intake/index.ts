@@ -280,11 +280,7 @@ Deno.serve(async(request:Request)=>{
       declaredBasis:"user_declared_for_external_evidence"
     });
 
-    // Resolve authorization-sensitive metadata with the service client, then enforce the
-    // caller's identity and collaboration membership explicitly. This avoids relying on
-    // a manually forwarded Authorization header for PostgREST RLS while preserving the
-    // same project/job access boundary as the public jobs policy.
-    const {data:session,error:sessionError}=await serviceClient
+    const {data:session,error:sessionError}=await userClient
       .from("external_ai_sessions")
       .select("id,project_id,job_id,user_id,provider,status,context_snapshot,staging_event_id,staging_trace_id")
       .eq("id",externalAiSessionId)
@@ -294,34 +290,13 @@ Deno.serve(async(request:Request)=>{
       return json({error:"External AI session ownership is required."},403,origin);
     }
 
-    const {data:job,error:jobError}=await serviceClient
+    const {data:job,error:jobError}=await userClient
       .from("jobs")
       .select("id,project_id")
       .eq("id",session.job_id)
       .eq("project_id",session.project_id)
       .single();
     if(jobError||!job)return json({error:"Job collaboration access is required."},403,origin);
-
-    const [{data:projectMember,error:projectMemberError},{data:jobCollaborator,error:jobCollaboratorError}]=await Promise.all([
-      serviceClient
-        .from("project_members")
-        .select("id")
-        .eq("project_id",session.project_id)
-        .eq("user_id",user.id)
-        .eq("status","active")
-        .maybeSingle(),
-      serviceClient
-        .from("job_collaborators")
-        .select("id")
-        .eq("job_id",session.job_id)
-        .eq("user_id",user.id)
-        .eq("status","accepted")
-        .maybeSingle()
-    ]);
-    if(projectMemberError||jobCollaboratorError)throw projectMemberError||jobCollaboratorError;
-    if(!projectMember&&!jobCollaborator){
-      return json({error:"Job collaboration access is required."},403,origin);
-    }
 
     const contentHash=await sha256Text(content);
     const traceKey=String(
