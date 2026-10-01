@@ -89,19 +89,20 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/search/issues?q=repo:$REPO+is:issue+is:open+in:title+BRANCH-X%20canonical%20write%20anomaly%20$REF" \
+            "https://api.github.com/search/issues?q=repo:$REPO+is:issue+is:open+in:title+BRANCH-X+canonical+write+anomaly" \
             > open-incidents.json
 
-          python - "$title_prefix" "$body" <<'PY' > issue.json
+          python - "$title_prefix" "$body" <<'PY' > issue-body.json
           import json, sys
           print(json.dumps({"body":sys.argv[2]}))
           PY
 
-          python - <<'PY'
-          import json
+          python - "$title_prefix" <<'PY'
+          import json, sys
           from pathlib import Path
           data=json.loads(Path("open-incidents.json").read_text())
-          items=data.get("items", [])
+          prefix=sys.argv[1]
+          items=[x for x in data.get("items",[]) if x.get("title","").startswith(prefix)]
           if items:
               Path("incident-mode.txt").write_text("update")
               Path("incident-number.txt").write_text(str(items[0]["number"]))
@@ -116,10 +117,10 @@ jobs:
               -H "Authorization: Bearer $GH_TOKEN" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
               "https://api.github.com/repos/$REPO/issues/$number/comments" \
-              -d "$(python -c 'import json,sys; print(json.dumps({"body":open("issue.json").read()}))')" \
+              -d @issue-body.json \
               || echo "::warning::Unable to update the existing governance incident."
           else
-            python - "$REPO" "$title_prefix @ $SHA" "$body" <<'PY' > issue.json
+            python - "$REPO" "$title_prefix @ $SHA" "$body" <<'PY' > create-issue.json
             import json, sys
             print(json.dumps({"title":sys.argv[2],"body":sys.argv[3],"labels":["governance"]}))
             PY
@@ -128,7 +129,7 @@ jobs:
               -H "Authorization: Bearer $GH_TOKEN" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
               https://api.github.com/repos/$REPO/issues \
-              -d @issue.json \
+              -d @create-issue.json \
               || echo "::warning::Unable to open governance incident automatically."
           fi
 
