@@ -73,6 +73,11 @@
       "id": "visibility-utility",
       "repository": "DataNest-Supository/DataNest",
       "mode": "specialized-visibility-market-intelligence"
+    },
+    {
+      "id": "liberty-in-all",
+      "repository": "DataNest-Supository/DataNest",
+      "mode": "specialized-continuous-indexing-traceability"
     }
   ],
   "dimensions": [
@@ -171,6 +176,10 @@
     {
       "target": "visibility-utility",
       "path": "environment/feeds/visibility-utility.json"
+    },
+    {
+      "target": "liberty-in-all",
+      "path": "environment/feeds/liberty-in-all.json"
     }
   ]
 }
