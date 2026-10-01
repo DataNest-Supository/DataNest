@@ -222,3 +222,17 @@ test("release manifest declares the production-inclusive surface contract",()=>{
   assert.match(pagesWorkflow,/production-inclusive Assurance surface/);
   assert.match(pagesWorkflow,/DataNest\/assurance\//);
 });
+
+
+test("connector-attested Edge inventory is source-bound and includes send-job-invite v4",()=>{
+  assert.equal(edgeInventoryBaseline.schema_version,2);
+  assert.equal(
+    edgeInventoryBaseline.source_tree_sha256,
+    "106202cb25e1879958f1b7b3f22dcf1f6f9e1f703c7b1d667cf7d5e80ac7698d"
+  );
+  assert.equal(edgeInventoryBaseline.functions["send-job-invite"].version,4);
+  assert.equal(edgeInventoryBaseline.functions["send-job-invite"].status,"ACTIVE");
+  assert.equal(edgeInventoryBaseline.functions["send-job-invite"].verify_jwt,true);
+  assert.match(edgeReleaseWorkflow,/Enforce connector-attested fallback/);
+  assert.match(edgeReleaseWorkflow,/steps\.release_mode\.outputs\.mode == 'management-api'/);
+});
