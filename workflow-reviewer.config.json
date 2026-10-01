@@ -11,7 +11,8 @@
     "boundaries",
     "botsquad",
     "environment",
-    "enforcer"
+    "enforcer",
+    "guardian"
   ],
   "exclude": [
     "node_modules",
