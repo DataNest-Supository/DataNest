@@ -18,7 +18,11 @@ const manifestWriter=fileURLToPath(
   new URL("../../scripts/write-release-manifest.mjs",import.meta.url)
 );
 const edgeAttestationScript=readFileSync(
-  new URL("../../scripts/verify-production-edge-function-attestation.mjs",import.meta.url),
+  new URL("../../scripts/verify-production-edge-function-release-reference.mjs",import.meta.url),
+  "utf8"
+);
+const edgeReleaseWorkflow=readFileSync(
+  new URL("../../.github/workflows/production-edge-function-release.yml",import.meta.url),
   "utf8"
 );
 
@@ -96,19 +100,64 @@ test("release manifest embeds UI governance traceability when UI release environ
 });
 
 
+test("file worker production deployment is bound to an exact SHA and protected environment",()=>{
+  const workflow=readFileSync(
+    new URL("../../.github/workflows/datanest-ai-file-worker-deploy.yml",import.meta.url),
+    "utf8"
+  );
+  assert.match(workflow,/release_sha:/);
+  assert.match(workflow,/ref: \$\{\{ inputs\.release_sha \}\}/);
+  assert.match(workflow,/git merge-base --is-ancestor/);
+  assert.match(workflow,/environment:\n      name: github-pages/);
+  assert.match(workflow,/--no-verify-jwt/);
+  assert.match(workflow,/supabase\/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf/);
+  assert.match(workflow,/version: 2\.118\.0/);
+  assert.match(workflow,/needs: \[validate, gate-timeframe\]/);
+  assert.match(workflow,/write-production-file-worker-release-attestation\.mjs/);
+  assert.match(workflow,/name: datanest-ai-file-worker-release-\$\{\{ inputs\.release_sha \}\}/);
+  assert.match(workflow,/retention-days: 90/);
+  const writer=readFileSync(
+    new URL("../../scripts/write-production-file-worker-release-attestation.mjs",import.meta.url),
+    "utf8"
+  );
+  assert.match(writer,/const sourceRoot=resolve\("supabase\/functions"\);/);
+  assert.match(writer,/sourceTreeScope:"supabase\/functions"/);
+});
+
+test("governed Edge Function deployment is blocked until its timeframe gate passes",()=>{
+  const workflow=readFileSync(
+    new URL("../../.github/workflows/production-edge-function-release.yml",import.meta.url),
+    "utf8"
+  );
+  assert.match(workflow,/  deploy:\n    name: Deploy governed Edge Functions from exact release SHA\n    needs: gate-timeframe/);
+});
+
+
+test("Pages workflow stays within GitHub workflow_dispatch input limit",()=>{
+  const dispatchBlock=pagesWorkflow.split("\npermissions:\n",1)[0];
+  const inputs=dispatchBlock.match(/^      [A-Za-z0-9_-]+:$/gm)||[];
+  assert.equal(inputs.length,25);
+});
+
 test("Pages release wiring requires live database and Edge Function attestation",()=>{
-  assert.match(pagesWorkflow,/database_migration_head:/);
-  assert.match(pagesWorkflow,/default:\s*20260930105423/);
-  assert.match(pagesWorkflow,/database_migration_name:/);
-  assert.match(pagesWorkflow,/default:\s*datanest_release_attestation_v1/);
+  assert.match(pagesWorkflow,/database_migration_reference:/);
+  assert.match(pagesWorkflow,/default: '\{"head":"20260930130500","name":"index_external_ai_companion_intake"\}'/);
+  assert.doesNotMatch(pagesWorkflow,/database_migration_head:/);
+  assert.doesNotMatch(pagesWorkflow,/database_migration_name:/);
   assert.match(pagesWorkflow,/verify-production-release-attestation\.mjs/);
-  assert.match(pagesWorkflow,/verify-production-edge-function-attestation\.mjs/);
+  assert.match(pagesWorkflow,/verify-production-edge-function-release-reference\.mjs/);
+  assert.match(pagesWorkflow,/edge_function_release_reference:/);
+  assert.match(pagesWorkflow,/actions\/download-artifact@v5/);
   assert.match(pagesWorkflow,/SUPABASE_ACCESS_TOKEN:\s*\$\{\{ secrets\.SUPABASE_ACCESS_TOKEN \}\}/);
   assert.match(pagesWorkflow,/DATANEST_DB_ATTESTATION_FILE: \.datanest\/release-attestation\.json/);
-  assert.match(pagesWorkflow,/DATANEST_EDGE_ATTESTATION_FILE: \.datanest\/edge-function-attestation\.json/);
   assert.match(edgeAttestationScript,/api\.supabase\.com\/v1\/projects/);
   assert.match(edgeAttestationScript,/SUPABASE_ACCESS_TOKEN/);
   assert.match(edgeAttestationScript,/ezbr_sha256/);
+  assert.match(edgeAttestationScript,/workflowRunId/);
+  assert.match(edgeReleaseWorkflow,/environment:/);
+  assert.match(edgeReleaseWorkflow,/DATANEST_RELEASE_SHA/);
+  assert.match(edgeReleaseWorkflow,/supabase functions deploy/);
+  assert.match(edgeReleaseWorkflow,/write-production-edge-function-release-attestation\.mjs/);
 });
 
 test("release manifest records verified database and Edge Function attestations",()=>{
@@ -128,11 +177,13 @@ test("release manifest records verified database and Edge Function attestations"
     fingerprint:"a".repeat(64)
   }));
   writeFileSync(edgePath,JSON.stringify({
-    schemaVersion:"edge-function-attestation-v1",
+    schemaVersion:"edge-function-release-attestation-v2",
     status:"verified",
-    source:"supabase-management-api",
+    source:"governed-production-edge-function-release",
     verifiedAt:"2026-09-30T10:54:24.000Z",
-    baselineFingerprint:"b".repeat(64),
+    workflowRunId:12345,
+    sourceCommit:"b".repeat(40),
+    sourceTreeSha256:"b".repeat(64),
     functions:{"datanest-ai-chat":{version:258,ezbr_sha256:"c".repeat(64)}}
   }));
   const result=spawnSync(process.execPath,[manifestWriter,target],{env,encoding:"utf8"});
@@ -142,5 +193,8 @@ test("release manifest records verified database and Edge Function attestations"
   assert.equal(json.releaseAttestation.database.fingerprint,"a".repeat(64));
   assert.equal(json.releaseAttestation.edgeFunctions.status,"verified");
   assert.equal(json.releaseAttestation.edgeFunctions.functionCount,1);
+  assert.equal(json.releaseAttestation.edgeFunctions.releaseReference,12345);
+  assert.equal(json.releaseAttestation.edgeFunctions.sourceCommit,"b".repeat(40));
+  assert.equal(json.releaseAttestation.edgeFunctions.sourceTreeSha256,"b".repeat(64));
   rmSync(dir,{recursive:true,force:true});
 });

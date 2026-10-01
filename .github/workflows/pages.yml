@@ -10,15 +10,10 @@ on:
         description: Exact 40-character commit SHA reachable from main
         required: true
         type: string
-      database_migration_head:
-        description: Expected production database migration head; the live database is queried and must match exactly
+      database_migration_reference:
+        description: Expected production database migration identity as JSON, for example {"head":"20260930130500","name":"index_external_ai_companion_intake"}
         required: true
-        default: 20260930105423
-        type: string
-      database_migration_name:
-        description: Expected production database migration name paired with the migration head
-        required: true
-        default: datanest_release_attestation_v1
+        default: '{"head":"20260930130500","name":"index_external_ai_companion_intake"}'
         type: string
       release_mode:
         description: Fully authorized production or temporary Owner live test mode
@@ -38,6 +33,10 @@ on:
         type: string
       datanest_ai_certification_reference:
         description: DataNest AI Certification run/artifact for the exact candidate SHA and governed staging backend
+        required: true
+        type: string
+      edge_function_release_reference:
+        description: Successful Governed Production Edge Function Release workflow run for the exact release SHA
         required: true
         type: string
       audit_optimizer_reference:
@@ -130,6 +129,7 @@ on:
         type: string
 
 permissions:
+  actions: read
   contents: read
   pages: write
   id-token: write
@@ -169,9 +169,7 @@ jobs:
       DATANEST_UI_OWNER_TEST_MODE_EXPIRES_AT: ${{ inputs.owner_test_mode_expires_at }}
       DATANEST_UI_OWNER_TEST_MODE_REASON: ${{ inputs.owner_test_mode_reason }}
       DATANEST_UI_OWNER_TEST_MODE_ACTOR: ${{ github.actor }}
-      DATANEST_EXPECTED_DB_MIGRATION_HEAD: ${{ inputs.database_migration_head }}
-      DATANEST_EXPECTED_DB_MIGRATION_NAME: ${{ inputs.database_migration_name }}
-      DATANEST_EDGE_ATTESTATION_BASELINE: config/production-edge-function-attestation.json
+      DATANEST_EXPECTED_DB_MIGRATION_REFERENCE: ${{ inputs.database_migration_reference }}
     steps:
       - name: Checkout exact release SHA
         uses: actions/checkout@v7.0.1
@@ -206,11 +204,23 @@ jobs:
       - name: Verify live production database release attestation
         run: node scripts/verify-production-release-attestation.mjs .datanest/release-attestation.json
 
-      - name: Verify live production Edge Function deployment attestation
+      - name: Download referenced governed Edge Function release evidence
+        uses: actions/download-artifact@v5
+        with:
+          name: datanest-edge-function-release-${{ inputs.release_sha }}
+          path: ${{ runner.temp }}/datanest-edge-function-release
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.edge_function_release_reference }}
+
+      - name: Verify referenced governed Edge Function release
         env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+          DATANEST_RELEASE_SHA: ${{ inputs.release_sha }}
+          DATANEST_EDGE_FUNCTION_RELEASE_REFERENCE: ${{ inputs.edge_function_release_reference }}
           DATANEST_SUPABASE_PROJECT: sgqdmfgjbprsoqsmgigi
-        run: node scripts/verify-production-edge-function-attestation.mjs .datanest/edge-function-attestation.json
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: node scripts/verify-production-edge-function-release-reference.mjs ${{ runner.temp }}/datanest-edge-function-release/edge-function-release.json
 
       - uses: ./.github/actions/node-project-setup
       - run: npm test
@@ -327,6 +337,7 @@ jobs:
         env:
           RELEASE_SHA: ${{ inputs.release_sha }}
           RELEASE_MODE: ${{ inputs.release_mode }}
+          EDGE_FUNCTION_RELEASE_REFERENCE: ${{ inputs.edge_function_release_reference }}
           TEST_MODE_EXPIRES_AT: ${{ inputs.owner_test_mode_expires_at }}
           TEST_MODE_WINDOW_STRATEGY: ${{ inputs.owner_test_mode_window_strategy }}
         run: |
@@ -366,6 +377,9 @@ jobs:
           if(manifest.releaseAttestation?.database?.status!=="verified") throw new Error("Live release must carry a verified production database attestation");
           if(!/^[0-9a-f]{64}$/i.test(String(manifest.releaseAttestation.database.fingerprint||""))) throw new Error("Production database attestation fingerprint is missing");
           if(manifest.releaseAttestation.edgeFunctions?.status!=="verified") throw new Error("Live release must carry a verified Edge Function attestation");
+          if(manifest.releaseAttestation.edgeFunctions.sourceCommit!==process.env.RELEASE_SHA) throw new Error("Edge Function release source commit mismatch");
+          if(String(manifest.releaseAttestation.edgeFunctions.releaseReference)!==String(process.env.EDGE_FUNCTION_RELEASE_REFERENCE)) throw new Error("Edge Function release reference mismatch");
+          if(!/^[0-9a-f]{64}$/i.test(String(manifest.releaseAttestation.edgeFunctions.sourceTreeSha256||""))) throw new Error("Edge Function source tree fingerprint is missing");
           if(Number(manifest.releaseAttestation.edgeFunctions.functionCount||0)<1) throw new Error("Edge Function attestation function count is missing");
           NODE
 

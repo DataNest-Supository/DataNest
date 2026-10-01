@@ -1,0 +1,129 @@
+name: Governed Production Edge Function Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_sha:
+        description: Exact 40-character commit SHA reachable from main
+        required: true
+        type: string
+      gate_timeframe_override_hours:
+        description: Optional Owner worktree-gate planning-window override in hours (0.5-72)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: governed-production-edge-functions
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy governed Edge Functions from exact release SHA
+    needs: gate-timeframe
+    environment:
+      name: github-pages
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      DATANEST_RELEASE_SHA: ${{ inputs.release_sha }}
+      DATANEST_SUPABASE_PROJECT: sgqdmfgjbprsoqsmgigi
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - name: Checkout exact release SHA
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.release_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify exact SHA is reachable from main
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$DATANEST_RELEASE_SHA"
+          git fetch origin main --no-tags --prune
+          git merge-base --is-ancestor "$DATANEST_RELEASE_SHA" origin/main
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.7
+
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 2.118.0
+
+      - name: Require production deployment credential
+        shell: bash
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN" || {
+            echo "SUPABASE_ACCESS_TOKEN is required to deploy governed production Edge Functions."
+            exit 1
+          }
+
+      - name: Validate governed Edge Function bundles
+        shell: bash
+        run: |
+          set -euo pipefail
+          functions=(
+            datanest-ai-chat
+            datanest-ai-intake
+            datanest-ai-certification
+            manage-ai-provider-v2
+            send-job-invite
+            send-project-member-invite
+            ronsas-status
+            external-audit
+          )
+          for function in "${functions[@]}"; do
+            dir="supabase/functions/$function"
+            if [ -f "$dir/deno.json" ]; then
+              deno check --config "$dir/deno.json" "$dir/index.ts"
+            else
+              deno check "$dir/index.ts"
+            fi
+          done
+
+      - name: Deploy governed Edge Functions from exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          functions=(
+            datanest-ai-chat
+            datanest-ai-intake
+            datanest-ai-certification
+            manage-ai-provider-v2
+            send-job-invite
+            send-project-member-invite
+            ronsas-status
+            external-audit
+          )
+          for function in "${functions[@]}"; do
+            echo "::group::Deploy $function"
+            supabase functions deploy "$function" \
+              --project-ref "$DATANEST_SUPABASE_PROJECT" \
+              --use-docker
+            echo "::endgroup::"
+          done
+
+      - name: Write production Edge Function release attestation
+        run: |
+          mkdir -p .datanest
+          node scripts/write-production-edge-function-release-attestation.mjs .datanest/edge-function-release.json
+
+      - name: Preserve production Edge Function release evidence
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: datanest-edge-function-release-${{ inputs.release_sha }}
+          path: .datanest/edge-function-release.json
+          if-no-files-found: error
+          retention-days: 90
+
+  gate-timeframe:
+    name: DataNest AI worktree gate timeframe
+    uses: ./.github/workflows/worktree-gate-timeframe.yml
+    with:
+      gate_id: "production-edge-function-release"
+      override_hours: ${{ inputs.gate_timeframe_override_hours || '' }}

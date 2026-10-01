@@ -1,18 +1,20 @@
 import { createClient } from "@supabase/supabase-js";
 import crypto from "node:crypto";
 
-const url=process.env.DATANEST_AI_STAGING_URL;
-const publishableKey=process.env.DATANEST_AI_STAGING_PUBLISHABLE_KEY;
-const serviceKey=process.env.DATANEST_AI_STAGING_SERVICE_ROLE_KEY;
+const url=process.env.DATANEST_CERTIFICATION_URL;
+const publishableKey=process.env.DATANEST_CERTIFICATION_PUBLISHABLE_KEY;
+const serviceKey=process.env.DATANEST_CERTIFICATION_SERVICE_ROLE_KEY;
+const stagingUrl=process.env.DATANEST_AI_STAGING_URL;
+const stagingServiceKey=process.env.DATANEST_AI_STAGING_SERVICE_ROLE_KEY;
 const email=process.env.DATANEST_AI_E2E_EMAIL;
 const password=process.env.DATANEST_AI_E2E_PASSWORD;
 
-if(!url||!publishableKey||!serviceKey||!email||!password){
-  throw new Error("Staging URL, publishable/service keys, and E2E credentials are required.");
+if(!url||!publishableKey||!serviceKey||!stagingUrl||!stagingServiceKey||!email||!password){
+  throw new Error("Canonical certification URL/keys, staging service credentials, and E2E credentials are required.");
 }
 
 const client=createClient(url,publishableKey,{auth:{persistSession:false,autoRefreshToken:false}});
-const admin=createClient(url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
+const admin=createClient(stagingUrl,stagingServiceKey,{auth:{persistSession:false,autoRefreshToken:false}});
 const signed=await client.auth.signInWithPassword({email,password});
 if(signed.error||!signed.data.user)throw signed.error||new Error("E2E sign-in failed.");
 const userId=signed.data.user.id;
@@ -33,6 +35,98 @@ const context=await client.functions.invoke("datanest-ai-chat",{body:{action:"co
 if(context.error||!context.data?.sessionId)throw context.error||new Error("E2E session unavailable.");
 const sessionId=context.data.sessionId;
 
+async function ensureStagingUser(){
+  let page=1;
+  while(page<=20){
+    const listed=await admin.auth.admin.listUsers({page,perPage:100});
+    if(listed.error)throw listed.error;
+    const existing=listed.data.users.find(item=>item.email===email);
+    if(existing){
+      const updated=await admin.auth.admin.updateUserById(existing.id,{
+        password,
+        email_confirm:true
+      });
+      if(updated.error)throw updated.error;
+      return updated.data.user;
+    }
+    if(listed.data.users.length<100)break;
+    page++;
+  }
+
+  const created=await admin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm:true
+  });
+  if(created.error)throw created.error;
+  return created.data.user;
+}
+
+async function ensureStagingProject(){
+  const existing=await admin.from("projects")
+    .select("id")
+    .eq("slug","resonance-datanest")
+    .maybeSingle();
+  if(existing.error)throw existing.error;
+  if(existing.data)return existing.data;
+
+  const inserted=await admin.from("projects").insert({
+    slug:"resonance-datanest",
+    name:"Resonance DataNest",
+    description:"Governed staging data-plane fixture for DataNest AI certification.",
+    status:"ACTIVE"
+  }).select("id").single();
+  if(inserted.error)throw inserted.error;
+  return inserted.data;
+}
+
+async function ensureStagingJob(stagingProjectId){
+  const existing=await admin.from("jobs")
+    .select("id")
+    .eq("project_id",stagingProjectId)
+    .eq("title","DataNest AI E2E Job")
+    .maybeSingle();
+  if(existing.error)throw existing.error;
+  if(existing.data)return existing.data;
+
+  const inserted=await admin.from("jobs").insert({
+    project_id:stagingProjectId,
+    title:"DataNest AI E2E Job",
+    description:"Deterministic staging data-plane fixture for governed DataNest AI file-worker acceptance.",
+    priority:70,
+    status:"READY",
+    required_capabilities:["chat"],
+    requirements:{environment:"staging-data-plane"},
+    acceptance:{traceable:true,uncertified_session:true}
+  }).select("id").single();
+  if(inserted.error)throw inserted.error;
+  return inserted.data;
+}
+
+const stagingUser=await ensureStagingUser();
+const stagingProject=await ensureStagingProject();
+const stagingJob=await ensureStagingJob(stagingProject.id);
+
+if(stagingUser.id===userId){
+  throw new Error("Canonical and staging Auth identities unexpectedly share a UUID.");
+}
+if(stagingProject.id===projectId){
+  throw new Error("Canonical and staging project identities unexpectedly share a UUID.");
+}
+if(stagingJob.id===jobId){
+  throw new Error("Canonical and staging job identities unexpectedly share a UUID.");
+}
+
+const stagingSessionInsert=await admin.from("ai_sessions").insert({
+  project_id:stagingProject.id,
+  job_id:stagingJob.id,
+  user_id:stagingUser.id,
+  client_session_id:crypto.randomUUID(),
+  status:"active"
+}).select("id").single();
+if(stagingSessionInsert.error)throw stagingSessionInsert.error;
+const stagingSessionId=stagingSessionInsert.data.id;
+
 const marker="file-worker-stress-"+Date.now()+"-"+crypto.randomUUID().slice(0,8);
 const duplicate=Buffer.from(marker+" duplicate payload ".repeat(16),"utf8");
 const payloads=[
@@ -41,24 +135,26 @@ const payloads=[
   ...Array.from({length:4},(_,index)=>Buffer.from(marker+" unique "+index+" ".repeat(32),"utf8"))
 ];
 
-const submission=await admin.from("ai_file_submissions").insert({
-  trace_id:"DN-FILE-STRESS-"+marker,
-  project_id:projectId,
-  job_id:jobId,
-  session_id:sessionId,
-  user_id:userId,
-  client_request_id:crypto.randomUUID(),
-  instruction:"Worker durability stress fixture.",
-  status:"UPLOADING",
-  file_count:payloads.length
-}).select("id").single();
-if(submission.error)throw submission.error;
-
-const submissionId=submission.data.id;
+let submissionId=null;
 let artifactIds=[];
 let canonicalPaths=[];
 
 try{
+  const submission=await admin.from("ai_file_submissions").insert({
+    trace_id:"DN-FILE-STRESS-"+marker,
+    project_id:stagingProject.id,
+    job_id:stagingJob.id,
+    session_id:stagingSessionId,
+    user_id:stagingUser.id,
+    client_request_id:crypto.randomUUID(),
+    instruction:"Worker durability stress fixture.",
+    status:"UPLOADING",
+    file_count:payloads.length
+  }).select("id").single();
+  if(submission.error)throw submission.error;
+
+  submissionId=submission.data.id;
+
   for(let index=0;index<payloads.length;index++){
     const item=await admin.from("ai_file_submission_items").insert({
       submission_id:submissionId,
@@ -90,11 +186,11 @@ try{
   }
 
   for(let pass=0;pass<3;pass++){
-    const response=await fetch(url.replace(/\/$/,"")+"/functions/v1/datanest-ai-file-worker",{
+    const response=await fetch(stagingUrl.replace(/\/$/,"")+"/functions/v1/datanest-ai-file-worker",{
       method:"POST",
       headers:{
         "Content-Type":"application/json",
-        "x-datanest-worker-auth":serviceKey
+        "x-datanest-worker-auth":stagingServiceKey
       },
       body:JSON.stringify({action:"drain"})
     });
@@ -136,9 +232,9 @@ try{
   });
   if(redelivery.error)throw redelivery.error;
 
-  const redeliveryResponse=await fetch(url.replace(/\/$/,"")+"/functions/v1/datanest-ai-file-worker",{
+  const redeliveryResponse=await fetch(stagingUrl.replace(/\/$/,"")+"/functions/v1/datanest-ai-file-worker",{
     method:"POST",
-    headers:{"Content-Type":"application/json","x-datanest-worker-auth":serviceKey},
+    headers:{"Content-Type":"application/json","x-datanest-worker-auth":stagingServiceKey},
     body:JSON.stringify({action:"drain"})
   });
   if(!redeliveryResponse.ok)throw new Error("READY redelivery drain failed.");
@@ -153,6 +249,14 @@ try{
 
   console.log(JSON.stringify({
     marker,
+    canonicalProjectId:projectId,
+    stagingProjectId:stagingProject.id,
+    canonicalJobId:jobId,
+    stagingJobId:stagingJob.id,
+    canonicalUserId:userId,
+    stagingUserId:stagingUser.id,
+    canonicalSessionId:sessionId,
+    stagingSessionId,
     logicalItems:items.data.length,
     duplicatePhysicalHash:items.data[0].verified_sha256,
     duplicateArtifactReused:true,
@@ -161,7 +265,8 @@ try{
     readyRedeliveryChunkDelta:0
   }));
 }finally{
-  await admin.from("ai_file_submissions").delete().eq("id",submissionId);
+  if(submissionId)await admin.from("ai_file_submissions").delete().eq("id",submissionId);
   if(artifactIds.length)await admin.from("datanest_artifacts").delete().in("id",artifactIds);
   if(canonicalPaths.length)await admin.storage.from("datanest-ai-staging-files").remove(canonicalPaths);
+  await admin.from("ai_sessions").delete().eq("id",stagingSessionId);
 }

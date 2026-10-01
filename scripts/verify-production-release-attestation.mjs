@@ -5,11 +5,22 @@ import { dirname, resolve } from "node:path";
 const target=resolve(process.argv[2] || ".datanest/release-attestation.json");
 const supabaseUrl=process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
 const publishableKey=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || "";
-const expectedHead=(process.env.DATANEST_EXPECTED_DB_MIGRATION_HEAD || "").trim();
-const expectedName=(process.env.DATANEST_EXPECTED_DB_MIGRATION_NAME || "").trim();
+const expectedReference=(process.env.DATANEST_EXPECTED_DB_MIGRATION_REFERENCE || "").trim();
 
 if(!supabaseUrl||!publishableKey)throw new Error("Production release attestation requires Supabase public configuration.");
-if(!expectedHead||!expectedName)throw new Error("Production release attestation requires the expected database migration head and name.");
+if(!expectedReference)throw new Error("Production release attestation requires the expected database migration reference.");
+
+let expectedConfig;
+try{
+  expectedConfig=JSON.parse(expectedReference);
+}catch{
+  throw new Error("DATANEST_EXPECTED_DB_MIGRATION_REFERENCE must be valid JSON.");
+}
+const expectedHead=String(expectedConfig?.head||"").trim();
+const expectedName=String(expectedConfig?.name||"").trim();
+if(!expectedHead||!expectedName){
+  throw new Error("DATANEST_EXPECTED_DB_MIGRATION_REFERENCE must contain non-empty head and name fields.");
+}
 
 const response=await fetch(
   supabaseUrl.replace(/\/$/,"")+"/rest/v1/rpc/get_datanest_release_attestation_v1",

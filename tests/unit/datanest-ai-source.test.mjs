@@ -78,7 +78,11 @@ test("governed release wiring names the certified DataNest AI runtime", () => {
 
   assert.match(ci,/Retired Copilot\/contribution-scoring source remains active/);
   assert.match(certification,/DATANEST_AI_STAGING_SERVICE_ROLE_KEY/);
-  assert.match(certification,/test:browser:datanest-ai/);
+  assert.match(certification,/DATANEST_CERTIFICATION_URL/);
+  assert.doesNotMatch(certification,/DATANEST_AI_STAGING_PUBLISHABLE_KEY/);
+  assert.match(certification,/datanest-ai-return-safety\.spec\.ts/);
+  assert.match(certification,/human input is traced\|AI Companion return/);
+  assert.match(certification,/mirrorStagingSyntheticSignIn:false/);
   assert.match(certification,/test:stress:datanest-ai/);
 
   for(const fn of ["datanest-ai-chat","datanest-ai-intake","datanest-ai-certification","send-project-member-invite"]){
