@@ -64,6 +64,9 @@ test("CONDUCTOR does not duplicate an active workflow",()=>{
   const knowledge=processes.find(x=>x.id==="knowledge");
   assert.equal(knowledge.active,true);
   assert.equal(knowledge.due,false);
+  const command=selectNextCommand(config,processes,{},workflowStates);
+  assert.equal(command.type,"wait");
+  assert.equal(command.workflow,null);
 });
 
 test("CONDUCTOR triggers SUGGESTER when process graph is fresh",()=>{
