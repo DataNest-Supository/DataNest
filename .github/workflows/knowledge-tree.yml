@@ -45,6 +45,7 @@ jobs:
           jq -e '.schemaVersion == "datanest-knowledge-index-v1"' knowledge/index.json >/dev/null
           jq -e '.authority == "provisional_repository_learning" and .productionAuthorization == false and .certifiedMemory == false' knowledge/feeds/datanest.json >/dev/null
           jq -e '.authority == "provisional_repository_learning" and .productionAuthorization == false and .certifiedMemory == false' knowledge/feeds/mirror-datanest.json >/dev/null
+          jq -e '.authority == "provisional_repository_learning" and .productionAuthorization == false and .certifiedMemory == false' knowledge/feeds/enforcer.json >/dev/null
 
       - name: Publish isolated Knowledge feed branch
         shell: bash
