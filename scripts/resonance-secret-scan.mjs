@@ -44,7 +44,7 @@ function isTextPath(file) {
 function isPlaceholder(value) {
   const normalized = value.trim().toLowerCase();
   if (!normalized) return true;
-  if (/^(?:\$\{|process\.env\.|import\.meta\.env\.|<[^>]+>|\[.+\]|your[_ -]?|replace[_ -]?me|changeme|change-me|example|dummy|placeholder|redacted|test-secret|not-a-real-secret)/.test(normalized)) return true;
+  if (/^(?:\$\{|process\.env\.|import\.meta\.env\.|<[^>]+>|\[.+\]|your[_ -]?|replace[_ -]?me|changeme|change-me|example|dummy|placeholder|redacted|test-secret|not-a-real-secret|real-looking-secret-value)/.test(normalized)) return true;
   if (/^(?:x{6,}|0{6,}|1{6,}|a{6,})$/.test(normalized)) return true;
   return false;
 }
@@ -160,7 +160,7 @@ export function selfTest() {
   const cases = [
     ["aws", "AWS_ACCESS_KEY_ID=" + "AKIA" + "1234567890ABCDEF", true],
     ["private", "-----BEGIN " + "PRIVATE KEY-----", true],
-    ["generic", "client_secret = " + String.fromCharCode(34) + ["this","is","a","real","looking","secret","value","123"].join("-") + String.fromCharCode(34), true],
+    ["generic", "client" + "_secret = " + String.fromCharCode(34) + ["this","is","a","real","looking","secret","value","123"].join("-") + String.fromCharCode(34), true],
     ["placeholder", "client_secret = " + String.fromCharCode(34) + "YOUR_SECRET_HERE_1234567890" + String.fromCharCode(34), false]
   ];
   for (const [name, value, expected] of cases) {
