@@ -1,0 +1,130 @@
+name: LIBERTY-IN-ALL Traceability
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "*/10 * * * *"
+      timezone: Africa/Johannesburg
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - "Knowledge Tree"
+      - "DataNest Boundaries"
+      - "BOTSQUAD AI Tree"
+      - "ENVIRONMENT Tree"
+      - "ENFORCER Defence Tree"
+      - "GUARDIAN Health & Healing Tree"
+      - "CONDUCTOR Process Synchronization Tree"
+      - "SUGGESTER Continuous Optimization Tree"
+      - "CALMER Governance Softening Tree"
+      - "REGULATOR Harmony Tree"
+      - "VISIBILITY-UTILITY Market Presence Tree"
+      - "Security scan"
+      - "DataNest AI Certification"
+      - "DataNest Maintenance"
+      - "Resonance Forge Phase A"
+    types: [completed]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: datanest-liberty-in-all
+  cancel-in-progress: true
+
+jobs:
+  traceability:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    name: Refresh public traceability index
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && 'main' || '' }}
+          fetch-depth: 0
+
+      - uses: ./.github/actions/node-project-setup
+
+      - name: Read sanitized specialized-tree state
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/liberty-in-all
+          for branch in             automation/knowledge-feed             automation/environment-feed             automation/enforcer             automation/guardian             automation/conductor             automation/suggester             automation/calmer             automation/regulator             automation/visibility-utility; do
+            git fetch origin "$branch" || true
+          done
+          git show origin/automation/knowledge-feed:knowledge/feeds/datanest.json > /tmp/liberty-in-all/knowledge.json 2>/dev/null || echo '{}' > /tmp/liberty-in-all/knowledge.json
+          git show origin/automation/environment-feed:environment/feeds/datanest.json > /tmp/liberty-in-all/environment.json 2>/dev/null || echo '{}' > /tmp/liberty-in-all/environment.json
+          git show origin/automation/enforcer:enforcer/state/latest.json > /tmp/liberty-in-all/enforcer.json 2>/dev/null || echo '{}' > /tmp/liberty-in-all/enforcer.json
+          git show origin/automation/guardian:guardian/snapshots/latest.json > /tmp/liberty-in-all/guardian.json 2>/dev/null || echo '{}' > /tmp/liberty-in-all/guardian.json
+          git show origin/automation/conductor:conductor/state/latest.json > /tmp/liberty-in-all/conductor.json 2>/dev/null || echo '{}' > /tmp/liberty-in-all/conductor.json
+          git show origin/automation/suggester:suggester/feeds/datanest.json > /tmp/liberty-in-all/suggester.json 2>/dev/null || echo '{}' > /tmp/liberty-in-all/suggester.json
+          git show origin/automation/calmer:calmer/state/latest.json > /tmp/liberty-in-all/calmer.json 2>/dev/null || echo '{}' > /tmp/liberty-in-all/calmer.json
+          git show origin/automation/regulator:regulator/state/latest.json > /tmp/liberty-in-all/regulator.json 2>/dev/null || echo '{}' > /tmp/liberty-in-all/regulator.json
+          git show origin/automation/visibility-utility:visibility-utility/state/latest.json > /tmp/liberty-in-all/visibility-utility.json 2>/dev/null || echo '{}' > /tmp/liberty-in-all/visibility-utility.json
+
+      - name: Build sanitized traceability graph
+        env:
+          LIBERTY_KNOWLEDGE_PATH: /tmp/liberty-in-all/knowledge.json
+          LIBERTY_ENVIRONMENT_PATH: /tmp/liberty-in-all/environment.json
+          LIBERTY_ENFORCER_PATH: /tmp/liberty-in-all/enforcer.json
+          LIBERTY_GUARDIAN_PATH: /tmp/liberty-in-all/guardian.json
+          LIBERTY_CONDUCTOR_PATH: /tmp/liberty-in-all/conductor.json
+          LIBERTY_SUGGESTER_PATH: /tmp/liberty-in-all/suggester.json
+          LIBERTY_CALMER_PATH: /tmp/liberty-in-all/calmer.json
+          LIBERTY_REGULATOR_PATH: /tmp/liberty-in-all/regulator.json
+          LIBERTY_VISIBILITY_PATH: /tmp/liberty-in-all/visibility-utility.json
+        run: node scripts/liberty-traceability-index.mjs --out-dir /tmp/liberty-output
+
+      - name: Verify publication boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          jq -e '
+            .productionAuthorization == false and
+            .publicationBoundary.secretsPublished == false and
+            .publicationBoundary.protectedPersonalDataPublished == false and
+            .publicationBoundary.privateAuthenticationMaterialPublished == false and
+            .publicationBoundary.privateAiMemoryPublished == false and
+            .publicationBoundary.materialAdverseFindingsSuppressed == false and
+            .publicationBoundary.authorityGrantedByIndex == false and
+            .compliance.conformant == true
+          ' /tmp/liberty-output/public/transparency/liberty-in-all/latest.json >/dev/null
+
+      - name: Publish isolated live index
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch="automation/liberty-in-all"
+          git fetch origin "$branch" || true
+          git switch -C "$branch"
+          mkdir -p public/transparency/liberty-in-all liberty-in-all/history
+          cp /tmp/liberty-output/public/transparency/liberty-in-all/latest.json public/transparency/liberty-in-all/latest.json
+          day="$(date -u +%F)"
+          mkdir -p "liberty-in-all/history/$day"
+          cp /tmp/liberty-output/history/"$day"/latest.json "liberty-in-all/history/$day/latest.json"
+          git add public/transparency/liberty-in-all/latest.json liberty-in-all/history/
+          if git diff --cached --quiet; then
+            echo "LIBERTY-IN-ALL traceability index unchanged."
+            exit 0
+          fi
+          git -c user.name="DataNest LIBERTY-IN-ALL"               -c user.email="41898282+github-actions[bot]@users.noreply.github.com"               commit -m "Refresh LIBERTY-IN-ALL traceability index"
+          git push --force-with-lease origin HEAD:"$branch"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: liberty-in-all-traceability-${{ github.run_id }}
+          path: /tmp/liberty-output/
+          retention-days: 30
+
+  gate-timeframe:
+    name: DataNest AI worktree gate timeframe
+    uses: ./.github/workflows/worktree-gate-timeframe.yml
+    with:
+      gate_id: "liberty-in-all"
