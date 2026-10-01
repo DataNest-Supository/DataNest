@@ -25,9 +25,11 @@ function normalizeSecurityRun(run){
   };
 }
 
-async function fetchLatestSecurityRun(token,repository){
+async function fetchLatestSecurityRun(token,repository,{targetSha="",targetBranch=""}={}){
   if(!token||!repository) return null;
-  const endpoint="https://api.github.com/repos/"+repository+"/actions/workflows/security-scan.yml/runs?branch=main&per_page=5";
+  const params=new URLSearchParams({per_page:"10"});
+  if(targetBranch) params.set("branch",targetBranch);
+  const endpoint="https://api.github.com/repos/"+repository+"/actions/workflows/security-scan.yml/runs?"+params.toString();
   const response=await fetch(endpoint,{headers:{
     Accept:"application/vnd.github+json",
     Authorization:"Bearer "+token,
@@ -36,7 +38,9 @@ async function fetchLatestSecurityRun(token,repository){
   }});
   if(!response.ok) return null;
   const body=await response.json();
-  return body?.workflow_runs?.[0]||null;
+  const runs=Array.isArray(body?.workflow_runs)?body.workflow_runs:[];
+  if(targetSha) return runs.find((run)=>run?.head_sha===targetSha)||null;
+  return runs[0]||null;
 }
 
 export function buildEnforcerAssessment({
@@ -45,6 +49,7 @@ export function buildEnforcerAssessment({
   knowledge,
   environment,
   securityRun,
+  securityTargetSha="",
   auditIndex,
   generatedAt=new Date().toISOString()
 }){
@@ -101,9 +106,18 @@ export function buildEnforcerAssessment({
 
   const security=normalizeSecurityRun(securityRun);
   const failedConclusions=new Set(["failure","cancelled","timed_out","action_required","startup_failure"]);
+  const securityMatchesTarget=!securityTargetSha||!security.headSha||security.headSha===securityTargetSha;
   if(!security.available){
-    checks.push({id:"security-workflow",status:"review",detail:"Latest Security scan state unavailable."});
+    const suffix=securityTargetSha?" for target "+securityTargetSha.slice(0,12):"";
+    checks.push({id:"security-workflow",status:"review",detail:"Security scan state unavailable"+suffix+"."});
     reviews.push("security-workflow-state-unavailable");
+  }else if(!securityMatchesTarget){
+    checks.push({
+      id:"security-workflow",
+      status:"review",
+      detail:"Security scan head "+security.headSha+" does not match target "+securityTargetSha+"."
+    });
+    reviews.push("security-workflow-sha-mismatch");
   }else if(failedConclusions.has(security.conclusion)){
     checks.push({id:"security-workflow",status:"block",detail:"Latest Security scan concluded "+security.conclusion+"."});
     blockers.push("security-workflow-"+security.conclusion);
@@ -174,7 +188,7 @@ export function buildEnforcerAssessment({
       hardRuleCount:hardRules.length,
       scopeIds:boundaryScopes.map(x=>x.id).filter(Boolean)
     },
-    securityWorkflow:security,
+    securityWorkflow:{...security,targetSha:securityTargetSha||null},
     knowledge:{
       restrictionMode:config?.knowledgeAccess?.restrictionMode||null,
       itemCount:learning.length,
@@ -231,12 +245,19 @@ async function main(){
   const auditIndex=await readJson("public/transparency/audits/index.json",{documents:[]});
   if(!config||!boundaries) throw new Error("ENFORCER requires config/enforcer.tree.json and config/boundaries.policy.json");
 
+  const securityTargetSha=process.env.ENFORCER_SECURITY_TARGET_SHA||"";
   const securityRun=await fetchLatestSecurityRun(
     process.env.GITHUB_TOKEN||"",
-    process.env.GITHUB_REPOSITORY||""
+    process.env.GITHUB_REPOSITORY||"",
+    {
+      targetSha:securityTargetSha,
+      targetBranch:process.env.ENFORCER_SECURITY_TARGET_BRANCH||""
+    }
   );
 
-  const assessment=buildEnforcerAssessment({config,boundaries,knowledge,environment,securityRun,auditIndex});
+  const assessment=buildEnforcerAssessment({
+    config,boundaries,knowledge,environment,securityRun,securityTargetSha,auditIndex
+  });
   const transparency=buildTransparencySummary(assessment);
   const learningFeed={
     schemaVersion:"datanest-enforcer-learning-feed-v1",
