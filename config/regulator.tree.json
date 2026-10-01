@@ -17,7 +17,8 @@
     "CONDUCTOR",
     "SUGGESTER",
     "Knowledge",
-    "BOTSQUAD"
+    "BOTSQUAD",
+    "VISIBILITY-UTILITY"
   ],
   "botsquadRoles": [
     {
@@ -49,7 +50,8 @@
     "timing",
     "optimization",
     "resource",
-    "transparency"
+    "transparency",
+    "market-visibility"
   ],
   "controls": {
     "mayRequestBotsquadWork": true,
