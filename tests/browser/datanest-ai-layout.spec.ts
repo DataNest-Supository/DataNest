@@ -107,6 +107,17 @@ test("DataNest AI keeps the animated hero and a compact command-first workspace"
   await expect(composer).toBeFocused();
   expect(await page.locator(".datanestAiComposer").evaluate(element=>getComputedStyle(element).position)).toBe("sticky");
 
+  const focusModeButton=page.getByRole("button",{name:"Focus mode",exact:true});
+  await expect(focusModeButton).toBeVisible();
+  await focusModeButton.click();
+  await expect(page.locator(".datanestAiHeroV2")).toHaveCount(0);
+  await expect(composer).toBeFocused();
+  await expect(page.getByRole("button",{name:"Show AI core",exact:true})).toHaveAttribute("aria-pressed","true");
+  expect(await page.evaluate(()=>localStorage.getItem("datanest-ai:focus-mode:v1"))).toBe("true");
+  await page.getByRole("button",{name:"Show AI core",exact:true}).click();
+  await expect(page.locator(".datanestAiHeroV2")).toBeVisible();
+  expect(await page.evaluate(()=>localStorage.getItem("datanest-ai:focus-mode:v1"))).toBe("false");
+
   await composer.fill("First Job draft must stay with JOB-00099.");
   await expect(page.getByText("SESSION-ONLY DRAFT · LOCKED TO JOB-00099",{exact:true})).toBeVisible();
   await expect(page.getByLabel("DataNest AI command context locked to JOB-00099")).toBeVisible();
