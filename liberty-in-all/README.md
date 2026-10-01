@@ -27,3 +27,5 @@ Live on-demand snapshot:
 https://raw.githubusercontent.com/DataNest-Supository/DataNest/automation/liberty-in-all/public/transparency/liberty-in-all/latest.json
 
 The deployed Transparency workspace reads this safe snapshot at runtime, so evidence freshness is decoupled from governed production deployment cadence.
+
+Restricted-looking paths are not listed in published traceability output; only their aggregate count and non-reversible evidence digest are retained for assurance continuity.
