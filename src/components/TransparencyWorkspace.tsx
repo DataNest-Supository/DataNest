@@ -62,6 +62,7 @@ const findingsUrl=auditReturnBase+"/findings.json";
 const backlogUrl=auditReturnBase+"/remediation-backlog.json";
 const systemCharterUrl=`${publicBasePath}/system-charter/`;
 const visibilityUtilityIndexUrl=`${publicBasePath}/transparency/visibility-utility/index.json`;
+const libertyIndexUrl=`${publicBasePath}/transparency/liberty-in-all/index.json`;
 
 function downloadText(filename:string,text:string){
   const blob=new Blob([text],{type:"text/plain;charset=utf-8"});
@@ -189,6 +190,21 @@ export default function TransparencyWorkspace(){
             <a className="primaryButton compact linkButton" href={systemCharterUrl}>Open System Charter</a>
             <a className="secondaryButton compact linkButton" href="https://github.com/DataNest-Supository/DataNest/blob/main/docs/DATANEST_SYSTEM_CHARTER.md">Source on GitHub</a>
             <a className="textButton linkButton" href={visibilityUtilityIndexUrl}>Visibility intelligence index</a>
+          </div>
+        </article>
+        <article className="transparencyDocCard">
+          <div className="transparencyDocHeader">
+            <div><p className="eyebrow">LIBERTY-IN-ALL · CONTINUOUS TRACEABILITY</p><h3>On-demand provenance, indexing &amp; evidence visibility</h3></div>
+            <span className="badge good">PUBLISHED</span>
+          </div>
+          <p>Continuously refreshed, source-attributable traceability metadata for interested individuals, stakeholders, auditors and regulators. Public output contains digests and lineage, not protected record contents.</p>
+          <dl className="transparencyMeta">
+            <div><dt>Operating rule</dt><dd>Maximum legitimate visibility · minimum necessary restriction</dd></div>
+            <div><dt>Authority</dt><dd>Evidence/indexing only · no production authorization</dd></div>
+          </dl>
+          <div className="heroActions">
+            <a className="primaryButton compact linkButton" href={libertyIndexUrl}>Open traceability index</a>
+            <a className="secondaryButton compact linkButton" href="https://github.com/DataNest-Supository/DataNest/blob/main/docs/LIBERTY_IN_ALL_STANDARD.md">Read standard</a>
           </div>
         </article>
         <article className="transparencyDocCard"><div className="transparencyDocHeader"><div><p className="eyebrow">DATA NEST ARCHITECTURE · 28 SEP 2026</p><h3>Architecture &amp; Infrastructure Audit / Stakeholder Document</h3></div><span className="badge good">PUBLISHED</span></div><p>Current architecture authority, infrastructure boundaries, governed AI lifecycle, execution controls, security model, CI/CD evidence and clearly separated target-state capabilities.</p><dl className="transparencyMeta"><div><dt>Audience</dt><dd>Audit + stakeholder presentation</dd></div><div><dt>Status</dt><dd>Published reference; claims remain evidence-bound</dd></div></dl><div className="heroActions"><a className="primaryButton compact linkButton" href="./architecture">Open architecture document</a><a className="secondaryButton compact linkButton" href="https://github.com/DataNest-Supository/DataNest/blob/main/docs/ARCHITECTURE.md">Source on GitHub</a></div></article>
