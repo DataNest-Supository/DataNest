@@ -24,6 +24,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: ./.github/actions/automation-x-annotation
+        with:
+          automation_id: environment-tree
+          automation_class: enforcement
+          automation_action: heal
+          automation_target: environment/feeds/
+          automation_effect: bounded_mutation
+          human_review_required: "true"
+
       - name: Prepare isolated ENVIRONMENT feed branch
         shell: bash
         run: |
