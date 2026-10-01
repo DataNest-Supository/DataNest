@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "datanest-liberty-public-bootstrap-v1",
+  "standard": "LIBERTY-IN-ALL",
+  "version": "1.0",
+  "status": "published",
+  "publicPage": "https://datanest-supository.github.io/DataNest/traceability/",
+  "standardPage": "https://github.com/DataNest-Supository/DataNest/blob/main/docs/LIBERTY_IN_ALL_STANDARD.md",
+  "liveIndex": "https://raw.githubusercontent.com/DataNest-Supository/DataNest/automation/liberty-in-all/public/transparency/liberty-in-all/latest.json",
+  "sourceHistory": "https://github.com/DataNest-Supository/DataNest/commits/automation/liberty-in-all",
+  "updateModel": "event-driven plus ten-minute pulse",
+  "productionAuthorization": false,
+  "publicationBoundary": {
+    "secrets": false,
+    "protectedPersonalData": false,
+    "privateAuthenticationMaterial": false,
+    "privateAiMemory": false
+  },
+  "audiences": [
+    "interested individuals and parties",
+    "users",
+    "stakeholders",
+    "auditors",
+    "regulators",
+    "developers",
+    "operators"
+  ],
+  "notice": "LIBERTY-IN-ALL is a DataNest internal standard, not an external certification or regulatory approval."
+}
