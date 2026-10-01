@@ -1,8 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { classifyPath, loadBoundary } from "../../scripts/lib/repository-boundary.mjs";
 
 const boundary = loadBoundary();
+const validator = readFileSync("scripts/validate-mirror-candidate-boundary.mjs", "utf8");
 
 test("boundary contract fails closed for unclassified paths", () => {
   assert.equal(classifyPath("unclassified-control-plane/new.yml", boundary).policy, "unclassified");
@@ -33,6 +35,12 @@ test("boundary keeps Mirror control-plane files out of promotion", () => {
   ]) {
     assert.equal(classifyPath(path, boundary).policy, "mirror_only");
   }
+});
+
+test("candidate validator ignores Mirror-only controls but blocks protected and canonical-owned paths", () => {
+  assert.match(validator, /item\.policy === "mirror_only"/);
+  assert.match(validator, /\["canonical_only", "protected_shared", "unclassified"\]/);
+  assert.match(validator, /ignoredPaths/);
 });
 
 test("boundary permits application paths after protected matches", () => {
