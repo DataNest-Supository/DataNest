@@ -35,7 +35,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p /tmp/suggester
-          for branch in automation/guardian automation/knowledge-feed automation/environment-feed automation/enforcer automation/botsquad/orchestrator automation/conductor automation/suggester; do
+          for branch in automation/guardian automation/knowledge-feed automation/environment-feed automation/enforcer automation/botsquad/orchestrator automation/conductor automation/calmer automation/regulator automation/suggester; do
             git fetch origin "$branch" || true
           done
           git show origin/automation/guardian:guardian/snapshots/latest.json > /tmp/suggester/guardian.json 2>/dev/null || echo '{}' > /tmp/suggester/guardian.json
@@ -44,6 +44,8 @@ jobs:
           git show origin/automation/enforcer:enforcer/state/latest.json > /tmp/suggester/enforcer.json 2>/dev/null || echo '{}' > /tmp/suggester/enforcer.json
           git show origin/automation/botsquad/orchestrator:botsquad/feeds/datanest.json > /tmp/suggester/botsquad.json 2>/dev/null || echo '{}' > /tmp/suggester/botsquad.json
           git show origin/automation/conductor:conductor/state/latest.json > /tmp/suggester/conductor.json 2>/dev/null || echo '{}' > /tmp/suggester/conductor.json
+          git show origin/automation/calmer:calmer/feeds/datanest.json > /tmp/suggester/calmer.json 2>/dev/null || echo '{}' > /tmp/suggester/calmer.json
+          git show origin/automation/regulator:regulator/state/latest.json > /tmp/suggester/regulator.json 2>/dev/null || echo '{}' > /tmp/suggester/regulator.json
           git show origin/automation/suggester:suggester/feeds/datanest.json > /tmp/suggester/previous.json 2>/dev/null || echo '{}' > /tmp/suggester/previous.json
           git switch -C automation/suggester
 
@@ -56,6 +58,8 @@ jobs:
           SUGGESTER_ENFORCER_PATH: /tmp/suggester/enforcer.json
           SUGGESTER_BOTSQUAD_PATH: /tmp/suggester/botsquad.json
           SUGGESTER_CONDUCTOR_PATH: /tmp/suggester/conductor.json
+          SUGGESTER_CALMER_PATH: /tmp/suggester/calmer.json
+          SUGGESTER_REGULATOR_PATH: /tmp/suggester/regulator.json
           SUGGESTER_PREVIOUS_PATH: /tmp/suggester/previous.json
         run: node scripts/suggester-engine.mjs
 
