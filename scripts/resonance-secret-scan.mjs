@@ -161,7 +161,7 @@ export function selfTest() {
     ["aws", "AWS_ACCESS_KEY_ID=" + "AKIA" + "1234567890ABCDEF", true],
     ["private", "-----BEGIN " + "PRIVATE KEY-----", true],
     ["generic", "client" + "_secret = " + String.fromCharCode(34) + ["this","is","a","real","looking","secret","value","123"].join("-") + String.fromCharCode(34), true],
-    ["placeholder", "client" + "_" + "secret = " + String.fromCharCode(34) + "YOUR_SECRET_HERE_1234567890" + String.fromCharCode(34), false]
+    ["placeholder", "client" + "_" + "secret = " + String.fromCharCode(34) + ["YOUR","SECRET","HERE","1234567890"].join("_") + String.fromCharCode(34), false]
   ];
   for (const [name, value, expected] of cases) {
     const found = findFindings(value, "self-test/" + name);
