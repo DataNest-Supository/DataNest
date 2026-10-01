@@ -69,7 +69,7 @@
       "id": "botsquad",
       "workflow": "botsquad.yml",
       "workflowName": "BOTSQUAD AI Tree",
-      "maxAgeMinutes": 360,
+      "maxAgeMinutes": 60,
       "dependencies": [
         "knowledge",
         "environment"
