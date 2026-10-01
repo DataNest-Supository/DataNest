@@ -43,8 +43,43 @@ const jetBrainsMono=JetBrains_Mono({
 
 // Keep focused DataNest AI refinements last so UX overrides remain authoritative.
 export const metadata = {
-  title: "DataNest",
-  description: "Plan projects, collaborate with DataNest AI, and review traceable work in one workspace."
+  metadataBase: new URL("https://datanest-supository.github.io"),
+  applicationName: "DataNest",
+  title: {
+    default: "DataNest · Resonance AppDev Control Plane",
+    template: "%s · DataNest"
+  },
+  description: "Governed Resonance AppDev planning, AI collaboration, execution, evidence, transparency, product governance and market-intelligence platform.",
+  keywords: [
+    "DataNest",
+    "Resonance AppDev",
+    "AI governance",
+    "software delivery",
+    "product operations",
+    "project orchestration",
+    "transparent AI",
+    "route to market"
+  ],
+  alternates: {
+    canonical: "https://datanest-supository.github.io/DataNest/"
+  },
+  openGraph: {
+    type: "website",
+    url: "https://datanest-supository.github.io/DataNest/",
+    siteName: "DataNest",
+    title: "DataNest · Resonance AppDev Control Plane",
+    description: "Governed AppDev, AI collaboration, evidence, transparency and product/market intelligence."
+  },
+  twitter: {
+    card: "summary",
+    title: "DataNest · Resonance AppDev Control Plane",
+    description: "Governed AppDev, AI collaboration, evidence, transparency and product/market intelligence."
+  },
+  robots: {
+    index: true,
+    follow: true
+  },
+  manifest: "/DataNest/site.webmanifest"
 };
 
 export default function RootLayout({children}:{children:ReactNode}) {
