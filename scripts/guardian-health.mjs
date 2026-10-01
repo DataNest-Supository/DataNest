@@ -210,6 +210,7 @@ export function buildGuardianSnapshot({
   suggesterFeed={},
   calmerState={},
   regulatorState={},
+  visibilityState={},
   branchReport={},
   reviewerReport={},
   previousSnapshot=null,
@@ -246,7 +247,8 @@ export function buildGuardianSnapshot({
     knowledge:inspectTreeEvidence(knowledge,"datanest-knowledge-feed-v1",blueprint?.feedFreshness?.knowledgeMinutes??420,now),
     botsquad:inspectTreeEvidence(botsquad,"datanest-botsquad-consolidated-feed-v1",blueprint?.feedFreshness?.botsquadMinutes??420,now),
     calmer:inspectTreeEvidence(calmerState,"datanest-calmer-state-v1",blueprint?.feedFreshness?.calmerMinutes??45,now),
-    regulator:inspectTreeEvidence(regulatorState,"datanest-regulator-state-v1",blueprint?.feedFreshness?.regulatorMinutes??45,now)
+    regulator:inspectTreeEvidence(regulatorState,"datanest-regulator-state-v1",blueprint?.feedFreshness?.regulatorMinutes??45,now),
+    visibility:inspectTreeEvidence(visibilityState,"datanest-visibility-utility-state-v1",blueprint?.feedFreshness?.visibilityUtilityMinutes??240,now)
   };
   for(const [source,evidence] of Object.entries(sourceEvidence)){
     if(!evidence.valid){
@@ -400,6 +402,28 @@ export function buildGuardianSnapshot({
     evidenceMissing:harmonyMissing
   });
 
+  const visibilityEvidenceValid=sourceEvidence.visibility?.valid===true;
+  const visibilitySeo=Number(visibilityState?.assessment?.seo?.score||0);
+  const visibilityCoverage=Number(visibilityState?.assessment?.platform?.coveragePercent||0);
+  const visibilityOk=visibilityEvidenceValid &&
+    visibilitySeo>=Number(blueprint?.marketVisibility?.minimumSeoScore||80) &&
+    visibilityCoverage>=Number(blueprint?.marketVisibility?.minimumPlatformCoveragePercent||70);
+  checks.push({
+    id:"market-visibility",
+    status:visibilityOk?"healthy":visibilityEvidenceValid?"degraded":"degraded",
+    weight:0,
+    earned:0,
+    detail:visibilityEvidenceValid
+      ?`VISIBILITY-UTILITY SEO ${visibilitySeo}/100; platform coverage ${visibilityCoverage}%.`
+      :"VISIBILITY-UTILITY runtime evidence is not yet initialized or fresh."
+  });
+  if(!visibilityOk) optimalDrift.push({
+    control:"market-visibility",
+    evidenceAvailable:visibilityEvidenceValid,
+    seoScore:visibilityEvidenceValid?visibilitySeo:null,
+    platformCoveragePercent:visibilityEvidenceValid?visibilityCoverage:null
+  });
+
   const remoteRequiredFailures=[];
   for(const [repository,state] of Object.entries(remoteRepositories||{})){
     if(state?.required && (!state.available || state.defaultBranchMatches===false)){
@@ -525,6 +549,14 @@ export function buildGuardianSnapshot({
           generatedAt:regulatorState?.generatedAt||null,
           status:regulatorState?.status||"missing",
           requirementCount:Number(regulatorState?.transparency?.requirementCount||0)
+        },
+        visibilityUtility:{
+          available:!!visibilityState?.generatedAt,
+          generatedAt:visibilityState?.generatedAt||null,
+          status:visibilityState?.status||"missing",
+          seoScore:visibilityState?.assessment?.seo?.score??null,
+          visibilityScore:visibilityState?.assessment?.visibilityScore??null,
+          platformCoveragePercent:visibilityState?.assessment?.platform?.coveragePercent??null
         }
       },
       branches,
@@ -587,6 +619,7 @@ async function main(){
   const suggesterFeed=await readJson(process.env.GUARDIAN_SUGGESTER_PATH||"/tmp/guardian/suggester.json",{});
   const calmerState=await readJson(process.env.GUARDIAN_CALMER_PATH||"/tmp/guardian/calmer.json",{});
   const regulatorState=await readJson(process.env.GUARDIAN_REGULATOR_PATH||"/tmp/guardian/regulator.json",{});
+  const visibilityState=await readJson(process.env.GUARDIAN_VISIBILITY_PATH||"/tmp/guardian/visibility.json",{});
   const branchReport=await readJson(process.env.GUARDIAN_BRANCH_REPORT_PATH||"/tmp/guardian/branch-cleaner-report.json",{});
   const reviewerReport=await readJson(process.env.GUARDIAN_REVIEWER_REPORT_PATH||"/tmp/guardian/workflow-reviewer-report.json",{});
   const previousSnapshot=await readJson(process.env.GUARDIAN_PREVIOUS_SNAPSHOT_PATH||"/tmp/guardian/previous.json",null);
@@ -600,7 +633,7 @@ async function main(){
   const headSha=execFileSync("git",["rev-parse","HEAD"],{encoding:"utf8"}).trim();
 
   const snapshot=buildGuardianSnapshot({
-    config,blueprint,environment,enforcer,knowledge,botsquad,conductorState,suggesterFeed,calmerState,regulatorState,
+    config,blueprint,environment,enforcer,knowledge,botsquad,conductorState,suggesterFeed,calmerState,regulatorState,visibilityState,
     branchReport,reviewerReport,previousSnapshot,
     sourceState:sources,treeContracts:contracts,remoteRepositories,headSha
   });
