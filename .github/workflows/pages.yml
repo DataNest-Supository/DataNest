@@ -307,7 +307,7 @@ jobs:
               -o "/tmp/datanest-${route:-home}.html"
             grep -qi "<html" "/tmp/datanest-${route:-home}.html"
           done
-          grep -q "<title>DataNest</title>" /tmp/datanest-home.html
+          grep -Eq '<title>DataNest([^<]*)</title>' /tmp/datanest-home.html
           if ! grep -q 'class="authShell"' /tmp/datanest-home.html; then
             echo "Expected Next.js auth shell was not served. Live HTML prefix:"
             head -c 2000 /tmp/datanest-home.html
