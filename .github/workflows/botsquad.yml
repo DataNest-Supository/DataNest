@@ -91,7 +91,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p botsquad/feeds/specialists
-          find /tmp/botsquad-artifacts -type f -name "*.json" -exec cp {} botsquad/feeds/specialists/ \\;
+          find /tmp/botsquad-artifacts -type f -name "*.json" -exec cp {} botsquad/feeds/specialists/ ';'
           node scripts/botsquad-orchestrator.mjs --consolidate --dir botsquad/feeds/specialists --target datanest --out botsquad/feeds/datanest.json
           node scripts/botsquad-orchestrator.mjs --consolidate --dir botsquad/feeds/specialists --target mirror --out botsquad/feeds/mirror-datanest.json
       - name: Publish orchestrator branch
