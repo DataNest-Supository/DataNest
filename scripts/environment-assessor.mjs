@@ -90,6 +90,7 @@ async function main(){
     await jsonFile("config/knowledge-tree.json"),
     await jsonFile("config/boundaries.policy.json"),
     await jsonFile("config/botsquad.tree.json"),
+    await jsonFile("config/enforcer.tree.json"),
     config
   ];
 
