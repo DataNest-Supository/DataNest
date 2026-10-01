@@ -26,7 +26,7 @@ concurrency:
 
 jobs:
   regulate:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.head_branch == 'main'
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.event != 'workflow_run')
     name: Regulate requirements, transparency and harmony
     runs-on: ubuntu-24.04
     timeout-minutes: 15
