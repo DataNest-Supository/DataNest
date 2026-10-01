@@ -151,4 +151,4 @@
     "canonical_only": "Owned by the canonical control plane; never introduced by a Mirror candidate.",
     "unclassified": "Fail closed until the path is explicitly classified."
   }
-}\n
+}
