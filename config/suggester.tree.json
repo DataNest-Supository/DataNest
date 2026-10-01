@@ -14,7 +14,8 @@
     "automation/botsquad/orchestrator:botsquad/feeds/datanest.json",
     "automation/conductor:conductor/state/latest.json",
     "automation/calmer:calmer/feeds/datanest.json",
-    "automation/regulator:regulator/state/latest.json"
+    "automation/regulator:regulator/state/latest.json",
+    "automation/visibility-utility:visibility-utility/feeds/datanest.json"
   ],
   "automationClasses": {
     "autonomousSafe": [
