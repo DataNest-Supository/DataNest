@@ -137,6 +137,7 @@ Resonance Forge indexes DataNest specialized trees through `specialized-trees.js
 - **Boundaries** — acceptance/tolerance evidence observation.
 - **BOTSQUAD** — scoped AI-agent identities mapped to `automation/botsquad/*`; agents have no production authority.
 - **ENVIRONMENT** — compatibility and adaptation-feed observation.
+- **ENFORCER** — defensive-evidence observation with complete approved Knowledge lineage and no production authority.
 - **FREETREE** — no automatic Forge replication or synchronization.
 
 Forge may preserve branch, evidence, identity, and compatibility lineage for these trees. It must not convert an AI recommendation, environment finding, or mirrored branch into production authorization.
