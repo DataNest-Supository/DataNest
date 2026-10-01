@@ -1,0 +1,24 @@
+{
+  "name": "BRANCH-X Automation",
+  "target": "branch",
+  "enforcement": "active",
+  "bypass_actors": [],
+  "conditions": {
+    "ref_name": {
+      "include": [
+        "refs/heads/automation/**",
+        "refs/heads/audit/**",
+        "refs/heads/ci/**"
+      ],
+      "exclude": []
+    }
+  },
+  "rules": [
+    {
+      "type": "non_fast_forward"
+    },
+    {
+      "type": "deletion"
+    }
+  ]
+}
