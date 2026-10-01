@@ -1,7 +1,7 @@
-import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { dirname, relative, resolve } from "node:path";
-import { mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync, statSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { gitTrackedTreeSha256 } from "./lib/git-tracked-tree-sha256.mjs";
 
 const artifactPath=resolve(process.argv[2] || ".datanest/edge-function-release.json");
 const releaseSha=(process.env.DATANEST_RELEASE_SHA || "").trim();
@@ -63,36 +63,8 @@ for(const slug of requiredFunctions){
   if(!/^[0-9a-f]{64}$/i.test(String(fn.ezbr_sha256||"")))throw new Error(slug+" has an invalid deployment digest.");
 }
 
-function filesUnder(root){
-  const output=[];
-  function visit(current){
-    for(const name of readdirSync(current).sort()){
-      const path=resolve(current,name);
-      const relativePath=relative(root,path).split("\\").join("/");
-      const stat=statSync(path);
-      if(stat.isDirectory())visit(path);
-      else if(stat.isFile())output.push({path:relativePath,bytes:readFileSync(path)});
-    }
-  }
-  visit(root);
-  return output;
-}
-function sha256Tree(root){
-  const hash=createHash("sha256");
-  for(const file of filesUnder(root)){
-    const pathBytes=Buffer.from(file.path,"utf8");
-    hash.update(Buffer.from(String(pathBytes.byteLength)+":"));
-    hash.update(pathBytes);
-    hash.update(Buffer.from(":"));
-    hash.update(file.bytes);
-    hash.update(Buffer.from("\n"));
-  }
-  return hash.digest("hex");
-}
-const sourceRoot=resolve("supabase/functions");
-if(!existsSync(sourceRoot))throw new Error("supabase/functions source tree is missing.");
-const observedSourceTreeSha256=sha256Tree(sourceRoot);
-if(observedSourceTreeSha256!==String(attestation.sourceTreeSha256))throw new Error("Current Edge Function source tree does not match the referenced release attestation.");
+const observedSourceTreeSha256=gitTrackedTreeSha256("supabase/functions");
+if(observedSourceTreeSha256!==String(attestation.sourceTreeSha256))throw new Error("Current Git-tracked Edge Function source tree does not match the referenced release attestation.");
 
 if(supabaseToken){
   const response=await fetch(

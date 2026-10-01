@@ -1,6 +1,6 @@
-import { createHash } from "node:crypto";
-import { dirname, relative, resolve } from "node:path";
-import { existsSync, readdirSync, readFileSync, statSync, mkdirSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { gitTrackedTreeSha256 } from "./lib/git-tracked-tree-sha256.mjs";
 
 const target=resolve(process.argv[2] || ".datanest/edge-function-release.json");
 const releaseSha=(process.env.DATANEST_RELEASE_SHA || "").trim();
@@ -25,37 +25,7 @@ if(!/^[0-9a-f]{40}$/i.test(releaseSha))throw new Error("DATANEST_RELEASE_SHA mus
 if(!Number.isInteger(workflowRunId)||workflowRunId<=0)throw new Error("GITHUB_RUN_ID is required for production Edge Function release attestation.");
 if(!repository)throw new Error("GITHUB_REPOSITORY is required for production Edge Function release attestation.");
 
-function filesUnder(root){
-  const output=[];
-  function visit(current){
-    for(const name of readdirSync(current).sort()){
-      const path=resolve(current,name);
-      const relativePath=relative(root,path).split("\\").join("/");
-      const stat=statSync(path);
-      if(stat.isDirectory())visit(path);
-      else if(stat.isFile())output.push({path:relativePath,bytes:readFileSync(path)});
-    }
-  }
-  visit(root);
-  return output;
-}
-
-function sha256Tree(root){
-  const hash=createHash("sha256");
-  for(const file of filesUnder(root)){
-    const pathBytes=Buffer.from(file.path,"utf8");
-    hash.update(Buffer.from(String(pathBytes.byteLength)+":"));
-    hash.update(pathBytes);
-    hash.update(Buffer.from(":"));
-    hash.update(file.bytes);
-    hash.update(Buffer.from("\n"));
-  }
-  return hash.digest("hex");
-}
-
-const sourceRoot=resolve("supabase/functions");
-if(!existsSync(sourceRoot))throw new Error("supabase/functions source tree is missing.");
-const sourceTreeSha256=sha256Tree(sourceRoot);
+const sourceTreeSha256=gitTrackedTreeSha256("supabase/functions");
 
 let observedFunctions=[];
 let verificationMode="management-api";
