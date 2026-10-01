@@ -137,14 +137,28 @@ jobs:
               },
               "observedCanonical": {
                   "present": bool(canonical),
+                  "target": canonical.get("target") if canonical else None,
                   "enforcement": canonical.get("enforcement") if canonical else None,
+                  "bypassActorsEmpty": not bool(canonical.get("bypass_actors")) if canonical else False,
                   "refs": sorted(canonical_refs),
                   "ruleTypes": sorted(canonical_types),
-                  "requiredStatusChecks": sorted(canonical_checks)
+                  "requiredStatusChecks": sorted(canonical_checks),
+                  "requiredApprovingReviewCount": canonical_pull_request_params.get("required_approving_review_count") if canonical else None,
+                  "dismissStaleReviewsOnPush": canonical_pull_request_params.get("dismiss_stale_reviews_on_push") if canonical else None,
+                  "requiredReviewThreadResolution": canonical_pull_request_params.get("required_review_thread_resolution") if canonical else None,
+                  "strictRequiredStatusChecksPolicy": canonical_status_params.get("strict_required_status_checks_policy") if canonical else None,
+                  "doNotEnforceOnCreate": canonical_status_params.get("do_not_enforce_on_create") if canonical else None
               },
               "observedAutomation": {
                   "present": bool(automation),
-                  "enforcement": automation.get("enforcement") if automation else None
+                  "target": automation.get("target") if automation else None,
+                  "enforcement": automation.get("enforcement") if automation else None,
+                  "bypassActorsEmpty": not bool(automation.get("bypass_actors")) if automation else False,
+                  "refs": sorted(automation_refs),
+                  "ruleTypes": sorted(automation_types),
+                  "requiredStatusChecks": sorted(automation_checks),
+                  "strictRequiredStatusChecksPolicy": automation_status_params.get("strict_required_status_checks_policy") if automation else None,
+                  "doNotEnforceOnCreate": automation_status_params.get("do_not_enforce_on_create") if automation else None
               },
               "canonicalRulesetMatch": canonical_ok,
               "automationRulesetActive": automation_ok,
