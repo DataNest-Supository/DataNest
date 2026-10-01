@@ -439,6 +439,17 @@
         "governanceReview"
       ],
       "machineBaselineMinutes": 20
+    },
+    "branch-protection-tree.yml": {
+      "gateId": "branch-protection-tree",
+      "gateType": "automated_validation",
+      "taskComplexity": "standard",
+      "reportingComplexity": "detailed",
+      "reviewDomains": [
+        "engineeringReview",
+        "governanceReview"
+      ],
+      "machineBaselineMinutes": 10
     }
   }
 }
