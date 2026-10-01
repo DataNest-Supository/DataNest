@@ -41,6 +41,7 @@
     "learningPath": "enforcer/feeds/knowledge-learning.json",
     "transparencyPath": "enforcer/transparency/latest.json",
     "artifactRetentionDays": 30,
-    "disclosure": "publish status, evidence lineage, categories, counts, and remediation state; never publish secret values or private authentication material"
+    "disclosure": "publish status, evidence lineage, categories, counts, and remediation state; never publish secret values or private authentication material",
+    "publicEntrypoint": "/DataNest/transparency/enforcer/index.json"
   }
 }
