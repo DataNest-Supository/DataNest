@@ -157,6 +157,22 @@
         "Runtime, provider, backend, permission, production-workflow, Forge-authority, and credential changes require human review",
         "FREETREE remains isolated from automatic synchronization"
       ]
+    },
+    {
+      "id": "enforcer_defence",
+      "tolerance": "continuous-defence-without-authority-escalation",
+      "patterns": [
+        "enforcer/**",
+        "config/enforcer.tree.json",
+        "scripts/enforcer-monitor.mjs",
+        ".github/workflows/enforcer.yml"
+      ],
+      "acceptance": [
+        "ENFORCER consumes the complete approved Knowledge corpus without category or topic filtering",
+        "ENFORCER may fail its own defensive check but cannot approve, merge, deploy production, or rewrite Boundaries",
+        "Security findings remain attributable and are not silently suppressed",
+        "Secrets, private authentication material, and protected personal data are not published as transparency content"
+      ]
     }
   ],
   "hardRules": [
@@ -206,6 +222,21 @@
         "\"productionAuthority\": true"
       ],
       "message": "BOTSQUAD and Forge specialized-tree projections cannot assert production authority."
+    },
+    {
+      "id": "no_enforcer_authority_escalation",
+      "files": [
+        "config/enforcer.tree.json",
+        "infra/reson8-forge/specialized-trees.json"
+      ],
+      "forbiddenText": [
+        "\"productionAuthorization\": true",
+        "\"productionAuthority\": true",
+        "\"mayDeployProduction\": true",
+        "\"mayChangeBoundaries\": true",
+        "\"maySuppressFindings\": true"
+      ],
+      "message": "ENFORCER may enforce checks but cannot acquire production authority, rewrite Boundaries, or suppress findings."
     }
   ],
   "resultSemantics": {
