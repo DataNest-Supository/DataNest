@@ -5,7 +5,10 @@
   "protectedPatterns": [
     "^main$",
     "^production$",
-    "^release/"
+    "^release/",
+    "^automation/knowledge-feed$",
+    "^automation/boundaries-assessment$",
+    "^feature/knowledge-boundaries-maintenance$"
   ],
   "supabaseProjects": [
     {
@@ -43,4 +46,4 @@
   "supabaseEvidenceMaxAgeMinutes": 90,
   "archiveTagPrefix": "branch-archive/",
   "allowArchivedPrune": false
-}
+}\n
