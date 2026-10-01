@@ -102,3 +102,24 @@ test("CONDUCTOR consumes allowlisted SUGGESTER autonomous commands after synchro
   assert.equal(command.workflow,"maintenance.yml");
   assert.equal(command.inputs.task,"branch-cleaner");
 });
+
+test("CONDUCTOR treats a newer failed prerequisite as stale even when an older success is fresh",()=>{
+  const workflowStates=states({
+    knowledge:[
+      run(40,{id:100,status:"completed",conclusion:"failure"}),
+      run(60,{id:99,status:"completed",conclusion:"success"})
+    ],
+    environment:[run(10)],
+    enforcer:[run(10)],
+    guardian:[run(10)],
+    maintenance:[run(10)]
+  });
+  const processes=evaluateProcessSchedule(config,workflowStates,now);
+  const knowledge=processes.find(x=>x.id==="knowledge");
+  const enforcer=processes.find(x=>x.id==="enforcer");
+  assert.equal(knowledge.operationalFresh,false);
+  assert.equal(knowledge.due,true);
+  assert.equal(enforcer.dependenciesReady,false);
+  const command=selectNextCommand(config,processes,{},workflowStates);
+  assert.equal(command.processId,"knowledge");
+});
