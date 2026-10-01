@@ -51,7 +51,18 @@
         "scripts/boundaries-assessor.mjs",
         "scripts/knowledge-tree.mjs",
         "tests/unit/boundaries-assessor.test.mjs",
-        "tests/unit/knowledge-tree.test.mjs"
+        "tests/unit/knowledge-tree.test.mjs",
+        ".github/workflows/botsquad.yml",
+        ".github/workflows/environment-tree.yml",
+        "botsquad/**",
+        "environment/**",
+        "config/botsquad.tree.json",
+        "config/environment.tree.json",
+        "scripts/botsquad-orchestrator.mjs",
+        "scripts/environment-assessor.mjs",
+        "tests/unit/botsquad.test.mjs",
+        "tests/unit/environment-tree.test.mjs",
+        "infra/reson8-forge/specialized-trees.json"
       ]
     },
     {
@@ -86,7 +97,12 @@
         "scripts/knowledge-feed-consumer.mjs",
         "scripts/mirror-ai-plugin-check.mjs",
         "templates/freetree/**",
-        "tests/unit/knowledge-feed-consumer.test.mjs"
+        "tests/unit/knowledge-feed-consumer.test.mjs",
+        ".github/workflows/botsquad-feed-consumer.yml",
+        "config/botsquad-consumer.json",
+        "botsquad/inbox/**",
+        "scripts/botsquad-feed-consumer.mjs",
+        "tests/unit/botsquad-feed-consumer.test.mjs"
       ]
     },
     {
