@@ -208,6 +208,8 @@ export function buildGuardianSnapshot({
   botsquad={},
   conductorState={},
   suggesterFeed={},
+  calmerState={},
+  regulatorState={},
   branchReport={},
   reviewerReport={},
   previousSnapshot=null,
@@ -242,7 +244,9 @@ export function buildGuardianSnapshot({
     environment:inspectTreeEvidence(environment,"datanest-environment-feed-v1",blueprint?.feedFreshness?.environmentMinutes??420,now),
     enforcer:inspectTreeEvidence(enforcer,"datanest-enforcer-assessment-v1",blueprint?.feedFreshness?.enforcerMinutes??210,now),
     knowledge:inspectTreeEvidence(knowledge,"datanest-knowledge-feed-v1",blueprint?.feedFreshness?.knowledgeMinutes??420,now),
-    botsquad:inspectTreeEvidence(botsquad,"datanest-botsquad-consolidated-feed-v1",blueprint?.feedFreshness?.botsquadMinutes??420,now)
+    botsquad:inspectTreeEvidence(botsquad,"datanest-botsquad-consolidated-feed-v1",blueprint?.feedFreshness?.botsquadMinutes??420,now),
+    calmer:inspectTreeEvidence(calmerState,"datanest-calmer-state-v1",blueprint?.feedFreshness?.calmerMinutes??45,now),
+    regulator:inspectTreeEvidence(regulatorState,"datanest-regulator-state-v1",blueprint?.feedFreshness?.regulatorMinutes??45,now)
   };
   for(const [source,evidence] of Object.entries(sourceEvidence)){
     if(!evidence.valid){
@@ -366,6 +370,27 @@ export function buildGuardianSnapshot({
     suggester:{ok:suggesterOk,ageMinutes:Number.isFinite(suggesterAge)?suggesterAge:null}
   });
 
+  const calmerSafe=
+    calmerState?.productionAuthorization===false &&
+    Number(calmerState?.summary?.hardControlsRemoved??0)===Number(blueprint?.governanceHarmony?.calmerHardControlsRemoved??0);
+  const regulatorSafe=
+    regulatorState?.productionAuthorization===false &&
+    Boolean(regulatorState?.transparency?.financialCommitmentsAuthorized)===Boolean(blueprint?.governanceHarmony?.regulatorFinancialCommitmentsAuthorized??false);
+  checks.push({
+    id:"governance-harmony",
+    status:calmerSafe&&regulatorSafe?"healthy":"critical",
+    weight:0,
+    earned:0,
+    detail:calmerSafe&&regulatorSafe
+      ?"CALMER and REGULATOR preserve non-negotiable authority, security and financial boundaries."
+      :"CALMER or REGULATOR violated a non-negotiable governance-harmony condition."
+  });
+  if(!calmerSafe||!regulatorSafe) optimalDrift.push({
+    control:"governance-harmony",
+    calmerSafe,
+    regulatorSafe
+  });
+
   const remoteRequiredFailures=[];
   for(const [repository,state] of Object.entries(remoteRepositories||{})){
     if(state?.required && (!state.available || state.defaultBranchMatches===false)){
@@ -479,6 +504,18 @@ export function buildGuardianSnapshot({
           generatedAt:suggesterFeed?.generatedAt||null,
           suggestionCount:Number(suggesterFeed?.summary?.total||0),
           autonomousCommandCount:Number(suggesterFeed?.summary?.autonomousSafe||0)
+        },
+        calmer:{
+          available:!!calmerState?.generatedAt,
+          generatedAt:calmerState?.generatedAt||null,
+          status:calmerState?.status||"missing",
+          tier:calmerState?.tier||null
+        },
+        regulator:{
+          available:!!regulatorState?.generatedAt,
+          generatedAt:regulatorState?.generatedAt||null,
+          status:regulatorState?.status||"missing",
+          requirementCount:Number(regulatorState?.transparency?.requirementCount||0)
         }
       },
       branches,
@@ -539,6 +576,8 @@ async function main(){
   const botsquad=await readJson(process.env.GUARDIAN_BOTSQUAD_PATH||"/tmp/guardian/botsquad.json",{});
   const conductorState=await readJson(process.env.GUARDIAN_CONDUCTOR_PATH||"/tmp/guardian/conductor.json",{});
   const suggesterFeed=await readJson(process.env.GUARDIAN_SUGGESTER_PATH||"/tmp/guardian/suggester.json",{});
+  const calmerState=await readJson(process.env.GUARDIAN_CALMER_PATH||"/tmp/guardian/calmer.json",{});
+  const regulatorState=await readJson(process.env.GUARDIAN_REGULATOR_PATH||"/tmp/guardian/regulator.json",{});
   const branchReport=await readJson(process.env.GUARDIAN_BRANCH_REPORT_PATH||"/tmp/guardian/branch-cleaner-report.json",{});
   const reviewerReport=await readJson(process.env.GUARDIAN_REVIEWER_REPORT_PATH||"/tmp/guardian/workflow-reviewer-report.json",{});
   const previousSnapshot=await readJson(process.env.GUARDIAN_PREVIOUS_SNAPSHOT_PATH||"/tmp/guardian/previous.json",null);
@@ -552,7 +591,7 @@ async function main(){
   const headSha=execFileSync("git",["rev-parse","HEAD"],{encoding:"utf8"}).trim();
 
   const snapshot=buildGuardianSnapshot({
-    config,blueprint,environment,enforcer,knowledge,botsquad,conductorState,suggesterFeed,
+    config,blueprint,environment,enforcer,knowledge,botsquad,conductorState,suggesterFeed,calmerState,regulatorState,
     branchReport,reviewerReport,previousSnapshot,
     sourceState:sources,treeContracts:contracts,remoteRepositories,headSha
   });
