@@ -2,7 +2,6 @@ name: VISIBILITY-UTILITY Market Presence Tree
 
 on:
   pull_request:
-    branches: [main]
   push:
     branches: [main]
   schedule:
@@ -34,6 +33,16 @@ jobs:
         with:
           ref: ${{ github.event_name == 'workflow_run' && 'main' || '' }}
           fetch-depth: 0
+
+      - uses: ./.github/actions/node-project-setup
+
+      - name: Validate VISIBILITY-UTILITY and public charter contracts
+        run: node --test tests/unit/visibility-utility.test.mjs tests/unit/system-charter.test.mjs tests/unit/regulator.test.mjs tests/unit/guardian.test.mjs tests/unit/suggester.test.mjs
+
+      - name: Verify TypeScript and public static export
+        run: |
+          npm run check
+          npm run build
 
       - name: Read Knowledge and BOTSQUAD inputs
         shell: bash
