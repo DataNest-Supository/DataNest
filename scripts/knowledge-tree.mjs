@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import { createHash } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
+import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { pathToFileURL } from "node:url";
@@ -96,6 +98,52 @@ function pullItem(repository,role,pull,categories){
   };
 }
 
+function gitCommitItem(repository,role,{sha,date,message},categories){
+  const summary=clean(message);
+  return {
+    id:`commit:${repository}@${sha}`,
+    repository,
+    sourceRole:role,
+    sourceType:"commit",
+    sourceSha:sha,
+    sourceUrl:`https://github.com/${repository}/commit/${sha}`,
+    observedAt:date,
+    summary,
+    categories:categorize(summary,categories),
+    evidenceHash:"sha256:"+digest(repository+"|"+sha+"|"+summary)
+  };
+}
+
+function gitLogItems(repository,role,categories,cwd,maxCommits){
+  const format="%H%x1f%cI%x1f%s%x1e";
+  const output=execFileSync("git",["-C",cwd,"log",`-n${maxCommits}`,`--format=${format}`],{
+    encoding:"utf8",
+    stdio:["ignore","pipe","pipe"]
+  });
+  return output.split("\x1e").map(record=>record.trim()).filter(Boolean).map(record=>{
+    const [sha,date,...messageParts]=record.split("\x1f");
+    return gitCommitItem(repository,role,{sha,date,message:messageParts.join("\x1f")},categories);
+  });
+}
+
+async function collectGitFallback(source,config){
+  const maxCommits=Math.min(100,Number(config.maxCommitsPerRepository||50));
+  if(source.repository===process.env.GITHUB_REPOSITORY){
+    return gitLogItems(source.repository,source.role,config.categories,process.cwd(),maxCommits);
+  }
+
+  const tmp=await mkdtemp(path.join(os.tmpdir(),"datanest-knowledge-"));
+  try{
+    execFileSync("git",[
+      "clone","--quiet","--filter=blob:none","--no-checkout",`--depth=${maxCommits}`,
+      `https://github.com/${source.repository}.git`,tmp
+    ],{stdio:["ignore","pipe","pipe"]});
+    return gitLogItems(source.repository,source.role,config.categories,tmp,maxCommits);
+  } finally {
+    await rm(tmp,{recursive:true,force:true});
+  }
+}
+
 export function dedupeItems(items){
   const seen=new Set();
   return items
@@ -109,20 +157,28 @@ export function dedupeItems(items){
 }
 
 async function collectSource(source,config,token){
-  const commits=await githubJson(
-    source.repository,
-    `/commits?per_page=${Math.min(100,Number(config.maxCommitsPerRepository||50))}`,
-    token
-  );
-  const pulls=await githubJson(
-    source.repository,
-    `/pulls?state=closed&sort=updated&direction=desc&per_page=${Math.min(100,Number(config.maxPullRequestsPerRepository||50))}`,
-    token
-  );
-  return [
-    ...commits.map((commit)=>commitItem(source.repository,source.role,commit,config.categories)),
-    ...pulls.filter((pull)=>pull.merged_at).map((pull)=>pullItem(source.repository,source.role,pull,config.categories))
-  ];
+  if(source.repository===process.env.GITHUB_REPOSITORY){
+    return collectGitFallback(source,config);
+  }
+  try{
+    const commits=await githubJson(
+      source.repository,
+      `/commits?per_page=${Math.min(100,Number(config.maxCommitsPerRepository||50))}`,
+      token
+    );
+    const pulls=await githubJson(
+      source.repository,
+      `/pulls?state=closed&sort=updated&direction=desc&per_page=${Math.min(100,Number(config.maxPullRequestsPerRepository||50))}`,
+      token
+    );
+    return [
+      ...commits.map((commit)=>commitItem(source.repository,source.role,commit,config.categories)),
+      ...pulls.filter((pull)=>pull.merged_at).map((pull)=>pullItem(source.repository,source.role,pull,config.categories))
+    ];
+  }catch(error){
+    process.stderr.write(`Knowledge REST enrichment unavailable for ${source.repository}; using Git history fallback. ${clean(error?.message)}\n`);
+    return collectGitFallback(source,config);
+  }
 }
 
 async function main(){
