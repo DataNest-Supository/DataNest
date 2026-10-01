@@ -59,7 +59,8 @@
         "scripts/botsquad-orchestrator.mjs",
         "scripts/environment-assessor.mjs",
         "tests/unit/botsquad.test.mjs",
-        "tests/unit/environment-tree.test.mjs"
+        "tests/unit/environment-tree.test.mjs",
+        "infra/reson8-forge/specialized-trees.json"
       ]
     },
     {
