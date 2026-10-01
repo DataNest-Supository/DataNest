@@ -415,6 +415,18 @@
         "operationsReview"
       ],
       "machineBaselineMinutes": 20
+    },
+    "visibility-utility.yml": {
+      "gateId": "visibility-utility",
+      "gateType": "automated_analysis",
+      "taskComplexity": "complex",
+      "reportingComplexity": "detailed",
+      "reviewDomains": [
+        "engineeringReview",
+        "visualReview",
+        "governanceReview"
+      ],
+      "machineBaselineMinutes": 20
     }
   }
 }
