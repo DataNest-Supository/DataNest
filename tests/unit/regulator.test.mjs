@@ -16,17 +16,20 @@ const config={
   }
 };
 const boundaries={scopes:[{id:"a"}],hardRules:[{id:"b"}]};
+const validSources={
+  guardian:{schemaVersion:"datanest-guardian-snapshot-v1",productionAuthorization:false,status:"healthy",drift:{optimalConditionDrift:[]}},
+  enforcer:{schemaVersion:"datanest-enforcer-assessment-v1",productionAuthorization:false,status:"pass",blockers:[],reviews:[]},
+  calmer:{schemaVersion:"datanest-calmer-state-v1",productionAuthorization:false,status:"softening-active"},
+  environment:{schemaVersion:"datanest-environment-feed-v1",productionAuthorization:false,environmentCompatible:true,reviewRequired:[]},
+  conductor:{schemaVersion:"datanest-conductor-state-v1",productionAuthorization:false,allProcessesFresh:true},
+  suggester:{schemaVersion:"datanest-suggester-feed-v1",productionAuthorization:false,suggestions:[]},
+  botsquad:{schemaVersion:"datanest-botsquad-consolidated-feed-v1",productionAuthorization:false,risks:[]}
+};
 
 test("REGULATOR is harmonized when no requirement source is unresolved",()=>{
   const state=buildRegulatorState({
     config,boundaries,
-    guardian:{status:"healthy",drift:{optimalConditionDrift:[]}},
-    enforcer:{status:"pass",blockers:[],reviews:[]},
-    calmer:{status:"softening-active"},
-    environment:{environmentCompatible:true,reviewRequired:[]},
-    conductor:{allProcessesFresh:true},
-    suggester:{suggestions:[]},
-    botsquad:{risks:[]}
+    ...validSources
   });
   assert.equal(state.status,"harmonized");
   assert.equal(state.requirements.length,0);
@@ -37,13 +40,12 @@ test("REGULATOR is harmonized when no requirement source is unresolved",()=>{
 test("REGULATOR turns security and health gaps into transparent BOTSQUAD requirements",()=>{
   const state=buildRegulatorState({
     config,boundaries,
-    guardian:{status:"degraded",drift:{optimalConditionDrift:[{control:"environment",dimension:"runtime"}]}},
-    enforcer:{status:"block",blockers:["security-workflow-failure"],reviews:[]},
-    calmer:{status:"softening-suspended"},
-    environment:{environmentCompatible:false,reviewRequired:[{dimension:"runtime"}]},
-    conductor:{allProcessesFresh:false},
-    suggester:{suggestions:[]},
-    botsquad:{risks:[]}
+    ...validSources,
+    guardian:{...validSources.guardian,status:"degraded",drift:{optimalConditionDrift:[{control:"environment",dimension:"runtime"}]}},
+    enforcer:{...validSources.enforcer,status:"block",blockers:["security-workflow-failure"]},
+    calmer:{...validSources.calmer,status:"softening-suspended"},
+    environment:{...validSources.environment,environmentCompatible:false,reviewRequired:[{dimension:"runtime"}]},
+    conductor:{...validSources.conductor,allProcessesFresh:false}
   });
   assert.equal(state.status,"blocked");
   assert.ok(state.requirements.length>=4);
@@ -60,13 +62,15 @@ test("REGULATOR deduplicates repeated review suggestions",()=>{
   };
   const state=buildRegulatorState({
     config,boundaries,
-    guardian:{status:"healthy",drift:{optimalConditionDrift:[]}},
-    enforcer:{status:"pass",blockers:[],reviews:[]},
-    calmer:{status:"softening-active"},
-    environment:{environmentCompatible:true,reviewRequired:[]},
-    conductor:{allProcessesFresh:true},
-    suggester:{suggestions:[suggestion,suggestion]},
-    botsquad:{risks:[]}
+    ...validSources,
+    suggester:{...validSources.suggester,suggestions:[suggestion,suggestion]}
   });
   assert.equal(state.requirements.length,1);
+});
+
+test("REGULATOR makes missing source evidence visible instead of claiming harmony",()=>{
+  const state=buildRegulatorState({config,boundaries});
+  assert.equal(state.status,"attention");
+  assert.ok(state.requirements.length>=7);
+  assert.ok(state.requirements.some(x=>x.title.includes("guardian")));
 });
