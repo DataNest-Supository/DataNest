@@ -175,6 +175,24 @@
         "Security findings remain attributable and are not silently suppressed",
         "Secrets, private authentication material, and protected personal data are not published as transparency content"
       ]
+    },
+    {
+      "id": "guardian_health_healing",
+      "tolerance": "safe-healing-without-authority-escalation",
+      "patterns": [
+        "guardian/**",
+        "config/guardian.tree.json",
+        "config/guardian.blueprint.json",
+        "scripts/guardian-health.mjs",
+        ".github/workflows/guardian.yml"
+      ],
+      "acceptance": [
+        "GUARDIAN snapshots preserve blueprint, observed-state, and prior-snapshot lineage",
+        "Autonomous branch deletion is limited to branches proven to have zero unique commits with live revalidation",
+        "Automatic source changes are limited to byte-safe normalization",
+        "Behavioral deduplication and refactoring are review-only",
+        "GUARDIAN cannot weaken Boundaries/ENFORCER, change production authority, expose secrets, or synchronize FREETREE"
+      ]
     }
   ],
   "hardRules": [
@@ -239,6 +257,20 @@
         "\"maySuppressFindings\": true"
       ],
       "message": "ENFORCER may enforce checks but cannot acquire production authority, rewrite Boundaries, or suppress findings."
+    },
+    {
+      "id": "no_guardian_authority_escalation",
+      "files": [
+        "config/guardian.tree.json",
+        "infra/reson8-forge/specialized-trees.json"
+      ],
+      "forbiddenText": [
+        "\"productionAuthorization\": true",
+        "\"productionAuthority\": true",
+        "\"autonomousDeletion\": \"unique-history\"",
+        "\"synchronizeFreetree\": true"
+      ],
+      "message": "GUARDIAN may heal proven redundancy but cannot gain production authority, delete unique history, or synchronize FREETREE."
     }
   ],
   "resultSemantics": {
