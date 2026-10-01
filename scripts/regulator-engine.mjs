@@ -60,6 +60,15 @@ export function buildRegulatorState({
       evidence:["calmer.status"]
     }));
   }
+  if(conductor?.allProcessesFresh===false){
+    requirements.push(requirement({
+      source:"conductor",requirementClass:"timing",severity:"medium",
+      title:"Restore synchronized process timing",
+      detail:"CONDUCTOR reports one or more specialized processes are stale, active, blocked or awaiting refresh.",
+      evidence:["conductor.processes","conductor.nextCommand"]
+    }));
+  }
+
   for(const suggestion of (suggester?.suggestions||[]).filter(x=>x.automationClass!=="autonomous-safe").slice(0,50)){
     requirements.push(requirement({
       source:"suggester",requirementClass:"optimization",
