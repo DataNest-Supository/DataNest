@@ -1,3 +1,4 @@
+# worktree-gate: false
 name: Notify Mirror of canonical DataNest main
 
 on:
