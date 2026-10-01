@@ -34,7 +34,10 @@ test("public index contains digests and safe metadata but excludes sensitive rec
     config,files,headSha:"abc123",generatedAt:"2026-10-01T10:00:00Z"
   });
   assert.equal(state.productionAuthorization,false);
-  assert.equal(internalIndex.records.length,3);
+  assert.equal(internalIndex.records.length,2);
+  assert.equal(internalIndex.records.some(x=>x.path.includes("secret")),false);
+  assert.equal(internalIndex.restrictedRecordCount,1);
+  assert.match(internalIndex.restrictedEvidenceDigest,/^sha256:[a-f0-9]{64}$/);
   assert.equal(publicIndex.records.some(x=>x.path.includes("secret")),false);
   assert.ok(publicIndex.records.every(x=>x.digest.startsWith("sha256:")));
   assert.equal(publicIndex.disclosure.recordContentsPublished,false);
