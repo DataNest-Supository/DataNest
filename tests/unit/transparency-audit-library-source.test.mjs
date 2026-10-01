@@ -8,6 +8,7 @@ const registry=JSON.parse(readFileSync(new URL("../../public/transparency/audits
 const auditReturn=readFileSync(new URL("../../public/transparency/audits/external-full-system-audit-return-2026-09-25/report.md",import.meta.url),"utf8");
 const findings=JSON.parse(readFileSync(new URL("../../public/transparency/audits/external-full-system-audit-return-2026-09-25/findings.json",import.meta.url),"utf8"));
 const backlog=JSON.parse(readFileSync(new URL("../../public/transparency/audits/external-full-system-audit-return-2026-09-25/remediation-backlog.json",import.meta.url),"utf8"));
+const libertyDescriptor=JSON.parse(readFileSync(new URL("../../public/transparency/liberty-in-all/index.json",import.meta.url),"utf8"));
 
 const fullBrief=Array.from({length:8},(_,index)=>
   readFileSync(
@@ -99,4 +100,18 @@ test("public transparency index publishes the result with explicit limitations",
   assert.match(html,/Structured findings \(JSON\)/);
   assert.match(html,/Reported remediation backlog \(JSON\)/);
   assert.match(html,/External audit return received 25 Sep 2026/);
+});
+
+
+test("LIBERTY-IN-ALL is embedded with live sanitized traceability",()=>{
+  const html=readFileSync(new URL("../../public/transparency/index.html",import.meta.url),"utf8");
+  assert.match(workspace,/LIBERTY-IN-ALL · CONTINUOUS TRACEABILITY/);
+  assert.match(workspace,/raw\.githubusercontent\.com\/DataNest-Supository\/DataNest\/automation\/liberty-in-all/);
+  assert.match(workspace,/Indexed evidence/);
+  assert.match(html,/LIBERTY-IN-ALL · CONTINUOUS TRACEABILITY/);
+  assert.match(html,/Current traceability snapshot/);
+  assert.match(String(libertyDescriptor.latest),/automation\/liberty-in-all/);
+  assert.equal(libertyDescriptor.disclosure.recordContents,false);
+  assert.equal(libertyDescriptor.disclosure.secrets,false);
+  assert.equal(libertyDescriptor.assurance.productionAuthorization,false);
 });

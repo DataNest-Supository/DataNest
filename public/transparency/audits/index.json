@@ -197,6 +197,41 @@
         "role_effect": false,
         "production_authorization": false
       }
+    },
+    {
+      "id": "liberty-in-all-continuous-traceability",
+      "title": "DataNest LIBERTY-IN-ALL Continuous Indexing & Traceability",
+      "document_type": "continuous_traceability_index",
+      "version": "1.0",
+      "status": "published",
+      "audit_result_status": "continuous_generated_evidence",
+      "published_at": "2026-10-01",
+      "source": "../liberty-in-all/index.json",
+      "coverage": {
+        "content_digests": true,
+        "source_commit_lineage": true,
+        "evidence_gaps": true,
+        "public_sanitized_index": true,
+        "record_contents": false,
+        "secrets": false,
+        "private_authentication_material": false,
+        "protected_personal_data": false
+      },
+      "standards_alignment": [
+        "ISO 15489-1:2016",
+        "ISO 23081-1:2017",
+        "W3C PROV",
+        "ISO/IEC 27001:2022",
+        "ISO/IEC 27701:2025",
+        "NIST CSF 2.0"
+      ],
+      "authority": {
+        "governance_effect": false,
+        "financial_effect": false,
+        "ownership_effect": false,
+        "role_effect": false,
+        "production_authorization": false
+      }
     }
   ]
 }

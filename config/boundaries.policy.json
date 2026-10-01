@@ -283,6 +283,25 @@
         "Paid acquisition, pricing, binding sales commitments and public claims require human review",
         "VISIBILITY-UTILITY cannot merge, deploy, spend, rewrite Boundaries or claim certification"
       ]
+    },
+    {
+      "id": "liberty_in_all_traceability",
+      "tolerance": "maximum-safe-visibility-with-minimum-necessary-restriction",
+      "patterns": [
+        "liberty-in-all/**",
+        "config/liberty-in-all.standard.json",
+        "scripts/liberty-in-all-indexer.mjs",
+        ".github/workflows/liberty-in-all.yml",
+        "public/transparency/liberty-in-all/**",
+        "docs/LIBERTY_IN_ALL_STANDARD.md"
+      ],
+      "acceptance": [
+        "Every public record entry is attributable to a source ref and SHA-256 digest",
+        "Sensitive records and record contents are not published through the public index",
+        "Missing evidence is explicit rather than inferred or fabricated",
+        "Disclosure, retention and sensitivity-policy changes require human review",
+        "LIBERTY-IN-ALL cannot approve, merge, deploy production, rewrite history or change production authority"
+      ]
     }
   ],
   "hardRules": [
