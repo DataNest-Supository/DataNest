@@ -10,7 +10,7 @@ on:
       timezone: Africa/Johannesburg
   workflow_dispatch:
   workflow_run:
-    workflows: ["Security scan"]
+    workflows: ["Security scan", "Knowledge Tree", "ENVIRONMENT Tree"]
     types: [completed]
 
 permissions:
@@ -53,11 +53,6 @@ jobs:
       - name: Assess defensive posture
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ENFORCER_SECURITY_RUN_ID: ${{ github.event.workflow_run.id || '' }}
-          ENFORCER_SECURITY_RUN_STATUS: ${{ github.event.workflow_run.status || '' }}
-          ENFORCER_SECURITY_RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion || '' }}
-          ENFORCER_SECURITY_RUN_URL: ${{ github.event.workflow_run.html_url || '' }}
-          ENFORCER_SECURITY_RUN_SHA: ${{ github.event.workflow_run.head_sha || '' }}
         run: node scripts/enforcer-monitor.mjs
 
       - name: Publish transparent defensive evidence
