@@ -31,27 +31,26 @@ jobs:
         run: node scripts/verify-security-invariants.mjs
 
   secret-scan:
-    name: Secret scan (gitleaks)
+    name: Secret scan (Resonance Secret Integrity)
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
-      - name: gitleaks
-        uses: gitleaks/gitleaks-action@v3
-        env:
-          GITLEAKS_ENABLE_COMMENTS: "false"
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
-          GITLEAKS_ENABLE_SUMMARY: "true"
-      - name: Upload gitleaks SARIF artifact
-        if: always() && hashFiles('results.sarif') != ''
+      - name: Verify Resonance execution profile
+        run: node scripts/verify-resonance-security-execution.mjs
+      - name: Run Resonance Secret Integrity self-test
+        run: node scripts/resonance-secret-scan.mjs --self-test
+      - name: Run Resonance Secret Integrity scan
+        run: node scripts/resonance-secret-scan.mjs --output resonance-secret-scan.sarif
+      - name: Upload Resonance secret-scan SARIF artifact
+        if: always() && hashFiles('resonance-secret-scan.sarif') != ''
         uses: actions/upload-artifact@v4.6.2
         with:
-          name: gitleaks-sarif-${{ github.run_id }}-${{ github.sha }}
-          path: results.sarif
-          if-no-files-found: warn
+          name: resonance-secret-scan-${{ github.run_id }}-${{ github.sha }}
+          path: resonance-secret-scan.sarif
+          if-no-files-found: error
           retention-days: ${{ env.SARIF_RETENTION_DAYS }}
 
   dependency-audit:
