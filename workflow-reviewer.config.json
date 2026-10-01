@@ -16,7 +16,8 @@
     "conductor",
     "suggester",
     "calmer",
-    "regulator"
+    "regulator",
+    "visibility-utility"
   ],
   "exclude": [
     "node_modules",
