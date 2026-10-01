@@ -203,8 +203,9 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
       .map(element=>{
         const rect=element.getBoundingClientRect();
         return {
+          element,
           tag:element.tagName.toLowerCase(),
-          className:element.className,
+          className:typeof element.className==="string" ? element.className : "",
           text:(element.textContent||"").trim().replace(/\s+/g," ").slice(0,120),
           left:Math.round(rect.left),
           right:Math.round(rect.right),
@@ -212,13 +213,8 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
         };
       })
       .filter(item=>item.right>viewportWidth+1||item.left< -1)
-      .filter(item=>{
-        const selector=item.className
-          ? "."+String(item.className).trim().split(/\s+/).filter(Boolean).join(".")
-          : item.tag;
-        const element=document.querySelector(selector);
-        return element ? !isClipped(element) : true;
-      })
+      .filter(item=>!isClipped(item.element))
+      .map(({element,...item})=>item)
       .slice(0,12);
   });
   expect(
