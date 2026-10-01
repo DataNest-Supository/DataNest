@@ -295,7 +295,7 @@ jobs:
 
       - name: Verify deployed Next.js shell and public governance routes
         run: |
-          for route in "" legal governance accessibility terms privacy disclaimers acceptable-use intellectual-property; do
+          for route in "" legal governance accessibility terms privacy disclaimers acceptable-use intellectual-property transparency system-charter architecture stress-test; do
             suffix=""
             if [ -n "$route" ]; then suffix="$route/"; fi
             curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors               "https://datanest-supository.github.io/DataNest/$suffix"               -o "/tmp/datanest-${route:-home}.html"
