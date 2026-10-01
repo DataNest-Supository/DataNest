@@ -23,7 +23,14 @@ const validSources={
   environment:{schemaVersion:"datanest-environment-feed-v1",productionAuthorization:false,environmentCompatible:true,reviewRequired:[]},
   conductor:{schemaVersion:"datanest-conductor-state-v1",productionAuthorization:false,allProcessesFresh:true},
   suggester:{schemaVersion:"datanest-suggester-feed-v1",productionAuthorization:false,suggestions:[]},
-  botsquad:{schemaVersion:"datanest-botsquad-consolidated-feed-v1",productionAuthorization:false,risks:[]}
+  botsquad:{schemaVersion:"datanest-botsquad-consolidated-feed-v1",productionAuthorization:false,risks:[]},
+  visibility:{
+    schemaVersion:"datanest-visibility-utility-state-v1",
+    productionAuthorization:false,
+    status:"ready",
+    assessment:{seo:{score:92},platform:{coveragePercent:90}},
+    missingInputs:[]
+  }
 };
 
 test("REGULATOR is harmonized when no requirement source is unresolved",()=>{
@@ -71,6 +78,21 @@ test("REGULATOR deduplicates repeated review suggestions",()=>{
 test("REGULATOR makes missing source evidence visible instead of claiming harmony",()=>{
   const state=buildRegulatorState({config,boundaries});
   assert.equal(state.status,"attention");
-  assert.ok(state.requirements.length>=7);
+  assert.ok(state.requirements.length>=8);
   assert.ok(state.requirements.some(x=>x.title.includes("guardian")));
+});
+
+test("REGULATOR converts visibility gaps into market requirements",()=>{
+  const state=buildRegulatorState({
+    config,boundaries,
+    ...validSources,
+    visibility:{
+      ...validSources.visibility,
+      assessment:{seo:{score:65},platform:{coveragePercent:55}},
+      missingInputs:["local-trends"]
+    }
+  });
+  assert.equal(state.status,"attention");
+  assert.ok(state.requirements.some(x=>x.requirementClass==="market-visibility"&&x.title.includes("visibility baseline")));
+  assert.ok(state.requirements.some(x=>x.title.includes("local-trends")));
 });
