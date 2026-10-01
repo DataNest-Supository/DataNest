@@ -32,7 +32,9 @@ test("boundary keeps Mirror control-plane files out of promotion", () => {
     ".github/workflows/sync-canonical.yml",
     ".github/workflows/production-candidate.yml",
     "scripts/mirror-test-suite.mjs",
-    "config/mirror-rd-policy.json"
+    "config/mirror-rd-policy.json",
+    "src/components/RndTestModeToggle.tsx",
+    "src/components/OwnerRDCockpit.tsx"
   ]) {
     assert.equal(classifyPath(path, boundary).policy, "mirror_only");
   }
