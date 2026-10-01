@@ -116,16 +116,23 @@ jobs:
               },
               "canonicalRulesetMatch": canonical_ok,
               "automationRulesetActive": automation_ok,
-              "result": "protected" if canonical_ok and automation_ok else "protection-gap",
+              "result": (
+                  "api-access-unavailable"
+                  if not api_ok
+                  else "protected"
+                  if canonical_ok and automation_ok
+                  else "protection-gap"
+              ),
               "runId": os.environ.get("GITHUB_RUN_ID")
           }
 
           Path("native-protection/state/latest.json").write_text(json.dumps(evidence, indent=2) + "\n")
           print(json.dumps(evidence, indent=2))
 
-          if not api_ok:
-              print("::warning::BRANCH-X native protection could not be fully evaluated because one or more GitHub administration reads were unavailable.")
-          elif not (canonical_ok and automation_ok):
+          result = evidence["result"]
+          if result == "api-access-unavailable":
+              print("::warning::BRANCH-X native protection could not be evaluated because one or more GitHub administration reads were unavailable; evidence is api-access-unavailable.")
+          elif result == "protection-gap":
               print("::warning::BRANCH-X native protection is not fully active; evidence was published as protection-gap.")
           else:
               print("BRANCH-X native protection matches the declared policy.")
