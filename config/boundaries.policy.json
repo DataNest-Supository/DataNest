@@ -20,16 +20,61 @@
     "canonicalMutationFromFreetree": "deny",
     "autonomousDestructiveChange": "redundant-history-only",
     "aiOutputAuthority": "advisory-unless-human-approved",
-    "auditEvidence": "required-for-production-promotion"
+    "auditEvidence": "required-for-production-promotion",
+    "botsquadAuthority": "advisory-only",
+    "environmentAuthority": "environment-advisory-safe-generated-adaptation-only",
+    "freetreeEnvironmentSynchronization": "deny"
   },
   "acceptanceCriteria": [
-    {"id":"BND-001","criterion":"Production deployment requires explicit canonical human approval.","severity":"blocker"},
-    {"id":"BND-002","criterion":"Mirror and FREETREE cannot self-authorize canonical production changes.","severity":"blocker"},
-    {"id":"BND-003","criterion":"Unknown capability or safety state is not treated as permission.","severity":"blocker"},
-    {"id":"BND-004","criterion":"Credentials and secrets are not committed to source.","severity":"blocker"},
-    {"id":"BND-005","criterion":"Material automated changes remain attributable and auditable.","severity":"blocker"},
-    {"id":"BND-006","criterion":"Autonomous cleanup may delete only redundant branches with no unique commits and no open PR.","severity":"blocker"},
-    {"id":"BND-007","criterion":"AI-generated assessments and optimizations do not become certification by themselves.","severity":"blocker"},
-    {"id":"BND-008","criterion":"User-facing behavior preserves human control, reversibility, and truthful state representation.","severity":"required"}
+    {
+      "id": "BND-001",
+      "criterion": "Production deployment requires explicit canonical human approval.",
+      "severity": "blocker"
+    },
+    {
+      "id": "BND-002",
+      "criterion": "Mirror and FREETREE cannot self-authorize canonical production changes.",
+      "severity": "blocker"
+    },
+    {
+      "id": "BND-003",
+      "criterion": "Unknown capability or safety state is not treated as permission.",
+      "severity": "blocker"
+    },
+    {
+      "id": "BND-004",
+      "criterion": "Credentials and secrets are not committed to source.",
+      "severity": "blocker"
+    },
+    {
+      "id": "BND-005",
+      "criterion": "Material automated changes remain attributable and auditable.",
+      "severity": "blocker"
+    },
+    {
+      "id": "BND-006",
+      "criterion": "Autonomous cleanup may delete only redundant branches with no unique commits and no open PR.",
+      "severity": "blocker"
+    },
+    {
+      "id": "BND-007",
+      "criterion": "AI-generated assessments and optimizations do not become certification by themselves.",
+      "severity": "blocker"
+    },
+    {
+      "id": "BND-008",
+      "criterion": "User-facing behavior preserves human control, reversibility, and truthful state representation.",
+      "severity": "required"
+    },
+    {
+      "id": "BND-009",
+      "criterion": "BOTSQUAD AI agents cannot approve, merge, deploy production, weaken governance, or make autonomous commercial commitments.",
+      "severity": "blocker"
+    },
+    {
+      "id": "BND-010",
+      "criterion": "ENVIRONMENT cannot transfer production authority, weaken Boundaries, disclose secrets, or automatically synchronize FREETREE.",
+      "severity": "blocker"
+    }
   ]
 }
