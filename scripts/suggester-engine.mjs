@@ -58,6 +58,18 @@ export function buildSuggesterFeed({
     }));
   }
 
+  for(const candidate of (guardian?.observed?.source?.redundancyCandidates||[]).slice(0,50)){
+    suggestions.push(suggestion({
+      source:"guardian",
+      type:"code-streamlining",
+      priority:candidate?.severity==="high"?"high":"medium",
+      title:"Review code/workflow streamlining candidate",
+      detail:JSON.stringify(candidate),
+      automationClass:"review-required",
+      evidence:["guardian.observed.source.redundancyCandidates"]
+    }));
+  }
+
   for(const drift of guardian?.drift?.optimalConditionDrift||[]){
     suggestions.push(suggestion({
       source:"guardian",
