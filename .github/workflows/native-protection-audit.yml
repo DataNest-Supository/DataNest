@@ -45,9 +45,13 @@ jobs:
           rulesets = json.loads(rulesets_text) if rulesets_text.lstrip().startswith("[") else []
 
           expected = policy["branchClasses"]["canonical"]
-          expected_refs = {"refs/heads/main", "refs/heads/release/**"}
+          expected_automation = policy["branchClasses"]["protected_automation"]
+          expected_refs = {f"refs/heads/{p}" for p in expected["patterns"]}
+          expected_automation_refs = {f"refs/heads/{p}" for p in expected_automation["patterns"]}
           expected_checks = set(expected["requiredStatusChecks"])
+          expected_automation_checks = set(expected_automation["requiredStatusChecks"])
           required_types = {"pull_request", "required_status_checks", "required_linear_history", "non_fast_forward", "deletion"}
+          required_automation_types = {"required_status_checks", "non_fast_forward", "deletion"}
 
           canonical = next((r for r in rulesets if r.get("name") == "BRANCH-X Canonical"), None)
           automation = next((r for r in rulesets if r.get("name") == "BRANCH-X Automation"), None)
@@ -58,18 +62,28 @@ jobs:
           def rule_types(rule):
               return {x.get("type") for x in (rule or {}).get("rules", []) if isinstance(x, dict) and x.get("type")}
 
+          def get_rule(rule, rule_type):
+              return next((x for x in (rule or {}).get("rules", []) if x.get("type") == rule_type), None)
+
           def required_checks(rule):
               found = set()
-              for item in (rule or {}).get("rules", []):
-                  if item.get("type") == "required_status_checks":
-                      for check in (item.get("parameters") or {}).get("required_status_checks", []):
-                          if isinstance(check, dict) and check.get("context"):
-                              found.add(check["context"])
+              item = get_rule(rule, "required_status_checks")
+              for check in ((item or {}).get("parameters") or {}).get("required_status_checks", []):
+                  if isinstance(check, dict) and check.get("context"):
+                      found.add(check["context"])
               return found
 
           canonical_types = rule_types(canonical)
           canonical_checks = required_checks(canonical)
           canonical_refs = refs(canonical)
+          automation_types = rule_types(automation)
+          automation_checks = required_checks(automation)
+          automation_refs = refs(automation)
+
+          canonical_pull_request = get_rule(canonical, "pull_request")
+          canonical_pull_request_params = (canonical_pull_request or {}).get("parameters") or {}
+          canonical_status_params = (get_rule(canonical, "required_status_checks") or {}).get("parameters") or {}
+          automation_status_params = (get_rule(automation, "required_status_checks") or {}).get("parameters") or {}
 
           api_ok = (
               Path("native-protection/state/main.http").read_text().strip() == "200"
@@ -79,16 +93,34 @@ jobs:
           canonical_ok = (
               api_ok
               and bool(canonical)
+              and canonical.get("target") == "branch"
               and canonical.get("enforcement") == "active"
+              and not canonical.get("bypass_actors")
               and expected_refs.issubset(canonical_refs)
               and required_types.issubset(canonical_types)
               and expected_checks.issubset(canonical_checks)
+              and canonical_pull_request_params.get("required_approving_review_count", 0) >= expected["requiredApprovingReviews"]
+              and canonical_pull_request_params.get("dismiss_stale_reviews_on_push") is expected["dismissStaleReviews"]
+              and canonical_pull_request_params.get("required_review_thread_resolution") is expected["requireConversationResolution"]
+              and canonical_status_params.get("do_not_enforce_on_create") is False
+              and canonical_status_params.get("strict_required_status_checks_policy") is True
           )
 
-          automation_ok = api_ok and bool(automation) and automation.get("enforcement") == "active"
-
+          automation_ok = (
+              api_ok
+              and bool(automation)
+              and automation.get("target") == "branch"
+              and automation.get("enforcement") == "active"
+              and not automation.get("bypass_actors")
+              and expected_automation_refs.issubset(automation_refs)
+              and required_automation_types.issubset(automation_types)
+              and "pull_request" not in automation_types
+              and expected_automation_checks.issubset(automation_checks)
+              and automation_status_params.get("do_not_enforce_on_create") is False
+              and automation_status_params.get("strict_required_status_checks_policy") is True
+          )
           evidence = {
-              "schemaVersion": "datanest-native-protection-audit-v2",
+              "schemaVersion": "datanest-native-protection-audit-v3",
               "repository": os.environ.get("GITHUB_REPOSITORY"),
               "observedMainProtectedLegacyFlag": bool(main.get("protected")),
               "mainEndpointHttp": Path("native-protection/state/main.http").read_text().strip(),
