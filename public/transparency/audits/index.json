@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-09-25",
+  "updated_at": "2026-10-01",
   "documents": [
     {
       "id": "external-full-system-audit-brief-v1",
@@ -86,6 +86,30 @@
         "ownership_effect": false,
         "role_effect": false,
         "certification_effect": false
+      }
+    },
+    {
+      "id": "enforcer-continuous-defence",
+      "title": "DataNest ENFORCER Continuous Defence Transparency",
+      "document_type": "continuous_defence_index",
+      "version": "1.0",
+      "status": "published",
+      "audit_result_status": "continuous_generated_evidence",
+      "published_at": "2026-10-01",
+      "source": "../enforcer/index.json",
+      "coverage": {
+        "boundaries": true,
+        "security_workflow_state": true,
+        "complete_approved_knowledge": true,
+        "environment_compatibility": true,
+        "secret_values": false
+      },
+      "authority": {
+        "governance_effect": false,
+        "financial_effect": false,
+        "ownership_effect": false,
+        "role_effect": false,
+        "production_authorization": false
       }
     }
   ]
