@@ -14,7 +14,8 @@
     "^automation/conductor$",
     "^automation/suggester$",
     "^automation/calmer$",
-    "^automation/regulator$"
+    "^automation/regulator$",
+    "^automation/visibility-utility$"
   ],
   "supabaseProjects": [
     {
