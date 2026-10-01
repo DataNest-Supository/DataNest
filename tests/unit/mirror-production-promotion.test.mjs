@@ -26,13 +26,13 @@ test("Mirror production import is isolated from main and live deployment",()=>{
   assert.doesNotMatch(importWorkflow,/git push origin main/);
 });
 
-test("Mirror import validates selective-sync lineage instead of canonical ancestry",()=>{
-  assert.match(importWorkflow,/mirror_sync_base_sha:/);
-  assert.match(importWorkflow,/MIRROR_SYNC_BASE_SHA/);
-  assert.match(importWorkflow,/merge-base --is-ancestor "\$MIRROR_SYNC_BASE_SHA" "\$MIRROR_SHA"/);
+test("Mirror import validates post-sync anchor lineage instead of canonical ancestry",()=>{
+  assert.match(importWorkflow,/mirror_sync_sha:/);
+  assert.match(importWorkflow,/MIRROR_SYNC_SHA/);
+  assert.match(importWorkflow,/merge-base --is-ancestor "\$MIRROR_SYNC_SHA" "\$MIRROR_SHA"/);
   assert.match(importWorkflow,/merge-base --is-ancestor "\$BASE_SHA" origin\/main/);
   assert.doesNotMatch(importWorkflow,/merge-base --is-ancestor "\$BASE_SHA" "\$MIRROR_SHA"/);
-  assert.match(importWorkflow,/git diff --name-only "\$MIRROR_SYNC_BASE_SHA" "\$MIRROR_SHA"/);
+  assert.match(importWorkflow,/git diff --name-only "\$MIRROR_SYNC_SHA" "\$MIRROR_SHA"/);
 });
 
 test("Mirror-only controls are excluded while canonical/protected divergence remains blocked",()=>{
@@ -74,7 +74,7 @@ test("candidate artifact identity and digest are fail-closed",()=>{
   assert.match(importWorkflow,/Candidate patch digest does not match/);
   assert.match(importWorkflow,/candidateArtifact:\$candidateArtifact/);
   assert.match(importWorkflow,/candidatePatchDigest:\$candidatePatchDigest/);
-  assert.match(importWorkflow,/mirrorSyncBaseSha:\$mirrorSyncBaseSha/);
+  assert.match(importWorkflow,/mirrorSyncSha:\$mirrorSyncSha/);
 });
 
 test("promotion manifest starts with zero production authority",()=>{
