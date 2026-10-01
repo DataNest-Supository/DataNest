@@ -32,7 +32,8 @@
     "calmer:assess": "node scripts/calmer-governance.mjs",
     "regulator:assess": "node scripts/regulator-engine.mjs",
     "visibility:assess": "node scripts/visibility-utility.mjs",
-    "liberty:index": "node scripts/liberty-in-all-indexer.mjs"
+    "liberty:index": "node scripts/liberty-in-all-indexer.mjs",
+    "branch-protection:verify": "node scripts/branch-protection-tree.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
