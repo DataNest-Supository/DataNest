@@ -12,6 +12,7 @@ test("boundary contract fails closed for unclassified paths", () => {
 
 test("boundary protects explicit canonical-only release/governance files", () => {
   for (const path of [
+    "DEVELOPER_COORDINATION.md",
     "scripts/write-release-manifest.mjs",
     "scripts/write-ui-governance-evidence.mjs",
     "config/worktree-gate-timeframes.json",
