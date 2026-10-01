@@ -98,5 +98,11 @@
     "package.json",
     "config/conductor.tree.json",
     "config/suggester.tree.json"
-  ]
+  ],
+  "coordination": {
+    "conductorMaxAgeMinutes": 30,
+    "suggesterMaxAgeMinutes": 30,
+    "requiredConductorAuthority": "process-synchronization",
+    "requiredSuggesterAuthority": "optimization-advisory"
+  }
 }
