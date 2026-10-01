@@ -227,6 +227,39 @@
         "Behavioral, dependency, provider, governance, UI, function, product and business changes remain review-required",
         "SUGGESTER cannot merge, deploy production, change Boundaries, or suppress ENFORCER findings"
       ]
+    },
+    {
+      "id": "calmer_governance_softening",
+      "tolerance": "maximum-softening-above-non-negotiable-floor",
+      "patterns": [
+        "calmer/**",
+        "config/calmer.tree.json",
+        "scripts/calmer-governance.mjs",
+        ".github/workflows/calmer.yml",
+        "scripts/propose-worktree-gate-timeframe.mjs"
+      ],
+      "acceptance": [
+        "CALMER minimizes planning/evidence friction but does not remove automated checks or mandatory approvals",
+        "CALMER cannot soften Boundaries hard rules, ENFORCER blockers, security thresholds, production authority or secret protection",
+        "Owner overrides cannot go below the computed minimum-pass floor",
+        "STONE/GOLD/DIAMOND packages are evidence-based incentives, not authorization credentials"
+      ]
+    },
+    {
+      "id": "regulator_harmony",
+      "tolerance": "transparent-requirement-regulation-with-bounded-action",
+      "patterns": [
+        "regulator/**",
+        "config/regulator.tree.json",
+        "scripts/regulator-engine.mjs",
+        ".github/workflows/regulator.yml"
+      ],
+      "acceptance": [
+        "REGULATOR requirement state is transparent and attributable to source evidence",
+        "BOTSQUAD audit/stress/acquisition/supply/action roles remain advisory and non-authorizing",
+        "Acquisition means identifying free/open/already-authorized resources and never purchasing, committing funds or acquiring credentials",
+        "REGULATOR cannot bypass security, rewrite Boundaries, merge or deploy production"
+      ]
     }
   ],
   "hardRules": [
@@ -322,6 +355,40 @@
         "\"neverSynchronizeFreetree\": false"
       ],
       "message": "CONDUCTOR and SUGGESTER may coordinate and suggest but cannot acquire production/governance authority or synchronize FREETREE."
+    },
+    {
+      "id": "no_calmer_guardrail_removal",
+      "files": [
+        "config/calmer.tree.json",
+        "scripts/propose-worktree-gate-timeframe.mjs",
+        "infra/reson8-forge/specialized-trees.json"
+      ],
+      "forbiddenText": [
+        "\"mayRemoveHardGate\": true",
+        "\"mayLowerSecurityThreshold\": true",
+        "\"mayOverrideBoundaries\": true",
+        "\"mayApproveProduction\": true",
+        "\"mayWeakenHumanAuthority\": true",
+        "\"productionAuthority\": true"
+      ],
+      "message": "CALMER may reduce avoidable friction only above non-negotiable DataNest governance/security floors."
+    },
+    {
+      "id": "no_regulator_external_authority",
+      "files": [
+        "config/regulator.tree.json",
+        "infra/reson8-forge/specialized-trees.json"
+      ],
+      "forbiddenText": [
+        "\"mayPurchase\": true",
+        "\"mayCommitFunds\": true",
+        "\"mayAcquireCredentials\": true",
+        "\"mayBypassSecurity\": true",
+        "\"mayChangeBoundaries\": true",
+        "\"mayDeployProduction\": true",
+        "\"productionAuthority\": true"
+      ],
+      "message": "REGULATOR may coordinate requirements but cannot spend, acquire credentials, bypass security or gain production authority."
     }
   ],
   "resultSemantics": {
