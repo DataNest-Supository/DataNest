@@ -29,8 +29,10 @@ export function buildAutomationXAnnotation(env=process.env){
   const requestedReview=clean(env.AUTOMATION_X_HUMAN_REVIEW_REQUIRED).toLowerCase();
   let humanReview;
   if(requestedReview==="true") humanReview=true;
-  else if(requestedReview==="false") humanReview=false;
-  else if(requestedReview) throw new Error("AUTOMATION_X_HUMAN_REVIEW_REQUIRED must be true or false");
+  else if(requestedReview==="false") {
+    if(effect!=="read_only") throw new Error("AUTOMATION_X_HUMAN_REVIEW_REQUIRED cannot be false for non-read_only effects");
+    humanReview=false;
+  } else if(requestedReview) throw new Error("AUTOMATION_X_HUMAN_REVIEW_REQUIRED must be true or false");
   else humanReview=effect!=="read_only" || automationClass==="enforcement" || automationClass==="mutation" || automationClass==="deployment";
   const annotationId=clean(env.AUTOMATION_X_ANNOTATION_ID) || "ax-"+sanitizeId(automationId)+"-"+runId+"-"+runAttempt;
   const reason=clean(env.AUTOMATION_X_HUMAN_REVIEW_REASON) || (humanReview
