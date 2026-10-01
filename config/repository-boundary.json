@@ -8,7 +8,8 @@
     {
       "policy": "mirror_only",
       "patterns": [
-        ".github/**",
+        ".github/workflows/production-candidate.yml",
+        ".github/workflows/sync-canonical.yml",
         ".datanest/**",
         "config/repository-boundary.json",
         "config/mirror-rd-policy.json",
@@ -31,6 +32,8 @@
     {
       "policy": "canonical_only",
       "patterns": [
+        ".github/workflows/mirror-production-import.yml",
+        ".github/workflows/notify-mirror-canonical.yml",
         "scripts/write-release-manifest.mjs",
         "scripts/write-ui-governance-evidence.mjs",
         "config/worktree-gate-timeframes.json",
@@ -58,6 +61,8 @@
     {
       "policy": "protected_shared",
       "patterns": [
+        ".github/workflows/**",
+        ".github/actions/**",
         "infra/reson8-forge/README.md",
         "infra/reson8-forge/scripts/backup.sh",
         ".env.example",
