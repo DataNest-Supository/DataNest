@@ -48,6 +48,16 @@
       "id": "guardian",
       "repository": "DataNest-Supository/DataNest",
       "mode": "specialized-health-and-safe-healing"
+    },
+    {
+      "id": "conductor",
+      "repository": "DataNest-Supository/DataNest",
+      "mode": "specialized-process-synchronization"
+    },
+    {
+      "id": "suggester",
+      "repository": "DataNest-Supository/DataNest",
+      "mode": "specialized-continuous-optimization"
     }
   ],
   "dimensions": [
@@ -126,6 +136,14 @@
     {
       "target": "guardian",
       "path": "environment/feeds/guardian.json"
+    },
+    {
+      "target": "conductor",
+      "path": "environment/feeds/conductor.json"
+    },
+    {
+      "target": "suggester",
+      "path": "environment/feeds/suggester.json"
     }
   ]
 }
