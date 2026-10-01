@@ -21,6 +21,62 @@ async function exists(filename){
 }
 const sha256=value=>"sha256:"+createHash("sha256").update(String(value)).digest("hex");
 
+async function githubPublicJson(endpoint){
+  const response=await fetch("https://api.github.com"+endpoint,{
+    headers:{
+      Accept:"application/vnd.github+json",
+      "X-GitHub-Api-Version":"2022-11-28",
+      "User-Agent":"datanest-guardian"
+    }
+  });
+  if(response.status===404) return null;
+  if(!response.ok) throw new Error("GitHub public API "+response.status+" for "+endpoint);
+  return response.json();
+}
+
+async function collectRemoteRepositories(entries=[]){
+  const out={};
+  for(const entry of entries){
+    const repository=String(entry.repository||"");
+    if(!repository) continue;
+    try{
+      const meta=await githubPublicJson("/repos/"+repository);
+      if(!meta){
+        out[repository]={
+          available:false,
+          required:entry.required===true,
+          mode:entry.mode||null,
+          reason:"not_found"
+        };
+        continue;
+      }
+      const branches=await githubPublicJson("/repos/"+repository+"/branches?per_page=100")||[];
+      out[repository]={
+        available:true,
+        required:entry.required===true,
+        mode:entry.mode||null,
+        defaultBranch:meta.default_branch||null,
+        expectedDefaultBranch:entry.expectedDefaultBranch||null,
+        defaultBranchMatches:!entry.expectedDefaultBranch||meta.default_branch===entry.expectedDefaultBranch,
+        branchCount:Array.isArray(branches)?branches.length:0,
+        branches:Array.isArray(branches)?branches.map(x=>x.name).filter(Boolean):[],
+        pushedAt:meta.pushed_at||null,
+        updatedAt:meta.updated_at||null,
+        healingAuthority:entry.healingAuthority||null
+      };
+    }catch(error){
+      out[repository]={
+        available:false,
+        required:entry.required===true,
+        mode:entry.mode||null,
+        reason:"probe_failed",
+        error:error.message
+      };
+    }
+  }
+  return out;
+}
+
 async function sourceHashes(paths=[]){
   const out={};
   for(const filename of paths){
@@ -149,6 +205,7 @@ export function buildGuardianSnapshot({
   previousSnapshot=null,
   sourceState={},
   treeContracts={},
+  remoteRepositories={},
   headSha=null,
   generatedAt=new Date().toISOString()
 }){
@@ -258,6 +315,31 @@ export function buildGuardianSnapshot({
   health.score+=botsquadAvailable?5:2;
   if(!botsquadAvailable) optimalDrift.push({control:"botsquad-feed",expected:"available",observed:"missing"});
 
+  const remoteRequiredFailures=[];
+  for(const [repository,state] of Object.entries(remoteRepositories||{})){
+    if(state?.required && (!state.available || state.defaultBranchMatches===false)){
+      remoteRequiredFailures.push({
+        repository,
+        reason:!state.available?(state.reason||"unavailable"):"default_branch_drift",
+        observedDefault:state.defaultBranch||null,
+        expectedDefault:state.expectedDefaultBranch||null
+      });
+    }
+  }
+  checks.push({
+    id:"remote-repositories",
+    status:remoteRequiredFailures.length?"degraded":"healthy",
+    weight:0,
+    earned:0,
+    detail:remoteRequiredFailures.length
+      ?remoteRequiredFailures.length+" required remote repository condition(s) need review."
+      :"Required remote repository health probes are available and aligned."
+  });
+  if(remoteRequiredFailures.length) optimalDrift.push({
+    control:"remote-repositories",
+    failures:remoteRequiredFailures
+  });
+
   const missingBlueprintSources=Object.entries(sourceState)
     .filter(([,state])=>state?.missing)
     .map(([filename])=>filename);
@@ -335,7 +417,8 @@ export function buildGuardianSnapshot({
         generatedAt:botsquad?.generatedAt||null
       },
       branches,
-      source:code
+      source:code,
+      remoteRepositories
     },
     drift:{
       optimalConditionDrift:optimalDrift,
@@ -392,6 +475,7 @@ async function main(){
   const branchReport=await readJson(process.env.GUARDIAN_BRANCH_REPORT_PATH||"/tmp/guardian/branch-cleaner-report.json",{});
   const reviewerReport=await readJson(process.env.GUARDIAN_REVIEWER_REPORT_PATH||"/tmp/guardian/workflow-reviewer-report.json",{});
   const previousSnapshot=await readJson(process.env.GUARDIAN_PREVIOUS_SNAPSHOT_PATH||"/tmp/guardian/previous.json",null);
+  const remoteRepositories=await collectRemoteRepositories(config.remoteRepositories||[]);
 
   const sources=await sourceHashes(blueprint.blueprintSources||[]);
   const contracts={};
@@ -405,7 +489,7 @@ async function main(){
   const snapshot=buildGuardianSnapshot({
     config,blueprint,environment,enforcer,knowledge,botsquad,
     branchReport,reviewerReport,previousSnapshot,
-    sourceState:sources,treeContracts:contracts,headSha
+    sourceState:sources,treeContracts:contracts,remoteRepositories,headSha
   });
 
   const outDir=arg("--out-dir","guardian");
