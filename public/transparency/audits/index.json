@@ -111,6 +111,33 @@
         "role_effect": false,
         "production_authorization": false
       }
+    },
+    {
+      "id": "regulator-continuous-harmony",
+      "title": "DataNest REGULATOR Continuous Harmony Transparency",
+      "document_type": "continuous_regulation_index",
+      "version": "1.0",
+      "status": "published",
+      "audit_result_status": "continuous_generated_evidence",
+      "published_at": "2026-10-01",
+      "source": "../regulator/index.json",
+      "coverage": {
+        "requirements": true,
+        "botsquad_audit": true,
+        "stress_test": true,
+        "free_open_acquisition_scout": true,
+        "supply_readiness": true,
+        "action_planning": true,
+        "financial_commitments": false,
+        "credential_acquisition": false
+      },
+      "authority": {
+        "governance_effect": false,
+        "financial_effect": false,
+        "ownership_effect": false,
+        "role_effect": false,
+        "production_authorization": false
+      }
     }
   ]
 }
