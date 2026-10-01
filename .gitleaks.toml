@@ -21,3 +21,18 @@ regexTarget = "line"
 regexes = [
   '''merge\.billingReminder\.v1'''
 ]
+
+[[allowlists]]
+description = "Historical external-AI trace-key fixture from one unit-test commit; not authentication material."
+targetRules = ["generic-api-key"]
+condition = "AND"
+commits = [
+  "7ac61b91756d23a0061c2ef98ce45bf161edabf7"
+]
+paths = [
+  '''^tests/unit/external-ai-return\.test\.mjs$'''
+]
+regexTarget = "line"
+regexes = [
+  '''(?i)expectedTraceKey:\s*"[A-Za-z0-9_-]*trace[A-Za-z0-9_-]*"'''
+]
