@@ -857,7 +857,7 @@ async function main() {
           reason:"control_plane_blockers",
           blockerCount:strictBlockers.length,
         }
-      : await applyDeletes(repo, token, github.branches, config, { pruneArchived:a.pruneArchived }))
+      : await applyDeletes(repo, token, github.branches, config, { pruneArchived:gitOnlySafeApply ? false : a.pruneArchived }))
     : { deleted:[], failed:[], skipped:false };
 
   const report = {
