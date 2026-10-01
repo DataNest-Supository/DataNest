@@ -22,3 +22,8 @@ The streamliner may apply deterministic, byte-safe text normalization. In canoni
 - **DataNest** — scheduled cleaner + PR-based streamliner.
 - **Mirror-DataNest** — scheduled safe cleaner + R&D streamliner.
 - **FREETREE** — isolated local maintenance only; no synchronization to DataNest, Mirror, Knowledge, or Boundaries.
+
+
+## BOTSQUAD and ENVIRONMENT branches
+
+The cleaner treats `automation/botsquad/*` and `automation/environment-feed` as protected automation state. Generated feeds may be refreshed or replaced by their owning workflows, but generic maintenance must not delete those branches. Specialized-tree source/configuration changes remain subject to canonical review.
