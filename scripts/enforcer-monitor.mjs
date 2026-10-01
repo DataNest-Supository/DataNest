@@ -73,6 +73,20 @@ export function buildEnforcerAssessment({
   });
   if(!knowledgeOpen) blockers.push("knowledge-access-filter-detected");
 
+  const knowledgeFeedAvailable=
+    knowledge?.schemaVersion==="datanest-knowledge-feed-v1" &&
+    knowledge?.target==="enforcer" &&
+    knowledge?.productionAuthorization===false;
+  if(!knowledgeFeedAvailable){
+    checks.push({id:"knowledge-feed-state",status:"review",detail:"ENFORCER Knowledge feed is missing or not yet initialized."});
+    reviews.push("knowledge-feed-unavailable");
+  }else if(knowledgeItems.length===0){
+    checks.push({id:"knowledge-feed-state",status:"review",detail:"ENFORCER Knowledge feed is initialized but currently empty."});
+    reviews.push("knowledge-feed-empty");
+  }else{
+    checks.push({id:"knowledge-feed-state",status:"pass",detail:`ENFORCER loaded ${knowledgeItems.length} approved Knowledge item(s).`});
+  }
+
   const boundaryScopes=Array.isArray(boundaries?.scopes)?boundaries.scopes:[];
   const hardRules=Array.isArray(boundaries?.hardRules)?boundaries.hardRules:[];
   const boundariesPresent=boundaryScopes.length>0 && hardRules.length>0;
@@ -101,11 +115,18 @@ export function buildEnforcerAssessment({
   }
 
   const environmentReviews=Array.isArray(environment?.reviewRequired)?environment.reviewRequired:[];
-  if(environmentReviews.length){
+  const environmentFeedAvailable=
+    environment?.schemaVersion==="datanest-environment-feed-v1" &&
+    environment?.target==="enforcer" &&
+    environment?.productionAuthorization===false;
+  if(!environmentFeedAvailable){
+    checks.push({id:"environment",status:"review",detail:"ENFORCER ENVIRONMENT feed is missing or not yet initialized."});
+    reviews.push("environment-feed-unavailable");
+  }else if(environmentReviews.length){
     checks.push({id:"environment",status:"review",detail:`${environmentReviews.length} ENVIRONMENT item(s) require human review.`});
     reviews.push("environment-review-required");
   }else{
-    checks.push({id:"environment",status:"pass",detail:"No current ENVIRONMENT material-review requirement was supplied."});
+    checks.push({id:"environment",status:"pass",detail:"Current ENFORCER ENVIRONMENT feed has no material-review requirements."});
   }
 
   if(config?.productionAuthorization===true){
@@ -210,18 +231,10 @@ async function main(){
   const auditIndex=await readJson("public/transparency/audits/index.json",{documents:[]});
   if(!config||!boundaries) throw new Error("ENFORCER requires config/enforcer.tree.json and config/boundaries.policy.json");
 
-  let securityRun=null;
-  if(process.env.ENFORCER_SECURITY_RUN_ID){
-    securityRun={
-      id:Number(process.env.ENFORCER_SECURITY_RUN_ID),
-      status:process.env.ENFORCER_SECURITY_RUN_STATUS||"completed",
-      conclusion:process.env.ENFORCER_SECURITY_RUN_CONCLUSION||null,
-      html_url:process.env.ENFORCER_SECURITY_RUN_URL||null,
-      head_sha:process.env.ENFORCER_SECURITY_RUN_SHA||null
-    };
-  }else{
-    securityRun=await fetchLatestSecurityRun(process.env.GITHUB_TOKEN||"",process.env.GITHUB_REPOSITORY||"");
-  }
+  const securityRun=await fetchLatestSecurityRun(
+    process.env.GITHUB_TOKEN||"",
+    process.env.GITHUB_REPOSITORY||""
+  );
 
   const assessment=buildEnforcerAssessment({config,boundaries,knowledge,environment,securityRun,auditIndex});
   const transparency=buildTransparencySummary(assessment);

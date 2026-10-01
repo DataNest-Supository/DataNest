@@ -16,6 +16,9 @@ const boundaries={
   hardRules:[{id:"no-secrets"}]
 };
 const knowledge={
+  schemaVersion:"datanest-knowledge-feed-v1",
+  target:"enforcer",
+  productionAuthorization:false,
   items:[
     {id:"a",categories:["security"],summary:"security learning",evidenceHash:"sha256:a"},
     {id:"b",categories:["ux"],summary:"ux learning",evidenceHash:"sha256:b"}
@@ -24,7 +27,7 @@ const knowledge={
 
 test("ENFORCER consumes all approved Knowledge categories without filtering",()=>{
   const result=buildEnforcerAssessment({
-    config,boundaries,knowledge,environment:{reviewRequired:[]},
+    config,boundaries,knowledge,environment:{schemaVersion:"datanest-environment-feed-v1",target:"enforcer",productionAuthorization:false,reviewRequired:[]},
     securityRun:{id:1,status:"completed",conclusion:"success"},
     auditIndex:{documents:[{id:"audit-1"}]},
     generatedAt:"2026-10-01T00:00:00.000Z"
@@ -38,7 +41,7 @@ test("ENFORCER consumes all approved Knowledge categories without filtering",()=
 
 test("ENFORCER blocks security failure without acquiring production authority",()=>{
   const result=buildEnforcerAssessment({
-    config,boundaries,knowledge,environment:{reviewRequired:[]},
+    config,boundaries,knowledge,environment:{schemaVersion:"datanest-environment-feed-v1",target:"enforcer",productionAuthorization:false,reviewRequired:[]},
     securityRun:{id:2,status:"completed",conclusion:"failure"},
     auditIndex:{documents:[{id:"audit-1"}]}
   });
@@ -53,7 +56,7 @@ test("ENFORCER rejects filtered Knowledge configuration",()=>{
     knowledgeAccess:{...config.knowledgeAccess,categoryFilters:["security"]}
   };
   const result=buildEnforcerAssessment({
-    config:filtered,boundaries,knowledge,environment:{reviewRequired:[]},
+    config:filtered,boundaries,knowledge,environment:{schemaVersion:"datanest-environment-feed-v1",target:"enforcer",productionAuthorization:false,reviewRequired:[]},
     securityRun:{status:"completed",conclusion:"success"},
     auditIndex:{documents:[{id:"audit-1"}]}
   });
@@ -63,7 +66,7 @@ test("ENFORCER rejects filtered Knowledge configuration",()=>{
 
 test("transparency summary excludes raw learning bodies and secret payloads",()=>{
   const result=buildEnforcerAssessment({
-    config,boundaries,knowledge,environment:{reviewRequired:[]},
+    config,boundaries,knowledge,environment:{schemaVersion:"datanest-environment-feed-v1",target:"enforcer",productionAuthorization:false,reviewRequired:[]},
     securityRun:{status:"completed",conclusion:"success"},
     auditIndex:{documents:[{id:"audit-1"}]}
   });
@@ -71,4 +74,41 @@ test("transparency summary excludes raw learning bodies and secret payloads",()=
   assert.equal(publicSummary.disclosure.secretValues,false);
   assert.equal(publicSummary.disclosure.rawSensitiveScannerPayloads,false);
   assert.equal("items" in publicSummary.knowledge,false);
+});
+
+test("ENFORCER reports dependency feed bootstrap gaps as review",()=>{
+  const result=buildEnforcerAssessment({
+    config,
+    boundaries,
+    knowledge:{items:[]},
+    environment:{},
+    securityRun:{status:"completed",conclusion:"success"},
+    auditIndex:{documents:[{id:"audit-1"}]}
+  });
+  assert.equal(result.status,"review");
+  assert.ok(result.reviews.includes("knowledge-feed-unavailable"));
+  assert.ok(result.reviews.includes("environment-feed-unavailable"));
+});
+
+test("ENFORCER reports an initialized empty Knowledge feed as review",()=>{
+  const result=buildEnforcerAssessment({
+    config,
+    boundaries,
+    knowledge:{
+      schemaVersion:"datanest-knowledge-feed-v1",
+      target:"enforcer",
+      productionAuthorization:false,
+      items:[]
+    },
+    environment:{
+      schemaVersion:"datanest-environment-feed-v1",
+      target:"enforcer",
+      productionAuthorization:false,
+      reviewRequired:[]
+    },
+    securityRun:{status:"completed",conclusion:"success"},
+    auditIndex:{documents:[{id:"audit-1"}]}
+  });
+  assert.equal(result.status,"review");
+  assert.ok(result.reviews.includes("knowledge-feed-empty"));
 });
