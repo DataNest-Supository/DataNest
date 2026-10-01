@@ -38,48 +38,37 @@
         "do_not_enforce_on_create": false,
         "required_status_checks": [
           {
-            "context": "CI",
-            "integration_id": -1
+            "context": "CI"
           },
           {
-            "context": "PR Verification",
-            "integration_id": -1
+            "context": "PR Verification"
           },
           {
-            "context": "Security scan",
-            "integration_id": -1
+            "context": "Security scan"
           },
           {
-            "context": "DataNest AI Certification",
-            "integration_id": -1
+            "context": "DataNest AI Certification"
           },
           {
-            "context": "DataNest Boundaries",
-            "integration_id": -1
+            "context": "DataNest Boundaries"
           },
           {
-            "context": "ENFORCER Defence Tree",
-            "integration_id": -1
+            "context": "ENFORCER Defence Tree"
           },
           {
-            "context": "GUARDIAN Health & Healing Tree",
-            "integration_id": -1
+            "context": "GUARDIAN Health & Healing Tree"
           },
           {
-            "context": "CALMER Governance Softening Tree",
-            "integration_id": -1
+            "context": "CALMER Governance Softening Tree"
           },
           {
-            "context": "REGULATOR Harmony Tree",
-            "integration_id": -1
+            "context": "REGULATOR Harmony Tree"
           },
           {
-            "context": "VISIBILITY-UTILITY Market Presence Tree",
-            "integration_id": -1
+            "context": "VISIBILITY-UTILITY Market Presence Tree"
           },
           {
-            "context": "BRANCH-X Protection Tree",
-            "integration_id": -1
+            "context": "BRANCH-X Protection Tree"
           }
         ],
         "strict_required_status_checks_policy": true
