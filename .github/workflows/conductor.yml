@@ -20,6 +20,7 @@ on:
       - "SUGGESTER Optimization Tree"
       - "CALMER Governance Softening Tree"
       - "REGULATOR Harmony Tree"
+      - "VISIBILITY-UTILITY Market Presence Tree"
     types: [completed]
 
 permissions:
@@ -109,7 +110,7 @@ jobs:
             suggester.yml)
               gh workflow run "$workflow" --ref main -f conductor_run_id="$GITHUB_RUN_ID"
               ;;
-            knowledge-tree.yml|environment-tree.yml|boundaries-assessment.yml|security-scan.yml|enforcer.yml|botsquad.yml|guardian.yml|calmer.yml|regulator.yml)
+            knowledge-tree.yml|environment-tree.yml|boundaries-assessment.yml|security-scan.yml|enforcer.yml|botsquad.yml|guardian.yml|calmer.yml|regulator.yml|visibility-utility.yml)
               gh workflow run "$workflow" --ref main
               ;;
             *)
