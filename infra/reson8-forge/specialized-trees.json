@@ -86,6 +86,12 @@
       "ref": "automation/regulator",
       "productionAuthority": false,
       "forgeMode": "observe-requirements-and-harmony"
+    },
+    "visibility-utility": {
+      "role": "visibility-market-intelligence-and-route-to-market",
+      "ref": "automation/visibility-utility",
+      "productionAuthority": false,
+      "forgeMode": "observe-seo-market-and-projection-evidence"
     }
   },
   "rules": [
@@ -98,6 +104,7 @@
     "CONDUCTOR coordinates workflow timing and dispatch but cannot merge, deploy production, rewrite Boundaries, or synchronize FREETREE.",
     "SUGGESTER may emit only allowlisted reversible autonomous commands; all other optimizations remain review-required.",
     "CALMER may soften planning friction only above non-negotiable Boundaries, ENFORCER, security and human-authority floors.",
-    "REGULATOR may use BOTSQUAD to audit, stress-test and plan approved/free/open requirements but cannot spend, acquire credentials or gain production authority."
+    "REGULATOR may use BOTSQUAD to audit, stress-test and plan approved/free/open requirements but cannot spend, acquire credentials or gain production authority.",
+    "VISIBILITY-UTILITY may model SEO, market presence and routes to market but cannot spend, change pricing, make binding sales commitments or publish unverified claims."
   ]
 }
