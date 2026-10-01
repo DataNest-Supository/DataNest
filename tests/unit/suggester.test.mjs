@@ -35,7 +35,13 @@ test("SUGGESTER keeps blueprint, security and BOTSQUAD changes review-required",
     guardian:{
       status:"degraded",
       health:{score:80},
-      observed:{branches:{redundantBranchCount:0},source:{safeRefinementCount:0}},
+      observed:{
+        branches:{redundantBranchCount:0},
+        source:{
+          safeRefinementCount:0,
+          redundancyCandidates:[{severity:"medium",category:"code-structure",code:"long_function",file:"x.mjs"}]
+        }
+      },
       drift:{optimalConditionDrift:[{control:"environment",dimension:"runtime",expected:"compatible",observed:"review"}]}
     },
     knowledge:{itemCount:10,optimizationCandidates:[{category:"maintenance"}]},
