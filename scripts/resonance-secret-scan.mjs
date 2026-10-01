@@ -100,7 +100,7 @@ function scanCurrentTree() {
 
 function scanHistory() {
   const findings = [];
-  const entries = git(["rev-list", "--objects", "--all"]).split("\n").map((line) => line.trim()).filter(Boolean);
+  const entries = git(["rev-list", "--objects", "HEAD"]).split("\n").map((line) => line.trim()).filter(Boolean);
   const seenBlobs = new Set();
   for (const entry of entries) {
     const firstSpace = entry.indexOf(" ");
