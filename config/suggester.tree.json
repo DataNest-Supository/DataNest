@@ -12,7 +12,9 @@
     "automation/environment-feed:environment/feeds/datanest.json",
     "automation/enforcer:enforcer/state/latest.json",
     "automation/botsquad/orchestrator:botsquad/feeds/datanest.json",
-    "automation/conductor:conductor/state/latest.json"
+    "automation/conductor:conductor/state/latest.json",
+    "automation/calmer:calmer/feeds/datanest.json",
+    "automation/regulator:regulator/state/latest.json"
   ],
   "automationClasses": {
     "autonomousSafe": [
