@@ -18,6 +18,7 @@ on:
       - "Security scan"
       - "DataNest Maintenance"
       - "Resonance Forge Phase A"
+      - "VISIBILITY-UTILITY Market Presence Tree"
     types: [completed]
 
 permissions:
@@ -55,7 +56,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p /tmp/guardian
-          for branch in automation/knowledge-feed automation/environment-feed automation/enforcer automation/botsquad/orchestrator automation/conductor automation/suggester automation/calmer automation/regulator automation/guardian; do
+          for branch in automation/knowledge-feed automation/environment-feed automation/enforcer automation/botsquad/orchestrator automation/conductor automation/suggester automation/calmer automation/regulator automation/visibility-utility automation/guardian; do
             git fetch origin "$branch" || true
           done
           git show origin/automation/environment-feed:environment/feeds/guardian.json > /tmp/guardian/environment.json 2>/dev/null ||             git show origin/automation/environment-feed:environment/feeds/datanest.json > /tmp/guardian/environment.json 2>/dev/null || echo '{}' > /tmp/guardian/environment.json
@@ -66,6 +67,7 @@ jobs:
           git show origin/automation/suggester:suggester/feeds/datanest.json > /tmp/guardian/suggester.json 2>/dev/null || echo '{}' > /tmp/guardian/suggester.json
           git show origin/automation/calmer:calmer/state/latest.json > /tmp/guardian/calmer.json 2>/dev/null || echo '{}' > /tmp/guardian/calmer.json
           git show origin/automation/regulator:regulator/state/latest.json > /tmp/guardian/regulator.json 2>/dev/null || echo '{}' > /tmp/guardian/regulator.json
+          git show origin/automation/visibility-utility:visibility-utility/state/latest.json > /tmp/guardian/visibility.json 2>/dev/null || echo '{}' > /tmp/guardian/visibility.json
           git show origin/automation/guardian:guardian/snapshots/latest.json > /tmp/guardian/previous.json 2>/dev/null || echo 'null' > /tmp/guardian/previous.json
 
       - name: Measure source streamlining health
@@ -105,6 +107,7 @@ jobs:
           GUARDIAN_SUGGESTER_PATH: /tmp/guardian/suggester.json
           GUARDIAN_CALMER_PATH: /tmp/guardian/calmer.json
           GUARDIAN_REGULATOR_PATH: /tmp/guardian/regulator.json
+          GUARDIAN_VISIBILITY_PATH: /tmp/guardian/visibility.json
           GUARDIAN_PREVIOUS_SNAPSHOT_PATH: /tmp/guardian/previous.json
           GUARDIAN_BRANCH_REPORT_PATH: /tmp/guardian/branches/branch-cleaner-report.json
           GUARDIAN_REVIEWER_REPORT_PATH: /tmp/guardian/reviewer/report.json
