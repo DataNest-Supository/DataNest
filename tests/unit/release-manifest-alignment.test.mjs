@@ -116,7 +116,15 @@ test("file worker production deployment is bound to an exact SHA and protected e
   assert.match(workflow,/write-production-file-worker-release-attestation\.mjs/);
   assert.match(workflow,/name: datanest-ai-file-worker-release-\$\{\{ inputs\.release_sha \}\}/);
   assert.match(workflow,/retention-days: 90/);
+  const writer=readFileSync(
+    new URL("../../scripts/write-production-file-worker-release-attestation.mjs",import.meta.url),
+    "utf8"
+  );
+  assert.match(writer,/const sourceRoot=resolve\("supabase\/functions"\);/);
+  assert.match(writer,/sourceTreeScope:"supabase\/functions"/);
 });
+
+test("release manifest records verified database and Edge Function attestations",()=>{
 
 test("governed Edge Function deployment is blocked until its timeframe gate passes",()=>{
   const workflow=readFileSync(
