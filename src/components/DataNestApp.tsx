@@ -1449,7 +1449,7 @@ export default function DataNestApp({session}:{session:Session}) {
 
   return <div
     data-workspace={view}
-    className={"appFrame "+(aiSidebarOpen?"aiDockOpen ":"")+(companionReserve>0?"companionRailReserved":"")}
+    className={"appFrame datanextExperience "+(aiSidebarOpen?"aiDockOpen ":"")+(companionReserve>0?"companionRailReserved":"")}
     style={companionReserve>0?({"--companion-reserve":companionReserve+"px"} as CSSProperties):undefined}
   >
     <PlatformShell
@@ -1566,7 +1566,7 @@ export default function DataNestApp({session}:{session:Session}) {
 
       </>}
       topbar={
-      <header className="topbar">
+      <header className="topbar datanextShellTopbar">
         <button className="menuButton" onClick={()=>setMobileOpen(true)} aria-label="Open menu" aria-controls="datanest-navigation" aria-expanded={mobileOpen}>☰</button>
         <div className="topbarTitle">
           <span className="workspaceEmblem"><WorkspaceGlyph view={view}/></span>
