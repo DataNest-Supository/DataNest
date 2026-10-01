@@ -29,21 +29,29 @@ jobs:
           headers=(
             -H "Accept: application/vnd.github+json"
             -H "Authorization: Bearer ${GH_TOKEN}"
+            -H "X-GitHub-Api-Version: 2022-11-28"
           )
 
-          curl --fail --silent --show-error --location "${headers[@]}"             "${api}/branches/main"             > native-protection/state/main.json
+          curl --silent --show-error --location "${headers[@]}"             -o native-protection/state/main.json             -w "%{http_code}"             "${api}/branches/main"             > native-protection/state/main.http
 
-          curl --fail --silent --show-error --location "${headers[@]}"             "${api}/rulesets"             > native-protection/state/rulesets-index.json
+          curl --silent --show-error --location "${headers[@]}"             -o native-protection/state/rulesets-index.json             -w "%{http_code}"             "${api}/rulesets"             > native-protection/state/rulesets-index.http
 
           for spec in "canonical:BRANCH-X Canonical" "automation:BRANCH-X Automation"; do
             key="${spec%%:*}"
             name="${spec#*:}"
-            id="$(jq -r --arg name "$name" '.[] | select(.name == $name) | .id' native-protection/state/rulesets-index.json | head -n1)"
-            if [ -n "$id" ] && [ "$id" != "null" ]; then
-              curl --fail --silent --show-error --location "${headers[@]}"                 "${api}/rulesets/${id}"                 > "native-protection/state/${key}.json"
-            else
-              printf 'null\n' > "native-protection/state/${key}.json"
+            printf 'null\n' > "native-protection/state/${key}.json"
+            printf 'absent\n' > "native-protection/state/${key}.http"
+
+            if [ "$(cat native-protection/state/rulesets-index.http)" != "200" ]; then
+              continue
             fi
+
+            id="$(jq -r --arg name "$name" '.[]? | select(.name == $name) | .id' native-protection/state/rulesets-index.json 2>/dev/null | head -n1 || true)"
+            if [ -z "$id" ] || [ "$id" = "null" ]; then
+              continue
+            fi
+
+            curl --silent --show-error --location "${headers[@]}"               -o "native-protection/state/${key}.json"               -w "%{http_code}"               "${api}/rulesets/${id}"               > "native-protection/state/${key}.http"
           done
 
       - name: Evaluate native protection against BRANCH-X policy
@@ -56,13 +64,40 @@ jobs:
           from pathlib import Path
 
           state = Path("native-protection/state")
-          main = json.loads((state / "main.json").read_text())
-          canonical = json.loads((state / "canonical.json").read_text())
-          automation = json.loads((state / "automation.json").read_text())
           policy = json.loads(Path("config/branch-protection.tree.json").read_text())
 
-          canonical = canonical if isinstance(canonical, dict) else {}
-          automation = automation if isinstance(automation, dict) else {}
+          def status(name):
+              path = state / f"{name}.http"
+              return path.read_text().strip() if path.exists() else "missing"
+
+          def read_json(name, expected_type):
+              path = state / name
+              if not path.exists():
+                  return expected_type()
+              try:
+                  value = json.loads(path.read_text())
+              except Exception:
+                  return expected_type()
+              return value if isinstance(value, expected_type) else expected_type()
+
+          main_http = status("main")
+          index_http = status("rulesets-index")
+          canonical_http = status("canonical")
+          automation_http = status("automation")
+
+          main = read_json("main.json", dict) if main_http == "200" else {}
+          rulesets_index = read_json("rulesets-index.json", list) if index_http == "200" else []
+          canonical = read_json("canonical.json", dict) if canonical_http == "200" else {}
+          automation = read_json("automation.json", dict) if automation_http == "200" else {}
+
+          detail_access_failures = [
+              name for name, code in (
+                  ("canonical", canonical_http),
+                  ("automation", automation_http),
+              )
+              if code not in {"200", "absent"}
+          ]
+          api_ok = main_http == "200" and index_http == "200" and not detail_access_failures
 
           def refs(ruleset):
               return set((((ruleset.get("conditions") or {}).get("ref_name") or {}).get("include") or []))
@@ -129,9 +164,25 @@ jobs:
           }
 
           failed = sorted(name for name, passed in checks.items() if not passed)
+          result = (
+              "api-access-unavailable"
+              if not api_ok
+              else "protected"
+              if not failed
+              else "protection-gap"
+          )
+
           evidence = {
-              "schemaVersion": "datanest-native-protection-audit-v3",
+              "schemaVersion": "datanest-native-protection-audit-v4",
               "repository": os.environ.get("GITHUB_REPOSITORY"),
+              "apiAccess": {
+                  "mainEndpoint": main_http,
+                  "rulesetsIndexEndpoint": index_http,
+                  "canonicalRulesetEndpoint": canonical_http,
+                  "automationRulesetEndpoint": automation_http,
+                  "detailAccessFailures": detail_access_failures,
+              },
+              "observedRulesetCount": len(rulesets_index),
               "observedMainProtected": bool(main.get("protected")),
               "checks": checks,
               "failedChecks": failed,
@@ -153,16 +204,20 @@ jobs:
               },
               "expectedCanonicalStatusChecks": sorted(expected_canonical_checks),
               "expectedAutomationStatusChecks": sorted(expected_automation_checks),
-              "result": "protected" if not failed else "protection-gap",
+              "result": result,
               "runId": os.environ.get("GITHUB_RUN_ID"),
           }
 
           (state / "latest.json").write_text(json.dumps(evidence, indent=2) + "\n")
           print(json.dumps(evidence, indent=2))
 
-          if failed:
+          if result == "api-access-unavailable":
+              print("::warning::BRANCH-X native protection could not be evaluated because one or more GitHub administration reads were unavailable; evidence is api-access-unavailable.")
+          elif result == "protection-gap":
               print("::error::BRANCH-X native protection is not fully active: " + ", ".join(failed))
               raise SystemExit(1)
+          else:
+              print("BRANCH-X native protection matches the declared policy.")
           PY
 
       - name: Publish audit summary
