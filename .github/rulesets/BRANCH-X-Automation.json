@@ -1,0 +1,25 @@
+{
+  "_comment": "Import this repository ruleset in GitHub Settings > Rules > Rulesets > New ruleset > Import a ruleset. Generated from config/branch-protection.tree.json.",
+  "name": "BRANCH-X Automation",
+  "target": "branch",
+  "enforcement": "active",
+  "bypass_actors": [],
+  "conditions": {
+    "ref_name": {
+      "include": [
+        "refs/heads/automation/**",
+        "refs/heads/audit/**",
+        "refs/heads/ci/**"
+      ],
+      "exclude": []
+    }
+  },
+  "rules": [
+    {
+      "type": "non_fast_forward"
+    },
+    {
+      "type": "deletion"
+    }
+  ]
+}
