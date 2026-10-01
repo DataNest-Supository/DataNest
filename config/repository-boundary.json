@@ -49,7 +49,17 @@
         "knowledge/**",
         "scripts/boundaries-assessor.mjs",
         "scripts/knowledge-tree.mjs",
-        "docs/MAINTENANCE_PROTOCOL.md"
+        "docs/MAINTENANCE_PROTOCOL.md",
+        ".github/workflows/botsquad.yml",
+        ".github/workflows/environment-tree.yml",
+        "botsquad/**",
+        "environment/**",
+        "config/botsquad.tree.json",
+        "config/environment.tree.json",
+        "scripts/botsquad-orchestrator.mjs",
+        "scripts/environment-assessor.mjs",
+        "tests/unit/botsquad.test.mjs",
+        "tests/unit/environment-tree.test.mjs"
       ]
     },
     {
