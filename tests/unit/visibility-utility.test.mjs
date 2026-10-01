@@ -22,7 +22,12 @@ function strongInput(){
     sitemap:'<urlset><url><loc>https://datanest-supository.github.io/DataNest/</loc></url></urlset>',
     manifest:{name:"DataNest",start_url:"/DataNest/"},
     appContract:{contract:"reson8-app@1",status:"live"},
-    catalog:{entries:[{deliveryPath:"/a"},{deliveryUrl:"https://x.example"}]},
+    catalog:{entries:[
+      {type:"product-platform",deliveryPath:"/a"},
+      {type:"app",deliveryUrl:"https://x.example"},
+      {type:"service"},
+      {type:"package-set"}
+    ]},
     charterExists:true,
     transparencySource:"System Charter system-charter",
     globalTrends:{items:[{strength:80,relevance:90}]},
@@ -67,4 +72,12 @@ test("missing market inputs are made visible instead of fabricated",()=>{
   assert.deepEqual(state.missingInputs.sort(),["analytics","commercial-baseline","global-trends","local-trends"].sort());
   assert.equal(state.productionAuthorization,false);
   assert.equal(state.controls.mayPublishUnverifiedClaims,false);
+});
+
+test("internal services and packages do not reduce public platform coverage",()=>{
+  const result=assessVisibility(strongInput());
+  assert.equal(result.platform.catalogEntries,4);
+  assert.equal(result.platform.publicEligibleEntries,2);
+  assert.equal(result.platform.publicDeliveryEntries,2);
+  assert.equal(result.platform.coveragePercent,100);
 });
