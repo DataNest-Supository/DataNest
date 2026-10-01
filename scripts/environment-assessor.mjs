@@ -1,54 +1,74 @@
 #!/usr/bin/env node
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 async function textFile(filename){try{return await readFile(filename,"utf8");}catch{return "";}}
 async function jsonFile(filename){try{return JSON.parse(await readFile(filename,"utf8"));}catch{return null;}}
+async function exists(filename){try{await access(filename);return true;}catch{return false;}}
 
 export function assessEnvironment(config,observed){
   const findings=[];
   const expected=config.expected||{};
   const add=(dimension,status,detail,adaptationClass="none")=>findings.push({dimension,status,detail,adaptationClass});
+  const compatible=(condition,dimension,ok,drift,adaptationClass="human-review-required")=>
+    add(dimension,condition?"compatible":"review",condition?ok:drift,condition?"none":adaptationClass);
 
-  add("runtime",
-    observed.node22Configured ? "compatible" : "review",
-    observed.node22Configured ? "Node 22 setup is present in repository automation." : "Node 22 is not explicitly discoverable in the shared setup.",
-    observed.node22Configured ? "none" : "human-review-required");
+  compatible(observed.canonicalRepository===expected.canonicalRepository,
+    "source-control",
+    "Canonical source repository matches the DataNest authority contract.",
+    "Canonical source repository identity is missing or drifted.");
 
-  add("ci-runner",
-    observed.ubuntu2404 ? "compatible" : "review",
-    observed.ubuntu2404 ? "Ubuntu 24.04 runner usage is present." : "Expected Ubuntu 24.04 runner was not found.",
-    observed.ubuntu2404 ? "none" : "human-review-required");
+  compatible(observed.node22Configured,
+    "runtime",
+    "Node 22 setup is present in shared repository automation.",
+    "Node 22 is not explicitly discoverable in the shared setup.");
 
-  add("delivery",
-    observed.deliveryProvider===expected.canonicalDelivery ? "compatible" : "review",
-    "Canonical delivery observed as "+(observed.deliveryProvider||"unknown")+".",
-    observed.deliveryProvider===expected.canonicalDelivery ? "none" : "human-review-required");
+  compatible(observed.ubuntu2404,
+    "ci-runner",
+    "Ubuntu 24.04 runner usage is present.",
+    "Expected Ubuntu 24.04 runner was not found.");
 
-  add("backend",
-    observed.backendAuthority===expected.backendAuthority ? "compatible" : "review",
-    "Backend authority observed as "+(observed.backendAuthority||"unknown")+".",
-    observed.backendAuthority===expected.backendAuthority ? "none" : "human-review-required");
+  compatible(observed.deliveryProvider===expected.canonicalDelivery,
+    "delivery",
+    "Canonical delivery is "+expected.canonicalDelivery+".",
+    "Canonical delivery observed as "+(observed.deliveryProvider||"unknown")+".");
 
-  add("registry",
-    observed.forgeMode===expected.forgeMode ? "compatible" : "review",
-    "Resonance Forge mode observed as "+(observed.forgeMode||"unknown")+".",
-    observed.forgeMode===expected.forgeMode ? "none" : "human-review-required");
+  compatible(observed.backendAuthority===expected.backendAuthority,
+    "backend",
+    "Backend authority is "+expected.backendAuthority+".",
+    "Backend authority observed as "+(observed.backendAuthority||"unknown")+".");
 
-  add("branch-hygiene",
-    observed.botsquadProtected && observed.environmentProtected ? "compatible" : "adapt",
-    observed.botsquadProtected && observed.environmentProtected
-      ? "BOTSQUAD and ENVIRONMENT automation branches are protected from autonomous cleanup."
-      : "Automation branch protection needs alignment.",
-    observed.botsquadProtected && observed.environmentProtected ? "none" : "human-review-required");
+  compatible(observed.aiArchitecturePresent,
+    "ai-inference",
+    "Provider-neutral DataNest AI architecture is discoverable.",
+    "AI inference architecture contract is missing.");
 
+  compatible(observed.forgeMode===expected.forgeMode,
+    "registry",
+    "Resonance Forge remains in "+expected.forgeMode+" mode.",
+    "Resonance Forge mode observed as "+(observed.forgeMode||"unknown")+".");
+
+  compatible(observed.backupConfigured,
+    "backup-recovery",
+    "Governed backup/recovery authority is cataloged.",
+    "Backup/recovery authority is not discoverable.");
+
+  compatible(observed.lockfilePresent,
+    "dependency-posture",
+    "Locked dependency state is present for reproducible automation.",
+    "Dependency lockfile is missing.");
+
+  compatible(observed.botsquadProtected && observed.environmentProtected,
+    "branch-hygiene",
+    "BOTSQUAD and ENVIRONMENT automation branches are protected from generic cleanup.",
+    "Automation branch protection needs alignment.");
+
+  const treeConfigsOk=observed.requiredTreeConfigs.every(Boolean);
   add("evidence-observability",
-    observed.requiredTreeConfigs.every(Boolean) ? "compatible" : "adapt",
-    observed.requiredTreeConfigs.every(Boolean)
-      ? "Specialized tree contracts are discoverable."
-      : "One or more specialized tree contracts are missing.",
-    observed.requiredTreeConfigs.every(Boolean) ? "safe-auto-generated-metadata" : "human-review-required");
+    treeConfigsOk ? "compatible" : "adapt",
+    treeConfigsOk ? "Specialized tree contracts are discoverable." : "One or more specialized tree contracts are missing.",
+    treeConfigsOk ? "safe-auto-generated-metadata" : "human-review-required");
 
   return {
     schemaVersion:"datanest-environment-assessment-v1",
@@ -96,11 +116,15 @@ async function main(){
   ];
 
   const observed={
-    node22Configured:/node-version\s*:\s*["']?22\b/.test(setup) || /node-version\s*:\s*["']?22\b/.test(ci),
+    canonicalRepository:catalog?.canonicalRepository || null,
+    node22Configured:/default\s*:\s*["']22["']/.test(setup) || /node-version\s*:\s*["']?22\b/.test(ci),
     ubuntu2404:/ubuntu-24\.04/.test(ci),
     deliveryProvider:app?.delivery?.provider || null,
     backendAuthority:String(catalog?.authority?.backend||"").startsWith("Supabase:") ? "Supabase" : null,
+    aiArchitecturePresent:await exists("docs/DATANEST_AI_ARCHITECTURE.md"),
     forgeMode:catalog?.authority?.sovereignForge?.mode || null,
+    backupConfigured:Boolean(catalog?.authority?.backupArtifacts),
+    lockfilePresent:await exists("package-lock.json"),
     botsquadProtected:(boundary.protectedPatterns||[]).some(x=>x==="^automation/botsquad/"),
     environmentProtected:(boundary.protectedPatterns||[]).some(x=>x==="^automation/environment-feed$"),
     requiredTreeConfigs
@@ -111,6 +135,7 @@ async function main(){
   await mkdir("environment/feeds",{recursive:true});
   await writeFile("environment/state/latest.json",JSON.stringify(assessment,null,2)+"\n");
   for(const feed of config.feeds||[]){
+    await mkdir(path.dirname(feed.path),{recursive:true});
     await writeFile(feed.path,JSON.stringify(feedFor(feed.target,assessment,config),null,2)+"\n");
   }
   console.log(JSON.stringify({compatible:assessment.compatible,findings:assessment.findings.length},null,2));
