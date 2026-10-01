@@ -149,34 +149,13 @@ function stagingConfig(supabaseUrl:string,serviceKey:string){
   });
 }
 
-async function loadAuthorizedJob(serviceClient:AnyClient,jobId:string,userId:string):Promise<JobContext>{
-  const {data,error}=await serviceClient
+async function loadAuthorizedJob(client:AnyClient,jobId:string):Promise<JobContext>{
+  const {data,error}=await client
     .from("jobs")
     .select("id,project_id,job_number,title,description,priority,status,required_capabilities,requirements,acceptance,deadline")
     .eq("id",jobId)
     .single();
   if(error||!data)throw new Error(error?.message||"Job not found or not authorized.");
-
-  const [{data:projectMember,error:projectMemberError},{data:jobCollaborator,error:jobCollaboratorError}]=await Promise.all([
-    serviceClient
-      .from("project_members")
-      .select("id")
-      .eq("project_id",data.project_id)
-      .eq("user_id",userId)
-      .eq("status","active")
-      .maybeSingle(),
-    serviceClient
-      .from("job_collaborators")
-      .select("id")
-      .eq("job_id",jobId)
-      .eq("user_id",userId)
-      .eq("status","accepted")
-      .maybeSingle()
-  ]);
-  if(projectMemberError||jobCollaboratorError)throw projectMemberError||jobCollaboratorError;
-  if(!projectMember&&!jobCollaborator){
-    throw new Error("Job not found or not authorized.");
-  }
   return data as JobContext;
 }
 
@@ -1072,7 +1051,7 @@ Deno.serve(async(request:Request)=>{
         :"datanest_ai";
     const learningEligible=!legalMode&&!developmentMode&&reuseState==="project_learning_eligible";
 
-    const job=await loadAuthorizedJob(serviceClient,jobId,user.id);
+    const job=await loadAuthorizedJob(userClient,jobId);
 
     if(action==="context"){
       const session=await ensureStagingSession({
