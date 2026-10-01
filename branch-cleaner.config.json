@@ -8,7 +8,8 @@
     "^release/",
     "^automation/knowledge-feed$",
     "^automation/botsquad/",
-    "^automation/environment-feed$"
+    "^automation/environment-feed$",
+    "^automation/enforcer$"
   ],
   "supabaseProjects": [
     {
