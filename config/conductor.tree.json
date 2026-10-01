@@ -31,6 +31,16 @@
       }
     },
     {
+      "id": "boundaries",
+      "workflow": "boundaries-assessment.yml",
+      "workflowName": "DataNest Boundaries",
+      "maxAgeMinutes": 1440,
+      "dependencies": [],
+      "dispatch": {
+        "enabled": true
+      }
+    },
+    {
       "id": "security",
       "workflow": "security-scan.yml",
       "workflowName": "Security scan",
@@ -48,7 +58,8 @@
       "dependencies": [
         "knowledge",
         "environment",
-        "security"
+        "security",
+        "boundaries"
       ],
       "dispatch": {
         "enabled": true
@@ -76,7 +87,8 @@
         "knowledge",
         "environment",
         "enforcer",
-        "botsquad"
+        "botsquad",
+        "boundaries"
       ],
       "dispatch": {
         "enabled": true
@@ -156,5 +168,6 @@
     "neverChangeBoundaries": true,
     "neverSynchronizeFreetree": true,
     "failedOrUnknownDependencyState": "do-not-dispatch-dependent-process"
-  }
+  },
+  "retryCooldownMinutes": 30
 }
