@@ -10,7 +10,8 @@
     "knowledge",
     "boundaries",
     "botsquad",
-    "environment"
+    "environment",
+    "enforcer"
   ],
   "exclude": [
     "node_modules",
