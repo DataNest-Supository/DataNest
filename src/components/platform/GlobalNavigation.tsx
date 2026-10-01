@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { NavigationItem } from "@/components/platform/navigationTypes";
 
@@ -41,13 +42,36 @@ export default function GlobalNavigation({
 }) {
   void onOpenQuickSwitch;
   const groups=Array.from(new Set(items.map(item=>item.group)));
+  const activeGroup=items.find(item=>item.id===currentView)?.group;
+  const [openGroups,setOpenGroups]=useState<Set<string>>(
+    ()=>new Set(groups.filter(group=>group==="Core"||group===activeGroup))
+  );
+
+  useEffect(()=>{
+    if(!activeGroup)return;
+    setOpenGroups(previous=>{
+      if(previous.has(activeGroup))return previous;
+      const next=new Set(previous);
+      next.add(activeGroup);
+      return next;
+    });
+  },[activeGroup]);
 
   return <>
     <nav className="navStack" aria-label="Project workspaces">
       {groups.map(group=><details
         className="navGroup navDisclosure"
-        key={group+String(items.some(item=>item.group===group&&item.id===currentView))}
-        open={group==="Core"||items.some(item=>item.group===group&&item.id===currentView)}
+        key={group}
+        open={group==="Core"||items.some(item=>item.group===group&&item.id===currentView)||openGroups.has(group)}
+        onToggle={event=>{
+          const isOpen=event.currentTarget.open;
+          setOpenGroups(previous=>{
+            const next=new Set(previous);
+            if(isOpen)next.add(group);
+            else next.delete(group);
+            return next;
+          });
+        }}
       >
         <summary>{group}</summary>
         {items.filter(item=>item.group===group).map(item=><button
