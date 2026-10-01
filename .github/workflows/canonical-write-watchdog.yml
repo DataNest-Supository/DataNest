@@ -1,0 +1,107 @@
+name: BRANCH-X Canonical Write Watchdog
+
+on:
+  push:
+    branches:
+      - main
+      - "release/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write
+
+jobs:
+  detect:
+    name: BRANCH-X Canonical Write Watchdog
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Inspect canonical push provenance
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          REF: ${{ github.ref }}
+          BEFORE: ${{ github.event.before }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p canonical-write/state
+
+          if [ "$REF" = "refs/heads/main" ] && [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            cat > canonical-write/state/result.json <<'JSON'
+          {"schemaVersion":"datanest-canonical-write-watchdog-v1","result":"bootstrap","reason":"initial branch creation event"}
+          JSON
+            exit 0
+          fi
+
+          curl -fsSL \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/$REPO/commits/$SHA/pulls" \
+            > canonical-write/state/associated-prs.json
+
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+
+          prs=json.loads(Path("canonical-write/state/associated-prs.json").read_text())
+          merged=[p for p in prs if p.get("merged_at")]
+          evidence={
+              "schemaVersion":"datanest-canonical-write-watchdog-v1",
+              "repository":os.environ["REPO"],
+              "ref":os.environ["REF"],
+              "sha":os.environ["SHA"],
+              "associatedPullRequests":[
+                  {"number":p.get("number"),"state":p.get("state"),"merged_at":p.get("merged_at"),"base_ref":(p.get("base") or {}).get("ref")}
+                  for p in prs
+              ],
+              "mergedPullRequests":[
+                  {"number":p.get("number"),"merged_at":p.get("merged_at"),"base_ref":(p.get("base") or {}).get("ref")}
+                  for p in merged
+              ],
+              "result":"authorized-merge-provenance" if merged else "canonical-write-anomaly"
+          }
+          Path("canonical-write/state/result.json").write_text(json.dumps(evidence,indent=2)+"\n")
+          print(json.dumps(evidence,indent=2))
+          if not merged:
+              print("::error::No associated merged pull request was found for this canonical push.")
+          PY
+
+      - name: Open governance incident
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          REF: ${{ github.ref }}
+          SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          title="BRANCH-X canonical write anomaly: $REF"
+          body="A push to canonical ref $REF at $SHA has no associated merged pull request. This is a detection-only governance alert; native GitHub protection remains the control that prevents direct writes. Review the workflow artifact and enable the BRANCH-X native rulesets if still unresolved."
+          curl -fsSL -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/$REPO/issues \
+            -d "$(python -c 'import json,os; print(json.dumps({"title":os.environ["TITLE"],"body":os.environ["BODY"]}))')" \
+            || echo "::warning::Unable to open governance incident automatically."
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          REF: ${{ github.ref }}
+          SHA: ${{ github.sha }}
+          TITLE: "BRANCH-X canonical write anomaly"
+          BODY: "Canonical write anomaly detected; inspect the workflow evidence artifact and the BRANCH-X native protection tracking issue."
+
+      - name: Upload canonical write evidence
+        if: always()
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: canonical-write-watchdog-${{ github.run_id }}
+          path: canonical-write/state/
+          retention-days: 90
