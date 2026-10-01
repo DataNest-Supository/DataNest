@@ -89,11 +89,6 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p /tmp/guardian/branches
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p /tmp/guardian/branches
           if node scripts/branch-cleaner.mjs --report-dir /tmp/guardian/branches; then
             exit 0
           fi
