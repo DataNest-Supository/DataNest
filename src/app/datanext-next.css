@@ -206,3 +206,8 @@
   .datanextTelemetryDivider{display:none}
   .datanextTelemetryItem{width:calc(50% - .3rem)}
 }
+
+/* DataNext command cue: retain the existing AI nav affordance while making its role explicit. */
+.datanextExperience .navGroup button.aiHeroNav::after{
+  content:"COMMAND";
+}
