@@ -6,8 +6,12 @@
   "enforcementModel": "github-native-when-admin-protection-is-available-plus-repository-native-preflight",
   "failClosed": true,
   "canonicalBranches": {
-    "exact": ["main"],
-    "patterns": ["release/**"]
+    "exact": [
+      "main"
+    ],
+    "patterns": [
+      "release/**"
+    ]
   },
   "protectedAutomationBranches": [
     "automation/**",
@@ -16,7 +20,10 @@
   ],
   "branchClasses": {
     "canonical": {
-      "patterns": ["main", "release/**"],
+      "patterns": [
+        "main",
+        "release/**"
+      ],
       "pullRequestRequired": true,
       "requiredApprovingReviews": 1,
       "dismissStaleReviews": true,
@@ -40,7 +47,11 @@
       ]
     },
     "protected_automation": {
-      "patterns": ["automation/**", "audit/**", "ci/**"],
+      "patterns": [
+        "automation/**",
+        "audit/**",
+        "ci/**"
+      ],
       "pullRequestRequired": false,
       "requiredApprovingReviews": 0,
       "dismissStaleReviews": false,
@@ -49,10 +60,15 @@
       "allowForcePushes": false,
       "allowDeletions": false,
       "enforceAdmins": true,
-      "requiredStatusChecks": ["CI", "BRANCH-X Protection Tree"]
+      "requiredStatusChecks": [
+        "CI",
+        "BRANCH-X Protection Tree"
+      ]
     },
     "ordinary": {
-      "patterns": ["**"],
+      "patterns": [
+        "**"
+      ],
       "pullRequestRequired": false,
       "requiredApprovingReviews": 0,
       "dismissStaleReviews": false,
@@ -91,8 +107,18 @@
     "docs/governance/**"
   ],
   "destructiveOperations": {
-    "forbiddenOnCanonical": ["force_push", "delete_branch", "direct_push"],
+    "forbiddenOnCanonical": [
+      "force_push",
+      "delete_branch",
+      "direct_push"
+    ],
     "exception": "none",
     "evidenceRequiredForAnyPolicyChange": true
+  },
+  "documentation": {
+    "canonicalProtectionRequiresGithubNativeAdministration": true,
+    "repositoryNativeVerification": ".github/workflows/branch-protection-tree.yml",
+    "policySource": "config/branch-protection.tree.json",
+    "governanceDoc": "docs/governance/BRANCH_X_PROTECTION.md"
   }
 }
