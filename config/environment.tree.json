@@ -58,6 +58,16 @@
       "id": "suggester",
       "repository": "DataNest-Supository/DataNest",
       "mode": "specialized-continuous-optimization"
+    },
+    {
+      "id": "calmer",
+      "repository": "DataNest-Supository/DataNest",
+      "mode": "specialized-minimum-friction-governance"
+    },
+    {
+      "id": "regulator",
+      "repository": "DataNest-Supository/DataNest",
+      "mode": "specialized-transparent-harmony-regulation"
     }
   ],
   "dimensions": [
@@ -144,6 +154,14 @@
     {
       "target": "suggester",
       "path": "environment/feeds/suggester.json"
+    },
+    {
+      "target": "calmer",
+      "path": "environment/feeds/calmer.json"
+    },
+    {
+      "target": "regulator",
+      "path": "environment/feeds/regulator.json"
     }
   ]
 }
