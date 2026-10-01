@@ -181,3 +181,24 @@ DataNest/main baseline
 The canonical release payload requires a Mirror promotion reference, successful live Mirror evidence, DataNest AI Certification evidence for the governed staging backend, and an Audit Optimizer reference before production authorization can resolve.
 
 A Mirror deployment is therefore **live evidence**, not canonical production authority.
+
+
+## Specialized tree topology
+
+The canonical DataNest control plane includes these logical specialized trees:
+
+```text
+DataNest
+├── Knowledge       -> learns from canonical + Mirror repository evidence
+├── Boundaries      -> tolerance boundaries and acceptance criteria
+├── BOTSQUAD        -> AI-only advisory specialist branches
+├── ENVIRONMENT     -> compatibility assessment and safe adaptation feeds
+├── Mirror-DataNest -> ungated R&D candidate workspace
+└── FREETREE        -> isolated open-development repository, no synchronization
+```
+
+BOTSQUAD branches are AI-agent work lanes for optimization, product expansion, responsible business growth, UX ease, UI evolution, function evolution, integration scouting, quality observation and environment translation. Their outputs are proposals/evidence and cannot merge, deploy, certify or authorize canonical production.
+
+ENVIRONMENT observes source-control, runtime, CI, delivery, backend, AI inference, registry, recovery, dependency, branch-hygiene and evidence conditions. It may refresh generated compatibility state automatically; material environment changes remain human-reviewed.
+
+Resonance Forge mirrors this topology as a read-only/scoped-agent projection. The Forge never infers production authority from a specialized tree.
