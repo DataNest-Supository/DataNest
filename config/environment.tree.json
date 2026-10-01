@@ -38,6 +38,11 @@
       "repository": "DataNest-Supository/FREETREE",
       "mode": "isolated-no-sync",
       "writeAccess": false
+    },
+    {
+      "id": "enforcer",
+      "repository": "DataNest-Supository/DataNest",
+      "mode": "specialized-defensive"
     }
   ],
   "dimensions": [
@@ -108,6 +113,10 @@
     {
       "target": "forge",
       "path": "environment/feeds/resonance-forge.json"
+    },
+    {
+      "target": "enforcer",
+      "path": "environment/feeds/enforcer.json"
     }
   ]
 }
