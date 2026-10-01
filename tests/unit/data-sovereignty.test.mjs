@@ -16,10 +16,18 @@ function manifest(overrides={}){
 }
 
 test("missing manifest fails closed without inventing residency claims",()=>{
-  const model=deriveDataSovereigntyModel({manifest:null,providerProfiles:[],retentionPolicies:[],retentionHolds:[]});
+  const model=deriveDataSovereigntyModel({
+    manifest:null,
+    providerProfiles:[],
+    retentionPolicies:[],
+    retentionHolds:[{status:"active"},{status:"released"}]
+  });
   assert.equal(model.rollout,"unresolved");
   assert.equal(model.boundary,"unresolved");
   assert.equal(model.externalProcessing,"unresolved");
+  assert.equal(model.authorityModel,"project_governed");
+  assert.equal(model.platformOwnershipEffect,"none");
+  assert.equal(model.activeHoldCount,1);
   assert.deepEqual(model.allowedRegions,[]);
 });
 
