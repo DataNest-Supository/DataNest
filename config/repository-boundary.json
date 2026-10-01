@@ -87,7 +87,18 @@
         "tests/unit/conductor.test.mjs",
         "tests/unit/suggester.test.mjs",
         "lib/resonance-forge-*.mjs",
-        "scripts/tree-evidence.mjs"
+        "scripts/tree-evidence.mjs",
+        ".github/workflows/calmer.yml",
+        ".github/workflows/regulator.yml",
+        "calmer/**",
+        "regulator/**",
+        "config/calmer.tree.json",
+        "config/regulator.tree.json",
+        "scripts/calmer-governance.mjs",
+        "scripts/regulator-engine.mjs",
+        "tests/unit/calmer.test.mjs",
+        "tests/unit/regulator.test.mjs",
+        "public/transparency/regulator/**"
       ]
     },
     {
