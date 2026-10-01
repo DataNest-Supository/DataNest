@@ -152,5 +152,7 @@
       "privacy-or-legal-interpretation",
       "production-authority-change"
     ]
-  }
+  },
+  "publicLiveUrl": "https://raw.githubusercontent.com/DataNest-Supository/DataNest/automation/liberty-in-all/public/transparency/liberty-in-all/latest.json",
+  "publicDescriptorPath": "public/transparency/liberty-in-all/index.json"
 }
