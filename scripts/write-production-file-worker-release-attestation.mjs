@@ -43,8 +43,8 @@ function sha256Tree(root){
   return hash.digest("hex");
 }
 
-const sourceRoot=resolve("supabase/functions",functionSlug);
-if(!existsSync(sourceRoot))throw new Error("File worker source tree is missing.");
+const sourceRoot=resolve("supabase/functions");
+if(!existsSync(sourceRoot))throw new Error("Supabase Edge Function source tree is missing.");
 const sourceTreeSha256=sha256Tree(sourceRoot);
 
 const response=await fetch(
@@ -77,6 +77,7 @@ const attestation={
   function:functionSlug,
   sourceCommit:releaseSha,
   workflowRunId,
+  sourceTreeScope:"supabase/functions",
   sourceTreeSha256,
   deployment:{version,ezbr_sha256:digest,status,verify_jwt:verifyJwt},
   verifiedAt:new Date().toISOString()
