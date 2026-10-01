@@ -75,5 +75,21 @@
       "target": "mirror",
       "path": "guardian/feeds/mirror-datanest.json"
     }
+  ],
+  "remoteRepositories": [
+    {
+      "repository": "DataNest-Supository/Mirror-DataNest",
+      "mode": "observe-health-delegate-healing",
+      "expectedDefaultBranch": "main",
+      "required": true,
+      "healingAuthority": "Mirror-DataNest local maintenance"
+    },
+    {
+      "repository": "DataNest-Supository/FREETREE",
+      "mode": "isolated-observe-only",
+      "expectedDefaultBranch": "main",
+      "required": false,
+      "healingAuthority": "FREETREE local maintenance only"
+    }
   ]
 }
