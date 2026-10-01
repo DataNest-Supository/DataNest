@@ -21,7 +21,10 @@
     "environment-compatibility",
     "botsquad-advisory-state",
     "resonance-forge-tree-registry",
-    "published-transparency-audit-index"
+    "published-transparency-audit-index",
+    "guardian-health-state",
+    "conductor-process-state",
+    "suggester-optimization-state"
   ],
   "enforcement": {
     "mayFailOwnSecurityCheck": true,
