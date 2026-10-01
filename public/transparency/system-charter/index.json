@@ -21,6 +21,10 @@
     "ISO 9241-210:2019",
     "WCAG 2.2",
     "NIST CSF 2.0",
-    "NIST AI RMF 1.0"
+    "NIST AI RMF 1.0",
+    "ISO/IEC 27701:2025",
+    "ISO 37000:2021",
+    "ISO 37301:2021",
+    "CIS Controls v8.1"
   ]
 }
