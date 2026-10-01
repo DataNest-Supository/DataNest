@@ -25,52 +25,96 @@ jobs:
           curl -sS -H "Accept: application/vnd.github+json" -o native-protection/state/rulesets.json -w "%{http_code}" "https://api.github.com/repos/${REPO}/rulesets" > native-protection/state/rulesets.http
           test -s native-protection/state/main.json
           test -s native-protection/state/rulesets.json
+          test -s config/branch-protection.tree.json
 
-      - name: Evaluate native protection state
+      - name: Evaluate native protection against BRANCH-X policy
         shell: bash
-        env:
-          EXPECTED_CANONICAL_CHECKS: |
-          - "CI"
-          - "PR Verification"
-          - "Security scan"
-          - "DataNest AI Certification"
-          - "DataNest Boundaries"
-          - "ENFORCER Defence Tree"
-          - "GUARDIAN Health & Healing Tree"
-          - "CALMER Governance Softening Tree"
-          - "REGULATOR Harmony Tree"
-          - "VISIBILITY-UTILITY Market Presence Tree"
-          - "BRANCH-X Protection Tree"
         run: |
           set -euo pipefail
           python - <<'PY'
-          import json, os
+          import json
+          import os
           from pathlib import Path
+
+          policy = json.loads(Path("config/branch-protection.tree.json").read_text())
           main_text = Path("native-protection/state/main.json").read_text()
           rulesets_text = Path("native-protection/state/rulesets.json").read_text()
           main = json.loads(main_text) if main_text.lstrip().startswith("{") else {}
           rulesets = json.loads(rulesets_text) if rulesets_text.lstrip().startswith("[") else []
-          expected_checks = [line.strip()[2:-1] for line in os.environ["EXPECTED_CANONICAL_CHECKS"].splitlines() if line.strip()]
+
+          expected = policy["branchClasses"]["canonical"]
+          expected_refs = {"refs/heads/main", "refs/heads/release/**"}
+          expected_checks = set(expected["requiredStatusChecks"])
+          required_types = {"pull_request", "required_status_checks", "required_linear_history", "non_fast_forward", "deletion"}
+
           canonical = next((r for r in rulesets if r.get("name") == "BRANCH-X Canonical"), None)
           automation = next((r for r in rulesets if r.get("name") == "BRANCH-X Automation"), None)
-          refs = lambda r: (((r or {}).get("conditions") or {}).get("ref_name") or {}).get("include") or []
-          types = lambda r: sorted(x.get("type") for x in (r or {}).get("rules",[]) if isinstance(x,dict) and x.get("type"))
-          statuses=[]
-          for rule in (canonical or {}).get("rules",[]):
-              if rule.get("type") == "required_status_checks":
-                  for check in (rule.get("parameters") or {}).get("required_status_checks",[]):
-                      if isinstance(check,dict) and check.get("context"): statuses.append(check["context"])
-          expected_refs={"refs/heads/main","refs/heads/release/**"}
-          required_types={"pull_request","required_status_checks","required_linear_history","non_fast_forward","deletion"}
-          passed=(bool(main.get("protected")) and bool(canonical) and canonical.get("enforcement")=="active" and expected_refs.issubset(set(refs(canonical))) and required_types.issubset(set(types(canonical))) and set(expected_checks).issubset(set(statuses)) and bool(automation) and automation.get("enforcement")=="active")
-          evidence={"schemaVersion":"datanest-native-protection-audit-v1","repository":os.environ.get("GITHUB_REPOSITORY"),"mainEndpointHttp":Path("native-protection/state/main.http").read_text().strip(),"rulesetsEndpointHttp":Path("native-protection/state/rulesets.http").read_text().strip(),"observedMainProtected":bool(main.get("protected")),"observedRulesetCount":len(rulesets),"canonicalRuleset":{"present":bool(canonical),"enforcement":canonical.get("enforcement") if canonical else None,"refs":refs(canonical),"ruleTypes":types(canonical),"requiredStatusChecks":sorted(set(statuses))},"automationRuleset":{"present":bool(automation),"enforcement":automation.get("enforcement") if automation else None},"expectedCanonicalStatusChecks":expected_checks,"result":"protected" if passed else "protection-gap","runId":os.environ.get("GITHUB_RUN_ID")}
-          Path("native-protection/state/latest.json").write_text(json.dumps(evidence,indent=2)+"
-")
-          print(json.dumps(evidence,indent=2))
-          if not passed:
+
+          def refs(rule):
+              return set((((rule or {}).get("conditions") or {}).get("ref_name") or {}).get("include") or [])
+
+          def rule_types(rule):
+              return {x.get("type") for x in (rule or {}).get("rules", []) if isinstance(x, dict) and x.get("type")}
+
+          def required_checks(rule):
+              found = set()
+              for item in (rule or {}).get("rules", []):
+                  if item.get("type") == "required_status_checks":
+                      for check in (item.get("parameters") or {}).get("required_status_checks", []):
+                          if isinstance(check, dict) and check.get("context"):
+                              found.add(check["context"])
+              return found
+
+          canonical_types = rule_types(canonical)
+          canonical_checks = required_checks(canonical)
+          canonical_refs = refs(canonical)
+
+          canonical_ok = (
+              bool(canonical)
+              and canonical.get("enforcement") == "active"
+              and expected_refs.issubset(canonical_refs)
+              and required_types.issubset(canonical_types)
+              and expected_checks.issubset(canonical_checks)
+          )
+
+          automation_ok = bool(automation) and automation.get("enforcement") == "active"
+
+          evidence = {
+              "schemaVersion": "datanest-native-protection-audit-v2",
+              "repository": os.environ.get("GITHUB_REPOSITORY"),
+              "observedMainProtectedLegacyFlag": bool(main.get("protected")),
+              "mainEndpointHttp": Path("native-protection/state/main.http").read_text().strip(),
+              "rulesetsEndpointHttp": Path("native-protection/state/rulesets.http").read_text().strip(),
+              "observedRulesetCount": len(rulesets),
+              "policyCanonical": {
+                  "refs": sorted(expected_refs),
+                  "requiredStatusChecks": sorted(expected_checks),
+                  "requiredRuleTypes": sorted(required_types)
+              },
+              "observedCanonical": {
+                  "present": bool(canonical),
+                  "enforcement": canonical.get("enforcement") if canonical else None,
+                  "refs": sorted(canonical_refs),
+                  "ruleTypes": sorted(canonical_types),
+                  "requiredStatusChecks": sorted(canonical_checks)
+              },
+              "observedAutomation": {
+                  "present": bool(automation),
+                  "enforcement": automation.get("enforcement") if automation else None
+              },
+              "canonicalRulesetMatch": canonical_ok,
+              "automationRulesetActive": automation_ok,
+              "result": "protected" if canonical_ok and automation_ok else "protection-gap",
+              "runId": os.environ.get("GITHUB_RUN_ID")
+          }
+
+          Path("native-protection/state/latest.json").write_text(json.dumps(evidence, indent=2) + "\n")
+          print(json.dumps(evidence, indent=2))
+
+          if not (canonical_ok and automation_ok):
               print("::warning::BRANCH-X native protection is not fully active; evidence was published as protection-gap.")
           else:
-              print("BRANCH-X native protection is active.")
+              print("BRANCH-X native protection matches the declared policy.")
           PY
 
       - name: Publish audit summary
@@ -78,7 +122,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -f native-protection/state/latest.json && cat native-protection/state/latest.json >> "$GITHUB_STEP_SUMMARY" || echo "Audit evidence unavailable." >> "$GITHUB_STEP_SUMMARY"
+          if test -f native-protection/state/latest.json; then
+            cat native-protection/state/latest.json >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Audit evidence unavailable." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Upload native protection evidence
         if: always()
