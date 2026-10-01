@@ -200,6 +200,8 @@ export function buildGuardianSnapshot({
   enforcer={},
   knowledge={},
   botsquad={},
+  conductorState={},
+  suggesterFeed={},
   branchReport={},
   reviewerReport={},
   previousSnapshot=null,
@@ -315,6 +317,32 @@ export function buildGuardianSnapshot({
   health.score+=botsquadAvailable?5:2;
   if(!botsquadAvailable) optimalDrift.push({control:"botsquad-feed",expected:"available",observed:"missing"});
 
+  const coordinationNow=Date.parse(generatedAt);
+  const conductorAt=Date.parse(conductorState?.generatedAt||"");
+  const suggesterAt=Date.parse(suggesterFeed?.generatedAt||"");
+  const conductorAge=Number.isFinite(conductorAt)?Math.max(0,(coordinationNow-conductorAt)/60000):Number.POSITIVE_INFINITY;
+  const suggesterAge=Number.isFinite(suggesterAt)?Math.max(0,(coordinationNow-suggesterAt)/60000):Number.POSITIVE_INFINITY;
+  const conductorOk=
+    conductorState?.authority===(blueprint?.coordination?.requiredConductorAuthority||"process-synchronization") &&
+    conductorAge<=Number(blueprint?.coordination?.conductorMaxAgeMinutes||30);
+  const suggesterOk=
+    suggesterFeed?.authority===(blueprint?.coordination?.requiredSuggesterAuthority||"optimization-advisory") &&
+    suggesterAge<=Number(blueprint?.coordination?.suggesterMaxAgeMinutes||30);
+  checks.push({
+    id:"coordination",
+    status:conductorOk&&suggesterOk?"healthy":"degraded",
+    weight:0,
+    earned:0,
+    detail:conductorOk&&suggesterOk
+      ?"CONDUCTOR and SUGGESTER coordination state is fresh."
+      :`Coordination freshness: conductor=${Number.isFinite(conductorAge)?Math.round(conductorAge):"missing"}m, suggester=${Number.isFinite(suggesterAge)?Math.round(suggesterAge):"missing"}m.`
+  });
+  if(!conductorOk||!suggesterOk) optimalDrift.push({
+    control:"coordination",
+    conductor:{ok:conductorOk,ageMinutes:Number.isFinite(conductorAge)?conductorAge:null},
+    suggester:{ok:suggesterOk,ageMinutes:Number.isFinite(suggesterAge)?suggesterAge:null}
+  });
+
   const remoteRequiredFailures=[];
   for(const [repository,state] of Object.entries(remoteRepositories||{})){
     if(state?.required && (!state.available || state.defaultBranchMatches===false)){
@@ -416,6 +444,20 @@ export function buildGuardianSnapshot({
         botCount:Number(botsquad?.botCount||0),
         generatedAt:botsquad?.generatedAt||null
       },
+      coordination:{
+        conductor:{
+          available:!!conductorState?.generatedAt,
+          generatedAt:conductorState?.generatedAt||null,
+          allProcessesFresh:conductorState?.allProcessesFresh??null,
+          nextCommand:conductorState?.nextCommand||null
+        },
+        suggester:{
+          available:!!suggesterFeed?.generatedAt,
+          generatedAt:suggesterFeed?.generatedAt||null,
+          suggestionCount:Number(suggesterFeed?.summary?.total||0),
+          autonomousCommandCount:Number(suggesterFeed?.summary?.autonomousSafe||0)
+        }
+      },
       branches,
       source:code,
       remoteRepositories
@@ -472,6 +514,8 @@ async function main(){
   const enforcer=await readJson(process.env.GUARDIAN_ENFORCER_PATH||"/tmp/guardian/enforcer.json",{});
   const knowledge=await readJson(process.env.GUARDIAN_KNOWLEDGE_PATH||"/tmp/guardian/knowledge.json",{});
   const botsquad=await readJson(process.env.GUARDIAN_BOTSQUAD_PATH||"/tmp/guardian/botsquad.json",{});
+  const conductorState=await readJson(process.env.GUARDIAN_CONDUCTOR_PATH||"/tmp/guardian/conductor.json",{});
+  const suggesterFeed=await readJson(process.env.GUARDIAN_SUGGESTER_PATH||"/tmp/guardian/suggester.json",{});
   const branchReport=await readJson(process.env.GUARDIAN_BRANCH_REPORT_PATH||"/tmp/guardian/branch-cleaner-report.json",{});
   const reviewerReport=await readJson(process.env.GUARDIAN_REVIEWER_REPORT_PATH||"/tmp/guardian/workflow-reviewer-report.json",{});
   const previousSnapshot=await readJson(process.env.GUARDIAN_PREVIOUS_SNAPSHOT_PATH||"/tmp/guardian/previous.json",null);
@@ -487,7 +531,7 @@ async function main(){
   }
 
   const snapshot=buildGuardianSnapshot({
-    config,blueprint,environment,enforcer,knowledge,botsquad,
+    config,blueprint,environment,enforcer,knowledge,botsquad,conductorState,suggesterFeed,
     branchReport,reviewerReport,previousSnapshot,
     sourceState:sources,treeContracts:contracts,remoteRepositories,headSha
   });
