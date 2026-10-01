@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   visibility:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.head_branch == 'main'
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.event != 'workflow_run')
     name: Assess visibility, trends and route-to-market
     runs-on: ubuntu-24.04
     timeout-minutes: 15
