@@ -3,7 +3,9 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const configPath=fileURLToPath(new URL("../config/worktree-gate-timeframes.json",import.meta.url));
+const calmerPath=fileURLToPath(new URL("../config/calmer.tree.json",import.meta.url));
 const CONFIG=JSON.parse(readFileSync(configPath,"utf8"));
+const CALMER=JSON.parse(readFileSync(calmerPath,"utf8"));
 
 function clean(value){ return typeof value==="string" ? value.trim() : ""; }
 function parseArgs(argv){
@@ -28,6 +30,14 @@ function escalatedTaskComplexity(base,changedFiles){
 }
 function roundUpHuman(hours){ return CONFIG.humanBuckets.find((x)=>hours<=x) || CONFIG.maxHumanHours; }
 function roundUpMachine(minutes){ return CONFIG.machineBucketsMinutes.find((x)=>minutes<=x) || CONFIG.machineBucketsMinutes.at(-1); }
+function calmerMinimumPassHours(profile,effectiveTask,effectiveReporting){
+  const domainFloors=(profile.reviewDomains||[])
+    .map((key)=>Number(CALMER.domainFloorsHours?.[key]||0));
+  const domainFloor=domainFloors.length ? Math.max(...domainFloors) : 0;
+  const taskFloor=Number(CONFIG.taskComplexityHours[effectiveTask]||0)*0.25;
+  const reportingFloor=Number(CONFIG.reportingComplexityHours[effectiveReporting]||0)*0.25;
+  return roundUpHuman(Math.max(domainFloor,taskFloor+reportingFloor));
+}
 function profileFor({gateId,workflowFile}){
   if(workflowFile && CONFIG.gateProfiles[workflowFile]) return [workflowFile,CONFIG.gateProfiles[workflowFile]];
   if(gateId){
@@ -57,8 +67,10 @@ export function proposeWorktreeGateTimeframe({
   const coordinationHours=Math.max(0,(humanAssumptions.length-1)*6);
   const taskHours=CONFIG.taskComplexityHours[effectiveTask];
   const reportingHours=CONFIG.reportingComplexityHours[effectiveReporting];
-  const rawHumanHours=humanResponseHours+coordinationHours+taskHours+reportingHours;
-  const humanFollowupHours=roundUpHuman(rawHumanHours);
+  const baselineRawHumanHours=humanResponseHours+coordinationHours+taskHours+reportingHours;
+  const baselineHumanFollowupHours=roundUpHuman(baselineRawHumanHours);
+  const minimumPassHours=calmerMinimumPassHours(profile,effectiveTask,effectiveReporting);
+  const humanFollowupHours=minimumPassHours;
 
   const scopeMultiplier=changed>=31?1.75:changed>=11?1.4:changed>=4?1.2:1;
   const complexityMultiplier={routine:0.8,standard:1,complex:1.25,cross_system:1.5}[effectiveTask];
@@ -72,8 +84,8 @@ export function proposeWorktreeGateTimeframe({
   if(hasOverride){
     if(!isManual) throw new Error("overrideHours is only valid for manual_mutation gates");
     const parsed=Number(overrideHours);
-    if(!Number.isFinite(parsed) || parsed<0.5 || parsed>CONFIG.maxHumanHours){
-      throw new Error(`overrideHours must be between 0.5 and ${CONFIG.maxHumanHours}`);
+    if(!Number.isFinite(parsed) || parsed<minimumPassHours || parsed>CONFIG.maxHumanHours){
+      throw new Error(`overrideHours must be between CALMER minimum ${minimumPassHours} and ${CONFIG.maxHumanHours}`);
     }
     acceptedHours=parsed;
     overrideDeltaHours=Number((parsed-recommendedHours).toFixed(3));
@@ -96,8 +108,12 @@ export function proposeWorktreeGateTimeframe({
       coordinationHours,
       taskHours,
       reportingHours,
-      rawHours:rawHumanHours,
-      recommendedHours:humanFollowupHours
+      rawHours:minimumPassHours,
+      recommendedHours:humanFollowupHours,
+      baselineRawHours:baselineRawHumanHours,
+      baselineRecommendedHours:baselineHumanFollowupHours,
+      calmerMinimumPassHours:minimumPassHours,
+      calmerSofteningHours:Math.max(0,baselineHumanFollowupHours-minimumPassHours)
     },
     manualWindow:isManual?{
       recommendedHours,
@@ -109,7 +125,15 @@ export function proposeWorktreeGateTimeframe({
     interpretation:isManual
       ?"Human response/evidence-gathering planning window for a mutating gate. This does not waive authority requirements."
       :"Machine execution ETA plus human follow-up planning window if intervention, review, or reporting is needed. It does not delay or weaken the automated gate.",
-    calibration:"Planning heuristic, not an SLA. Recalibrate from observed run durations and repository-specific human response timestamps.",
+    calmer:{
+      mode:CALMER.mode,
+      pressure:CALMER.pressure,
+      hardControlsPreserved:true,
+      minimumPassHours,
+      baselinePlanningHours:baselineHumanFollowupHours,
+      softenedPlanningHours:humanFollowupHours
+    },
+    calibration:"Planning heuristic, not an SLA. CALMER minimizes planning/evidence friction only; automated checks, authority requirements, hard Boundaries, ENFORCER blockers and mandatory approvals remain unchanged.",
     generatedAt:new Date().toISOString()
   };
 }

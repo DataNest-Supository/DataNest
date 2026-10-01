@@ -91,6 +91,12 @@ async function main(){
     await jsonFile("config/boundaries.policy.json"),
     await jsonFile("config/botsquad.tree.json"),
     await jsonFile("config/enforcer.tree.json"),
+    await jsonFile("config/guardian.tree.json"),
+    await jsonFile("config/conductor.tree.json"),
+    await jsonFile("config/suggester.tree.json"),
+    await jsonFile("config/calmer.tree.json"),
+    await jsonFile("config/regulator.tree.json"),
+    await jsonFile("config/visibility-utility.tree.json"),
     config
   ];
 

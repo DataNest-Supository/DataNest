@@ -355,6 +355,78 @@
         "engineeringReview"
       ],
       "machineBaselineMinutes": 20
+    },
+    "guardian.yml": {
+      "gateId": "guardian",
+      "gateType": "automated_enforcement",
+      "taskComplexity": "cross_system",
+      "reportingComplexity": "audit_grade",
+      "reviewDomains": [
+        "engineeringReview",
+        "operationsReview",
+        "securityReview",
+        "governanceReview"
+      ],
+      "machineBaselineMinutes": 30
+    },
+    "conductor.yml": {
+      "gateId": "conductor",
+      "gateType": "automated_enforcement",
+      "taskComplexity": "cross_system",
+      "reportingComplexity": "audit_grade",
+      "reviewDomains": [
+        "engineeringReview",
+        "operationsReview",
+        "governanceReview"
+      ],
+      "machineBaselineMinutes": 20
+    },
+    "suggester.yml": {
+      "gateId": "suggester",
+      "gateType": "automated_analysis",
+      "taskComplexity": "complex",
+      "reportingComplexity": "detailed",
+      "reviewDomains": [
+        "engineeringReview",
+        "operationsReview",
+        "governanceReview"
+      ],
+      "machineBaselineMinutes": 15
+    },
+    "calmer.yml": {
+      "gateId": "calmer",
+      "gateType": "automated_analysis",
+      "taskComplexity": "standard",
+      "reportingComplexity": "detailed",
+      "reviewDomains": [
+        "governanceReview",
+        "securityReview"
+      ],
+      "machineBaselineMinutes": 15
+    },
+    "regulator.yml": {
+      "gateId": "regulator",
+      "gateType": "automated_analysis",
+      "taskComplexity": "cross_system",
+      "reportingComplexity": "audit_grade",
+      "reviewDomains": [
+        "governanceReview",
+        "securityReview",
+        "operationsReview"
+      ],
+      "machineBaselineMinutes": 20
+    },
+    "visibility-utility.yml": {
+      "gateId": "visibility-utility",
+      "gateType": "automated_analysis",
+      "taskComplexity": "complex",
+      "reportingComplexity": "detailed",
+      "reviewDomains": [
+        "engineeringReview",
+        "visualReview",
+        "governanceReview"
+      ],
+      "machineBaselineMinutes": 20
     }
   }
 }

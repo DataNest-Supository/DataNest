@@ -9,7 +9,13 @@
     "^automation/knowledge-feed$",
     "^automation/botsquad/",
     "^automation/environment-feed$",
-    "^automation/enforcer$"
+    "^automation/enforcer$",
+    "^automation/guardian$",
+    "^automation/conductor$",
+    "^automation/suggester$",
+    "^automation/calmer$",
+    "^automation/regulator$",
+    "^automation/visibility-utility$"
   ],
   "supabaseProjects": [
     {

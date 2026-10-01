@@ -43,6 +43,36 @@
       "id": "enforcer",
       "repository": "DataNest-Supository/DataNest",
       "mode": "specialized-defensive"
+    },
+    {
+      "id": "guardian",
+      "repository": "DataNest-Supository/DataNest",
+      "mode": "specialized-health-and-safe-healing"
+    },
+    {
+      "id": "conductor",
+      "repository": "DataNest-Supository/DataNest",
+      "mode": "specialized-process-synchronization"
+    },
+    {
+      "id": "suggester",
+      "repository": "DataNest-Supository/DataNest",
+      "mode": "specialized-continuous-optimization"
+    },
+    {
+      "id": "calmer",
+      "repository": "DataNest-Supository/DataNest",
+      "mode": "specialized-minimum-friction-governance"
+    },
+    {
+      "id": "regulator",
+      "repository": "DataNest-Supository/DataNest",
+      "mode": "specialized-transparent-harmony-regulation"
+    },
+    {
+      "id": "visibility-utility",
+      "repository": "DataNest-Supository/DataNest",
+      "mode": "specialized-visibility-market-intelligence"
     }
   ],
   "dimensions": [
@@ -117,6 +147,30 @@
     {
       "target": "enforcer",
       "path": "environment/feeds/enforcer.json"
+    },
+    {
+      "target": "guardian",
+      "path": "environment/feeds/guardian.json"
+    },
+    {
+      "target": "conductor",
+      "path": "environment/feeds/conductor.json"
+    },
+    {
+      "target": "suggester",
+      "path": "environment/feeds/suggester.json"
+    },
+    {
+      "target": "calmer",
+      "path": "environment/feeds/calmer.json"
+    },
+    {
+      "target": "regulator",
+      "path": "environment/feeds/regulator.json"
+    },
+    {
+      "target": "visibility-utility",
+      "path": "environment/feeds/visibility-utility.json"
     }
   ]
 }

@@ -194,6 +194,12 @@ DataNest
 ├── BOTSQUAD        -> AI-only advisory specialist branches
 ├── ENVIRONMENT     -> compatibility assessment and safe adaptation feeds
 ├── ENFORCER        -> continuous Boundaries/security defence + transparent learning
+├── GUARDIAN        -> blueprint snapshots, health drift + safe healing
+├── CONDUCTOR       -> workflow timing, dependencies + pull/push coordination
+├── SUGGESTER       -> continuous optimization + bounded automation queue
+├── CALMER          -> minimum-friction pass floors + STONE/GOLD/DIAMOND incentives
+├── REGULATOR       -> transparent requirements + BOTSQUAD audit/stress/supply/action
+├── VISIBILITY-UTILITY -> SEO, market presence + route-to-market intelligence
 ├── Mirror-DataNest -> ungated R&D candidate workspace
 └── FREETREE        -> isolated open-development repository, no synchronization
 ```
@@ -210,3 +216,58 @@ Resonance Forge mirrors this topology as a read-only/scoped-agent projection. Th
 ENFORCER continuously correlates Boundaries, the complete approved Knowledge corpus, ENVIRONMENT compatibility, repository security-workflow state, Forge tree lineage, and published audit-index evidence. It may fail its own defensive check when a machine-verifiable invariant is violated.
 
 ENFORCER does not receive production deployment authority and cannot rewrite Boundaries or suppress findings. Its learning feed has no Knowledge category/topic filter; protected secrets and private authentication material remain outside the learning corpus and outside transparency publication.
+
+
+### GUARDIAN, CONDUCTOR and SUGGESTER loop
+
+GUARDIAN measures actual operating state against a machine-readable optimal blueprint. It snapshots environment compatibility, ENFORCER state, Knowledge availability, BOTSQUAD availability, branch redundancy, source-maintainability signals, remote repository inventory, and coordination freshness. Safe healing is limited to branches proven to have no unique commits and byte-safe text normalization; behavioral code removal or refactoring remains pull-request reviewed.
+
+CONDUCTOR is the timing and command coordinator. It reads recent workflow state, respects dependency freshness, dispatches at most one due process per cycle, and preserves the existing authority of each target tree. It uses event-driven workflow completion plus a 15-minute coordination pulse rather than claiming zero-latency execution.
+
+When the process graph is synchronized, CONDUCTOR triggers SUGGESTER. SUGGESTER continuously synthesizes GUARDIAN health, Knowledge learning, ENVIRONMENT compatibility, ENFORCER defence state, BOTSQUAD proposals and CONDUCTOR timing into deduplicated optimization suggestions. Only predefined reversible maintenance actions enter its autonomous command queue; changes to behavior, dependencies, providers, governance, UX/functions, products or business remain review-required.
+
+The resulting operating loop is:
+
+```text
+sources / environment / security
+        ↓ pull
+Knowledge + ENVIRONMENT + ENFORCER + BOTSQUAD
+        ↓
+GUARDIAN snapshot → drift + safe healing evidence
+        ↓
+CONDUCTOR timing / dependency synchronization
+        ↓
+SUGGESTER optimization feed
+        ↓ safe allowlist only
+CONDUCTOR dispatch
+        ↓
+reviewed or reversible update path
+```
+
+Mirror-DataNest consumes designated public feeds through Mirror-owned workflows. FREETREE remains outside automatic synchronization and automatic healing.
+
+
+### CALMER and REGULATOR relationship
+
+CALMER continuously searches for the least restrictive **planning and evidence-routing** configuration that still satisfies the DataNest pass floor. It may reduce response windows, duplicated evidence requests, redundant review handoffs, stale-evidence refreshes and low-risk queue friction. It does **not** remove automated checks, hard Boundaries, ENFORCER security blockers, production authorization, secret protections, unique-history protections or mandatory human approval. Shared gate-timeframe proposals now use CALMER's computed minimum-pass floor by default and reject owner overrides below that floor.
+
+CALMER also publishes incentive packages for functions, processes and builds:
+
+- **STONE** — baseline passing evidence and minimum-friction routing.
+- **GOLD** — stronger accuracy/performance/security/contribution evidence with accelerated low-risk routing and longer evidence reuse.
+- **DIAMOND** — maximum non-authorizing softening and fast-lane treatment when all high thresholds, including full security evidence, are satisfied.
+
+REGULATOR converts unresolved health, security, environment, governance and optimization requirements into transparent requirement packets. Those packets are consumable by dedicated BOTSQUAD roles for audit, stress-testing, free/open/already-authorized acquisition scouting, supply-readiness analysis and bounded action planning. "Acquisition" does not authorize purchases, financial commitments, credential acquisition or provider authority.
+
+REGULATOR publishes a sanitized transparency surface and feeds its requirements back into SUGGESTER. CONDUCTOR manages freshness for CALMER and REGULATOR before completing the synchronized SUGGESTER cycle.
+
+
+### VISIBILITY-UTILITY relationship
+
+VISIBILITY-UTILITY continuously evaluates the public discoverability and market-facing condition of DataNest. It audits technical SEO, canonical/social metadata, robots/sitemap/manifest coverage, public assurance evidence, Supository delivery coverage, configured global/local trend inputs, analytics availability and commercial-baseline availability.
+
+Its route-to-market engine compares owned search/content, Reson8/RONSAS ecosystem cross-promotion, product-led public proof, partnership/referral, community/education, marketplace/integration, human-led outreach and paid acquisition. Without real historical/commercial inputs it publishes **relative scenario indices only**. Currency/revenue projection requires an explicit baseline and conversion evidence.
+
+VISIBILITY-UTILITY is freshness-managed by CONDUCTOR after Knowledge, BOTSQUAD and REGULATOR. It sends SEO/market evidence and route-to-market scenarios to SUGGESTER as review-required optimization candidates. GUARDIAN monitors visibility evidence as a non-destructive health dimension, while ENFORCER and Boundaries prevent the tree from gaining spend, pricing, sales-commitment, unverified-claim or production authority.
+
+The public System Charter at `/DataNest/system-charter/` is part of the visibility/transparency surface and describes DataNest's mission, value proposition, governance, architecture, products/services, projections and standards-alignment posture. Standards references are mappings and targets; they do not assert external ISO certification.

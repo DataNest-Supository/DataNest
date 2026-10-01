@@ -32,6 +32,11 @@ jobs:
           - integration-scout
           - quality-observer
           - environment-liaison
+          - regulator-auditor
+          - regulator-stress-tester
+          - regulator-acquisition-scout
+          - regulator-supply-coordinator
+          - regulator-action-planner
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -54,15 +59,17 @@ jobs:
           mkdir -p /tmp/botsquad
           git fetch origin automation/knowledge-feed || true
           git fetch origin automation/environment-feed || true
+          git fetch origin automation/regulator || true
           git show origin/automation/knowledge-feed:knowledge/feeds/datanest.json > /tmp/botsquad/knowledge.json 2>/dev/null || echo '{}' > /tmp/botsquad/knowledge.json
           git show origin/automation/environment-feed:environment/feeds/botsquad.json > /tmp/botsquad/environment.json 2>/dev/null || echo '{}' > /tmp/botsquad/environment.json
+          git show origin/automation/regulator:regulator/requirements/botsquad.json > /tmp/botsquad/regulator.json 2>/dev/null || echo '{}' > /tmp/botsquad/regulator.json
 
       - name: Run scoped AI specialist
         env:
           BOTSQUAD_AI_ENDPOINT: ${{ secrets.BOTSQUAD_AI_ENDPOINT }}
           BOTSQUAD_AI_API_KEY: ${{ secrets.BOTSQUAD_AI_API_KEY }}
           BOTSQUAD_AI_MODEL: ${{ vars.BOTSQUAD_AI_MODEL }}
-        run: node scripts/botsquad-orchestrator.mjs --bot "${{ matrix.bot }}" --knowledge /tmp/botsquad/knowledge.json --environment /tmp/botsquad/environment.json --out "botsquad/feeds/specialists/${{ matrix.bot }}.json"
+        run: node scripts/botsquad-orchestrator.mjs --bot "${{ matrix.bot }}" --knowledge /tmp/botsquad/knowledge.json --environment /tmp/botsquad/environment.json --regulator /tmp/botsquad/regulator.json --out "botsquad/feeds/specialists/${{ matrix.bot }}.json"
 
       - name: Publish bot feed branch
         shell: bash

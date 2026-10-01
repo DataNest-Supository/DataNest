@@ -11,7 +11,13 @@
     "boundaries",
     "botsquad",
     "environment",
-    "enforcer"
+    "enforcer",
+    "guardian",
+    "conductor",
+    "suggester",
+    "calmer",
+    "regulator",
+    "visibility-utility"
   ],
   "exclude": [
     "node_modules",

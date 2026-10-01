@@ -230,6 +230,61 @@
       "branch": "automation/enforcer",
       "knowledgeAccess": "all-approved-knowledge-no-category-filter",
       "transparencyEvidence": true
+    },
+    "guardian": {
+      "path": "guardian/",
+      "mode": "event-driven-health-and-safe-healing",
+      "productionAuthority": false,
+      "branch": "automation/guardian",
+      "blueprint": "config/guardian.blueprint.json",
+      "heals": "proven-branch-redundancy-and-byte-safe-source-noise",
+      "mirrorFeed": true
+    },
+    "conductor": {
+      "path": "conductor/",
+      "mode": "event-driven-process-synchronization",
+      "productionAuthority": false,
+      "branch": "automation/conductor",
+      "purpose": "timing-dependency-and-pull-push-coordination"
+    },
+    "suggester": {
+      "path": "suggester/",
+      "mode": "continuous-optimization-suggestions",
+      "productionAuthority": false,
+      "branch": "automation/suggester",
+      "purpose": "continuous-optimization-and-bounded-autonomous-update-queue"
+    },
+    "calmer": {
+      "path": "calmer/",
+      "mode": "continuous-minimum-friction-governance",
+      "productionAuthority": false,
+      "branch": "automation/calmer",
+      "tiers": [
+        "STONE",
+        "GOLD",
+        "DIAMOND"
+      ],
+      "hardFloorPreserved": true
+    },
+    "regulator": {
+      "path": "regulator/",
+      "mode": "transparent-system-regulation-and-harmony",
+      "productionAuthority": false,
+      "branch": "automation/regulator",
+      "botsquadRequirementFeed": true
+    },
+    "visibility-utility": {
+      "path": "visibility-utility/",
+      "mode": "continuous-visibility-market-intelligence-and-route-to-market",
+      "productionAuthority": false,
+      "branch": "automation/visibility-utility",
+      "transparencyEvidence": true,
+      "routeToMarketProjections": true
     }
+  },
+  "publicSystemCharter": {
+    "path": "docs/DATANEST_SYSTEM_CHARTER.md",
+    "publicUrl": "https://datanest-supository.github.io/DataNest/system-charter/",
+    "standardsAlignment": "mapped-not-certified"
   }
 }

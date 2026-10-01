@@ -60,6 +60,8 @@ const auditReturnBase=`${publicBasePath}/transparency/audits/external-full-syste
 const auditReturnUrl=auditReturnBase+"/report.md";
 const findingsUrl=auditReturnBase+"/findings.json";
 const backlogUrl=auditReturnBase+"/remediation-backlog.json";
+const systemCharterUrl=`${publicBasePath}/system-charter/`;
+const visibilityUtilityIndexUrl=`${publicBasePath}/transparency/visibility-utility/index.json`;
 
 function downloadText(filename:string,text:string){
   const blob=new Blob([text],{type:"text/plain;charset=utf-8"});
@@ -173,6 +175,22 @@ export default function TransparencyWorkspace(){
       </div>
 
       <div className="transparencyDocumentGrid">
+        <article className="transparencyDocCard">
+          <div className="transparencyDocHeader">
+            <div><p className="eyebrow">SYSTEM CHARTER · 1 OCT 2026</p><h3>Scope, Mission, Governance, Architecture &amp; Assurance</h3></div>
+            <span className="badge good">PUBLISHED</span>
+          </div>
+          <p>Public charter covering mission, vision, value proposition, governance, specialized-tree architecture, infrastructure, products/services, market-growth controls, projections and standards alignment.</p>
+          <dl className="transparencyMeta">
+            <div><dt>Standards posture</dt><dd>ISO/NIST/WCAG aligned mapping; no certification claim</dd></div>
+            <div><dt>Visibility</dt><dd>Public source-controlled platform document</dd></div>
+          </dl>
+          <div className="heroActions">
+            <a className="primaryButton compact linkButton" href={systemCharterUrl}>Open System Charter</a>
+            <a className="secondaryButton compact linkButton" href="https://github.com/DataNest-Supository/DataNest/blob/main/docs/DATANEST_SYSTEM_CHARTER.md">Source on GitHub</a>
+            <a className="textButton linkButton" href={visibilityUtilityIndexUrl}>Visibility intelligence index</a>
+          </div>
+        </article>
         <article className="transparencyDocCard"><div className="transparencyDocHeader"><div><p className="eyebrow">DATA NEST ARCHITECTURE · 28 SEP 2026</p><h3>Architecture &amp; Infrastructure Audit / Stakeholder Document</h3></div><span className="badge good">PUBLISHED</span></div><p>Current architecture authority, infrastructure boundaries, governed AI lifecycle, execution controls, security model, CI/CD evidence and clearly separated target-state capabilities.</p><dl className="transparencyMeta"><div><dt>Audience</dt><dd>Audit + stakeholder presentation</dd></div><div><dt>Status</dt><dd>Published reference; claims remain evidence-bound</dd></div></dl><div className="heroActions"><a className="primaryButton compact linkButton" href="./architecture">Open architecture document</a><a className="secondaryButton compact linkButton" href="https://github.com/DataNest-Supository/DataNest/blob/main/docs/ARCHITECTURE.md">Source on GitHub</a></div></article>
         <article className="transparencyDocCard"><div className="transparencyDocHeader"><div><p className="eyebrow">ADVERSARIAL VALIDATION · 28 SEP 2026</p><h3>DataNest AI Adversarial Stress-Test Evidence</h3></div><span className="badge good">PUBLISHED</span></div><p>Database-level validation of authentication boundaries, authority escalation, contribution certification, request idempotency, payload-tamper protection, row isolation and certified-memory exposure.</p><dl className="transparencyMeta"><div><dt>Scope</dt><dd>Staging runtime tests + production schema/function inspection</dd></div><div><dt>Result</dt><dd>Verified controls recorded; not a full penetration test</dd></div></dl><div className="heroActions"><a className="primaryButton compact linkButton" href="./stress-test">Open stress-test report</a><a className="secondaryButton compact linkButton" href="https://github.com/DataNest-Supository/DataNest/blob/main/docs/ADVERSARIAL_STRESS_TEST_2026-09-28.md">Source on GitHub</a></div></article>
         <article className="transparencyDocCard">

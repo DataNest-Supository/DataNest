@@ -58,7 +58,15 @@ DataNest does not require Vercel. GitHub Pages is the active public delivery tar
 - **BOTSQUAD** — AI-only advisory specialist branches for optimization, product expansion, business growth, UX ease, UI evolution, function evolution, integrations, quality, and environment translation.
 - **ENVIRONMENT** — shared compatibility assessor for runtimes, CI, delivery, backend, inference, Forge, recovery, dependencies, branch hygiene, and evidence; only generated non-authorizing adaptations are automatic.
 - **ENFORCER** — continuous defensive enforcement and transparency tree that monitors security against Boundaries, consumes the complete approved Knowledge corpus without category/topic filtering, and publishes traceable learning/defence evidence without production authority.
+- **GUARDIAN** — event-driven health monitor and safe healer that snapshots the operating blueprint, measures drift from optimal conditions, observes branch/source health, deletes only proven redundant branches, and routes behavioral streamlining through review.
+- **CONDUCTOR** — timing and process-synchronization tree that coordinates dependency freshness plus pull/push and push/pull workflow dispatch across the specialized trees.
+- **SUGGESTER** — continuous optimization tree that converts GUARDIAN, Knowledge, ENVIRONMENT, ENFORCER, BOTSQUAD, CONDUCTOR, CALMER and REGULATOR evidence into deduplicated suggestions and a bounded safe-automation queue.
+- **CALMER** — continuous minimum-friction governance tree that pushes planning/evidence gates down to their safe pass floor and awards STONE, GOLD and DIAMOND packages to functions, processes and builds using accuracy, performance, security and contribution evidence.
+- **REGULATOR** — transparency and harmony tree that converts system requirements into BOTSQUAD audit, stress-test, free/open acquisition-scout, supply-readiness and bounded action-planning work.
+- **VISIBILITY-UTILITY** — continuous SEO, discoverability, brand/platform presence and market-intelligence tree that models evidence-labelled routes to market and projected relative outcomes without autonomous spend, pricing, sales or unverified-claim authority.
 - **FREETREE** — isolated open-development clone target with no DataNest/Mirror synchronization, Knowledge exchange, Boundaries governance, BOTSQUAD feed authority, or canonical production authority.
+
+Public system scope, mission, vision, governance, architecture, products/services, projections and standards alignment are documented in [`docs/DATANEST_SYSTEM_CHARTER.md`](docs/DATANEST_SYSTEM_CHARTER.md) and rendered publicly at **/DataNest/system-charter/**. The standards mapping is an alignment reference, not a claim of ISO certification.
 
 Scheduled noise deletion and decluttering are defined in [`docs/MAINTENANCE_PROTOCOL.md`](docs/MAINTENANCE_PROTOCOL.md).
 

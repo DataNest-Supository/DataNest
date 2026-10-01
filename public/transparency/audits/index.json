@@ -111,6 +111,92 @@
         "role_effect": false,
         "production_authorization": false
       }
+    },
+    {
+      "id": "regulator-continuous-harmony",
+      "title": "DataNest REGULATOR Continuous Harmony Transparency",
+      "document_type": "continuous_regulation_index",
+      "version": "1.0",
+      "status": "published",
+      "audit_result_status": "continuous_generated_evidence",
+      "published_at": "2026-10-01",
+      "source": "../regulator/index.json",
+      "coverage": {
+        "requirements": true,
+        "botsquad_audit": true,
+        "stress_test": true,
+        "free_open_acquisition_scout": true,
+        "supply_readiness": true,
+        "action_planning": true,
+        "financial_commitments": false,
+        "credential_acquisition": false
+      },
+      "authority": {
+        "governance_effect": false,
+        "financial_effect": false,
+        "ownership_effect": false,
+        "role_effect": false,
+        "production_authorization": false
+      }
+    },
+    {
+      "id": "datanest-system-charter-v1",
+      "title": "DataNest System Charter · Scope, Mission, Governance, Architecture & Assurance",
+      "document_type": "system_charter",
+      "version": "1.0",
+      "status": "published",
+      "audit_result_status": "public_management_system_reference",
+      "published_at": "2026-10-01",
+      "source": "../system-charter/index.json",
+      "coverage": {
+        "mission": true,
+        "vision": true,
+        "value_proposition": true,
+        "governance": true,
+        "architecture": true,
+        "infrastructure": true,
+        "products_services": true,
+        "projections": true,
+        "standards_alignment": true
+      },
+      "assurance": {
+        "iso_certified": false,
+        "accreditation_claimed": false,
+        "guaranteed_business_outcomes": false
+      },
+      "authority": {
+        "governance_effect": false,
+        "financial_effect": false,
+        "ownership_effect": false,
+        "role_effect": false,
+        "production_authorization": false
+      }
+    },
+    {
+      "id": "visibility-utility-continuous-market-intelligence",
+      "title": "DataNest VISIBILITY-UTILITY Continuous Visibility & Market Intelligence",
+      "document_type": "continuous_visibility_index",
+      "version": "1.0",
+      "status": "published",
+      "audit_result_status": "continuous_generated_evidence",
+      "published_at": "2026-10-01",
+      "source": "../visibility-utility/index.json",
+      "coverage": {
+        "technical_seo": true,
+        "platform_visibility": true,
+        "trend_inputs": true,
+        "route_to_market": true,
+        "projected_outcomes": true,
+        "guaranteed_outcomes": false,
+        "marketing_spend_authority": false
+      },
+      "authority": {
+        "governance_effect": false,
+        "financial_effect": false,
+        "ownership_effect": false,
+        "role_effect": false,
+        "production_authorization": false
+      }
     }
   ]
 }

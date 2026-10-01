@@ -138,6 +138,12 @@ Resonance Forge indexes DataNest specialized trees through `specialized-trees.js
 - **BOTSQUAD** — scoped AI-agent identities mapped to `automation/botsquad/*`; agents have no production authority.
 - **ENVIRONMENT** — compatibility and adaptation-feed observation.
 - **ENFORCER** — defensive-evidence observation with complete approved Knowledge lineage and no production authority.
+- **GUARDIAN** — health/drift/healing evidence observation.
+- **CONDUCTOR** — orchestration timing and command-lineage observation.
+- **SUGGESTER** — optimization-suggestion and bounded automation-queue observation.
+- **CALMER** — minimum-friction governance and STONE/GOLD/DIAMOND tier-evidence observation.
+- **REGULATOR** — transparent harmony requirements and BOTSQUAD regulation-evidence observation.
+- **VISIBILITY-UTILITY** — SEO, market-presence and route-to-market projection evidence observation.
 - **FREETREE** — no automatic Forge replication or synchronization.
 
 Forge may preserve branch, evidence, identity, and compatibility lineage for these trees. It must not convert an AI recommendation, environment finding, or mirrored branch into production authorization.
