@@ -253,6 +253,25 @@
       "productionAuthority": false,
       "branch": "automation/suggester",
       "purpose": "continuous-optimization-and-bounded-autonomous-update-queue"
+    },
+    "calmer": {
+      "path": "calmer/",
+      "mode": "continuous-minimum-friction-governance",
+      "productionAuthority": false,
+      "branch": "automation/calmer",
+      "tiers": [
+        "STONE",
+        "GOLD",
+        "DIAMOND"
+      ],
+      "hardFloorPreserved": true
+    },
+    "regulator": {
+      "path": "regulator/",
+      "mode": "transparent-system-regulation-and-harmony",
+      "productionAuthority": false,
+      "branch": "automation/regulator",
+      "botsquadRequirementFeed": true
     }
   }
 }
