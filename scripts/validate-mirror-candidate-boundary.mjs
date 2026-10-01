@@ -15,13 +15,17 @@ if (!pathsFile) throw new Error("Usage: node scripts/validate-mirror-candidate-b
 const boundary = loadBoundary(contractPath);
 const paths = readFileSync(pathsFile, "utf8").split(/\r?\n/).map((value) => value.trim()).filter(Boolean);
 const classifications = classifyPaths([...new Set(paths)], boundary);
-const blocked = classifications.filter((item) => item.policy !== "promotable");
-const promotablePaths = classifications.filter((item) => item.policy === "promotable").map((item) => item.path);
+const promotable = classifications.filter((item) => item.policy === "promotable");
+const ignored = classifications.filter((item) => item.policy === "mirror_only");
+const blocked = classifications.filter((item) =>
+  ["canonical_only", "protected_shared", "unclassified"].includes(item.policy)
+);
 
 const report = {
-  schemaVersion: "mirror-candidate-boundary-v1",
+  schemaVersion: "mirror-candidate-boundary-v2",
   sourcePathCount: classifications.length,
-  promotablePaths,
+  promotablePaths: promotable.map((item) => item.path),
+  ignoredPaths: ignored.map((item) => item.path),
   classifications,
   blocked
 };
@@ -35,4 +39,6 @@ if (blocked.length) {
   process.exit(1);
 }
 
-console.log(`Mirror candidate boundary clean: ${promotablePaths.length} promotable path(s).`);
+console.log(
+  `Mirror candidate boundary clean: ${promotable.length} promotable path(s), ${ignored.length} Mirror-only path(s) excluded.`
+);
