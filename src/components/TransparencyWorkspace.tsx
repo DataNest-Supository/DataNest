@@ -62,6 +62,8 @@ const findingsUrl=auditReturnBase+"/findings.json";
 const backlogUrl=auditReturnBase+"/remediation-backlog.json";
 const systemCharterUrl=`${publicBasePath}/system-charter/`;
 const visibilityUtilityIndexUrl=`${publicBasePath}/transparency/visibility-utility/index.json`;
+const libertyTraceabilityUrl=`${publicBasePath}/traceability/`;
+const libertyBootstrapUrl=`${publicBasePath}/transparency/liberty-in-all/index.json`;
 
 function downloadText(filename:string,text:string){
   const blob=new Blob([text],{type:"text/plain;charset=utf-8"});
@@ -175,6 +177,22 @@ export default function TransparencyWorkspace(){
       </div>
 
       <div className="transparencyDocumentGrid">
+        <article className="transparencyDocCard">
+          <div className="transparencyDocHeader">
+            <div><p className="eyebrow">LIBERTY-IN-ALL · VERSION 1.0</p><h3>Continuous Public Traceability Standard</h3></div>
+            <span className="badge good">PUBLISHED</span>
+          </div>
+          <p>DataNest internal standard for universal non-sensitive inspectability, provenance, uncertainty labelling, versioned correction, audit/regulatory readiness and on-demand public traceability.</p>
+          <dl className="transparencyMeta">
+            <div><dt>Live model</dt><dd>Event-driven + 10-minute pulse</dd></div>
+            <div><dt>Boundary</dt><dd>No secrets, private auth, protected personal data or private AI memory</dd></div>
+          </dl>
+          <div className="heroActions">
+            <a className="primaryButton compact linkButton" href={libertyTraceabilityUrl}>Open live Traceability</a>
+            <a className="secondaryButton compact linkButton" href="https://github.com/DataNest-Supository/DataNest/blob/main/docs/LIBERTY_IN_ALL_STANDARD.md">Read standard</a>
+            <a className="textButton linkButton" href={libertyBootstrapUrl}>Machine-readable bootstrap</a>
+          </div>
+        </article>
         <article className="transparencyDocCard">
           <div className="transparencyDocHeader">
             <div><p className="eyebrow">SYSTEM CHARTER · 1 OCT 2026</p><h3>Scope, Mission, Governance, Architecture &amp; Assurance</h3></div>
