@@ -158,8 +158,8 @@ export function selfTest() {
   const cases = [
     ["aws", "AWS_ACCESS_KEY_ID=AKIA1234567890ABCDEF", true],
     ["private", "-----BEGIN PRIVATE KEY-----", true],
-    ["generic", "client_secret = \\"this-is-a-real-looking-secret-value-123\\"", true],
-    ["placeholder", "client_secret = \\"YOUR_SECRET_HERE_1234567890\\"", false]
+    ["generic", 'client_secret = "this-is-a-real-looking-secret-value-123"', true],
+    ["placeholder", 'client_secret = "YOUR_SECRET_HERE_1234567890"', false]
   ];
   for (const [name, value, expected] of cases) {
     const found = findFindings(value, "self-test/" + name);
