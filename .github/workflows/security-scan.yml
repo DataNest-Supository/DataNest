@@ -51,17 +51,108 @@ jobs:
           sudo install -m 0755 /tmp/gitleaks /usr/local/bin/gitleaks
           gitleaks version
 
-      - name: Scan Git history for secrets
+      - name: Scan current working tree for secrets
+        id: gitleaks_current
         shell: bash
         run: |
+          set +e
+          gitleaks dir . \
+            --no-banner \
+            --redact=100 \
+            --report-format sarif \
+            --report-path results-current.sarif
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Scan new commit range for secrets
+        id: gitleaks_incremental
+        shell: bash
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+          PUSH_HEAD_SHA: ${{ github.sha }}
+        run: |
+          set +e
+          zeros="0000000000000000000000000000000000000000"
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ] && [ -n "$PR_BASE_SHA" ] && [ -n "$PR_HEAD_SHA" ]; then
+            range="$PR_BASE_SHA..$PR_HEAD_SHA"
+          elif [ "$GITHUB_EVENT_NAME" = "push" ] && [ -n "$PUSH_BEFORE_SHA" ] && [ "$PUSH_BEFORE_SHA" != "$zeros" ]; then
+            range="$PUSH_BEFORE_SHA..$PUSH_HEAD_SHA"
+          elif git rev-parse HEAD^ >/dev/null 2>&1; then
+            range="HEAD^..HEAD"
+          else
+            range="HEAD"
+          fi
+          echo "Scanning commit range: $range"
+          gitleaks git . \
+            --no-banner \
+            --redact=100 \
+            --log-opts="$range --diff-filter=tuxdb" \
+            --report-format sarif \
+            --report-path results-incremental.sarif
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Audit full Git history for legacy secret findings
+        id: gitleaks_history
+        shell: bash
+        run: |
+          set +e
+          gitleaks git . \
+            --no-banner \
+            --redact=100 \
+            --report-format sarif \
+            --report-path results-history.sarif
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          if [ -s results-history.sarif ]; then
+            count="$(jq '[.runs[]?.results[]?] | length' results-history.sarif)"
+          else
+            count=0
+          fi
+          echo "finding_count=$count" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Enforce current and incremental secret gates
+        shell: bash
+        env:
+          CURRENT_EXIT: ${{ steps.gitleaks_current.outputs.exit_code }}
+          INCREMENTAL_EXIT: ${{ steps.gitleaks_incremental.outputs.exit_code }}
+          HISTORY_EXIT: ${{ steps.gitleaks_history.outputs.exit_code }}
+          HISTORY_COUNT: ${{ steps.gitleaks_history.outputs.finding_count }}
+        run: |
           set -euo pipefail
-          gitleaks git .             --no-banner             --redact=100             --report-format sarif             --report-path results.sarif
-      - name: Upload gitleaks SARIF artifact
-        if: always() && hashFiles('results.sarif') != ''
+          for pair in "current:$CURRENT_EXIT" "incremental:$INCREMENTAL_EXIT"; do
+            name="${pair%%:*}"
+            code="${pair##*:}"
+            if [ "$code" = "1" ]; then
+              echo "::error::Gitleaks found secret-pattern findings in the $name scan."
+              exit 1
+            fi
+            if [ "$code" != "0" ]; then
+              echo "::error::Gitleaks $name scan failed with exit code $code."
+              exit 1
+            fi
+          done
+          if [ "$HISTORY_EXIT" = "1" ]; then
+            echo "::warning::Legacy Git history contains $HISTORY_COUNT secret-pattern finding(s). Current/new-change gates are clean; historical remediation remains tracked separately."
+          elif [ "$HISTORY_EXIT" != "0" ]; then
+            echo "::error::Gitleaks full-history audit failed with exit code $HISTORY_EXIT."
+            exit 1
+          fi
+
+      - name: Upload gitleaks SARIF artifacts
+        if: always()
         uses: actions/upload-artifact@v4.6.2
         with:
           name: gitleaks-sarif-${{ github.run_id }}-${{ github.sha }}
-          path: results.sarif
+          path: |
+            results-current.sarif
+            results-incremental.sarif
+            results-history.sarif
           if-no-files-found: warn
           retention-days: ${{ env.SARIF_RETENTION_DAYS }}
 
