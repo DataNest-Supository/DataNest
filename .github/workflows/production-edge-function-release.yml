@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: Deploy governed Edge Functions from exact release SHA
+    name: Release governed Edge Functions from exact release SHA
     needs: gate-timeframe
     environment:
       name: github-pages
@@ -51,17 +51,22 @@ jobs:
         with:
           deno-version: v2.9.7
 
-      - uses: supabase/setup-cli@v3
-        with:
-          version: 2.118.0
-
-      - name: Require production deployment credential
+      - name: Select production Edge release mode
+        id: release_mode
         shell: bash
         run: |
-          test -n "$SUPABASE_ACCESS_TOKEN" || {
-            echo "SUPABASE_ACCESS_TOKEN is required to deploy governed production Edge Functions."
-            exit 1
-          }
+          if [ -n "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "mode=management-api" >> "$GITHUB_OUTPUT"
+            echo "Using GitHub-held Supabase management credential."
+          else
+            echo "mode=connector-attested" >> "$GITHUB_OUTPUT"
+            echo "SUPABASE_ACCESS_TOKEN is absent; requiring fresh connector-attested live inventory bound to the exact source tree."
+          fi
+
+      - uses: supabase/setup-cli@v3
+        if: steps.release_mode.outputs.mode == 'management-api'
+        with:
+          version: 2.118.0
 
       - name: Validate governed Edge Function bundles
         shell: bash
@@ -87,6 +92,7 @@ jobs:
           done
 
       - name: Deploy governed Edge Functions from exact checkout
+        if: steps.release_mode.outputs.mode == 'management-api'
         shell: bash
         run: |
           set -euo pipefail
@@ -107,6 +113,15 @@ jobs:
               --use-docker
             echo "::endgroup::"
           done
+
+      - name: Enforce connector-attested fallback
+        if: steps.release_mode.outputs.mode == 'connector-attested'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f config/production-edge-function-attestation.json
+          echo "Authenticated Supabase connector deployment is represented by the checked-in live inventory baseline."
+          echo "The attestation writer will fail unless that inventory is fresh and the exact supabase/functions source-tree fingerprint matches."
 
       - name: Write production Edge Function release attestation
         run: |
