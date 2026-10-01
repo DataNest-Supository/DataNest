@@ -1,0 +1,13 @@
+# DataNest canonical governance ownership
+# Canonical control-plane and production-adjacent paths require review by the repository owner.
+* @DataNest-Supository
+
+# Governance and authorization boundaries
+/.github/ @DataNest-Supository
+/config/ @DataNest-Supository
+/schemas/ @DataNest-Supository
+/scripts/ @DataNest-Supository
+/supabase/ @DataNest-Supository
+/infra/ @DataNest-Supository
+/docs/governance/ @DataNest-Supository
+/tests/ @DataNest-Supository
