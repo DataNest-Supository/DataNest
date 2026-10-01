@@ -50,6 +50,13 @@
       "productionAuthority": false,
       "forgeMode": "observe-defensive-evidence",
       "knowledgeAccess": "all-approved-knowledge-no-category-filter"
+    },
+    "guardian": {
+      "role": "health-monitor-and-safe-healer",
+      "ref": "automation/guardian",
+      "productionAuthority": false,
+      "forgeMode": "observe-health-drift-and-healing-evidence",
+      "blueprint": "config/guardian.blueprint.json"
     }
   },
   "rules": [
@@ -57,6 +64,7 @@
     "Forge projections cannot assert production authorization.",
     "ENVIRONMENT findings are compatibility evidence, not authority migration.",
     "FREETREE is not automatically replicated, synchronized, or governed by specialized trees.",
-    "ENFORCER may fail defensive checks but cannot acquire production authority or rewrite Boundaries."
+    "ENFORCER may fail defensive checks but cannot acquire production authority or rewrite Boundaries.",
+    "GUARDIAN may heal only proven redundant branches and byte-safe source noise; behavioral repair remains reviewed."
   ]
 }
