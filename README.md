@@ -60,7 +60,9 @@ DataNest does not require Vercel. GitHub Pages is the active public delivery tar
 - **ENFORCER** — continuous defensive enforcement and transparency tree that monitors security against Boundaries, consumes the complete approved Knowledge corpus without category/topic filtering, and publishes traceable learning/defence evidence without production authority.
 - **GUARDIAN** — event-driven health monitor and safe healer that snapshots the operating blueprint, measures drift from optimal conditions, observes branch/source health, deletes only proven redundant branches, and routes behavioral streamlining through review.
 - **CONDUCTOR** — timing and process-synchronization tree that coordinates dependency freshness plus pull/push and push/pull workflow dispatch across the specialized trees.
-- **SUGGESTER** — continuous optimization tree that converts GUARDIAN, Knowledge, ENVIRONMENT, ENFORCER, BOTSQUAD and CONDUCTOR evidence into deduplicated suggestions and a bounded safe-automation queue.
+- **SUGGESTER** — continuous optimization tree that converts GUARDIAN, Knowledge, ENVIRONMENT, ENFORCER, BOTSQUAD, CONDUCTOR, CALMER and REGULATOR evidence into deduplicated suggestions and a bounded safe-automation queue.
+- **CALMER** — continuous minimum-friction governance tree that pushes planning/evidence gates down to their safe pass floor and awards STONE, GOLD and DIAMOND packages to functions, processes and builds using accuracy, performance, security and contribution evidence.
+- **REGULATOR** — transparency and harmony tree that converts system requirements into BOTSQUAD audit, stress-test, free/open acquisition-scout, supply-readiness and bounded action-planning work.
 - **FREETREE** — isolated open-development clone target with no DataNest/Mirror synchronization, Knowledge exchange, Boundaries governance, BOTSQUAD feed authority, or canonical production authority.
 
 Scheduled noise deletion and decluttering are defined in [`docs/MAINTENANCE_PROTOCOL.md`](docs/MAINTENANCE_PROTOCOL.md).
