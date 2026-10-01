@@ -199,6 +199,7 @@ DataNest
 ├── SUGGESTER       -> continuous optimization + bounded automation queue
 ├── CALMER          -> minimum-friction pass floors + STONE/GOLD/DIAMOND incentives
 ├── REGULATOR       -> transparent requirements + BOTSQUAD audit/stress/supply/action
+├── VISIBILITY-UTILITY -> SEO, market presence + route-to-market intelligence
 ├── Mirror-DataNest -> ungated R&D candidate workspace
 └── FREETREE        -> isolated open-development repository, no synchronization
 ```
@@ -259,3 +260,14 @@ CALMER also publishes incentive packages for functions, processes and builds:
 REGULATOR converts unresolved health, security, environment, governance and optimization requirements into transparent requirement packets. Those packets are consumable by dedicated BOTSQUAD roles for audit, stress-testing, free/open/already-authorized acquisition scouting, supply-readiness analysis and bounded action planning. "Acquisition" does not authorize purchases, financial commitments, credential acquisition or provider authority.
 
 REGULATOR publishes a sanitized transparency surface and feeds its requirements back into SUGGESTER. CONDUCTOR manages freshness for CALMER and REGULATOR before completing the synchronized SUGGESTER cycle.
+
+
+### VISIBILITY-UTILITY relationship
+
+VISIBILITY-UTILITY continuously evaluates the public discoverability and market-facing condition of DataNest. It audits technical SEO, canonical/social metadata, robots/sitemap/manifest coverage, public assurance evidence, Supository delivery coverage, configured global/local trend inputs, analytics availability and commercial-baseline availability.
+
+Its route-to-market engine compares owned search/content, Reson8/RONSAS ecosystem cross-promotion, product-led public proof, partnership/referral, community/education, marketplace/integration, human-led outreach and paid acquisition. Without real historical/commercial inputs it publishes **relative scenario indices only**. Currency/revenue projection requires an explicit baseline and conversion evidence.
+
+VISIBILITY-UTILITY is freshness-managed by CONDUCTOR after Knowledge, BOTSQUAD and REGULATOR. It sends SEO/market evidence and route-to-market scenarios to SUGGESTER as review-required optimization candidates. GUARDIAN monitors visibility evidence as a non-destructive health dimension, while ENFORCER and Boundaries prevent the tree from gaining spend, pricing, sales-commitment, unverified-claim or production authority.
+
+The public System Charter at `/DataNest/system-charter/` is part of the visibility/transparency surface and describes DataNest's mission, value proposition, governance, architecture, products/services, projections and standards-alignment posture. Standards references are mappings and targets; they do not assert external ISO certification.
