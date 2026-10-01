@@ -263,6 +263,16 @@
         "operationsReview"
       ],
       "machineBaselineMinutes": 30
+    },
+    "notify-mirror-canonical.yml": {
+      "gateId": "notify-mirror-canonical",
+      "gateType": "automated_analysis",
+      "taskComplexity": "standard",
+      "reportingComplexity": "summary",
+      "reviewDomains": [
+        "operationsReview"
+      ],
+      "machineBaselineMinutes": 10
     }
   }
 }
