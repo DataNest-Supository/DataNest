@@ -13,6 +13,7 @@ import {
   indexPullRequestsByBranch,
   isArchivedPruneTarget,
   normalizeSupabaseProjectPayload,
+  parseArgs,
 } from "../../scripts/branch-cleaner.mjs";
 
 const config = {
@@ -242,4 +243,12 @@ test("missing Supabase verification is a strict blocker", () => {
   });
   assert.equal(blockers.length, 1);
   assert.equal(blockers[0].code, "supabase_audit_unavailable");
+});
+
+
+test("git-only safe mode enables apply without archived pruning", () => {
+  const args = parseArgs(["--git-only-safe-apply"]);
+  assert.equal(args.apply, true);
+  assert.equal(args.gitOnlySafeApply, true);
+  assert.equal(args.pruneArchived, false);
 });

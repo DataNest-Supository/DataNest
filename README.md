@@ -44,7 +44,21 @@ Standalone Node/Docker runtimes continue to expose the server health endpoint at
 - Local PC backup hosting: **disabled**
 - AI compute: **replaceable approved HTTPS inference endpoints; no workstation is required**
 - AI architecture: [`docs/DATANEST_AI_ARCHITECTURE.md`](docs/DATANEST_AI_ARCHITECTURE.md)
-- Optional future delivery target: **Vercel**
+- Vercel dependency: **none**
+
+
+## Delivery-provider metadata
+
+DataNest does not require Vercel. GitHub Pages is the active public delivery target; the retained `vercel.json` exists only to keep the still-linked Vercel Git integration deployment-disabled and is not a runtime dependency.
+
+## Specialized control trees
+
+- **Knowledge** — provenance-preserving repository learning from canonical DataNest and Mirror-DataNest, producing provisional categorized optimization feeds without self-promoting to Certified Memory or production authority.
+- **Boundaries** — canonical tolerance and acceptance assessor mapping DataNest human-AI principles to machine-verifiable invariants and explicit human-review criteria across functional changes.
+- **FREETREE** — isolated open-development clone target with no DataNest/Mirror synchronization, Knowledge exchange, Boundaries governance, or canonical production authority.
+
+Scheduled noise deletion and decluttering are defined in [`docs/MAINTENANCE_PROTOCOL.md`](docs/MAINTENANCE_PROTOCOL.md).
+
 
 GitHub and Supabase remain the required source/CI and backend authorities. Dropbox is continuity storage for governed release and recovery artifacts; it is not the request-serving production web runtime. Hosting remains replaceable delivery infrastructure, not system authority.
 

@@ -181,10 +181,11 @@ export function compareMigrationParity(repoFiles = [], liveMigrations = []) {
   };
 }
 
-function parseArgs(argv) {
-  const out = { apply:false, strict:false, pruneArchived:false, config:"branch-cleaner.config.json", reportDir:"artifacts/branch-cleaner", staleDays:null };
+export function parseArgs(argv) {
+  const out = { apply:false, strict:false, pruneArchived:false, gitOnlySafeApply:false, config:"branch-cleaner.config.json", reportDir:"artifacts/branch-cleaner", staleDays:null };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--apply") out.apply = true;
+    else if (argv[i] === "--git-only-safe-apply") { out.apply = true; out.gitOnlySafeApply = true; }
     else if (argv[i] === "--strict") out.strict = true;
     else if (argv[i] === "--prune-archived") out.pruneArchived = true;
     else if (argv[i] === "--config") out.config = argv[++i];
@@ -819,6 +820,8 @@ async function main() {
   if (Number.isFinite(a.staleDays) && a.staleDays > 0) config.staleDays = a.staleDays;
   if (a.pruneArchived && !a.apply)
     throw new Error("--prune-archived requires --apply.");
+  if (a.pruneArchived && a.gitOnlySafeApply)
+    throw new Error("--git-only-safe-apply cannot be combined with --prune-archived.");
   if (a.pruneArchived && config.allowArchivedPrune !== true)
     throw new Error("Archived pruning is disabled by branch-cleaner.config.json.");
 
@@ -848,8 +851,9 @@ async function main() {
   }
 
   const strictBlockers = getStrictBlockers(supabase);
+  const gitOnlySafeApply = a.gitOnlySafeApply === true && a.pruneArchived !== true;
   const apply = a.apply
-    ? (strictBlockers.length
+    ? (strictBlockers.length && !gitOnlySafeApply
       ? {
           deleted:[],
           failed:[],
@@ -857,15 +861,16 @@ async function main() {
           reason:"control_plane_blockers",
           blockerCount:strictBlockers.length,
         }
-      : await applyDeletes(repo, token, github.branches, config, { pruneArchived:a.pruneArchived }))
+      : await applyDeletes(repo, token, github.branches, config, { pruneArchived:gitOnlySafeApply ? false : a.pruneArchived }))
     : { deleted:[], failed:[], skipped:false };
 
   const report = {
     schemaVersion:1,
     generatedAt:new Date().toISOString(),
     repository:repo,
-    mode:a.apply ? (a.pruneArchived ? "apply+prune-archived" : "apply") : "dry-run",
+    mode:a.apply ? (a.gitOnlySafeApply ? "git-only-safe-apply" : (a.pruneArchived ? "apply+prune-archived" : "apply")) : "dry-run",
     pruneArchived:a.pruneArchived,
+    gitOnlySafeApply:a.gitOnlySafeApply,
     guardrails:config.guardrails || [],
     learning,
     github:{ ...github, counts:decisionCounts(github.branches) },

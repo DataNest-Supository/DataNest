@@ -5,7 +5,8 @@
   "protectedPatterns": [
     "^main$",
     "^production$",
-    "^release/"
+    "^release/",
+    "^automation/knowledge-feed$"
   ],
   "supabaseProjects": [
     {
