@@ -42,11 +42,25 @@ test("ENFORCER consumes all approved Knowledge categories without filtering",()=
 test("ENFORCER blocks security failure without acquiring production authority",()=>{
   const result=buildEnforcerAssessment({
     config,boundaries,knowledge,environment:{schemaVersion:"datanest-environment-feed-v1",target:"enforcer",productionAuthorization:false,reviewRequired:[]},
-    securityRun:{id:2,status:"completed",conclusion:"failure"},
+    securityRun:{id:2,status:"completed",conclusion:"failure",head_sha:"current-sha"},
+    securityTargetSha:"current-sha",
     auditIndex:{documents:[{id:"audit-1"}]}
   });
   assert.equal(result.status,"block");
   assert.ok(result.blockers.includes("security-workflow-failure"));
+  assert.equal(result.productionAuthorization,false);
+});
+
+test("ENFORCER does not import a Security failure from a different commit",()=>{
+  const result=buildEnforcerAssessment({
+    config,boundaries,knowledge,environment:{schemaVersion:"datanest-environment-feed-v1",target:"enforcer",productionAuthorization:false,reviewRequired:[]},
+    securityRun:{id:3,status:"completed",conclusion:"failure",head_sha:"older-main-sha"},
+    securityTargetSha:"current-pr-sha",
+    auditIndex:{documents:[{id:"audit-1"}]}
+  });
+  assert.equal(result.status,"review");
+  assert.ok(result.reviews.includes("security-workflow-sha-mismatch"));
+  assert.equal(result.blockers.includes("security-workflow-failure"),false);
   assert.equal(result.productionAuthorization,false);
 });
 
