@@ -126,7 +126,8 @@
         "tests/unit/ui-production-authorization.test.mjs",
         "tests/unit/ui-ux-source.test.mjs",
         "knowledge/README.md",
-        "docs/MAINTENANCE_PROTOCOL.md"
+        "docs/MAINTENANCE_PROTOCOL.md",
+        "vercel.json"
       ]
     },
     {
