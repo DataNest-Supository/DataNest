@@ -274,6 +274,18 @@
         "governanceReview"
       ],
       "machineBaselineMinutes": 20
+    },
+    "resonance-forge-phase-a.yml": {
+      "gateId": "resonance-forge-phase-a",
+      "gateType": "automated_validation",
+      "taskComplexity": "cross_system",
+      "reportingComplexity": "audit_grade",
+      "reviewDomains": [
+        "engineeringReview",
+        "securityReview",
+        "governanceReview"
+      ],
+      "machineBaselineMinutes": 30
     }
   }
 }
