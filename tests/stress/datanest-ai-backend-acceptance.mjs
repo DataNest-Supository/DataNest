@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
 
 // Fail closed BEFORE loading a client or issuing any request.
 const target = new URL(process.env.DATANEST_CERTIFICATION_URL || "https://invalid.invalid");
@@ -142,7 +143,7 @@ const evidence = {
   stagingDataPlane: "qchttpcyqlqnhvahprhz",
   syntheticStagingSignIn: false,
   candidateCommit: process.env.DATANEST_CANDIDATE_SHA || null,
-  checkoutCommit: process.env.GITHUB_SHA || null,
+  checkoutCommit: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
   fixtureMarker, completedAt: new Date().toISOString(), results,
   productionTested: false, deployedSourceDigestVerified: false,
   status: results.every(item => item.status === "passed") ? "passed" : "failed"
