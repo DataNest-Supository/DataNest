@@ -46,6 +46,9 @@ jobs:
       - name: Verify ownership registry integrity
         run: node --test tests/unit/ownership-registry.test.mjs
 
+      - name: Verify canonical write watchdog contract
+        run: node --test tests/unit/canonical-write-watchdog.test.mjs
+
       - name: Verify canonical push semantics
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: bash
