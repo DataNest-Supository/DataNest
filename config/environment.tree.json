@@ -43,6 +43,11 @@
       "id": "enforcer",
       "repository": "DataNest-Supository/DataNest",
       "mode": "specialized-defensive"
+    },
+    {
+      "id": "guardian",
+      "repository": "DataNest-Supository/DataNest",
+      "mode": "specialized-health-and-safe-healing"
     }
   ],
   "dimensions": [
@@ -117,6 +122,10 @@
     {
       "target": "enforcer",
       "path": "environment/feeds/enforcer.json"
+    },
+    {
+      "target": "guardian",
+      "path": "environment/feeds/guardian.json"
     }
   ]
 }
