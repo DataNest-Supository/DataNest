@@ -157,6 +157,9 @@ export function dedupeItems(items){
 }
 
 async function collectSource(source,config,token){
+  if(source.repository===process.env.GITHUB_REPOSITORY){
+    return collectGitFallback(source,config);
+  }
   try{
     const commits=await githubJson(
       source.repository,
