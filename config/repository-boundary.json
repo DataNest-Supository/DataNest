@@ -121,7 +121,13 @@
         "scripts/liberty-in-all-indexer.mjs",
         "tests/unit/liberty-in-all.test.mjs",
         "docs/LIBERTY_IN_ALL_STANDARD.md",
-        "public/transparency/liberty-in-all/**"
+        "public/transparency/liberty-in-all/**",
+        "config/branch-protection.tree.json",
+        "scripts/branch-protection-tree.mjs",
+        ".github/workflows/branch-protection-tree.yml",
+        ".github/CODEOWNERS",
+        "tests/unit/branch-protection-tree.test.mjs",
+        "docs/governance/BRANCH_X_PROTECTION.md"
       ]
     },
     {
