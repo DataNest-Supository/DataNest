@@ -41,7 +41,7 @@ if (!Number.isInteger(major) || major < Number(profile.runtime?.nodeMajor || 22)
 
 try {
   const gitVersion = execFileSync("git", ["--version"], { encoding: "utf8" }).trim();
-  if (!/^git version \\d+/.test(gitVersion)) fail("git executable is unavailable");
+  if (!/^git version [0-9]+/.test(gitVersion)) fail("git executable is unavailable");
   console.log("Resonance execution profile: " + profile.profileId);
   console.log("External license: none");
   console.log("Network dependency: none");
