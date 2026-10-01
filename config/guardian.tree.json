@@ -16,7 +16,8 @@
     "conductor",
     "suggester",
     "calmer",
-    "regulator"
+    "regulator",
+    "visibility-utility"
   ],
   "isolatedTrees": [
     {
@@ -31,7 +32,8 @@
     "knowledgeFeed": "knowledge/feeds/datanest.json",
     "botsquadFeed": "botsquad/feeds/datanest.json",
     "branchCleanerReport": "branch-cleaner-report.json",
-    "workflowReviewerReport": "report.json"
+    "workflowReviewerReport": "report.json",
+    "visibilityUtilityFeed": "visibility-utility/feeds/datanest.json"
   },
   "snapshot": {
     "branch": "automation/guardian",
