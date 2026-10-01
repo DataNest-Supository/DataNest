@@ -18,6 +18,11 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
+      - name: Check out governed watchdog code
+        uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 1
+
       - name: Inspect canonical push provenance
         env:
           GH_TOKEN: ${{ github.token }}
@@ -32,7 +37,7 @@ jobs:
 
           if [ "$REF" = "refs/heads/main" ] && [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
             cat > canonical-write/state/result.json <<'JSON'
-          {"schemaVersion":"datanest-canonical-write-watchdog-v1","result":"bootstrap","reason":"initial branch creation event"}
+          {"schemaVersion":"datanest-canonical-write-watchdog-v2","result":"bootstrap","reason":"initial branch creation event"}
           JSON
             exit 0
           fi
@@ -44,33 +49,10 @@ jobs:
             "https://api.github.com/repos/$REPO/commits/$SHA/pulls" \
             > canonical-write/state/associated-prs.json
 
-          python - <<'PY'
-          import json, os
-          from pathlib import Path
+          node scripts/canonical-write-watchdog.mjs canonical-write/state/associated-prs.json
 
-          prs=json.loads(Path("canonical-write/state/associated-prs.json").read_text())
-          merged=[p for p in prs if p.get("merged_at")]
-          evidence={
-              "schemaVersion":"datanest-canonical-write-watchdog-v1",
-              "repository":os.environ["REPO"],
-              "ref":os.environ["REF"],
-              "sha":os.environ["SHA"],
-              "associatedPullRequests":[
-                  {"number":p.get("number"),"state":p.get("state"),"merged_at":p.get("merged_at"),"base_ref":(p.get("base") or {}).get("ref")}
-                  for p in prs
-              ],
-              "mergedPullRequests":[
-                  {"number":p.get("number"),"merged_at":p.get("merged_at"),"base_ref":(p.get("base") or {}).get("ref")}
-                  for p in merged
-              ],
-              "result":"authorized-merge-provenance" if merged else "canonical-write-anomaly"
-          }
-          Path("canonical-write/state/result.json").write_text(json.dumps(evidence,indent=2)+"\n")
-          print(json.dumps(evidence,indent=2))
-          if not merged:
-              print("::error::No associated merged pull request was found for this canonical push.")
-              raise SystemExit(1)
-          PY
+      - name: Verify watchdog unit contract
+        run: node --test tests/unit/canonical-write-watchdog.test.mjs
 
       - name: Open or update governance incident
         if: failure()
@@ -92,11 +74,6 @@ jobs:
             "https://api.github.com/search/issues?q=repo:$REPO+is:issue+is:open+in:title+BRANCH-X+canonical+write+anomaly" \
             > open-incidents.json
 
-          python - "$title_prefix" "$body" <<'PY' > issue-body.json
-          import json, sys
-          print(json.dumps({"body":sys.argv[2]}))
-          PY
-
           python - "$title_prefix" <<'PY'
           import json, sys
           from pathlib import Path
@@ -110,6 +87,11 @@ jobs:
               Path("incident-mode.txt").write_text("create")
           PY
 
+          python - "$body" <<'PY' > issue-body.json
+          import json, sys
+          print(json.dumps({"body":sys.argv[1]}))
+          PY
+
           if [ "$(cat incident-mode.txt)" = "update" ]; then
             number="$(cat incident-number.txt)"
             curl -fsSL -X POST \
@@ -120,9 +102,9 @@ jobs:
               -d @issue-body.json \
               || echo "::warning::Unable to update the existing governance incident."
           else
-            python - "$REPO" "$title_prefix @ $SHA" "$body" <<'PY' > create-issue.json
+            python - "$title_prefix @ $SHA" "$body" <<'PY' > create-issue.json
             import json, sys
-            print(json.dumps({"title":sys.argv[2],"body":sys.argv[3],"labels":["governance"]}))
+            print(json.dumps({"title":sys.argv[1],"body":sys.argv[2],"labels":["governance"]}))
             PY
             curl -fsSL -X POST \
               -H "Accept: application/vnd.github+json" \
