@@ -187,7 +187,30 @@ jobs:
       - name: Remove only branches proven to have no unique commits
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node scripts/branch-cleaner.mjs --git-only-safe-apply --report-dir artifacts/guardian/branch-healing
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/guardian/branch-healing
+          if node scripts/branch-cleaner.mjs --git-only-safe-apply --report-dir artifacts/guardian/branch-healing; then
+            exit 0
+          fi
+          echo "::warning::Live branch verification is unavailable. GUARDIAN is skipping destructive branch healing for this cycle."
+          cat > artifacts/guardian/branch-healing/branch-cleaner-report.json <<'JSON'
+          {
+            "schemaVersion": 1,
+            "mode": "safe-apply-skipped",
+            "apply": {
+              "deleted": [],
+              "failed": [],
+              "skipped": true,
+              "reason": "live-branch-verification-unavailable"
+            },
+            "availability": {
+              "available": false,
+              "failClosed": true
+            }
+          }
+          JSON
 
       - name: Apply only byte-safe source streamlining
         run: node scripts/workflow-reviewer.mjs --apply --report-dir artifacts/guardian/source-healing
@@ -198,7 +221,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ "$(gh pr list --state open --json headRefName --jq 'any(.[]; (.headRefName | startswith("guardian/heal-") or startswith("maintenance/streamline-")))')" = "true" ]; then
+          if ! pending="$(gh pr list --state open --json headRefName --jq 'any(.[]; (.headRefName | startswith("guardian/heal-") or startswith("maintenance/streamline-")))' 2>/tmp/guardian-gh-pr-list.err)"; then
+            echo "::warning::GitHub PR inventory unavailable; source-healing changes will remain artifact evidence for this cycle."
+            cat /tmp/guardian-gh-pr-list.err || true
+            exit 0
+          fi
+          if [ "$pending" = "true" ]; then
             echo "A source-healing PR already awaits review."
             exit 0
           fi
