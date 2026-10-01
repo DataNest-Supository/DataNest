@@ -392,6 +392,29 @@
         "governanceReview"
       ],
       "machineBaselineMinutes": 15
+    },
+    "calmer.yml": {
+      "gateId": "calmer",
+      "gateType": "automated_analysis",
+      "taskComplexity": "standard",
+      "reportingComplexity": "detailed",
+      "reviewDomains": [
+        "governanceReview",
+        "securityReview"
+      ],
+      "machineBaselineMinutes": 15
+    },
+    "regulator.yml": {
+      "gateId": "regulator",
+      "gateType": "automated_analysis",
+      "taskComplexity": "cross_system",
+      "reportingComplexity": "audit_grade",
+      "reviewDomains": [
+        "governanceReview",
+        "securityReview",
+        "operationsReview"
+      ],
+      "machineBaselineMinutes": 20
     }
   }
 }
