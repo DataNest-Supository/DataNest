@@ -222,6 +222,14 @@
       "mode": "isolated-no-sync",
       "productionAuthority": false,
       "forgeReplication": "disabled-by-default"
+    },
+    "enforcer": {
+      "path": "enforcer/",
+      "mode": "continuous-defensive-enforcement",
+      "productionAuthority": false,
+      "branch": "automation/enforcer",
+      "knowledgeAccess": "all-approved-knowledge-no-category-filter",
+      "transparencyEvidence": true
     }
   }
 }
