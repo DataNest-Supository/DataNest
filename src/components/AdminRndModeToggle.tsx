@@ -90,29 +90,43 @@ export default function AdminRndModeToggle({
 
       const {data:existing,error:lookupError}=await supabase
         .from("product_surfaces")
-        .select("id,build_commit,release_id,url")
+        .select("id")
         .eq("project_id",projectId)
         .eq("name",MIRROR_SURFACE_NAME)
-        .order("updated_at",{ascending:false})
+        .eq("build_commit",manifest.commit)
+        .eq("release_id",manifest.releaseId)
         .limit(1)
         .maybeSingle();
       if(lookupError)throw lookupError;
 
       let surfaceId=existing?.id||"";
-      if(existing?.id){
-        const {error:updateError}=await supabase
-          .from("product_surfaces")
-          .update(surfacePayload)
-          .eq("id",existing.id);
-        if(updateError)throw updateError;
-      }else{
+      if(!surfaceId){
         const {data:inserted,error:insertError}=await supabase.from("product_surfaces").insert({
           project_id:projectId,
           ...surfacePayload,
           created_by:currentUserId
         }).select("id").single();
-        if(insertError)throw insertError;
-        surfaceId=String(inserted?.id||"");
+        if(insertError){
+          // The unique release/build identity is append-only. A concurrent
+          // synchronization may have created the same immutable surface.
+          if(insertError.code==="23505"){
+            const {data:recovered,error:recoveryError}=await supabase
+              .from("product_surfaces")
+              .select("id")
+              .eq("project_id",projectId)
+              .eq("name",MIRROR_SURFACE_NAME)
+              .eq("build_commit",manifest.commit)
+              .eq("release_id",manifest.releaseId)
+              .limit(1)
+              .maybeSingle();
+            if(recoveryError||!recovered?.id)throw insertError;
+            surfaceId=String(recovered.id);
+          }else{
+            throw insertError;
+          }
+        }else{
+          surfaceId=String(inserted?.id||"");
+        }
       }
 
       if(surfaceId){

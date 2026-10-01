@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { classifyPath, loadBoundary } from "../../scripts/lib/repository-boundary.mjs";
 
 const importWorkflow=readFileSync(
   new URL("../../.github/workflows/mirror-production-import.yml",import.meta.url),
@@ -25,7 +26,12 @@ test("Mirror production import is isolated from main and live deployment",()=>{
   assert.doesNotMatch(importWorkflow,/git push origin main/);
 });
 
-test("Mirror-only R&D controls are excluded from canonical production patch",()=>{
+test("Mirror-only and protected controls are excluded by the boundary contract",()=>{
+  const boundary=loadBoundary();
+  assert.match(importWorkflow,/validate-mirror-candidate-boundary\.mjs/);
+  assert.match(importWorkflow,/promotablePaths/);
+  assert.doesNotMatch(importWorkflow,/\:\(exclude\)/);
+
   for(const path of [
     ".github/workflows/ci.yml",
     ".github/workflows/pages.yml",
@@ -34,9 +40,11 @@ test("Mirror-only R&D controls are excluded from canonical production patch",()=
     "docs/MIRROR_DATANEST_RD_MODE.md",
     "docs/PRODUCTION_CANDIDATE_HANDOFF.md",
     "scripts/mirror-test-suite.mjs",
-    "README.md"
+    "README.md",
+    "scripts/write-release-manifest.mjs",
+    "config/worktree-gate-timeframes.json"
   ]){
-    assert.ok(importWorkflow.includes(`':(exclude)${path}'`),path);
+    assert.notEqual(classifyPath(path,boundary).policy,"promotable",path);
   }
 });
 
