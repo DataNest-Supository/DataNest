@@ -33,3 +33,9 @@ jobs:
           name: datanest-boundaries-${{ github.run_id }}
           path: artifacts/boundaries/
           retention-days: 30
+
+  gate-timeframe:
+    name: DataNest AI worktree gate timeframe
+    uses: ./.github/workflows/worktree-gate-timeframe.yml
+    with:
+      gate_id: "boundaries-assessment"
