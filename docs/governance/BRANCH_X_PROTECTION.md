@@ -26,6 +26,6 @@ GitHub confirms that repository rulesets and protected branches are available fo
 
 Import `.github/rulesets/BRANCH-X-Canonical.json` and set it to **Active** for `main` and `release/**`. The definition enforces pull requests, one approval, stale-review dismissal, conversation resolution, required status checks, linear history, no force pushes, and no deletions.
 
-Import `.github/rulesets/BRANCH-X-Automation.json` and set it to **Active** for `automation/**`, `audit/**`, and `ci/**`. This host-level ruleset intentionally enforces only non-fast-forward and deletion protection so existing direct automation writes remain possible; BRANCH-X continues to require and verify the repository-native checks for these branches.
+Import `.github/rulesets/BRANCH-X-Automation.json` and set it to **Active** for `automation/**`, `audit/**`, and `ci/**`. This host-level ruleset blocks non-fast-forward updates and branch deletion while retaining direct automation writes. It also carries the protected-automation status checks declared in `config/branch-protection.tree.json`; review/conversation-resolution requirements remain scoped to canonical PR changes.
 
 No bypass actors are configured in either definition.
