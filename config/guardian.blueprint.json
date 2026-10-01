@@ -36,6 +36,14 @@
     {
       "id": "suggester",
       "contract": "config/suggester.tree.json"
+    },
+    {
+      "id": "calmer",
+      "contract": "config/calmer.tree.json"
+    },
+    {
+      "id": "regulator",
+      "contract": "config/regulator.tree.json"
     }
   ],
   "environment": {
@@ -75,7 +83,9 @@
       "^automation/enforcer$",
       "^automation/guardian$",
       "^automation/conductor$",
-      "^automation/suggester$"
+      "^automation/suggester$",
+      "^automation/calmer$",
+      "^automation/regulator$"
     ],
     "autonomousDeletion": "no-unique-commits-only"
   },
@@ -99,7 +109,9 @@
     "workflow-reviewer.config.json",
     "package.json",
     "config/conductor.tree.json",
-    "config/suggester.tree.json"
+    "config/suggester.tree.json",
+    "config/calmer.tree.json",
+    "config/regulator.tree.json"
   ],
   "coordination": {
     "conductorMaxAgeMinutes": 30,
