@@ -30,7 +30,8 @@
     "conductor:sync": "node scripts/conductor-orchestrator.mjs",
     "suggester:build": "node scripts/suggester-engine.mjs",
     "calmer:assess": "node scripts/calmer-governance.mjs",
-    "regulator:assess": "node scripts/regulator-engine.mjs"
+    "regulator:assess": "node scripts/regulator-engine.mjs",
+    "visibility:assess": "node scripts/visibility-utility.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
