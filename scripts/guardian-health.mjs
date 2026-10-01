@@ -370,25 +370,34 @@ export function buildGuardianSnapshot({
     suggester:{ok:suggesterOk,ageMinutes:Number.isFinite(suggesterAge)?suggesterAge:null}
   });
 
-  const calmerSafe=
-    calmerState?.productionAuthorization===false &&
-    Number(calmerState?.summary?.hardControlsRemoved??0)===Number(blueprint?.governanceHarmony?.calmerHardControlsRemoved??0);
-  const regulatorSafe=
-    regulatorState?.productionAuthorization===false &&
-    Boolean(regulatorState?.transparency?.financialCommitmentsAuthorized)===Boolean(blueprint?.governanceHarmony?.regulatorFinancialCommitmentsAuthorized??false);
+  const calmerEvidenceValid=sourceEvidence.calmer?.valid===true;
+  const regulatorEvidenceValid=sourceEvidence.regulator?.valid===true;
+  const calmerSafe=calmerEvidenceValid
+    ?calmerState?.productionAuthorization===false &&
+      Number(calmerState?.summary?.hardControlsRemoved??0)===Number(blueprint?.governanceHarmony?.calmerHardControlsRemoved??0)
+    :null;
+  const regulatorSafe=regulatorEvidenceValid
+    ?regulatorState?.productionAuthorization===false &&
+      Boolean(regulatorState?.transparency?.financialCommitmentsAuthorized)===Boolean(blueprint?.governanceHarmony?.regulatorFinancialCommitmentsAuthorized??false)
+    :null;
+  const harmonyViolation=calmerSafe===false||regulatorSafe===false;
+  const harmonyMissing=!calmerEvidenceValid||!regulatorEvidenceValid;
   checks.push({
     id:"governance-harmony",
-    status:calmerSafe&&regulatorSafe?"healthy":"critical",
+    status:harmonyViolation?"critical":harmonyMissing?"degraded":"healthy",
     weight:0,
     earned:0,
-    detail:calmerSafe&&regulatorSafe
-      ?"CALMER and REGULATOR preserve non-negotiable authority, security and financial boundaries."
-      :"CALMER or REGULATOR violated a non-negotiable governance-harmony condition."
+    detail:harmonyViolation
+      ?"CALMER or REGULATOR violated a non-negotiable governance-harmony condition."
+      :harmonyMissing
+        ?"CALMER/REGULATOR runtime evidence is not yet initialized or fresh."
+        :"CALMER and REGULATOR preserve non-negotiable authority, security and financial boundaries."
   });
-  if(!calmerSafe||!regulatorSafe) optimalDrift.push({
+  if(harmonyViolation||harmonyMissing) optimalDrift.push({
     control:"governance-harmony",
     calmerSafe,
-    regulatorSafe
+    regulatorSafe,
+    evidenceMissing:harmonyMissing
   });
 
   const remoteRequiredFailures=[];
