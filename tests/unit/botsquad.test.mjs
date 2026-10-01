@@ -32,3 +32,15 @@ test("consolidated feed preserves non-authorizing status",()=>{
   assert.equal(feed.productionAuthorization,false);
   assert.deepEqual(feed.sourceBots,["ux-ease"]);
 });
+
+test("BOTSQUAD work orders carry REGULATOR requirements without authority escalation",()=>{
+  const order=buildBotWorkOrder(bot,{},{},{
+    status:"attention",
+    requirements:[{id:"req-1",title:"Audit runtime"}],
+    instructions:["Audit","Stress-test"]
+  });
+  assert.equal(order.context.regulatorStatus,"attention");
+  assert.equal(order.context.regulatorRequirementCount,1);
+  assert.equal(order.context.regulatorRequirements[0].id,"req-1");
+  assert.equal(order.productionAuthorization,false);
+});
