@@ -62,7 +62,12 @@
         "scripts/environment-assessor.mjs",
         "tests/unit/botsquad.test.mjs",
         "tests/unit/environment-tree.test.mjs",
-        "infra/reson8-forge/specialized-trees.json"
+        "infra/reson8-forge/specialized-trees.json",
+        ".github/workflows/enforcer.yml",
+        "enforcer/**",
+        "config/enforcer.tree.json",
+        "scripts/enforcer-monitor.mjs",
+        "tests/unit/enforcer.test.mjs"
       ]
     },
     {
