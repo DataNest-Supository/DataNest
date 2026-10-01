@@ -20,8 +20,8 @@ jobs:
       - name: Query GitHub native protection
         shell: bash
         env:
-          GITHUB_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           mkdir -p native-protection/state
@@ -34,7 +34,7 @@ jobs:
 
           curl --silent --show-error --location "${headers[@]}"             -o native-protection/state/main.json             -w "%{http_code}"             "${api}/branches/main"             > native-protection/state/main.http
 
-          curl --silent --show-error --location "${headers[@]}"             -o native-protection/state/rulesets-index.json             -w "%{http_code}"             "${api}/rulesets"             > native-protection/state/rulesets-index.http
+          curl --silent --show-error --location "${headers[@]}"             -o native-protection/state/rulesets-index.json             -w "%{http_code}"             "${api}/rulesets"             > native-protection/state/rulesets.http
 
           for spec in "canonical:BRANCH-X Canonical" "automation:BRANCH-X Automation"; do
             key="${spec%%:*}"
@@ -42,7 +42,7 @@ jobs:
             printf 'null\n' > "native-protection/state/${key}.json"
             printf 'absent\n' > "native-protection/state/${key}.http"
 
-            if [ "$(cat native-protection/state/rulesets-index.http)" != "200" ]; then
+            if [ "$(cat native-protection/state/rulesets.http)" != "200" ]; then
               continue
             fi
 
@@ -81,12 +81,12 @@ jobs:
               return value if isinstance(value, expected_type) else expected_type()
 
           main_http = status("main")
-          index_http = status("rulesets-index")
+          rulesets_http = status("rulesets")
           canonical_http = status("canonical")
           automation_http = status("automation")
 
           main = read_json("main.json", dict) if main_http == "200" else {}
-          rulesets_index = read_json("rulesets-index.json", list) if index_http == "200" else []
+          rulesets = read_json("rulesets-index.json", list) if rulesets_http == "200" else []
           canonical = read_json("canonical.json", dict) if canonical_http == "200" else {}
           automation = read_json("automation.json", dict) if automation_http == "200" else {}
 
@@ -97,126 +97,147 @@ jobs:
               )
               if code not in {"200", "absent"}
           ]
-          api_ok = main_http == "200" and index_http == "200" and not detail_access_failures
 
-          def refs(ruleset):
-              return set((((ruleset.get("conditions") or {}).get("ref_name") or {}).get("include") or []))
+          expected = policy["branchClasses"]["canonical"]
+          expected_automation = policy["branchClasses"]["protected_automation"]
+          expected_refs = {f"refs/heads/{p}" for p in expected["patterns"]}
+          expected_automation_refs = {f"refs/heads/{p}" for p in expected_automation["patterns"]}
+          expected_checks = set(expected["requiredStatusChecks"])
+          expected_automation_checks = set(expected_automation["requiredStatusChecks"])
+          required_types = {"pull_request", "required_status_checks", "required_linear_history", "non_fast_forward", "deletion"}
+          required_automation_types = {"required_status_checks", "non_fast_forward", "deletion"}
 
-          def rules_by_type(ruleset):
-              return {
-                  rule.get("type"): rule
-                  for rule in (ruleset.get("rules") or [])
-                  if isinstance(rule, dict) and rule.get("type")
-              }
+          def refs(rule):
+              return set((((rule or {}).get("conditions") or {}).get("ref_name") or {}).get("include") or [])
 
-          def required_checks(rules):
-              params = (rules.get("required_status_checks") or {}).get("parameters") or {}
-              checks = {
-                  item.get("context")
-                  for item in (params.get("required_status_checks") or [])
-                  if isinstance(item, dict) and item.get("context")
-              }
-              return params, checks
+          def rule_types(rule):
+              return {x.get("type") for x in (rule or {}).get("rules", []) if isinstance(x, dict) and x.get("type")}
 
-          canonical_policy = policy["branchClasses"]["canonical"]
-          automation_policy = policy["branchClasses"]["protected_automation"]
+          def get_rule(rule, rule_type):
+              return next((x for x in (rule or {}).get("rules", []) if x.get("type") == rule_type), None)
 
-          expected_canonical_refs = {
-              *(f"refs/heads/{name}" for name in policy["canonicalBranches"]["exact"]),
-              *(f"refs/heads/{pattern}" for pattern in policy["canonicalBranches"]["patterns"]),
-          }
-          expected_automation_refs = {
-              f"refs/heads/{pattern}"
-              for pattern in policy["protectedAutomationBranches"]
-          }
-          expected_canonical_checks = set(canonical_policy["requiredStatusChecks"])
-          expected_automation_checks = set(automation_policy["requiredStatusChecks"])
+          def required_checks(rule):
+              found = set()
+              item = get_rule(rule, "required_status_checks")
+              for check in ((item or {}).get("parameters") or {}).get("required_status_checks", []):
+                  if isinstance(check, dict) and check.get("context"):
+                      found.add(check["context"])
+              return found
 
-          canonical_rules = rules_by_type(canonical)
-          automation_rules = rules_by_type(automation)
-          canonical_status_params, observed_canonical_checks = required_checks(canonical_rules)
-          automation_status_params, observed_automation_checks = required_checks(automation_rules)
-          pr_params = (canonical_rules.get("pull_request") or {}).get("parameters") or {}
+          canonical_types = rule_types(canonical)
+          canonical_checks = required_checks(canonical)
+          canonical_refs = refs(canonical)
+          automation_types = rule_types(automation)
+          automation_checks = required_checks(automation)
+          automation_refs = refs(automation)
 
-          checks = {
-              "mainProtected": bool(main.get("protected")),
-              "canonicalPresent": bool(canonical),
-              "canonicalActive": canonical.get("enforcement") == "active",
-              "canonicalRefs": expected_canonical_refs.issubset(refs(canonical)),
-              "canonicalNoBypass": not (canonical.get("bypass_actors") or []),
-              "canonicalPullRequest": "pull_request" in canonical_rules,
-              "canonicalOneApproval": int(pr_params.get("required_approving_review_count") or 0) >= int(canonical_policy["requiredApprovingReviews"]),
-              "canonicalDismissStale": pr_params.get("dismiss_stale_reviews_on_push") is canonical_policy["dismissStaleReviews"],
-              "canonicalResolveThreads": pr_params.get("required_review_thread_resolution") is canonical_policy["requireConversationResolution"],
-              "canonicalRequiredChecks": expected_canonical_checks.issubset(observed_canonical_checks),
-              "canonicalStrictChecks": canonical_status_params.get("strict_required_status_checks_policy") is True,
-              "canonicalLinearHistory": "required_linear_history" in canonical_rules,
-              "canonicalNoForcePush": "non_fast_forward" in canonical_rules,
-              "canonicalNoDeletion": "deletion" in canonical_rules,
-              "automationPresent": bool(automation),
-              "automationActive": automation.get("enforcement") == "active",
-              "automationRefs": expected_automation_refs.issubset(refs(automation)),
-              "automationNoBypass": not (automation.get("bypass_actors") or []),
-              "automationRequiredChecks": expected_automation_checks.issubset(observed_automation_checks),
-              "automationStrictChecks": automation_status_params.get("strict_required_status_checks_policy") is True,
-              "automationNoForcePush": "non_fast_forward" in automation_rules,
-              "automationNoDeletion": "deletion" in automation_rules,
-          }
+          canonical_pull_request = get_rule(canonical, "pull_request")
+          canonical_pull_request_params = (canonical_pull_request or {}).get("parameters") or {}
+          canonical_status_params = (get_rule(canonical, "required_status_checks") or {}).get("parameters") or {}
+          automation_status_params = (get_rule(automation, "required_status_checks") or {}).get("parameters") or {}
 
-          failed = sorted(name for name, passed in checks.items() if not passed)
+          api_ok = (
+              main_http == "200"
+              and rulesets_http == "200"
+              and not detail_access_failures
+          )
+
+          canonical_ok = (
+              api_ok
+              and bool(canonical)
+              and canonical.get("target") == "branch"
+              and canonical.get("enforcement") == "active"
+              and not canonical.get("bypass_actors")
+              and expected_refs.issubset(canonical_refs)
+              and required_types.issubset(canonical_types)
+              and expected_checks.issubset(canonical_checks)
+              and canonical_pull_request_params.get("required_approving_review_count", 0) >= expected["requiredApprovingReviews"]
+              and canonical_pull_request_params.get("dismiss_stale_reviews_on_push") is expected["dismissStaleReviews"]
+              and canonical_pull_request_params.get("required_review_thread_resolution") is expected["requireConversationResolution"]
+              and canonical_status_params.get("do_not_enforce_on_create") is False
+              and canonical_status_params.get("strict_required_status_checks_policy") is True
+          )
+
+          automation_ok = (
+              api_ok
+              and bool(automation)
+              and automation.get("target") == "branch"
+              and automation.get("enforcement") == "active"
+              and not automation.get("bypass_actors")
+              and expected_automation_refs.issubset(automation_refs)
+              and required_automation_types.issubset(automation_types)
+              and "pull_request" not in automation_types
+              and expected_automation_checks.issubset(automation_checks)
+              and automation_status_params.get("do_not_enforce_on_create") is False
+              and automation_status_params.get("strict_required_status_checks_policy") is True
+          )
 
           evidence = {
               "schemaVersion": "datanest-native-protection-audit-v4",
               "repository": os.environ.get("GITHUB_REPOSITORY"),
+              "observedMainProtectedLegacyFlag": bool(main.get("protected")),
               "mainEndpointHttp": main_http,
-              "rulesetsEndpointHttp": index_http,
+              "rulesetsEndpointHttp": rulesets_http,
+              "observedRulesetCount": len(rulesets),
               "apiAccess": {
                   "mainEndpoint": main_http,
-                  "rulesetsEndpoint": index_http,
+                  "rulesetsEndpoint": rulesets_http,
                   "canonicalRulesetEndpoint": canonical_http,
                   "automationRulesetEndpoint": automation_http,
-                  "detailAccessFailures": detail_access_failures,
+                  "detailAccessFailures": detail_access_failures
               },
-              "observedRulesetCount": len(rulesets_index),
-              "observedMainProtected": bool(main.get("protected")),
-              "checks": checks,
-              "failedChecks": failed,
-              "canonicalRuleset": {
-                  "id": canonical.get("id"),
+              "policyCanonical": {
+                  "refs": sorted(expected_refs),
+                  "requiredStatusChecks": sorted(expected_checks),
+                  "requiredRuleTypes": sorted(required_types)
+              },
+              "observedCanonical": {
+                  "id": canonical.get("id") if canonical else None,
                   "present": bool(canonical),
-                  "enforcement": canonical.get("enforcement"),
-                  "refs": sorted(refs(canonical)),
-                  "ruleTypes": sorted(canonical_rules),
-                  "requiredStatusChecks": sorted(observed_canonical_checks),
+                  "target": canonical.get("target") if canonical else None,
+                  "enforcement": canonical.get("enforcement") if canonical else None,
+                  "bypassActorsEmpty": not bool(canonical.get("bypass_actors")) if canonical else False,
+                  "refs": sorted(canonical_refs),
+                  "ruleTypes": sorted(canonical_types),
+                  "requiredStatusChecks": sorted(canonical_checks),
+                  "requiredApprovingReviewCount": canonical_pull_request_params.get("required_approving_review_count") if canonical else None,
+                  "dismissStaleReviewsOnPush": canonical_pull_request_params.get("dismiss_stale_reviews_on_push") if canonical else None,
+                  "requiredReviewThreadResolution": canonical_pull_request_params.get("required_review_thread_resolution") if canonical else None,
+                  "strictRequiredStatusChecksPolicy": canonical_status_params.get("strict_required_status_checks_policy") if canonical else None,
+                  "doNotEnforceOnCreate": canonical_status_params.get("do_not_enforce_on_create") if canonical else None
               },
-              "automationRuleset": {
-                  "id": automation.get("id"),
+              "observedAutomation": {
+                  "id": automation.get("id") if automation else None,
                   "present": bool(automation),
-                  "enforcement": automation.get("enforcement"),
-                  "refs": sorted(refs(automation)),
-                  "ruleTypes": sorted(automation_rules),
-                  "requiredStatusChecks": sorted(observed_automation_checks),
+                  "target": automation.get("target") if automation else None,
+                  "enforcement": automation.get("enforcement") if automation else None,
+                  "bypassActorsEmpty": not bool(automation.get("bypass_actors")) if automation else False,
+                  "refs": sorted(automation_refs),
+                  "ruleTypes": sorted(automation_types),
+                  "requiredStatusChecks": sorted(automation_checks),
+                  "strictRequiredStatusChecksPolicy": automation_status_params.get("strict_required_status_checks_policy") if automation else None,
+                  "doNotEnforceOnCreate": automation_status_params.get("do_not_enforce_on_create") if automation else None
               },
-              "expectedCanonicalStatusChecks": sorted(expected_canonical_checks),
-              "expectedAutomationStatusChecks": sorted(expected_automation_checks),
+              "canonicalRulesetMatch": canonical_ok,
+              "automationRulesetActive": automation_ok,
               "result": (
                   "api-access-unavailable"
                   if not api_ok
                   else "protected"
-                  if not failed
+                  if canonical_ok and automation_ok
                   else "protection-gap"
               ),
-              "runId": os.environ.get("GITHUB_RUN_ID"),
+              "runId": os.environ.get("GITHUB_RUN_ID")
           }
 
-          (state / "latest.json").write_text(json.dumps(evidence, indent=2) + "\n")
+          Path("native-protection/state/latest.json").write_text(json.dumps(evidence, indent=2) + "\n")
           print(json.dumps(evidence, indent=2))
 
           result = evidence["result"]
           if result == "api-access-unavailable":
               print("::warning::BRANCH-X native protection could not be evaluated because one or more GitHub administration reads were unavailable; evidence is api-access-unavailable.")
           elif result == "protection-gap":
-              print("::error::BRANCH-X native protection is not fully active: " + ", ".join(failed))
+              print("::error::BRANCH-X native protection is not fully active.")
               raise SystemExit(1)
           else:
               print("BRANCH-X native protection matches the declared policy.")
@@ -227,7 +248,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ -f native-protection/state/latest.json ]; then
+          if test -f native-protection/state/latest.json; then
             cat native-protection/state/latest.json >> "$GITHUB_STEP_SUMMARY"
           else
             echo "Audit evidence unavailable." >> "$GITHUB_STEP_SUMMARY"
