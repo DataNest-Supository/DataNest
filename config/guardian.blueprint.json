@@ -28,6 +28,14 @@
     {
       "id": "guardian",
       "contract": "config/guardian.tree.json"
+    },
+    {
+      "id": "conductor",
+      "contract": "config/conductor.tree.json"
+    },
+    {
+      "id": "suggester",
+      "contract": "config/suggester.tree.json"
     }
   ],
   "environment": {
@@ -87,6 +95,8 @@
     "infra/reson8-forge/specialized-trees.json",
     "branch-cleaner.config.json",
     "workflow-reviewer.config.json",
-    "package.json"
+    "package.json",
+    "config/conductor.tree.json",
+    "config/suggester.tree.json"
   ]
 }
