@@ -1,0 +1,23 @@
+title = "DataNest Gitleaks policy"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Supabase publishable client keys are intentionally public and remain constrained by RLS."
+targetRules = ["generic-api-key"]
+regexes = [
+  '''^sb_publishable_[A-Za-z0-9_-]+$'''
+]
+
+[[allowlists]]
+description = "SyncVision billing reminder localStorage key is an application storage identifier, not authentication material."
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = [
+  '''^apps/ronsas/syncvision/src/lib/billingReminder\.ts$'''
+]
+regexTarget = "line"
+regexes = [
+  '''merge\.billingReminder\.v1'''
+]
