@@ -239,6 +239,20 @@
       "blueprint": "config/guardian.blueprint.json",
       "heals": "proven-branch-redundancy-and-byte-safe-source-noise",
       "mirrorFeed": true
+    },
+    "conductor": {
+      "path": "conductor/",
+      "mode": "event-driven-process-synchronization",
+      "productionAuthority": false,
+      "branch": "automation/conductor",
+      "purpose": "timing-dependency-and-pull-push-coordination"
+    },
+    "suggester": {
+      "path": "suggester/",
+      "mode": "continuous-optimization-suggestions",
+      "productionAuthority": false,
+      "branch": "automation/suggester",
+      "purpose": "continuous-optimization-and-bounded-autonomous-update-queue"
     }
   }
 }
