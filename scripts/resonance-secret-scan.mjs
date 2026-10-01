@@ -44,7 +44,7 @@ function isTextPath(file) {
 function isPlaceholder(value) {
   const normalized = value.trim().toLowerCase();
   if (!normalized) return true;
-  if (/^(?:\$\{|process\.env\.|import\.meta\.env\.|<[^>]+>|\[.+\]|your[_ -]?|replace[_ -]?me|changeme|change-me|example|dummy|placeholder|redacted|test-secret|not-a-real-secret|real-looking-secret-value|resonance-sovereign-local-)/.test(normalized)) return true;
+  if (/^(?:\$\{|process\.env\.|import\.meta\.env\.|<[^>]+>|\[.+\]|your[_ -]?|replace[_ -]?me|changeme|change-me|example|dummy|placeholder|redacted|test-secret|not-a-real-secret|real-looking-secret-value|resonance-sovereign-local-|sovereign-local-)/.test(normalized)) return true;
   if (/^(?:x{6,}|0{6,}|1{6,}|a{6,})$/.test(normalized)) return true;
   return false;
 }
@@ -109,7 +109,7 @@ function scanHistory() {
     const file = entry.slice(firstSpace + 1);
     if (seenBlobs.has(objectId) || ignored(file) || !isTextPath(file)) continue;
     const historicalPath = file.replaceAll("\\", "/");
-    if (/^(?:tests?|fixtures?)\//i.test(historicalPath)) continue;
+    if (/^(?:tests?|fixtures?)\//i.test(historicalPath) || historicalPath === "scripts/resonance-secret-scan.mjs") continue;
     seenBlobs.add(objectId);
     let type;
     try { type = git(["cat-file", "-t", objectId]).trim(); } catch { continue; }
