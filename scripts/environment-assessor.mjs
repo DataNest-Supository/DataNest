@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 async function textFile(filename){try{return await readFile(filename,"utf8");}catch{return "";}}
 async function jsonFile(filename){try{return JSON.parse(await readFile(filename,"utf8"));}catch{return null;}}
@@ -115,4 +116,6 @@ async function main(){
   console.log(JSON.stringify({compatible:assessment.compatible,findings:assessment.findings.length},null,2));
 }
 
-main().catch(error=>{console.error(error);process.exitCode=1;});
+if(process.argv[1] && import.meta.url===pathToFileURL(path.resolve(process.argv[1])).href){
+  main().catch(error=>{console.error(error);process.exitCode=1;});
+}
