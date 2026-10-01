@@ -194,6 +194,9 @@ DataNest
 ├── BOTSQUAD        -> AI-only advisory specialist branches
 ├── ENVIRONMENT     -> compatibility assessment and safe adaptation feeds
 ├── ENFORCER        -> continuous Boundaries/security defence + transparent learning
+├── GUARDIAN        -> blueprint snapshots, health drift + safe healing
+├── CONDUCTOR       -> workflow timing, dependencies + pull/push coordination
+├── SUGGESTER       -> continuous optimization + bounded automation queue
 ├── Mirror-DataNest -> ungated R&D candidate workspace
 └── FREETREE        -> isolated open-development repository, no synchronization
 ```
@@ -210,3 +213,32 @@ Resonance Forge mirrors this topology as a read-only/scoped-agent projection. Th
 ENFORCER continuously correlates Boundaries, the complete approved Knowledge corpus, ENVIRONMENT compatibility, repository security-workflow state, Forge tree lineage, and published audit-index evidence. It may fail its own defensive check when a machine-verifiable invariant is violated.
 
 ENFORCER does not receive production deployment authority and cannot rewrite Boundaries or suppress findings. Its learning feed has no Knowledge category/topic filter; protected secrets and private authentication material remain outside the learning corpus and outside transparency publication.
+
+
+### GUARDIAN, CONDUCTOR and SUGGESTER loop
+
+GUARDIAN measures actual operating state against a machine-readable optimal blueprint. It snapshots environment compatibility, ENFORCER state, Knowledge availability, BOTSQUAD availability, branch redundancy, source-maintainability signals, remote repository inventory, and coordination freshness. Safe healing is limited to branches proven to have no unique commits and byte-safe text normalization; behavioral code removal or refactoring remains pull-request reviewed.
+
+CONDUCTOR is the timing and command coordinator. It reads recent workflow state, respects dependency freshness, dispatches at most one due process per cycle, and preserves the existing authority of each target tree. It uses event-driven workflow completion plus a 15-minute coordination pulse rather than claiming zero-latency execution.
+
+When the process graph is synchronized, CONDUCTOR triggers SUGGESTER. SUGGESTER continuously synthesizes GUARDIAN health, Knowledge learning, ENVIRONMENT compatibility, ENFORCER defence state, BOTSQUAD proposals and CONDUCTOR timing into deduplicated optimization suggestions. Only predefined reversible maintenance actions enter its autonomous command queue; changes to behavior, dependencies, providers, governance, UX/functions, products or business remain review-required.
+
+The resulting operating loop is:
+
+```text
+sources / environment / security
+        ↓ pull
+Knowledge + ENVIRONMENT + ENFORCER + BOTSQUAD
+        ↓
+GUARDIAN snapshot → drift + safe healing evidence
+        ↓
+CONDUCTOR timing / dependency synchronization
+        ↓
+SUGGESTER optimization feed
+        ↓ safe allowlist only
+CONDUCTOR dispatch
+        ↓
+reviewed or reversible update path
+```
+
+Mirror-DataNest consumes designated public feeds through Mirror-owned workflows. FREETREE remains outside automatic synchronization and automatic healing.
