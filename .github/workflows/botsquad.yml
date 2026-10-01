@@ -39,7 +39,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git switch -C "automation/botsquad/${{ matrix.bot }}"
+          branch="automation/botsquad/${{ matrix.bot }}"
+          git fetch origin "$branch" || true
+          git switch -C "$branch"
 
       - name: Read latest Knowledge and ENVIRONMENT inputs
         shell: bash
@@ -81,6 +83,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Prepare orchestrator branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin automation/botsquad/orchestrator || true
+          git switch -C automation/botsquad/orchestrator
       - uses: actions/download-artifact@v4
         with:
           pattern: botsquad-*-${{ github.run_id }}
@@ -98,7 +106,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git switch -C automation/botsquad/orchestrator
           git add botsquad/feeds/
           if git diff --cached --quiet; then exit 0; fi
           git -c user.name="DataNest BOTSQUAD" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "Refresh consolidated BOTSQUAD feeds"
