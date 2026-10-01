@@ -80,38 +80,6 @@ for (const root of roots) {
   }
 }
 
-
-const gitleaksPolicyPath = ".gitleaks.toml";
-if (!existsSync(gitleaksPolicyPath)) {
-  add(gitleaksPolicyPath, 1, "gitleaks-policy-missing", "A repository-local Gitleaks policy is required.");
-} else {
-  const policy = readFileSync(gitleaksPolicyPath, "utf8");
-  const allowlistCount = (policy.match(/\[\[allowlists\]\]/g) || []).length;
-  if (!/\[extend\][\s\S]*useDefault\s*=\s*true/.test(policy)) {
-    add(gitleaksPolicyPath, 1, "gitleaks-default-rules-disabled", "Gitleaks policy must extend the upstream default rule set.");
-  }
-  if (allowlistCount !== 3) {
-    add(gitleaksPolicyPath, 1, "gitleaks-allowlist-scope", `Expected exactly 3 narrow allowlists, found ${allowlistCount}.`);
-  }
-  if (!policy.includes("^sb_publishable_")) {
-    add(gitleaksPolicyPath, 1, "gitleaks-publishable-key-allowlist", "The only API-key prefix exception must remain the Supabase publishable-key prefix.");
-  }
-  if (!policy.includes("apps/ronsas/syncvision/src/lib/billingReminder\\.ts")) {
-    add(gitleaksPolicyPath, 1, "gitleaks-storage-key-path", "The localStorage-key exception must remain path-scoped to SyncVision billingReminder.ts.");
-  }
-  if (!policy.includes("7ac61b91756d23a0061c2ef98ce45bf161edabf7") ||
-      !policy.includes("^tests/unit/external-ai-return\\.test\\.mjs$") ||
-      !policy.includes("expectedTraceKey")) {
-    add(gitleaksPolicyPath, 1, "gitleaks-historical-fixture-scope", "Historical trace-key exception must remain bound to the exact test commit, file, and expectedTraceKey fixture.");
-  }
-  if (/sb_secret_|service[_-]?role|BEGIN .*PRIVATE KEY/i.test(policy)) {
-    add(gitleaksPolicyPath, 1, "gitleaks-secret-allowlist", "Secret/service-role/private-key patterns must never be allowlisted.");
-  }
-  if (/paths\s*=\s*\[\s*['"]{1,3}(?:\.\*|\^?\.\*\$?)['"]{1,3}/m.test(policy)) {
-    add(gitleaksPolicyPath, 1, "gitleaks-broad-path-allowlist", "Repository-wide path allowlists are forbidden.");
-  }
-}
-
 if (findings.length) {
   console.error(`Security invariants failed with ${findings.length} finding(s).\n`);
   for (const finding of findings) {

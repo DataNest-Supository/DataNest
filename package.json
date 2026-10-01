@@ -33,7 +33,9 @@
     "regulator:assess": "node scripts/regulator-engine.mjs",
     "visibility:assess": "node scripts/visibility-utility.mjs",
     "liberty:index": "node scripts/liberty-in-all-indexer.mjs",
-    "branch-protection:verify": "node scripts/branch-protection-tree.mjs"
+    "branch-protection:verify": "node scripts/branch-protection-tree.mjs",
+    "security:resonance-execution": "node scripts/verify-resonance-security-execution.mjs",
+    "security:resonance-scan": "node scripts/resonance-secret-scan.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",

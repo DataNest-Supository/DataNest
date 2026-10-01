@@ -4,6 +4,10 @@
 
 # Governance and authorization boundaries
 /.github/ @DataNest-Supository
+/.github/CODEOWNERS @DataNest-Supository
+/.github/rulesets/ @DataNest-Supository
+/.github/workflows/branch-protection-tree.yml @DataNest-Supository
+/.github/workflows/native-protection-audit.yml @DataNest-Supository
 /config/ @DataNest-Supository
 /schemas/ @DataNest-Supository
 /scripts/ @DataNest-Supository

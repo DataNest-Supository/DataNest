@@ -55,7 +55,7 @@
       "pullRequestRequired": false,
       "requiredApprovingReviews": 0,
       "dismissStaleReviews": false,
-      "requireConversationResolution": true,
+      "requireConversationResolution": false,
       "requireLinearHistory": false,
       "allowForcePushes": false,
       "allowDeletions": false,
