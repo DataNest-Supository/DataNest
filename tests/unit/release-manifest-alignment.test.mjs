@@ -124,8 +124,6 @@ test("file worker production deployment is bound to an exact SHA and protected e
   assert.match(writer,/sourceTreeScope:"supabase\/functions"/);
 });
 
-test("release manifest records verified database and Edge Function attestations",()=>{
-
 test("governed Edge Function deployment is blocked until its timeframe gate passes",()=>{
   const workflow=readFileSync(
     new URL("../../.github/workflows/production-edge-function-release.yml",import.meta.url),
