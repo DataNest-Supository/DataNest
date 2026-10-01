@@ -42,18 +42,18 @@ test("automated gates report machine ETA separately from human follow-up",()=>{
   const security=proposeWorktreeGateTimeframe({gateId:"security-scan"});
   assert.equal(security.gateType,"automated_validation");
   assert.ok(security.machine.estimatedMinutes<=60);
-  assert.ok(security.humanFollowup.recommendedHours>=24);
+  assert.equal(security.humanFollowup.recommendedHours,12);
 });
 
 test("manual mutating gates retain human response/evidence planning windows",()=>{
   const pages=proposeWorktreeGateTimeframe({gateId:"pages"});
   assert.equal(pages.gateType,"manual_mutation");
-  assert.equal(pages.humanFollowup.rawHours,66);
-  assert.equal(pages.manualWindow.recommendedHours,72);
+  assert.equal(pages.humanFollowup.baselineRawHours,66);
+  assert.equal(pages.manualWindow.recommendedHours,12);
 
   const cleaner=proposeWorktreeGateTimeframe({gateId:"branch-cleaner"});
   assert.equal(cleaner.gateType,"manual_mutation");
-  assert.equal(cleaner.manualWindow.recommendedHours,24);
+  assert.equal(cleaner.manualWindow.recommendedHours,6);
 });
 
 test("change scope escalates complexity and machine ETA without weakening baseline risk",()=>{
@@ -67,15 +67,16 @@ test("change scope escalates complexity and machine ETA without weakening baseli
 
 test("Owner overrides are bounded, auditable, and limited to manual mutation gates",()=>{
   const override=proposeWorktreeGateTimeframe({gateId:"pages",overrideHours:48});
-  assert.equal(override.manualWindow.recommendedHours,72);
+  assert.equal(override.manualWindow.recommendedHours,12);
   assert.equal(override.manualWindow.acceptedHours,48);
   assert.equal(override.manualWindow.ownerOverride,true);
-  assert.equal(override.manualWindow.overrideDeltaHours,-24);
+  assert.equal(override.manualWindow.overrideDeltaHours,36);
 
-  const exact=proposeWorktreeGateTimeframe({gateId:"branch-cleaner",overrideHours:24});
+  const exact=proposeWorktreeGateTimeframe({gateId:"branch-cleaner",overrideHours:6});
   assert.equal(exact.manualWindow.ownerOverride,false);
 
-  assert.throws(()=>proposeWorktreeGateTimeframe({gateId:"pages",overrideHours:73}),/between 0\.5 and 72/);
+  assert.throws(()=>proposeWorktreeGateTimeframe({gateId:"pages",overrideHours:73}),/CALMER minimum 12 and 72/);
+  assert.throws(()=>proposeWorktreeGateTimeframe({gateId:"pages",overrideHours:6}),/CALMER minimum 12 and 72/);
   assert.throws(()=>proposeWorktreeGateTimeframe({gateId:"ci",overrideHours:12}),/only valid for manual_mutation/);
 });
 
@@ -93,4 +94,16 @@ test("manual workflows expose bounded Owner override inputs",()=>{
     assert.match(source,/gate_timeframe_override_hours:/,`${workflow} missing override input`);
     assert.match(source,/override_hours: \$\{\{ inputs\.gate_timeframe_override_hours \|\| '' \}\}/);
   }
+});
+
+test("CALMER applies the minimum pass planning floor without weakening automated checks",()=>{
+  const pages=proposeWorktreeGateTimeframe({gateId:"pages"});
+  assert.equal(pages.humanFollowup.baselineRecommendedHours,72);
+  assert.equal(pages.humanFollowup.calmerMinimumPassHours,12);
+  assert.equal(pages.humanFollowup.calmerSofteningHours,60);
+  assert.equal(pages.calmer.hardControlsPreserved,true);
+
+  const security=proposeWorktreeGateTimeframe({gateId:"security-scan"});
+  assert.equal(security.humanFollowup.calmerMinimumPassHours,12);
+  assert.equal(security.machine.baselineMinutes,30);
 });
