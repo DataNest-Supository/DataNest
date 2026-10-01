@@ -38,9 +38,36 @@ const packages = [
 const issueUrl =
   "https://github.com/DataNest-Supository/DataNest/issues/new?template=trade-implementation-interest.yml";
 
+const serviceSchema = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  name: "DataNest Independent Regulatory Assurance & Audit Services",
+  provider: {
+    "@type": "Organization",
+    name: "DataNest · Resonance AppDev"
+  },
+  areaServed: {
+    "@type": "Country",
+    name: "South Africa"
+  },
+  serviceType: [
+    "Regulatory readiness assessment",
+    "Technical audit support",
+    "Compliance readiness",
+    "Governance and controls review",
+    "Authorized digital oversight",
+    "Implementation and remediation support"
+  ],
+  url: "https://datanest-supository.github.io/DataNest/assurance/"
+};
+
 export default function AssurancePage() {
   return (
     <main className="publicReportPage">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
+      />
       <header>
         <Link href="/transparency">← Public Transparency</Link>
         <a href="https://github.com/DataNest-Supository/DataNest/blob/main/docs/INDEPENDENT_REGULATORY_ASSURANCE_SERVICES.md">
@@ -72,6 +99,11 @@ export default function AssurancePage() {
           <p className="muted">
             Specialist day rate: R12,500. Taxes, travel, external certification/registration fees and specialist third-party
             tools are excluded unless quoted. Final scope and authorization are agreed in writing before work starts.
+          </p>
+          <p>
+            <strong>Founding-client offer:</strong> the first three qualified implementations may receive a 20% launch
+            discount in exchange for permission to publish a sanitized case study and outcome metrics. Confidential and
+            personal information is never published without written authorization.
           </p>
         </section>
 
