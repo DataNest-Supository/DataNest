@@ -355,6 +355,19 @@
         "engineeringReview"
       ],
       "machineBaselineMinutes": 20
+    },
+    "guardian.yml": {
+      "gateId": "guardian",
+      "gateType": "automated_enforcement",
+      "taskComplexity": "cross_system",
+      "reportingComplexity": "audit_grade",
+      "reviewDomains": [
+        "engineeringReview",
+        "operationsReview",
+        "securityReview",
+        "governanceReview"
+      ],
+      "machineBaselineMinutes": 30
     }
   }
 }
