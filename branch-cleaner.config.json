@@ -10,7 +10,9 @@
     "^automation/botsquad/",
     "^automation/environment-feed$",
     "^automation/enforcer$",
-    "^automation/guardian$"
+    "^automation/guardian$",
+    "^automation/conductor$",
+    "^automation/suggester$"
   ],
   "supabaseProjects": [
     {
