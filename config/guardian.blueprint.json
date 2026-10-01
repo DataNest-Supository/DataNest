@@ -123,6 +123,12 @@
     "environmentMinutes": 420,
     "enforcerMinutes": 210,
     "knowledgeMinutes": 420,
-    "botsquadMinutes": 420
+    "botsquadMinutes": 420,
+    "calmerMinutes": 45,
+    "regulatorMinutes": 45
+  },
+  "governanceHarmony": {
+    "calmerHardControlsRemoved": 0,
+    "regulatorFinancialCommitmentsAuthorized": false
   }
 }
