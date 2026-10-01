@@ -64,10 +64,7 @@ const serviceSchema = {
 export default function AssurancePage() {
   return (
     <main className="publicReportPage">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
-      />
+      <script type="application/ld+json">{JSON.stringify(serviceSchema)}</script>
       <header>
         <Link href="/transparency">← Public Transparency</Link>
         <a href="https://github.com/DataNest-Supository/DataNest/blob/main/docs/INDEPENDENT_REGULATORY_ASSURANCE_SERVICES.md">
