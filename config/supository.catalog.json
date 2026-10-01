@@ -272,6 +272,19 @@
       "productionAuthority": false,
       "branch": "automation/regulator",
       "botsquadRequirementFeed": true
+    },
+    "visibility-utility": {
+      "path": "visibility-utility/",
+      "mode": "continuous-visibility-market-intelligence-and-route-to-market",
+      "productionAuthority": false,
+      "branch": "automation/visibility-utility",
+      "transparencyEvidence": true,
+      "routeToMarketProjections": true
     }
+  },
+  "publicSystemCharter": {
+    "path": "docs/DATANEST_SYSTEM_CHARTER.md",
+    "publicUrl": "https://datanest-supository.github.io/DataNest/system-charter/",
+    "standardsAlignment": "mapped-not-certified"
   }
 }
