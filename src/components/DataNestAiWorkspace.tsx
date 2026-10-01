@@ -47,6 +47,7 @@ type Props={
 };
 
 const jobColumns="id,job_number,title,description,priority,status,required_capabilities,requirements,created_at,updated_at";
+const focusModeStorageKey="datanest-ai:focus-mode:v1";
 
 function jobCode(job:Job){
   return "JOB-"+String(job.job_number).padStart(5,"0");
@@ -72,6 +73,7 @@ export default function DataNestAiWorkspace({
 }:Props){
   const [jobs,setJobs]=useState<Job[]>([]);
   const [displayTimeZone,setDisplayTimeZone]=useState("UTC");
+  const [focusMode,setFocusMode]=useState(false);
   const [selectedJobId,setSelectedJobId]=useState("");
   const [sessionId,setSessionId]=useState("");
   const [context,setContext]=useState<ContextResponse|null>(null);
@@ -90,6 +92,11 @@ export default function DataNestAiWorkspace({
 
   useEffect(()=>{
     setDisplayTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone||"UTC");
+    try{
+      setFocusMode(window.localStorage.getItem(focusModeStorageKey)==="true");
+    }catch{
+      setFocusMode(false);
+    }
   },[]);
 
   const selectedJob=useMemo(
@@ -248,6 +255,19 @@ export default function DataNestAiWorkspace({
     input?.focus({preventScroll:true});
   }
 
+  function toggleFocusMode(){
+    const next=!focusMode;
+    setFocusMode(next);
+    try{
+      window.localStorage.setItem(focusModeStorageKey,String(next));
+    }catch{
+      // Focus mode remains available for the current session when storage is unavailable.
+    }
+    if(next){
+      window.requestAnimationFrame(()=>openAiWorkspace());
+    }
+  }
+
   function inspectCertifiedMemory(){
     const disclosure=document.getElementById("datanest-ai-governance-tools");
     if(disclosure instanceof HTMLDetailsElement)disclosure.open=true;
@@ -276,7 +296,7 @@ export default function DataNestAiWorkspace({
   const contextReady=Boolean(context?.job.id===selectedJobId&&!contextError&&!jobsError&&!loading);
   const contextStatus=loading?"SYNCING":contextError||jobsError?"NEEDS ATTENTION":contextReady?"CONTEXT READY":"STANDBY";
 
-  return <div className="datanestAiWorkspace">
+  return <div className={"datanestAiWorkspace"+(focusMode?" isFocusMode":"")}>
     <section className="panel" aria-label="DataNest AI objective">
       <PageHeader
         eyebrow="DATANEST AI · GOVERNED OBJECTIVE"
@@ -289,10 +309,22 @@ export default function DataNestAiWorkspace({
         </>}
       />
     </section>
+    <section className="datanestAiModeBar" aria-label="DataNest AI display mode">
+      <div>
+        <span className="datanestAiModeGlyph" aria-hidden="true">{focusMode?"◎":"✦"}</span>
+        <span>
+          <b>{focusMode?"Focus mode":"AI core view"}</b>
+          <small>{focusMode?"Hero visuals are quiet; command tools and governed context stay active.":"Cinematic AI core visuals are active with full command access."}</small>
+        </span>
+      </div>
+      <button className="secondaryButton compact datanestAiModeToggle" type="button" aria-pressed={focusMode} onClick={toggleFocusMode}>
+        {focusMode?"Show AI core":"Focus mode"}
+      </button>
+    </section>
     {jobsError&&<section className="panel" role="alert"><p>{jobsError}</p><button className="secondaryButton" disabled={jobsLoading} onClick={()=>void loadJobs()}>Retry loading jobs</button></section>}
     {contextError&&<section className="panel" role="alert"><h3>Job context needs attention</h3><p>{contextError}</p><p className="muted">Your draft is preserved. Retry context loading before sending another command.</p><button className="secondaryButton" disabled={loading} onClick={()=>void refreshContext()}>Retry AI context</button></section>}
 
-      <section className={"datanestAiHero datanestAiHeroV2 "+(loading?"isWorking":"isReady")} aria-label="DataNest AI development command center">
+      {!focusMode&&<section className={"datanestAiHero datanestAiHeroV2 "+(loading?"isWorking":"isReady")} aria-label="DataNest AI development command center">
       <div className="datanestAiHeroGrid" aria-hidden="true"/>
       <div className="datanestAiHeroGlow datanestAiHeroGlowOne" aria-hidden="true"/>
       <div className="datanestAiHeroGlow datanestAiHeroGlowTwo" aria-hidden="true"/>
@@ -387,7 +419,7 @@ export default function DataNestAiWorkspace({
           {loading?"AI context pipeline synchronising":contextReady?"Governed Job context ready":"Job context needs attention"}
         </div>
       </div>
-    </section>
+    </section>}
 
     {selectedJob&&<>
       <section id="datanest-ai-chat" className="datanestAiChatStage" aria-label="DataNest AI Chat">
