@@ -106,6 +106,27 @@
         "Relevant tests remain reproducible",
         "Advisory evidence is not mislabeled as certification"
       ]
+    },
+    {
+      "id": "functional_change",
+      "tolerance": "evidence-before-adoption",
+      "patterns": [
+        "src/**",
+        "scripts/**",
+        "apps/**",
+        "infra/**",
+        "ops/**",
+        "config/**",
+        ".github/**",
+        "supabase/**",
+        "package.json"
+      ],
+      "acceptance": [
+        "Purpose and affected behavior are identifiable",
+        "Relevant tests or an explicit evidence rationale accompany the change",
+        "The change does not silently escalate production, data, synchronization, or AI authority",
+        "Human override and review paths remain available where the change is consequential"
+      ]
     }
   ],
   "hardRules": [
