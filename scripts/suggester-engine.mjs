@@ -27,6 +27,8 @@ export function buildSuggesterFeed({
   enforcer={},
   botsquad={},
   conductor={},
+  calmer={},
+  regulator={},
   previous={},
   headSha=null,
   generatedAt=new Date().toISOString()
@@ -39,7 +41,9 @@ export function buildSuggesterFeed({
     environment:inspectTreeEvidence(environment,"datanest-environment-feed-v1",420,now),
     enforcer:inspectTreeEvidence(enforcer,"datanest-enforcer-assessment-v1",210,now),
     botsquad:inspectTreeEvidence(botsquad,"datanest-botsquad-consolidated-feed-v1",420,now),
-    conductor:inspectTreeEvidence(conductor,"datanest-conductor-state-v1",30,now)
+    conductor:inspectTreeEvidence(conductor,"datanest-conductor-state-v1",30,now),
+    calmer:inspectTreeEvidence(calmer,"datanest-calmer-feed-v1",45,now),
+    regulator:inspectTreeEvidence(regulator,"datanest-regulator-state-v1",45,now)
   };
   const automationReady=Object.values(sourceEvidence).every(source=>source.valid) &&
     ["healthy","healing"].includes(guardian?.status) &&
@@ -175,6 +179,30 @@ export function buildSuggesterFeed({
       evidence:["botsquad.uxEaseFeed"]
     }));
   }
+  for(const gate of (calmer?.gateSoftening||[]).filter(x=>Number(x.maximumSofteningHours||0)>0).slice(0,30)){
+    suggestions.push(suggestion({
+      source:"calmer",
+      type:"governance-friction",
+      priority:"low",
+      title:"Apply CALMER minimum-pass planning window",
+      detail:JSON.stringify(gate),
+      automationClass:"review-required",
+      evidence:["calmer.gateSoftening"]
+    }));
+  }
+
+  for(const req of (regulator?.requirements||[]).slice(0,50)){
+    suggestions.push(suggestion({
+      source:"regulator",
+      type:"harmony-requirement",
+      priority:req.severity==="critical"?"critical":req.severity==="high"?"high":"medium",
+      title:req.title||"Resolve REGULATOR requirement",
+      detail:req.detail||"",
+      automationClass:"review-required",
+      evidence:["regulator.requirements",req.id].filter(Boolean)
+    }));
+  }
+
   for(const recommendation of (botsquad?.functionEvolutionFeed||[]).slice(0,30)){
     suggestions.push(suggestion({
       source:"botsquad",
@@ -231,7 +259,9 @@ export function buildSuggesterFeed({
       enforcerStatus:enforcer?.status||"missing",
       environmentCompatible:environment?.environmentCompatible??null,
       knowledgeItems:Number(knowledge?.itemCount||0),
-      botsquadAvailable:botsquad?.schemaVersion==="datanest-botsquad-consolidated-feed-v1"
+      botsquadAvailable:botsquad?.schemaVersion==="datanest-botsquad-consolidated-feed-v1",
+      calmerTier:calmer?.tier||null,
+      regulatorStatus:regulator?.status||"missing"
     },
     suggestions:unique,
     commands,
@@ -256,10 +286,12 @@ async function main(){
   const enforcer=await readJson(process.env.SUGGESTER_ENFORCER_PATH||"/tmp/suggester/enforcer.json",{});
   const botsquad=await readJson(process.env.SUGGESTER_BOTSQUAD_PATH||"/tmp/suggester/botsquad.json",{});
   const conductor=await readJson(process.env.SUGGESTER_CONDUCTOR_PATH||"/tmp/suggester/conductor.json",{});
+  const calmer=await readJson(process.env.SUGGESTER_CALMER_PATH||"/tmp/suggester/calmer.json",{});
+  const regulator=await readJson(process.env.SUGGESTER_REGULATOR_PATH||"/tmp/suggester/regulator.json",{});
   const previous=await readJson(process.env.SUGGESTER_PREVIOUS_PATH||"/tmp/suggester/previous.json",{});
 
   const headSha=execFileSync("git",["rev-parse","HEAD"],{encoding:"utf8"}).trim();
-  const feed=buildSuggesterFeed({config,guardian,knowledge,environment,enforcer,botsquad,conductor,previous,headSha});
+  const feed=buildSuggesterFeed({config,guardian,knowledge,environment,enforcer,botsquad,conductor,calmer,regulator,previous,headSha});
   feed.triggeringConductorRunId=process.env.SUGGESTER_CONDUCTOR_RUN_ID||null;
   await mkdir("suggester/feeds",{recursive:true});
   await writeFile("suggester/feeds/datanest.json",JSON.stringify(feed,null,2)+"\n");
