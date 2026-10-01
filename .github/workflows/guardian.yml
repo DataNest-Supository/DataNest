@@ -18,7 +18,6 @@ on:
       - "Security scan"
       - "DataNest Maintenance"
       - "Resonance Forge Phase A"
-      - "VISIBILITY-UTILITY Market Presence Tree"
     types: [completed]
 
 permissions:
