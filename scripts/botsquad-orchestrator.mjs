@@ -23,7 +23,7 @@ function derivedCategoryCounts(items=[]){
   return counts;
 }
 
-export function buildBotWorkOrder(bot,knowledge={},environment={}){
+export function buildBotWorkOrder(bot,knowledge={},environment={},regulator={}){
   const knowledgeItems=Array.isArray(knowledge?.items) ? knowledge.items : [];
   const categoryCounts=knowledge?.categoryCounts || derivedCategoryCounts(knowledgeItems);
   const environmentFindings=Array.isArray(environment?.findings) ? environment.findings : [];
@@ -42,7 +42,11 @@ export function buildBotWorkOrder(bot,knowledge={},environment={}){
       recentLearningCount:knowledgeItems.length,
       knowledgeOptimizationCandidates:Array.isArray(knowledge?.optimizationCandidates)?knowledge.optimizationCandidates.slice(0,20):[],
       environmentFindingCount:environmentFindings.length,
-      environmentFindings:environmentFindings.slice(0,20)
+      environmentFindings:environmentFindings.slice(0,20),
+      regulatorStatus:regulator?.status||null,
+      regulatorRequirementCount:Array.isArray(regulator?.requirements)?regulator.requirements.length:0,
+      regulatorRequirements:Array.isArray(regulator?.requirements)?regulator.requirements.slice(0,30):[],
+      regulatorInstructions:Array.isArray(regulator?.instructions)?regulator.instructions:[]
     },
     objectives:[
       bot.purpose,
@@ -139,7 +143,8 @@ async function main(){
   if(!bot || bot.id==="orchestrator") throw new Error("Unknown or non-specialist bot: "+botId);
   const knowledge=await readJson(arg("--knowledge"),{});
   const environment=await readJson(arg("--environment"),{});
-  const workOrder=buildBotWorkOrder(bot,knowledge,environment);
+  const regulator=await readJson(arg("--regulator"),{});
+  const workOrder=buildBotWorkOrder(bot,knowledge,environment,regulator);
   const endpoint=process.env.BOTSQUAD_AI_ENDPOINT;
   let feed;
   if(endpoint){
