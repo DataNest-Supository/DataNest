@@ -295,7 +295,7 @@ jobs:
 
       - name: Verify deployed Next.js shell and public governance routes
         run: |
-          for route in "" legal governance accessibility terms privacy disclaimers acceptable-use intellectual-property; do
+          for route in "" legal governance accessibility terms privacy disclaimers acceptable-use intellectual-property transparency system-charter architecture stress-test; do
             suffix=""
             if [ -n "$route" ]; then suffix="$route/"; fi
             curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors               "https://datanest-supository.github.io/DataNest/$suffix"               -o "/tmp/datanest-${route:-home}.html"
@@ -314,6 +314,20 @@ jobs:
           grep -q '"ok":true' /tmp/datanest-health.json
           grep -q '"project":"Resonance DataNest"' /tmp/datanest-health.json
 
+      - name: Verify public SEO discovery artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors \
+            https://datanest-supository.github.io/DataNest/robots.txt \
+            -o /tmp/datanest-robots.txt
+          grep -q '^User-agent:' /tmp/datanest-robots.txt
+          grep -Fq 'Sitemap: https://datanest-supository.github.io/DataNest/sitemap.xml' /tmp/datanest-robots.txt
+          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors \
+            https://datanest-supository.github.io/DataNest/sitemap.xml \
+            -o /tmp/datanest-sitemap.xml
+          grep -q '<urlset' /tmp/datanest-sitemap.xml
+          grep -Fq '<loc>https://datanest-supository.github.io/DataNest/</loc>' /tmp/datanest-sitemap.xml
       - name: Verify runtime configuration
         run: |
           curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors             https://datanest-supository.github.io/DataNest/runtime-config.js             -o /tmp/runtime-config.js
