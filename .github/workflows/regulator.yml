@@ -41,7 +41,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p /tmp/regulator
-          for branch in automation/guardian automation/enforcer automation/calmer automation/environment-feed automation/conductor automation/suggester automation/botsquad/orchestrator; do
+          for branch in automation/guardian automation/enforcer automation/calmer automation/environment-feed automation/conductor automation/suggester automation/botsquad/orchestrator automation/visibility-utility; do
             git fetch origin "$branch" || true
           done
           git show origin/automation/guardian:guardian/snapshots/latest.json > /tmp/regulator/guardian.json 2>/dev/null || echo '{}' > /tmp/regulator/guardian.json
@@ -51,6 +51,7 @@ jobs:
           git show origin/automation/conductor:conductor/state/latest.json > /tmp/regulator/conductor.json 2>/dev/null || echo '{}' > /tmp/regulator/conductor.json
           git show origin/automation/suggester:suggester/feeds/datanest.json > /tmp/regulator/suggester.json 2>/dev/null || echo '{}' > /tmp/regulator/suggester.json
           git show origin/automation/botsquad/orchestrator:botsquad/feeds/datanest.json > /tmp/regulator/botsquad.json 2>/dev/null || echo '{}' > /tmp/regulator/botsquad.json
+          git show origin/automation/visibility-utility:visibility-utility/state/latest.json > /tmp/regulator/visibility.json 2>/dev/null || echo '{}' > /tmp/regulator/visibility.json
 
       - name: Build transparent harmony and BOTSQUAD requirement packet
         env:
@@ -61,6 +62,7 @@ jobs:
           REGULATOR_CONDUCTOR_PATH: /tmp/regulator/conductor.json
           REGULATOR_SUGGESTER_PATH: /tmp/regulator/suggester.json
           REGULATOR_BOTSQUAD_PATH: /tmp/regulator/botsquad.json
+          REGULATOR_VISIBILITY_PATH: /tmp/regulator/visibility.json
         run: node scripts/regulator-engine.mjs
 
       - name: Verify non-authorizing regulation
