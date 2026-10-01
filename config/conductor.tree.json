@@ -93,6 +93,36 @@
       "dispatch": {
         "enabled": true
       }
+    },
+    {
+      "id": "calmer",
+      "workflow": "calmer.yml",
+      "workflowName": "CALMER Governance Softening Tree",
+      "maxAgeMinutes": 30,
+      "dependencies": [
+        "guardian",
+        "enforcer",
+        "boundaries"
+      ],
+      "dispatch": {
+        "enabled": true
+      }
+    },
+    {
+      "id": "regulator",
+      "workflow": "regulator.yml",
+      "workflowName": "REGULATOR Harmony Tree",
+      "maxAgeMinutes": 30,
+      "dependencies": [
+        "calmer",
+        "guardian",
+        "enforcer",
+        "botsquad",
+        "boundaries"
+      ],
+      "dispatch": {
+        "enabled": true
+      }
     }
   ],
   "safeSuggestionActions": {
@@ -158,6 +188,21 @@
       "from": "canonical-feeds",
       "to": "Mirror-DataNest",
       "mode": "push-public-feed-pull-by-mirror-consumers"
+    },
+    {
+      "from": "GUARDIAN+ENFORCER+CONDUCTOR",
+      "to": "CALMER",
+      "mode": "pull-minimize-governance-friction"
+    },
+    {
+      "from": "CALMER+GUARDIAN+ENFORCER+BOTSQUAD+SUGGESTER",
+      "to": "REGULATOR",
+      "mode": "pull-audit-stress-acquire-supply-action-requirements"
+    },
+    {
+      "from": "REGULATOR",
+      "to": "BOTSQUAD",
+      "mode": "push-requirement-packet"
     }
   ],
   "controls": {
