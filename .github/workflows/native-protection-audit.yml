@@ -1,0 +1,84 @@
+name: BRANCH-X Native Protection Audit
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: BRANCH-X Native Protection Audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Query GitHub native protection
+        shell: bash
+        env:
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir -p native-protection/state
+          curl -fsSL -H "Accept: application/vnd.github+json" "https://api.github.com/repos/${REPO}/branches/main" > native-protection/state/main.json
+          curl -fsSL -H "Accept: application/vnd.github+json" "https://api.github.com/repos/${REPO}/rulesets" > native-protection/state/rulesets.json
+
+      - name: Evaluate native protection state
+        shell: bash
+        env:
+          EXPECTED_CANONICAL_CHECKS: |
+          - "CI"
+          - "PR Verification"
+          - "Security scan"
+          - "DataNest AI Certification"
+          - "DataNest Boundaries"
+          - "ENFORCER Defence Tree"
+          - "GUARDIAN Health & Healing Tree"
+          - "CALMER Governance Softening Tree"
+          - "REGULATOR Harmony Tree"
+          - "VISIBILITY-UTILITY Market Presence Tree"
+          - "BRANCH-X Protection Tree"
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          main = json.loads(Path("native-protection/state/main.json").read_text())
+          rulesets = json.loads(Path("native-protection/state/rulesets.json").read_text())
+          expected_checks = [line.strip()[2:-1] for line in os.environ["EXPECTED_CANONICAL_CHECKS"].splitlines() if line.strip()]
+          canonical = next((r for r in rulesets if r.get("name") == "BRANCH-X Canonical"), None)
+          automation = next((r for r in rulesets if r.get("name") == "BRANCH-X Automation"), None)
+          refs = lambda r: (((r or {}).get("conditions") or {}).get("ref_name") or {}).get("include") or []
+          types = lambda r: sorted(x.get("type") for x in (r or {}).get("rules",[]) if isinstance(x,dict) and x.get("type"))
+          statuses=[]
+          for rule in (canonical or {}).get("rules",[]):
+              if rule.get("type") == "required_status_checks":
+                  for check in (rule.get("parameters") or {}).get("required_status_checks",[]):
+                      if isinstance(check,dict) and check.get("context"): statuses.append(check["context"])
+          expected_refs={"refs/heads/main","refs/heads/release/**"}
+          required_types={"pull_request","required_status_checks","required_linear_history","non_fast_forward","deletion"}
+          passed=(bool(main.get("protected")) and bool(canonical) and canonical.get("enforcement")=="active" and expected_refs.issubset(set(refs(canonical))) and required_types.issubset(set(types(canonical))) and set(expected_checks).issubset(set(statuses)) and bool(automation) and automation.get("enforcement")=="active")
+          evidence={"schemaVersion":"datanest-native-protection-audit-v1","repository":os.environ.get("GITHUB_REPOSITORY"),"observedMainProtected":bool(main.get("protected")),"observedRulesetCount":len(rulesets),"canonicalRuleset":{"present":bool(canonical),"enforcement":canonical.get("enforcement") if canonical else None,"refs":refs(canonical),"ruleTypes":types(canonical),"requiredStatusChecks":sorted(set(statuses))},"automationRuleset":{"present":bool(automation),"enforcement":automation.get("enforcement") if automation else None},"expectedCanonicalStatusChecks":expected_checks,"result":"protected" if passed else "protection-gap","runId":os.environ.get("GITHUB_RUN_ID")}
+          Path("native-protection/state/latest.json").write_text(json.dumps(evidence,indent=2)+"
+")
+          print(json.dumps(evidence,indent=2))
+          if not passed:
+              print("::error::BRANCH-X native protection is not fully active.")
+              raise SystemExit(1)
+          PY
+
+      - name: Publish audit summary
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f native-protection/state/latest.json && cat native-protection/state/latest.json >> "$GITHUB_STEP_SUMMARY" || echo "Audit evidence unavailable." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload native protection evidence
+        if: always()
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: native-protection-audit-${{ github.run_id }}
+          path: native-protection/state/
+          retention-days: 90
