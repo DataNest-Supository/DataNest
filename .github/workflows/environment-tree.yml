@@ -24,7 +24,10 @@ jobs:
 
       - name: Prepare isolated ENVIRONMENT feed branch
         shell: bash
-        run: git switch -C automation/environment-feed
+        run: |
+          set -euo pipefail
+          git fetch origin automation/environment-feed || true
+          git switch -C automation/environment-feed
 
       - name: Assess compatibility and apply safe generated adaptations
         run: node scripts/environment-assessor.mjs
