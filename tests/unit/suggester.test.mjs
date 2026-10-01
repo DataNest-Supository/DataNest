@@ -6,9 +6,10 @@ const config={automationClasses:{autonomousSafe:["heal-redundant-branches","heal
 
 const generatedAt="2026-10-01T10:00:00Z";
 function buildFeed(input){
-  const schemas={guardian:"guardian-snapshot",knowledge:"knowledge-feed",environment:"environment-feed",enforcer:"enforcer-assessment",botsquad:"botsquad-consolidated-feed",conductor:"conductor-state",calmer:"calmer-feed",regulator:"regulator-state"};
+  const schemas={guardian:"guardian-snapshot",knowledge:"knowledge-feed",environment:"environment-feed",enforcer:"enforcer-assessment",botsquad:"botsquad-consolidated-feed",conductor:"conductor-state",calmer:"calmer-feed",regulator:"regulator-state",visibility:"visibility-utility-feed"};
   const sources=Object.fromEntries(Object.entries(schemas).map(([key,schema])=>[key,{
     schemaVersion:"datanest-"+schema+"-v1",productionAuthorization:false,generatedAt,
+    ...(key==="visibility"?{seoScore:90,visibilityScore:90,missingInputs:[],routes:[]}:{}),
     ...input[key]
   }]));
   return buildSuggesterFeed({...input,...sources,generatedAt});
@@ -19,7 +20,8 @@ function safeInputs(){
     guardian:{status:"healing",headSha:"a".repeat(40),observed:{branches:{redundantBranchCount:1,redundantBranches:["merged-a"]},source:{safeRefinementCount:0}},drift:{optimalConditionDrift:[]}},
     knowledge:{itemCount:1},environment:{environmentCompatible:true},enforcer:{status:"pass"},
     botsquad:{recommendations:[]},conductor:{allProcessesFresh:true,headSha:"a".repeat(40)},
-    calmer:{tier:"STONE",gateSoftening:[]},regulator:{status:"harmonized",requirements:[]}};
+    calmer:{tier:"STONE",gateSoftening:[]},regulator:{status:"harmonized",requirements:[]},
+    visibility:{seoScore:90,visibilityScore:90,missingInputs:[],routes:[]}};
 }
 
 test("SUGGESTER suppresses automation for blocked, stale, unsynchronized or wrong-source evidence",()=>{
@@ -50,7 +52,7 @@ test("equivalent observations keep fingerprints across pulses but changed branch
 test("missing feeds create visible evidence-repair suggestions with no commands",()=>{
   const feed=buildSuggesterFeed({config,generatedAt});
   assert.equal(feed.commands.length,0);
-  assert.equal(feed.suggestions.filter(x=>x.type==="source-evidence").length,8);
+  assert.equal(feed.suggestions.filter(x=>x.type==="source-evidence").length,9);
 });
 
 test("SUGGESTER queues only allowlisted safe healing signals",()=>{
@@ -126,4 +128,27 @@ test("SUGGESTER deduplicates equivalent suggestions by fingerprint",()=>{
     conductor:{allProcessesFresh:true}
   });
   assert.equal(feed.suggestions.filter(x=>x.type==="ai-optimization").length,1);
+});
+
+test("SUGGESTER exposes VISIBILITY-UTILITY market routes as review-required",()=>{
+  const feed=buildFeed({
+    ...safeInputs(),
+    guardian:{...safeInputs().guardian,observed:{branches:{redundantBranchCount:0},source:{safeRefinementCount:0}}},
+    visibility:{
+      seoScore:92,
+      visibilityScore:88,
+      missingInputs:["local-trends"],
+      routes:[{
+        id:"owned-search-content",
+        label:"Owned search + public evidence",
+        opportunityScore:84,
+        confidence:"medium",
+        projectedOutcome:{basis:"scenario-relative-index",currentBaselineIndex:100,reachIndex:118},
+        implementationClass:"review-required"
+      }]
+    }
+  });
+  assert.ok(feed.suggestions.some(x=>x.type==="route-to-market"));
+  assert.ok(feed.suggestions.some(x=>x.type==="market-evidence"));
+  assert.ok(feed.suggestions.filter(x=>x.source==="visibility-utility").every(x=>x.automationClass==="review-required"));
 });
