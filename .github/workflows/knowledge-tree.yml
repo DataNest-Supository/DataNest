@@ -1,0 +1,42 @@
+name: Knowledge Tree
+
+on:
+  schedule:
+    - cron: "23 */6 * * *"
+      timezone: Africa/Johannesburg
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: datanest-knowledge-tree
+  cancel-in-progress: true
+
+jobs:
+  learn:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build categorized repository learning feeds
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/knowledge-tree.mjs
+
+      - name: Publish isolated Knowledge tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch="automation/knowledge-feed"
+          git switch -C "$branch"
+          git add knowledge/index.json knowledge/feeds/
+          if git diff --cached --quiet; then
+            echo "Knowledge feed unchanged."
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]"               -c user.email="41898282+github-actions[bot]@users.noreply.github.com"               commit -m "Refresh DataNest Knowledge feeds"
+          git push --force-with-lease origin "HEAD:$branch"
