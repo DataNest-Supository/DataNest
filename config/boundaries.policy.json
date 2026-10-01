@@ -252,7 +252,9 @@
         "regulator/**",
         "config/regulator.tree.json",
         "scripts/regulator-engine.mjs",
-        ".github/workflows/regulator.yml"
+        ".github/workflows/regulator.yml",
+        "public/transparency/regulator/**",
+        "public/transparency/audits/index.json"
       ],
       "acceptance": [
         "REGULATOR requirement state is transparent and attributable to source evidence",
