@@ -18,7 +18,7 @@ Force-pushes and branch deletion are forbidden for canonical branches.
 4. `branch-cleaner.config.json` protects canonical, automation, audit, and CI branches from destructive maintenance.
 5. Boundaries classifies the BRANCH-X control plane as canonical-only.
 
-A failed GitHub-native administration attempt is recorded as a protection gap; BRANCH-X never treats that gap as successful protection.
+An unavailable GitHub administration read is recorded as `api-access-unavailable`; a readable GitHub API that shows missing or mismatched native controls is recorded as a `protection-gap`. BRANCH-X never treats either state as successful protection.
 
 ## Free host-level closure
 
