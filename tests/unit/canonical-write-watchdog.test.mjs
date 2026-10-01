@@ -33,3 +33,14 @@ test("empty association list is anomalous", () => {
   });
   assert.equal(evidence.result, "canonical-write-anomaly");
 });
+
+test("merged PR for a different base branch is still a canonical-write anomaly", () => {
+  const evidence = buildEvidence({
+    repository: "DataNest-Supository/DataNest",
+    ref: "refs/heads/main",
+    sha: "ghi",
+    prs: [{ number: 44, state: "closed", merged_at: "2026-10-01T12:30:00Z", base: { ref: "develop" } }]
+  });
+  assert.equal(evidence.result, "canonical-write-anomaly");
+  assert.equal(isAuthorized(evidence), false);
+});
