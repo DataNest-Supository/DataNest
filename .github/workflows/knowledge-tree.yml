@@ -22,6 +22,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Prepare isolated Knowledge branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin automation/knowledge-feed || true
+          git switch -C automation/knowledge-feed
+
       - name: Build categorized repository learning feeds
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -32,7 +39,6 @@ jobs:
         run: |
           set -euo pipefail
           branch="automation/knowledge-feed"
-          git switch -C "$branch"
           git add knowledge/index.json knowledge/feeds/
           if git diff --cached --quiet; then
             echo "Knowledge feed unchanged."
