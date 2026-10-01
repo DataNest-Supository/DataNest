@@ -1,0 +1,28 @@
+name: Boundaries Assessment
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: "13 5 * * *"
+      timezone: Africa/Johannesburg
+
+permissions:
+  contents: read
+
+jobs:
+  assess:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assess DataNest tolerance boundaries and acceptance criteria
+        run: node scripts/boundaries-assessor.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: boundaries-assessment-${{ github.run_id }}
+          path: boundaries/reports/latest.json
+          retention-days: 30
