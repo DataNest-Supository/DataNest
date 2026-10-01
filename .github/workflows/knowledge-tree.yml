@@ -58,3 +58,9 @@ jobs:
             knowledge/index.json
             knowledge/feeds/*.json
           retention-days: 14
+
+  gate-timeframe:
+    name: DataNest AI worktree gate timeframe
+    uses: ./.github/workflows/worktree-gate-timeframe.yml
+    with:
+      gate_id: "knowledge-tree"
