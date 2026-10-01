@@ -123,6 +123,20 @@
       "dispatch": {
         "enabled": true
       }
+    },
+    {
+      "id": "visibility-utility",
+      "workflow": "visibility-utility.yml",
+      "workflowName": "VISIBILITY-UTILITY Market Presence Tree",
+      "maxAgeMinutes": 240,
+      "dependencies": [
+        "knowledge",
+        "botsquad",
+        "regulator"
+      ],
+      "dispatch": {
+        "enabled": true
+      }
     }
   ],
   "safeSuggestionActions": {
@@ -203,6 +217,16 @@
       "from": "REGULATOR",
       "to": "BOTSQUAD",
       "mode": "push-requirement-packet"
+    },
+    {
+      "from": "Knowledge+BOTSQUAD+REGULATOR+public-platform-state",
+      "to": "VISIBILITY-UTILITY",
+      "mode": "pull-assess-project-market-routes"
+    },
+    {
+      "from": "VISIBILITY-UTILITY",
+      "to": "SUGGESTER",
+      "mode": "push-seo-market-and-route-to-market-evidence"
     }
   ],
   "controls": {
