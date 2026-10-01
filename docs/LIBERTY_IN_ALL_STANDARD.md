@@ -90,9 +90,9 @@ These are design/alignment references. DataNest does not claim certification, ac
 
 Stable public descriptor: /DataNest/transparency/liberty-in-all/index.json
 
-Continuously generated public traceability snapshot: /DataNest/transparency/liberty-in-all/latest.json
+Continuously generated public traceability snapshot: https://raw.githubusercontent.com/DataNest-Supository/DataNest/automation/liberty-in-all/public/transparency/liberty-in-all/latest.json
 
-The platform Transparency workspace links these artifacts so interested parties can inspect current lineage and limitations on demand.
+The live DataNest Transparency workspace reads this sanitized snapshot on demand from the dedicated automation branch, so fresh evidence can be inspected without turning a transparency refresh into a production deployment. The static descriptor remains part of the governed Pages release.
 
 ## 11. Acceptance criteria
 
