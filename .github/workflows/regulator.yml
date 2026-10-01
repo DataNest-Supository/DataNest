@@ -14,8 +14,6 @@ on:
       - "CALMER Governance Softening Tree"
       - "GUARDIAN Health & Healing Tree"
       - "ENFORCER Defence Tree"
-      - "SUGGESTER Optimization Tree"
-      - "BOTSQUAD AI Tree"
     types: [completed]
 
 permissions:
