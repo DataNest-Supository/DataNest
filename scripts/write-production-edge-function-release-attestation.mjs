@@ -8,6 +8,10 @@ const supabaseToken=(process.env.SUPABASE_ACCESS_TOKEN || "").trim();
 const projectRef=(process.env.DATANEST_SUPABASE_PROJECT || "sgqdmfgjbprsoqsmgigi").trim();
 const workflowRunId=Number(process.env.GITHUB_RUN_ID || 0);
 const repository=(process.env.GITHUB_REPOSITORY || "").trim();
+const baselinePath=resolve(
+  process.env.DATANEST_EDGE_ATTESTATION_BASELINE ||
+  "config/production-edge-function-attestation.json"
+);
 
 const functions=[
   "datanest-ai-chat",
@@ -23,9 +27,6 @@ const functions=[
 if(!/^[0-9a-f]{40}$/i.test(releaseSha)){
   throw new Error("DATANEST_RELEASE_SHA must be an exact 40-character Git commit SHA.");
 }
-if(!supabaseToken){
-  throw new Error("SUPABASE_ACCESS_TOKEN is required for production Edge Function release attestation.");
-}
 if(!Number.isInteger(workflowRunId)||workflowRunId<=0){
   throw new Error("GITHUB_RUN_ID is required for production Edge Function release attestation.");
 }
@@ -39,7 +40,7 @@ function filesUnder(root){
     const names=readdirSync(current).sort();
     for(const name of names){
       const path=resolve(current,name);
-      const relativePath=relative(root,path).split("\\\\").join("/");
+      const relativePath=relative(root,path).split("\\").join("/");
       const stat=statSync(path);
       if(stat.isDirectory())visit(path);
       else if(stat.isFile())output.push({path:relativePath,bytes:readFileSync(path)});
@@ -57,83 +58,119 @@ function sha256Tree(root){
     hash.update(pathBytes);
     hash.update(Buffer.from(":"));
     hash.update(file.bytes);
-    hash.update(Buffer.from("\\n"));
+    hash.update(Buffer.from("\n"));
   }
   return hash.digest("hex");
+}
+
+function validateObservedFunction(slug,observed,mismatches){
+  if(!observed){
+    mismatches.push({slug,reason:"missing"});
+    return null;
+  }
+  const version=Number(observed.version);
+  const digest=String(observed.ezbr_sha256||"");
+  const status=String(observed.status||"");
+  const verifyJwt=observed.verify_jwt===true;
+  if(status!=="ACTIVE")mismatches.push({slug,field:"status",expected:"ACTIVE",observed:status});
+  if(!verifyJwt)mismatches.push({slug,field:"verify_jwt",expected:true,observed:Boolean(observed.verify_jwt)});
+  if(!Number.isInteger(version)||version<=0)mismatches.push({slug,field:"version",reason:"missing_or_invalid"});
+  if(!/^[0-9a-f]{64}$/i.test(digest))mismatches.push({slug,field:"ezbr_sha256",reason:"missing_or_invalid"});
+  return {version,ezbr_sha256:digest,status,verify_jwt:verifyJwt};
 }
 
 const sourceRoot=resolve("supabase/functions");
 if(!existsSync(sourceRoot))throw new Error("supabase/functions source tree is missing.");
 const sourceTreeSha256=sha256Tree(sourceRoot);
 
-const response=await fetch(
-  "https://api.supabase.com/v1/projects/"+encodeURIComponent(projectRef)+"/functions",
-  {headers:{Authorization:"Bearer "+supabaseToken,Accept:"application/json"}}
-);
-let payload;
-try{
-  payload=await response.json();
-}catch{
-  payload=null;
-}
-if(!response.ok){
-  throw new Error("Production Edge Function inventory request failed with HTTP "+response.status+".");
-}
+let source;
+let verificationMode;
+let connectorObservedAt=null;
+let releaseFunctions={};
 
-const observedFunctions=Array.isArray(payload)?payload:[];
-const observedBySlug=new Map(observedFunctions.map(fn=>[String(fn.slug||""),fn]));
-const releaseFunctions={};
-const mismatches=[];
+if(supabaseToken){
+  const response=await fetch(
+    "https://api.supabase.com/v1/projects/"+encodeURIComponent(projectRef)+"/functions",
+    {headers:{Authorization:"Bearer "+supabaseToken,Accept:"application/json"}}
+  );
+  let payload;
+  try{payload=await response.json();}catch{payload=null;}
+  if(!response.ok){
+    throw new Error("Production Edge Function inventory request failed with HTTP "+response.status+".");
+  }
+  const observedBySlug=new Map((Array.isArray(payload)?payload:[]).map(fn=>[String(fn.slug||""),fn]));
+  const mismatches=[];
+  for(const slug of functions){
+    const normalized=validateObservedFunction(slug,observedBySlug.get(slug),mismatches);
+    if(normalized){
+      releaseFunctions[slug]={...normalized,sourceCommit:releaseSha,sourceTreeSha256};
+    }
+  }
+  if(mismatches.length){
+    throw new Error("Production Edge Function release inventory validation failed: "+JSON.stringify(mismatches));
+  }
+  source="governed-production-edge-function-release";
+  verificationMode="management-api";
+}else{
+  let baseline;
+  try{baseline=JSON.parse(readFileSync(baselinePath,"utf8"));}
+  catch(error){throw new Error("Unable to read connector-attested Edge Function baseline: "+error.message);}
+  if(Number(baseline.schema_version)!==2){
+    throw new Error("Connector-attested Edge Function baseline must use schema_version 2.");
+  }
+  if(String(baseline.supabase_project||"")!==projectRef){
+    throw new Error("Connector-attested Edge Function baseline project mismatch.");
+  }
+  if(String(baseline.source_tree_sha256||"")!==sourceTreeSha256){
+    throw new Error(
+      "Connector-attested Edge Function baseline source tree mismatch. Expected "+
+      baseline.source_tree_sha256+" but checkout produced "+sourceTreeSha256+"."
+    );
+  }
+  const observedMillis=Date.parse(String(baseline.observed_at||""));
+  if(!Number.isFinite(observedMillis))throw new Error("Connector-attested Edge Function baseline observed_at is invalid.");
+  const maxAgeHours=Number(baseline.attestation_notes?.max_age_hours||72);
+  const ageHours=(Date.now()-observedMillis)/3_600_000;
+  if(ageHours<(-5/60))throw new Error("Connector-attested Edge Function baseline observed_at is unexpectedly in the future.");
+  if(ageHours>maxAgeHours){
+    throw new Error("Connector-attested Edge Function baseline is stale; refresh authenticated Supabase inventory before release.");
+  }
 
-for(const slug of functions){
-  const observed=observedBySlug.get(slug);
-  if(!observed){
-    mismatches.push({slug,reason:"missing"});
-    continue;
+  const mismatches=[];
+  for(const slug of functions){
+    const normalized=validateObservedFunction(slug,baseline.functions?.[slug],mismatches);
+    if(normalized){
+      releaseFunctions[slug]={...normalized,sourceCommit:releaseSha,sourceTreeSha256};
+    }
   }
-  if(String(observed.status||"")!=="ACTIVE"){
-    mismatches.push({slug,field:"status",expected:"ACTIVE",observed:String(observed.status||"")});
+  if(mismatches.length){
+    throw new Error("Connector-attested Edge Function baseline validation failed: "+JSON.stringify(mismatches));
   }
-  if(observed.verify_jwt!==true){
-    mismatches.push({slug,field:"verify_jwt",expected:true,observed:Boolean(observed.verify_jwt)});
-  }
-
-  const version=Number(observed.version);
-  const digest=String(observed.ezbr_sha256||"");
-  if(!Number.isInteger(version)||version<=0){
-    mismatches.push({slug,field:"version",reason:"missing_or_invalid"});
-  }
-  if(!/^[0-9a-f]{64}$/i.test(digest)){
-    mismatches.push({slug,field:"ezbr_sha256",reason:"missing_or_invalid"});
-  }
-
-  releaseFunctions[slug]={
-    version,
-    ezbr_sha256:digest,
-    status:String(observed.status||""),
-    verify_jwt:Boolean(observed.verify_jwt),
-    sourceCommit:releaseSha,
-    sourceTreeSha256
-  };
-}
-
-if(mismatches.length){
-  throw new Error("Production Edge Function release inventory validation failed: "+JSON.stringify(mismatches));
+  source="supabase-connector-attested-live-inventory";
+  verificationMode="connector-attested";
+  connectorObservedAt=new Date(observedMillis).toISOString();
 }
 
 const attestation={
   schemaVersion:"edge-function-release-attestation-v2",
   status:"verified",
-  source:"governed-production-edge-function-release",
+  source,
+  verificationMode,
   repository,
   project:projectRef,
   sourceCommit:releaseSha,
   workflowRunId,
   sourceTreeSha256,
+  connectorObservedAt,
   functions:releaseFunctions,
   verifiedAt:new Date().toISOString()
 };
 
 mkdirSync(dirname(target),{recursive:true});
 writeFileSync(target,JSON.stringify(attestation,null,2)+"\n","utf8");
-console.log("Recorded governed production Edge Function release for",releaseSha);
+console.log(
+  "Recorded governed production Edge Function release for",
+  releaseSha,
+  "using",
+  verificationMode
+);
