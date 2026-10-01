@@ -81,7 +81,12 @@
         "config/mirror-ai-plugins.json",
         "docs/MIRROR_AI_PLUGIN_LAB.md",
         "knowledge/inbox/**",
-        "src/lib/mirror-ai-rd-plugins.ts"
+        "src/lib/mirror-ai-rd-plugins.ts",
+        ".github/workflows/bootstrap-freetree.yml",
+        "scripts/knowledge-feed-consumer.mjs",
+        "scripts/mirror-ai-plugin-check.mjs",
+        "templates/freetree/**",
+        "tests/unit/knowledge-feed-consumer.test.mjs"
       ]
     },
     {
@@ -119,7 +124,9 @@
         "tests/unit/transparency-audit-library-source.test.mjs",
         "tests/unit/ui-governance-evidence.test.mjs",
         "tests/unit/ui-production-authorization.test.mjs",
-        "tests/unit/ui-ux-source.test.mjs"
+        "tests/unit/ui-ux-source.test.mjs",
+        "knowledge/README.md",
+        "docs/MAINTENANCE_PROTOCOL.md"
       ]
     },
     {
