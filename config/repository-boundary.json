@@ -83,7 +83,12 @@
         "public/.well-known/reson8-app.json",
         "src/lib/reson8.ts",
         "tests/unit/reson8-integration.test.mjs",
-        "README.md"
+        "README.md",
+        ".github/workflows/botsquad-feed-consumer.yml",
+        "config/botsquad-consumer.json",
+        "botsquad/inbox/**",
+        "scripts/botsquad-feed-consumer.mjs",
+        "tests/unit/botsquad-feed-consumer.test.mjs"
       ]
     },
     {
