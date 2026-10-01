@@ -12,7 +12,9 @@
     "^automation/enforcer$",
     "^automation/guardian$",
     "^automation/conductor$",
-    "^automation/suggester$"
+    "^automation/suggester$",
+    "^automation/calmer$",
+    "^automation/regulator$"
   ],
   "supabaseProjects": [
     {
