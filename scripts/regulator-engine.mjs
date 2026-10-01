@@ -21,7 +21,7 @@ function requirement({source,requirementClass,severity,title,detail,evidence=[]}
 }
 
 export function buildRegulatorState({
-  config,boundaries={},guardian={},enforcer={},calmer={},environment={},conductor={},suggester={},botsquad={},
+  config,boundaries={},guardian={},enforcer={},calmer={},environment={},conductor={},suggester={},botsquad={},visibility={},
   generatedAt=new Date().toISOString()
 }){
   const requirements=[];
@@ -33,7 +33,8 @@ export function buildRegulatorState({
     ["environment",environment,"datanest-environment-feed-v1","environment","medium"],
     ["conductor",conductor,"datanest-conductor-state-v1","timing","medium"],
     ["suggester",suggester,"datanest-suggester-feed-v1","optimization","medium"],
-    ["botsquad",botsquad,"datanest-botsquad-consolidated-feed-v1","transparency","medium"]
+    ["botsquad",botsquad,"datanest-botsquad-consolidated-feed-v1","transparency","medium"],
+    ["visibility-utility",visibility,"datanest-visibility-utility-state-v1","market-visibility","medium"]
   ];
   for(const [name,value,schema,requirementClass,severity] of sourceContracts){
     if(value?.schemaVersion===schema && value?.productionAuthorization===false) continue;
@@ -79,6 +80,25 @@ export function buildRegulatorState({
       evidence:["calmer.status"]
     }));
   }
+  const seoScore=Number(visibility?.assessment?.seo?.score||0);
+  const platformCoverage=Number(visibility?.assessment?.platform?.coveragePercent||0);
+  if(visibility?.schemaVersion==="datanest-visibility-utility-state-v1" && (seoScore<80 || platformCoverage<70)){
+    requirements.push(requirement({
+      source:"visibility-utility",requirementClass:"market-visibility",severity:"medium",
+      title:"Improve DataNest visibility baseline",
+      detail:`VISIBILITY-UTILITY reports SEO ${seoScore}/100 and platform coverage ${platformCoverage}%.`,
+      evidence:["visibility.assessment.seo.score","visibility.assessment.platform.coveragePercent"]
+    }));
+  }
+  for(const missing of (visibility?.missingInputs||[]).slice(0,20)){
+    requirements.push(requirement({
+      source:"visibility-utility",requirementClass:"market-visibility",severity:"medium",
+      title:"Resolve market-evidence gap: "+String(missing),
+      detail:"Market projection confidence is limited until this input is configured or explicitly waived.",
+      evidence:["visibility.missingInputs",missing]
+    }));
+  }
+
   if(conductor?.allProcessesFresh===false){
     requirements.push(requirement({
       source:"conductor",requirementClass:"timing",severity:"medium",
@@ -178,8 +198,9 @@ async function main(){
   const conductor=await readJson(process.env.REGULATOR_CONDUCTOR_PATH||"/tmp/regulator/conductor.json",{});
   const suggester=await readJson(process.env.REGULATOR_SUGGESTER_PATH||"/tmp/regulator/suggester.json",{});
   const botsquad=await readJson(process.env.REGULATOR_BOTSQUAD_PATH||"/tmp/regulator/botsquad.json",{});
+  const visibility=await readJson(process.env.REGULATOR_VISIBILITY_PATH||"/tmp/regulator/visibility.json",{});
 
-  const state=buildRegulatorState({config,boundaries,guardian,enforcer,calmer,environment,conductor,suggester,botsquad});
+  const state=buildRegulatorState({config,boundaries,guardian,enforcer,calmer,environment,conductor,suggester,botsquad,visibility});
   await mkdir("regulator/state",{recursive:true});
   await mkdir("regulator/requirements",{recursive:true});
   await mkdir("regulator/transparency",{recursive:true});
