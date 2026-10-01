@@ -25,6 +25,14 @@ on:
         description: Successful live Mirror visual/functional verification reference
         required: true
         type: string
+      candidate_artifact_name:
+        description: Immutable Mirror production-candidate artifact name
+        required: true
+        type: string
+      candidate_patch_digest:
+        description: SHA-256 digest of the candidate patch
+        required: true
+        type: string
       summary:
         description: Candidate purpose and optimization summary
         required: true
@@ -52,6 +60,8 @@ jobs:
       CANDIDATE_NAME: ${{ github.event.client_payload.candidate_name || inputs.candidate_name }}
       CANDIDATE_RUN: ${{ github.event.client_payload.candidate_run || inputs.candidate_run }}
       MIRROR_LIVE_EVIDENCE: ${{ github.event.client_payload.mirror_live_evidence || inputs.mirror_live_evidence_reference }}
+      CANDIDATE_ARTIFACT: ${{ github.event.client_payload.candidate_artifact_name || inputs.candidate_artifact_name }}
+      CANDIDATE_PATCH_DIGEST: ${{ github.event.client_payload.candidate_patch_digest || inputs.candidate_patch_digest }}
       CANDIDATE_SUMMARY: ${{ github.event.client_payload.summary || inputs.summary }}
     steps:
       - name: Validate handoff payload
@@ -67,8 +77,19 @@ jobs:
             fi
           done
           test -n "$CANDIDATE_NAME"
-          test -n "$CANDIDATE_RUN"
-          test -n "$MIRROR_LIVE_EVIDENCE"
+          if ! [[ "$CANDIDATE_RUN" =~ ^https://github.com/DataNest-Supository/Mirror-DataNest/actions/runs/[0-9]+$ ]]; then
+            echo "::error::candidate_run must be an exact Mirror workflow-run URL."
+            exit 1
+          fi
+          if ! [[ "$MIRROR_LIVE_EVIDENCE" =~ ^https://github.com/DataNest-Supository/Mirror-DataNest/actions/runs/[0-9]+$ ]]; then
+            echo "::error::mirror_live_evidence_reference must be an exact Mirror workflow-run URL."
+            exit 1
+          fi
+          test "$CANDIDATE_ARTIFACT" = "mirror-production-candidate-\${MIRROR_SHA:0:12}"
+          if ! [[ "$CANDIDATE_PATCH_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "::error::candidate_patch_digest must be sha256:<64 lowercase hex characters>"
+            exit 1
+          fi
           test -n "$CANDIDATE_SUMMARY"
 
       - uses: actions/checkout@v7.0.1
@@ -89,19 +110,52 @@ jobs:
             exit 1
           fi
 
-      - name: Create curated production patch
+      - name: Verify candidate boundary contract
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p /tmp/mirror-promotion
-          git diff --binary "$BASE_SHA" "$MIRROR_SHA" -- .             ':(exclude).github/workflows/ci.yml'             ':(exclude).github/workflows/pages.yml'             ':(exclude).github/workflows/production-candidate.yml'             ':(exclude)config/mirror-rd-policy.json'             ':(exclude)docs/MIRROR_DATANEST_RD_MODE.md'             ':(exclude)docs/PRODUCTION_CANDIDATE_HANDOFF.md'             ':(exclude)scripts/mirror-test-suite.mjs'             ':(exclude)README.md'             > /tmp/mirror-promotion/candidate.patch
-
-          git diff --name-status "$BASE_SHA" "$MIRROR_SHA" -- .             ':(exclude).github/workflows/ci.yml'             ':(exclude).github/workflows/pages.yml'             ':(exclude).github/workflows/production-candidate.yml'             ':(exclude)config/mirror-rd-policy.json'             ':(exclude)docs/MIRROR_DATANEST_RD_MODE.md'             ':(exclude)docs/PRODUCTION_CANDIDATE_HANDOFF.md'             ':(exclude)scripts/mirror-test-suite.mjs'             ':(exclude)README.md'             > /tmp/mirror-promotion/changed-files.txt
-
-          if [ ! -s /tmp/mirror-promotion/candidate.patch ]; then
-            echo "::error::Mirror candidate contains no promotable changes after R&D-only exclusions."
+          git show "$BASE_SHA:config/repository-boundary.json" > /tmp/mirror-promotion/boundary-canonical.json
+          git show "$MIRROR_SHA:config/repository-boundary.json" > /tmp/mirror-promotion/boundary-mirror.json
+          canonical_boundary_sha="$(sha256sum /tmp/mirror-promotion/boundary-canonical.json | cut -d' ' -f1)"
+          mirror_boundary_sha="$(sha256sum /tmp/mirror-promotion/boundary-mirror.json | cut -d' ' -f1)"
+          if [ "$canonical_boundary_sha" != "$mirror_boundary_sha" ]; then
+            echo "::error::Mirror boundary contract does not match the exact canonical base contract."
             exit 1
           fi
+
+          git diff --name-only "$BASE_SHA" "$MIRROR_SHA" | sort -u > /tmp/mirror-promotion/changed-paths.txt
+          node scripts/validate-mirror-candidate-boundary.mjs \
+            --paths-file /tmp/mirror-promotion/changed-paths.txt \
+            --contract /tmp/mirror-promotion/boundary-canonical.json \
+            --output /tmp/mirror-promotion/boundary-classification.json
+
+      - name: Create curated production patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from "node:fs";
+          const report = JSON.parse(readFileSync("/tmp/mirror-promotion/boundary-classification.json", "utf8"));
+          writeFileSync("/tmp/mirror-promotion/changed-files.txt", report.promotablePaths.join("\n") + (report.promotablePaths.length ? "\n" : ""));
+          NODE
+          if [ ! -s /tmp/mirror-promotion/changed-files.txt ]; then
+            echo "::error::Mirror candidate contains no promotable changes after boundary enforcement."
+            exit 1
+          fi
+          mapfile -t candidate_paths < /tmp/mirror-promotion/changed-files.txt
+          git diff --binary "$BASE_SHA" "$MIRROR_SHA" -- "${candidate_paths[@]}" > /tmp/mirror-promotion/candidate.patch
+          if [ ! -s /tmp/mirror-promotion/candidate.patch ]; then
+            echo "::error::Candidate patch is empty after boundary enforcement."
+            exit 1
+          fi
+          patch_sha256="$(sha256sum /tmp/mirror-promotion/candidate.patch | cut -d' ' -f1)"
+          if [ "sha256:$patch_sha256" != "$CANDIDATE_PATCH_DIGEST" ]; then
+            echo "::error::Candidate patch digest does not match the Mirror production-candidate handoff."
+            exit 1
+          fi
+          git diff --name-status "$BASE_SHA" "$MIRROR_SHA" -- "${candidate_paths[@]}" > /tmp/mirror-promotion/changed-files.txt
+          git diff --stat "$BASE_SHA" "$MIRROR_SHA" -- "${candidate_paths[@]}" > /tmp/mirror-promotion/diff-stat.txt
 
       - name: Apply candidate to isolated promotion branch
         shell: bash
@@ -124,6 +178,8 @@ jobs:
               canonicalBaseSha:$canonicalBaseSha,
               candidateName:$candidateName,
               candidateRun:$candidateRun,
+              candidateArtifact:$candidateArtifact,
+              candidatePatchDigest:$candidatePatchDigest,
               mirrorLiveEvidence:$mirrorLiveEvidence,
               summary:$summary,
               importedBy:$importedBy,
@@ -159,6 +215,8 @@ jobs:
           - Mirror source SHA: `$MIRROR_SHA`
           - Canonical base SHA: `$BASE_SHA`
           - Candidate run/evidence: $CANDIDATE_RUN
+          - Candidate artifact: $CANDIDATE_ARTIFACT
+          - Candidate patch digest: $CANDIDATE_PATCH_DIGEST
           - Live Mirror visual/functional evidence: $MIRROR_LIVE_EVIDENCE
           - Promotion manifest: `$PROMOTION_MANIFEST`
 
