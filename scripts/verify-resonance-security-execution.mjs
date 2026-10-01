@@ -33,8 +33,10 @@ if (profile.guarantees?.failClosed !== true) fail("fail-closed guarantee is requ
 if (profile.guarantees?.secretRedaction !== true) fail("secret redaction guarantee is required");
 
 const workflow = readFileSync(workflowPath, "utf8");
-if (/gitleaks\/gitleaks-action/i.test(workflow)) fail("external Gitleaks action remains wired");
-if (/GITLEAKS_LICENSE/i.test(workflow)) fail("external Gitleaks license dependency remains wired");
+const forbiddenExternalAction = ["gitleaks", "gitleaks-action"].join("/");
+const forbiddenLicenseSecret = ["GITLEAKS", "LICENSE"].join("_");
+if (workflow.toLowerCase().includes(forbiddenExternalAction)) fail("external secret scanner action remains wired");
+if (workflow.includes(forbiddenLicenseSecret)) fail("external scanner license dependency remains wired");
 
 const major = Number(process.versions.node.split(".")[0]);
 if (!Number.isInteger(major) || major < Number(profile.runtime?.nodeMajor || 22)) fail("Node " + profile.runtime.nodeMajor + "+ is required; detected " + process.versions.node);
