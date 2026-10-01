@@ -30,6 +30,15 @@ jobs:
           ref: main
           fetch-depth: 0
 
+      - uses: ./.github/actions/automation-x-annotation
+        with:
+          automation_id: suggester
+          automation_class: analysis
+          automation_action: recommend
+          automation_target: suggester/feeds/datanest.json
+          automation_effect: proposal
+          human_review_required: "true"
+
       - name: Read latest tree health, learning and coordination state
         shell: bash
         run: |

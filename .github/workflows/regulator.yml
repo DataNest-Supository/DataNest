@@ -36,6 +36,15 @@ jobs:
           ref: ${{ github.event_name == 'workflow_run' && 'main' || '' }}
           fetch-depth: 0
 
+      - uses: ./.github/actions/automation-x-annotation
+        with:
+          automation_id: regulator
+          automation_class: analysis
+          automation_action: recommend
+          automation_target: regulator/state/latest.json
+          automation_effect: proposal
+          human_review_required: "true"
+
       - name: Read current specialized-tree state
         shell: bash
         run: |

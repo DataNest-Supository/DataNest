@@ -35,6 +35,15 @@ jobs:
           ref: ${{ github.event_name == 'workflow_run' && 'main' || '' }}
           fetch-depth: 0
 
+      - uses: ./.github/actions/automation-x-annotation
+        with:
+          automation_id: calmer
+          automation_class: analysis
+          automation_action: recommend
+          automation_target: calmer/state/latest.json
+          automation_effect: proposal
+          human_review_required: "true"
+
       - name: Read health, defence, timing, learning and suggestion state
         shell: bash
         run: |

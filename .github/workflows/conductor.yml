@@ -49,6 +49,15 @@ jobs:
           ref: main
           fetch-depth: 0
 
+      - uses: ./.github/actions/automation-x-annotation
+        with:
+          automation_id: conductor
+          automation_class: enforcement
+          automation_action: mutate
+          automation_target: automation dispatch graph
+          automation_effect: bounded_mutation
+          human_review_required: "true"
+
       - name: Read prior coordination and SUGGESTER state
         shell: bash
         run: |

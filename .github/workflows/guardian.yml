@@ -46,6 +46,15 @@ jobs:
           ref: ${{ github.event_name == 'workflow_run' && 'main' || '' }}
           fetch-depth: 0
 
+      - uses: ./.github/actions/automation-x-annotation
+        with:
+          automation_id: guardian/monitor
+          automation_class: enforcement
+          automation_action: observe
+          automation_target: guardian/snapshots/latest.json
+          automation_effect: read_only
+          human_review_required: "true"
+
       - name: Fetch branch topology
         shell: bash
         run: git fetch --all --prune
@@ -165,6 +174,15 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+
+      - uses: ./.github/actions/automation-x-annotation
+        with:
+          automation_id: guardian/heal
+          automation_class: enforcement
+          automation_action: heal
+          automation_target: guardian/
+          automation_effect: bounded_mutation
+          human_review_required: "true"
 
       - name: Remove only branches proven to have no unique commits
         env:

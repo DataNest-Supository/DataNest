@@ -44,6 +44,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: ./.github/actions/automation-x-annotation
+        with:
+          automation_id: botsquad/${{ matrix.bot }}
+          automation_class: analysis
+          automation_action: recommend
+          automation_target: botsquad/feeds/specialists/${{ matrix.bot }}.json
+          automation_effect: proposal
+          human_review_required: "true"
+
       - name: Prepare specialist branch
         shell: bash
         run: |
@@ -95,6 +104,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - uses: ./.github/actions/automation-x-annotation
+        with:
+          automation_id: botsquad/orchestrator
+          automation_class: analysis
+          automation_action: recommend
+          automation_target: botsquad/feeds/datanest.json
+          automation_effect: proposal
+          human_review_required: "true"
 
       - name: Prepare orchestrator branch
         shell: bash
