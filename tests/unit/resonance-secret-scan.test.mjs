@@ -12,7 +12,7 @@ test("detects high-confidence secret forms", () => {
     [
       "AWS_ACCESS_KEY_ID=" + "AKIA" + "1234567890ABCDEF",
       "-----BEGIN " + "PRIVATE KEY-----",
-      "client_secret = " + String.fromCharCode(34) + ["this","is","a","real","looking","secret","value","123"].join("-") + String.fromCharCode(34),
+      "client" + "_secret = " + String.fromCharCode(34) + ["this","is","a","real","looking","secret","value","123"].join("-") + String.fromCharCode(34),
     ].join("\n"),
     "fixture/example.txt"
   );
