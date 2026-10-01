@@ -13,8 +13,8 @@ const LOCAL_USER = {
   identities: [{ provider: "local" }],
 };
 const LOCAL_SESSION = {
-  access_token: "sovereign-local-token",
-  refresh_token: "sovereign-local-refresh",
+  access_token: "local-token",
+  refresh_token: "local-refresh",
   token_type: "bearer",
   expires_in: 315360000,
   expires_at: Math.floor(Date.now() / 1000) + 315360000,

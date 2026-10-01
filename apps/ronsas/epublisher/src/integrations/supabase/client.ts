@@ -16,8 +16,8 @@ const LOCAL_USER: any = {
   identities: [{ id: "local", provider: "local", identity_data: { email: "local@resonance.invalid" } }],
 };
 const LOCAL_SESSION: any = {
-  access_token: "resonance-sovereign-local-token",
-  refresh_token: "resonance-sovereign-local-refresh",
+  access_token: "local-token",
+  refresh_token: "local-refresh",
   token_type: "bearer",
   expires_in: 315360000,
   expires_at: Math.floor(Date.now() / 1000) + 315360000,
