@@ -46,4 +46,4 @@
   "supabaseEvidenceMaxAgeMinutes": 90,
   "archiveTagPrefix": "branch-archive/",
   "allowArchivedPrune": false
-}\n
+}
