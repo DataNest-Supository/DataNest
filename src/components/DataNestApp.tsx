@@ -11,6 +11,7 @@ import { SPARKS_TASK_COMPLETE, SPARKS_TASK_EVIDENCE, SPARKS_TASK_START, SPARKS_W
 import { workflowPhaseForView } from "@/lib/workflowPhases";
 import JobInviteForm from "@/components/JobInviteForm";
 import ResonanceHome from "@/components/ResonanceHome";
+import WorkspaceGlyph from "@/components/platform/WorkspaceGlyph";
 import MotionControl from "@/components/MotionControl";
 import ExecutionAuthorityPanel from "@/components/ExecutionAuthorityPanel";
 import ResourceFabricPanel from "@/components/ResourceFabricPanel";
@@ -1447,6 +1448,7 @@ export default function DataNestApp({session}:{session:Session}) {
         : "Control plane offline";
 
   return <div
+    data-workspace={view}
     className={"appFrame "+(aiSidebarOpen?"aiDockOpen ":"")+(companionReserve>0?"companionRailReserved":"")}
     style={companionReserve>0?({"--companion-reserve":companionReserve+"px"} as CSSProperties):undefined}
   >
@@ -1567,6 +1569,7 @@ export default function DataNestApp({session}:{session:Session}) {
       <header className="topbar">
         <button className="menuButton" onClick={()=>setMobileOpen(true)} aria-label="Open menu" aria-controls="datanest-navigation" aria-expanded={mobileOpen}>☰</button>
         <div className="topbarTitle">
+          <span className="workspaceEmblem"><WorkspaceGlyph view={view}/></span>
           <p className="eyebrow">{DATANEST_CANONICAL_NAME.toUpperCase()} · {currentGroup.toUpperCase()}</p>
           <h1 id="workspace-title" ref={workspaceTitleRef} tabIndex={-1}>{currentLabel}</h1>
           <p className="topbarContext">{currentDescription}</p>
