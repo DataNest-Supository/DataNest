@@ -1,0 +1,153 @@
+{
+  "schemaVersion": "datanest-boundaries-v1",
+  "authority": "DataNest-Supository/DataNest",
+  "principles": [
+    "human-agency",
+    "traceable-evidence",
+    "least-authority",
+    "privacy-by-default",
+    "reversible-automation",
+    "fail-closed-on-uncertainty",
+    "separate-evidence-from-authorization"
+  ],
+  "scopes": [
+    {
+      "id": "production_authority",
+      "tolerance": "zero-implicit-authority",
+      "patterns": [
+        ".github/workflows/pages.yml",
+        ".github/workflows/mirror-production-import.yml",
+        "scripts/write-release-manifest.mjs",
+        "scripts/write-ui-governance-evidence.mjs"
+      ],
+      "acceptance": [
+        "Exact release identity is preserved",
+        "Human production authorization remains separate from technical verification",
+        "Mirror cannot deploy canonical production"
+      ]
+    },
+    {
+      "id": "destructive_maintenance",
+      "tolerance": "only-proven-redundant-history",
+      "patterns": [
+        "scripts/branch-cleaner.mjs",
+        "branch-cleaner.config.json",
+        ".github/workflows/maintenance.yml"
+      ],
+      "acceptance": [
+        "Protected/default/open-PR branches are never deleted",
+        "Unknown or unique history is retained",
+        "Destructive apply is revalidated against live Git state"
+      ]
+    },
+    {
+      "id": "knowledge_learning",
+      "tolerance": "provisional-until-reviewed",
+      "patterns": [
+        "knowledge/**",
+        "scripts/knowledge-tree.mjs",
+        "config/knowledge-tree.json"
+      ],
+      "acceptance": [
+        "Repository evidence retains provenance",
+        "Learning does not self-promote to Certified Memory",
+        "Optimization candidates require review before canonical adoption"
+      ]
+    },
+    {
+      "id": "ai_provider",
+      "tolerance": "review-before-canonical-provider-change",
+      "patterns": [
+        "supabase/functions/**",
+        "src/**"
+      ],
+      "acceptance": [
+        "No credentials are committed",
+        "Provider endpoints remain explicitly configured",
+        "Hosted or local inference never becomes DataNest identity authority"
+      ]
+    },
+    {
+      "id": "data_change",
+      "tolerance": "migration-and-rls-evidence-required",
+      "patterns": [
+        "supabase/migrations/**",
+        "supabase/functions/**"
+      ],
+      "acceptance": [
+        "Migration lineage is preserved",
+        "RLS/authorization impact is reviewed",
+        "Rollback or recovery implications are documented"
+      ]
+    },
+    {
+      "id": "repository_sync",
+      "tolerance": "exact-lineage-only",
+      "patterns": [
+        "config/repository-boundary.json",
+        ".github/workflows/sync-canonical.yml",
+        ".github/workflows/notify-mirror-canonical.yml",
+        "scripts/lib/repository-boundary.mjs"
+      ],
+      "acceptance": [
+        "Canonical and Mirror authority remain distinct",
+        "Unclassified paths fail closed",
+        "FREETREE remains outside all synchronization paths"
+      ]
+    },
+    {
+      "id": "verification",
+      "tolerance": "evidence-required",
+      "patterns": [
+        "tests/**",
+        ".github/workflows/**"
+      ],
+      "acceptance": [
+        "Relevant tests remain reproducible",
+        "Advisory evidence is not mislabeled as certification"
+      ]
+    }
+  ],
+  "hardRules": [
+    {
+      "id": "no_freetree_sync",
+      "files": [
+        ".github/workflows/sync-canonical.yml",
+        ".github/workflows/notify-mirror-canonical.yml",
+        ".github/workflows/mirror-production-import.yml",
+        "scripts/lib/sync-canonical-files.mjs"
+      ],
+      "forbiddenText": [
+        "FREETREE",
+        "Mirror-DataNest-Empty"
+      ],
+      "message": "FREETREE must remain isolated from canonical and Mirror synchronization."
+    },
+    {
+      "id": "no_autonomous_archived_prune",
+      "files": [
+        ".github/workflows/maintenance.yml"
+      ],
+      "forbiddenText": [
+        "--prune-archived"
+      ],
+      "message": "Scheduled maintenance may delete only branches proven to have no unique commits; archived unique history requires separate explicit authorization."
+    },
+    {
+      "id": "no_vercel_dependency_metadata",
+      "files": [
+        "README.md",
+        "docs/DEPLOYMENT.md"
+      ],
+      "forbiddenText": [
+        "data-nest-alpha.vercel.app"
+      ],
+      "message": "Vercel is not a required DataNest delivery dependency."
+    }
+  ],
+  "resultSemantics": {
+    "pass": "No hard boundary violation detected; required human/evidence acceptance still applies.",
+    "review": "A change touches a governed scope and requires the listed acceptance evidence.",
+    "block": "A machine-verifiable DataNest invariant was violated."
+  }
+}
