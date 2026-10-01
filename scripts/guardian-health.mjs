@@ -256,6 +256,7 @@ export function buildGuardianSnapshot({
       :"BOTSQUAD consolidated feed is not yet available."
   });
   health.score+=botsquadAvailable?5:2;
+  if(!botsquadAvailable) optimalDrift.push({control:"botsquad-feed",expected:"available",observed:"missing"});
 
   const missingBlueprintSources=Object.entries(sourceState)
     .filter(([,state])=>state?.missing)
@@ -279,8 +280,6 @@ export function buildGuardianSnapshot({
   const healthy=!critical &&
     health.score>=Number(blueprint?.healthThresholds?.healthy||90) &&
     optimalDrift.length===0;
-  const status=critical?"critical":healthy?"healthy":"degraded";
-
   const delta=compareSnapshots(previousSnapshot,sourceState,env.dimensions);
   const blueprintDigest=sha256(JSON.stringify(blueprint));
   const healingCandidates={
@@ -290,6 +289,14 @@ export function buildGuardianSnapshot({
     environmentReview:env.reviewRequired,
     unresolvedBranches:branches.reviewBranches
   };
+  const healingNeeded=
+    healingCandidates.redundantBranches.length>0 ||
+    healingCandidates.codeSafeRefinements.length>0;
+  const status=critical
+    ?"critical"
+    :healthy
+      ?(healingNeeded?"healing":"healthy")
+      :"degraded";
 
   return {
     schemaVersion:"datanest-guardian-snapshot-v1",
