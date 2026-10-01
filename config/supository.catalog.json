@@ -180,5 +180,46 @@
       ],
       "liveDeploymentAuthority": "DataNest-Supository/DataNest"
     }
+  },
+  "specializedTrees": {
+    "knowledge": {
+      "path": "knowledge/",
+      "mode": "repository-learning",
+      "productionAuthority": false,
+      "feedBranch": "automation/knowledge-feed"
+    },
+    "boundaries": {
+      "path": "boundaries/",
+      "mode": "acceptance-and-tolerance",
+      "productionAuthority": false,
+      "assessmentWorkflow": ".github/workflows/boundaries-assessment.yml"
+    },
+    "botsquad": {
+      "path": "botsquad/",
+      "mode": "ai-only-advisory",
+      "productionAuthority": false,
+      "branchPrefix": "automation/botsquad/",
+      "purposes": [
+        "optimization",
+        "expansion",
+        "business-growth",
+        "ux-ease",
+        "ui-evolution",
+        "function-evolution"
+      ]
+    },
+    "environment": {
+      "path": "environment/",
+      "mode": "environment-assessment-and-adaptation",
+      "productionAuthority": false,
+      "feedBranch": "automation/environment-feed",
+      "forgeAlignment": true
+    },
+    "freetree": {
+      "repository": "DataNest-Supository/FREETREE",
+      "mode": "isolated-no-sync",
+      "productionAuthority": false,
+      "forgeReplication": "disabled-by-default"
+    }
   }
 }
