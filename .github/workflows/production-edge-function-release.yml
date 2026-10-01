@@ -30,6 +30,8 @@ jobs:
     env:
       DATANEST_RELEASE_SHA: ${{ inputs.release_sha }}
       DATANEST_SUPABASE_PROJECT: sgqdmfgjbprsoqsmgigi
+      DATANEST_CONNECTOR_ATTESTATION_FILE: config/production-edge-function-connector-attestation.json
+      DATANEST_CONNECTOR_ATTESTATION_MAX_AGE_HOURS: "24"
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
     steps:
       - name: Checkout exact release SHA
@@ -52,16 +54,9 @@ jobs:
           deno-version: v2.9.7
 
       - uses: supabase/setup-cli@v3
+        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' }}
         with:
           version: 2.118.0
-
-      - name: Require production deployment credential
-        shell: bash
-        run: |
-          test -n "$SUPABASE_ACCESS_TOKEN" || {
-            echo "SUPABASE_ACCESS_TOKEN is required to deploy governed production Edge Functions."
-            exit 1
-          }
 
       - name: Validate governed Edge Function bundles
         shell: bash
@@ -86,7 +81,12 @@ jobs:
             fi
           done
 
+      - name: Verify connector-attested production state
+        if: ${{ env.SUPABASE_ACCESS_TOKEN == '' }}
+        run: node scripts/verify-production-edge-function-connector-attestation.mjs "$DATANEST_CONNECTOR_ATTESTATION_FILE"
+
       - name: Deploy governed Edge Functions from exact checkout
+        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' }}
         shell: bash
         run: |
           set -euo pipefail

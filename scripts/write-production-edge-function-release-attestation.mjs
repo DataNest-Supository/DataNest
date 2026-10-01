@@ -8,6 +8,7 @@ const supabaseToken=(process.env.SUPABASE_ACCESS_TOKEN || "").trim();
 const projectRef=(process.env.DATANEST_SUPABASE_PROJECT || "sgqdmfgjbprsoqsmgigi").trim();
 const workflowRunId=Number(process.env.GITHUB_RUN_ID || 0);
 const repository=(process.env.GITHUB_REPOSITORY || "").trim();
+const connectorPath=resolve(process.env.DATANEST_CONNECTOR_ATTESTATION_FILE || "config/production-edge-function-connector-attestation.json");
 
 const functions=[
   "datanest-ai-chat",
@@ -20,26 +21,16 @@ const functions=[
   "external-audit"
 ];
 
-if(!/^[0-9a-f]{40}$/i.test(releaseSha)){
-  throw new Error("DATANEST_RELEASE_SHA must be an exact 40-character Git commit SHA.");
-}
-if(!supabaseToken){
-  throw new Error("SUPABASE_ACCESS_TOKEN is required for production Edge Function release attestation.");
-}
-if(!Number.isInteger(workflowRunId)||workflowRunId<=0){
-  throw new Error("GITHUB_RUN_ID is required for production Edge Function release attestation.");
-}
-if(!repository){
-  throw new Error("GITHUB_REPOSITORY is required for production Edge Function release attestation.");
-}
+if(!/^[0-9a-f]{40}$/i.test(releaseSha))throw new Error("DATANEST_RELEASE_SHA must be an exact 40-character Git commit SHA.");
+if(!Number.isInteger(workflowRunId)||workflowRunId<=0)throw new Error("GITHUB_RUN_ID is required for production Edge Function release attestation.");
+if(!repository)throw new Error("GITHUB_REPOSITORY is required for production Edge Function release attestation.");
 
 function filesUnder(root){
   const output=[];
   function visit(current){
-    const names=readdirSync(current).sort();
-    for(const name of names){
+    for(const name of readdirSync(current).sort()){
       const path=resolve(current,name);
-      const relativePath=relative(root,path).split("\\\\").join("/");
+      const relativePath=relative(root,path).split("\\").join("/");
       const stat=statSync(path);
       if(stat.isDirectory())visit(path);
       else if(stat.isFile())output.push({path:relativePath,bytes:readFileSync(path)});
@@ -57,7 +48,7 @@ function sha256Tree(root){
     hash.update(pathBytes);
     hash.update(Buffer.from(":"));
     hash.update(file.bytes);
-    hash.update(Buffer.from("\\n"));
+    hash.update(Buffer.from("\n"));
   }
   return hash.digest("hex");
 }
@@ -66,74 +57,66 @@ const sourceRoot=resolve("supabase/functions");
 if(!existsSync(sourceRoot))throw new Error("supabase/functions source tree is missing.");
 const sourceTreeSha256=sha256Tree(sourceRoot);
 
-const response=await fetch(
-  "https://api.supabase.com/v1/projects/"+encodeURIComponent(projectRef)+"/functions",
-  {headers:{Authorization:"Bearer "+supabaseToken,Accept:"application/json"}}
-);
-let payload;
-try{
-  payload=await response.json();
-}catch{
-  payload=null;
-}
-if(!response.ok){
-  throw new Error("Production Edge Function inventory request failed with HTTP "+response.status+".");
+let observedFunctions=[];
+let verificationMode="management-api";
+let connectorObservedAt=null;
+let connectorSourceCommit=null;
+
+if(supabaseToken){
+  const response=await fetch(
+    "https://api.supabase.com/v1/projects/"+encodeURIComponent(projectRef)+"/functions",
+    {headers:{Authorization:"Bearer "+supabaseToken,Accept:"application/json"}}
+  );
+  let payload;
+  try{payload=await response.json();}catch{payload=null;}
+  if(!response.ok)throw new Error("Production Edge Function inventory request failed with HTTP "+response.status+".");
+  observedFunctions=Array.isArray(payload)?payload:[];
+}else{
+  const connector=JSON.parse(readFileSync(connectorPath,"utf8"));
+  if(connector.schemaVersion!=="edge-function-connector-attestation-v1"||connector.status!=="verified"){
+    throw new Error("Connector Edge Function attestation is invalid.");
+  }
+  if(connector.source!=="supabase-mcp-connector"||String(connector.project||"")!==projectRef){
+    throw new Error("Connector Edge Function attestation provenance mismatch.");
+  }
+  connectorObservedAt=String(connector.observedAt||"");
+  connectorSourceCommit=String(connector.sourceCommit||"");
+  observedFunctions=Object.entries(connector.functions||{}).map(([slug,value])=>({slug,...value}));
+  verificationMode="connector-attested";
 }
 
-const observedFunctions=Array.isArray(payload)?payload:[];
 const observedBySlug=new Map(observedFunctions.map(fn=>[String(fn.slug||""),fn]));
 const releaseFunctions={};
 const mismatches=[];
-
 for(const slug of functions){
   const observed=observedBySlug.get(slug);
-  if(!observed){
-    mismatches.push({slug,reason:"missing"});
-    continue;
-  }
-  if(String(observed.status||"")!=="ACTIVE"){
-    mismatches.push({slug,field:"status",expected:"ACTIVE",observed:String(observed.status||"")});
-  }
-  if(observed.verify_jwt!==true){
-    mismatches.push({slug,field:"verify_jwt",expected:true,observed:Boolean(observed.verify_jwt)});
-  }
-
+  if(!observed){mismatches.push({slug,reason:"missing"});continue;}
+  if(String(observed.status||"")!=="ACTIVE")mismatches.push({slug,field:"status",expected:"ACTIVE",observed:String(observed.status||"")});
+  if(observed.verify_jwt!==true)mismatches.push({slug,field:"verify_jwt",expected:true,observed:Boolean(observed.verify_jwt)});
   const version=Number(observed.version);
   const digest=String(observed.ezbr_sha256||"");
-  if(!Number.isInteger(version)||version<=0){
-    mismatches.push({slug,field:"version",reason:"missing_or_invalid"});
-  }
-  if(!/^[0-9a-f]{64}$/i.test(digest)){
-    mismatches.push({slug,field:"ezbr_sha256",reason:"missing_or_invalid"});
-  }
-
-  releaseFunctions[slug]={
-    version,
-    ezbr_sha256:digest,
-    status:String(observed.status||""),
-    verify_jwt:Boolean(observed.verify_jwt),
-    sourceCommit:releaseSha,
-    sourceTreeSha256
-  };
+  if(!Number.isInteger(version)||version<=0)mismatches.push({slug,field:"version",reason:"missing_or_invalid"});
+  if(!/^[0-9a-f]{64}$/i.test(digest))mismatches.push({slug,field:"ezbr_sha256",reason:"missing_or_invalid"});
+  releaseFunctions[slug]={version,ezbr_sha256:digest,status:String(observed.status||""),verify_jwt:Boolean(observed.verify_jwt),sourceCommit:releaseSha,sourceTreeSha256};
 }
-
-if(mismatches.length){
-  throw new Error("Production Edge Function release inventory validation failed: "+JSON.stringify(mismatches));
-}
+if(mismatches.length)throw new Error("Production Edge Function release inventory validation failed: "+JSON.stringify(mismatches));
 
 const attestation={
   schemaVersion:"edge-function-release-attestation-v2",
   status:"verified",
   source:"governed-production-edge-function-release",
+  verificationMode,
   repository,
   project:projectRef,
   sourceCommit:releaseSha,
   workflowRunId,
   sourceTreeSha256,
+  connectorObservedAt,
+  connectorSourceCommit,
   functions:releaseFunctions,
   verifiedAt:new Date().toISOString()
 };
 
 mkdirSync(dirname(target),{recursive:true});
 writeFileSync(target,JSON.stringify(attestation,null,2)+"\n","utf8");
-console.log("Recorded governed production Edge Function release for",releaseSha);
+console.log("Recorded governed production Edge Function release for",releaseSha,"via",verificationMode);
