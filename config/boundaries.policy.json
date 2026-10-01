@@ -175,6 +175,57 @@
         "Security findings remain attributable and are not silently suppressed",
         "Secrets, private authentication material, and protected personal data are not published as transparency content"
       ]
+    },
+    {
+      "id": "guardian_health_healing",
+      "tolerance": "safe-healing-without-authority-escalation",
+      "patterns": [
+        "guardian/**",
+        "config/guardian.tree.json",
+        "config/guardian.blueprint.json",
+        "scripts/guardian-health.mjs",
+        ".github/workflows/guardian.yml"
+      ],
+      "acceptance": [
+        "GUARDIAN snapshots preserve blueprint, observed-state, and prior-snapshot lineage",
+        "Autonomous branch deletion is limited to branches proven to have zero unique commits with live revalidation",
+        "Automatic source changes are limited to byte-safe normalization",
+        "Behavioral deduplication and refactoring are review-only",
+        "GUARDIAN cannot weaken Boundaries/ENFORCER, change production authority, expose secrets, or synchronize FREETREE"
+      ]
+    },
+    {
+      "id": "conductor_synchronization",
+      "tolerance": "timing-and-dispatch-without-authority-escalation",
+      "patterns": [
+        "conductor/**",
+        "config/conductor.tree.json",
+        "scripts/conductor-orchestrator.mjs",
+        ".github/workflows/conductor.yml"
+      ],
+      "acceptance": [
+        "CONDUCTOR coordinates timing and dependencies but never merges or deploys production directly",
+        "At most one coordinated workflow dispatch is selected per cycle",
+        "Dependent processes are not dispatched while required dependencies are stale or active",
+        "Only allowlisted SUGGESTER autonomous commands may be dispatched",
+        "FREETREE remains outside automatic orchestration"
+      ]
+    },
+    {
+      "id": "suggester_optimization",
+      "tolerance": "continuous-suggestions-bounded-autonomy",
+      "patterns": [
+        "suggester/**",
+        "config/suggester.tree.json",
+        "scripts/suggester-engine.mjs",
+        ".github/workflows/suggester.yml"
+      ],
+      "acceptance": [
+        "Suggestions remain attributable to evidence sources and deduplicated",
+        "Autonomous commands are limited to predefined reversible maintenance actions",
+        "Behavioral, dependency, provider, governance, UI, function, product and business changes remain review-required",
+        "SUGGESTER cannot merge, deploy production, change Boundaries, or suppress ENFORCER findings"
+      ]
     }
   ],
   "hardRules": [
@@ -239,6 +290,37 @@
         "\"maySuppressFindings\": true"
       ],
       "message": "ENFORCER may enforce checks but cannot acquire production authority, rewrite Boundaries, or suppress findings."
+    },
+    {
+      "id": "no_guardian_authority_escalation",
+      "files": [
+        "config/guardian.tree.json",
+        "infra/reson8-forge/specialized-trees.json"
+      ],
+      "forbiddenText": [
+        "\"productionAuthorization\": true",
+        "\"productionAuthority\": true",
+        "\"autonomousDeletion\": \"unique-history\"",
+        "\"synchronizeFreetree\": true"
+      ],
+      "message": "GUARDIAN may heal proven redundancy but cannot gain production authority, delete unique history, or synchronize FREETREE."
+    },
+    {
+      "id": "no_conductor_suggester_authority_escalation",
+      "files": [
+        "config/conductor.tree.json",
+        "config/suggester.tree.json",
+        "infra/reson8-forge/specialized-trees.json"
+      ],
+      "forbiddenText": [
+        "\"productionAuthorization\": true",
+        "\"productionAuthority\": true",
+        "\"mayMerge\": true",
+        "\"mayDeployProduction\": true",
+        "\"mayChangeBoundaries\": true",
+        "\"neverSynchronizeFreetree\": false"
+      ],
+      "message": "CONDUCTOR and SUGGESTER may coordinate and suggest but cannot acquire production/governance authority or synchronize FREETREE."
     }
   ],
   "resultSemantics": {
