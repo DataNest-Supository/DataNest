@@ -29,6 +29,7 @@ export function buildSuggesterFeed({
   conductor={},
   calmer={},
   regulator={},
+  visibility={},
   previous={},
   headSha=null,
   generatedAt=new Date().toISOString()
@@ -43,7 +44,8 @@ export function buildSuggesterFeed({
     botsquad:inspectTreeEvidence(botsquad,"datanest-botsquad-consolidated-feed-v1",420,now),
     conductor:inspectTreeEvidence(conductor,"datanest-conductor-state-v1",30,now),
     calmer:inspectTreeEvidence(calmer,"datanest-calmer-feed-v1",45,now),
-    regulator:inspectTreeEvidence(regulator,"datanest-regulator-state-v1",45,now)
+    regulator:inspectTreeEvidence(regulator,"datanest-regulator-state-v1",45,now),
+    visibility:inspectTreeEvidence(visibility,"datanest-visibility-utility-feed-v1",240,now)
   };
   const automationReady=Object.values(sourceEvidence).every(source=>source.valid) &&
     ["healthy","healing"].includes(guardian?.status) &&
@@ -203,6 +205,35 @@ export function buildSuggesterFeed({
     }));
   }
 
+  for(const missing of (visibility?.missingInputs||[]).slice(0,20)){
+    suggestions.push(suggestion({
+      source:"visibility-utility",
+      type:"market-evidence",
+      priority:"medium",
+      title:"Configure visibility evidence source: "+String(missing),
+      detail:"VISIBILITY-UTILITY cannot raise projection confidence until this configured input is available.",
+      automationClass:"review-required",
+      evidence:["visibility.missingInputs",missing]
+    }));
+  }
+
+  for(const route of (visibility?.routes||[]).slice(0,5)){
+    suggestions.push(suggestion({
+      source:"visibility-utility",
+      type:"route-to-market",
+      priority:route.opportunityScore>=80?"high":"medium",
+      title:"Consider route to market: "+String(route.label||route.id||"market route"),
+      detail:JSON.stringify({
+        opportunityScore:route.opportunityScore,
+        confidence:route.confidence,
+        projectedOutcome:route.projectedOutcome,
+        implementationClass:route.implementationClass
+      }),
+      automationClass:"review-required",
+      evidence:["visibility.routes",route.id].filter(Boolean)
+    }));
+  }
+
   for(const recommendation of (botsquad?.functionEvolutionFeed||[]).slice(0,30)){
     suggestions.push(suggestion({
       source:"botsquad",
@@ -261,7 +292,10 @@ export function buildSuggesterFeed({
       knowledgeItems:Number(knowledge?.itemCount||0),
       botsquadAvailable:botsquad?.schemaVersion==="datanest-botsquad-consolidated-feed-v1",
       calmerTier:calmer?.tier||null,
-      regulatorStatus:regulator?.status||"missing"
+      regulatorStatus:regulator?.status||"missing",
+      visibilitySeoScore:visibility?.seoScore??null,
+      visibilityScore:visibility?.visibilityScore??null,
+      marketEvidenceMissing:Number(visibility?.missingInputs?.length||0)
     },
     suggestions:unique,
     commands,
@@ -288,10 +322,11 @@ async function main(){
   const conductor=await readJson(process.env.SUGGESTER_CONDUCTOR_PATH||"/tmp/suggester/conductor.json",{});
   const calmer=await readJson(process.env.SUGGESTER_CALMER_PATH||"/tmp/suggester/calmer.json",{});
   const regulator=await readJson(process.env.SUGGESTER_REGULATOR_PATH||"/tmp/suggester/regulator.json",{});
+  const visibility=await readJson(process.env.SUGGESTER_VISIBILITY_PATH||"/tmp/suggester/visibility.json",{});
   const previous=await readJson(process.env.SUGGESTER_PREVIOUS_PATH||"/tmp/suggester/previous.json",{});
 
   const headSha=execFileSync("git",["rev-parse","HEAD"],{encoding:"utf8"}).trim();
-  const feed=buildSuggesterFeed({config,guardian,knowledge,environment,enforcer,botsquad,conductor,calmer,regulator,previous,headSha});
+  const feed=buildSuggesterFeed({config,guardian,knowledge,environment,enforcer,botsquad,conductor,calmer,regulator,visibility,previous,headSha});
   feed.triggeringConductorRunId=process.env.SUGGESTER_CONDUCTOR_RUN_ID||null;
   await mkdir("suggester/feeds",{recursive:true});
   await writeFile("suggester/feeds/datanest.json",JSON.stringify(feed,null,2)+"\n");
