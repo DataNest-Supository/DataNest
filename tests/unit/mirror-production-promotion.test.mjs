@@ -26,11 +26,25 @@ test("Mirror production import is isolated from main and live deployment",()=>{
   assert.doesNotMatch(importWorkflow,/git push origin main/);
 });
 
-test("Mirror-only and protected controls are excluded by the boundary contract",()=>{
+test("Mirror import validates selective-sync lineage instead of canonical ancestry",()=>{
+  assert.match(importWorkflow,/mirror_sync_base_sha:/);
+  assert.match(importWorkflow,/MIRROR_SYNC_BASE_SHA/);
+  assert.match(importWorkflow,/merge-base --is-ancestor "\$MIRROR_SYNC_BASE_SHA" "\$MIRROR_SHA"/);
+  assert.match(importWorkflow,/merge-base --is-ancestor "\$BASE_SHA" origin\/main/);
+  assert.doesNotMatch(importWorkflow,/merge-base --is-ancestor "\$BASE_SHA" "\$MIRROR_SHA"/);
+  assert.match(importWorkflow,/git diff --name-only "\$MIRROR_SYNC_BASE_SHA" "\$MIRROR_SHA"/);
+});
+
+test("Mirror-only controls are excluded while canonical/protected divergence remains blocked",()=>{
   const boundary=loadBoundary();
+  const validator=readFileSync(
+    new URL("../../scripts/validate-mirror-candidate-boundary.mjs",import.meta.url),
+    "utf8"
+  );
   assert.match(importWorkflow,/validate-mirror-candidate-boundary\.mjs/);
   assert.match(importWorkflow,/promotablePaths/);
-  assert.doesNotMatch(importWorkflow,/\:\(exclude\)/);
+  assert.match(validator,/item\.policy === "mirror_only"/);
+  assert.match(validator,/\["canonical_only", "protected_shared", "unclassified"\]/);
 
   for(const path of [
     ".github/workflows/ci.yml",
@@ -38,14 +52,29 @@ test("Mirror-only and protected controls are excluded by the boundary contract",
     ".github/workflows/production-candidate.yml",
     "config/mirror-rd-policy.json",
     "docs/MIRROR_DATANEST_RD_MODE.md",
-    "docs/PRODUCTION_CANDIDATE_HANDOFF.md",
     "scripts/mirror-test-suite.mjs",
-    "README.md",
-    "scripts/write-release-manifest.mjs",
-    "config/worktree-gate-timeframes.json"
+    "README.md"
   ]){
-    assert.notEqual(classifyPath(path,boundary).policy,"promotable",path);
+    assert.equal(classifyPath(path,boundary).policy,"mirror_only",path);
   }
+});
+
+test("canonical importer binds candidate and live workflow evidence to the Mirror SHA",()=>{
+  assert.match(importWorkflow,/Candidate workflow identity is not bound to the declared Mirror SHA/);
+  assert.match(importWorkflow,/\.github\/workflows\/production-candidate\.yml/);
+  assert.match(importWorkflow,/Live Mirror evidence is not a successful pushed Pages run/);
+  assert.match(importWorkflow,/\.github\/workflows\/pages\.yml/);
+  assert.match(importWorkflow,/\.head_sha/);
+  assert.match(importWorkflow,/\.event/);
+});
+
+test("candidate artifact identity and digest are fail-closed",()=>{
+  assert.match(importWorkflow,/mirror-production-candidate-\$\{MIRROR_SHA:0:12\}/);
+  assert.match(importWorkflow,/candidate_patch_digest must be sha256/);
+  assert.match(importWorkflow,/Candidate patch digest does not match/);
+  assert.match(importWorkflow,/candidateArtifact:\$candidateArtifact/);
+  assert.match(importWorkflow,/candidatePatchDigest:\$candidatePatchDigest/);
+  assert.match(importWorkflow,/mirrorSyncBaseSha:\$mirrorSyncBaseSha/);
 });
 
 test("promotion manifest starts with zero production authority",()=>{
