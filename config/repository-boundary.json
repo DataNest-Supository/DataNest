@@ -10,6 +10,8 @@
       "patterns": [
         ".github/workflows/mirror-production-import.yml",
         ".github/workflows/notify-mirror-canonical.yml",
+        "tests/unit/automation-x-annotation.test.mjs",
+        "scripts/emit-automation-x-annotation.mjs",
         ".github/actions/automation-x-annotation/action.yml",
         "DEVELOPER_COORDINATION.md",
         "config/repository-boundary.json",
