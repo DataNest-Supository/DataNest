@@ -24,6 +24,7 @@ jobs:
           fetch-depth: 1
 
       - name: Inspect canonical push provenance
+        id: provenance
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
@@ -55,7 +56,7 @@ jobs:
         run: node --test tests/unit/canonical-write-watchdog.test.mjs
 
       - name: Open or update governance incident
-        if: failure()
+        if: steps.provenance.outcome == 'failure'
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
