@@ -64,6 +64,7 @@ test("REGULATOR turns security and health gaps into transparent BOTSQUAD require
 
 test("REGULATOR deduplicates repeated review suggestions",()=>{
   const suggestion={
+    source:"guardian",type:"code-streamlining",
     automationClass:"review-required",priority:"medium",title:"Same",detail:"same",
     fingerprint:"sha256:same"
   };
@@ -95,4 +96,22 @@ test("REGULATOR converts visibility gaps into market requirements",()=>{
   assert.equal(state.status,"attention");
   assert.ok(state.requirements.some(x=>x.requirementClass==="market-visibility"&&x.title.includes("visibility baseline")));
   assert.ok(state.requirements.some(x=>x.title.includes("local-trends")));
+});
+
+test("REGULATOR does not re-ingest its own SUGGESTER echoes",()=>{
+  const state=buildRegulatorState({
+    config,boundaries,
+    ...validSources,
+    suggester:{...validSources.suggester,suggestions:[{
+      source:"regulator",
+      type:"harmony-requirement",
+      automationClass:"review-required",
+      priority:"high",
+      title:"Resolve ENFORCER review condition",
+      detail:"security-workflow-pending",
+      fingerprint:"sha256:echo"
+    }]}
+  });
+  assert.equal(state.requirements.length,0);
+  assert.equal(state.status,"harmonized");
 });
