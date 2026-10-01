@@ -62,6 +62,8 @@ jobs:
       - name: Assess defensive posture
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ENFORCER_SECURITY_TARGET_SHA: ${{ github.event.pull_request.head.sha || github.event.workflow_run.head_sha || github.sha }}
+          ENFORCER_SECURITY_TARGET_BRANCH: ${{ github.event.pull_request.head.ref || github.event.workflow_run.head_branch || github.ref_name }}
         run: node scripts/enforcer-monitor.mjs
 
       - name: Publish transparent defensive evidence
