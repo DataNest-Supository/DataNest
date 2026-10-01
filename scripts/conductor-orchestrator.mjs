@@ -152,10 +152,26 @@ export function selectNextCommand(config,processes,suggesterFeed,workflowStates)
   }
 
   const pending=processes.filter(item=>item.due||item.active||item.retryCooldown);
-  if(!pending.length){
-    const safeSuggestion=selectSafeSuggestionAction(config,suggesterFeed,workflowStates);
-    if(safeSuggestion) return safeSuggestion;
+  if(pending.length){
+    return {
+      type:"wait",
+      source:"conductor",
+      workflow:null,
+      workflowName:null,
+      inputs:{},
+      reason:"processes-pending",
+      pending:pending.map(item=>({
+        id:item.id,
+        due:item.due,
+        active:item.active,
+        retryCooldown:item.retryCooldown,
+        blockedBy:item.blockedBy
+      }))
+    };
   }
+
+  const safeSuggestion=selectSafeSuggestionAction(config,suggesterFeed,workflowStates);
+  if(safeSuggestion) return safeSuggestion;
 
   return {
     type:"trigger-suggester",
