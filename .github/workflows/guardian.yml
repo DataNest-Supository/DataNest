@@ -50,13 +50,15 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p /tmp/guardian
-          for branch in automation/knowledge-feed automation/environment-feed automation/enforcer automation/botsquad/orchestrator automation/guardian; do
+          for branch in automation/knowledge-feed automation/environment-feed automation/enforcer automation/botsquad/orchestrator automation/conductor automation/suggester automation/guardian; do
             git fetch origin "$branch" || true
           done
           git show origin/automation/environment-feed:environment/feeds/guardian.json > /tmp/guardian/environment.json 2>/dev/null ||             git show origin/automation/environment-feed:environment/feeds/datanest.json > /tmp/guardian/environment.json 2>/dev/null || echo '{}' > /tmp/guardian/environment.json
           git show origin/automation/enforcer:enforcer/state/latest.json > /tmp/guardian/enforcer.json 2>/dev/null || echo '{}' > /tmp/guardian/enforcer.json
           git show origin/automation/knowledge-feed:knowledge/feeds/datanest.json > /tmp/guardian/knowledge.json 2>/dev/null || echo '{}' > /tmp/guardian/knowledge.json
           git show origin/automation/botsquad/orchestrator:botsquad/feeds/datanest.json > /tmp/guardian/botsquad.json 2>/dev/null || echo '{}' > /tmp/guardian/botsquad.json
+          git show origin/automation/conductor:conductor/state/latest.json > /tmp/guardian/conductor.json 2>/dev/null || echo '{}' > /tmp/guardian/conductor.json
+          git show origin/automation/suggester:suggester/feeds/datanest.json > /tmp/guardian/suggester.json 2>/dev/null || echo '{}' > /tmp/guardian/suggester.json
           git show origin/automation/guardian:guardian/snapshots/latest.json > /tmp/guardian/previous.json 2>/dev/null || echo 'null' > /tmp/guardian/previous.json
 
       - name: Measure source streamlining health
@@ -74,6 +76,8 @@ jobs:
           GUARDIAN_ENFORCER_PATH: /tmp/guardian/enforcer.json
           GUARDIAN_KNOWLEDGE_PATH: /tmp/guardian/knowledge.json
           GUARDIAN_BOTSQUAD_PATH: /tmp/guardian/botsquad.json
+          GUARDIAN_CONDUCTOR_PATH: /tmp/guardian/conductor.json
+          GUARDIAN_SUGGESTER_PATH: /tmp/guardian/suggester.json
           GUARDIAN_PREVIOUS_SNAPSHOT_PATH: /tmp/guardian/previous.json
           GUARDIAN_BRANCH_REPORT_PATH: /tmp/guardian/branches/branch-cleaner-report.json
           GUARDIAN_REVIEWER_REPORT_PATH: /tmp/guardian/reviewer/report.json
