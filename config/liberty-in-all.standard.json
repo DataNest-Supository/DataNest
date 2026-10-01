@@ -1,0 +1,162 @@
+{
+  "schemaVersion": "datanest-liberty-in-all-v1",
+  "standardId": "LIA",
+  "name": "LIBERTY-IN-ALL",
+  "version": "1.0",
+  "authority": "DataNest-Supository/DataNest",
+  "status": "internal-governance-standard",
+  "externalCertification": false,
+  "productionAuthorization": false,
+  "purpose": "Ensure that non-sensitive DataNest decisions, claims, controls, evidence and system relationships are continuously indexable, attributable, inspectable and understandable on demand by interested individuals and parties, users, stakeholders, auditors and regulators while preserving privacy, security and human authority.",
+  "principles": [
+    {
+      "id": "LIA-001",
+      "name": "Universal inspectability",
+      "rule": "Non-sensitive system claims, controls and evidence intended to support trust must be available through public human-readable and machine-readable indexes."
+    },
+    {
+      "id": "LIA-002",
+      "name": "Human agency",
+      "rule": "Visibility must improve informed human choice and must not convert disclosure, AI advice or evidence into implied consent or authorization."
+    },
+    {
+      "id": "LIA-003",
+      "name": "Symmetric transparency",
+      "rule": "Material adverse findings, limitations, uncertainty and pending states must be indexed with the same provenance discipline as favorable evidence."
+    },
+    {
+      "id": "LIA-004",
+      "name": "Provenance",
+      "rule": "Every indexed item must identify its stable ID, source, authority, revision or digest when available, and observation time."
+    },
+    {
+      "id": "LIA-005",
+      "name": "Temporal truth",
+      "rule": "Current, historical and superseded states must be distinguishable; stale evidence must not be presented as current."
+    },
+    {
+      "id": "LIA-006",
+      "name": "Uncertainty visibility",
+      "rule": "Unknown, unavailable, inferred, projected and unverified states must be labelled explicitly and never silently upgraded."
+    },
+    {
+      "id": "LIA-007",
+      "name": "Authority separation",
+      "rule": "Documentation, indexing, audit evidence and projections never create production, financial, legal, ownership or governance authority."
+    },
+    {
+      "id": "LIA-008",
+      "name": "Privacy and security boundary",
+      "rule": "Secrets, reusable credentials, private authentication material, protected personal data and private AI memory are excluded from public indexing."
+    },
+    {
+      "id": "LIA-009",
+      "name": "Accessible dual-format disclosure",
+      "rule": "Material public evidence should be available in accessible human-readable form and structured machine-readable form where practical."
+    },
+    {
+      "id": "LIA-010",
+      "name": "Open portability",
+      "rule": "Public traceability records use durable, non-proprietary or broadly interoperable formats and stable URLs/identifiers where practical."
+    },
+    {
+      "id": "LIA-011",
+      "name": "Versioned correction",
+      "rule": "Corrections and amendments preserve source history and identify what changed rather than silently rewriting the evidentiary record."
+    },
+    {
+      "id": "LIA-012",
+      "name": "Audit and regulatory readiness",
+      "rule": "Traceability should permit an independent reviewer to reconstruct what was asserted, by which authority, from which evidence, under which control and with what current status."
+    },
+    {
+      "id": "LIA-013",
+      "name": "Data minimization",
+      "rule": "Indexes publish the minimum evidence necessary to establish provenance, status and accountability."
+    },
+    {
+      "id": "LIA-014",
+      "name": "No silent suppression",
+      "rule": "A material public finding or limitation may be corrected, superseded or access-restricted for a documented privacy/security reason, but must not be silently hidden to improve apparent system health."
+    },
+    {
+      "id": "LIA-015",
+      "name": "Challengeability",
+      "rule": "Public records must expose enough source/revision context for an interested party to independently inspect, question or reproduce the basis of a claim where legally and technically possible."
+    }
+  ],
+  "publicAudiences": [
+    "interested-individuals-and-parties",
+    "users",
+    "stakeholders",
+    "auditors",
+    "regulators",
+    "developers",
+    "operators"
+  ],
+  "traceabilityFields": [
+    "id",
+    "type",
+    "title",
+    "status",
+    "authority",
+    "source",
+    "revision",
+    "digest",
+    "observedAt",
+    "effectiveAt",
+    "audience",
+    "sensitivity",
+    "productionAuthorization",
+    "relations",
+    "limitations"
+  ],
+  "sensitivityClasses": {
+    "public": "Safe and intended for public disclosure.",
+    "public_summary": "Sanitized summary may be published; raw evidence may remain restricted.",
+    "restricted": "Not published; only existence/classification may be represented when useful.",
+    "secret": "Never published or copied into traceability artifacts."
+  },
+  "publicAllowlist": [
+    "docs/*.md",
+    "public/transparency/**",
+    "public/.well-known/**",
+    "config/*.tree.json",
+    "config/*.policy.json",
+    "config/supository.catalog.json",
+    "config/liberty-in-all.standard.json",
+    ".github/workflows/*.yml"
+  ],
+  "publicDenylist": [
+    ".env*",
+    "**/*secret*",
+    "**/*credential*",
+    "**/*token*",
+    "**/private/**",
+    "backups/**",
+    "artifacts/private/**",
+    "**/*session*",
+    "**/*cookie*"
+  ],
+  "liveIndex": {
+    "branch": "automation/liberty-in-all",
+    "path": "public/transparency/liberty-in-all/latest.json",
+    "historyPath": "liberty-in-all/history",
+    "pulseMinutes": 10,
+    "eventDriven": true,
+    "publicPage": "https://datanest-supository.github.io/DataNest/traceability/",
+    "rawLatest": "https://raw.githubusercontent.com/DataNest-Supository/DataNest/automation/liberty-in-all/public/transparency/liberty-in-all/latest.json"
+  },
+  "controls": {
+    "mayPublishSanitizedEvidence": true,
+    "mayIndexPublicSource": true,
+    "mayPublishSecrets": false,
+    "mayPublishProtectedPersonalData": false,
+    "mayPublishPrivateAiMemory": false,
+    "maySuppressMaterialAdverseFindings": false,
+    "mayGrantAuthority": false,
+    "mayMerge": false,
+    "mayDeployProduction": false,
+    "correctionsRequireSourceHistory": true
+  }
+}
