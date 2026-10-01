@@ -181,7 +181,7 @@ export function compareMigrationParity(repoFiles = [], liveMigrations = []) {
   };
 }
 
-function parseArgs(argv) {
+export function parseArgs(argv) {
   const out = { apply:false, strict:false, pruneArchived:false, gitOnlySafeApply:false, config:"branch-cleaner.config.json", reportDir:"artifacts/branch-cleaner", staleDays:null };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--apply") out.apply = true;
