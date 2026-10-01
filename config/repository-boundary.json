@@ -67,7 +67,9 @@
         "enforcer/**",
         "config/enforcer.tree.json",
         "scripts/enforcer-monitor.mjs",
-        "tests/unit/enforcer.test.mjs"
+        "tests/unit/enforcer.test.mjs",
+        "public/transparency/enforcer/**",
+        "public/transparency/audits/index.json"
       ]
     },
     {
