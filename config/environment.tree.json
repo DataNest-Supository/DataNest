@@ -68,6 +68,11 @@
       "id": "regulator",
       "repository": "DataNest-Supository/DataNest",
       "mode": "specialized-transparent-harmony-regulation"
+    },
+    {
+      "id": "visibility-utility",
+      "repository": "DataNest-Supository/DataNest",
+      "mode": "specialized-visibility-market-intelligence"
     }
   ],
   "dimensions": [
@@ -162,6 +167,10 @@
     {
       "target": "regulator",
       "path": "environment/feeds/regulator.json"
+    },
+    {
+      "target": "visibility-utility",
+      "path": "environment/feeds/visibility-utility.json"
     }
   ]
 }
