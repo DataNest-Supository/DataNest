@@ -26,6 +26,25 @@ export function buildRegulatorState({
 }){
   const requirements=[];
 
+  const sourceContracts=[
+    ["guardian",guardian,"datanest-guardian-snapshot-v1","health","high"],
+    ["enforcer",enforcer,"datanest-enforcer-assessment-v1","security","high"],
+    ["calmer",calmer,"datanest-calmer-state-v1","governance","medium"],
+    ["environment",environment,"datanest-environment-feed-v1","environment","medium"],
+    ["conductor",conductor,"datanest-conductor-state-v1","timing","medium"],
+    ["suggester",suggester,"datanest-suggester-feed-v1","optimization","medium"],
+    ["botsquad",botsquad,"datanest-botsquad-consolidated-feed-v1","transparency","medium"]
+  ];
+  for(const [name,value,schema,requirementClass,severity] of sourceContracts){
+    if(value?.schemaVersion===schema && value?.productionAuthorization===false) continue;
+    requirements.push(requirement({
+      source:name,requirementClass,severity,
+      title:"Initialize or refresh "+name+" regulatory evidence",
+      detail:"REGULATOR requires a current non-authorizing "+schema+" input before declaring full harmony.",
+      evidence:[name+".schemaVersion",name+".productionAuthorization"]
+    }));
+  }
+
   for(const blocker of enforcer?.blockers||[]){
     requirements.push(requirement({
       source:"enforcer",requirementClass:"security",severity:"critical",
