@@ -22,8 +22,9 @@ test("System Charter publishes core system scope",()=>{
 
 test("standards crosswalk is explicit and does not claim certification",()=>{
   for(const standard of [
-    "ISO 9001:2026","ISO/IEC 27001:2022","ISO/IEC 42001:2023","ISO 31000:2018",
-    "ISO 22301:2019","ISO/IEC 25010:2023","ISO 9241-210:2019","WCAG 2.2","NIST CSF 2.0","NIST AI RMF 1.0"
+    "ISO 9001:2026","ISO/IEC 27001:2022","ISO/IEC 42001:2023","ISO/IEC 27701:2025",
+    "ISO 37000:2021","ISO 37301:2021","ISO 31000:2018","ISO 22301:2019",
+    "ISO/IEC 25010:2023","ISO 9241-210:2019","WCAG 2.2","NIST CSF 2.0","CIS Critical Security Controls v8.1","NIST AI RMF 1.0"
   ]) assert.ok(charter.includes(standard),standard);
   assert.match(charter,/not a claim of ISO certification/i);
   assert.equal(charterIndex.assurance.isoCertified,false);
