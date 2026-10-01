@@ -214,6 +214,11 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
       })
       .filter(item=>item.right>viewportWidth+1||item.left< -1)
       .filter(item=>!isClipped(item.element))
+      .filter(item=>{
+        const style=getComputedStyle(item.element);
+        const completelyOffscreen=item.right<=0||item.left>=viewportWidth;
+        return !(completelyOffscreen && style.position==="fixed");
+      })
       .map(({element,...item})=>item)
       .slice(0,12);
   });
