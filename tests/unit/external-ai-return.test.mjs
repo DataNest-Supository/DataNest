@@ -261,3 +261,20 @@ test("DataNest app reserves and clears the companion rail", () => {
   assert.match(source, /onCompanionReserve=\{setCompanionReserve\}/);
   assert.match(source, /setCompanionReserve\(0\)/);
 });
+
+
+test("automatic clipboard capture requires the tracked trace binding", async () => {
+  const { selectExternalAiClipboardCandidate: select } = await import("../../src/lib/externalAiClipboard.ts");
+  assert.equal(
+    select({ clipboardText: "trace-demo-1234\nBound result", currentResponse: "", traceBinding: "trace-demo-1234" }),
+    "trace-demo-1234\nBound result"
+  );
+  assert.equal(
+    select({ clipboardText: "Unrelated copied text", currentResponse: "", traceBinding: "trace-demo-1234" }),
+    null
+  );
+  assert.equal(
+    select({ clipboardText: "Manual replacement", currentResponse: "Existing draft", allowReplace: true, traceBinding: "trace-demo-1234" }),
+    "Manual replacement"
+  );
+});
