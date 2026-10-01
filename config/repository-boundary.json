@@ -6,34 +6,12 @@
   "ruleOrder": "first-match-wins",
   "pathRules": [
     {
-      "policy": "mirror_only",
-      "patterns": [
-        ".github/workflows/production-candidate.yml",
-        ".github/workflows/sync-canonical.yml",
-        ".datanest/**",
-        "config/repository-boundary.json",
-        "config/mirror-rd-policy.json",
-        "docs/MIRROR_DATANEST_RD_MODE.md",
-        "docs/PRODUCTION_CANDIDATE_HANDOFF.md",
-        "docs/reviews/mirror-*",
-        "scripts/lib/mirror-*.mjs",
-        "scripts/mirror-test-suite.mjs",
-        "scripts/validate-mirror-artifact.mjs",
-        "scripts/validate-mirror-boundary.mjs",
-        "tests/unit/mirror-*.test.mjs",
-        "tests/browser/mirror-*.spec.ts",
-        "supabase/staging-migrations/**",
-        "public/.well-known/reson8-app.json",
-        "src/lib/reson8.ts",
-        "tests/unit/reson8-integration.test.mjs",
-        "README.md"
-      ]
-    },
-    {
       "policy": "canonical_only",
       "patterns": [
-        ".github/workflows/mirror-production-import.yml",
-        ".github/workflows/notify-mirror-canonical.yml",
+        "config/repository-boundary.json",
+        "schemas/release-evidence-envelope-v1.schema.json",
+        "scripts/lib/repository-boundary.mjs",
+        "scripts/validate-mirror-candidate-boundary.mjs",
         "scripts/write-release-manifest.mjs",
         "scripts/write-ui-governance-evidence.mjs",
         "config/worktree-gate-timeframes.json",
@@ -55,14 +33,38 @@
         "src/components/AdminRndModeToggle.module.css",
         "supabase/migrations/20260930105423_datanest_release_attestation_v1.sql",
         "tests/unit/forge-evidence-index.test.mjs",
-        "tests/unit/mirror-production-promotion.test.mjs"
+        "tests/unit/mirror-production-promotion.test.mjs",
+        "tests/unit/mirror-candidate-boundary-contract.test.mjs",
+        "tests/unit/mirror-product-surface-immutability.test.mjs",
+        "tests/unit/worktree-gate-timeframes.test.mjs"
+      ]
+    },
+    {
+      "policy": "mirror_only",
+      "patterns": [
+        ".github/**",
+        ".datanest/**",
+        "config/mirror-rd-policy.json",
+        "docs/MIRROR_DATANEST_RD_MODE.md",
+        "docs/PRODUCTION_CANDIDATE_HANDOFF.md",
+        "docs/reviews/mirror-*",
+        "scripts/lib/mirror-*.mjs",
+        "scripts/lib/sync-canonical-files.mjs",
+        "scripts/mirror-test-suite.mjs",
+        "scripts/validate-mirror-artifact.mjs",
+        "tests/unit/mirror-*.test.mjs",
+        "tests/unit/repository-boundary.test.mjs",
+        "tests/browser/mirror-*.spec.ts",
+        "supabase/staging-migrations/**",
+        "public/.well-known/reson8-app.json",
+        "src/lib/reson8.ts",
+        "tests/unit/reson8-integration.test.mjs",
+        "README.md"
       ]
     },
     {
       "policy": "protected_shared",
       "patterns": [
-        ".github/workflows/**",
-        ".github/actions/**",
         "infra/reson8-forge/README.md",
         "infra/reson8-forge/scripts/backup.sh",
         ".env.example",
@@ -95,8 +97,7 @@
         "tests/unit/transparency-audit-library-source.test.mjs",
         "tests/unit/ui-governance-evidence.test.mjs",
         "tests/unit/ui-production-authorization.test.mjs",
-        "tests/unit/ui-ux-source.test.mjs",
-        "tests/unit/worktree-gate-timeframes.test.mjs"
+        "tests/unit/ui-ux-source.test.mjs"
       ]
     },
     {
