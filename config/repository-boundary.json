@@ -69,7 +69,8 @@
         "scripts/enforcer-monitor.mjs",
         "tests/unit/enforcer.test.mjs",
         "public/transparency/enforcer/**",
-        "public/transparency/audits/index.json"
+        "public/transparency/audits/index.json",
+        "lib/resonance-forge-*.mjs"
       ]
     },
     {
