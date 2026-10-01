@@ -10,6 +10,7 @@
       "patterns": [
         ".github/workflows/mirror-production-import.yml",
         ".github/workflows/notify-mirror-canonical.yml",
+        "DEVELOPER_COORDINATION.md",
         "config/repository-boundary.json",
         "schemas/release-evidence-envelope-v1.schema.json",
         "scripts/lib/repository-boundary.mjs",
