@@ -249,11 +249,13 @@ test("AI instrument respects motion preference, offscreen pause, and saved Focus
   await expect(core).toHaveAttribute("data-in-view","false");
   await expect(ring).toHaveCSS("animation-play-state","paused");
 
+  await page.locator(".workspaceOptions > summary").click();
   await page.locator(".motionControl").click();
   await expect(ring).toHaveCSS("animation-name","none");
   await page.reload();
   await expect(page.locator(".motionControl")).toHaveAttribute("aria-pressed","true");
   await expect(ring).toHaveCSS("animation-name","none");
+  await page.locator(".workspaceOptions > summary").click();
   await page.locator(".motionControl").click();
   await composer.fill("Keep my command while the AI core is hidden.");
   await page.getByRole("button",{name:"Focus mode",exact:true}).click();
@@ -300,9 +302,10 @@ test("AI error state stops the instrument and preserves the retry path", async (
   await page.goto(appPath+"?view=ai");
   await expect(page.locator(".aiReactor")).toHaveAttribute("data-core-state","attention");
   await expect(page.locator(".aiReactorOuter")).toHaveCSS("animation-play-state","paused");
-  await expect(page.getByPlaceholder(/Ask DataNest AI to analyze/i)).toBeDisabled();
+  await expect(page.getByRole("button",{name:"Send command",exact:true})).toBeDisabled();
+  await page.getByPlaceholder(/Ask DataNest AI to analyze/i).fill("Preserve this draft while context recovers.");
   await page.unroute(contextRoute);
   await page.getByRole("button",{name:"Retry AI context",exact:true}).click();
   await expect(page.locator(".aiReactor")).toHaveAttribute("data-core-state","ready");
-  await expect(page.getByPlaceholder(/Ask DataNest AI to analyze/i)).toBeEnabled();
+  await expect(page.getByPlaceholder(/Ask DataNest AI to analyze/i)).toHaveValue("Preserve this draft while context recovers.");
 });

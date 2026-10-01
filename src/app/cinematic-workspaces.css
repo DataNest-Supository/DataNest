@@ -17,7 +17,6 @@
 .appFrame .navGroup button { min-height:44px; transition:background-color 160ms ease,color 160ms ease; }
 .appFrame .navGroup button.active { color:var(--text-primary); background:var(--workspace-halo); box-shadow:inset 2px 0 var(--workspace-accent); }
 .appFrame .navGroup button.active>span { color:var(--workspace-accent); text-shadow:none; }
-.appFrame .navGroup button.aiHeroNav::after { content:"AI"; font-size:9px; }
 .appFrame .panel { background:var(--surface-work); box-shadow:0 8px 24px #0000000c; }
 .appFrame :is(.platformPageHeader,.panelHead) .eyebrow { color:var(--workspace-accent); }
 .appFrame :is(input,select,textarea):focus-visible { border-color:var(--workspace-accent); outline-color:var(--workspace-accent); }
@@ -81,7 +80,7 @@
   .aiReactor:not([data-in-view="true"]) :is(.aiReactorOuter,.aiReactorInner),.aiReactor[data-core-state="attention"] :is(.aiReactorOuter,.aiReactorInner),.aiReactor[data-core-state="standby"] :is(.aiReactorOuter,.aiReactorInner) { animation-play-state:paused; }
 }
 html[data-page-hidden="true"] *,html[data-page-hidden="true"] *::before,html[data-page-hidden="true"] *::after { animation-play-state:paused!important; }
-html[data-motion-paused="true"] *,html[data-motion-paused="true"] *::before,html[data-motion-paused="true"] *::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; }
+html[data-motion-paused="true"] *,html[data-motion-paused="true"] *::before,html[data-motion-paused="true"] *::after { animation:none!important; animation-play-state:paused!important; transition:none!important; scroll-behavior:auto!important; }
 @media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; } }
 @media(max-width:1100px) { .datanestAiHeroV2 { grid-template-columns:minmax(0,1fr); } .datanestAiHeroV2 .datanestAiHeroCopy { max-width:none; } .datanestAiHeroV2 .aiHud { max-width:600px; width:100%; justify-self:center; } }
 @media(max-width:620px) { .appFrame .topbarTitle { padding-left:0; } .workspaceEmblem { display:none; } .datanestAiHeroV2 { padding:20px 16px; gap:18px; } .aiReactor { width:210px; } .aiHudInstrument { height:210px; } .aiReactorCenter>strong { font-size:42px; } .aiReactorCenter>span,.aiReactorCenter>small { font-size:7px; } .aiHudHeading { flex-wrap:wrap; gap:5px; } .aiHudReadouts dd { font-size:9px; } }
