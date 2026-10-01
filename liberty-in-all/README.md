@@ -15,9 +15,15 @@ Runtime outputs:
 
 - liberty-in-all/state/latest.json — current assurance state;
 - liberty-in-all/index/traceability.json — internal repository traceability index;
-- public/transparency/liberty-in-all/latest.json — sanitized public index;
+- public/transparency/liberty-in-all/latest.json — sanitized public index generated on the automation branch;
 - public/transparency/liberty-in-all/index.json — stable public entrypoint metadata.
 
 The workflow is event-driven and also pulses every ten minutes. This is near-real-time repository assurance, not a claim of instantaneous external-system monitoring.
 
 Standards are alignment references only: ISO 15489-1:2016, ISO 23081-1:2017, W3C PROV, ISO/IEC 27001:2022, ISO/IEC 27701:2025 and NIST CSF 2.0. No certification or legal-compliance status is implied.
+
+Live on-demand snapshot:
+
+https://raw.githubusercontent.com/DataNest-Supository/DataNest/automation/liberty-in-all/public/transparency/liberty-in-all/latest.json
+
+The deployed Transparency workspace reads this safe snapshot at runtime, so evidence freshness is decoupled from governed production deployment cadence.
