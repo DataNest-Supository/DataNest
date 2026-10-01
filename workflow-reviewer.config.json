@@ -6,7 +6,11 @@
     "src",
     "scripts",
     ".github/workflows",
-    "docs"
+    "docs",
+    "knowledge",
+    "boundaries",
+    "botsquad",
+    "environment"
   ],
   "exclude": [
     "node_modules",
