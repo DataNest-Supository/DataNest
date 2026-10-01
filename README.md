@@ -63,6 +63,19 @@ The Supository scope includes source/provenance, lifecycle state, delivery route
 
 New Resonance AppDev projects, products and services should be registered through the Supository catalog even when their source or runtime lives in a separate repository or provider.
 
+## Specialized DataNest trees
+
+DataNest now organizes autonomous learning, governance assessment, AI specialization, and environment compatibility through dedicated trees:
+
+- **Knowledge** — categorizes learnings from DataNest and Mirror and publishes non-authorizing optimization feeds.
+- **Boundaries** — assesses tolerance boundaries and acceptance criteria against DataNest human–AI principles.
+- **BOTSQUAD** — AI-only advisory lanes for optimization, expansion, business growth, UX ease, UI evolution, function evolution, integrations, quality, and environment translation.
+- **ENVIRONMENT** — assesses runtime/platform compatibility across trees and publishes safe adaptation feeds.
+- **Mirror-DataNest** — ungated R&D candidate environment.
+- **FREETREE** — isolated open-development repository with no synchronization to the other trees.
+
+BOTSQUAD and ENVIRONMENT cannot authorize canonical production. Their outputs enter normal evidence, audit, and human-review paths.
+
 ## Target-state architecture concepts
 
 The approved 27 Sep 2026 ecosystem design extends DataNest with target-state concepts that are intentionally separate from current production capability claims:
@@ -155,9 +168,9 @@ docker build -t resonance-datanest:ci .
 
 Every GitHub Pages deployment also verifies the live homepage, static health marker, and published Supabase runtime configuration from a GitHub-hosted runner.
 
-## Optional Vercel delivery
+## Delivery-provider metadata
 
-Vercel may be used as a future or secondary delivery target. It is not required for core operation and does not become source, backend, product or governance authority by hosting the application.
+Vercel is not required by DataNest. GitHub Pages remains the active public delivery target; any retained Vercel integration metadata stays deployment-disabled and has no source, backend, governance, or production authority.
 
 ## Scheduling safety
 
