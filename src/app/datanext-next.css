@@ -155,6 +155,7 @@
     transition:none!important;
   }
   .datanextShellTopbar::before,
+  .datanextPulse,
   .datanextExperience .navGroup button:hover::after{
     animation:none!important;
   }
@@ -162,4 +163,46 @@
 @media(forced-colors:active){
   .datanextShellTopbar::before,
   .datanextExperience .navGroup button::after{display:none}
+}
+.datanextTelemetry{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:.55rem;
+  margin-top:1rem;
+  min-height:1.8rem;
+  color:rgba(220,236,244,.68);
+  font:600 10px/1.2 var(--font-mono,ui-monospace,monospace);
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+.datanextTelemetryItem{
+  display:inline-flex;
+  align-items:center;
+  gap:.42rem;
+  white-space:nowrap;
+}
+.datanextTelemetryItem b{
+  color:rgba(235,249,255,.94);
+  font-weight:800;
+}
+.datanextTelemetryItem.warn b{color:#ffd37a}
+.datanextTelemetryDivider{opacity:.25}
+.datanextPulse{
+  width:.5rem;
+  height:.5rem;
+  border-radius:999px;
+  background:var(--datanext-cyan);
+  box-shadow:0 0 0 0 rgba(121,236,255,.42);
+  animation:datanext-pulse 2.2s ease-out infinite;
+}
+@keyframes datanext-pulse{
+  0%{box-shadow:0 0 0 0 rgba(121,236,255,.42)}
+  70%{box-shadow:0 0 0 7px rgba(121,236,255,0)}
+  100%{box-shadow:0 0 0 0 rgba(121,236,255,0)}
+}
+@media(max-width:640px){
+  .datanextTelemetry{gap:.4rem;font-size:9px}
+  .datanextTelemetryDivider{display:none}
+  .datanextTelemetryItem{width:calc(50% - .3rem)}
 }
