@@ -127,6 +127,36 @@
         "The change does not silently escalate production, data, synchronization, or AI authority",
         "Human override and review paths remain available where the change is consequential"
       ]
+    },
+    {
+      "id": "botsquad_ai_advisory",
+      "tolerance": "ai-only-proposal-no-canonical-authority",
+      "patterns": [
+        "botsquad/**",
+        "config/botsquad.tree.json",
+        "scripts/botsquad-orchestrator.mjs",
+        ".github/workflows/botsquad.yml"
+      ],
+      "acceptance": [
+        "BOTSQUAD output remains advisory and traceable to inputs",
+        "AI agents cannot approve, merge, deploy production, weaken governance, or make binding commercial commitments",
+        "Canonical source adoption remains human-reviewed"
+      ]
+    },
+    {
+      "id": "environment_adaptation",
+      "tolerance": "safe-generated-adaptation-only",
+      "patterns": [
+        "environment/**",
+        "config/environment.tree.json",
+        "scripts/environment-assessor.mjs",
+        ".github/workflows/environment-tree.yml"
+      ],
+      "acceptance": [
+        "Automatic adaptation is limited to generated compatibility state and non-authorizing feeds",
+        "Runtime, provider, backend, permission, production-workflow, Forge-authority, and credential changes require human review",
+        "FREETREE remains isolated from automatic synchronization"
+      ]
     }
   ],
   "hardRules": [
@@ -164,6 +194,18 @@
         "data-nest-alpha.vercel.app"
       ],
       "message": "Vercel is not a required DataNest delivery dependency."
+    },
+    {
+      "id": "no_specialized_tree_authority_escalation",
+      "files": [
+        "config/botsquad.tree.json",
+        "infra/reson8-forge/specialized-trees.json"
+      ],
+      "forbiddenText": [
+        "\"productionAuthorization\": true",
+        "\"productionAuthority\": true"
+      ],
+      "message": "BOTSQUAD and Forge specialized-tree projections cannot assert production authority."
     }
   ],
   "resultSemantics": {
