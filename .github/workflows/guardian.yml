@@ -74,7 +74,26 @@ jobs:
       - name: Measure all-branch redundancy and lineage
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node scripts/branch-cleaner.mjs --report-dir /tmp/guardian/branches
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/guardian/branches
+          if node scripts/branch-cleaner.mjs --report-dir /tmp/guardian/branches; then
+            exit 0
+          fi
+          echo "::warning::GUARDIAN branch inventory unavailable; recording degraded evidence and skipping branch-healing candidates."
+          cat > /tmp/guardian/branches/branch-cleaner-report.json <<'JSON'
+          {
+            "schemaVersion": 1,
+            "mode": "report-unavailable",
+            "github": {"branches": []},
+            "apply": {"deleted": [], "failed": []},
+            "availability": {
+              "available": false,
+              "reason": "github-api-or-control-plane-unavailable"
+            }
+          }
+          JSON
 
       - name: Build GUARDIAN health snapshot
         env:
