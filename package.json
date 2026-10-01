@@ -22,7 +22,10 @@
     "test:forge": "node --test tests/unit/resonance-forge-phase-a.test.mjs tests/unit/resonance-forge-event-projection.test.mjs tests/unit/resonance-forge-event-ingestion.test.mjs tests/unit/resonance-forge-evidence-ingestion.test.mjs tests/unit/resonance-forge-registry.test.mjs tests/unit/resonance-forge-promotion-lineage.test.mjs tests/unit/resonance-forge-reconciliation.test.mjs tests/unit/resonance-forge-sync-dry-run.test.mjs tests/unit/forge-phase-a-cli.test.mjs tests/unit/resonance-forge-recovery.test.mjs",
     "forge:validate": "node scripts/forge-phase-a.mjs",
     "forge:sync-dry-run": "node scripts/forge-sync-dry-run.mjs",
-    "forge:recovery-validate": "node scripts/forge-recovery-validate.mjs"
+    "forge:recovery-validate": "node scripts/forge-recovery-validate.mjs",
+    "botsquad:ux-workorder": "node scripts/botsquad-orchestrator.mjs --bot ux-ease",
+    "environment:assess": "node scripts/environment-assessor.mjs",
+    "enforcer:assess": "node scripts/enforcer-monitor.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",

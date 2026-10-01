@@ -127,3 +127,17 @@ This adapter is deliberately **read-only with respect to release authority**:
 - DataNest remains the canonical authority during Phase A.
 
 The intended next integration is a Forge-hosted ingestion job that calls the same adapter against signed/immutable envelopes after repository replication. That integration must remain observational until a separately governed authority migration is approved.
+
+
+## Specialized tree alignment
+
+Resonance Forge indexes DataNest specialized trees through `specialized-trees.json` and the read-only registry projection.
+
+- **Knowledge** — repository-learning feed observation.
+- **Boundaries** — acceptance/tolerance evidence observation.
+- **BOTSQUAD** — scoped AI-agent identities mapped to `automation/botsquad/*`; agents have no production authority.
+- **ENVIRONMENT** — compatibility and adaptation-feed observation.
+- **ENFORCER** — defensive-evidence observation with complete approved Knowledge lineage and no production authority.
+- **FREETREE** — no automatic Forge replication or synchronization.
+
+Forge may preserve branch, evidence, identity, and compatibility lineage for these trees. It must not convert an AI recommendation, environment finding, or mirrored branch into production authorization.

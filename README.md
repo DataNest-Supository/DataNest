@@ -55,7 +55,10 @@ DataNest does not require Vercel. GitHub Pages is the active public delivery tar
 
 - **Knowledge** — provenance-preserving repository learning from canonical DataNest and Mirror-DataNest, producing provisional categorized optimization feeds without self-promoting to Certified Memory or production authority.
 - **Boundaries** — canonical tolerance and acceptance assessor mapping DataNest human-AI principles to machine-verifiable invariants and explicit human-review criteria across functional changes.
-- **FREETREE** — isolated open-development clone target with no DataNest/Mirror synchronization, Knowledge exchange, Boundaries governance, or canonical production authority.
+- **BOTSQUAD** — AI-only advisory specialist branches for optimization, product expansion, business growth, UX ease, UI evolution, function evolution, integrations, quality, and environment translation.
+- **ENVIRONMENT** — shared compatibility assessor for runtimes, CI, delivery, backend, inference, Forge, recovery, dependencies, branch hygiene, and evidence; only generated non-authorizing adaptations are automatic.
+- **ENFORCER** — continuous defensive enforcement and transparency tree that monitors security against Boundaries, consumes the complete approved Knowledge corpus without category/topic filtering, and publishes traceable learning/defence evidence without production authority.
+- **FREETREE** — isolated open-development clone target with no DataNest/Mirror synchronization, Knowledge exchange, Boundaries governance, BOTSQUAD feed authority, or canonical production authority.
 
 Scheduled noise deletion and decluttering are defined in [`docs/MAINTENANCE_PROTOCOL.md`](docs/MAINTENANCE_PROTOCOL.md).
 
@@ -169,9 +172,9 @@ docker build -t resonance-datanest:ci .
 
 Every GitHub Pages deployment also verifies the live homepage, static health marker, and published Supabase runtime configuration from a GitHub-hosted runner.
 
-## Optional Vercel delivery
+## Vercel status
 
-Vercel may be used as a future or secondary delivery target. It is not required for core operation and does not become source, backend, product or governance authority by hosting the application.
+Vercel is not required for DataNest operation. The active public delivery target is GitHub Pages, and retained Vercel integration metadata is deployment-disabled only.
 
 ## Scheduling safety
 

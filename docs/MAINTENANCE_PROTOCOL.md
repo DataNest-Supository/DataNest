@@ -20,3 +20,8 @@ DataNest repositories use scheduled maintenance to reduce branch noise and safel
 ## Repository coverage
 
 The protocol applies to DataNest, Mirror-DataNest, and the FREETREE repository once FREETREE exists. FREETREE maintenance is local to FREETREE and must never create synchronization with DataNest or Mirror-DataNest.
+
+
+## Specialized automation branches
+
+`automation/knowledge-feed`, `automation/botsquad/*`, `automation/environment-feed`, and `automation/enforcer` are protected automation state. Their owning workflows may refresh them, but generic branch cleanup must not delete them. Mirror inbox branches are separately protected inside Mirror-DataNest.

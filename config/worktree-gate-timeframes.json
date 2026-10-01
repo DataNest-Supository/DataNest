@@ -319,6 +319,42 @@
         "governanceReview"
       ],
       "machineBaselineMinutes": 20
+    },
+    "botsquad.yml": {
+      "gateId": "botsquad",
+      "gateType": "automated_analysis",
+      "taskComplexity": "complex",
+      "reportingComplexity": "detailed",
+      "reviewDomains": [
+        "engineeringReview",
+        "visualReview",
+        "governanceReview"
+      ],
+      "machineBaselineMinutes": 20
+    },
+    "environment-tree.yml": {
+      "gateId": "environment-tree",
+      "gateType": "automated_analysis",
+      "taskComplexity": "standard",
+      "reportingComplexity": "detailed",
+      "reviewDomains": [
+        "engineeringReview",
+        "operationsReview",
+        "governanceReview"
+      ],
+      "machineBaselineMinutes": 15
+    },
+    "enforcer.yml": {
+      "gateId": "enforcer",
+      "gateType": "automated_enforcement",
+      "taskComplexity": "complex",
+      "reportingComplexity": "audit_grade",
+      "reviewDomains": [
+        "securityReview",
+        "governanceReview",
+        "engineeringReview"
+      ],
+      "machineBaselineMinutes": 20
     }
   }
 }

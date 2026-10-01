@@ -129,6 +129,22 @@
         "maintenance",
         "architecture"
       ]
+    },
+    "enforcer": {
+      "file": "knowledge/feeds/enforcer.json",
+      "categories": [
+        "security",
+        "governance",
+        "reliability",
+        "testing",
+        "deployment",
+        "ai",
+        "data",
+        "ux",
+        "maintenance",
+        "architecture",
+        "other"
+      ]
     }
   },
   "controls": {

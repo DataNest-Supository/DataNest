@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "resonance-forge-specialized-trees-v1",
+  "authority": "read-only-projection",
+  "canonicalRepository": "DataNest-Supository/DataNest",
+  "trees": {
+    "knowledge": {
+      "role": "repository-learning",
+      "ref": "automation/knowledge-feed",
+      "productionAuthority": false,
+      "forgeMode": "observe-and-index"
+    },
+    "boundaries": {
+      "role": "acceptance-and-tolerance",
+      "ref": "main",
+      "productionAuthority": false,
+      "forgeMode": "observe-and-index"
+    },
+    "botsquad": {
+      "role": "ai-only-advisory",
+      "refPrefix": "automation/botsquad/",
+      "productionAuthority": false,
+      "forgeMode": "scoped-agent-identities",
+      "identities": [
+        "orchestrator",
+        "optimizer",
+        "product-expansion",
+        "business-growth",
+        "ux-ease",
+        "ui-evolution",
+        "function-evolution",
+        "integration-scout",
+        "quality-observer",
+        "environment-liaison"
+      ]
+    },
+    "environment": {
+      "role": "environment-assessment-and-adaptation",
+      "ref": "automation/environment-feed",
+      "productionAuthority": false,
+      "forgeMode": "observe-compatibility"
+    },
+    "freetree": {
+      "role": "isolated-open-development",
+      "productionAuthority": false,
+      "forgeMode": "no-automatic-replication"
+    },
+    "enforcer": {
+      "role": "continuous-defensive-enforcement",
+      "ref": "automation/enforcer",
+      "productionAuthority": false,
+      "forgeMode": "observe-defensive-evidence",
+      "knowledgeAccess": "all-approved-knowledge-no-category-filter"
+    }
+  },
+  "rules": [
+    "AI identities are scoped to their BOTSQUAD branch namespace.",
+    "Forge projections cannot assert production authorization.",
+    "ENVIRONMENT findings are compatibility evidence, not authority migration.",
+    "FREETREE is not automatically replicated, synchronized, or governed by specialized trees.",
+    "ENFORCER may fail defensive checks but cannot acquire production authority or rewrite Boundaries."
+  ]
+}
