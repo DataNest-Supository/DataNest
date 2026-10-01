@@ -39,7 +39,17 @@
         "tests/unit/mirror-production-promotion.test.mjs",
         "tests/unit/mirror-candidate-boundary-contract.test.mjs",
         "tests/unit/mirror-product-surface-immutability.test.mjs",
-        "tests/unit/worktree-gate-timeframes.test.mjs"
+        "tests/unit/worktree-gate-timeframes.test.mjs",
+        ".github/workflows/knowledge-tree.yml",
+        ".github/workflows/boundaries-assessment.yml",
+        ".github/workflows/maintenance.yml",
+        "boundaries/**",
+        "config/boundaries.policy.json",
+        "config/knowledge-tree.json",
+        "knowledge/**",
+        "scripts/boundaries-assessor.mjs",
+        "scripts/knowledge-tree.mjs",
+        "docs/MAINTENANCE_PROTOCOL.md"
       ]
     },
     {
@@ -141,4 +151,4 @@
     "canonical_only": "Owned by the canonical control plane; never introduced by a Mirror candidate.",
     "unclassified": "Fail closed until the path is explicitly classified."
   }
-}
+}\n
