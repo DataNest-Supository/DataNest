@@ -499,6 +499,31 @@ BOTSQUAD, Knowledge, SUGGESTER and the other trees are management-system compone
 
 ---
 
+## 16A. Privacy information management
+
+DataNest maps privacy-management design to **ISO/IEC 27701:2025** through purpose limitation, least privilege, privacy-risk awareness, accountable PII handling, evidence minimization, controlled retention and separation of public transparency from protected personal/authentication data.
+
+This mapping supports privacy-management discipline but does not itself establish compliance with any specific jurisdiction's privacy law.
+
+---
+
+## 16B. Organizational governance and compliance management
+
+DataNest uses **ISO 37000:2021** as a governance-principles reference and **ISO 37301:2021** as a compliance-management reference.
+
+The architecture supports these references through:
+
+- explicit organizational/system purpose;
+- role and authority separation;
+- stakeholder transparency;
+- accountable decision evidence;
+- identification of obligations and requirements;
+- reviewable controls and exceptions;
+- monitoring, audit and corrective-action loops;
+- preservation of human governance over consequential authority.
+
+---
+
 ## 17. Risk management
 
 The system maps to **ISO 31000:2018** by integrating risk into:
@@ -582,12 +607,16 @@ Accessibility remains an implementation and verification target and is not descr
 | ISO 9001:2026 | Quality-management reference | CI, Product Lab, GUARDIAN, SUGGESTER, release evidence |
 | ISO/IEC 27001:2022 | Information-security management reference | ENFORCER, Security Scan, Boundaries, audit events |
 | ISO/IEC 42001:2023 | AI-management reference | BOTSQUAD, Knowledge, SUGGESTER, Boundaries, AI certification |
+| ISO/IEC 27701:2025 | Privacy-information management reference | privacy controls, data minimization, access boundaries, transparency exclusions |
+| ISO 37000:2021 | Governance-of-organizations reference | authority model, stakeholder transparency, governance principles |
+| ISO 37301:2021 | Compliance-management reference | requirements, controls, REGULATOR, audit/corrective action |
 | ISO 31000:2018 | Risk-management reference | Boundaries, REGULATOR, governance, audit/optimizer |
 | ISO 22301:2019 + Amd 1:2024 | Continuity reference | backup/recovery, Forge, release lineage |
 | ISO/IEC 25010:2023 | Software quality reference | tests, Product Lab, Workflow Reviewer, GUARDIAN |
 | ISO 9241-210:2019 | Human-centred design reference | UX/UI design system, Product Lab, browser/visual tests |
 | WCAG 2.2 | Accessibility target | accessibility page, UI tests, visual/browser evidence |
 | NIST CSF 2.0 | Cyber-risk outcomes reference | Security Scan, ENFORCER, Boundaries |
+| CIS Critical Security Controls v8.1 | Prioritized cyber-defence practices | asset/control hygiene, ENFORCER, security verification |
 | NIST AI RMF 1.0 | Trustworthy AI-risk reference | AI scopes, review, evaluation, provenance, monitoring |
 
 ### 21.1 Official reference links
@@ -595,12 +624,16 @@ Accessibility remains an implementation and verification target and is not descr
 - ISO 9001: https://www.iso.org/standard/9001.html
 - ISO/IEC 27001: https://www.iso.org/standard/27001.html
 - ISO/IEC 42001: https://www.iso.org/standard/42001.html
+- ISO/IEC 27701: https://www.iso.org/standard/27701
+- ISO 37000: https://www.iso.org/standard/65036.html
+- ISO 37301: https://www.iso.org/standard/75080.html
 - ISO 31000: https://www.iso.org/standard/65694.html
 - ISO 22301: https://www.iso.org/standard/75106.html
 - ISO/IEC 25010: https://www.iso.org/standard/78176.html
 - ISO 9241-210: https://www.iso.org/standard/77520.html
 - WCAG 2.2: https://www.w3.org/TR/WCAG22/
 - NIST CSF 2.0: https://www.nist.gov/cyberframework
+- CIS Controls v8.1: https://www.cisecurity.org/controls
 - NIST AI RMF: https://www.nist.gov/itl/ai-risk-management-framework
 
 ---
