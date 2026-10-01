@@ -97,6 +97,6 @@ docker run --rm -p 3000:3000 \
 
 ## Replaceable delivery targets
 
-Vercel, Render, Fly.io, Azure Container Apps, AWS, a Windows/Linux VM, or another compatible target can be evaluated as future delivery infrastructure. Railway is not part of the current DataNest delivery path. Using any delivery provider does not make it source, backend, product or governance authority.
+Compatible delivery targets may be evaluated in the future through a separately governed change. Vercel and Railway are not required by the current DataNest delivery path. Using any delivery provider does not make it source, backend, product or governance authority.
 
 For Supabase Auth passwordless links, add the final public application origin to the allowed redirect URLs in Supabase Auth before relying on magic-link sign-in.
