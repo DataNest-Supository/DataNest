@@ -2,6 +2,17 @@
 
 **DataNest** is the canonical Resonance AppDev web control plane. It governs product execution intent, promotion, evidence and lifecycle state while preserving separate source, backend and delivery authorities.
 
+
+## Independent assurance services
+
+DataNest offers **private independent regulatory-readiness, technical-audit support, evidence, remediation and authorized digital-oversight services**.
+
+- Public service page: **https://datanest-supository.github.io/DataNest/assurance/**
+- Commercial charter: [`docs/INDEPENDENT_REGULATORY_ASSURANCE_SERVICES.md`](docs/INDEPENDENT_REGULATORY_ASSURANCE_SERVICES.md)
+- Trade & implementation intake: GitHub issue template `Trade & Implementation Interest`
+
+This service does **not** claim statutory government-regulator status, IRBA audit-firm status, accredited ISO certification-body status, or authority to perform private-security surveillance without the registrations required for those reserved activities.
+
 It combines two first-class tools:
 
 - **UNIFI** — project orchestration, planning, Job Manifests, context, checkpoints, artifacts and audit.
