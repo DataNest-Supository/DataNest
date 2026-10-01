@@ -1,5 +1,4 @@
 {
-  "_comment": "Import this repository ruleset in GitHub Settings > Rules > Rulesets > New ruleset > Import a ruleset. Generated from config/branch-protection.tree.json.",
   "name": "BRANCH-X Automation",
   "target": "branch",
   "enforcement": "active",
