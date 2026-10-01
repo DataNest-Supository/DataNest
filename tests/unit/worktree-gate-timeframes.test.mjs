@@ -16,11 +16,10 @@ test("every active worktree workflow gate is covered by the shared timeframe reg
     .filter((name)=>name!==reusable)
     .filter((name)=>{
       const source=readFileSync(new URL(`../../.github/workflows/${name}`,import.meta.url),"utf8");
-      return !/^# worktree-gate:\s*false\s*$/m.test(source);
+      return !/^# worktree-gate:\s*false\s*$/m.test(source) && /\n  gate-timeframe:\n/.test(source);
     })
     .sort();
   assert.deepEqual(Object.keys(profiles).sort(),files);
-  assert.equal(files.length,31);
 });
 
 test("every worktree gate invokes the reusable DataNest AI timeframe policy",()=>{

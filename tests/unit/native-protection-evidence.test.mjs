@@ -16,3 +16,15 @@ test("native protection evidence template is structurally valid", () => {
     assert.ok(Array.isArray(ruleset.requiredStatusChecks));
   }
 });
+
+test("native protection audit preserves fail-closed result distinctions", () => {
+  const workflow = fs.readFileSync(".github/workflows/native-protection-audit.yml", "utf8");
+  assert.match(workflow, /"result": \(\s*\n\s*"api-access-unavailable"/);
+  assert.match(workflow, /"protected"/);
+  assert.match(workflow, /"protection-gap"/);
+  assert.match(workflow, /if not api_ok/);
+  assert.match(workflow, /result == "api-access-unavailable"/);
+  assert.match(workflow, /result == "protection-gap"/);
+  assert.match(workflow, /rulesetsEndpointHttp/);
+  assert.match(workflow, /mainEndpointHttp/);
+});

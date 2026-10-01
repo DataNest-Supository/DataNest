@@ -1,4 +1,3 @@
-# worktree-gate: false
 name: BRANCH-X Canonical Write Watchdog
 
 on:

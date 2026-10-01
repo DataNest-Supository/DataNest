@@ -43,6 +43,9 @@ jobs:
       - name: Verify native protection evidence contract
         run: node --test tests/unit/native-protection-evidence.test.mjs
 
+      - name: Verify ownership registry integrity
+        run: node --test tests/unit/ownership-registry.test.mjs
+
       - name: Verify canonical push semantics
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: bash

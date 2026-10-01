@@ -1,9 +1,12 @@
 import fs from "node:fs";
 
 export function buildEvidence({ repository, ref, sha, prs }) {
-  const merged = prs.filter((pr) => Boolean(pr?.merged_at));
+  const canonicalRef = String(ref ?? "").replace(/^refs\/heads\//, "");
+  const merged = prs.filter(
+    (pr) => Boolean(pr?.merged_at) && pr?.base?.ref === canonicalRef
+  );
   return {
-    schemaVersion: "datanest-canonical-write-watchdog-v2",
+    schemaVersion: "datanest-canonical-write-watchdog-v3",
     repository,
     ref,
     sha,
