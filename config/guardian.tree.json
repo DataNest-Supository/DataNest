@@ -12,7 +12,9 @@
     "environment",
     "enforcer",
     "guardian",
-    "mirror"
+    "mirror",
+    "conductor",
+    "suggester"
   ],
   "isolatedTrees": [
     {
