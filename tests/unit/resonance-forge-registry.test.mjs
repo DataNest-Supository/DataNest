@@ -28,7 +28,8 @@ test("read-only projection cannot assert production authorization", () => {
 test("specialized tree projection remains non-authorizing", () => {
   const snapshot = createRegistrySnapshot({ trees: {
     botsquad: { authority: "advisory", productionAuthority: false, refPrefix: "automation/botsquad/" },
-    environment: { authority: "advisory", productionAuthority: false, ref: "automation/environment-feed" }
+    environment: { authority: "advisory", productionAuthority: false, ref: "automation/environment-feed" },
+    enforcer: { authority: "defensive-enforcement", productionAuthority: false, ref: "automation/enforcer" }
   }}, "2026-10-01T00:00:00.000Z");
   assert.equal(validateRegistrySnapshot(snapshot).valid, true);
   assert.equal(snapshot.trees.botsquad.productionAuthority, false);
