@@ -193,6 +193,7 @@ DataNest
 ├── Boundaries      -> tolerance boundaries and acceptance criteria
 ├── BOTSQUAD        -> AI-only advisory specialist branches
 ├── ENVIRONMENT     -> compatibility assessment and safe adaptation feeds
+├── ENFORCER        -> continuous Boundaries/security defence + transparent learning
 ├── Mirror-DataNest -> ungated R&D candidate workspace
 └── FREETREE        -> isolated open-development repository, no synchronization
 ```
@@ -202,3 +203,10 @@ BOTSQUAD branches are AI-agent work lanes for optimization, product expansion, r
 ENVIRONMENT observes source-control, runtime, CI, delivery, backend, AI inference, registry, recovery, dependency, branch-hygiene and evidence conditions. It may refresh generated compatibility state automatically; material environment changes remain human-reviewed.
 
 Resonance Forge mirrors this topology as a read-only/scoped-agent projection. The Forge never infers production authority from a specialized tree.
+
+
+### ENFORCER relationship
+
+ENFORCER continuously correlates Boundaries, the complete approved Knowledge corpus, ENVIRONMENT compatibility, repository security-workflow state, Forge tree lineage, and published audit-index evidence. It may fail its own defensive check when a machine-verifiable invariant is violated.
+
+ENFORCER does not receive production deployment authority and cannot rewrite Boundaries or suppress findings. Its learning feed has no Knowledge category/topic filter; protected secrets and private authentication material remain outside the learning corpus and outside transparency publication.
