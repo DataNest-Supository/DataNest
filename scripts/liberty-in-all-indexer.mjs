@@ -45,8 +45,9 @@ function normalizedRecord(item,config,headSha){
 }
 export function buildLibertyIndexes({config,files,headSha,generatedAt=new Date().toISOString(),evidence=[]}){
   const records=files.filter(item=>inScope(item.path,config)).map(item=>normalizedRecord(item,config,headSha));
-  const publicRecords=records.filter(item=>item.publicEligible&&!isSensitivePath(item.path,config));
   const restricted=records.filter(item=>item.classification==="restricted-metadata");
+  const safeRecords=records.filter(item=>item.classification!=="restricted-metadata");
+  const publicRecords=safeRecords.filter(item=>item.publicEligible);
   const missingEvidence=(config.evidenceSources||[]).filter(source=>!files.some(item=>item.path===source));
   const state={
     schemaVersion:"datanest-liberty-in-all-state-v1",
@@ -76,7 +77,9 @@ export function buildLibertyIndexes({config,files,headSha,generatedAt=new Date()
     authority:state.authority,
     productionAuthorization:false,
     headSha,
-    records,
+    records:safeRecords,
+    restrictedRecordCount:restricted.length,
+    restrictedEvidenceDigest:restricted.length?sha(Buffer.from(JSON.stringify(restricted.map(item=>item.digest).sort()))):null,
     evidence,
     missingEvidenceSources:missingEvidence
   };
