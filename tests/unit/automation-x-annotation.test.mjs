@@ -59,3 +59,21 @@ test("schema fixes all authority flags to false",()=>{
   assert.equal(schema.properties.authority.properties.merge.const,false);
   assert.equal(schema.properties.authority.properties.productionDeployment.const,false);
 });
+test("specialized automation workflows are wired to the reusable annotation action",()=>{
+  const workflows={
+    "botsquad.yml":["botsquad/${{ matrix.bot }}","botsquad/orchestrator"],
+    "environment-tree.yml":["environment-tree"],
+    "enforcer.yml":["enforcer"],
+    "guardian.yml":["guardian/monitor","guardian/heal"],
+    "conductor.yml":["conductor"],
+    "suggester.yml":["suggester"],
+    "calmer.yml":["calmer"],
+    "regulator.yml":["regulator"],
+    "visibility-utility.yml":["visibility-utility"]
+  };
+  for(const [file,ids] of Object.entries(workflows)){
+    const source=readFileSync(new URL("../../.github/workflows/"+file,import.meta.url),"utf8");
+    assert.match(source,/uses:\s+\.\/\.github\/actions\/automation-x-annotation/);
+    for(const id of ids) assert.match(source,new RegExp("automation_id:\\s+"+id.replace(/[.*+?^${}()|[\\]\\]/g,"\\\\$&")));
+  }
+});
