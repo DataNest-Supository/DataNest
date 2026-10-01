@@ -172,7 +172,9 @@
         "config/botsquad-consumer.json",
         "botsquad/inbox/**",
         "scripts/botsquad-feed-consumer.mjs",
-        "tests/unit/botsquad-feed-consumer.test.mjs"
+        "tests/unit/botsquad-feed-consumer.test.mjs",
+        "src/components/RndTestModeToggle.tsx",
+        "src/components/OwnerRDCockpit.tsx"
       ]
     },
     {
