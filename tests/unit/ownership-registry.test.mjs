@@ -21,8 +21,17 @@ test("ownership registry contains all declared ownership identities", () => {
   const codeowners = fs.readFileSync(".github/CODEOWNERS", "utf8");
   const ownership = fs.readFileSync("docs/governance/OWNERSHIP.md", "utf8");
 
+  const wildcardLine = codeowners
+    .split(/\r?\n/)
+    .find((line) => line.trim().startsWith("* "));
+
+  assert.ok(wildcardLine, "CODEOWNERS missing repository-wide wildcard rule");
+
   for (const principal of githubPrincipals) {
-    assert.ok(codeowners.includes(principal), `CODEOWNERS missing ${principal}`);
+    assert.ok(
+      wildcardLine.split(/\s+/).includes(principal),
+      `CODEOWNERS wildcard rule missing ${principal}`
+    );
     assert.ok(ownership.includes(principal), `OWNERSHIP registry missing ${principal}`);
   }
 
