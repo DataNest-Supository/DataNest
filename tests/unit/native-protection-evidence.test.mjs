@@ -28,3 +28,17 @@ test("native protection audit preserves fail-closed result distinctions", () => 
   assert.match(workflow, /rulesetsEndpointHttp/);
   assert.match(workflow, /mainEndpointHttp/);
 });
+
+test("native protection audit exposes deep canonical and automation observations", () => {
+  const workflow = fs.readFileSync(".github/workflows/native-protection-audit.yml", "utf8");
+  assert.match(workflow, /expected_automation = policy\["branchClasses"\]\["protected_automation"\]/);
+  assert.match(workflow, /required_automation_types/);
+  assert.match(workflow, /"bypassActorsEmpty"/);
+  assert.match(workflow, /"requiredApprovingReviewCount"/);
+  assert.match(workflow, /"dismissStaleReviewsOnPush"/);
+  assert.match(workflow, /"requiredReviewThreadResolution"/);
+  assert.match(workflow, /"strictRequiredStatusChecksPolicy"/);
+  assert.match(workflow, /"doNotEnforceOnCreate"/);
+  assert.match(workflow, /"refs": sorted\(automation_refs\)/);
+  assert.match(workflow, /"ruleTypes": sorted\(automation_types\)/);
+});
