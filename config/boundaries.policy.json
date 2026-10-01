@@ -262,6 +262,27 @@
         "Acquisition means identifying free/open/already-authorized resources and never purchasing, committing funds or acquiring credentials",
         "REGULATOR cannot bypass security, rewrite Boundaries, merge or deploy production"
       ]
+    },
+    {
+      "id": "visibility_market_intelligence",
+      "tolerance": "evidence-labelled-growth-without-commercial-authority",
+      "patterns": [
+        "visibility-utility/**",
+        "config/visibility-utility.tree.json",
+        "scripts/visibility-utility.mjs",
+        ".github/workflows/visibility-utility.yml",
+        "public/transparency/visibility-utility/**",
+        "docs/DATANEST_SYSTEM_CHARTER.md",
+        "src/app/system-charter/**",
+        "public/transparency/system-charter/**"
+      ],
+      "acceptance": [
+        "SEO, trend and route-to-market outputs retain evidence/assumption lineage",
+        "Missing global/local trend or analytics data remains visible and is not fabricated",
+        "Revenue projections require explicit commercial baseline and conversion evidence",
+        "Paid acquisition, pricing, binding sales commitments and public claims require human review",
+        "VISIBILITY-UTILITY cannot merge, deploy, spend, rewrite Boundaries or claim certification"
+      ]
     }
   ],
   "hardRules": [
@@ -391,6 +412,22 @@
         "\"productionAuthority\": true"
       ],
       "message": "REGULATOR may coordinate requirements but cannot spend, acquire credentials, bypass security or gain production authority."
+    },
+    {
+      "id": "no_visibility_commercial_authority",
+      "files": [
+        "config/visibility-utility.tree.json",
+        "infra/reson8-forge/specialized-trees.json"
+      ],
+      "forbiddenText": [
+        "\"mayPurchaseAdvertising\": true",
+        "\"mayCommitMarketingSpend\": true",
+        "\"mayChangePricing\": true",
+        "\"mayMakeBindingSalesCommitments\": true",
+        "\"mayPublishUnverifiedClaims\": true",
+        "\"productionAuthority\": true"
+      ],
+      "message": "VISIBILITY-UTILITY may model market routes but cannot acquire spend, pricing, sales, claim or production authority."
     }
   ],
   "resultSemantics": {
