@@ -343,6 +343,18 @@
         "governanceReview"
       ],
       "machineBaselineMinutes": 15
+    },
+    "enforcer.yml": {
+      "gateId": "enforcer",
+      "gateType": "automated_enforcement",
+      "taskComplexity": "complex",
+      "reportingComplexity": "audit_grade",
+      "reviewDomains": [
+        "securityReview",
+        "governanceReview",
+        "engineeringReview"
+      ],
+      "machineBaselineMinutes": 20
     }
   }
 }
