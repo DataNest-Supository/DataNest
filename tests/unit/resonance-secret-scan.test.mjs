@@ -24,7 +24,7 @@ test("detects high-confidence secret forms", () => {
 
 test("ignores explicit placeholder credentials", () => {
   const findings = findFindings(
-    "client" + "_" + "secret = " + String.fromCharCode(34) + ["YOUR","SECRET","HERE","1234567890"].join("_") + String.fromCharCode(34),
+    ["client","_","secret = ",String.fromCharCode(34),"YOUR","_","SECRET","_","HERE","_","1234567890",String.fromCharCode(34)].join(""),
     "fixture/placeholder.txt"
   );
   assert.equal(findings.length, 0);
