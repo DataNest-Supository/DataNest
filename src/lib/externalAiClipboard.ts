@@ -3,13 +3,15 @@ export type ExternalAiClipboardCandidateInput = {
   currentResponse:string;
   blockedTexts?:string[];
   allowReplace?:boolean;
+  traceBinding?:string;
 };
 
 export function selectExternalAiClipboardCandidate({
   clipboardText,
   currentResponse,
   blockedTexts=[],
-  allowReplace=false
+  allowReplace=false,
+  traceBinding=""
 }:ExternalAiClipboardCandidateInput):string|null{
   // Automatic capture must never replace a response already under review.
   if(!allowReplace&&currentResponse.trim())return null;
@@ -22,6 +24,11 @@ export function selectExternalAiClipboardCandidate({
     .filter(Boolean);
 
   if(blocked.includes(candidate))return null;
+
+  if(!allowReplace&&traceBinding.trim()){
+    const trace=traceBinding.trim();
+    if(!candidate.split(/\r?\n/)[0].includes(trace))return null;
+  }
 
   if(
     candidate.startsWith("RESONANCE DATANEST — LIVE EXTERNAL AI HANDOFF")&&

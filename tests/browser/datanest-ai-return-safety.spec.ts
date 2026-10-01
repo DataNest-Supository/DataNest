@@ -73,7 +73,12 @@ test("companion launch arms session auto-return when clipboard permission alread
       return text;
     }});
   });
-  const initial="Initial governed clipboard response.";
+  const handoff=page.locator("details.externalAiHandoff textarea");
+  const handoffText=await handoff.inputValue();
+  const traceMatch=handoffText.match(/Trace Key: (DN-[^\\n]+)/);
+  if(!traceMatch)throw new Error("Active tracked trace key is required for clipboard capture.");
+  const traceKey=traceMatch[1];
+  const initial=traceKey+"\\nInitial governed clipboard response.";
   await page.evaluate(async text=>navigator.clipboard.writeText(text),initial);
   const readsBeforeReturn=Number(await page.locator("html").getAttribute("data-clipboard-reads")||"0");
   await page.evaluate(()=>window.dispatchEvent(new Event("focus")));
