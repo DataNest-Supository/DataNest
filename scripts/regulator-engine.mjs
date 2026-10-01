@@ -108,7 +108,16 @@ export function buildRegulatorState({
     }));
   }
 
-  for(const suggestion of (suggester?.suggestions||[]).filter(x=>x.automationClass!=="autonomous-safe").slice(0,50)){
+  const promotableSuggestionTypes=new Set([
+    "code-streamlining",
+    "learning-optimization",
+    "governance-friction",
+    "function-evolution",
+    "route-to-market"
+  ]);
+  for(const suggestion of (suggester?.suggestions||[])
+    .filter(x=>x.automationClass!=="autonomous-safe" && promotableSuggestionTypes.has(x.type))
+    .slice(0,50)){
     requirements.push(requirement({
       source:"suggester",requirementClass:"optimization",
       severity:suggestion.priority==="critical"?"critical":suggestion.priority==="high"?"high":"medium",
