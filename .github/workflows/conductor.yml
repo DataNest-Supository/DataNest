@@ -12,6 +12,7 @@ on:
       - "Knowledge Tree"
       - "ENVIRONMENT Tree"
       - "Security scan"
+      - "DataNest Boundaries"
       - "ENFORCER Defence Tree"
       - "BOTSQUAD AI Tree"
       - "GUARDIAN Health & Healing Tree"
