@@ -25,7 +25,7 @@ test("ENVIRONMENT reports a compatible baseline without changing authority",()=>
     lockfilePresent:true,
     botsquadProtected:true,
     environmentProtected:true,
-    requiredTreeConfigs:[{}, {}, {}, {}, {}]
+    requiredTreeConfigs:[{}, {}, {}, {}, {}, {}]
   });
   assert.equal(result.compatible,true);
   assert.equal(result.productionAuthorization,false);
@@ -46,7 +46,7 @@ test("ENVIRONMENT requires review for material drift",()=>{
     lockfilePresent:false,
     botsquadProtected:false,
     environmentProtected:false,
-    requiredTreeConfigs:[{}, null, {}, {}, {}]
+    requiredTreeConfigs:[{}, null, {}, {}, {}, {}]
   });
   assert.equal(result.compatible,false);
   assert.ok(result.reviewRequired.length>=10);
