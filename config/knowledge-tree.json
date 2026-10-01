@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "datanest-knowledge-tree-v1",
+  "authority": "DataNest-Supository/DataNest",
+  "sources": [
+    {"repository":"DataNest-Supository/DataNest","role":"canonical"},
+    {"repository":"DataNest-Supository/Mirror-DataNest","role":"rnd"}
+  ],
+  "excludedRepositories": [
+    "DataNest-Supository/FREETREE",
+    "DataNest-Supository/Mirror-DataNest-Empty"
+  ],
+  "window": {"commitLimitPerRepository": 50},
+  "categories": [
+    "governance","security","ai","testing","deployment","maintenance","architecture","data","ui","general"
+  ],
+  "feeds": [
+    {
+      "target":"datanest",
+      "path":"knowledge/feeds/datanest-supository.json",
+      "authority":"advisory_repository_learning",
+      "productionAuthorization":false,
+      "certifiedMemory":false
+    },
+    {
+      "target":"mirror",
+      "path":"knowledge/feeds/mirror-datanest.json",
+      "authority":"provisional_repository_learning",
+      "productionAuthorization":false,
+      "certifiedMemory":false
+    }
+  ]
+}
