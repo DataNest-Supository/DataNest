@@ -41,6 +41,7 @@ jobs:
       - name: gitleaks
         uses: gitleaks/gitleaks-action@v3
         env:
+          GITLEAKS_ENABLE_COMMENTS: "false"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
           GITLEAKS_ENABLE_SUMMARY: "true"
