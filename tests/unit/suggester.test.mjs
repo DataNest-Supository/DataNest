@@ -50,7 +50,8 @@ test("SUGGESTER keeps blueprint, security and BOTSQUAD changes review-required",
     conductor:{allProcessesFresh:false}
   });
   assert.equal(feed.commands.length,0);
-  assert.ok(feed.suggestions.length>=6);
+  assert.ok(feed.suggestions.length>=7);
+  assert.ok(feed.suggestions.some(x=>x.type==="code-streamlining"));
   assert.ok(feed.suggestions.every(x=>x.automationClass==="review-required"));
 });
 
