@@ -12,7 +12,9 @@
     "botsquad",
     "environment",
     "enforcer",
-    "guardian"
+    "guardian",
+    "conductor",
+    "suggester"
   ],
   "exclude": [
     "node_modules",
