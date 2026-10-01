@@ -106,5 +106,11 @@
     "suggesterMaxAgeMinutes": 30,
     "requiredConductorAuthority": "process-synchronization",
     "requiredSuggesterAuthority": "optimization-advisory"
+  },
+  "feedFreshness": {
+    "environmentMinutes": 420,
+    "enforcerMinutes": 210,
+    "knowledgeMinutes": 420,
+    "botsquadMinutes": 420
   }
 }

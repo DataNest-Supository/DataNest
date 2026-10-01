@@ -184,7 +184,8 @@
         "config/guardian.tree.json",
         "config/guardian.blueprint.json",
         "scripts/guardian-health.mjs",
-        ".github/workflows/guardian.yml"
+        ".github/workflows/guardian.yml",
+        "scripts/tree-evidence.mjs"
       ],
       "acceptance": [
         "GUARDIAN snapshots preserve blueprint, observed-state, and prior-snapshot lineage",

@@ -169,5 +169,7 @@
     "neverSynchronizeFreetree": true,
     "failedOrUnknownDependencyState": "do-not-dispatch-dependent-process"
   },
-  "retryCooldownMinutes": 30
+  "retryCooldownMinutes": 30,
+  "dispatchReservationMinutes": 5,
+  "suggestionMaxAgeMinutes": 30
 }

@@ -17,6 +17,7 @@ on:
       - "BOTSQUAD AI Tree"
       - "GUARDIAN Health & Healing Tree"
       - "DataNest Maintenance"
+      - "SUGGESTER Optimization Tree"
     types: [completed]
 
 permissions:
@@ -26,11 +27,16 @@ permissions:
 
 concurrency:
   group: datanest-conductor
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   coordinate:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.head_branch == 'main'
+    if: >-
+      (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main') &&
+      (github.event_name != 'workflow_run' ||
+        (github.event.workflow_run.head_branch == 'main' &&
+         github.event.workflow_run.head_repository.full_name == github.repository &&
+         github.event.workflow_run.event != 'pull_request'))
     name: Synchronize tree timing and commands
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -74,6 +80,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          record_dispatch() {
+            code=$?
+            result="submitted"
+            if [ "$code" -ne 0 ]; then result="failed-or-unconfirmed"; fi
+            if [ -z "${workflow:-}" ]; then result="idle"; fi
+            jq --arg result "$result" --arg at "$(date -u +%FT%TZ)" --argjson code "$code" \
+              '{recordedAt:$at, outcome:$result, exitCode:$code, command:.nextCommand, productionAuthorization:false}' \
+              conductor/commands/latest.json > conductor/commands/dispatch.json
+          }
+          trap record_dispatch EXIT
           workflow="$(jq -r '.nextCommand.workflow // empty' conductor/commands/latest.json)"
           type="$(jq -r '.nextCommand.type // empty' conductor/commands/latest.json)"
           if [ -z "$workflow" ]; then
@@ -85,13 +101,18 @@ jobs:
           case "$workflow" in
             maintenance.yml)
               task="$(jq -r '.nextCommand.inputs.task // "branch-cleaner"' conductor/commands/latest.json)"
+              case "$task" in branch-cleaner|streamliner) ;; *) exit 1 ;; esac
               gh workflow run "$workflow" --ref main -f task="$task"
               ;;
             suggester.yml)
               gh workflow run "$workflow" --ref main -f conductor_run_id="$GITHUB_RUN_ID"
               ;;
-            *)
+            knowledge-tree.yml|environment-tree.yml|boundaries-assessment.yml|security-scan.yml|enforcer.yml|botsquad.yml|guardian.yml)
               gh workflow run "$workflow" --ref main
+              ;;
+            *)
+              echo "::error::CONDUCTOR refused a workflow outside its dispatch allowlist."
+              exit 1
               ;;
           esac
 
@@ -102,6 +123,7 @@ jobs:
           path: |
             conductor/state/latest.json
             conductor/commands/latest.json
+            conductor/commands/dispatch.json
           retention-days: 30
 
   gate-timeframe:

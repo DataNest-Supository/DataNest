@@ -5,6 +5,7 @@ import { execFileSync } from "node:child_process";
 import path from "node:path";
 import process from "node:process";
 import { pathToFileURL } from "node:url";
+import { inspectTreeEvidence } from "./tree-evidence.mjs";
 
 const args=process.argv.slice(2);
 const arg=(name,fallback=null)=>{
@@ -23,6 +24,7 @@ const sha256=value=>"sha256:"+createHash("sha256").update(String(value)).digest(
 
 async function githubPublicJson(endpoint){
   const response=await fetch("https://api.github.com"+endpoint,{
+    signal:AbortSignal.timeout(15000),
     headers:{
       Accept:"application/vnd.github+json",
       "X-GitHub-Api-Version":"2022-11-28",
@@ -93,7 +95,8 @@ async function sourceHashes(paths=[]){
 function branchHealth(report={}){
   const branches=Array.isArray(report?.github?.branches)?report.github.branches:[];
   const redundant=branches
-    .filter(x=>x?.classification?.decision==="delete_candidate")
+    .filter(x=>x?.classification?.decision==="delete_candidate" && x.classification.ahead===0 &&
+      ["behind","identical"].includes(x.classification.status) && !x.openPr && !x.protected)
     .map(x=>x.name);
   const review=branches
     .filter(x=>x?.classification?.decision==="review")
@@ -102,6 +105,7 @@ function branchHealth(report={}){
     .filter(x=>x?.classification?.status==="unknown")
     .map(x=>x.name);
   return {
+    available:Array.isArray(report?.github?.branches) && branches.length>0,
     branchCount:branches.length,
     redundantBranchCount:redundant.length,
     redundantBranches:redundant,
@@ -120,6 +124,7 @@ function codeHealth(report={}){
   const findings=Array.isArray(report?.nextSteps)?report.nextSteps:[];
   const refinements=Array.isArray(report?.refinements)?report.refinements:[];
   return {
+    available:Number.isFinite(summary.filesReviewed) && summary.filesReviewed>0 && Number.isFinite(summary.high),
     filesReviewed:Number(summary.filesReviewed||0),
     high:Number(summary.high||0),
     medium:Number(summary.medium||0),
@@ -176,7 +181,8 @@ function compareSnapshots(previous,currentSources,currentDimensions){
   if(!previous) return {previousAvailable:false,sourceChanges:[],environmentChanges:[]};
   const prevSources=previous?.blueprint?.sourceHashes||{};
   const sourceChanges=[];
-  for(const [filename,state] of Object.entries(currentSources||{})){
+  for(const filename of new Set([...Object.keys(prevSources),...Object.keys(currentSources||{})])){
+    const state=currentSources?.[filename];
     const prior=prevSources[filename]||null;
     const before=prior?.sha256||null;
     const after=state?.sha256||null;
@@ -215,9 +221,9 @@ export function buildGuardianSnapshot({
   const optimalDrift=[];
   const health={score:0,max:100};
 
-  const missingContracts=Object.entries(treeContracts)
-    .filter(([,present])=>!present)
-    .map(([id])=>id);
+  const missingContracts=(blueprint?.requiredTrees||[])
+    .filter(tree=>treeContracts[tree.id]!==true)
+    .map(tree=>tree.id);
   const treesOk=missingContracts.length===0;
   checks.push({
     id:"tree-contracts",
@@ -230,6 +236,20 @@ export function buildGuardianSnapshot({
   });
   health.score+=treesOk?15:0;
   if(!treesOk) optimalDrift.push({control:"tree-contracts",missing:missingContracts});
+
+  const now=new Date(generatedAt);
+  const sourceEvidence={
+    environment:inspectTreeEvidence(environment,"datanest-environment-feed-v1",blueprint?.feedFreshness?.environmentMinutes??420,now),
+    enforcer:inspectTreeEvidence(enforcer,"datanest-enforcer-assessment-v1",blueprint?.feedFreshness?.enforcerMinutes??210,now),
+    knowledge:inspectTreeEvidence(knowledge,"datanest-knowledge-feed-v1",blueprint?.feedFreshness?.knowledgeMinutes??420,now),
+    botsquad:inspectTreeEvidence(botsquad,"datanest-botsquad-consolidated-feed-v1",blueprint?.feedFreshness?.botsquadMinutes??420,now)
+  };
+  for(const [source,evidence] of Object.entries(sourceEvidence)){
+    if(!evidence.valid){
+      optimalDrift.push({control:"feed-evidence",source,reasons:evidence.reasons});
+      checks.push({id:source+"-evidence",status:source==="enforcer"?"critical":"degraded",weight:0,earned:0,detail:evidence.reasons.join(", ")});
+    }
+  }
 
   const env=environmentHealth(blueprint,environment);
   const envOk=env.available && env.compatible && env.drift.length===0;
@@ -280,7 +300,7 @@ export function buildGuardianSnapshot({
 
   const code=codeHealth(reviewerReport);
   const maxHigh=Number(blueprint?.sourceHealth?.maximumHighReviewerFindings||0);
-  const codeOk=code.high<=maxHigh;
+  const codeOk=code.available && code.high<=maxHigh;
   checks.push({
     id:"source-health",
     status:codeOk?"healthy":"degraded",
@@ -289,10 +309,10 @@ export function buildGuardianSnapshot({
     detail:`${code.high} high, ${code.medium} medium, ${code.low} low reviewer finding(s); ${code.redundancyCandidates.length} streamlining candidate(s).`
   });
   health.score+=codeOk?10:0;
-  if(!codeOk) optimalDrift.push({control:"source-health",maximumHigh:maxHigh,observedHigh:code.high});
+  if(!codeOk) optimalDrift.push({control:"source-health",available:code.available,maximumHigh:maxHigh,observedHigh:code.available?code.high:null});
 
   const branches=branchHealth(branchReport);
-  const branchEarned=branches.reviewBranchCount===0 && branches.unresolvedBranchCount===0
+  const branchEarned=!branches.available?0:branches.reviewBranchCount===0 && branches.unresolvedBranchCount===0 && branches.failed.length===0
     ? (branches.redundantBranchCount===0?10:8)
     : 5;
   checks.push({
@@ -303,6 +323,7 @@ export function buildGuardianSnapshot({
     detail:`${branches.branchCount} branch(es); ${branches.redundantBranchCount} safely redundant candidate(s), ${branches.reviewBranchCount} review branch(es), ${branches.unresolvedBranchCount} unresolved.`
   });
   health.score+=branchEarned;
+  if(!branches.available||branches.failed.length) optimalDrift.push({control:"branch-health",available:branches.available,failed:branches.failed});
 
   const botsquadAvailable=botsquad?.schemaVersion==="datanest-botsquad-consolidated-feed-v1";
   checks.push({
@@ -323,9 +344,11 @@ export function buildGuardianSnapshot({
   const conductorAge=Number.isFinite(conductorAt)?Math.max(0,(coordinationNow-conductorAt)/60000):Number.POSITIVE_INFINITY;
   const suggesterAge=Number.isFinite(suggesterAt)?Math.max(0,(coordinationNow-suggesterAt)/60000):Number.POSITIVE_INFINITY;
   const conductorOk=
+    inspectTreeEvidence(conductorState,"datanest-conductor-state-v1",blueprint?.coordination?.conductorMaxAgeMinutes||30,now).valid &&
     conductorState?.authority===(blueprint?.coordination?.requiredConductorAuthority||"process-synchronization") &&
     conductorAge<=Number(blueprint?.coordination?.conductorMaxAgeMinutes||30);
   const suggesterOk=
+    inspectTreeEvidence(suggesterFeed,"datanest-suggester-feed-v1",blueprint?.coordination?.suggesterMaxAgeMinutes||30,now).valid &&
     suggesterFeed?.authority===(blueprint?.coordination?.requiredSuggesterAuthority||"optimization-advisory") &&
     suggesterAge<=Number(blueprint?.coordination?.suggesterMaxAgeMinutes||30);
   checks.push({
@@ -368,9 +391,8 @@ export function buildGuardianSnapshot({
     failures:remoteRequiredFailures
   });
 
-  const missingBlueprintSources=Object.entries(sourceState)
-    .filter(([,state])=>state?.missing)
-    .map(([filename])=>filename);
+  const missingBlueprintSources=(blueprint?.blueprintSources||Object.keys(sourceState))
+    .filter(filename=>!sourceState[filename]?.sha256);
   const blueprintIntegrity=missingBlueprintSources.length===0;
   checks.push({
     id:"blueprint-integrity",
@@ -424,8 +446,9 @@ export function buildGuardianSnapshot({
       sourceHashes:sourceState
     },
     observed:{
+      sourceEvidence,
       trees:{
-        required:Object.keys(treeContracts),
+        required:(blueprint?.requiredTrees||[]).map(tree=>tree.id),
         missing:missingContracts
       },
       environment:env,
@@ -525,10 +548,8 @@ async function main(){
   const contracts={};
   for(const tree of blueprint.requiredTrees||[]) contracts[tree.id]=await exists(tree.contract);
 
-  let headSha=process.env.GITHUB_SHA||null;
-  if(!headSha){
-    try{headSha=execFileSync("git",["rev-parse","HEAD"],{encoding:"utf8"}).trim();}catch{}
-  }
+  // workflow_run GITHUB_SHA can identify a different revision than the checkout.
+  const headSha=execFileSync("git",["rev-parse","HEAD"],{encoding:"utf8"}).trim();
 
   const snapshot=buildGuardianSnapshot({
     config,blueprint,environment,enforcer,knowledge,botsquad,conductorState,suggesterFeed,

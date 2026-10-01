@@ -16,10 +16,11 @@ permissions:
 
 concurrency:
   group: datanest-suggester
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   suggest:
+    if: github.ref == 'refs/heads/main'
     name: Generate continuous optimization suggestions
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -48,6 +49,7 @@ jobs:
 
       - name: Generate optimization feed and automation queue
         env:
+          SUGGESTER_CONDUCTOR_RUN_ID: ${{ inputs.conductor_run_id }}
           SUGGESTER_GUARDIAN_PATH: /tmp/suggester/guardian.json
           SUGGESTER_KNOWLEDGE_PATH: /tmp/suggester/knowledge.json
           SUGGESTER_ENVIRONMENT_PATH: /tmp/suggester/environment.json

@@ -27,11 +27,16 @@ permissions:
 
 concurrency:
   group: datanest-guardian-${{ github.ref || github.event.workflow_run.head_branch || 'pulse' }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   monitor:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.head_branch == 'main'
+    if: >-
+      (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main') &&
+      (github.event_name != 'workflow_run' ||
+        (github.event.workflow_run.head_branch == 'main' &&
+         github.event.workflow_run.head_repository.full_name == github.repository &&
+         github.event.workflow_run.event != 'pull_request'))
     name: Snapshot blueprint health and drift
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -67,7 +72,6 @@ jobs:
       - name: Measure all-branch redundancy and lineage
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: node scripts/branch-cleaner.mjs --report-dir /tmp/guardian/branches
 
       - name: Build GUARDIAN health snapshot
@@ -123,8 +127,11 @@ jobs:
       (
         github.event_name == 'push' ||
         github.event_name == 'schedule' ||
-        github.event_name == 'workflow_dispatch'
+        (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
       )
+    concurrency:
+      group: datanest-safe-healing
+      cancel-in-progress: false
     name: Heal proven redundancy and safe source noise
     runs-on: ubuntu-24.04
     timeout-minutes: 25
@@ -137,7 +144,6 @@ jobs:
       - name: Remove only branches proven to have no unique commits
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: node scripts/branch-cleaner.mjs --git-only-safe-apply --report-dir artifacts/guardian/branch-healing
 
       - name: Apply only byte-safe source streamlining
@@ -149,6 +155,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          if [ "$(gh pr list --state open --json headRefName --jq 'any(.[]; (.headRefName | startswith("guardian/heal-") or startswith("maintenance/streamline-")))')" = "true" ]; then
+            echo "A source-healing PR already awaits review."
+            exit 0
+          fi
           git add -u
           if git diff --cached --quiet; then
             echo "No tracked safe source refinements require a pull request."

@@ -25,6 +25,9 @@ concurrency:
 
 jobs:
   branch-cleaner:
+    concurrency:
+      group: datanest-safe-healing
+      cancel-in-progress: false
     if: github.event_name == 'schedule' && github.event.schedule == '37 3 * * *' || github.event_name == 'workflow_dispatch' && (inputs.task == 'all' || inputs.task == 'branch-cleaner')
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -45,6 +48,9 @@ jobs:
           retention-days: 30
 
   streamliner:
+    concurrency:
+      group: datanest-safe-healing
+      cancel-in-progress: false
     if: github.event_name == 'schedule' && github.event.schedule == '17 4 * * 0' || github.event_name == 'workflow_dispatch' && (inputs.task == 'all' || inputs.task == 'streamliner')
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -60,6 +66,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          if [ "$(gh pr list --state open --json headRefName --jq 'any(.[]; (.headRefName | startswith("guardian/heal-") or startswith("maintenance/streamline-")))')" = "true" ]; then
+            echo "A source-healing PR already awaits review."
+            exit 0
+          fi
           git add -u
           if git diff --cached --quiet; then
             echo "No tracked safe refinements."

@@ -4,6 +4,8 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { pathToFileURL } from "node:url";
+import { execFileSync } from "node:child_process";
+import { inspectTreeEvidence } from "./tree-evidence.mjs";
 
 async function readJson(filename,fallback={}){
   try{return JSON.parse(await readFile(filename,"utf8"));}catch{return fallback;}
@@ -26,9 +28,30 @@ export function buildSuggesterFeed({
   botsquad={},
   conductor={},
   previous={},
+  headSha=null,
   generatedAt=new Date().toISOString()
 }){
   const suggestions=[];
+  const now=new Date(generatedAt);
+  const sourceEvidence={
+    guardian:inspectTreeEvidence(guardian,"datanest-guardian-snapshot-v1",45,now),
+    knowledge:inspectTreeEvidence(knowledge,"datanest-knowledge-feed-v1",420,now),
+    environment:inspectTreeEvidence(environment,"datanest-environment-feed-v1",420,now),
+    enforcer:inspectTreeEvidence(enforcer,"datanest-enforcer-assessment-v1",210,now),
+    botsquad:inspectTreeEvidence(botsquad,"datanest-botsquad-consolidated-feed-v1",420,now),
+    conductor:inspectTreeEvidence(conductor,"datanest-conductor-state-v1",30,now)
+  };
+  const automationReady=Object.values(sourceEvidence).every(source=>source.valid) &&
+    ["healthy","healing"].includes(guardian?.status) &&
+    enforcer?.status==="pass" && environment?.environmentCompatible===true &&
+    conductor?.allProcessesFresh===true &&
+    (!headSha || (guardian?.headSha===headSha && conductor?.headSha===headSha));
+  for(const [source,evidence] of Object.entries(sourceEvidence)){
+    if(evidence.valid) continue;
+    suggestions.push(suggestion({source,type:"source-evidence",priority:"high",
+      title:"Refresh "+source+" evidence",detail:evidence.reasons.join(", "),
+      evidence:[source+".generatedAt"]}));
+  }
 
   const redundant=Number(guardian?.observed?.branches?.redundantBranchCount||0);
   if(redundant>0){
@@ -40,7 +63,7 @@ export function buildSuggesterFeed({
       detail:`${redundant} branch(es) are classified by GUARDIAN as zero-unique-commit cleanup candidates.`,
       automationClass:"autonomous-safe",
       actionId:"heal-redundant-branches",
-      evidence:["guardian.observed.branches.redundantBranches"]
+      evidence:[{path:"guardian.observed.branches.redundantBranches",value:guardian?.observed?.branches?.redundantBranches||[],headSha:guardian?.headSha||null}]
     }));
   }
 
@@ -50,11 +73,11 @@ export function buildSuggesterFeed({
       source:"guardian",
       type:"source-health",
       priority:"medium",
-      title:"Apply byte-safe source streamlining",
-      detail:`${refinements} safe normalization refinement(s) are available.`,
+      title:"Propose deterministic source streamlining",
+      detail:`${refinements} normalization refinement(s) are available for a review PR.`,
       automationClass:"autonomous-safe",
       actionId:"heal-byte-safe-source-noise",
-      evidence:["guardian.observed.source.safeRefinements"]
+      evidence:[{path:"guardian.observed.source.safeRefinements",value:guardian?.observed?.source?.safeRefinements||[],headSha:guardian?.headSha||null}]
     }));
   }
 
@@ -179,7 +202,8 @@ export function buildSuggesterFeed({
   );
 
   const commands=unique
-    .filter(item=>item.automationClass==="autonomous-safe"&&item.actionId)
+    .filter(item=>automationReady && item.automationClass==="autonomous-safe" &&
+      config?.automationClasses?.autonomousSafe?.includes(item.actionId))
     .map(item=>({
       actionId:item.actionId,
       automationClass:item.automationClass,
@@ -191,6 +215,9 @@ export function buildSuggesterFeed({
   return {
     schemaVersion:"datanest-suggester-feed-v1",
     generatedAt,
+    headSha,
+    sourceEvidence,
+    automationReady,
     authority:"optimization-advisory",
     productionAuthorization:false,
     conductor:{
@@ -212,6 +239,7 @@ export function buildSuggesterFeed({
       total:unique.length,
       autonomousSafe:commands.length,
       reviewRequired:unique.filter(x=>x.automationClass!=="autonomous-safe").length,
+      awaitingSynchronization:unique.filter(x=>x.automationClass==="autonomous-safe").length-commands.length,
       newSincePrevious:unique.filter(x=>!previousFingerprints.has(x.fingerprint)).length
     },
     controls:config?.controls||{}
@@ -230,7 +258,9 @@ async function main(){
   const conductor=await readJson(process.env.SUGGESTER_CONDUCTOR_PATH||"/tmp/suggester/conductor.json",{});
   const previous=await readJson(process.env.SUGGESTER_PREVIOUS_PATH||"/tmp/suggester/previous.json",{});
 
-  const feed=buildSuggesterFeed({config,guardian,knowledge,environment,enforcer,botsquad,conductor,previous});
+  const headSha=execFileSync("git",["rev-parse","HEAD"],{encoding:"utf8"}).trim();
+  const feed=buildSuggesterFeed({config,guardian,knowledge,environment,enforcer,botsquad,conductor,previous,headSha});
+  feed.triggeringConductorRunId=process.env.SUGGESTER_CONDUCTOR_RUN_ID||null;
   await mkdir("suggester/feeds",{recursive:true});
   await writeFile("suggester/feeds/datanest.json",JSON.stringify(feed,null,2)+"\n");
   process.stdout.write(JSON.stringify(feed.summary,null,2)+"\n");

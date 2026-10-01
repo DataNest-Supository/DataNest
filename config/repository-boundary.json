@@ -86,7 +86,8 @@
         "scripts/suggester-engine.mjs",
         "tests/unit/conductor.test.mjs",
         "tests/unit/suggester.test.mjs",
-        "lib/resonance-forge-*.mjs"
+        "lib/resonance-forge-*.mjs",
+        "scripts/tree-evidence.mjs"
       ]
     },
     {

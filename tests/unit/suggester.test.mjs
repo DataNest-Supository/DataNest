@@ -2,10 +2,58 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { buildSuggesterFeed } from "../../scripts/suggester-engine.mjs";
 
-const config={controls:{mayMutateCanonicalMain:false}};
+const config={automationClasses:{autonomousSafe:["heal-redundant-branches","heal-byte-safe-source-noise"]},controls:{mayMutateCanonicalMain:false}};
+
+const generatedAt="2026-10-01T10:00:00Z";
+function buildFeed(input){
+  const schemas={guardian:"guardian-snapshot",knowledge:"knowledge-feed",environment:"environment-feed",enforcer:"enforcer-assessment",botsquad:"botsquad-consolidated-feed",conductor:"conductor-state"};
+  const sources=Object.fromEntries(Object.entries(schemas).map(([key,schema])=>[key,{
+    schemaVersion:"datanest-"+schema+"-v1",productionAuthorization:false,generatedAt,
+    ...input[key]
+  }]));
+  return buildSuggesterFeed({...input,...sources,generatedAt});
+}
+
+function safeInputs(){
+  return {config,
+    guardian:{status:"healing",headSha:"a".repeat(40),observed:{branches:{redundantBranchCount:1,redundantBranches:["merged-a"]},source:{safeRefinementCount:0}},drift:{optimalConditionDrift:[]}},
+    knowledge:{itemCount:1},environment:{environmentCompatible:true},enforcer:{status:"pass"},
+    botsquad:{recommendations:[]},conductor:{allProcessesFresh:true,headSha:"a".repeat(40)}};
+}
+
+test("SUGGESTER suppresses automation for blocked, stale, unsynchronized or wrong-source evidence",()=>{
+  assert.equal(buildFeed(safeInputs()).commands.length,1);
+  for(const overrides of [
+    {enforcer:{status:"block"}},
+    {enforcer:{status:"pass",generatedAt:"2026-09-01T00:00:00Z"}},
+    {conductor:{allProcessesFresh:false}},
+    {environment:{environmentCompatible:false}},
+    {guardian:{...safeInputs().guardian,status:"critical"}},
+    {headSha:"b".repeat(40)}
+  ]){
+    const feed=buildFeed({...safeInputs(),...overrides});
+    assert.equal(feed.automationReady,false);
+    assert.equal(feed.commands.length,0);
+  }
+});
+
+test("equivalent observations keep fingerprints across pulses but changed branch evidence differs",()=>{
+  const first=buildFeed(safeInputs());
+  const laterInputs=safeInputs(); laterInputs.guardian.generatedAt="2026-10-01T09:59:00Z";
+  assert.equal(buildFeed(laterInputs).commands[0].fingerprint,first.commands[0].fingerprint);
+  laterInputs.guardian.observed.branches.redundantBranches=["merged-b"];
+  assert.notEqual(buildFeed(laterInputs).commands[0].fingerprint,first.commands[0].fingerprint);
+  assert.match(first.sourceEvidence.guardian.digest,/^sha256:[a-f0-9]{64}$/);
+});
+
+test("missing feeds create visible evidence-repair suggestions with no commands",()=>{
+  const feed=buildSuggesterFeed({config,generatedAt});
+  assert.equal(feed.commands.length,0);
+  assert.equal(feed.suggestions.filter(x=>x.type==="source-evidence").length,6);
+});
 
 test("SUGGESTER queues only allowlisted safe healing signals",()=>{
-  const feed=buildSuggesterFeed({
+  const feed=buildFeed({
     config,
     guardian:{
       status:"healing",
@@ -30,7 +78,7 @@ test("SUGGESTER queues only allowlisted safe healing signals",()=>{
 });
 
 test("SUGGESTER keeps blueprint, security and BOTSQUAD changes review-required",()=>{
-  const feed=buildSuggesterFeed({
+  const feed=buildFeed({
     config,
     guardian:{
       status:"degraded",
@@ -62,7 +110,7 @@ test("SUGGESTER keeps blueprint, security and BOTSQUAD changes review-required",
 });
 
 test("SUGGESTER deduplicates equivalent suggestions by fingerprint",()=>{
-  const feed=buildSuggesterFeed({
+  const feed=buildFeed({
     config,
     guardian:{status:"healthy",health:{score:100},observed:{branches:{redundantBranchCount:0},source:{safeRefinementCount:0}},drift:{optimalConditionDrift:[]}},
     knowledge:{itemCount:10},
