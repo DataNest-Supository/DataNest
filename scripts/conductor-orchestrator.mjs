@@ -72,7 +72,8 @@ export function evaluateProcessSchedule(config,workflowStates,now=new Date()){
     const latestUpdated=state.latest?.updatedAt?Date.parse(state.latest.updatedAt):0;
     const retryAge=latestUpdated?Math.max(0,(now-new Date(latestUpdated))/60000):Number.POSITIVE_INFINITY;
     const retryCooldown=latestFailed && retryAge<retryCooldownMinutes;
-    const due=!state.active && !retryCooldown && !successFresh;
+    const operationalFresh=successFresh && !latestFailed;
+    const due=!state.active && !retryCooldown && !operationalFresh;
     processes.push({
       id:processConfig.id,
       workflow:processConfig.workflow,
@@ -82,6 +83,7 @@ export function evaluateProcessSchedule(config,workflowStates,now=new Date()){
       dispatch:processConfig.dispatch||{enabled:false},
       state,
       successFresh,
+      operationalFresh,
       due,
       active:state.active,
       retryCooldown,
@@ -93,11 +95,11 @@ export function evaluateProcessSchedule(config,workflowStates,now=new Date()){
   for(const item of processes){
     item.dependenciesReady=item.dependencies.every(id=>{
       const dep=index[id];
-      return !!dep && dep.successFresh && !dep.active;
+      return !!dep && dep.operationalFresh && !dep.active;
     });
     item.blockedBy=item.dependencies.filter(id=>{
       const dep=index[id];
-      return !dep || !dep.successFresh || dep.active;
+      return !dep || !dep.operationalFresh || dep.active;
     });
   }
   return processes;
@@ -195,7 +197,7 @@ async function main(){
   const workflowStates=await fetchWorkflowStates(config,token,repository,now);
   const processes=evaluateProcessSchedule(config,workflowStates,now);
   const nextCommand=selectNextCommand(config,processes,suggesterFeed,workflowStates);
-  const allFresh=processes.every(item=>item.successFresh&&!item.active);
+  const allFresh=processes.every(item=>item.operationalFresh&&!item.active);
 
   const state={
     schemaVersion:"datanest-conductor-state-v1",
