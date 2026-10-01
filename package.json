@@ -24,7 +24,9 @@
     "forge:sync-dry-run": "node scripts/forge-sync-dry-run.mjs",
     "forge:recovery-validate": "node scripts/forge-recovery-validate.mjs",
     "knowledge:build": "node scripts/knowledge-tree.mjs",
-    "boundaries:assess": "node scripts/boundaries-assessor.mjs"
+    "boundaries:assess": "node scripts/boundaries-assessor.mjs",
+    "botsquad:ux-workorder": "node scripts/botsquad-orchestrator.mjs --bot ux-ease",
+    "environment:assess": "node scripts/environment-assessor.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
