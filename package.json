@@ -25,7 +25,8 @@
     "forge:recovery-validate": "node scripts/forge-recovery-validate.mjs",
     "botsquad:ux-workorder": "node scripts/botsquad-orchestrator.mjs --bot ux-ease",
     "environment:assess": "node scripts/environment-assessor.mjs",
-    "enforcer:assess": "node scripts/enforcer-monitor.mjs"
+    "enforcer:assess": "node scripts/enforcer-monitor.mjs",
+    "guardian:health": "node scripts/guardian-health.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
