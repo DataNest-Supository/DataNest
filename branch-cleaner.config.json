@@ -8,7 +8,9 @@
     "^release/",
     "^automation/knowledge-feed$",
     "^automation/boundaries-assessment$",
-    "^feature/knowledge-boundaries-maintenance$"
+    "^feature/knowledge-boundaries-maintenance$",
+    "^automation/botsquad/",
+    "^automation/environment-feed$"
   ],
   "supabaseProjects": [
     {
