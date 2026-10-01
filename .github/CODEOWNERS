@@ -18,3 +18,4 @@
 
 /scripts/canonical-write-watchdog.mjs @DataNest-Supository
 /tests/unit/canonical-write-watchdog.test.mjs @DataNest-Supository
+/evidence/native-protection/ @DataNest-Supository
