@@ -47,6 +47,12 @@ test("mutation and deployment annotations retain non-authorizing authority flags
     assert.equal(json.humanReview.required,true);
   }
 });
+test("non-read-only effects cannot disable human review",()=>{
+  const {result}=runWriter({AUTOMATION_X_EFFECT:"bounded_mutation",AUTOMATION_X_HUMAN_REVIEW_REQUIRED:"false"});
+  assert.notEqual(result.status,0);
+  assert.match(result.stderr,/cannot be false for non-read_only/);
+});
+
 test("invalid automation metadata fails closed",()=>{
   const {result}=runWriter({AUTOMATION_X_CLASS:"not-valid"});
   assert.notEqual(result.status,0);
