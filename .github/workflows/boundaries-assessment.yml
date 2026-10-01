@@ -26,8 +26,17 @@ jobs:
 
       - name: Run Boundaries assessor
         env:
-          BOUNDARIES_BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || 'HEAD^' }}
-        run: node scripts/boundaries-assessor.mjs
+          BOUNDARIES_EVENT_NAME: ${{ github.event_name }}
+          BOUNDARIES_BASE_REF_NAME: ${{ github.base_ref }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$BOUNDARIES_EVENT_NAME" = "pull_request" ]; then
+            export BOUNDARIES_BASE_REF="origin/$BOUNDARIES_BASE_REF_NAME"
+          else
+            export BOUNDARIES_BASE_REF="HEAD^"
+          fi
+          node scripts/boundaries-assessor.mjs
 
       - uses: actions/upload-artifact@v4
         if: always()
