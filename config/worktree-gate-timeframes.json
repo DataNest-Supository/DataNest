@@ -286,6 +286,39 @@
         "governanceReview"
       ],
       "machineBaselineMinutes": 30
+    },
+    "boundaries-assessment.yml": {
+      "gateId": "boundaries-assessment",
+      "gateType": "automated_validation",
+      "taskComplexity": "standard",
+      "reportingComplexity": "detailed",
+      "reviewDomains": [
+        "governanceReview",
+        "engineeringReview"
+      ],
+      "machineBaselineMinutes": 10
+    },
+    "knowledge-tree.yml": {
+      "gateId": "knowledge-tree",
+      "gateType": "automated_analysis",
+      "taskComplexity": "standard",
+      "reportingComplexity": "detailed",
+      "reviewDomains": [
+        "engineeringReview",
+        "governanceReview"
+      ],
+      "machineBaselineMinutes": 15
+    },
+    "maintenance.yml": {
+      "gateId": "maintenance",
+      "gateType": "automated_enforcement",
+      "taskComplexity": "complex",
+      "reportingComplexity": "detailed",
+      "reviewDomains": [
+        "operationsReview",
+        "governanceReview"
+      ],
+      "machineBaselineMinutes": 20
     }
   }
 }
