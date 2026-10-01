@@ -24,7 +24,9 @@
     "published-transparency-audit-index",
     "guardian-health-state",
     "conductor-process-state",
-    "suggester-optimization-state"
+    "suggester-optimization-state",
+    "calmer-softening-state",
+    "regulator-harmony-state"
   ],
   "enforcement": {
     "mayFailOwnSecurityCheck": true,
