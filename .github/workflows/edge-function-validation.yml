@@ -26,7 +26,7 @@ jobs:
           - datanest-ai-certification
           - datanest-ai-upload
           - datanest-ai-file-worker
-          - send-project-member-invite
+          - send-job-invite\n          - send-project-member-invite
           - manage-user-password
           - manage-own-password
           - ronsas-status
