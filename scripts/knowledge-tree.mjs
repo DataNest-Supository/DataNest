@@ -134,7 +134,8 @@ async function main(){
 
   for(const source of config.sources||[]){
     if((config.excludedRepositories||[]).includes(source.repository)) continue;
-    collected.push(...await collectSource(source,config,token));
+    const sourceToken=source.repository===process.env.GITHUB_REPOSITORY?token:"";
+    collected.push(...await collectSource(source,config,sourceToken));
   }
 
   const items=dedupeItems(collected);
