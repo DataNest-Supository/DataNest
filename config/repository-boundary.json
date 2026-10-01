@@ -39,7 +39,19 @@
         "tests/unit/mirror-production-promotion.test.mjs",
         "tests/unit/mirror-candidate-boundary-contract.test.mjs",
         "tests/unit/mirror-product-surface-immutability.test.mjs",
-        "tests/unit/worktree-gate-timeframes.test.mjs"
+        "tests/unit/worktree-gate-timeframes.test.mjs",
+        ".github/workflows/knowledge-tree.yml",
+        ".github/workflows/boundaries-assessment.yml",
+        ".github/workflows/maintenance.yml",
+        "boundaries/**",
+        "config/boundaries.policy.json",
+        "config/knowledge-tree.json",
+        "knowledge/feeds/**",
+        "knowledge/index.json",
+        "scripts/boundaries-assessor.mjs",
+        "scripts/knowledge-tree.mjs",
+        "tests/unit/boundaries-assessor.test.mjs",
+        "tests/unit/knowledge-tree.test.mjs"
       ]
     },
     {
@@ -62,7 +74,14 @@
         "public/.well-known/reson8-app.json",
         "src/lib/reson8.ts",
         "tests/unit/reson8-integration.test.mjs",
-        "README.md"
+        "README.md",
+        ".github/workflows/knowledge-feed-consumer.yml",
+        ".github/workflows/mirror-maintenance.yml",
+        "config/knowledge-consumer.json",
+        "config/mirror-ai-plugins.json",
+        "docs/MIRROR_AI_PLUGIN_LAB.md",
+        "knowledge/inbox/**",
+        "src/lib/mirror-ai-rd-plugins.ts"
       ]
     },
     {
@@ -130,7 +149,7 @@
         ".semgrepignore",
         "workflow-reviewer.config.json",
         "branch-cleaner.config.json",
-        "vercel.json"
+        "knowledge/**"
       ]
     }
   ],
