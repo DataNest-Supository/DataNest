@@ -57,6 +57,7 @@ DataNest does not require Vercel. GitHub Pages is the active public delivery tar
 - **Boundaries** — canonical tolerance and acceptance assessor mapping DataNest human-AI principles to machine-verifiable invariants and explicit human-review criteria across functional changes.
 - **BOTSQUAD** — AI-only advisory specialist branches for optimization, product expansion, business growth, UX ease, UI evolution, function evolution, integrations, quality, and environment translation.
 - **ENVIRONMENT** — shared compatibility assessor for runtimes, CI, delivery, backend, inference, Forge, recovery, dependencies, branch hygiene, and evidence; only generated non-authorizing adaptations are automatic.
+- **ENFORCER** — continuous defensive enforcement and transparency tree that monitors security against Boundaries, consumes the complete approved Knowledge corpus without category/topic filtering, and publishes traceable learning/defence evidence without production authority.
 - **FREETREE** — isolated open-development clone target with no DataNest/Mirror synchronization, Knowledge exchange, Boundaries governance, BOTSQUAD feed authority, or canonical production authority.
 
 Scheduled noise deletion and decluttering are defined in [`docs/MAINTENANCE_PROTOCOL.md`](docs/MAINTENANCE_PROTOCOL.md).
