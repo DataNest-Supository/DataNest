@@ -14,7 +14,9 @@
     "enforcer",
     "guardian",
     "conductor",
-    "suggester"
+    "suggester",
+    "calmer",
+    "regulator"
   ],
   "exclude": [
     "node_modules",
