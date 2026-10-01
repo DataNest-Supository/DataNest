@@ -24,4 +24,11 @@ The protocol applies to DataNest, Mirror-DataNest, and the FREETREE repository o
 
 ## Specialized automation branches
 
-`automation/knowledge-feed`, `automation/botsquad/*`, `automation/environment-feed`, and `automation/enforcer` are protected automation state. Their owning workflows may refresh them, but generic branch cleanup must not delete them. Mirror inbox branches are separately protected inside Mirror-DataNest.
+`automation/knowledge-feed`, `automation/botsquad/*`, `automation/environment-feed`, `automation/enforcer`, `automation/guardian`, `automation/conductor`, and `automation/suggester` are protected automation state. Their owning workflows may refresh them, but generic branch cleanup must not delete them. Mirror inbox branches are separately protected inside Mirror-DataNest.
+
+
+## GUARDIAN healing relationship
+
+GUARDIAN may invoke the existing Branch Cleaner in `--git-only-safe-apply` mode and the existing Workflow Reviewer in byte-safe `--apply` mode. It does not introduce an independent destructive cleaner. Branches with unique/unknown history, open pull requests, protected status, or unresolved lineage are retained. Behavioral duplicate-code removal remains a reviewed optimization candidate rather than autonomous deletion.
+
+CONDUCTOR may dispatch these existing safe maintenance paths only when SUGGESTER emits the matching allowlisted command and timing/dependency conditions permit it.
