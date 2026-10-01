@@ -14,7 +14,9 @@
     "guardian",
     "mirror",
     "conductor",
-    "suggester"
+    "suggester",
+    "calmer",
+    "regulator"
   ],
   "isolatedTrees": [
     {
