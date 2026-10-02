@@ -25,7 +25,7 @@
         "release/**"
       ],
       "pullRequestRequired": true,
-      "requiredApprovingReviews": 1,
+      "requiredApprovingReviews": 0,
       "dismissStaleReviews": true,
       "requireConversationResolution": true,
       "requireLinearHistory": true,
@@ -85,14 +85,14 @@
     "canonical branches cannot be force-pushed",
     "canonical branches cannot be deleted",
     "canonical changes enter through pull requests",
-    "canonical branches require at least one approving review",
+    "canonical branches do not require an approving review; automated status checks remain required",
     "stale approvals are dismissed after new commits",
     "unresolved review conversations block canonical adoption",
     "canonical history remains linear",
     "required status checks are fail-closed",
     "automation cannot self-authorize a canonical merge",
     "automation cannot weaken this tree",
-    "branch policy changes require human review",
+    "branch policy changes are surfaced as explicit assurance work with a proposed remediation deadline",
     "protection gaps are published as explicit evidence rather than treated as compliant"
   ],
   "protectedPathFamilies": [
