@@ -102,11 +102,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${{
-            github.event_name == 'workflow_run' &&
-            github.event.workflow_run.head_sha ||
-            github.sha
-          }}"
           git fetch origin main --no-tags --prune
           test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
 
