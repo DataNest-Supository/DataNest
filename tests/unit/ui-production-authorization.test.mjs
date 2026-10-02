@@ -139,7 +139,7 @@ test("Pages production deployment is manual exact-SHA and environment gated",()=
   assert.match(pagesWorkflow,/'github-pages'/);
   assert.match(pagesWorkflow,/'github-pages-owner-test-mode'/);
   assert.match(pagesWorkflow,/'github-pages-progressive-live'/);
-  assert.match(pagesWorkflow,/default: progressive_live/);
+  assert.match(pagesWorkflow,/default: authorized/);
   assert.match(pagesWorkflow,/DATANEST_UI_PRODUCTION_CONFIRMATION: \$\{\{ inputs\.confirmation \}\}/);
 });
 
