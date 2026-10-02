@@ -50,6 +50,27 @@ test("production authorization rejects malformed SHA",()=>{
   assert.match(result.stderr,/40-character Git commit SHA/);
 });
 
+test("progressive-live authorization permits deployment without a separate human approval reference",()=>{
+  const result=verify({
+    DATANEST_UI_RELEASE_STATE:"progressive_live",
+    DATANEST_UI_PRODUCTION_CONFIRMATION:"",
+    DATANEST_UI_MIRROR_PROMOTION_REF:"",
+    DATANEST_UI_MIRROR_LIVE_EVIDENCE_REF:"",
+    DATANEST_UI_DATANEST_AI_CERTIFICATION_REF:"",
+    DATANEST_UI_AUDIT_OPTIMIZER_REF:"",
+    DATANEST_UI_PR_VERIFICATION_REF:"",
+    DATANEST_UI_SECURITY_REF:"",
+    DATANEST_UI_RONSAS_VALIDATION_REF:"",
+    DATANEST_UI_VISUAL_REVIEW_REF:"",
+    DATANEST_UI_GOVERNANCE_REVIEW_REF:"",
+    DATANEST_UI_LEGAL_REVIEW_REF:"",
+    DATANEST_UI_EXTERNAL_REVIEW_REF:"",
+    DATANEST_UI_AUTHORIZATION_REF:""
+  });
+  assert.equal(result.status,0,result.stderr);
+  assert.match(result.stdout,/progressive_live/);
+});
+
 test("production authorization rejects wrong confirmation text",()=>{
   const result=verify({DATANEST_UI_PRODUCTION_CONFIRMATION:"authorize production"});
   assert.notEqual(result.status,0);
