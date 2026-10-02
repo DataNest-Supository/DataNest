@@ -214,17 +214,35 @@ test("quick switch supports arrow-key result selection before Enter", () => {
 });
 
 
-test("workspace architecture follows the visible DataNest operating lifecycle", () => {
-  for (const group of ["Core","Discover","Govern & Build","Execute","Verify","System"]) {
-    assert.match(appSource, new RegExp('group:"'+group.replace("&","\\&")+'"'));
+test("workspace architecture follows the consolidated DataNest operating lifecycle", () => {
+  for (const group of ["HOME","THINK","GOVERN","BUILD","EXECUTE","PROVE","ADMIN"]) {
+    assert.match(appSource, new RegExp('group:"'+group+'"'));
   }
-  assert.match(appSource, /key:"ai",label:"DataNest AI",group:"Core"/);
-  assert.match(globalNavigationSource, /open=\{group==="Core"\|\|items\.some/);
+  assert.match(appSource, /key:"ai",label:"DataNest AI",group:"HOME"/);
+  assert.match(globalNavigationSource, /groupOrder=\["HOME","THINK","GOVERN","BUILD","EXECUTE","PROVE","ADMIN"\]/);
+  assert.match(globalNavigationSource, /open=\{group==="HOME"\|\|items\.some/);
   assert.match(globalNavigationSource, /item\.id==="ai"\?"aiHeroNav"/);
   assert.match(navigationTypesSource, /export type NavigationItem = \{/);
   assert.match(navigationTypesSource, /phase:WorkflowPhaseId\|null/);
   assert.match(navigationTypesSource, /keywords:readonly string\[\]/);
 });
+
+test("entry experience is usable before session resolution completes", () => {
+  assert.match(authGateSource, /useState<StartupState>\("signed-out"\)/);
+  assert.doesNotMatch(authGateSource, /if \(startup === "loading"\)/);
+  assert.match(authGateSource, /checkingSession/);
+  assert.match(authGateSource, /Email me a magic link/);
+  assert.match(authGateSource, /Forgot password\?/);
+});
+
+test("theme control is contextual rather than a persistent signed-in overlay", () => {
+  const layoutSource = fs.readFileSync(path.join(repoRoot, "src/app/layout.tsx"), "utf8");
+  assert.doesNotMatch(layoutSource, /themeControlDock/);
+  assert.match(appSource, /<ThemeControl compact/);
+  assert.match(authGateSource, /<span className="landingThemeControl"><ThemeControl compact/);
+  assert.match(cssSource, /\.landingThemeControl/);
+});
+
 
 test("workflow continuity maps specialist workspaces without breaking direct navigation", () => {
   assert.match(appSource, /const workflowNext:Partial<Record<ViewKey,ViewKey>>/);
@@ -238,7 +256,7 @@ test("workflow continuity maps specialist workspaces without breaking direct nav
 });
 
 test("page header exposes current lifecycle phase and preserves quick switching", () => {
-  assert.match(appSource, /currentGroup=currentNavItem\?\.group\|\|"Core"/);
+  assert.match(appSource, /currentGroup=currentNavItem\?\.group\|\|"HOME"/);
   assert.match(appSource, /DATANEST_CANONICAL_NAME\.toUpperCase\(\)\} · \{currentGroup\.toUpperCase\(\)\}/);
   assert.match(appSource, /Ctrl\/Cmd \+ K to toggle/);
 });
@@ -330,14 +348,13 @@ test("specialist workspaces retain persistent lifecycle orientation", () => {
 test("platform shell extraction keeps layout display-only and phase-safe", () => {
   assert.match(appSource, /<PlatformShell/);
   assert.match(appSource, /<GlobalNavigation/);
-  assert.match(appSource, /<ContextStrip/);
+  assert.doesNotMatch(appSource, /<ContextStrip/);
+  assert.match(appSource, /className="topbarMeta"/);
   assert.match(platformShellSource, /navigation:ReactNode/);
   assert.match(platformShellSource, /topbar:ReactNode/);
   assert.match(platformShellSource, /context\?:ReactNode/);
   assert.doesNotMatch(platformShellSource, /useState|useEffect|getSupabase|window\.history/);
   assert.match(contextStripSource, /aria-label="Workspace context"/);
-  assert.match(contextStripSource, /"Cross-phase"/);
-  assert.match(contextStripSource, /"Next · "\+nextAction/);
   assert.match(globalNavigationSource, /onNavigate:\(view:string\)=>void/);
   assert.match(globalNavigationSource, /aria-current=\{currentView===item\.id\?"page":undefined\}/);
 });
