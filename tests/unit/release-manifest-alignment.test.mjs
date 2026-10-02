@@ -158,7 +158,7 @@ test("Pages workflow has a single automatic release path",()=>{
 test("Pages release wiring derives the database attestation from the canonical contract",()=>{
   assert.match(pagesWorkflow,/Validate canonical production contract/);
   assert.match(pagesWorkflow,/DATANEST_EXPECTED_DB_MIGRATION_REFERENCE/);
-  assert.match(pagesWorkflow,/verify-production-release-attestation\\.mjs/);
+  assert.match(pagesWorkflow,/verify-production-release-attestation\.mjs/);
   assert.match(pagesWorkflow,/DATANEST_DB_ATTESTATION_FILE: \.datanest\\/release-attestation\\.json/);
   assert.match(pagesWorkflow,/databaseMigration/);
   assert.match(manifestScript,/databaseRelease:canonicalDatabaseRelease/);
