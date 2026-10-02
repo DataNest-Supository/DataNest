@@ -21,6 +21,18 @@ export function validateProductionContract(
   if(!/^[0-9]{14}$/.test(String(expected.head))){
     throw new Error("Production contract migration head must be a 14-digit timestamp.");
   }
+  const sourceFile=String(expected.sourceFile||"").trim();
+  if(!sourceFile.startsWith("supabase/migrations/") || !sourceFile.endsWith(".sql")){
+    throw new Error("Production contract must declare a repository migration sourceFile under supabase/migrations.");
+  }
+  const sourcePath=resolve(sourceFile);
+  if(!existsSync(sourcePath)){
+    throw new Error("Production contract migration sourceFile does not exist: "+sourceFile);
+  }
+  const sourceName=sourceFile.slice(sourceFile.lastIndexOf("_")+1,-4);
+  if(sourceName!==String(expected.name)){
+    throw new Error("Production migration sourceFile name does not match expected migration name.");
+  }
   if(contract.repository!=="DataNest-Supository/DataNest"){
     throw new Error("Production contract repository does not match the canonical repository.");
   }
