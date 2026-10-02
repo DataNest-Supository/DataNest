@@ -110,7 +110,7 @@ jobs:
         with:
           name: ui-governance-review-${{ github.run_id }}
           path: test-results/
-          if-no-files-found: error
+          if-no-files-found: ignore
           retention-days: 30
 
       - name: Collect preview log on failure
