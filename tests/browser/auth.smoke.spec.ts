@@ -33,7 +33,7 @@ test("failed authentication clears the busy state and reports an error", async (
 
   await page.goto(appPath);
   await page.getByLabel("Email").fill("smoke-test@example.invalid");
-  await page.getByLabel("Password").fill("not-a-real-password");
+  await page.locator('input[type="password"][autocomplete="current-password"]').fill("not-a-real-password");
   await page.getByRole("button", { name: "Sign in" }).click();
 
   await expect(page.locator(".authMessage")).toBeVisible();
@@ -55,7 +55,7 @@ test("offline sign-in failure remains recoverable", async ({ page, context }) =>
 
   await context.setOffline(true);
   await page.getByLabel("Email").fill("offline-test@example.invalid");
-  await page.getByLabel("Password").fill("not-a-real-password");
+  await page.locator('input[type="password"][autocomplete="current-password"]').fill("not-a-real-password");
   await page.getByRole("button", { name: "Sign in" }).click();
 
   await expect(page.locator(".authMessage")).toBeVisible();
