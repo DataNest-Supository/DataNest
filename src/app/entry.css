@@ -5,9 +5,9 @@
 .landingBrand { display: flex; gap: 12px; align-items: center; text-decoration: none; font-size: 10px; letter-spacing: .18em; color: #b9b2d2; }
 .landingBrand b { display: block; color: var(--text); font-size: 19px; letter-spacing: -.04em; margin-top: 3px; }
 .landingMonogram { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid #7dcde3; border-radius: 14px; color: #b9f6ff; font-size: 26px; font-weight: 800; background: linear-gradient(140deg, #22344c, #261442); }
-.motionControl { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: #140c26; color: #c9c3dc; font-size: 12px; cursor: pointer; }
-.motionControl[aria-pressed="true"] { border-color: var(--cyan); color: var(--cyan); }
-.motionControl span { font-size: 15px; }
+.motionControl { display: inline-grid; grid-template-columns:auto minmax(76px,1fr); align-items:center; gap:8px; min-height:44px; padding:6px 9px; border:1px solid var(--line); border-radius:10px; background:var(--surface-work); color:var(--text-primary); font-size:10px; cursor:pointer; }
+.motionControl:focus-within { border-color:var(--cyan); box-shadow:0 0 0 2px color-mix(in srgb,var(--cyan) 18%,transparent); }
+.motionControl span { font-size: 9px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }\n.motionControl select { min-height:30px; padding:5px 24px 5px 7px; border:1px solid var(--line); border-radius:7px; background:var(--panel); color:var(--text); font-size:10px; font-weight:700; }
 .landingLayout { width: 100%; max-width: 1320px; margin: auto; padding-block: 52px; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(340px, .85fr); align-items: center; gap: clamp(40px, 6vw, 100px); }
 .landingStory { min-width: 0; }
 .landingStory h2 { font-size: clamp(54px, 6vw, 84px); line-height: 1.02; letter-spacing: -.06em; margin: 0; }
@@ -77,7 +77,7 @@ html[data-motion-paused="true"] *, html[data-motion-paused="true"] *::before, ht
 .landingHubLink{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:rgba(20,12,38,.72);color:#c9eefa;text-decoration:none;font-size:12px;font-weight:800}
 .landingHubLink:hover,.landingHubLink:focus-visible{border-color:rgba(66,231,255,.38);color:#fff;background:rgba(66,231,255,.07)}
 @media (max-width:700px){.landingHeaderActions{gap:6px}.landingHubLink{min-height:40px;padding:8px 9px;font-size:10px}}
-@media (max-width:430px){.landingHubLink{font-size:0}.landingHubLink span{font-size:14px}}
+@media (max-width:430px){.landingHubLink{font-size:0}.landingHubLink span{font-size:14px}.motionControl{grid-template-columns:1fr;min-width:72px}.motionControl span{display:none}.motionControl select{width:100%}}
 
 
 /* Shared Resonance identity, governance trust, and operator footer */
