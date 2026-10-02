@@ -28,6 +28,10 @@ const requiredFunctions=[
 if(!/^[0-9a-f]{40}$/i.test(releaseSha))throw new Error("DATANEST_RELEASE_SHA must be an exact 40-character Git commit SHA.");
 if(!repository)throw new Error("GITHUB_REPOSITORY is required to verify the referenced Edge Function release.");
 
+function sha256Tree(root){
+  return gitTrackedObjectTreeSha256(root,releaseSha);
+}
+
 function validateFunctionSet(attestation,expectedSourceTree){
   const attestedFunctions=attestation.functions||{};
   for(const slug of requiredFunctions){
