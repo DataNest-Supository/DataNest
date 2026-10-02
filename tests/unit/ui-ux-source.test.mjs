@@ -266,6 +266,16 @@ test("signed-in home collapses duplicate navigation cards into one task-oriented
   assert.match(cssSource, /\.homeIntentBar\{/);
 });
 
+test("workspace status metadata never claims READY before a project record exists", () => {
+  assert.match(appSource, /project\?\.status\?\.toUpperCase\(\) \|\| \(loadingCore \? "CHECKING" : "UNAVAILABLE"\)/);
+  assert.doesNotMatch(appSource, /project\?\.status \|\| "READY"/);
+});
+
+test("public entry link surfaces follow the shared theme tokens", () => {
+  assert.match(cssSource, /\.landingHubLink\{[^}]*background:var\(--surface-work\)/);
+  assert.doesNotMatch(cssSource, /\.landingHubLink\{[^}]*background:rgba\(20,12,38/);
+});
+
 test("theme control is contextual rather than a persistent signed-in overlay", () => {
   const layoutSource = fs.readFileSync(path.join(repoRoot, "src/app/layout.tsx"), "utf8");
   assert.doesNotMatch(layoutSource, /themeControlDock/);
