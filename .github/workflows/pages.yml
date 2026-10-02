@@ -10,17 +10,13 @@ on:
         description: Exact 40-character commit SHA reachable from main
         required: true
         type: string
-      database_migration_reference:
-        description: Expected production database migration identity as JSON, for example {"head":"20261001142117","name":"certification_business_bank_settlement_launch"}
-        required: true
-        default: '{"head":"20261001142117","name":"certification_business_bank_settlement_launch"}'
-        type: string
       release_mode:
-        description: Fully authorized production or temporary Owner live test mode
+        description: Fully authorized production, progressive live exception, or temporary Owner live test mode
         required: true
         default: authorized
         type: choice
         options:
+          - progressive_live
           - authorized
           - owner_test_mode
       mirror_promotion_reference:
@@ -169,7 +165,6 @@ jobs:
       DATANEST_UI_OWNER_TEST_MODE_EXPIRES_AT: ${{ inputs.owner_test_mode_expires_at }}
       DATANEST_UI_OWNER_TEST_MODE_REASON: ${{ inputs.owner_test_mode_reason }}
       DATANEST_UI_OWNER_TEST_MODE_ACTOR: ${{ github.actor }}
-      DATANEST_EXPECTED_DB_MIGRATION_REFERENCE: ${{ inputs.database_migration_reference }}
     steps:
       - name: Checkout exact release SHA
         uses: actions/checkout@v7.0.1
@@ -210,11 +205,14 @@ jobs:
           git merge-base --is-ancestor "$DATANEST_UI_RELEASE_SHA" origin/main
 
       - name: Verify live production database release attestation
+        if: ${{ inputs.release_mode != 'progressive_live' }}
         env:
-          DATANEST_EXPECTED_DB_MIGRATION_REFERENCE: \${{ steps.production_contract.outputs.database_migration_reference }}
+          DATANEST_EXPECTED_DB_MIGRATION_REFERENCE: ${{ steps.production_contract.outputs.database_migration_reference }}
         run: node scripts/verify-production-release-attestation.mjs .datanest/release-attestation.json
 
       - name: Download referenced governed Edge Function release evidence
+        if: ${{ inputs.edge_function_release_reference != '' }}
+        continue-on-error: ${{ inputs.release_mode == 'progressive_live' }}
         uses: actions/download-artifact@v5
         with:
           name: datanest-edge-function-release-${{ inputs.release_sha }}
@@ -224,6 +222,8 @@ jobs:
           run-id: ${{ inputs.edge_function_release_reference }}
 
       - name: Verify referenced governed Edge Function release
+        if: ${{ inputs.edge_function_release_reference != '' }}
+        continue-on-error: ${{ inputs.release_mode == 'progressive_live' }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
           DATANEST_RELEASE_SHA: ${{ inputs.release_sha }}
@@ -243,6 +243,10 @@ jobs:
 
       - name: Write UI governance release evidence
         run: node scripts/write-ui-governance-evidence.mjs public/ui-governance-release.json
+
+      - name: Write progressive-live gap register
+        if: ${{ inputs.release_mode == 'progressive_live' }}
+        run: node scripts/write-progressive-live-gap-register.mjs public/progressive-live-gap-register.json
 
       - name: Write release manifest
         env:
@@ -283,7 +287,7 @@ jobs:
 
   deploy:
     environment:
-      name: ${{ inputs.release_mode == 'owner_test_mode' && 'github-pages-owner-test-mode' || 'github-pages' }}
+      name: ${{ inputs.release_mode == 'owner_test_mode' && 'github-pages-owner-test-mode' || inputs.release_mode == 'progressive_live' && 'github-pages-progressive-live' || 'github-pages' }}
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-24.04
     needs: build
@@ -401,6 +405,10 @@ jobs:
           if(evidence.productionDeploymentAllowed!==true) throw new Error("Production deployment must be explicitly allowed");
           if(mode==="authorized"){
             if(evidence.authorized!==true || evidence.fullyGoverned!==true) throw new Error("Authorized release must be fully governed");
+          }else if(mode==="progressive_live"){
+            if(evidence.authorized!==false || evidence.fullyGoverned!==false) throw new Error("Progressive-live must remain visibly not fully governed");
+            if(!Array.isArray(evidence.gaps)) throw new Error("Progressive-live evidence must publish an explicit gap list");
+            if(evidence.gaps.some((gap)=>gap.blocking===true)) throw new Error("Progressive-live gaps must be non-blocking");
           }else if(mode==="owner_test_mode"){
             if(evidence.authorized!==false || evidence.fullyGoverned!==false) throw new Error("Owner Test Mode must not claim full authorization");
             if(!evidence.ownerTestMode?.active || evidence.ownerTestMode.temporaryException!==true) throw new Error("Owner Test Mode metadata is required");
