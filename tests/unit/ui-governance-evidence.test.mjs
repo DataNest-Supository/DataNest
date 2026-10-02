@@ -76,6 +76,22 @@ test("evidence identifies the approved design spec and all four implementation p
   ]);
 });
 
+test("progressive-live evidence allows missing human and assurance references and publishes deadlines",()=>{
+  const {result,json}=runWriter({
+    DATANEST_UI_RELEASE_SHA:sha,
+    DATANEST_UI_RELEASE_STATE:"progressive_live"
+  });
+  assert.equal(result.status,0,result.stderr);
+  assert.equal(json.releaseState,"progressive_live");
+  assert.equal(json.authorized,false);
+  assert.equal(json.fullyGoverned,false);
+  assert.equal(json.productionDeploymentAllowed,true);
+  assert.equal(json.gaps.length,12);
+  assert.ok(json.gaps.every((gap)=>gap.blocking===false));
+  assert.ok(json.gaps.find((gap)=>gap.domain==="visualReview").proposedDeadlineHours===24);
+  assert.ok(json.gaps.find((gap)=>gap.domain==="legalReview").proposedDeadlineHours===72);
+});
+
 test("authorized evidence fails closed on placeholder review references",()=>{
   const {result}=runWriter({
     DATANEST_UI_RELEASE_SHA:sha,
