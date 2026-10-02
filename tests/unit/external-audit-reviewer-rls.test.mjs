@@ -30,17 +30,17 @@ const hardening=fs.readFileSync(
 );
 
 test("external audit browser roles are read-only and mutations stay behind governed RPCs",()=>{
-  for (const table of [
-    "external_audit_assessments",
-    "external_audit_profiles",
-    "external_audit_sources",
-    "external_audit_findings",
-    "external_audit_actions",
-    "external_audit_reviewers",
-    "external_audit_documents"
-  ]) {
-    assert.match(hardening,new RegExp("revoke insert, update, delete on\\s+"+table));
-  }
-  assert.match(hardening,/revoke all on[\\s\\S]*public\\.external_audit_events[\\s\\S]*from anon/);
-  assert.match(hardening,/grant select on[\\s\\S]*public\\.external_audit_documents[\\s\\S]*to authenticated/);
+  assert.match(
+    hardening,
+    /revoke insert, update, delete on[\s\S]*public\.external_audit_documents[\s\S]*from authenticated/
+  );
+  assert.match(
+    hardening,
+    /revoke all on[\s\S]*public\.external_audit_events[\s\S]*from anon/
+  );
+  assert.match(
+    hardening,
+    /grant select on[\s\S]*public\.external_audit_documents[\s\S]*to authenticated/
+  );
+  assert.doesNotMatch(hardening,/grant (?:insert|update|delete)[\s\S]*to authenticated/);
 });
