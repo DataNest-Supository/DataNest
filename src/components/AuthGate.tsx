@@ -6,6 +6,7 @@ import MotionControl from "./MotionControl";
 import ResonanceBrandLockup from "./platform/ResonanceBrandLockup";
 import GovernanceTrustMark from "./platform/GovernanceTrustMark";
 import PlatformFooter from "./platform/PlatformFooter";
+import ThemeControl from "./platform/ThemeControl";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
@@ -21,7 +22,7 @@ const DataNestApp = dynamic(() => import("@/components/DataNestApp"), {
   )
 });
 
-type StartupState = "loading" | "signed-out" | "signed-in" | "set-password" | "config-error" | "connection-error";
+type StartupState = "signed-out" | "signed-in" | "set-password" | "config-error" | "connection-error";
 const STARTUP_TIMEOUT_MS = 10000;
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
@@ -34,7 +35,8 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
 }
 
 export default function AuthGate() {
-  const [startup, setStartup] = useState<StartupState>("loading");
+  const [startup, setStartup] = useState<StartupState>("signed-out");
+  const [checkingSession, setCheckingSession] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [startupMessage, setStartupMessage] = useState("");
   const [email, setEmail] = useState("");
@@ -53,8 +55,8 @@ export default function AuthGate() {
       return;
     }
 
-    setStartup("loading");
     setStartupMessage("");
+    setCheckingSession(true);
 
     try {
       const result = await withTimeout(supabase.auth.getSession(), STARTUP_TIMEOUT_MS);
@@ -73,6 +75,8 @@ export default function AuthGate() {
       setSession(null);
       setStartup("connection-error");
       setStartupMessage(error instanceof Error ? error.message : "Unable to initialize authentication.");
+    } finally {
+      setCheckingSession(false);
     }
   }, []);
 
@@ -199,24 +203,6 @@ export default function AuthGate() {
     }
   }
 
-  if (startup === "loading") {
-    return (
-      <main className="authShell" role="status" aria-live="polite" aria-busy="true">
-        <section className="authCard">
-          <ResonanceBrandLockup />
-          <h1>{DATANEST_CANONICAL_NAME}</h1>
-          <div className="bootRow">
-            <div className="bootPulse" aria-hidden="true" />
-            <p className="lede">Checking your secure DataNest session…</p>
-          </div>
-          <noscript>
-            <p className="authMessage">JavaScript is required to sign in at {DATANEST_PUBLIC_URL}.</p>
-          </noscript>
-        </section>
-      </main>
-    );
-  }
-
   if (startup === "config-error") {
     return (
       <main className="authShell">
@@ -283,7 +269,7 @@ export default function AuthGate() {
       <a className="skipLink" href="#sign-in-email">Skip to sign in</a>
       <header className="landingHeader">
         <a className="landingBrand" href="#" aria-label="Resonance DataNest home"><ResonanceBrandLockup compact /></a>
-        <div className="landingHeaderActions"><GovernanceTrustMark/><a className="landingHubLink" href={RESON8_HUB_URL} target="_blank" rel="noreferrer">Reson8 Hub <span aria-hidden="true">↗</span></a><a className="landingHubLink" href="./transparency">Public Audit Library <span aria-hidden="true">↗</span></a><MotionControl/></div>
+        <div className="landingHeaderActions"><GovernanceTrustMark/><span className="landingThemeControl"><ThemeControl compact /></span><a className="landingHubLink" href={RESON8_HUB_URL} target="_blank" rel="noreferrer">Reson8 Hub <span aria-hidden="true">↗</span></a><a className="landingHubLink" href="./transparency">Public Audit Library <span aria-hidden="true">↗</span></a><MotionControl/></div>
       </header>
       <div className="landingLayout">
       <section className="landingStory" aria-labelledby="landing-title">
@@ -330,11 +316,11 @@ export default function AuthGate() {
           <button className="primaryButton" disabled={busy} type="submit">
             {busy ? "Signing in…" : "Sign in"}
           </button>
-          <button className="secondaryButton" disabled={busy} type="button" onClick={sendMagicLink}>
-            Send magic link
+          <button className="secondaryButton authMagicLink" disabled={busy} type="button" onClick={sendMagicLink}>
+            Email me a magic link
           </button>
-          <button className="secondaryButton" disabled={busy} type="button" onClick={sendPasswordReset}>
-            Forgot password? Email reset link
+          <button className="authRecoveryButton" disabled={busy} type="button" onClick={sendPasswordReset}>
+            Forgot password?
           </button>
         </form>
 
@@ -342,6 +328,7 @@ export default function AuthGate() {
           {message && <div className="authMessage">{message}</div>}
         </div>
         <p className="securityNote">Sign in with your authorized account. Need access? Ask your project administrator for an invitation.</p>
+        <p className="sessionCheckNote" role="status" aria-live="polite">{checkingSession ? "Checking your existing session…" : ""}</p>
       </section>
       </div>
       <PlatformFooter compact />
