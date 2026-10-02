@@ -9,6 +9,9 @@ const pages=fs.readFileSync(path.join(root,".github/workflows/pages.yml"),"utf8"
 const certification=fs.readFileSync(path.join(root,".github/workflows/datanest-ai-certification.yml"),"utf8");
 
 test("Pages release verification uses the canonical database contract and current main SHA",()=>{
+  assert.match(pages,/push:\n    branches:\n      - main/);
+  assert.match(pages,/workflow_dispatch:/);
+  assert.doesNotMatch(pages,/workflow_run:/);
   assert.ok(pages.includes("git rev-parse origin/main"));
   assert.match(pages,/verify-production-release-attestation\.mjs/);
   assert.match(pages,/Live database attestation is not verified/);

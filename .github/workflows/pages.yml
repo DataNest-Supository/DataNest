@@ -1,14 +1,14 @@
 # Governed production release for Resonance DataNest GitHub Pages.
 # Production authorization is the protected GitHub environment "github-pages".
 # The workflow deploys the exact current main SHA; no release SHA or evidence IDs
-# are entered manually.
+# are entered manually. A protected-main push triggers the normal path; manual
+# dispatch remains available for deliberate retries.
 name: Deploy GitHub Pages
 
 on:
-  workflow_run:
-    workflows:
-      - "CONDUCTOR Process Synchronization Tree"
-    types: [completed]
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -25,13 +25,7 @@ concurrency:
 jobs:
   prepare:
     name: Resolve production release
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (
-        github.event.workflow_run.conclusion == 'success' &&
-        github.event.workflow_run.head_branch == 'main' &&
-        github.event.workflow_run.head_repository.full_name == github.repository
-      )
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     outputs:
       release_sha: ${{ steps.release.outputs.sha }}
@@ -54,7 +48,7 @@ jobs:
           echo "sha=$RELEASE_SHA" >> "$GITHUB_OUTPUT"
 
           SHOULD_DEPLOY="true"
-          if [ "$GITHUB_EVENT_NAME" = "workflow_run" ]; then
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
             LAST_DEPLOYED_SHA="$(gh api               "repos/$GITHUB_REPOSITORY/deployments?environment=github-pages&per_page=20"               --jq '.[0].sha // empty' || true)"
             if [ "$LAST_DEPLOYED_SHA" = "$RELEASE_SHA" ]; then
               SHOULD_DEPLOY="false"

@@ -47,7 +47,7 @@ test("UI Test Mode cannot deploy or authorize production",()=>{
 
 test("production Pages authorization is isolated from UI Test Mode",()=>{
   assert.match(productionWorkflow,/environment:\n      name: github-pages/);
-  assert.match(productionWorkflow,/workflow_run:/);
+  assert.match(productionWorkflow,/push:\n    branches:\n      - main/);
   assert.doesNotMatch(productionWorkflow,/governance_review_reference/);
   assert.doesNotMatch(productionWorkflow,/production_authorization_reference/);
   assert.equal(productionWorkflow.includes("owner_test_mode"),false);

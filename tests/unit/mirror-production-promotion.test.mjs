@@ -85,7 +85,7 @@ test("promotion manifest starts with zero production authority",()=>{
 });
 
 test("production Pages release is environment-gated and no longer requires manual evidence IDs",()=>{
-  assert.match(pagesWorkflow,/workflow_run:/);
+  assert.match(pagesWorkflow,/push:\n    branches:\n      - main/);
   assert.match(pagesWorkflow,/environment:\n      name: github-pages/);
   assert.match(pagesWorkflow,/Verify live production database release attestation/);
   assert.doesNotMatch(pagesWorkflow,/mirror_promotion_reference/);
