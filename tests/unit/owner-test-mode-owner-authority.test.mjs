@@ -10,7 +10,7 @@ const pages=readFileSync(
 test("Pages production uses the protected environment instead of Owner Test Mode checks",()=>{
   assert.match(pages,/environment:\n      name: github-pages/);
   assert.doesNotMatch(pages,/GITHUB_REPOSITORY_OWNER/);
-  assert.doesNotMatch(pages,/collaborators\\/\\$GITHUB_ACTOR\\/permission/);
+  assert.equal(pages.includes("collaborators/$GITHUB_ACTOR/permission"),false);
   assert.doesNotMatch(pages,/Owner Test Mode authority verified from repository ownership/);
 });
 
