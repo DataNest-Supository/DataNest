@@ -227,6 +227,15 @@ test("workspace architecture follows the consolidated DataNest operating lifecyc
   assert.match(navigationTypesSource, /keywords:readonly string\[\]/);
 });
 
+test("authentication password fields provide accessible visibility controls", () => {
+  assert.match(authGateSource, /showPassword \? "text" : "password"/);
+  assert.match(authGateSource, /aria-label=\{showPassword \? "Hide password" : "Show password"\}/);
+  assert.match(authGateSource, /showNewPassword \? "Hide new password" : "Show new password"/);
+  assert.match(authGateSource, /showConfirmPassword \? "Hide confirmation password" : "Show confirmation password"/);
+  assert.match(cssSource, /\.passwordField\{/);
+  assert.match(cssSource, /\.passwordToggle\{/);
+});
+
 test("entry experience is usable before session resolution completes", () => {
   assert.match(authGateSource, /useState<StartupState>\("signed-out"\)/);
   assert.doesNotMatch(authGateSource, /if \(startup === "loading"\)/);
