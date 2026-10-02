@@ -54,6 +54,9 @@ export default function AuthGate() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const initialize = useCallback(async () => {
     const supabase = getSupabase();
@@ -255,11 +258,17 @@ export default function AuthGate() {
           <form onSubmit={submitNewPassword} className="authForm" aria-busy={busy}>
             <label>
               New password
-              <input type="password" required minLength={8} autoComplete="new-password" value={newPassword} onChange={(event) => setNewPasswordValue(event.target.value)} placeholder="At least 8 characters" />
+              <div className="passwordField">
+                <input type={showNewPassword ? "text" : "password"} required minLength={8} autoComplete="new-password" value={newPassword} onChange={(event) => setNewPasswordValue(event.target.value)} placeholder="At least 8 characters" />
+                <button className="passwordToggle" type="button" aria-pressed={showNewPassword} aria-label={showNewPassword ? "Hide new password" : "Show new password"} onClick={() => setShowNewPassword(value => !value)}>{showNewPassword ? "Hide" : "Show"}</button>
+              </div>
             </label>
             <label>
               Confirm password
-              <input type="password" required minLength={8} autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Re-enter your password" />
+              <div className="passwordField">
+                <input type={showConfirmPassword ? "text" : "password"} required minLength={8} autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Re-enter your password" />
+                <button className="passwordToggle" type="button" aria-pressed={showConfirmPassword} aria-label={showConfirmPassword ? "Hide confirmation password" : "Show confirmation password"} onClick={() => setShowConfirmPassword(value => !value)}>{showConfirmPassword ? "Hide" : "Show"}</button>
+              </div>
             </label>
             <button className="primaryButton" disabled={busy} type="submit">{busy ? "Saving…" : "Create password"}</button>
           </form>
@@ -313,14 +322,17 @@ export default function AuthGate() {
           </label>
           <label>
             Password
+            <div className="passwordField">
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               required
               autoComplete="current-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Password"
             />
+            <button className="passwordToggle" type="button" aria-pressed={showPassword} aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword(value => !value)}>{showPassword ? "Hide" : "Show"}</button>
+            </div>
           </label>
           <button className="primaryButton" disabled={busy} type="submit">
             {busy ? "Signing in…" : "Sign in"}
