@@ -20,62 +20,6 @@ on:
         required: true
         default: '{"head":"20261001142117","name":"certification_business_bank_settlement_launch"}'
         type: string
-      mirror_promotion_reference:
-        description: Mirror-DataNest production-candidate artifact/run/commit reference
-        required: true
-        type: string
-      mirror_live_evidence_reference:
-        description: Successful live Mirror visual/functional verification run or evidence artifact for the exact candidate
-        required: true
-        type: string
-      datanest_ai_certification_reference:
-        description: DataNest AI Certification run/artifact for the exact candidate SHA and governed staging backend
-        required: true
-        type: string
-      edge_function_release_reference:
-        description: Governed Edge release workflow run ID or connector:<source-sha> attestation reference
-        required: true
-        type: string
-      audit_optimizer_reference:
-        description: DataNest Audit Optimizer review/evidence reference for this production candidate
-        required: true
-        type: string
-      pr_verification_reference:
-        description: PR Verification run/reference for the exact release SHA
-        required: true
-        type: string
-      security_scan_reference:
-        description: Security scan run/reference for the exact release SHA
-        required: true
-        type: string
-      ronsas_validation_reference:
-        description: RONSAS Application Validation run/reference for the exact release SHA
-        required: true
-        type: string
-      visual_review_reference:
-        description: Human visual / UX review reference; required for authorized production, may be supplied post-test in Owner Test Mode
-        required: false
-        type: string
-      governance_review_reference:
-        description: Governance-impact human review reference
-        required: false
-        type: string
-      legal_review_reference:
-        description: Legal review reference for the legal/governance surface changes
-        required: false
-        type: string
-      external_review_reference:
-        description: External or independent human review reference
-        required: false
-        type: string
-      production_authorization_reference:
-        description: Final human production authorization reference; required for authorized production, remains open during Owner Test Mode
-        required: false
-        type: string
-      confirmation:
-        description: Final human authorization to deploy this production release
-        required: true
-        type: string
       gate_timeframe_override_hours:
         description: Optional Owner worktree-gate planning-window override in hours (0.5-72)
         required: false
@@ -172,32 +116,21 @@ jobs:
       - name: Verify live production database release attestation
         run: node scripts/verify-production-release-attestation.mjs .datanest/release-attestation.json
 
-      - name: Download referenced governed Edge Function release evidence
-        if: ${{ !startsWith(inputs.edge_function_release_reference, 'connector:') }}
-        uses: actions/download-artifact@v5
-        with:
-          name: datanest-edge-function-release-${{ inputs.release_sha }}
-          path: ${{ runner.temp }}/datanest-edge-function-release
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ inputs.edge_function_release_reference }}
-
-      - name: Stage Supabase connector Edge Function evidence
-        if: ${{ startsWith(inputs.edge_function_release_reference, 'connector:') }}
+      - name: Stage connector-attested Edge Function evidence
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p "${{ runner.temp }}/datanest-edge-function-release"
-          cp config/production-edge-function-attestation.json             "${{ runner.temp }}/datanest-edge-function-release/edge-function-release.json"
+          cp config/production-edge-function-connector-attestation.json \
+            "${{ runner.temp }}/datanest-edge-function-release/edge-function-release.json"
 
-      - name: Verify referenced governed Edge Function release
+      - name: Verify connector-attested governed Edge Function release
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          DATANEST_RELEASE_SHA: ${{ inputs.release_sha }}
-          DATANEST_EDGE_FUNCTION_RELEASE_REFERENCE: ${{ inputs.edge_function_release_reference }}
+          DATANEST_RELEASE_SHA: ${{ steps.release.outputs.sha }}
+          DATANEST_EDGE_FUNCTION_RELEASE_REFERENCE: connector:${{ steps.release.outputs.sha }}
           DATANEST_SUPABASE_PROJECT: sgqdmfgjbprsoqsmgigi
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        run: node scripts/verify-production-edge-function-release-reference.mjs ${{ runner.temp }}/datanest-edge-function-release/edge-function-release.json
+        run: node scripts/verify-production-edge-function-release-reference.mjs "${{ runner.temp }}/datanest-edge-function-release/edge-function-release.json"
 
       - uses: ./.github/actions/node-project-setup
 
