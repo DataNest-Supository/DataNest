@@ -27,8 +27,8 @@ test("worker stays out of batch deploy while preserving internal service authent
   assert.match(deploymentWorkflow,/--no-verify-jwt/);
   assert.match(deploymentWorkflow,/--use-docker/);
   assert.match(worker,/x-datanest-worker-auth/);
-  assert.match(worker,/request\.headers\.get\("x-datanest-worker-auth"\)!==serviceKey/);
-  assert.match(worker,/Worker authorization required/);
+  assert.match(worker,/request\.headers\.get\("x-datanest-worker-auth"\)!==workerToken/);
+  assert.match(worker,/const workerToken=requireEnv\("DATANEST_FILE_WORKER_TOKEN"\);/);
 });
 
 test("server digest is authoritative even when client SHA differs",()=>{
