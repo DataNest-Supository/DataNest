@@ -114,12 +114,14 @@ test("authorized fixture ignores parent candidate Test Mode state",()=>{
 });
 
 test("Pages production deployment uses the current main SHA and a protected environment",()=>{
-  assert.match(pagesWorkflow,/workflow_run:/);
-  assert.match(pagesWorkflow,/CONDUCTOR Process Synchronization Tree/);
+  assert.match(pagesWorkflow,/push:\n    branches:\n      - main/);
   assert.match(pagesWorkflow,/workflow_dispatch:/);
+  assert.doesNotMatch(pagesWorkflow,/workflow_run:/);
+  assert.doesNotMatch(pagesWorkflow,/CONDUCTOR Process Synchronization Tree/);
   assert.match(pagesWorkflow,/github-pages/);
   assert.match(pagesWorkflow,/deployments: read/);
   assert.match(pagesWorkflow,/git rev-parse origin\/main/);
+  assert.match(pagesWorkflow,/if \[ "\$GITHUB_EVENT_NAME" = "push" \]; then/);
   assert.match(pagesWorkflow,/verify-production-release-attestation\.mjs/);
   assert.match(pagesWorkflow,/npm test/);
   assert.match(pagesWorkflow,/npm run check/);
