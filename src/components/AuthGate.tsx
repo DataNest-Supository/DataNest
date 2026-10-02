@@ -12,6 +12,15 @@ import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
 import { DATANEST_CANONICAL_NAME, DATANEST_PUBLIC_URL, RESON8_HUB_URL } from "@/lib/reson8";
 
+function friendlyAuthError(error:unknown,fallback:string):string {
+  const raw=error instanceof Error ? error.message.toLowerCase() : "";
+  if (raw.includes("invalid login credentials")) return "We couldn’t sign you in. Check your email and password.";
+  if (raw.includes("email not confirmed")) return "Your email has not been confirmed yet. Check your inbox for the confirmation message.";
+  if (raw.includes("rate limit") || raw.includes("too many requests")) return "Too many attempts. Please wait a moment and try again.";
+  if (raw.includes("network") || raw.includes("failed to fetch") || raw.includes("fetch")) return "DataNest could not reach the authentication service. Check your connection and try again.";
+  return fallback;
+}
+
 const DataNestApp = dynamic(() => import("@/components/DataNestApp"), {
   ssr: false,
   loading: () => (
@@ -111,7 +120,7 @@ export default function AuthGate() {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to sign in.");
+      setMessage(friendlyAuthError(error,"We couldn’t sign you in. Please try again."));
     } finally {
       setBusy(false);
     }
@@ -141,7 +150,7 @@ export default function AuthGate() {
       setStartup("signed-in");
       setMessage("Password updated. Your DataNest session is ready.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to set your password.");
+      setMessage(friendlyAuthError(error,"We couldn’t update your password. Please try again."));
     } finally {
       setBusy(false);
     }
@@ -171,7 +180,7 @@ export default function AuthGate() {
       if (error) throw error;
       setMessage("Magic sign-in link sent.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to send a magic link.");
+      setMessage(friendlyAuthError(error,"We couldn’t send the magic link. Please try again."));
     } finally {
       setBusy(false);
     }
@@ -197,7 +206,7 @@ export default function AuthGate() {
       if (error) throw error;
       setMessage("If this email belongs to an authorized account, a password reset link has been sent.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to send a password reset email.");
+      setMessage(friendlyAuthError(error,"We couldn’t send the password reset email. Please try again."));
     } finally {
       setBusy(false);
     }
@@ -329,6 +338,7 @@ export default function AuthGate() {
         </div>
         <p className="securityNote">Sign in with your authorized account. Need access? Ask your project administrator for an invitation.</p>
         <p className="sessionCheckNote" role="status" aria-live="polite">{checkingSession ? "Checking your existing session…" : ""}</p>
+        <noscript><p className="authMessage">JavaScript is required to sign in. Enable JavaScript and reload this page.</p></noscript>
       </section>
       </div>
       <PlatformFooter compact />
