@@ -31,7 +31,7 @@ const DataNestApp = dynamic(() => import("@/components/DataNestApp"), {
   )
 });
 
-type StartupState = "signed-out" | "signed-in" | "set-password" | "config-error" | "connection-error";
+type StartupState = "signed-out" | "signed-in" | "set-password" | "config-error";
 const STARTUP_TIMEOUT_MS = 10000;
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
@@ -83,10 +83,10 @@ export default function AuthGate() {
       setStartup(result.data.session
         ? (flowType === "invite" || flowType === "recovery" ? "set-password" : "signed-in")
         : "signed-out");
-    } catch (error) {
+    } catch {
       setSession(null);
-      setStartup("connection-error");
-      setStartupMessage(error instanceof Error ? error.message : "Unable to initialize authentication.");
+      setStartup("signed-out");
+      setStartupMessage("We couldn’t verify an existing session. You can still sign in.");
     } finally {
       setCheckingSession(false);
     }
@@ -232,22 +232,6 @@ export default function AuthGate() {
     );
   }
 
-  if (startup === "connection-error") {
-    return (
-      <main className="authShell">
-        <section className="authCard" role="alert">
-          <ResonanceBrandLockup />
-          <h1>Connection problem</h1>
-          <p className="lede">{startupMessage || "DataNest could not reach the authentication service."}</p>
-          <button className="primaryButton" type="button" onClick={() => void initialize()}>
-            Retry startup
-          </button>
-          <p className="securityNote">Your session was not changed. Retry when connectivity is restored.</p>
-        </section>
-      </main>
-    );
-  }
-
   if (startup === "set-password" && session) {
     return (
       <main className="authShell">
@@ -349,7 +333,10 @@ export default function AuthGate() {
           {message && <div className="authMessage">{message}</div>}
         </div>
         <p className="securityNote">Sign in with your authorized account. Need access? Ask your project administrator for an invitation.</p>
-        <p className="sessionCheckNote" role="status" aria-live="polite">{checkingSession ? "Checking your existing session…" : ""}</p>
+        <p className={"sessionCheckNote"+(startupMessage ? " sessionCheckError" : "")} role="status" aria-live="polite">
+          {checkingSession ? "Checking your existing session…" : startupMessage || ""}
+          {startupMessage && !checkingSession && <button className="sessionCheckRetry" type="button" onClick={() => void initialize()}>Retry session check</button>}
+        </p>
         <noscript><p className="authMessage">JavaScript is required to sign in. Enable JavaScript and reload this page.</p></noscript>
       </section>
       </div>
