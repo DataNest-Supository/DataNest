@@ -213,8 +213,29 @@ jobs:
           }
           JSON
 
-      - name: Apply only byte-safe source streamlining
-        run: node scripts/workflow-reviewer.mjs --apply --report-dir artifacts/guardian/source-healing
+      - name: Apply only byte-safe non-workflow source streamlining
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Workflow definitions are governance/control-plane code. GUARDIAN may
+          # analyze them in monitor mode, but autonomous healing must never mutate
+          # .github/workflows/**; any workflow change requires a governed PR.
+          jq '.exclude = (((.exclude // []) + [".github/workflows"]) | unique)' \
+            workflow-reviewer.config.json > /tmp/guardian-workflow-reviewer.config.json
+          node scripts/workflow-reviewer.mjs \
+            --apply \
+            --config /tmp/guardian-workflow-reviewer.config.json \
+            --report-dir artifacts/guardian/source-healing
+
+      - name: Enforce workflow-definition mutation boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! git diff --quiet -- .github/workflows; then
+            echo "::error::GUARDIAN autonomous healing attempted to modify .github/workflows/**. Workflow changes require a governed human-reviewed PR."
+            git diff -- .github/workflows
+            exit 1
+          fi
 
       - name: Open reviewed healing PR for tracked source refinements
         env:
