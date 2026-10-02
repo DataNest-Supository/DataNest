@@ -172,7 +172,7 @@ export default function DataNestDashboard({
       <div className="controlCenterHeroCopy">
         <p className="eyebrow">DATANEST CONTROL CENTER</p>
         <h2>{projectName}</h2>
-        <p>One operational view across work, execution, governance, AI optimization, control health and evidence.</p>
+        <p>Live operational view across work, execution, governance, AI optimization, control health and evidence.</p>
         <div className="controlCenterHeroActions">
           <button className="primaryButton" type="button" onClick={()=>onNavigate("ai")}>Open DataNest AI</button>
           <button className="secondaryButton" type="button" onClick={()=>onNavigate("scheduler")}>Open TranScheduler</button>
@@ -306,14 +306,6 @@ export default function DataNestDashboard({
 
     {isOwner&&<OwnerDevelopmentAnalytics projectId={projectId}/>}
 
-    <section className="controlCenterLaunchpad" aria-label="DataNest workspaces">
-      <div><p className="eyebrow">QUICK LAUNCH</p><h3>Move from signal to governed action</h3></div>
-      <div>
-        <button type="button" onClick={()=>onNavigate("ai")}><span>✦</span><b>DataNest AI</b><small>Analyze &amp; collaborate</small></button>
-        <button type="button" onClick={()=>onNavigate("unifi")}><span>◇</span><b>UNIFI</b><small>Plan traceable work</small></button>
-        <button type="button" onClick={()=>onNavigate("scheduler")}><span>⌁</span><b>TranScheduler</b><small>Route execution</small></button>
-        <button type="button" onClick={()=>onNavigate("governance")}><span>◆</span><b>Governance</b><small>Decide with evidence</small></button>
-      </div>
-    </section>
+
   </div>;
 }
