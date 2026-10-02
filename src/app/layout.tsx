@@ -6,7 +6,6 @@ import {
 } from "next/font/google";
 import ThemeBootstrapScript from "@/components/platform/ThemeBootstrapScript";
 import CinematicRuntime from "@/components/platform/CinematicRuntime";
-import ThemeControl from "@/components/platform/ThemeControl";
 import "./resonance-design-system.css";
 import "./globals.css";
 import "./external-auditor.css";
@@ -106,7 +105,6 @@ export default function RootLayout({children}:{children:ReactNode}) {
       <body>
         <CinematicRuntime/>
         {children}
-        <div className="themeControlDock"><ThemeControl compact /></div>
       </body>
     </html>
   );
