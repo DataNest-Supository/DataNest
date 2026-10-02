@@ -14,6 +14,7 @@ import "./entry.css";
 import "./datanest-ai-optimized.css";
 import "./datanest-ai-command-center.css";
 import "./datanest-ai-zoom.css";
+import "./datanext-next.css";
 import "./cinematic-workspaces.css";
 import type { ReactNode } from "react";
 
