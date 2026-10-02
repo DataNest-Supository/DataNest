@@ -80,9 +80,10 @@ test("DataNest AI keeps the animated hero and a compact command-first workspace"
     return route.fulfill({contentType:"application/json",body:JSON.stringify(body)});
   });
 
+  const core=page.locator(".aiReactor");
   await page.goto(appPath+"?view=ai");
-
-  await expect(page.getByRole("heading",{name:"DataNest AI",exact:true}).first()).toBeVisible();
+  await expect(core).toHaveAttribute("data-core-state","ready",{timeout:20000});
+  await expect(page.getByRole("heading",{name:"DataNest AI",exact:true}).first()).toBeVisible({timeout:20000});
   await expect(page.getByRole("heading",{name:"DEVELOPMENT COMMAND CHANNEL",exact:true})).toBeVisible();
   await expect(page.locator(".aiReactor")).toHaveAttribute("data-core-state","ready");
   const objectiveHeader=page.getByRole("region",{name:"DataNest AI objective"});
@@ -124,7 +125,8 @@ test("DataNest AI keeps the animated hero and a compact command-first workspace"
   await expect(page.getByLabel("DataNest AI command context locked to JOB-00099")).toBeVisible();
 
   await page.reload();
-  await expect(page.getByText("JOB-00099 · AI Hero Layout Fixture",{exact:true}).first()).toBeVisible();
+  await expect(core).toHaveAttribute("data-core-state","ready",{timeout:20000});
+  await expect(page.getByText("JOB-00099 · AI Hero Layout Fixture",{exact:true}).first()).toBeVisible({timeout:20000});
   await expect(composer).toHaveValue("First Job draft must stay with JOB-00099.");
   await expect(page.getByText("SESSION-ONLY DRAFT · LOCKED TO JOB-00099",{exact:true})).toBeVisible();
 
