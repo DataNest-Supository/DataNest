@@ -31,8 +31,8 @@ jobs:
           automation_action: heal
           automation_target: environment/feeds/
           automation_effect: bounded_mutation
-          human_review_required: "false"
-          human_review_reason: "Routine ENVIRONMENT feed adaptation is non-authorizing; substantive gaps are published with proposed remedy deadlines."
+          human_review_required: "true"
+          human_review_reason: "ENVIRONMENT feed adaptation is a bounded mutation; Automation X records the requirement for human review and does not grant merge or production authority."
 
       - name: Prepare isolated ENVIRONMENT feed branch
         shell: bash
