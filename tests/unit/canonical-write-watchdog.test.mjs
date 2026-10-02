@@ -44,3 +44,10 @@ test("merged PR for a different base branch is still a canonical-write anomaly",
   assert.equal(evidence.result, "canonical-write-anomaly");
   assert.equal(isAuthorized(evidence), false);
 });
+\n\ntest("verification unavailable is not treated as authorized", () => {
+  const evidence = {
+    result: "verification-unavailable",
+    reason: "github-associated-prs-api-returned-403"
+  };
+  assert.equal(isAuthorized(evidence), false);
+});
