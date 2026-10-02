@@ -3,7 +3,7 @@ import {
   AIPI_MAX_BODY_BYTES,
   AIPI_POLICY_VERSION,
   AipiError,
-  authorizeBearer,
+  authorizeProjectBearer,
   makeAuditEvent,
   parseAllowedModels,
   requireProject,
@@ -34,27 +34,27 @@ export async function POST(request: Request) {
   const requestId = randomUUID();
   const startedAtMs = Date.now();
   const rawProject = request.headers.get("x-resonance-project")?.trim() || "unknown";
+  let project = rawProject;
 
-  if (!authorizeBearer(request.headers.get("authorization"), process.env.AIPI_API_KEYS)) {
-    audit({
-      requestId,
-      project: rawProject,
-      action: "ai.chat",
-      outcome: "denied",
-      startedAtMs,
-    });
+  try {
+    project = requireProject(request.headers.get("x-resonance-project"));
+  } catch (error) {
+    const safeError = error instanceof AipiError ? error : new AipiError("invalid_project", 400);
+    audit({ requestId, project: rawProject, action: "ai.chat", outcome: "denied", startedAtMs });
+    return json({ error: { code: safeError.code, message: safeError.message } }, safeError.status, requestId);
+  }
+
+  if (!authorizeProjectBearer(request.headers.get("authorization"), process.env.AIPI_PROJECT_KEYS, project)) {
+    audit({ requestId, project, action: "ai.chat", outcome: "denied", startedAtMs });
     return json(
-      { error: { code: "unauthorized", message: "A valid AiPI bearer token is required." } },
+      { error: { code: "unauthorized", message: "A valid project-scoped AiPI bearer token is required." } },
       401,
       requestId,
     );
   }
 
-  let project = rawProject;
   let model: string | undefined;
   try {
-    project = requireProject(request.headers.get("x-resonance-project"));
-
     const contentLength = Number(request.headers.get("content-length") || 0);
     if (Number.isFinite(contentLength) && contentLength > AIPI_MAX_BODY_BYTES) {
       throw new AipiError("request_too_large", 413, "AiPI requests are limited to 256 KiB.");

@@ -12,6 +12,7 @@ export type AipiChatPayload = {
   temperature?: number;
   max_output_tokens?: number;
 };
+export type AipiProjectKeyBinding = { project: string; key: string };
 
 export class AipiError extends Error {
   readonly code: string;
@@ -25,12 +26,7 @@ export class AipiError extends Error {
   }
 }
 
-export function parseApiKeys(raw: string | undefined): string[] {
-  return (raw || "")
-    .split(",")
-    .map((value) => value.trim())
-    .filter(Boolean);
-}
+const projectPattern = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 
 function secretsEqual(left: string, right: string): boolean {
   const leftBytes = Buffer.from(left);
@@ -39,11 +35,38 @@ function secretsEqual(left: string, right: string): boolean {
   return timingSafeEqual(leftBytes, rightBytes);
 }
 
-export function authorizeBearer(header: string | null, configuredKeys: string | undefined): boolean {
-  if (!header?.startsWith("Bearer ")) return false;
-  const presented = header.slice("Bearer ".length).trim();
+function bearerToken(header: string | null): string | null {
+  if (!header) return null;
+  const match = /^Bearer\s+(.+)$/i.exec(header.trim());
+  const token = match?.[1]?.trim() || "";
+  return token || null;
+}
+
+export function parseProjectKeys(raw: string | undefined): AipiProjectKeyBinding[] {
+  const bindings: AipiProjectKeyBinding[] = [];
+  for (const rawEntry of (raw || "").split(",")) {
+    const entry = rawEntry.trim();
+    if (!entry) continue;
+    const separator = entry.indexOf("=");
+    if (separator < 1) continue;
+    const project = entry.slice(0, separator).trim();
+    const key = entry.slice(separator + 1).trim();
+    if (!projectPattern.test(project) || !key) continue;
+    bindings.push({ project, key });
+  }
+  return bindings;
+}
+
+export function authorizeProjectBearer(
+  header: string | null,
+  configuredBindings: string | undefined,
+  project: string,
+): boolean {
+  const presented = bearerToken(header);
   if (!presented) return false;
-  return parseApiKeys(configuredKeys).some((key) => secretsEqual(presented, key));
+  return parseProjectKeys(configuredBindings)
+    .filter((binding) => binding.project === project)
+    .some((binding) => secretsEqual(presented, binding.key));
 }
 
 export function parseAllowedModels(raw: string | undefined, fallback: string | undefined): string[] {
@@ -53,7 +76,7 @@ export function parseAllowedModels(raw: string | undefined, fallback: string | u
 
 export function requireProject(value: string | null): string {
   const project = value?.trim() || "";
-  if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(project)) {
+  if (!projectPattern.test(project)) {
     throw new AipiError("invalid_project", 400, "A valid x-resonance-project header is required.");
   }
   return project;

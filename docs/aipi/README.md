@@ -5,7 +5,7 @@ Resonance AiPI is the governed AI API boundary for DataNest. It exposes a stable
 ## v0.1 surface
 
 - `GET /api/aipi/v1/health` — public service health metadata.
-- `GET /api/aipi/v1/models` — authenticated allowlisted model registry.
+- `GET /api/aipi/v1/models` — authenticated, project-scoped allowlisted model registry.
 - `POST /api/aipi/v1/ai/chat` — authenticated, project-scoped chat completion.
 
 The public contract is documented in `openapi.yaml`.
@@ -14,8 +14,8 @@ The public contract is documented in `openapi.yaml`.
 
 AiPI Core v0.1 is fail-closed:
 
-1. Authenticated endpoints require `Authorization: Bearer <AiPI key>` and keys are read only from server-side `AIPI_API_KEYS`.
-2. Chat requests require `x-resonance-project` so every execution has a project governance boundary.
+1. Authenticated endpoints require `Authorization: Bearer <AiPI key>` plus `x-resonance-project`.
+2. Gateway credentials are bound to explicit projects through server-side `AIPI_PROJECT_KEYS`; a key configured for one project cannot claim another project.
 3. Models are restricted by `AIPI_ALLOWED_MODELS`, with `DATANEST_SHARED_AI_MODEL` as the migration-compatible fallback.
 4. Provider endpoints require HTTPS, an exact configured hostname, no URL credentials, and port 443 when an explicit port is supplied.
 5. Provider requests disable redirects and use a 30-second timeout.
@@ -30,8 +30,10 @@ The upstream adapter supports OpenAI-compatible chat-completion endpoints withou
 Required for authenticated access:
 
 ```text
-AIPI_API_KEYS=<comma-separated gateway keys>
+AIPI_PROJECT_KEYS=resonance-demo=<gateway-key-current>,resonance-demo=<gateway-key-next>
 ```
+
+Each entry is `<project>=<key>`. Repeat a project to rotate credentials without an outage. A key may be repeated for multiple projects only when that cross-project access is deliberate.
 
 Recommended explicit AiPI provider configuration:
 
@@ -39,7 +41,7 @@ Recommended explicit AiPI provider configuration:
 AIPI_ALLOWED_MODELS=<model-a,model-b>
 AIPI_UPSTREAM_URL=https://ai.example.com/v1/chat/completions
 AIPI_UPSTREAM_HOST=ai.example.com
-AIPI_UPSTREAM_API_KEY=<server-side provider key>
+AIPI_UPSTREAM_API_KEY=<server-side-provider-key>
 ```
 
 If the `AIPI_UPSTREAM_*` variables are absent, the gateway can use the corresponding existing `DATANEST_SHARED_AI_*` values. Provider secrets must never use `NEXT_PUBLIC_*` variables.
@@ -48,7 +50,7 @@ If the `AIPI_UPSTREAM_*` variables are absent, the gateway can use the correspon
 
 ```bash
 curl -sS https://<datanest-host>/api/aipi/v1/ai/chat \
-  -H 'Authorization: Bearer <aipi-key>' \
+  -H 'Authorization: Bearer <project-scoped-aipi-key>' \
   -H 'x-resonance-project: resonance-demo' \
   -H 'content-type: application/json' \
   --data '{"model":"<allowed-model>","messages":[{"role":"user","content":"Summarize the current certified evidence."}]}'

@@ -2,19 +2,27 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   AipiError,
-  authorizeBearer,
+  authorizeProjectBearer,
   makeAuditEvent,
   parseAllowedModels,
+  parseProjectKeys,
   requireProject,
   resolveUpstreamConfig,
   validateChatPayload,
 } from "../../src/lib/aipiCore.ts";
 
-test("AiPI bearer authentication fails closed", () => {
-  assert.equal(authorizeBearer("Bearer alpha", undefined), false);
-  assert.equal(authorizeBearer(null, "alpha"), false);
-  assert.equal(authorizeBearer("Bearer wrong", "alpha,beta"), false);
-  assert.equal(authorizeBearer("Bearer beta", "alpha,beta"), true);
+test("AiPI project-scoped bearer authentication fails closed", () => {
+  const configured = "project-a=alpha,project-b=beta,project-a=rotated";
+  assert.deepEqual(parseProjectKeys(configured), [
+    { project: "project-a", key: "alpha" },
+    { project: "project-b", key: "beta" },
+    { project: "project-a", key: "rotated" },
+  ]);
+  assert.equal(authorizeProjectBearer("Bearer alpha", undefined, "project-a"), false);
+  assert.equal(authorizeProjectBearer(null, configured, "project-a"), false);
+  assert.equal(authorizeProjectBearer("Bearer wrong", configured, "project-a"), false);
+  assert.equal(authorizeProjectBearer("Bearer beta", configured, "project-a"), false);
+  assert.equal(authorizeProjectBearer("bearer rotated", configured, "project-a"), true);
 });
 
 test("AiPI model registry is allowlist based", () => {

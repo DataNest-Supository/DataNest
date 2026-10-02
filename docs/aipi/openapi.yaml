@@ -23,9 +23,11 @@ paths:
   /models:
     get:
       operationId: listAipiModels
-      summary: List models allowed by AiPI policy
+      summary: List models allowed by AiPI policy for a project
       security:
         - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectHeader'
       responses:
         '200':
           description: Allowed model registry.
@@ -33,6 +35,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ModelList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
   /ai/chat:
@@ -42,14 +46,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - in: header
-          name: x-resonance-project
-          required: true
-          schema:
-            type: string
-            minLength: 1
-            maxLength: 128
-          description: Resonance project governance boundary.
+        - $ref: '#/components/parameters/ProjectHeader'
       requestBody:
         required: true
         content:
@@ -103,6 +100,16 @@ components:
       type: http
       scheme: bearer
       bearerFormat: AiPI-Key
+  parameters:
+    ProjectHeader:
+      in: header
+      name: x-resonance-project
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+      description: Resonance project governance boundary bound to the presented AiPI key.
   responses:
     BadRequest:
       description: Invalid request.
@@ -111,7 +118,7 @@ components:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
     Unauthorized:
-      description: Missing or invalid AiPI bearer token.
+      description: Missing, invalid, or wrong-project AiPI bearer token.
       content:
         application/json:
           schema:
@@ -146,12 +153,14 @@ components:
           type: boolean
     ModelList:
       type: object
-      required: [object, policy_version, data]
+      required: [object, policy_version, project, data]
       properties:
         object:
           type: string
           const: list
         policy_version:
+          type: string
+        project:
           type: string
         data:
           type: array

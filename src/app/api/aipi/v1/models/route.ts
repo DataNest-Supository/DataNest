@@ -1,8 +1,9 @@
 import {
   AIPI_POLICY_VERSION,
   AipiError,
-  authorizeBearer,
+  authorizeProjectBearer,
   parseAllowedModels,
+  requireProject,
 } from "@/lib/aipiCore";
 
 export const runtime = "nodejs";
@@ -16,8 +17,15 @@ function errorResponse(error: AipiError) {
 }
 
 export async function GET(request: Request) {
-  if (!authorizeBearer(request.headers.get("authorization"), process.env.AIPI_API_KEYS)) {
-    return errorResponse(new AipiError("unauthorized", 401, "A valid AiPI bearer token is required."));
+  let project: string;
+  try {
+    project = requireProject(request.headers.get("x-resonance-project"));
+  } catch (error) {
+    return errorResponse(error instanceof AipiError ? error : new AipiError("invalid_project", 400));
+  }
+
+  if (!authorizeProjectBearer(request.headers.get("authorization"), process.env.AIPI_PROJECT_KEYS, project)) {
+    return errorResponse(new AipiError("unauthorized", 401, "A valid project-scoped AiPI bearer token is required."));
   }
 
   const models = parseAllowedModels(
@@ -29,6 +37,7 @@ export async function GET(request: Request) {
     {
       object: "list",
       policy_version: AIPI_POLICY_VERSION,
+      project,
       data: models.map((id) => ({
         id,
         object: "aipi.model",
