@@ -245,7 +245,7 @@ jobs:
           SUPABASE_URL: ${{ env.DATANEST_CERTIFICATION_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ env.DATANEST_CERTIFICATION_PUBLISHABLE_KEY }}
           DATANEST_RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          DATANEST_DB_RELEASE: datanest-ai-canonical-certification-v2
+          DATANEST_EXTERNAL_AUDIT_DB_RELEASE: datanest-ai-canonical-certification-v2
           DATANEST_EDGE_AI: datanest-ai-chat@candidate
           DATANEST_EDGE_INTAKE: datanest-ai-intake@candidate
           DATANEST_EDGE_CERTIFICATION: datanest-ai-certification@candidate
