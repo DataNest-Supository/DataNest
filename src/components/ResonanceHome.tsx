@@ -135,8 +135,8 @@ export default function ResonanceHome({
             {canOperate?"Create governed work":"Viewer mode"}
           </button>
         </div>
-        <div className="datanextTelemetry" aria-label="DataNext live operating status">
-          <span className="datanextTelemetryItem"><i aria-hidden="true" className="datanextPulse" /> SYSTEM <b>ONLINE</b></span>
+        <div className="datanextTelemetry" aria-label="DataNest workspace status">
+          <span className="datanextTelemetryItem"><i aria-hidden="true" className="datanextPulse" /> WORKSPACE <b>READY</b></span>
           <span className="datanextTelemetryDivider" aria-hidden="true">/</span>
           <span className="datanextTelemetryItem">WORK <b>{counts.active}</b> ACTIVE</span>
           <span className="datanextTelemetryDivider" aria-hidden="true">/</span>

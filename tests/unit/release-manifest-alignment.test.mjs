@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import fs from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -43,19 +44,14 @@ test("project invite Edge Function v2 is the enforced release version",()=>{
   assert.doesNotMatch(pagesWorkflow,/send-project-member-invite@1/);
 });
 
-test("release manifest identifies the current TranScheduler interests database release",()=>{
-  assert.match(
-    manifestScript,
-    /databaseRelease:process\.env\.DATANEST_DB_RELEASE \|\| "link-transcheduler-job-requirements-user-interests"/
-  );
-  assert.match(
-    pagesWorkflow,
-    /DATANEST_DB_RELEASE: link-transcheduler-job-requirements-user-interests/
-  );
-  assert.match(
-    pagesWorkflow,
-    /databaseRelease.*link-transcheduler-job-requirements-user-interests/
-  );
+test("release manifest derives the canonical production database release",()=>{
+  assert.match(manifestScript,/validateProductionContract/);
+  assert.match(manifestScript,/const expectedMigration=productionContract\.supabase\.expectedMigration/);
+  assert.match(manifestScript,/databaseRelease:canonicalDatabaseRelease/);
+  assert.match(manifestScript,/databaseMigration:\{/);
+  assert.doesNotMatch(manifestScript,/link-transcheduler-job-requirements-user-interests/);
+  assert.doesNotMatch(pagesWorkflow,/DATANEST_DB_RELEASE:/);
+  assert.doesNotMatch(pagesWorkflow,/link-transcheduler-job-requirements-user-interests/);
   assert.doesNotMatch(manifestScript,/add-mutation-recovery-observability/);
   assert.doesNotMatch(pagesWorkflow,/add-mutation-recovery-observability/);
 });
@@ -152,14 +148,16 @@ test("governed Edge Function deployment treats timeframe as advisory",()=>{
 test("Pages workflow stays within GitHub workflow_dispatch input limit",()=>{
   const dispatchBlock=pagesWorkflow.split("\npermissions:\n",1)[0];
   const inputs=dispatchBlock.match(/^      [A-Za-z0-9_-]+:$/gm)||[];
-  assert.equal(inputs.length,25);
+  assert.equal(inputs.length,24);
+  assert.doesNotMatch(dispatchBlock,/\n      database_migration_reference:/);
 });
 
-test("Pages release wiring retains strict attestation for protected modes while allowing progressive-live gaps",()=>{
-  assert.match(pagesWorkflow,/database_migration_reference:/);
-  assert.match(pagesWorkflow,/database_migration_reference:[\s\S]*?required: false[\s\S]*?default: ''/);
+test("Pages release wiring derives production attestation from the canonical contract",()=>{
+  assert.doesNotMatch(pagesWorkflow,/database_migration_reference:/);
   assert.doesNotMatch(pagesWorkflow,/database_migration_head:/);
   assert.doesNotMatch(pagesWorkflow,/database_migration_name:/);
+  assert.match(pagesWorkflow,/Validate canonical production contract/);
+  assert.match(pagesWorkflow,/DATANEST_EXPECTED_DB_MIGRATION_REFERENCE: \$\{\{ steps\.production_contract\.outputs\.database_migration_reference \}\}/);
   assert.match(pagesWorkflow,/verify-production-release-attestation\.mjs/);
   assert.match(pagesWorkflow,/verify-production-edge-function-release-reference\.mjs/);
   assert.match(pagesWorkflow,/edge_function_release_reference:/);
@@ -216,9 +214,13 @@ test("release manifest records verified database and Edge Function attestations"
 });
 
 
-test("release manifest declares the production-inclusive surface contract",()=>{
-  assert.match(manifestScript,/productionInclusion:\{/);
-  assert.match(manifestScript,/inclusive:true/);
+test("release manifest declares the production-inclusive surface contract from the catalog",()=>{
+  const catalog=JSON.parse(fs.readFileSync(
+    new URL("../../config/supository.catalog.json",import.meta.url),
+    "utf8"
+  ));
+  assert.match(manifestScript,/productionInclusion:productionCatalog\.productionInclusion/);
+  assert.equal(catalog.productionInclusion?.inclusive,true);
   for(const id of [
     "datanest",
     "datanest-assurance",
@@ -228,13 +230,13 @@ test("release manifest declares the production-inclusive surface contract",()=>{
     "ronsas-lyricsync-studio",
     "ronsas-scene-song-spark",
     "ronsas-sovereign-forge",
-    "ronsas-syncvision",
-    "ronsas-youtube-optimizer",
-    "ronsas-sovereign-backend",
-    "ronsas-shared"
+    "ronsas-syncvision"
   ]){
-    assert.match(manifestScript,new RegExp(id));
+    assert.ok(catalog.productionInclusion.publicSurfaces.includes(id),id);
   }
+  assert.ok(catalog.productionInclusion.externalProductionSurfaces.includes("ronsas-youtube-optimizer"));
+  assert.ok(catalog.productionInclusion.productionSupportComponents.includes("ronsas-sovereign-backend"));
+  assert.ok(catalog.productionInclusion.productionSupportComponents.includes("ronsas-shared"));
   assert.match(pagesWorkflow,/production-inclusive Assurance surface/);
   assert.match(pagesWorkflow,/DataNest\/assurance\//);
 });
