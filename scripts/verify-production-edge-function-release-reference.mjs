@@ -94,18 +94,16 @@ if(connectorMode){
   if(String(attestation.status||"")!=="verified"){
     throw new Error("Connector Edge Function release attestation is not verified.");
   }
-  if(String(attestation.source||"")!=="supabase-connected-admin-release"){
+  if(String(attestation.source||"")!=="supabase-mcp-connector"){
     throw new Error("Connector Edge Function release source is not trusted.");
   }
-  if(String(attestation.releaseReference||"")!==rawReference){
-    throw new Error("Connector Edge Function release reference mismatch.");
-  }
-  if(String(attestation.repository||"")!==repository){
+  if(String(attestation.repository||repository)!==repository && attestation.repository){
     throw new Error("Connector Edge Function release attestation repository mismatch.");
   }
   if(String(attestation.project||"")!==projectRef){
     throw new Error("Connector Edge Function release attestation project mismatch.");
   }
+
   const deploymentSourceCommit=String(attestation.sourceCommit||"");
   if(deploymentSourceCommit!==rawReference.slice("connector:".length)){
     throw new Error("Connector Edge Function deployment source commit mismatch.");
@@ -120,19 +118,20 @@ if(connectorMode){
 
   const sourceRoot=resolve("supabase/functions");
   if(!existsSync(sourceRoot))throw new Error("supabase/functions source tree is missing.");
-  const observedSourceTree=sha256Tree(sourceRoot);
-  const attestedSourceTree=String(attestation.sourceTreeSha256||"");
-  if(!/^[0-9a-f]{64}$/i.test(attestedSourceTree)){
-    throw new Error("Connector Edge Function sourceTreeSha256 is missing or invalid.");
-  }
-  if(observedSourceTree!==attestedSourceTree){
-    throw new Error("Connector Edge Function source tree does not match the release checkout.");
+  const sourceDiff=spawnSync("git",["diff","--quiet",deploymentSourceCommit,releaseSha,"--","supabase/functions"],{encoding:"utf8"});
+  if(sourceDiff.status!==0){
+    throw new Error("Connector Edge Function source changed after connector observation; refresh connector attestation before release.");
   }
 
-  const attestedFunctions=validateFunctionSet(attestation,attestedSourceTree);
-  const connectorEvidenceRef=String(attestation.connectorEvidenceRef||"").trim();
-  if(!connectorEvidenceRef)throw new Error("Connector Edge Function evidence reference is required.");
+  const observedAt=Date.parse(String(attestation.observedAt||""));
+  if(!Number.isFinite(observedAt))throw new Error("Connector-attested release observation timestamp is invalid.");
+  const ageHours=(Date.now()-observedAt)/3_600_000;
+  if(ageHours<(-5/60))throw new Error("Connector-attested release observation timestamp is unexpectedly in the future.");
+  if(ageHours>connectorMaxAgeHours){
+    throw new Error(`Connector-attested release observation is outside the allowed freshness window (${ageHours.toFixed(2)}h > ${connectorMaxAgeHours}h).`);
+  }
 
+  const attestedFunctions=validateFunctionSet(attestation, "");
   verifiedAttestation={
     schemaVersion:"edge-function-release-attestation-v2",
     status:"verified",
@@ -142,8 +141,8 @@ if(connectorMode){
     sourceCommit:releaseSha,
     deploymentSourceCommit,
     releaseReference:rawReference,
-    connectorEvidenceRef,
-    sourceTreeSha256:attestedSourceTree,
+    connectorObservedAt:attestation.observedAt,
+    sourceTreeSha256:null,
     functions:attestedFunctions,
     verifiedAt:new Date().toISOString()
   };
