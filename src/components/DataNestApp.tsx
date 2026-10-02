@@ -1754,20 +1754,20 @@ export default function DataNestApp({session}:{session:Session}) {
           {recoveryLedgerError&&<button className="secondaryButton compact" type="button" onClick={()=>void synchronizeDurableRecoveries()}>Retry recovery sync</button>}
         </section>}
         {!loadingCore&&project&&view==="sparks"&&recoveryHydrated&&<SparksWorkspace projectId={project.id} currentUserId={session.user.id} canOperate={canOperate} canManage={canManageAi} setNotice={setNotice} setError={setError}/>}
-        {!loadingCore&&project&&view==="impact"&&<ImpactScoringWorkspace projectId={project.id} currentUserId={session.user.id}/>} 
-        {!loadingCore&&project&&view==="governance"&&<GovernanceWorkspace projectId={project.id} currentUserId={session.user.id} role={membership?.role||"viewer"} canManage={canManageAi} setNotice={setNotice} setError={setError}/>} 
+        {!loadingCore&&project&&view==="impact"&&<ImpactScoringWorkspace projectId={project.id} currentUserId={session.user.id}/>}
+        {!loadingCore&&project&&view==="governance"&&<GovernanceWorkspace projectId={project.id} currentUserId={session.user.id} role={membership?.role||"viewer"} canManage={canManageAi} setNotice={setNotice} setError={setError}/>}
         {!loadingCore&&project&&view==="products"&&<ProductsWorkspace projectId={project.id} currentUserId={session.user.id} role={membership?.role||"viewer"}/>}
         {!loadingCore&&project&&view==="external_auditor"&&<ExternalAuditor projectId={project.id} currentUserId={session.user.id} role={membership?.role||"viewer"}/>}
         {!loadingCore&&project&&view==="thinktank"&&<ThinkTankWorkspace projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} canReview={canManageAi} setNotice={setNotice} setError={setError}/>}
         {!loadingCore&&project&&view==="ai"&&<DataNestAiWorkspace key={project.id+":"+session.user.id} projectId={project.id} currentUserId={session.user.id} currentUserEmail={session.user.email||"Authenticated user"} role={membership?.role||"viewer"} canOperate={canOperate} openScheduler={()=>setView("scheduler")} setNotice={setNotice} setError={setError} preferredJobId={activeDataNestAiSession?.jobId||null} onActiveSessionChange={updateActiveWorkContext}/>}
         {!loadingCore&&project&&view==="productlab"&&recoveryHydrated&&<ProductLab projectId={project.id} currentUserId={session.user.id} canOperate={canOperate} setNotice={setNotice} setError={setError}/>}
         {!loadingCore&&project&&view==="unifi"&&recoveryHydrated&&<UnifiPlanner project={project} currentUserId={session.user.id} jobs={jobs} capabilities={capabilities} reload={async()=>{await loadJobsPage(jobPage);await loadSummary(project.id);await loadRecentJobs(project.id);}} setNotice={setNotice} setError={setError} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} activeJobId={activeDataNestAiSession?.jobId||null}/>}
-        {!loadingCore&&view==="scheduler"&&project&&<Scheduler projectId={project.id} projectName={project?.name||DATANEST_CANONICAL_NAME} projectSlug={project?.slug||"resonance-datanest"} currentUserId={session.user.id} role={membership?.role||"viewer"} jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null} setNotice={setNotice} setError={setError} filter={schedulerFilter} viewMode={schedulerViewMode} sortMode={schedulerSortMode} interestOnly={schedulerInterestOnly} requirementFocus={schedulerRequirementFocus} onFilter={setSchedulerFilter} onViewMode={setSchedulerViewMode} onSortMode={setSchedulerSortMode} onInterestOnly={setSchedulerInterestOnly} onRequirementFocus={setSchedulerRequirementFocus}/>} 
+        {!loadingCore&&view==="scheduler"&&project&&<Scheduler projectId={project.id} projectName={project?.name||DATANEST_CANONICAL_NAME} projectSlug={project?.slug||"resonance-datanest"} currentUserId={session.user.id} role={membership?.role||"viewer"} jobs={jobs} capabilities={capabilities} onStatus={updateJobStatus} canOperate={canOperate} page={jobPage} total={jobCount} onPage={setJobPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null} setNotice={setNotice} setError={setError} filter={schedulerFilter} viewMode={schedulerViewMode} sortMode={schedulerSortMode} interestOnly={schedulerInterestOnly} requirementFocus={schedulerRequirementFocus} onFilter={setSchedulerFilter} onViewMode={setSchedulerViewMode} onSortMode={setSchedulerSortMode} onInterestOnly={setSchedulerInterestOnly} onRequirementFocus={setSchedulerRequirementFocus}/>}
         {!loadingCore&&view==="runs"&&<Runs runs={runs} jobLookup={jobLookup} page={runPage} total={runCount} onPage={setRunPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
         {!loadingCore&&view==="checkpoints"&&<Checkpoints checkpoints={checkpoints} jobLookup={jobLookup} page={checkpointPage} total={checkpointCount} onPage={setCheckpointPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
         {!loadingCore&&view==="audit"&&<Audit events={events} jobLookup={jobLookup} page={eventPage} total={eventCount} onPage={setEventPage} onNavigate={setView} activeJobId={activeDataNestAiSession?.jobId||null}/>}
         {!loadingCore&&view==="transparency"&&<TransparencyWorkspace/>}
-        {!loadingCore&&view==="settings"&&<Settings project={project} tools={tools} policies={policies} membership={membership} currentUserId={session.user.id} canManageAi={canManageAi} recoveryHydrated={recoveryHydrated} recoveryLedgerError={recoveryLedgerError} recoveryLastSyncedAt={recoveryLastSyncedAt} recoverySyncing={recoverySyncing} synchronizeDurableRecoveries={synchronizeDurableRecoveries}/>} 
+        {!loadingCore&&view==="settings"&&<Settings project={project} tools={tools} policies={policies} membership={membership} currentUserId={session.user.id} canManageAi={canManageAi} recoveryHydrated={recoveryHydrated} recoveryLedgerError={recoveryLedgerError} recoveryLastSyncedAt={recoveryLastSyncedAt} recoverySyncing={recoverySyncing} synchronizeDurableRecoveries={synchronizeDurableRecoveries}/>}
         </div>
         {!loadingCore&&project&&(previousViewItem||nextViewItem)&&<nav className="workflowContinuation" aria-label="Workspace progression">
           <div className="workflowContinuationCopy">
@@ -2341,7 +2341,7 @@ function Scheduler({projectId,projectName,projectSlug,currentUserId,role,jobs,ca
               </div>
             </div>)}
           </div></div>:<SchedulerGantt projectName={projectName} projectSlug={projectSlug} jobs={orderedVisible} onStatus={onStatus} canOperate={canOperate} activeJobId={activeJobId} userInterests={userInterests}/>}
-          {!requirementFocus&&<Pagination page={page} total={total} onPage={onPage}/>} 
+          {!requirementFocus&&<Pagination page={page} total={total} onPage={onPage}/>}
         </>}
     </section>
   </>;
@@ -2584,4 +2584,3 @@ function Pagination({page,total,onPage}:{page:number;total:number;onPage:(p:numb
 
 function Badge({value}:{value:string}) { return <span className={"badge "+tone(value)}>{value.replaceAll("_"," ")}</span>; }
 function EmptyState({title,text,actionLabel,onAction}:{title:string;text:string;actionLabel?:string;onAction?:()=>void}) { return <div className="emptyState"><div>◇</div><h3>{title}</h3><p>{text}</p>{actionLabel&&onAction&&<button className="secondaryButton compact emptyStateAction" type="button" onClick={onAction}>{actionLabel}</button>}</div>; }
-
