@@ -5,6 +5,20 @@ import { proposeOwnerTestModeWindow } from "./propose-owner-test-mode-window.mjs
 
 export const UI_GOVERNANCE_SCHEMA_VERSION="ui-governance-release-v2";
 export const OWNER_TEST_MODE_MAX_HOURS=72;
+export const PROGRESSIVE_LIVE_GAP_HOURS={
+  mirrorPromotion:48,
+  mirrorLiveEvidence:48,
+  datanestAiCertification:48,
+  auditOptimizer:72,
+  prVerification:48,
+  securityScan:48,
+  ronsasValidation:48,
+  visualReview:24,
+  governanceReview:48,
+  legalReview:72,
+  externalReview:72,
+  productionAuthorization:72
+};
 export const UI_GOVERNANCE_DESIGN_SPEC=
   "docs/superpowers/specs/2026-09-29-resonance-datanest-ui-governance-system-design.md";
 export const UI_GOVERNANCE_IMPLEMENTATION_PLANS=[
@@ -142,8 +156,8 @@ export function hasUiGovernanceEnvironment(env=process.env){
 
 export function buildUiGovernanceEvidence(env=process.env){
   const releaseState=clean(env.DATANEST_UI_RELEASE_STATE) || "candidate";
-  if (!["candidate","authorized","owner_test_mode"].includes(releaseState)) {
-    throw new Error("DATANEST_UI_RELEASE_STATE must be candidate, authorized, or owner_test_mode");
+  if (!["candidate","authorized","progressive_live","owner_test_mode"].includes(releaseState)) {
+    throw new Error("DATANEST_UI_RELEASE_STATE must be candidate, authorized, progressive_live, or owner_test_mode");
   }
 
   const releaseSha=clean(env.DATANEST_UI_RELEASE_SHA);
@@ -180,6 +194,23 @@ export function buildUiGovernanceEvidence(env=process.env){
     };
   }
 
+  const gaps=releaseState==="progressive_live"
+    ? Object.entries(evidence)
+        .filter(([,item])=>item.status==="pending")
+        .map(([key])=>{
+          const hours=PROGRESSIVE_LIVE_GAP_HOURS[key] || 72;
+          return {
+            id:`human-evidence:${key}`,
+            domain:key,
+            status:"pending",
+            remedy:`Supply or complete the ${key} assurance item and attach the relevant review/evidence reference.`,
+            proposedDeadlineHours:hours,
+            proposedDeadline:new Date(Date.parse(generatedAt)+hours*3_600_000).toISOString(),
+            blocking:false
+          };
+        })
+    : [];
+
   return {
     schemaVersion:UI_GOVERNANCE_SCHEMA_VERSION,
     project:"Resonance DataNest",
@@ -187,11 +218,18 @@ export function buildUiGovernanceEvidence(env=process.env){
     releaseState,
     authorized:releaseState==="authorized",
     fullyGoverned:releaseState==="authorized",
-    productionDeploymentAllowed:releaseState==="authorized" || releaseState==="owner_test_mode",
+    productionDeploymentAllowed:
+      releaseState==="authorized" ||
+      releaseState==="progressive_live" ||
+      releaseState==="owner_test_mode",
+    deploymentBasis:releaseState==="progressive_live"
+      ? "Manual workflow dispatch plus automated technical validation; human approval and evidence completion are advisory."
+      : null,
     ownerTestMode,
     designSpec:UI_GOVERNANCE_DESIGN_SPEC,
     implementationPlans:UI_GOVERNANCE_IMPLEMENTATION_PLANS,
     evidence,
+    gaps,
     generatedAt
   };
 }
