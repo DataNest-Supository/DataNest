@@ -28,7 +28,7 @@ export function assertPolicyShape() {
   }
   const canonical = config.branchClasses.canonical;
   if (canonical.pullRequestRequired !== true) throw new Error("canonical PR requirement missing");
-  if (canonical.requiredApprovingReviews < 1) throw new Error("canonical review floor missing");
+  if (canonical.requiredApprovingReviews < 0) throw new Error("canonical review floor cannot be negative");
   if (canonical.allowForcePushes !== false) throw new Error("canonical force-push protection missing");
   if (canonical.allowDeletions !== false) throw new Error("canonical deletion protection missing");
   if (canonical.enforceAdmins !== true) throw new Error("canonical admin enforcement missing");

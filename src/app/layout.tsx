@@ -5,6 +5,7 @@ import {
   JetBrains_Mono
 } from "next/font/google";
 import ThemeBootstrapScript from "@/components/platform/ThemeBootstrapScript";
+import CinematicRuntime from "@/components/platform/CinematicRuntime";
 import ThemeControl from "@/components/platform/ThemeControl";
 import "./resonance-design-system.css";
 import "./globals.css";
@@ -13,6 +14,8 @@ import "./entry.css";
 import "./datanest-ai-optimized.css";
 import "./datanest-ai-command-center.css";
 import "./datanest-ai-zoom.css";
+import "./datanext-next.css";
+import "./cinematic-workspaces.css";
 import type { ReactNode } from "react";
 
 const interTight=Inter_Tight({
@@ -101,6 +104,7 @@ export default function RootLayout({children}:{children:ReactNode}) {
         <script src={runtimeConfigSource} />
       </head>
       <body>
+        <CinematicRuntime/>
         {children}
         <div className="themeControlDock"><ThemeControl compact /></div>
       </body>

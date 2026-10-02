@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import fs from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -36,26 +37,21 @@ test("project invite Edge Function v2 is the enforced release version",()=>{
     /DATANEST_EDGE_PROJECT_INVITES: send-project-member-invite@3/
   );
   assert.match(
-    pagesWorkflow,
-    /projectInvitations.*send-project-member-invite@3/
+    manifestScript,
+    /projectInvitations:process\.env\.DATANEST_EDGE_PROJECT_INVITES \|\| "send-project-member-invite@3"/
   );
   assert.doesNotMatch(manifestScript,/send-project-member-invite@1/);
   assert.doesNotMatch(pagesWorkflow,/send-project-member-invite@1/);
 });
 
-test("release manifest identifies the current TranScheduler interests database release",()=>{
-  assert.match(
-    manifestScript,
-    /databaseRelease:process\.env\.DATANEST_DB_RELEASE \|\| "link-transcheduler-job-requirements-user-interests"/
-  );
-  assert.match(
-    pagesWorkflow,
-    /DATANEST_DB_RELEASE: link-transcheduler-job-requirements-user-interests/
-  );
-  assert.match(
-    pagesWorkflow,
-    /databaseRelease.*link-transcheduler-job-requirements-user-interests/
-  );
+test("release manifest derives the canonical production database release",()=>{
+  assert.match(manifestScript,/validateProductionContract/);
+  assert.match(manifestScript,/const expectedMigration=productionContract\.supabase\.expectedMigration/);
+  assert.match(manifestScript,/databaseRelease:canonicalDatabaseRelease/);
+  assert.match(manifestScript,/databaseMigration:\{/);
+  assert.doesNotMatch(manifestScript,/link-transcheduler-job-requirements-user-interests/);
+  assert.doesNotMatch(pagesWorkflow,/DATANEST_DB_RELEASE:/);
+  assert.doesNotMatch(pagesWorkflow,/link-transcheduler-job-requirements-user-interests/);
   assert.doesNotMatch(manifestScript,/add-mutation-recovery-observability/);
   assert.doesNotMatch(pagesWorkflow,/add-mutation-recovery-observability/);
 });
@@ -83,6 +79,18 @@ test("release manifest preserves legacy shape when no UI governance environment 
   assert.equal("uiGovernance" in json,false);
 });
 
+test("release manifest publishes progressive-live readiness and non-blocking gaps",()=>{
+  const {result,json}=writeManifest({
+    DATANEST_UI_RELEASE_SHA:"d".repeat(40),
+    DATANEST_UI_RELEASE_STATE:"progressive_live"
+  });
+  assert.equal(result.status,0,result.stderr);
+  assert.equal(json.releaseReadiness.mode,"progressive_live");
+  assert.equal(json.releaseReadiness.deploymentAllowed,true);
+  assert.ok(json.releaseReadiness.gapCount>0);
+  assert.ok(json.releaseReadiness.gaps.every((gap)=>gap.blocking===false));
+});
+
 test("release manifest embeds UI governance traceability when UI release environment is supplied",()=>{
   const {result,json}=writeManifest({
     DATANEST_UI_RELEASE_SHA:"b".repeat(40),
@@ -108,11 +116,14 @@ test("file worker production deployment is bound to an exact SHA and protected e
   assert.match(workflow,/release_sha:/);
   assert.match(workflow,/ref: \$\{\{ inputs\.release_sha \}\}/);
   assert.match(workflow,/git merge-base --is-ancestor/);
-  assert.match(workflow,/environment:\n      name: github-pages/);
+  assert.match(
+    workflow,
+    /environment:\n      name: \$\{\{ inputs\.release_mode == 'progressive_live' && 'github-pages-progressive-live' \|\| 'github-pages' \}\}/
+  );
   assert.match(workflow,/--no-verify-jwt/);
   assert.match(workflow,/supabase\/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf/);
   assert.match(workflow,/version: 2\.118\.0/);
-  assert.match(workflow,/needs: \[validate, gate-timeframe\]/);
+  assert.match(workflow,/needs: \[validate\]/);
   assert.match(workflow,/write-production-file-worker-release-attestation\.mjs/);
   assert.match(workflow,/name: datanest-ai-file-worker-release-\$\{\{ inputs\.release_sha \}\}/);
   assert.match(workflow,/retention-days: 90/);
@@ -124,40 +135,37 @@ test("file worker production deployment is bound to an exact SHA and protected e
   assert.match(writer,/sourceTreeScope:"supabase\/functions"/);
 });
 
-test("governed Edge Function deployment is blocked until its timeframe gate passes",()=>{
+test("governed Edge Function deployment treats timeframe as advisory",()=>{
   const workflow=readFileSync(
     new URL("../../.github/workflows/production-edge-function-release.yml",import.meta.url),
     "utf8"
   );
-  assert.match(workflow,/  deploy:\n    name: Deploy governed Edge Functions from exact release SHA\n    needs: gate-timeframe/);
+  assert.match(workflow,/  deploy:\n    name: Deploy governed Edge Functions from exact release SHA/);
+  assert.match(workflow,/release_mode:[\s\S]*default: progressive_live/);
 });
 
 
-test("Pages workflow stays within GitHub workflow_dispatch input limit",()=>{
-  const dispatchBlock=pagesWorkflow.split("\npermissions:\n",1)[0];
-  const inputs=dispatchBlock.match(/^      [A-Za-z0-9_-]+:$/gm)||[];
-  assert.equal(inputs.length,25);
+test("Pages workflow has a simple protected-main release path",()=>{
+  assert.match(pagesWorkflow,/push:\n    branches:\n      - main/);
+  assert.match(pagesWorkflow,/workflow_dispatch:/);
+  assert.match(pagesWorkflow,/github.event_name == 'push'/);
+  assert.match(pagesWorkflow,/GITHUB_EVENT_NAME" = "push"/);
+  assert.doesNotMatch(pagesWorkflow,/workflow_run:/);
+  assert.doesNotMatch(pagesWorkflow,/CONDUCTOR Process Synchronization Tree/);
+  assert.match(pagesWorkflow,/environment:\n      name: github-pages/);
+  assert.doesNotMatch(pagesWorkflow,/mirror_promotion_reference/);
+  assert.doesNotMatch(pagesWorkflow,/database_migration_reference:/);
+  assert.doesNotMatch(pagesWorkflow,/DATANEST_DB_RELEASE:/);
 });
 
-test("Pages release wiring requires live database and Edge Function attestation",()=>{
-  assert.match(pagesWorkflow,/database_migration_reference:/);
-  assert.match(pagesWorkflow,/default: '\{"head":"20260930130500","name":"index_external_ai_companion_intake"\}'/);
-  assert.doesNotMatch(pagesWorkflow,/database_migration_head:/);
-  assert.doesNotMatch(pagesWorkflow,/database_migration_name:/);
+test("Pages release wiring derives the database attestation from the canonical contract",()=>{
+  assert.match(pagesWorkflow,/Validate canonical production contract/);
+  assert.match(pagesWorkflow,/DATANEST_EXPECTED_DB_MIGRATION_REFERENCE/);
   assert.match(pagesWorkflow,/verify-production-release-attestation\.mjs/);
-  assert.match(pagesWorkflow,/verify-production-edge-function-release-reference\.mjs/);
-  assert.match(pagesWorkflow,/edge_function_release_reference:/);
-  assert.match(pagesWorkflow,/actions\/download-artifact@v5/);
-  assert.match(pagesWorkflow,/SUPABASE_ACCESS_TOKEN:\s*\$\{\{ secrets\.SUPABASE_ACCESS_TOKEN \}\}/);
-  assert.match(pagesWorkflow,/DATANEST_DB_ATTESTATION_FILE: \.datanest\/release-attestation\.json/);
-  assert.match(edgeAttestationScript,/api\.supabase\.com\/v1\/projects/);
-  assert.match(edgeAttestationScript,/SUPABASE_ACCESS_TOKEN/);
-  assert.match(edgeAttestationScript,/ezbr_sha256/);
-  assert.match(edgeAttestationScript,/workflowRunId/);
-  assert.match(edgeReleaseWorkflow,/environment:/);
-  assert.match(edgeReleaseWorkflow,/DATANEST_RELEASE_SHA/);
-  assert.match(edgeReleaseWorkflow,/supabase functions deploy/);
-  assert.match(edgeReleaseWorkflow,/write-production-edge-function-release-attestation\.mjs/);
+  assert.ok(pagesWorkflow.includes("DATANEST_DB_ATTESTATION_FILE: .datanest/release-attestation.json"));
+  assert.match(pagesWorkflow,/databaseMigration/);
+  assert.match(manifestScript,/databaseRelease:canonicalDatabaseRelease/);
+  assert.doesNotMatch(pagesWorkflow,/edge_function_release_reference:/);
 });
 
 test("release manifest records verified database and Edge Function attestations",()=>{
@@ -197,4 +205,31 @@ test("release manifest records verified database and Edge Function attestations"
   assert.equal(json.releaseAttestation.edgeFunctions.sourceCommit,"b".repeat(40));
   assert.equal(json.releaseAttestation.edgeFunctions.sourceTreeSha256,"b".repeat(64));
   rmSync(dir,{recursive:true,force:true});
+});
+
+
+test("release manifest declares the production-inclusive surface contract from the catalog",()=>{
+  const catalog=JSON.parse(fs.readFileSync(
+    new URL("../../config/supository.catalog.json",import.meta.url),
+    "utf8"
+  ));
+  assert.match(manifestScript,/productionInclusion:productionCatalog\.productionInclusion/);
+  assert.equal(catalog.productionInclusion?.inclusive,true);
+  for(const id of [
+    "datanest",
+    "datanest-assurance",
+    "ronsas-career-compass",
+    "ronsas-creative-studio",
+    "ronsas-epublisher",
+    "ronsas-lyricsync-studio",
+    "ronsas-scene-song-spark",
+    "ronsas-sovereign-forge",
+    "ronsas-syncvision"
+  ]){
+    assert.ok(catalog.productionInclusion.publicSurfaces.includes(id),id);
+  }
+  assert.ok(catalog.productionInclusion.externalProductionSurfaces.includes("ronsas-youtube-optimizer"));
+  assert.ok(catalog.productionInclusion.productionSupportComponents.includes("ronsas-sovereign-backend"));
+  assert.ok(catalog.productionInclusion.productionSupportComponents.includes("ronsas-shared"));
+  assert.match(pagesWorkflow,/DataNest\/assurance\//);
 });

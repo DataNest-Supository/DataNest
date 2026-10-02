@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { setupUiGovernanceFixture } from "./ui-governance-fixture";
 
 const appPath = process.env.DATANEST_APP_PATH || "/";
 
@@ -83,7 +84,7 @@ test("DataNest AI keeps the animated hero and a compact command-first workspace"
 
   await expect(page.getByRole("heading",{name:"DataNest AI",exact:true}).first()).toBeVisible();
   await expect(page.getByRole("heading",{name:"DEVELOPMENT COMMAND CHANNEL",exact:true})).toBeVisible();
-  await expect(page.getByText("AI CORE LINKED",{exact:true})).toBeVisible();
+  await expect(page.locator(".aiReactor")).toHaveAttribute("data-core-state","ready");
   const objectiveHeader=page.getByRole("region",{name:"DataNest AI objective"});
   await expect(objectiveHeader).toBeVisible();
   await expect(objectiveHeader.getByRole("heading",{name:"Governed AI workspace",exact:true})).toBeVisible();
@@ -106,6 +107,17 @@ test("DataNest AI keeps the animated hero and a compact command-first workspace"
   await page.getByRole("button",{name:"Jump to DataNest AI command composer",exact:true}).click();
   await expect(composer).toBeFocused();
   expect(await page.locator(".datanestAiComposer").evaluate(element=>getComputedStyle(element).position)).toBe("sticky");
+
+  const focusModeButton=page.getByRole("button",{name:"Focus mode",exact:true});
+  await expect(focusModeButton).toBeVisible();
+  await focusModeButton.click();
+  await expect(page.locator(".datanestAiHeroV2")).toHaveCount(0);
+  await expect(composer).toBeFocused();
+  await expect(page.getByRole("button",{name:"Show AI core",exact:true})).toHaveAttribute("aria-pressed","true");
+  expect(await page.evaluate(()=>localStorage.getItem("datanest-ai:focus-mode:v1"))).toBe("true");
+  await page.getByRole("button",{name:"Show AI core",exact:true}).click();
+  await expect(page.locator(".datanestAiHeroV2")).toBeVisible();
+  expect(await page.evaluate(()=>localStorage.getItem("datanest-ai:focus-mode:v1"))).toBe("false");
 
   await composer.fill("First Job draft must stay with JOB-00099.");
   await expect(page.getByText("SESSION-ONLY DRAFT · LOCKED TO JOB-00099",{exact:true})).toBeVisible();
@@ -220,4 +232,80 @@ test("DataNest AI keeps the animated hero and a compact command-first workspace"
 
   expect(mobile.consoleWidth).toBeLessThanOrEqual(mobile.viewportWidth);
   expect(mobile.scrollWidth).toBeLessThanOrEqual(mobile.viewportWidth);
+});
+
+test("AI instrument respects motion preference, offscreen pause, and saved Focus mode", async ({page})=>{
+  await setupUiGovernanceFixture(page);
+  await page.emulateMedia({reducedMotion:"no-preference"});
+  await page.goto(appPath+"?view=ai");
+  const core=page.locator(".aiReactor");
+  const ring=page.locator(".aiReactorOuter");
+  const composer=page.getByPlaceholder(/Ask DataNest AI to analyze/i);
+  await expect(core).toHaveAttribute("data-core-state","ready");
+  await core.scrollIntoViewIfNeeded();
+  await expect(core).toHaveAttribute("data-in-view","true");
+  await expect(ring).toHaveCSS("animation-play-state","running");
+  await page.locator(".datanestAiAdvancedDisclosure").scrollIntoViewIfNeeded();
+  await expect(core).toHaveAttribute("data-in-view","false");
+  await expect(ring).toHaveCSS("animation-play-state","paused");
+
+  await page.locator(".workspaceOptions > summary").click();
+  await page.locator(".motionControl").click();
+  await expect(ring).toHaveCSS("animation-name","none");
+  await page.reload();
+  await expect(page.locator(".motionControl")).toHaveAttribute("aria-pressed","true");
+  await expect(ring).toHaveCSS("animation-name","none");
+  await page.locator(".workspaceOptions > summary").click();
+  await page.locator(".motionControl").click();
+  await composer.fill("Keep my command while the AI core is hidden.");
+  await page.getByRole("button",{name:"Focus mode",exact:true}).click();
+  await expect(core).toHaveCount(0);
+  await expect(composer).toBeFocused();
+  await page.reload();
+  await expect(core).toHaveCount(0);
+  await expect(composer).toHaveValue("Keep my command while the AI core is hidden.");
+  await page.getByRole("button",{name:"Show AI core",exact:true}).click();
+  await expect(core).toHaveAttribute("data-core-state","ready");
+  await page.emulateMedia({reducedMotion:"reduce"});
+  await expect(ring).toHaveCSS("animation-name","none");
+});
+
+test("AI dial and readouts fit narrow screens in both themes", async ({page},testInfo)=>{
+  await setupUiGovernanceFixture(page);
+  await page.emulateMedia({reducedMotion:"reduce"});
+  await page.goto(appPath+"?view=ai");
+  for(const theme of ["dark","light"]){
+    await page.getByLabel("Theme preference").first().selectOption(theme);
+    for(const width of [320,390,768,1440]){
+      await page.setViewportSize({width,height:1000});
+      await expect(page.locator(".aiReactor")).toHaveAttribute("data-core-state","ready");
+      const layout=await page.locator(".aiReactor").evaluate(node=>{
+        const box=node.getBoundingClientRect();
+        return {left:box.left,right:box.right,overflow:document.documentElement.scrollWidth-innerWidth,width:innerWidth};
+      });
+      expect(layout.left).toBeGreaterThanOrEqual(0);
+      expect(layout.right).toBeLessThanOrEqual(layout.width);
+      expect(layout.overflow).toBeLessThanOrEqual(0);
+      await expect(page.getByPlaceholder(/Ask DataNest AI to analyze/i)).toBeEnabled();
+      if(width===390||width===1440){
+        await page.locator(".datanestAiHeroV2").screenshot({path:testInfo.outputPath(`ai-core-${theme}-${width}.png`)});
+      }
+    }
+  }
+});
+
+test("AI error state stops the instrument and preserves the retry path", async ({page})=>{
+  await setupUiGovernanceFixture(page);
+  await page.emulateMedia({reducedMotion:"no-preference"});
+  const contextRoute="**/functions/v1/datanest-ai-chat";
+  await page.route(contextRoute,route=>route.fulfill({status:503,contentType:"application/json",body:JSON.stringify({error:"Fixture context unavailable"})}));
+  await page.goto(appPath+"?view=ai");
+  await expect(page.locator(".aiReactor")).toHaveAttribute("data-core-state","attention");
+  await expect(page.locator(".aiReactorOuter")).toHaveCSS("animation-play-state","paused");
+  await expect(page.getByRole("button",{name:"Send command",exact:true})).toBeDisabled();
+  await page.getByPlaceholder(/Ask DataNest AI to analyze/i).fill("Preserve this draft while context recovers.");
+  await page.unroute(contextRoute);
+  await page.getByRole("button",{name:"Retry AI context",exact:true}).click();
+  await expect(page.locator(".aiReactor")).toHaveAttribute("data-core-state","ready");
+  await expect(page.getByPlaceholder(/Ask DataNest AI to analyze/i)).toHaveValue("Preserve this draft while context recovers.");
 });

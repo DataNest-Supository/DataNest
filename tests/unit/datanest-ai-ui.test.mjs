@@ -29,8 +29,8 @@ test("DataNest AI keeps the animated hero while compressing duplicated workspace
   assert.ok(heroIndex<chatIndex&&chatIndex<commandIndex&&commandIndex<contextDetailsIndex&&contextDetailsIndex<advancedIndex,
     "DOM order must keep the animated hero visible, then the command channel, compact work context and optional detail disclosures");
   assert.doesNotMatch(workspace,/className="datanestAiOverviewDisclosure"/);
-  assert.match(workspace,/datanestAiOrbitOne/);
-  assert.match(workspace,/datanestAiPacket packetOne/);
+  assert.match(workspace,/<AiCoreVisual state=/);
+  assert.match(workspace,/contextReady\?"ready":"standby"/);
 
   assert.match(app,/view!==\"ai\"&&workspaceTaskGuides\[view\]/);
   assert.match(workspace,/htmlFor="datanest-ai-active-job">Active Job context/);
@@ -62,6 +62,22 @@ test("DataNest AI command center keeps responsive and reduced-motion safeguards"
   assert.match(css,/@media\(max-width:620px\)/);
   assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
   assert.match(css,/\.datanestAiHeroVisual\s*\{[^}]*min-height:300px/s);
+});
+
+
+test("DataNest AI Focus mode is persistent, keyboard-safe and keeps narrow context labels contained",()=>{
+  const workspace=read("src/components/DataNestAiWorkspace.tsx");
+  const css=read("src/app/datanest-ai-optimized.css");
+
+  assert.match(workspace,/const focusModeStorageKey="datanest-ai:focus-mode:v1"/);
+  assert.match(workspace,/window\.localStorage\.getItem\(focusModeStorageKey\)==="true"/);
+  assert.match(workspace,/window\.localStorage\.setItem\(focusModeStorageKey,String\(next\)\)/);
+  assert.match(workspace,/aria-pressed=\{focusMode\}/);
+  assert.match(workspace,/\{!focusMode&&<section className=\{"datanestAiHero datanestAiHeroV2 "/);
+  assert.match(workspace,/window\.requestAnimationFrame\(\(\)=>openAiWorkspace\(\)\)/);
+  assert.match(css,/\.datanestAiCommandObjective strong\{overflow-wrap:anywhere\}/);
+  assert.match(css,/\.datanestAiCommandContext>select\{[\s\S]*?max-width:100%[\s\S]*?text-overflow:ellipsis/s);
+  assert.match(css,/\.datanestAiHeroVisual,[\s\S]*?\.datanestAiCoreStage\{overflow:visible\}/s);
 });
 
 

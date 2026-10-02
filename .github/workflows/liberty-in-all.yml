@@ -21,12 +21,13 @@ permissions:
   contents: write
 
 concurrency:
-  group: datanest-liberty-in-all-${{ github.ref || github.event.workflow_run.head_branch || 'pulse' }}
+  # Coalesce scheduled and dependency-triggered runs that observe the same canonical SHA.
+  group: datanest-liberty-in-all-${{ github.event.workflow_run.head_sha || github.sha }}
   cancel-in-progress: true
 
 jobs:
   traceability:
-    if: github.event_name != 'workflow_run' || (github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.event != 'workflow_run')
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.event != 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     name: Index records, provenance and public traceability
     runs-on: ubuntu-24.04
     timeout-minutes: 15

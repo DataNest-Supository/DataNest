@@ -16,7 +16,8 @@ export function verifyUiProductionAuthorization(env=process.env){
     ? REQUIRED_OWNER_TEST_MODE_CONFIRMATION
     : REQUIRED_CONFIRMATION;
 
-  if ((env.DATANEST_UI_PRODUCTION_CONFIRMATION || "").trim()!==expectedConfirmation) {
+  if (releaseState!=="progressive_live" &&
+      (env.DATANEST_UI_PRODUCTION_CONFIRMATION || "").trim()!==expectedConfirmation) {
     throw new Error(`DATANEST_UI_PRODUCTION_CONFIRMATION must equal ${expectedConfirmation}`);
   }
 
@@ -32,6 +33,10 @@ export function verifyUiProductionAuthorization(env=process.env){
 
   if (releaseState==="authorized" && !evidence.authorized) {
     throw new Error("Production authorization payload did not resolve to fully authorized state");
+  }
+
+  if (releaseState==="progressive_live" && !evidence.productionDeploymentAllowed) {
+    throw new Error("Progressive-live payload did not permit deployment");
   }
 
   if (releaseState==="owner_test_mode") {

@@ -19,13 +19,15 @@ export const uiGovernanceFixture={
 
 export async function setupUiGovernanceFixture(page:Page){
   const {projectId,userId,job}=uiGovernanceFixture;
+  // Mirror keeps its owner-only entry gate; this changes only the mocked identity.
+  const fixtureEmail=process.env.DATANEST_MIRROR_TEST_MODE==="true"?"iace1236912@gmail.com":"fixture@example.invalid";
 
   await page.route("**/runtime-config.js",route=>route.fulfill({
     contentType:"application/javascript",
     body:"window.__DATANEST_CONFIG__={supabaseUrl:'https://fixture.supabase.co',supabasePublishableKey:'fixture-key',authoritative:true}"
   }));
 
-  await page.addInitScript(({userId})=>{
+  await page.addInitScript(({userId,fixtureEmail})=>{
     const encode=(data:unknown)=>btoa(JSON.stringify(data))
       .replaceAll("+","-").replaceAll("/","_").replaceAll("=","");
     localStorage.setItem("sb-fixture-auth-token",JSON.stringify({
@@ -33,9 +35,9 @@ export async function setupUiGovernanceFixture(page:Page){
       refresh_token:"fixture",
       token_type:"bearer",
       expires_at:4102444800,
-      user:{id:userId,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid"}
+      user:{id:userId,aud:"authenticated",role:"authenticated",email:fixtureEmail}
     }));
-  },{userId});
+  },{userId,fixtureEmail});
 
   await page.route("https://fixture.supabase.co/**",route=>{
     const path=new URL(route.request().url()).pathname;

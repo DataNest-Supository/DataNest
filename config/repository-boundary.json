@@ -8,6 +8,7 @@
     {
       "policy": "canonical_only",
       "patterns": [
+        "evidence/native-protection/**",
         ".github/workflows/mirror-production-import.yml",
         ".github/workflows/notify-mirror-canonical.yml",
         "tests/unit/automation-x-annotation.test.mjs",
@@ -171,7 +172,9 @@
         "config/botsquad-consumer.json",
         "botsquad/inbox/**",
         "scripts/botsquad-feed-consumer.mjs",
-        "tests/unit/botsquad-feed-consumer.test.mjs"
+        "tests/unit/botsquad-feed-consumer.test.mjs",
+        "src/components/RndTestModeToggle.tsx",
+        "src/components/OwnerRDCockpit.tsx"
       ]
     },
     {

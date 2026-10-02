@@ -2,10 +2,38 @@
 
 **DataNest** is the canonical Resonance AppDev web control plane. It governs product execution intent, promotion, evidence and lifecycle state while preserving separate source, backend and delivery authorities.
 
+### Declaration of Intent
+
+DataNest has published a proposed **Human + DataNest / Resonance Declaration of Intent v1.0**, explicitly subject to human approval and independent external AI assurance review.
+
+- Proposed declaration: docs/DECLARATION_OF_INTENT.md
+- External AI auditor call: Issue #388
+- Adoption/review PR: PR #389
+
+The declaration is a governance pledge, not a certification, statutory designation, production authorization or substitute for human accountability.
+
+
+
+## Independent assurance services
+
+DataNest offers **private independent regulatory-readiness, technical-audit support, evidence, remediation and authorized digital-oversight services**.
+
+- Public service page: **https://datanest-supository.github.io/DataNest/assurance/**
+- Commercial charter: [`docs/INDEPENDENT_REGULATORY_ASSURANCE_SERVICES.md`](docs/INDEPENDENT_REGULATORY_ASSURANCE_SERVICES.md)
+- Trade & implementation intake: GitHub issue template `Trade & Implementation Interest`
+
+This service does **not** claim statutory government-regulator status, IRBA audit-firm status, accredited ISO certification-body status, or authority to perform private-security surveillance without the registrations required for those reserved activities.
+
 It combines two first-class tools:
 
 - **UNIFI** — project orchestration, planning, Job Manifests, context, checkpoints, artifacts and audit.
 - **TranScheduler** — capability-aware scheduling, dependencies, reservations, retry/backoff, execution history and human controls.
+
+## Production-inclusive baseline
+
+DataNest uses an **inclusive production contract**: every approved production-capable public surface, governed external production target, and production-support component is represented in its release contract. `/DataNest/` and `/Mirror-DataNest/` are peer production surfaces with separate release authority; staging backends, FREETREE, automation branches, and candidate branches remain non-production-authoritative unless explicitly assigned to one of those peer surfaces.
+
+Contract: [`docs/PRODUCTION_INCLUSION_CONTRACT.md`](docs/PRODUCTION_INCLUSION_CONTRACT.md)
 
 ## Canonical public identity
 
@@ -46,6 +74,10 @@ Standalone Node/Docker runtimes continue to expose the server health endpoint at
 - AI architecture: [`docs/DATANEST_AI_ARCHITECTURE.md`](docs/DATANEST_AI_ARCHITECTURE.md)
 - Vercel dependency: **none**
 
+### Production contract
+
+The machine-readable release authority is maintained in [\`config/production-contract.json\`](config/production-contract.json). CI and Pages release verification validate that contract and derive the expected Supabase production migration identity from it rather than maintaining a separate hard-coded database-release literal.
+
 
 ## Delivery-provider metadata
 
@@ -78,7 +110,7 @@ GitHub and Supabase remain the required source/CI and backend authorities. Dropb
 
 `DataNest-Supository/DataNest` is the canonical Resonance AppDev **Supository**: the governed parent index for Resonance application-development projects, products and services.
 
-The Supository scope includes source/provenance, lifecycle state, delivery routes, release evidence, service relationships and future sovereign Git/registry replication. The current production authority model remains GitHub + GitHub Pages + Supabase; deploying Reson8 Forge does not silently replace it.
+The Supository scope includes source/provenance, lifecycle state, delivery routes, release evidence, service relationships and future sovereign Git/registry replication. The current peer production authority model is GitHub + GitHub Pages + separate Supabase services: DataNest governs `/DataNest/`, while Mirror governs `/Mirror-DataNest/`. Deploying Reson8 Forge does not silently replace either surface.
 
 - Architecture contract: [`docs/DATANEST_SUPOSITORY_ARCHITECTURE.md`](docs/DATANEST_SUPOSITORY_ARCHITECTURE.md)
 - Machine-readable catalog: [`config/supository.catalog.json`](config/supository.catalog.json)

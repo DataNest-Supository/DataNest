@@ -1,3 +1,5 @@
+@import "../../shared/cinematic.css";
+
 :root{
   --dn-surface-canvas:#070414;
   --dn-surface-chrome:rgba(12,5,29,.96);
