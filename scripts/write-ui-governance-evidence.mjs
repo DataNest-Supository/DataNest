@@ -2,8 +2,9 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { proposeOwnerTestModeWindow } from "./propose-owner-test-mode-window.mjs";
+import { verifyGithubProductionApproval } from "./verify-ui-github-production-approval.mjs";
 
-export const UI_GOVERNANCE_SCHEMA_VERSION="ui-governance-release-v2";
+export const UI_GOVERNANCE_SCHEMA_VERSION="ui-governance-release-v3";
 export const OWNER_TEST_MODE_MAX_HOURS=72;
 export const PROGRESSIVE_LIVE_GAP_HOURS={
   mirrorPromotion:48,
@@ -154,7 +155,10 @@ export function hasUiGovernanceEnvironment(env=process.env){
   ].some((name)=>env[name]!==undefined);
 }
 
-export function buildUiGovernanceEvidence(env=process.env){
+export function buildUiGovernanceEvidence(
+  env=process.env,
+  {verifiedProductionAuthorization=null}={}
+){
   const releaseState=clean(env.DATANEST_UI_RELEASE_STATE) || "candidate";
   if (!["candidate","authorized","progressive_live","owner_test_mode"].includes(releaseState)) {
     throw new Error("DATANEST_UI_RELEASE_STATE must be candidate, authorized, progressive_live, or owner_test_mode");
@@ -166,10 +170,17 @@ export function buildUiGovernanceEvidence(env=process.env){
   }
 
   if (releaseState==="authorized") {
-    for (const [,envName] of REVIEW_ENV) {
+    for (const [key,envName] of REVIEW_ENV) {
+      if (key==="productionAuthorization") continue;
       if (isPlaceholder(env[envName])) {
         throw new Error(`${envName} must contain a non-placeholder review reference for an authorized release`);
       }
+    }
+    if (!verifiedProductionAuthorization?.verified) {
+      throw new Error("Authorized release requires verified GitHub production approval evidence");
+    }
+    if (clean(verifiedProductionAuthorization.releaseSha).toLowerCase()!==releaseSha.toLowerCase()) {
+      throw new Error("Verified GitHub production approval does not match DATANEST_UI_RELEASE_SHA");
     }
   }
 
@@ -191,6 +202,24 @@ export function buildUiGovernanceEvidence(env=process.env){
   const ownerTestMode=releaseState==="owner_test_mode" ? buildOwnerTestMode(env,generatedAt) : null;
   const evidence={};
   for (const [key,envName] of REVIEW_ENV) {
+    if(key==="productionAuthorization" && releaseState==="authorized"){
+      evidence[key]={
+        status:"verified",
+        reference:verifiedProductionAuthorization.reference,
+        verification:{
+          source:verifiedProductionAuthorization.source,
+          repository:verifiedProductionAuthorization.repository,
+          prNumber:verifiedProductionAuthorization.prNumber,
+          reviewer:verifiedProductionAuthorization.reviewer,
+          reviewId:verifiedProductionAuthorization.reviewId,
+          reviewCommitSha:verifiedProductionAuthorization.reviewCommitSha,
+          releaseSha:verifiedProductionAuthorization.releaseSha,
+          mergedAt:verifiedProductionAuthorization.mergedAt
+        }
+      };
+      continue;
+    }
+
     const raw=clean(env[envName]);
     const supplied=!isPlaceholder(raw);
     const candidateAuthorization=releaseState==="candidate" && key==="productionAuthorization";
@@ -217,20 +246,22 @@ export function buildUiGovernanceEvidence(env=process.env){
         })
     : [];
 
+  const authorized=releaseState==="authorized" && verifiedProductionAuthorization?.verified===true;
   return {
     schemaVersion:UI_GOVERNANCE_SCHEMA_VERSION,
     project:"Resonance DataNest",
     releaseSha,
     releaseState,
-    authorized:releaseState==="authorized",
-    fullyGoverned:releaseState==="authorized",
+    authorized,
+    fullyGoverned:authorized,
     productionDeploymentAllowed:
-      releaseState==="authorized" ||
+      authorized ||
       releaseState==="progressive_live" ||
       releaseState==="owner_test_mode",
     deploymentBasis:releaseState==="progressive_live"
       ? "Manual workflow dispatch plus automated technical validation; human approval and evidence completion are advisory."
       : null,
+    authorizationIntegrity:authorized ? "github-verified-commit-bound-review" : "not-authorized",
     ownerTestMode,
     designSpec:UI_GOVERNANCE_DESIGN_SPEC,
     implementationPlans:UI_GOVERNANCE_IMPLEMENTATION_PLANS,
@@ -240,12 +271,15 @@ export function buildUiGovernanceEvidence(env=process.env){
   };
 }
 
-export function writeUiGovernanceEvidence(
+export async function writeUiGovernanceEvidence(
   target=resolve("public/ui-governance-release.json"),
-  env=process.env
+  env=process.env,
+  options={}
 ){
   const output=resolve(target);
-  const evidence=buildUiGovernanceEvidence(env);
+  const verifiedProductionAuthorization=
+    options.verifiedProductionAuthorization ?? await verifyGithubProductionApproval(env,options);
+  const evidence=buildUiGovernanceEvidence(env,{verifiedProductionAuthorization});
   mkdirSync(dirname(output),{recursive:true});
   writeFileSync(output,JSON.stringify(evidence)+"\n","utf8");
   return evidence;
@@ -257,6 +291,6 @@ const directInvocation=
 
 if (directInvocation) {
   const target=process.argv[2] || "public/ui-governance-release.json";
-  const evidence=writeUiGovernanceEvidence(target);
+  const evidence=await writeUiGovernanceEvidence(target);
   console.log("Wrote UI governance evidence for",evidence.releaseSha,evidence.releaseState);
 }
