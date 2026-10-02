@@ -460,14 +460,14 @@ test("workspace context is phase-safe and wraps long project identity at 320px",
 
   await page.goto(appPath+"?view=external_auditor");
   const workspaceMeta = page.locator(".topbarMeta");
-  await expect(workspaceMeta).toContainText(longProjectName,{exact:true});
-  await expect(workspaceMeta).toContainText("ACTIVE",{exact:true});
+  await expect(workspaceMeta).toContainText(longProjectName);
+  await expect(workspaceMeta).toContainText("ACTIVE");
   await expect(page.getByRole("navigation", {name:"DataNest lifecycle phases"}).locator('[aria-current="step"]')).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 
   await page.goto(appPath+"?view=governance");
   await expect(page.getByRole("button", {name:"Govern phase · current"})).toHaveAttribute("aria-current","step");
-  await expect(page.locator(".topbarMeta")).toContainText("GOVERN",{exact:true});
+  await expect(page.locator(".topbarMeta")).toContainText("GOVERN");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
