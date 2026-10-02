@@ -5,6 +5,7 @@ import {
   hasUiGovernanceEnvironment
 } from "./write-ui-governance-evidence.mjs";
 import { buildProgressiveLiveGapRegister } from "./write-progressive-live-gap-register.mjs";
+import { validateProductionContract } from "./validate-production-contract.mjs";
 
 const target=resolve(process.argv[2] || "public/release-manifest.json");
 const uiGovernance=hasUiGovernanceEnvironment(process.env)
@@ -19,10 +20,27 @@ const progressiveLiveGapRegister=hasUiGovernanceEnvironment(process.env)
   ? buildProgressiveLiveGapRegister(process.env)
   : null;
 
+const { contract:productionContract, catalog:productionCatalog }=validateProductionContract(
+  process.env.DATANEST_PRODUCTION_CONTRACT_FILE || "config/production-contract.json"
+);
+const expectedMigration=productionContract.supabase.expectedMigration;
+const canonicalDatabaseRelease=`${expectedMigration.head} · ${expectedMigration.name}`;
+const suppliedDatabaseRelease=(process.env.DATANEST_DB_RELEASE || "").trim();
+if(suppliedDatabaseRelease && suppliedDatabaseRelease!==canonicalDatabaseRelease){
+  throw new Error(
+    "DATANEST_DB_RELEASE disagrees with the canonical production contract: "+
+    suppliedDatabaseRelease+" != "+canonicalDatabaseRelease
+  );
+}
+
 const manifest={
-  project:"Resonance DataNest",
+  project:productionContract.project,
   frontendCommit:process.env.DATANEST_RELEASE_SHA || process.env.GITHUB_SHA || "local",
-  databaseRelease:process.env.DATANEST_DB_RELEASE || "link-transcheduler-job-requirements-user-interests",
+  databaseRelease:canonicalDatabaseRelease,
+  databaseMigration:{
+    head:expectedMigration.head,
+    name:expectedMigration.name
+  },
   externalAuditRelease:process.env.DATANEST_EXTERNAL_AUDIT_DB_RELEASE || "external-audit-production-v1",
   baseline:{
     release:process.env.DATANEST_BASELINE_RELEASE || "reload-latest-v1",
@@ -38,32 +56,8 @@ const manifest={
     ronsasStatus:process.env.DATANEST_EDGE_RONSAS_STATUS || "ronsas-status@1",
     externalAudit:process.env.DATANEST_EDGE_EXTERNAL_AUDIT || "external-audit@1"
   },
-  supabaseProject:process.env.DATANEST_SUPABASE_PROJECT || "sgqdmfgjbprsoqsmgigi",
-  productionInclusion:{
-    schemaVersion:"production-inclusion-v1",
-    inclusive:true,
-    canonicalAuthority:"DataNest-Supository/DataNest:main",
-    publicSurfaces:[
-      "datanest",
-      "datanest-assurance",
-      "ronsas-career-compass",
-      "ronsas-creative-studio",
-      "ronsas-epublisher",
-      "ronsas-lyricsync-studio",
-      "ronsas-scene-song-spark",
-      "ronsas-sovereign-forge",
-      "ronsas-syncvision"
-    ],
-    externalProductionSurfaces:["ronsas-youtube-optimizer"],
-    productionSupportComponents:["ronsas-sovereign-backend","ronsas-shared"],
-    excludedFromProductionAuthority:[
-      "DataNest-Supository/Mirror-DataNest",
-      "DataNest AI Staging",
-      "DataNest-Supository/FREETREE",
-      "automation/*",
-      "mirror-promotion/*"
-    ]
-  },
+  supabaseProject:productionContract.supabase.project,
+  productionInclusion:productionCatalog.productionInclusion,
   ...(uiGovernance ? {uiGovernance} : {}),
   ...(progressiveLiveGapRegister
     ? {
@@ -104,4 +98,4 @@ const manifest={
 };
 mkdirSync(dirname(target),{recursive:true});
 writeFileSync(target,JSON.stringify(manifest)+"\n","utf8");
-console.log("Wrote release manifest for",manifest.frontendCommit);
+console.log("Wrote release manifest for",manifest.frontendCommit,"database",manifest.databaseRelease);
