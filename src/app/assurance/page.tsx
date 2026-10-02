@@ -1,5 +1,6 @@
 import "./assurance.css";
 import Link from "next/link";
+import ThemeControl from "@/components/platform/ThemeControl";
 
 export const metadata = {
   title: "Independent Regulatory Assurance, Audit & Digital Oversight",
@@ -67,9 +68,12 @@ export default function AssurancePage() {
       <script type="application/ld+json">{JSON.stringify(serviceSchema)}</script>
       <header>
         <Link href="/transparency">← Public Transparency</Link>
-        <a href="https://github.com/DataNest-Supository/DataNest/blob/main/docs/INDEPENDENT_REGULATORY_ASSURANCE_SERVICES.md">
+        <div className="publicReportHeaderActions">
+          <ThemeControl compact />
+          <a href="https://github.com/DataNest-Supository/DataNest/blob/main/docs/INDEPENDENT_REGULATORY_ASSURANCE_SERVICES.md">
           Service charter ↗
-        </a>
+          </a>
+        </div>
       </header>
 
       <article>
