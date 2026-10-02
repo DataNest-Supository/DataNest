@@ -81,6 +81,8 @@ test("DataNest AI keeps the animated hero and a compact command-first workspace"
   });
 
   const core=page.locator(".aiReactor");
+  await page.goto(appPath);
+  await expect(page.getByRole("heading",{name:"Find your next meaningful step."})).toBeVisible({timeout:20000});
   await page.goto(appPath+"?view=ai");
   await expect(core).toHaveAttribute("data-core-state","ready",{timeout:20000});
   await expect(page.getByRole("heading",{name:"DataNest AI",exact:true}).first()).toBeVisible({timeout:20000});
