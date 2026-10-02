@@ -83,7 +83,7 @@ for (const root of roots) {
 const workerPath = "supabase/functions/datanest-ai-file-worker/index.ts";
 if (existsSync(workerPath)) {
   const workerSource = readFileSync(workerPath, "utf8");
-  if (/x-datanest-worker-auth[^\n]*.{0,120}SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SERVICE_ROLE_KEY[^\n]*.{0,120}x-datanest-worker-auth/.test(workerSource)) {
+  if (/request\.headers\.get\(["']x-datanest-worker-auth["']\)\s*!==\s*serviceKey/.test(workerSource)) {
     add(workerPath, 1, "worker-auth-service-role-coupling", "Worker authentication must use a dedicated DATANEST_FILE_WORKER_TOKEN, not the Supabase service-role credential.");
   }
   if (!/DATANEST_FILE_WORKER_TOKEN/.test(workerSource)) {
