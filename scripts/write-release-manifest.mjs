@@ -87,7 +87,7 @@ const manifest={
           status:edgeFunctionAttestation.status,
           source:edgeFunctionAttestation.source,
           verifiedAt:edgeFunctionAttestation.verifiedAt,
-          releaseReference:edgeFunctionAttestation.workflowRunId,
+          releaseReference:edgeFunctionAttestation.releaseReference ?? edgeFunctionAttestation.workflowRunId,
           sourceCommit:edgeFunctionAttestation.sourceCommit,
           sourceTreeSha256:edgeFunctionAttestation.sourceTreeSha256,
           functionCount:Object.keys(edgeFunctionAttestation.functions||{}).length

@@ -162,10 +162,22 @@ test("Pages release wiring derives the database attestation from the canonical c
   assert.match(pagesWorkflow,/Validate canonical production contract/);
   assert.match(pagesWorkflow,/DATANEST_EXPECTED_DB_MIGRATION_REFERENCE/);
   assert.match(pagesWorkflow,/verify-production-release-attestation\.mjs/);
-  assert.ok(pagesWorkflow.includes("DATANEST_DB_ATTESTATION_FILE: .datanest/release-attestation.json"));
-  assert.match(pagesWorkflow,/databaseMigration/);
-  assert.match(manifestScript,/databaseRelease:canonicalDatabaseRelease/);
-  assert.doesNotMatch(pagesWorkflow,/edge_function_release_reference:/);
+  assert.match(pagesWorkflow,/verify-production-edge-function-release-reference\.mjs/);
+  assert.match(pagesWorkflow,/edge_function_release_reference:\s*connector:/);
+  assert.match(pagesWorkflow,/connector:/);
+  assert.match(pagesWorkflow,/Stage Supabase connector Edge Function evidence/);
+  assert.match(pagesWorkflow,/DATANEST_DB_ATTESTATION_FILE: \.datanest\/release-attestation\.json/);
+  assert.match(edgeAttestationScript,/api\.supabase\.com\/v1\/projects/);
+  assert.match(edgeAttestationScript,/SUPABASE_ACCESS_TOKEN/);
+  assert.match(edgeAttestationScript,/ezbr_sha256/);
+  assert.match(edgeAttestationScript,/workflowRunId/);
+  assert.match(edgeAttestationScript,/edge-function-connector-attestation-v1/);
+  assert.match(edgeAttestationScript,/sha256Tree/);
+  assert.match(edgeAttestationScript,/git.*merge-base|merge-base/);
+  assert.match(edgeReleaseWorkflow,/environment:/);
+  assert.match(edgeReleaseWorkflow,/DATANEST_RELEASE_SHA/);
+  assert.match(edgeReleaseWorkflow,/supabase functions deploy/);
+  assert.match(edgeReleaseWorkflow,/write-production-edge-function-release-attestation\.mjs/);
 });
 
 test("release manifest records verified database and Edge Function attestations",()=>{

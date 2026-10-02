@@ -110,6 +110,36 @@ jobs:
           DATANEST_EXPECTED_DB_MIGRATION_REFERENCE: ${{ steps.production_contract.outputs.database_migration_reference }}
         run: node scripts/verify-production-release-attestation.mjs .datanest/release-attestation.json
 
+      - name: Publish Supabase connector Edge Function evidence
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: edge-function-release-attestation
+          path: config/production-edge-function-connector-attestation.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Stage Supabase connector Edge Function evidence
+        uses: actions/download-artifact@v5
+        with:
+          name: edge-function-release-attestation
+          path: ${{ runner.temp }}/datanest-edge-function-release
+
+      - name: Normalize staged Edge Function evidence filename
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f "${{ runner.temp }}/datanest-edge-function-release/production-edge-function-connector-attestation.json"
+          mv "${{ runner.temp }}/datanest-edge-function-release/production-edge-function-connector-attestation.json" \
+            "${{ runner.temp }}/datanest-edge-function-release/edge-function-release.json"
+      - name: Verify connector-attested governed Edge Function release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DATANEST_RELEASE_SHA: ${{ steps.release.outputs.sha }}
+          edge_function_release_reference: connector:${{ steps.release.outputs.sha }}
+          DATANEST_EDGE_FUNCTION_RELEASE_REFERENCE: connector:${{ steps.release.outputs.sha }}
+          DATANEST_SUPABASE_PROJECT: sgqdmfgjbprsoqsmgigi
+        run: node scripts/verify-production-edge-function-release-reference.mjs "${{ runner.temp }}/datanest-edge-function-release/edge-function-release.json"
+
       - run: node scripts/write-runtime-config.mjs public/runtime-config.js
         env:
           SUPABASE_URL: "https://sgqdmfgjbprsoqsmgigi.supabase.co"
