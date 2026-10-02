@@ -29,7 +29,8 @@ export function validateProductionContract(
   if(!existsSync(sourcePath)){
     throw new Error("Production contract migration sourceFile does not exist: "+sourceFile);
   }
-  const sourceName=sourceFile.slice(sourceFile.lastIndexOf("_")+1,-4);
+  const sourceBasename=sourceFile.slice(sourceFile.lastIndexOf("/")+1,-4);
+  const sourceName=sourceBasename.replace(/^\d{14}_/,"");
   if(sourceName!==String(expected.name)){
     throw new Error("Production migration sourceFile name does not match expected migration name.");
   }
