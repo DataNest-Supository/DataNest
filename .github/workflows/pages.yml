@@ -72,7 +72,15 @@ on:
         required: false
         type: string
       production_authorization_reference:
-        description: Final human production authorization reference; required for authorized production, remains open during Owner Test Mode
+        description: Human-readable final authorization note; not authoritative without the verified GitHub PR review below
+        required: false
+        type: string
+      production_authorization_pr_number:
+        description: Merged PR whose merge commit must exactly equal release_sha for authorized production
+        required: false
+        type: string
+      production_authorization_reviewer:
+        description: GitHub login whose latest current-head review must be APPROVED for authorized production
         required: false
         type: string
       owner_test_mode_reference:
@@ -131,6 +139,7 @@ on:
 permissions:
   actions: read
   contents: read
+  pull-requests: read
   pages: write
   id-token: write
 
@@ -160,6 +169,8 @@ jobs:
       DATANEST_UI_LEGAL_REVIEW_REF: ${{ inputs.legal_review_reference }}
       DATANEST_UI_EXTERNAL_REVIEW_REF: ${{ inputs.external_review_reference }}
       DATANEST_UI_AUTHORIZATION_REF: ${{ inputs.production_authorization_reference }}
+      DATANEST_UI_AUTHORIZATION_PR_NUMBER: ${{ inputs.production_authorization_pr_number }}
+      DATANEST_UI_AUTHORIZATION_REVIEWER: ${{ inputs.production_authorization_reviewer }}
       DATANEST_UI_PRODUCTION_CONFIRMATION: ${{ inputs.confirmation }}
       DATANEST_UI_OWNER_TEST_MODE_REF: ${{ inputs.owner_test_mode_reference }}
       DATANEST_UI_OWNER_TEST_MODE_OWNER_LOGIN: ${{ inputs.owner_test_mode_owner_login }}
@@ -196,6 +207,8 @@ jobs:
         run: node scripts/propose-owner-test-mode-window.mjs
 
       - name: Verify production authorization payload
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/verify-ui-production-authorization.mjs
 
       - name: Verify exact SHA is reachable from main
@@ -236,6 +249,8 @@ jobs:
           SUPABASE_PUBLISHABLE_KEY: "sb_publishable_yIf5HFKNNteed4HdYCS2Vw_4TB-4LvB"
 
       - name: Write UI governance release evidence
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/write-ui-governance-evidence.mjs public/ui-governance-release.json
 
       - name: Write release manifest
@@ -396,6 +411,9 @@ jobs:
           if(evidence.productionDeploymentAllowed!==true) throw new Error("Production deployment must be explicitly allowed");
           if(mode==="authorized"){
             if(evidence.authorized!==true || evidence.fullyGoverned!==true) throw new Error("Authorized release must be fully governed");
+            if(evidence.authorizationIntegrity!=="github-verified-commit-bound-review") throw new Error("Authorized release must carry commit-bound GitHub review verification");
+            if(evidence.evidence?.productionAuthorization?.status!=="verified") throw new Error("Production authorization evidence must be verified");
+            if(evidence.evidence?.productionAuthorization?.verification?.releaseSha!==process.env.RELEASE_SHA) throw new Error("Verified production authorization release SHA mismatch");
           }else if(mode==="owner_test_mode"){
             if(evidence.authorized!==false || evidence.fullyGoverned!==false) throw new Error("Owner Test Mode must not claim full authorization");
             if(!evidence.ownerTestMode?.active || evidence.ownerTestMode.temporaryException!==true) throw new Error("Owner Test Mode metadata is required");
