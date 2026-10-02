@@ -4,7 +4,7 @@
 .landingHeader { min-height: 100px; border-bottom: 1px solid var(--line); }
 .landingBrand { display: flex; gap: 12px; align-items: center; text-decoration: none; font-size: 10px; letter-spacing: .18em; color: var(--text-secondary); }
 .landingBrand b { display: block; color: var(--text); font-size: 19px; letter-spacing: -.04em; margin-top: 3px; }
-.landingMonogram { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid #7dcde3; border-radius: 14px; color: var(--brand-cyan); font-size: 26px; font-weight: 800; background: linear-gradient(140deg, var(--surface-elevated), var(--surface-work-soft)); }
+.landingMonogram { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--brand-cyan); border-radius: 14px; color: var(--brand-cyan); font-size: 26px; font-weight: 800; background: linear-gradient(140deg, var(--surface-elevated), var(--surface-work-soft)); }
 .motionControl { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-chrome); color: var(--text-secondary); font-size: 12px; cursor: pointer; }
 .motionControl[aria-pressed="true"] { border-color: var(--cyan); color: var(--cyan); }
 .motionControl span { font-size: 15px; }
@@ -76,7 +76,7 @@ html[data-motion-paused="true"] *, html[data-motion-paused="true"] *::before, ht
 /* Reson8 ecosystem ingress */
 .landingHeaderActions{display:flex;align-items:center;gap:10px}
 .landingHubLink{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:rgba(20,12,38,.72);color:var(--text-primary);text-decoration:none;font-size:12px;font-weight:800}
-.landingHubLink:hover,.landingHubLink:focus-visible{border-color:rgba(66,231,255,.38);color:#fff;background:rgba(66,231,255,.07)}
+.landingHubLink:hover,.landingHubLink:focus-visible{border-color:rgba(66,231,255,.38);color:var(--text-primary);background:rgba(66,231,255,.07)}
 @media (max-width:700px){.landingHeaderActions{gap:6px}.landingHubLink{min-height:40px;padding:8px 9px;font-size:10px}}
 @media (max-width:430px){.landingHeaderActions{gap:6px}.landingHubLink{font-size:10px;min-height:38px;padding:7px 9px}.landingHubLink span{font-size:10px}.landingThemeControl{min-width:105px}}
 
