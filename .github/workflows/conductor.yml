@@ -29,7 +29,7 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: datanest-conductor
+  group: datanest-conductor-${{ github.event_name }}-${{ github.event_name == 'workflow_run' && github.event.workflow_run.name || github.ref_name || 'schedule' }}
   cancel-in-progress: true
 
 jobs:
@@ -83,7 +83,9 @@ jobs:
           set -euo pipefail
           git add conductor/state/latest.json conductor/commands/latest.json
           if ! git diff --cached --quiet; then
-            git -c user.name="DataNest CONDUCTOR"                 -c user.email="41898282+github-actions[bot]@users.noreply.github.com"                 commit -m "Refresh CONDUCTOR process synchronization"
+            git -c user.name="DataNest CONDUCTOR" \
+                -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+                commit -m "Refresh CONDUCTOR process synchronization"
             git push --force-with-lease origin HEAD:automation/conductor
           fi
 
@@ -140,6 +142,13 @@ jobs:
           retention-days: 30
 
   gate-timeframe:
+    if: >-
+      (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main') &&
+      (github.event_name != 'workflow_run' ||
+        (github.event.workflow_run.head_branch == 'main' &&
+         github.event.workflow_run.head_repository.full_name == github.repository &&
+         github.event.workflow_run.event != 'pull_request' &&
+         github.event.workflow_run.event != 'workflow_run'))
     name: DataNest AI worktree gate timeframe
     uses: ./.github/workflows/worktree-gate-timeframe.yml
     with:
