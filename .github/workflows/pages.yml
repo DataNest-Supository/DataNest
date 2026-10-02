@@ -431,6 +431,7 @@ jobs:
           node <<'NODE'
           const fs=require("fs");
           const manifest=JSON.parse(fs.readFileSync("/tmp/release-manifest.json","utf8"));
+          const mode=process.env.RELEASE_MODE;
           if(manifest.productionInclusion?.inclusive!==true) throw new Error("Live release must declare production-inclusive mode");
           const requiredPublic=[
             "datanest",
