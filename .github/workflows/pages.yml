@@ -144,6 +144,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           DATANEST_RELEASE_SHA: ${{ steps.release.outputs.sha }}
+          edge_function_release_reference: ${{ steps.edge_attestation_reference.outputs.reference }}
           DATANEST_EDGE_FUNCTION_RELEASE_REFERENCE: ${{ steps.edge_attestation_reference.outputs.reference }}
           DATANEST_SUPABASE_PROJECT: sgqdmfgjbprsoqsmgigi
         run: node scripts/verify-production-edge-function-release-reference.mjs "${{ runner.temp }}/datanest-edge-function-release/edge-function-release.json"
