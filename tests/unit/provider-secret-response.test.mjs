@@ -2,20 +2,40 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 
-const source=fs.readFileSync(
+const edgeSource=fs.readFileSync(
   "supabase/functions/manage-ai-provider-v2/index.ts",
+  "utf8"
+);
+
+const syncMigration=fs.readFileSync(
+  "supabase/migrations/20261002130000_harden_provider_sync_secret_boundary.sql",
   "utf8"
 );
 
 test("provider-management responses strip decrypted credentials at the browser boundary",()=>{
   assert.match(
-    source,
+    edgeSource,
     /function publicConnection\(value:unknown\)\{[\s\S]*const \{secret:_secret,\.\.\.safe\}=value/
   );
-  assert.match(source,/connection:publicConnection\(connection\)/);
-  assert.match(source,/connection:publicConnection\(\{[\s\S]*processing_region:personalProcessingRegion/);
+  assert.match(edgeSource,/connection:publicConnection\(connection\)/);
+  assert.match(edgeSource,/connection:publicConnection\(\{[\s\S]*processing_region:personalProcessingRegion/);
   assert.doesNotMatch(
-    source,
+    edgeSource,
     /return json\(\{ok:true,[\s\S]{0,120}connection\},200,origin\)/
+  );
+});
+
+test("shared-provider sync RPC never returns the Vault-decrypted credential",()=>{
+  assert.doesNotMatch(
+    syncMigration,
+    /'secret',v\.decrypted_secret/
+  );
+  assert.match(
+    syncMigration,
+    /return \(\s*select jsonb_build_object\(\s*'id',c\.id,[\s\S]*'metadata',c\.metadata\)/
+  );
+  assert.match(
+    syncMigration,
+    /revoke all on function public\.service_sync_shared_ai_provider_connection_v1\(uuid,uuid\)/
   );
 });
