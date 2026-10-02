@@ -430,6 +430,7 @@ jobs:
           grep -q '"projectInvitations":"send-project-member-invite@3"' /tmp/release-manifest.json
           node <<'NODE'
           const fs=require("fs");
+          const mode=process.env.RELEASE_MODE;
           const manifest=JSON.parse(fs.readFileSync("/tmp/release-manifest.json","utf8"));
           if(manifest.productionInclusion?.inclusive!==true) throw new Error("Live release must declare production-inclusive mode");
           const requiredPublic=[
