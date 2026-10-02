@@ -8,7 +8,7 @@ const edgeSource=fs.readFileSync(
 );
 
 const syncMigration=fs.readFileSync(
-  "supabase/migrations/20261002130000_harden_provider_sync_secret_boundary.sql",
+  "supabase/migrations/20261002101955_harden_provider_sync_secret_boundary.sql",
   "utf8"
 );
 
@@ -32,7 +32,7 @@ test("shared-provider sync RPC never returns the Vault-decrypted credential",()=
   );
   assert.match(
     syncMigration,
-    /return \(\s*select jsonb_build_object\(\s*'id',c\.id,[\s\S]*'metadata',c\.metadata\)/
+    /return \(\s*select jsonb_build_object\(\s*'id',c\.id,[\s\S]*'metadata',c\.metadata\s*\)/
   );
   assert.match(
     syncMigration,
