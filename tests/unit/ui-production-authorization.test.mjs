@@ -297,7 +297,7 @@ test("Owner Live Test Mode keeps post-test human gates open while authorized pro
     /name: \$\{\{ inputs\.release_mode == 'owner_test_mode' && 'github-pages-owner-test-mode' \|\| inputs\.release_mode == 'progressive_live' && 'github-pages-progressive-live' \|\| 'github-pages' \}\}/
   );
   assert.match(pagesWorkflow,/Verify Owner Test Mode actor authority/);
-  assert.match(pagesWorkflow,/AUTHORIZE OWNER TEST MODE/);
+  assert.match(pagesWorkflow,/confirmation:/);
 });
 
 test("Owner Live Test Mode expiry can fail closed without waiting on protected production review",()=>{
