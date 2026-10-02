@@ -119,4 +119,3 @@ The repository, evidence records, configured authorities, and applicable human a
 ## 10. Review requirement
 
 UX changes should be reviewable independently from governance changes. A visual redesign must not silently change authorization, evidence status, lifecycle state, synchronization authority, or deployment authority.
-
