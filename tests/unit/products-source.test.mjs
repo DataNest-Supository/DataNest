@@ -10,6 +10,7 @@ const products=fs.readFileSync(path.join(root,"src/components/ProductsWorkspace.
 const gateway=fs.readFileSync(path.join(root,"supabase/functions/datanest-ai-chat/index.ts"),"utf8");
 const learningGateway=fs.readFileSync(path.join(root,"supabase/functions/_shared/datanestAiLearning.ts"),"utf8");
 const productMigration=fs.readFileSync(path.join(root,"supabase/migrations/20260926055810_add_governed_product_catalog.sql"),"utf8");
+const certificationMigration=fs.readFileSync(path.join(root,"supabase/migrations/20261001140000_resonance_certification_service_offering.sql"),"utf8");
 const ronsasSnapshot=fs.readFileSync(path.join(root,"data/imports/ronsas-product-20260926.jsonl"),"utf8");
 
 test("Products is a first-class DataNest workspace",()=>{
@@ -152,4 +153,39 @@ test("Portfolio Pulse receives governed products with Portfolio Registry lifecyc
   assert.match(products,/catalogProductsForPulse/);
   assert.match(products,/governedProductLifecycle\(product,portfolioItems\)/);
   assert.match(products,/ResonancePortfolioPulse products=\{catalogProductsForPulse\}/);
+});
+
+test("Resonance Certification & Assurance is a governed market service offering",()=>{
+  assert.match(products,/CertificationServicesPanel/);
+  assert.match(products,/certification|assurance/i);
+  assert.match(certificationMigration,/RCS-SVC-01/);
+  assert.equal(certificationMigration.includes("billing_enabled=false"),true);
+  assert.match(certificationMigration,/external_accreditation_claim/);
+  assert.match(certificationMigration,/external_accreditation_claim',false/);
+});
+
+const certificationPanel=fs.readFileSync(path.join(root,"src/components/CertificationServicesPanel.tsx"),"utf8");
+
+test("Certification services are customer-facing with pricing and governed intake",()=>{
+  assert.match(certificationPanel,/Resonance Certification & Assurance/);
+  assert.match(certificationPanel,/RESONANCE_CERTIFICATION_PRICING/);
+  assert.match(certificationPanel,/Submit service request/);
+  assert.match(certificationPanel,/create_certification_service_request_v2/);
+  assert.match(certificationPanel,/external accreditation/i);
+  assert.match(products,/CertificationServicesPanel/);
+});
+
+
+const certificationLaunchMigration=fs.readFileSync(path.join(root,"supabase/migrations/20261001170000_certification_business_bank_settlement_launch.sql"),"utf8");
+const bankPaymentMigration=fs.readFileSync(path.join(root,"supabase/migrations/20261001162000_certification_bank_transfer_business_payments.sql"),"utf8");
+const bankPanel=fs.readFileSync(path.join(root,"src/components/CertificationServicesPanel.tsx"),"utf8");
+
+test("bank-transfer payment intake is a governed commercial path",()=>{
+  assert.equal(bankPaymentMigration.includes("settlement_currency text not null default 'ZAR'"),true);
+  assert.equal(bankPaymentMigration.includes("payment_method text not null default 'bank_transfer'"),true);
+  assert.equal(bankPaymentMigration.includes("invoice_currency text not null default 'ZAR'"),true);
+  assert.equal(certificationLaunchMigration.includes("published_pricing_bank_transfer"),true);
+  assert.equal(bankPanel.includes("Bank transfer / EFT"),true);
+  assert.equal(bankPanel.includes("target_requested_currency:requestedCurrency"),true);
+  assert.equal(bankPanel.includes("create_certification_service_request_v2"),true);
 });
