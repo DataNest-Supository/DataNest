@@ -4,7 +4,7 @@ The canonical production Pages workflow is intentionally operator-light.
 
 ## Normal path
 
-A successful completion of the canonical `CONDUCTOR Process Synchronization Tree` on `main` automatically starts the Pages release workflow. The workflow resolves the exact current `main` commit itself, validates the canonical production contract, runs technical validation, deploys through the protected `github-pages` environment, and verifies the live site.
+A push to the protected `main` branch automatically starts the Pages release workflow. The workflow resolves the exact current `main` commit itself, validates the canonical production contract, runs technical validation, deploys through the protected `github-pages` environment, and verifies the live site.
 
 No release SHA, Mirror reference, audit reference, PR reference, security reference, RONSAS reference, or governance evidence ID needs to be entered manually.
 
