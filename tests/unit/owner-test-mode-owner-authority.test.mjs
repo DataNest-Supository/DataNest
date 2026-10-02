@@ -7,9 +7,10 @@ const pages=readFileSync(
   "utf8"
 );
 
-test("repository owner authorization does not depend on collaborator API quota",()=>{
-  assert.match(pages,/GITHUB_ACTOR" = "\$GITHUB_REPOSITORY_OWNER/);
-  assert.match(pages,/Owner Test Mode authority verified from repository ownership/);
-  assert.match(pages,/collaborators\/\$GITHUB_ACTOR\/permission/);
-  assert.match(pages,/test "\$permission" = "admin"/);
+test("Pages production uses the protected environment instead of Owner Test Mode checks",()=>{
+  assert.match(pages,/environment:\n      name: github-pages/);
+  assert.doesNotMatch(pages,/GITHUB_REPOSITORY_OWNER/);
+  assert.equal(pages.includes("collaborators/$GITHUB_ACTOR/permission"),false);
+  assert.doesNotMatch(pages,/Owner Test Mode authority verified from repository ownership/);
 });
+

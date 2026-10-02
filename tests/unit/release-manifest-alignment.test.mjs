@@ -37,8 +37,8 @@ test("project invite Edge Function v2 is the enforced release version",()=>{
     /DATANEST_EDGE_PROJECT_INVITES: send-project-member-invite@3/
   );
   assert.match(
-    pagesWorkflow,
-    /projectInvitations.*send-project-member-invite@3/
+    manifestScript,
+    /projectInvitations:process\.env\.DATANEST_EDGE_PROJECT_INVITES \|\| "send-project-member-invite@3"/
   );
   assert.doesNotMatch(manifestScript,/send-project-member-invite@1/);
   assert.doesNotMatch(pagesWorkflow,/send-project-member-invite@1/);
@@ -145,33 +145,24 @@ test("governed Edge Function deployment treats timeframe as advisory",()=>{
 });
 
 
-test("Pages workflow stays within GitHub workflow_dispatch input limit",()=>{
-  const dispatchBlock=pagesWorkflow.split("\npermissions:\n",1)[0];
-  const inputs=dispatchBlock.match(/^      [A-Za-z0-9_-]+:$/gm)||[];
-  assert.equal(inputs.length,24);
-  assert.doesNotMatch(dispatchBlock,/\n      database_migration_reference:/);
+test("Pages workflow has a single automatic release path",()=>{
+  assert.match(pagesWorkflow,/workflow_run:/);
+  assert.match(pagesWorkflow,/CONDUCTOR Process Synchronization Tree/);
+  assert.match(pagesWorkflow,/workflow_dispatch:/);
+  assert.match(pagesWorkflow,/environment:\n      name: github-pages/);
+  assert.doesNotMatch(pagesWorkflow,/mirror_promotion_reference/);
+  assert.doesNotMatch(pagesWorkflow,/database_migration_reference:/);
+  assert.doesNotMatch(pagesWorkflow,/DATANEST_DB_RELEASE:/);
 });
 
-test("Pages release wiring derives production attestation from the canonical contract",()=>{
-  assert.doesNotMatch(pagesWorkflow,/database_migration_reference:/);
-  assert.doesNotMatch(pagesWorkflow,/database_migration_head:/);
-  assert.doesNotMatch(pagesWorkflow,/database_migration_name:/);
+test("Pages release wiring derives the database attestation from the canonical contract",()=>{
   assert.match(pagesWorkflow,/Validate canonical production contract/);
-  assert.match(pagesWorkflow,/DATANEST_EXPECTED_DB_MIGRATION_REFERENCE: \$\{\{ steps\.production_contract\.outputs\.database_migration_reference \}\}/);
+  assert.match(pagesWorkflow,/DATANEST_EXPECTED_DB_MIGRATION_REFERENCE/);
   assert.match(pagesWorkflow,/verify-production-release-attestation\.mjs/);
-  assert.match(pagesWorkflow,/verify-production-edge-function-release-reference\.mjs/);
-  assert.match(pagesWorkflow,/edge_function_release_reference:/);
-  assert.match(pagesWorkflow,/actions\/download-artifact@v5/);
-  assert.match(pagesWorkflow,/SUPABASE_ACCESS_TOKEN:\s*\$\{\{ secrets\.SUPABASE_ACCESS_TOKEN \}\}/);
-  assert.match(pagesWorkflow,/DATANEST_DB_ATTESTATION_FILE: \.datanest\/release-attestation\.json/);
-  assert.match(edgeAttestationScript,/api\.supabase\.com\/v1\/projects/);
-  assert.match(edgeAttestationScript,/SUPABASE_ACCESS_TOKEN/);
-  assert.match(edgeAttestationScript,/ezbr_sha256/);
-  assert.match(edgeAttestationScript,/workflowRunId/);
-  assert.match(edgeReleaseWorkflow,/environment:/);
-  assert.match(edgeReleaseWorkflow,/DATANEST_RELEASE_SHA/);
-  assert.match(edgeReleaseWorkflow,/supabase functions deploy/);
-  assert.match(edgeReleaseWorkflow,/write-production-edge-function-release-attestation\.mjs/);
+  assert.ok(pagesWorkflow.includes("DATANEST_DB_ATTESTATION_FILE: .datanest/release-attestation.json"));
+  assert.match(pagesWorkflow,/databaseMigration/);
+  assert.match(manifestScript,/databaseRelease:canonicalDatabaseRelease/);
+  assert.doesNotMatch(pagesWorkflow,/edge_function_release_reference:/);
 });
 
 test("release manifest records verified database and Edge Function attestations",()=>{
@@ -237,6 +228,5 @@ test("release manifest declares the production-inclusive surface contract from t
   assert.ok(catalog.productionInclusion.externalProductionSurfaces.includes("ronsas-youtube-optimizer"));
   assert.ok(catalog.productionInclusion.productionSupportComponents.includes("ronsas-sovereign-backend"));
   assert.ok(catalog.productionInclusion.productionSupportComponents.includes("ronsas-shared"));
-  assert.match(pagesWorkflow,/production-inclusive Assurance surface/);
   assert.match(pagesWorkflow,/DataNest\/assurance\//);
 });

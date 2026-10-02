@@ -113,72 +113,39 @@ test("authorized fixture ignores parent candidate Test Mode state",()=>{
   }
 });
 
-test("Pages production deployment is manual exact-SHA and environment gated",()=>{
-  assert.doesNotMatch(pagesWorkflow,/\n\s+push:\s*\n/);
+test("Pages production deployment uses the current main SHA and a protected environment",()=>{
+  assert.match(pagesWorkflow,/workflow_run:/);
+  assert.match(pagesWorkflow,/CONDUCTOR Process Synchronization Tree/);
   assert.match(pagesWorkflow,/workflow_dispatch:/);
-  for (const input of [
-    "release_sha",
-    "mirror_promotion_reference",
-    "mirror_live_evidence_reference",
-    "datanest_ai_certification_reference",
-    "audit_optimizer_reference",
-    "pr_verification_reference",
-    "security_scan_reference",
-    "ronsas_validation_reference",
-    "visual_review_reference",
-    "governance_review_reference",
-    "legal_review_reference",
-    "external_review_reference",
-    "production_authorization_reference",
-    "confirmation"
-  ]) {
-    assert.match(pagesWorkflow,new RegExp(`\\n      ${input}:\\n`));
-  }
-  assert.match(pagesWorkflow,/ref: \$\{\{ inputs\.release_sha \}\}/);
-  assert.match(pagesWorkflow,/git merge-base --is-ancestor "\$DATANEST_UI_RELEASE_SHA" origin\/main/);
-  assert.match(pagesWorkflow,/'github-pages'/);
-  assert.match(pagesWorkflow,/'github-pages-owner-test-mode'/);
-  assert.match(pagesWorkflow,/'github-pages-progressive-live'/);
-  assert.match(pagesWorkflow,/default: authorized/);
-  assert.match(pagesWorkflow,/DATANEST_UI_PRODUCTION_CONFIRMATION: \$\{\{ inputs\.confirmation \}\}/);
+  assert.match(pagesWorkflow,/github-pages/);
+  assert.match(pagesWorkflow,/deployments: read/);
+  assert.match(pagesWorkflow,/git rev-parse origin\/main/);
+  assert.match(pagesWorkflow,/verify-production-release-attestation\.mjs/);
+  assert.match(pagesWorkflow,/npm test/);
+  assert.match(pagesWorkflow,/npm run check/);
+  assert.doesNotMatch(pagesWorkflow,/mirror_promotion_reference/);
+  assert.doesNotMatch(pagesWorkflow,/production_authorization_reference/);
+  assert.doesNotMatch(pagesWorkflow,/owner_test_mode/);
 });
 
 
-test("Pages post-deployment verification covers all public legal routes and governed app targets",()=>{
+test("Pages post-deployment verification covers public routes and governed app targets",()=>{
   for (const route of [
-    "legal",
-    "governance",
-    "accessibility",
-    "terms",
-    "privacy",
-    "disclaimers",
-    "acceptable-use",
-    "intellectual-property",
-    "assurance"
+    "legal","governance","accessibility","terms","privacy","disclaimers",
+    "acceptable-use","intellectual-property","assurance"
   ]) {
     assert.match(pagesWorkflow,new RegExp(`for route in [^\\n]*\\b${route}\\b`));
   }
-
   for (const slug of [
-    "career-compass",
-    "creative-studio",
-    "epublisher",
-    "lyricsync-studio",
-    "scene-song-spark",
-    "sovereign-forge",
-    "syncvision"
+    "career-compass","creative-studio","epublisher","lyricsync-studio",
+    "scene-song-spark","sovereign-forge","syncvision"
   ]) {
     assert.match(pagesWorkflow,new RegExp(`for app in [^\\n]*\\b${slug}\\b`));
   }
-
-  assert.match(pagesWorkflow,/https:\/\/youtubeoptimizer\.life\//);
-  assert.match(pagesWorkflow,/production-inclusive Assurance surface/);
-  assert.match(pagesWorkflow,/trade-implementation-interest\.yml/);
-  assert.match(pagesWorkflow,/ui-governance-release\.json/);
-  assert.match(pagesWorkflow,/release_mode:/);
-  assert.match(pagesWorkflow,/owner_test_mode/);
-  assert.match(pagesWorkflow,/evidence\.releaseState!==mode/);
-  assert.match(pagesWorkflow,/evidence\.productionDeploymentAllowed!==true/);
+  assert.match(pagesWorkflow,/youtubeoptimizer\.life/);
+  assert.match(pagesWorkflow,/productionInclusion/);
+  assert.match(pagesWorkflow,/release-manifest\.json/);
+  assert.match(pagesWorkflow,/releaseAttestation/);
 });
 
 test("RONSAS validation is required when the Pages release gate changes",()=>{
@@ -273,31 +240,18 @@ test("Owner Live Test Mode AI-proposed strategy does not require an explicit exp
   assert.match(result.stdout,/owner_test_mode/);
 });
 
-test("Pages workflow exposes AI timeframe complexity controls",()=>{
-  for(const input of [
-    "owner_test_mode_window_strategy",
-    "owner_test_mode_task_complexity",
-    "owner_test_mode_reporting_complexity"
-  ]){
-    assert.match(pagesWorkflow,new RegExp(`\\n      ${input}:\\n`));
-  }
-  assert.match(pagesWorkflow,/Show DataNest AI proposed Owner Test Mode timeframe/);
-  assert.match(pagesWorkflow,/propose-owner-test-mode-window\.mjs/);
-  assert.match(pagesWorkflow,/proposal\.strategy==="ai_proposed"/);
+test("Pages workflow omits legacy Owner Test Mode timeframe inputs",()=>{
+  assert.doesNotMatch(pagesWorkflow,/owner_test_mode_window_strategy/);
+  assert.doesNotMatch(pagesWorkflow,/owner_test_mode_task_complexity/);
+  assert.doesNotMatch(pagesWorkflow,/owner_test_mode_reporting_complexity/);
+  assert.doesNotMatch(pagesWorkflow,/propose-owner-test-mode-window\\.mjs/);
 });
 
-
-test("Owner Live Test Mode keeps post-test human gates open while authorized production remains protected",()=>{
-  const visualBlock=pagesWorkflow.match(/visual_review_reference:\n([\s\S]*?)(?=\n      governance_review_reference:)/)?.[1]||"";
-  const authBlock=pagesWorkflow.match(/production_authorization_reference:\n([\s\S]*?)(?=\n      owner_test_mode_reference:)/)?.[1]||"";
-  assert.match(visualBlock,/required: false/);
-  assert.match(authBlock,/required: false/);
-  assert.match(
-    pagesWorkflow,
-    /name: \$\{\{ inputs\.release_mode == 'owner_test_mode' && 'github-pages-owner-test-mode' \|\| inputs\.release_mode == 'progressive_live' && 'github-pages-progressive-live' \|\| 'github-pages' \}\}/
-  );
-  assert.match(pagesWorkflow,/Verify Owner Test Mode actor authority/);
-  assert.match(pagesWorkflow,/confirmation:/);
+test("Pages production keeps authorization in the protected environment",()=>{
+  assert.match(pagesWorkflow,/environment:\n      name: github-pages/);
+  assert.doesNotMatch(pagesWorkflow,/visual_review_reference/);
+  assert.doesNotMatch(pagesWorkflow,/production_authorization_reference/);
+  assert.doesNotMatch(pagesWorkflow,/owner_test_mode/);
 });
 
 test("Owner Live Test Mode expiry can fail closed without waiting on protected production review",()=>{
