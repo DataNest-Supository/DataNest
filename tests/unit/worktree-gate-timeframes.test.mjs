@@ -23,7 +23,8 @@ test("every active worktree workflow gate is covered by the shared timeframe reg
 });
 
 test("every worktree gate invokes the reusable DataNest AI timeframe policy",()=>{
-  for(const [workflowFile,profile] of Object.entries(profiles)){\n    if(workflowFile==="pages.yml") continue;
+  for(const [workflowFile,profile] of Object.entries(profiles)){
+    if(workflowFile==="pages.yml") continue;
     const source=readFileSync(new URL(`../../.github/workflows/${workflowFile}`,import.meta.url),"utf8");
     assert.match(source,/\n  gate-timeframe:\n/,`${workflowFile} missing gate-timeframe job`);
     assert.match(source,/uses: \.\/\.github\/workflows\/worktree-gate-timeframe\.yml/);
