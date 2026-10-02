@@ -29,11 +29,11 @@ export function buildProgressiveLiveGapRegister(
     DATANEST_UI_RELEASE_STATE:releaseMode
   });
 
-  const gaps=[...(ui.gaps || [])];
+  const gaps=releaseMode==="progressive_live" ? [...(ui.gaps || [])] : [];
   const dbFile=resolve(env.DATANEST_DB_ATTESTATION_FILE || ".datanest/release-attestation.json");
   const edgeFile=resolve(env.DATANEST_EDGE_ATTESTATION_FILE || ".datanest/edge-function-attestation.json");
 
-  if(!existsSync(dbFile)){
+  if(releaseMode==="progressive_live" && !existsSync(dbFile)){
     gaps.push({
       id:"technical:database-attestation",
       domain:"production-database",
@@ -45,7 +45,7 @@ export function buildProgressiveLiveGapRegister(
     });
   }
 
-  if(!existsSync(edgeFile) && !clean(env.DATANEST_UI_EDGE_FUNCTION_RELEASE_REF || env.DATANEST_EDGE_FUNCTION_RELEASE_REFERENCE)){
+  if(releaseMode==="progressive_live" && !existsSync(edgeFile) && !clean(env.DATANEST_UI_EDGE_FUNCTION_RELEASE_REF || env.DATANEST_EDGE_FUNCTION_RELEASE_REFERENCE)){
     gaps.push({
       id:"technical:edge-function-release",
       domain:"production-edge-functions",
