@@ -117,6 +117,8 @@ jobs:
         run: node scripts/verify-production-release-attestation.mjs .datanest/release-attestation.json
 
       - name: Stage connector-attested Edge Function evidence
+        with:
+          edge_function_release_reference: ${{ steps.release.outputs.sha }}
         shell: bash
         run: |
           set -euo pipefail
