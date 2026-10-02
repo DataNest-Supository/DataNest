@@ -45,13 +45,16 @@ The canonical `/DataNest/` surface remains DataNest `main` plus its authorized p
 
 ## Release enforcement
 
-An authorized production release must:
+A **progressive-live** release may deploy when the workflow is manually dispatched and the automated technical deployment path succeeds. Human review and asynchronous evidence are tracked as non-blocking assurance gaps with proposed remedy deadlines.
+
+The progressive-live release must:
 
 1. Bind to an exact SHA reachable from `main`.
-2. Carry verified database and Edge Function attestations.
-3. Carry the required Mirror, certification, audit, security, RONSAS, governance, legal, and human authorization evidence.
-4. Build all DataNest-hosted RONSAS Pages apps.
-5. Verify every inclusive public surface after deployment.
-6. Verify the governed external YouTube Optimizer target.
-7. Publish a release manifest whose `productionInclusion.inclusive` value is `true`.
-8. Preserve the lawful boundary of the Assurance service: independent private assurance/oversight, not statutory regulator authority or unauthorized surveillance.
+2. Complete the declared automated build/check/deployment path.
+3. Verify every inclusive public surface after deployment where the workflow defines a live check.
+4. Verify the governed external YouTube Optimizer target where the workflow defines a live check.
+5. Publish a release manifest whose `productionInclusion.inclusive` value is `true`.
+6. Publish a machine-readable progressive-live gap register whenever assurance evidence is incomplete.
+7. Preserve the lawful boundary of the Assurance service: independent private assurance/oversight, not statutory regulator authority or unauthorized surveillance.
+
+The strict **authorized** release mode remains available when a fully evidenced human/governance dossier is required.
