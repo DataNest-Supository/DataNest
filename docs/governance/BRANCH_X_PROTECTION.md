@@ -18,11 +18,14 @@ Force-pushes and branch deletion are forbidden for canonical branches.
 4. `branch-cleaner.config.json` protects canonical, automation, audit, and CI branches from destructive maintenance.
 5. Boundaries classifies the BRANCH-X control plane as canonical-only.
 
-A GitHub-native ruleset that still requires approvals is a **native protection gap** against the current progressive-live policy. That mismatch should be remediated by the repository administrator by the proposed policy deadline rather than silently represented as compliant.
+An unavailable GitHub administration read is recorded as `api-access-unavailable`; a readable GitHub API that shows missing or mismatched native controls is recorded as a `protection-gap`. BRANCH-X never treats either state as successful protection.
 
 ## Free host-level closure
 
-GitHub confirms that repository rulesets and protected branches are available for public repositories on GitHub Free. citeturn718149search4turn718149search6
+GitHub documents repository rulesets and protected branches as available for public repositories on GitHub Free:
+
+- [Available rules for rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets)
+- [Managing protected branches](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches)
 
 Import `.github/rulesets/BRANCH-X-Canonical.json` and set it to **Active** for `main` and `release/**`. The definition enforces pull requests, zero required approvals, conversation resolution, required status checks, linear history, no force pushes, and no deletions.
 

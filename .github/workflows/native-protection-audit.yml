@@ -15,6 +15,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
+      - uses: actions/checkout@v7.0.1
+
       - name: Query GitHub native protection
         shell: bash
         env:
@@ -23,11 +25,34 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p native-protection/state
-          curl -sS -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "X-GitHub-Api-Version: 2022-11-28" -o native-protection/state/main.json -w "%{http_code}" "https://api.github.com/repos/${REPO}/branches/main" > native-protection/state/main.http
-          curl -sS -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "X-GitHub-Api-Version: 2022-11-28" -o native-protection/state/rulesets.json -w "%{http_code}" "https://api.github.com/repos/${REPO}/rulesets" > native-protection/state/rulesets.http
-          test -s native-protection/state/main.json
-          test -s native-protection/state/rulesets.json
-          test -s config/branch-protection.tree.json
+          api="https://api.github.com/repos/${REPO}"
+          headers=(
+            -H "Accept: application/vnd.github+json"
+            -H "Authorization: Bearer ${GITHUB_TOKEN}"
+            -H "X-GitHub-Api-Version: 2022-11-28"
+          )
+
+          curl --silent --show-error --location "${headers[@]}"             -o native-protection/state/main.json             -w "%{http_code}"             "${api}/branches/main"             > native-protection/state/main.http
+
+          curl --silent --show-error --location "${headers[@]}"             -o native-protection/state/rulesets-index.json             -w "%{http_code}"             "${api}/rulesets"             > native-protection/state/rulesets.http
+
+          for spec in "canonical:BRANCH-X Canonical" "automation:BRANCH-X Automation"; do
+            key="${spec%%:*}"
+            name="${spec#*:}"
+            printf 'null\n' > "native-protection/state/${key}.json"
+            printf 'absent\n' > "native-protection/state/${key}.http"
+
+            if [ "$(cat native-protection/state/rulesets.http)" != "200" ]; then
+              continue
+            fi
+
+            id="$(jq -r --arg name "$name" '.[]? | select(.name == $name) | .id' native-protection/state/rulesets-index.json 2>/dev/null | head -n1 || true)"
+            if [ -z "$id" ] || [ "$id" = "null" ]; then
+              continue
+            fi
+
+            curl --silent --show-error --location "${headers[@]}"               -o "native-protection/state/${key}.json"               -w "%{http_code}"               "${api}/rulesets/${id}"               > "native-protection/state/${key}.http"
+          done
 
       - name: Evaluate native protection against BRANCH-X policy
         shell: bash
@@ -38,11 +63,40 @@ jobs:
           import os
           from pathlib import Path
 
+          state = Path("native-protection/state")
           policy = json.loads(Path("config/branch-protection.tree.json").read_text())
-          main_text = Path("native-protection/state/main.json").read_text()
-          rulesets_text = Path("native-protection/state/rulesets.json").read_text()
-          main = json.loads(main_text) if main_text.lstrip().startswith("{") else {}
-          rulesets = json.loads(rulesets_text) if rulesets_text.lstrip().startswith("[") else []
+
+          def status(name):
+              path = state / f"{name}.http"
+              return path.read_text().strip() if path.exists() else "missing"
+
+          def read_json(name, expected_type):
+              path = state / name
+              if not path.exists():
+                  return expected_type()
+              try:
+                  value = json.loads(path.read_text())
+              except Exception:
+                  return expected_type()
+              return value if isinstance(value, expected_type) else expected_type()
+
+          main_http = status("main")
+          rulesets_http = status("rulesets")
+          canonical_http = status("canonical")
+          automation_http = status("automation")
+
+          main = read_json("main.json", dict) if main_http == "200" else {}
+          rulesets = read_json("rulesets-index.json", list) if rulesets_http == "200" else []
+          canonical = read_json("canonical.json", dict) if canonical_http == "200" else {}
+          automation = read_json("automation.json", dict) if automation_http == "200" else {}
+
+          detail_access_failures = [
+              name for name, code in (
+                  ("canonical", canonical_http),
+                  ("automation", automation_http),
+              )
+              if code not in {"200", "absent"}
+          ]
 
           expected = policy["branchClasses"]["canonical"]
           expected_automation = policy["branchClasses"]["protected_automation"]
@@ -52,9 +106,6 @@ jobs:
           expected_automation_checks = set(expected_automation["requiredStatusChecks"])
           required_types = {"pull_request", "required_status_checks", "required_linear_history", "non_fast_forward", "deletion"}
           required_automation_types = {"required_status_checks", "non_fast_forward", "deletion"}
-
-          canonical = next((r for r in rulesets if r.get("name") == "BRANCH-X Canonical"), None)
-          automation = next((r for r in rulesets if r.get("name") == "BRANCH-X Automation"), None)
 
           def refs(rule):
               return set((((rule or {}).get("conditions") or {}).get("ref_name") or {}).get("include") or [])
@@ -86,8 +137,9 @@ jobs:
           automation_status_params = (get_rule(automation, "required_status_checks") or {}).get("parameters") or {}
 
           api_ok = (
-              Path("native-protection/state/main.http").read_text().strip() == "200"
-              and Path("native-protection/state/rulesets.http").read_text().strip() == "200"
+              main_http == "200"
+              and rulesets_http == "200"
+              and not detail_access_failures
           )
 
           canonical_ok = (
@@ -119,16 +171,20 @@ jobs:
               and automation_status_params.get("do_not_enforce_on_create") is False
               and automation_status_params.get("strict_required_status_checks_policy") is True
           )
+
           evidence = {
-              "schemaVersion": "datanest-native-protection-audit-v3",
+              "schemaVersion": "datanest-native-protection-audit-v4",
               "repository": os.environ.get("GITHUB_REPOSITORY"),
               "observedMainProtectedLegacyFlag": bool(main.get("protected")),
-              "mainEndpointHttp": Path("native-protection/state/main.http").read_text().strip(),
-              "rulesetsEndpointHttp": Path("native-protection/state/rulesets.http").read_text().strip(),
+              "mainEndpointHttp": main_http,
+              "rulesetsEndpointHttp": rulesets_http,
               "observedRulesetCount": len(rulesets),
               "apiAccess": {
-                  "mainEndpoint": Path("native-protection/state/main.http").read_text().strip(),
-                  "rulesetsEndpoint": Path("native-protection/state/rulesets.http").read_text().strip()
+                  "mainEndpoint": main_http,
+                  "rulesetsEndpoint": rulesets_http,
+                  "canonicalRulesetEndpoint": canonical_http,
+                  "automationRulesetEndpoint": automation_http,
+                  "detailAccessFailures": detail_access_failures
               },
               "policyCanonical": {
                   "refs": sorted(expected_refs),
@@ -136,6 +192,7 @@ jobs:
                   "requiredRuleTypes": sorted(required_types)
               },
               "observedCanonical": {
+                  "id": canonical.get("id") if canonical else None,
                   "present": bool(canonical),
                   "target": canonical.get("target") if canonical else None,
                   "enforcement": canonical.get("enforcement") if canonical else None,
@@ -150,6 +207,7 @@ jobs:
                   "doNotEnforceOnCreate": canonical_status_params.get("do_not_enforce_on_create") if canonical else None
               },
               "observedAutomation": {
+                  "id": automation.get("id") if automation else None,
                   "present": bool(automation),
                   "target": automation.get("target") if automation else None,
                   "enforcement": automation.get("enforcement") if automation else None,
@@ -179,7 +237,8 @@ jobs:
           if result == "api-access-unavailable":
               print("::warning::BRANCH-X native protection could not be evaluated because one or more GitHub administration reads were unavailable; evidence is api-access-unavailable.")
           elif result == "protection-gap":
-              print("::warning::BRANCH-X native protection is not fully active; evidence was published as protection-gap.")
+              print("::error::BRANCH-X native protection is not fully active.")
+              raise SystemExit(1)
           else:
               print("BRANCH-X native protection matches the declared policy.")
           PY
