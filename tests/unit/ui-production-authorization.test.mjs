@@ -142,9 +142,9 @@ test("Pages post-deployment verification covers public routes and governed app t
   ]) {
     assert.match(pagesWorkflow,new RegExp(`for app in [^\\n]*\\b${slug}\\b`));
   }
-  assert.match(pagesWorkflow,/youtubeoptimizer\\.life/);
+  assert.match(pagesWorkflow,/youtubeoptimizer\.life/);
   assert.match(pagesWorkflow,/productionInclusion/);
-  assert.match(pagesWorkflow,/release-manifest\\.json/);
+  assert.match(pagesWorkflow,/release-manifest\.json/);
   assert.match(pagesWorkflow,/releaseAttestation/);
 });
 
