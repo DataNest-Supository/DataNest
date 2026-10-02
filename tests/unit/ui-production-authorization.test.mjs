@@ -16,12 +16,29 @@ const ronsasWorkflow=readFileSync(
   "utf8"
 );
 
+const releaseSha="c".repeat(40);
+const candidateSha="d".repeat(40);
+const githubApprovalFixture=JSON.stringify({
+  pr:{
+    number:405,
+    base:{ref:"main",repo:{full_name:"DataNest-Supository/DataNest"}},
+    head:{sha:candidateSha},
+    merged_at:"2026-10-02T03:37:29Z",
+    merge_commit_sha:releaseSha
+  },
+  reviews:[{
+    id:9001,
+    state:"APPROVED",
+    commit_id:candidateSha,
+    user:{login:"ReleaseReviewer"}
+  }]
+});
+
 const valid={
   // Keep authorized-release contract tests deterministic even when the parent
   // workflow exports candidate/test-mode state into process.env.
   DATANEST_UI_RELEASE_STATE:"authorized",
-  DATANEST_UI_RELEASE_SHA:"c".repeat(40),
-  DATANEST_UI_RELEASE_STATE:"authorized",
+  DATANEST_UI_RELEASE_SHA:releaseSha,
   DATANEST_UI_PRODUCTION_CONFIRMATION:"AUTHORIZE PRODUCTION",
   DATANEST_UI_MIRROR_PROMOTION_REF:"Mirror-DataNest candidate run #42",
   DATANEST_UI_MIRROR_LIVE_EVIDENCE_REF:"Mirror live verification #42",
@@ -34,7 +51,14 @@ const valid={
   DATANEST_UI_GOVERNANCE_REVIEW_REF:"DN-GOV-REVIEW-001",
   DATANEST_UI_LEGAL_REVIEW_REF:"DN-LEGAL-REVIEW-001",
   DATANEST_UI_EXTERNAL_REVIEW_REF:"DN-EXTERNAL-REVIEW-001",
-  DATANEST_UI_AUTHORIZATION_REF:"DN-PROD-AUTH-001"
+  DATANEST_UI_AUTHORIZATION_REF:"invented-reference-must-not-be-authoritative",
+  DATANEST_UI_AUTHORIZATION_PR_NUMBER:"405",
+  DATANEST_UI_AUTHORIZATION_REVIEWER:"ReleaseReviewer",
+  DATANEST_UI_TEST_FIXTURES:"1",
+  DATANEST_UI_GITHUB_APPROVAL_FIXTURE:githubApprovalFixture,
+  GITHUB_REPOSITORY:"DataNest-Supository/DataNest",
+  GITHUB_TOKEN:"test-token",
+  GITHUB_ACTIONS:"false"
 };
 
 function verify(extra={}){
@@ -73,10 +97,39 @@ test("production authorization rejects missing and placeholder references",()=>{
   }
 });
 
-test("production authorization accepts a complete structural payload",()=>{
+test("production authorization accepts complete commit-bound GitHub approval evidence",()=>{
   const result=verify();
   assert.equal(result.status,0,result.stderr);
   assert.match(result.stdout,/Validated UI production authorization payload/);
+});
+
+test("production authorization rejects fabricated reference when GitHub merge evidence mismatches release SHA",()=>{
+  const fixture=JSON.parse(githubApprovalFixture);
+  fixture.pr.merge_commit_sha="e".repeat(40);
+  const result=verify({DATANEST_UI_GITHUB_APPROVAL_FIXTURE:JSON.stringify(fixture)});
+  assert.notEqual(result.status,0);
+  assert.match(result.stderr,/merge commit does not match/i);
+});
+
+test("production authorization rejects stale approval bound to a different candidate commit",()=>{
+  const fixture=JSON.parse(githubApprovalFixture);
+  fixture.reviews[0].commit_id="e".repeat(40);
+  const result=verify({DATANEST_UI_GITHUB_APPROVAL_FIXTURE:JSON.stringify(fixture)});
+  assert.notEqual(result.status,0);
+  assert.match(result.stderr,/No commit-bound review decision/i);
+});
+
+test("production authorization rejects a later changes-requested decision on the current head",()=>{
+  const fixture=JSON.parse(githubApprovalFixture);
+  fixture.reviews.push({
+    id:9002,
+    state:"CHANGES_REQUESTED",
+    commit_id:candidateSha,
+    user:{login:"ReleaseReviewer"}
+  });
+  const result=verify({DATANEST_UI_GITHUB_APPROVAL_FIXTURE:JSON.stringify(fixture)});
+  assert.notEqual(result.status,0);
+  assert.match(result.stderr,/has not approved the current PR head commit/i);
 });
 
 test("authorized fixture ignores parent candidate Test Mode state",()=>{
@@ -92,7 +145,7 @@ test("authorized fixture ignores parent candidate Test Mode state",()=>{
   }
 });
 
-test("Pages production deployment is manual exact-SHA and environment gated",()=>{
+test("Pages production deployment is manual exact-SHA, review-bound and environment gated",()=>{
   assert.doesNotMatch(pagesWorkflow,/\n\s+push:\s*\n/);
   assert.match(pagesWorkflow,/workflow_dispatch:/);
   for (const input of [
@@ -109,6 +162,8 @@ test("Pages production deployment is manual exact-SHA and environment gated",()=
     "legal_review_reference",
     "external_review_reference",
     "production_authorization_reference",
+    "production_authorization_pr_number",
+    "production_authorization_reviewer",
     "confirmation"
   ]) {
     assert.match(pagesWorkflow,new RegExp(`\\n      ${input}:\\n`));
@@ -117,7 +172,11 @@ test("Pages production deployment is manual exact-SHA and environment gated",()=
   assert.match(pagesWorkflow,/git merge-base --is-ancestor "\$DATANEST_UI_RELEASE_SHA" origin\/main/);
   assert.match(pagesWorkflow,/'github-pages'/);
   assert.match(pagesWorkflow,/'github-pages-owner-test-mode'/);
+  assert.match(pagesWorkflow,/pull-requests: read/);
   assert.match(pagesWorkflow,/DATANEST_UI_PRODUCTION_CONFIRMATION: \$\{\{ inputs\.confirmation \}\}/);
+  assert.match(pagesWorkflow,/DATANEST_UI_AUTHORIZATION_PR_NUMBER: \$\{\{ inputs\.production_authorization_pr_number \}\}/);
+  assert.match(pagesWorkflow,/DATANEST_UI_AUTHORIZATION_REVIEWER: \$\{\{ inputs\.production_authorization_reviewer \}\}/);
+  assert.match(pagesWorkflow,/Verify production authorization payload[\s\S]*?GITHUB_TOKEN: \$\{\{ github\.token \}\}/);
 });
 
 
@@ -156,6 +215,7 @@ test("Pages post-deployment verification covers all public legal routes and gove
   assert.match(pagesWorkflow,/owner_test_mode/);
   assert.match(pagesWorkflow,/evidence\.releaseState!==mode/);
   assert.match(pagesWorkflow,/evidence\.productionDeploymentAllowed!==true/);
+  assert.match(pagesWorkflow,/github-verified-commit-bound-review/);
 });
 
 test("RONSAS validation is required when the Pages release gate changes",()=>{
@@ -171,7 +231,6 @@ test("RONSAS validation is required when the Pages release gate changes",()=>{
 
 
 test("Owner Live Test Mode allows temporary production while human review refs remain pending",()=>{
-  const expiry=new Date(Date.now()+2*60*60*1000).toISOString();
   const result=verify({
     DATANEST_UI_RELEASE_STATE:"owner_test_mode",
     DATANEST_UI_PRODUCTION_CONFIRMATION:"AUTHORIZE OWNER TEST MODE",
@@ -266,7 +325,7 @@ test("Pages workflow exposes AI timeframe complexity controls",()=>{
 
 test("Owner Live Test Mode keeps post-test human gates open while authorized production remains protected",()=>{
   const visualBlock=pagesWorkflow.match(/visual_review_reference:\n([\s\S]*?)(?=\n      governance_review_reference:)/)?.[1]||"";
-  const authBlock=pagesWorkflow.match(/production_authorization_reference:\n([\s\S]*?)(?=\n      owner_test_mode_reference:)/)?.[1]||"";
+  const authBlock=pagesWorkflow.match(/production_authorization_reference:\n([\s\S]*?)(?=\n      production_authorization_pr_number:)/)?.[1]||"";
   assert.match(visualBlock,/required: false/);
   assert.match(authBlock,/required: false/);
   assert.match(
