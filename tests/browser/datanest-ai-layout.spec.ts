@@ -250,7 +250,10 @@ test("AI instrument respects motion preference, offscreen pause, and saved Focus
   await expect(ring).toHaveCSS("animation-play-state","paused");
 
   await page.locator(".workspaceOptions > summary").click();
-  await page.locator(".motionControl").click();
+  const motionControl = page.locator(".motionControl");
+  await motionControl.click();
+  await expect(motionControl).toHaveAttribute("aria-pressed", "true");
+  await page.waitForTimeout(50);
   await expect(ring).toHaveCSS("animation-name","none");
   await page.reload();
   await expect(page.locator(".motionControl")).toHaveAttribute("aria-pressed","true");
