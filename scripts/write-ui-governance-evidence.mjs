@@ -181,7 +181,13 @@ export function buildUiGovernanceEvidence(env=process.env){
     }
   }
 
-  const generatedAt=new Date().toISOString();
+  const generatedAtRaw=clean(env.DATANEST_UI_GENERATED_AT);
+  if(generatedAtRaw && !Number.isFinite(Date.parse(generatedAtRaw))){
+    throw new Error("DATANEST_UI_GENERATED_AT must be a valid ISO-8601 date/time");
+  }
+  const generatedAt=generatedAtRaw
+    ? new Date(Date.parse(generatedAtRaw)).toISOString()
+    : new Date().toISOString();
   const ownerTestMode=releaseState==="owner_test_mode" ? buildOwnerTestMode(env,generatedAt) : null;
   const evidence={};
   for (const [key,envName] of REVIEW_ENV) {
