@@ -9,7 +9,8 @@ test("canonical production contract and Supository catalog agree", () => {
   assert.equal(contract.deployment.defaultMode, "authorized");
   assert.deepEqual(contract.supabase.expectedMigration, {
     head: "20261001142117",
-    name: "certification_business_bank_settlement_launch"
+    name: "certification_business_bank_settlement_launch",
+    sourceFile: "supabase/migrations/20261001170000_certification_business_bank_settlement_launch.sql"
   });
   assert.equal(catalog.canonicalRepository, contract.repository);
   assert.equal(catalog.canonicalPublicUrl, "https://datanest-supository.github.io/DataNest/");
