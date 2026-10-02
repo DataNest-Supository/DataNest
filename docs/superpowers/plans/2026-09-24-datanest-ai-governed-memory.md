@@ -2320,5 +2320,3 @@ Before execution, verify the plan against the approved spec:
 ## Execution Topology Amendment — 2026-09-24
 
 **Ruling:** Supabase Pro Branching is not required for the approved functionality. Replace every planned dedicated Supabase staging project with the already-created dedicated staging project **DataNest AI Staging** (project ref `qchttpcyqlqnhvahprhz`, region `eu-central-1`). Production remains project ref `sgqdmfgjbprsoqsmgigi`. All server-only gateway, RLS, certification, retention, backup, stress-test, and promotion requirements remain binding. Staging-only DDL must be applied only to `qchttpcyqlqnhvahprhz` and must never be applied to production. Git branch `feature/datanest-ai-governed-memory` remains the code-isolation boundary.
-
-

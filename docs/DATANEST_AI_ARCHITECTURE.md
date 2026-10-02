@@ -107,4 +107,3 @@ Verified Memory usage can generate governed outcome evidence without creating a 
 - Outcome evidence remains append-only so reviewers can see how operational experience accumulated around a memory over time.
 
 This preserves the separation between **use**, **observed outcome**, **review**, and **authority**: successful use is not proof of truth, while adverse evidence is strong enough to trigger scrutiny.
-
