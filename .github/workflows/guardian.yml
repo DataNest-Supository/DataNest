@@ -193,7 +193,8 @@ jobs:
           automation_action: heal
           automation_target: guardian/
           automation_effect: bounded_mutation
-          human_review_required: "false"
+          human_review_required: "true"
+          human_review_reason: "GUARDIAN healing can mutate repository state or open a PR; require explicit human review in the automation contract."
 
       - name: Remove only branches proven to have no unique commits
         env:
