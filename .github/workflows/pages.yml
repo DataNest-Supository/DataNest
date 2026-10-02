@@ -10,20 +10,6 @@ on:
     branches:
       - main
   workflow_dispatch:
-    inputs:
-      release_sha:
-        description: Exact 40-character commit SHA reachable from main
-        required: true
-        type: string
-      database_migration_reference:
-        description: Expected production database migration identity as JSON, for example {"head":"20261001142117","name":"certification_business_bank_settlement_launch"}
-        required: true
-        default: '{"head":"20261001142117","name":"certification_business_bank_settlement_launch"}'
-        type: string
-      gate_timeframe_override_hours:
-        description: Optional Owner worktree-gate planning-window override in hours (0.5-72)
-        required: false
-        type: string
 
 permissions:
   actions: read
@@ -111,28 +97,7 @@ jobs:
         run: |
           set -euo pipefail
           git fetch origin main --no-tags --prune
-          git merge-base --is-ancestor "$DATANEST_UI_RELEASE_SHA" origin/main
-
-      - name: Verify live production database release attestation
-        run: node scripts/verify-production-release-attestation.mjs .datanest/release-attestation.json
-
-      - name: Stage connector-attested Edge Function evidence
-        with:
-          edge_function_release_reference: ${{ steps.release.outputs.sha }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p "${{ runner.temp }}/datanest-edge-function-release"
-          cp config/production-edge-function-connector-attestation.json \
-            "${{ runner.temp }}/datanest-edge-function-release/edge-function-release.json"
-
-      - name: Verify connector-attested governed Edge Function release
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          DATANEST_RELEASE_SHA: ${{ steps.release.outputs.sha }}
-          DATANEST_EDGE_FUNCTION_RELEASE_REFERENCE: connector:${{ steps.release.outputs.sha }}
-          DATANEST_SUPABASE_PROJECT: sgqdmfgjbprsoqsmgigi
-        run: node scripts/verify-production-edge-function-release-reference.mjs "${{ runner.temp }}/datanest-edge-function-release/edge-function-release.json"
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
 
       - uses: ./.github/actions/node-project-setup
 
@@ -144,6 +109,23 @@ jobs:
         env:
           DATANEST_EXPECTED_DB_MIGRATION_REFERENCE: ${{ steps.production_contract.outputs.database_migration_reference }}
         run: node scripts/verify-production-release-attestation.mjs .datanest/release-attestation.json
+
+      - name: Stage Supabase connector Edge Function evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${{ runner.temp }}/datanest-edge-function-release"
+          cp config/production-edge-function-connector-attestation.json \
+            "${{ runner.temp }}/datanest-edge-function-release/edge-function-release.json"
+
+      - name: Verify connector-attested governed Edge Function release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DATANEST_RELEASE_SHA: ${{ steps.release.outputs.sha }}
+          edge_function_release_reference: connector:${{ steps.release.outputs.sha }}
+          DATANEST_EDGE_FUNCTION_RELEASE_REFERENCE: connector:${{ steps.release.outputs.sha }}
+          DATANEST_SUPABASE_PROJECT: sgqdmfgjbprsoqsmgigi
+        run: node scripts/verify-production-edge-function-release-reference.mjs "${{ runner.temp }}/datanest-edge-function-release/edge-function-release.json"
 
       - run: node scripts/write-runtime-config.mjs public/runtime-config.js
         env:
