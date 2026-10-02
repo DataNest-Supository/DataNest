@@ -23,3 +23,24 @@ test("external audit reviewer RLS keeps project-member read access and splits wr
   assert.doesNotMatch(migration,/create policy\s+external_audit_reviewers_\w+[\s\S]*?for all/);
   assert.doesNotMatch(migration,/drop policy if exists external_audit_reviewers_select/);
 });
+
+const hardening=fs.readFileSync(
+  "supabase/migrations/20261002101924_harden_external_audit_write_boundaries.sql",
+  "utf8"
+);
+
+test("external audit browser roles are read-only and mutations stay behind governed RPCs",()=>{
+  assert.match(
+    hardening,
+    /revoke insert, update, delete on[\s\S]*public\.external_audit_documents[\s\S]*from authenticated/
+  );
+  assert.match(
+    hardening,
+    /revoke all on[\s\S]*public\.external_audit_events[\s\S]*from anon/
+  );
+  assert.match(
+    hardening,
+    /grant select on[\s\S]*public\.external_audit_documents[\s\S]*to authenticated/
+  );
+  assert.doesNotMatch(hardening,/grant (?:insert|update|delete)[\s\S]*to authenticated/);
+});

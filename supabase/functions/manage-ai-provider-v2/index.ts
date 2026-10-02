@@ -37,6 +37,13 @@ function json(body:unknown,status=200,origin:string|null=null){
   });
 }
 
+
+function publicConnection(value:unknown){
+  if(!value||typeof value!=="object"||Array.isArray(value))return value;
+  const {secret:_secret,...safe}=value as Record<string,unknown>;
+  return safe;
+}
+
 function parseProcessingRegion(value:unknown){
   const region=String(value||"").trim().toLowerCase();
   if(!region)return null;
@@ -201,7 +208,7 @@ Deno.serve(async(req:Request)=>{
       );
       if(syncError)throw syncError;
 
-      return json({ok:true,config:data,connection},200,origin);
+      return json({ok:true,config:data,connection:publicConnection(connection)},200,origin);
     }
 
     if(action==="disable"){
@@ -274,10 +281,10 @@ Deno.serve(async(req:Request)=>{
 
     return json({
       ok:true,
-      connection:{
+      connection:publicConnection({
         ...(data as Record<string,unknown>),
         processing_region:personalProcessingRegion
-      }
+      })
     },200,origin);
   }catch(error){
     return json({
