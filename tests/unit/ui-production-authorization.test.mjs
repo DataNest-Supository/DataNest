@@ -16,12 +16,29 @@ const ronsasWorkflow=readFileSync(
   "utf8"
 );
 
+const releaseSha="c".repeat(40);
+const candidateSha="d".repeat(40);
+const reviewId=9001;
+const authorizationRef=`github:DataNest-Supository/DataNest#405:review:${reviewId}@${candidateSha}`;
+const githubApprovalFixture=JSON.stringify({
+  pr:{
+    number:405,
+    base:{ref:"main",repo:{full_name:"DataNest-Supository/DataNest"}},
+    head:{sha:candidateSha},
+    merged_at:"2026-10-02T03:37:29Z",
+    merge_commit_sha:releaseSha
+  },
+  reviews:[{
+    id:reviewId,
+    state:"APPROVED",
+    commit_id:candidateSha,
+    user:{login:"ReleaseReviewer"}
+  }]
+});
+
 const valid={
-  // Keep authorized-release contract tests deterministic even when the parent
-  // workflow exports candidate/test-mode state into process.env.
   DATANEST_UI_RELEASE_STATE:"authorized",
-  DATANEST_UI_RELEASE_SHA:"c".repeat(40),
-  DATANEST_UI_RELEASE_STATE:"authorized",
+  DATANEST_UI_RELEASE_SHA:releaseSha,
   DATANEST_UI_PRODUCTION_CONFIRMATION:"AUTHORIZE PRODUCTION",
   DATANEST_UI_MIRROR_PROMOTION_REF:"Mirror-DataNest candidate run #42",
   DATANEST_UI_MIRROR_LIVE_EVIDENCE_REF:"Mirror live verification #42",
@@ -34,7 +51,11 @@ const valid={
   DATANEST_UI_GOVERNANCE_REVIEW_REF:"DN-GOV-REVIEW-001",
   DATANEST_UI_LEGAL_REVIEW_REF:"DN-LEGAL-REVIEW-001",
   DATANEST_UI_EXTERNAL_REVIEW_REF:"DN-EXTERNAL-REVIEW-001",
-  DATANEST_UI_AUTHORIZATION_REF:"DN-PROD-AUTH-001"
+  DATANEST_UI_AUTHORIZATION_REF:authorizationRef,
+  DATANEST_UI_TEST_FIXTURES:"1",
+  DATANEST_UI_GITHUB_APPROVAL_FIXTURE:githubApprovalFixture,
+  GITHUB_REPOSITORY:"DataNest-Supository/DataNest",
+  GITHUB_ACTIONS:"false"
 };
 
 function verify(extra={}){
@@ -94,10 +115,45 @@ test("production authorization rejects missing and placeholder references",()=>{
   }
 });
 
-test("production authorization accepts a complete structural payload",()=>{
+test("production authorization accepts complete commit-bound GitHub approval evidence",()=>{
   const result=verify();
   assert.equal(result.status,0,result.stderr);
   assert.match(result.stdout,/Validated UI production authorization payload/);
+});
+
+test("production authorization rejects invented authorization labels",()=>{
+  const result=verify({DATANEST_UI_AUTHORIZATION_REF:"DN-PROD-AUTH-001"});
+  assert.notEqual(result.status,0);
+  assert.match(result.stderr,/canonical GitHub review reference/i);
+});
+
+test("production authorization rejects reference bound to a different PR head",()=>{
+  const result=verify({
+    DATANEST_UI_AUTHORIZATION_REF:`github:DataNest-Supository/DataNest#405:review:${reviewId}@${"e".repeat(40)}`
+  });
+  assert.notEqual(result.status,0);
+  assert.match(result.stderr,/not bound to the current PR head commit/i);
+});
+
+test("production authorization rejects merge commit mismatch",()=>{
+  const fixture=JSON.parse(githubApprovalFixture);
+  fixture.pr.merge_commit_sha="e".repeat(40);
+  const result=verify({DATANEST_UI_GITHUB_APPROVAL_FIXTURE:JSON.stringify(fixture)});
+  assert.notEqual(result.status,0);
+  assert.match(result.stderr,/merge commit does not match/i);
+});
+
+test("production authorization rejects superseded approval",()=>{
+  const fixture=JSON.parse(githubApprovalFixture);
+  fixture.reviews.push({
+    id:reviewId+1,
+    state:"CHANGES_REQUESTED",
+    commit_id:candidateSha,
+    user:{login:"ReleaseReviewer"}
+  });
+  const result=verify({DATANEST_UI_GITHUB_APPROVAL_FIXTURE:JSON.stringify(fixture)});
+  assert.notEqual(result.status,0);
+  assert.match(result.stderr,/stale|superseded/i);
 });
 
 test("authorized fixture ignores parent candidate Test Mode state",()=>{
