@@ -34,6 +34,9 @@
 .passwordField input{padding-right:64px!important}
 .passwordToggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);min-height:32px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface-work-soft);color:var(--text-subtle);font-size:10px;font-weight:800;cursor:pointer}
 .passwordToggle:hover,.passwordToggle:focus-visible{border-color:rgba(66,231,255,.32);color:var(--text-primary);outline:none}
+.sessionCheckNote.sessionCheckError{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;color:var(--brand-cyan)}
+.sessionCheckRetry{border:0;background:transparent;color:inherit;font:800 10px/1.3 inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:2px 0}
+.sessionCheckRetry:hover,.sessionCheckRetry:focus-visible{color:var(--text-primary);outline:none}
 .landingSignIn input { font-size: 16px; min-height: 48px; }
 .landingSignIn button { min-height: 48px; font-size: 13px; }
 .landingSignIn .securityNote { font-size: 12px; line-height: 1.7; color: var(--text-secondary); }
