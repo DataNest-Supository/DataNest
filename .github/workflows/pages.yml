@@ -26,35 +26,35 @@ on:
           - owner_test_mode
       mirror_promotion_reference:
         description: Mirror-DataNest production-candidate artifact/run/commit reference
-        required: true
+        required: false
         type: string
       mirror_live_evidence_reference:
         description: Successful live Mirror visual/functional verification run or evidence artifact for the exact candidate
-        required: true
+        required: false
         type: string
       datanest_ai_certification_reference:
         description: DataNest AI Certification run/artifact for the exact candidate SHA and governed staging backend
-        required: true
+        required: false
         type: string
       edge_function_release_reference:
         description: Successful Governed Production Edge Function Release workflow run for the exact release SHA
-        required: true
+        required: false
         type: string
       audit_optimizer_reference:
         description: DataNest Audit Optimizer review/evidence reference for this production candidate
-        required: true
+        required: false
         type: string
       pr_verification_reference:
         description: PR Verification run/reference for the exact release SHA
-        required: true
+        required: false
         type: string
       security_scan_reference:
         description: Security scan run/reference for the exact release SHA
-        required: true
+        required: false
         type: string
       ronsas_validation_reference:
         description: RONSAS Application Validation run/reference for the exact release SHA
-        required: true
+        required: false
         type: string
       visual_review_reference:
         description: Human visual / UX review reference; required for authorized production, may be supplied post-test in Owner Test Mode
