@@ -236,6 +236,14 @@ test("authentication password fields provide accessible visibility controls", ()
   assert.match(cssSource, /\.passwordToggle\{/);
 });
 
+test("session-check failures keep the sign-in shell usable", () => {
+  assert.doesNotMatch(authGateSource, /startup = "connection-error"/);
+  assert.match(authGateSource, /setStartup\("signed-out"\)/);
+  assert.match(authGateSource, /You can still sign in/);
+  assert.match(authGateSource, /Retry session check/);
+  assert.match(cssSource, /\.sessionCheckNote\.sessionCheckError/);
+});
+
 test("entry experience is usable before session resolution completes", () => {
   assert.match(authGateSource, /useState<StartupState>\("signed-out"\)/);
   assert.doesNotMatch(authGateSource, /if \(startup === "loading"\)/);
