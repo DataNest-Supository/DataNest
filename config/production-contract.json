@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "project": "Resonance DataNest",
+  "repository": "DataNest-Supository/DataNest",
+  "branch": "main",
+  "authority": {
+    "sourceControl": "GitHub",
+    "publicDelivery": "GitHub Pages",
+    "backend": "Supabase",
+    "railwayRequired": false,
+    "vercelRequired": false
+  },
+  "publicDelivery": {
+    "origin": "https://datanest-supository.github.io",
+    "basePath": "/DataNest/",
+    "provider": "GitHub Pages"
+  },
+  "supabase": {
+    "project": "sgqdmfgjbprsoqsmgigi",
+    "region": "eu-central-1",
+    "expectedMigration": {
+      "head": "20261001142117",
+      "name": "certification_business_bank_settlement_launch"
+    }
+  },
+  "productionCatalog": "config/supository.catalog.json",
+  "deployment": {
+    "defaultMode": "authorized",
+    "exceptionModes": [
+      "progressive_live",
+      "owner_test_mode"
+    ]
+  }
+}
