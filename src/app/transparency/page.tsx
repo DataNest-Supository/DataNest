@@ -1,4 +1,5 @@
 import TransparencyWorkspace from "@/components/TransparencyWorkspace";
+import ThemeControl from "@/components/platform/ThemeControl";
 
 export const metadata={
   title:"DataNest Public Audit Library",
@@ -9,7 +10,10 @@ export default function PublicTransparencyPage(){
   return <main className="publicEvidenceShell">
     <header className="publicEvidenceHeader">
       <a href="./" aria-label="Back to DataNest">← DataNest</a>
-      <span>PUBLIC EVIDENCE</span>
+      <div className="publicEvidenceHeaderActions">
+        <ThemeControl compact />
+        <span>PUBLIC EVIDENCE</span>
+      </div>
     </header>
     <TransparencyWorkspace/>
     <footer className="publicEvidenceFooter">
