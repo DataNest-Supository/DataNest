@@ -8,6 +8,6 @@ test("Pages production does not embed Owner Test Mode authorization logic",()=>{
   assert.match(workflow,/workflow_run:/);
   assert.match(workflow,/name: github-pages/);
   assert.doesNotMatch(workflow,/OWNER_TEST_MODE_OWNER_LOGIN/);
-  assert.doesNotMatch(workflow,/collaborators\\/\\$GITHUB_ACTOR\\/permission/);
+  assert.equal(workflow.includes("collaborators/$GITHUB_ACTOR/permission"),false);
 });
 
