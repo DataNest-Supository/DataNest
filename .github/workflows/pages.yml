@@ -1,3 +1,4 @@
+# Production UI/UX release trigger: 2026-10-02
 # Governed production release for Resonance DataNest GitHub Pages.
 # Production authorization is the protected GitHub environment "github-pages".
 # The workflow deploys the exact current main SHA; no release SHA or evidence IDs
