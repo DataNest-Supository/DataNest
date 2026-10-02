@@ -7,8 +7,11 @@ const edgeSource=fs.readFileSync(
   "utf8"
 );
 
+const productionContract=JSON.parse(
+  fs.readFileSync("config/production-contract.json","utf8")
+);
 const syncMigration=fs.readFileSync(
-  "supabase/migrations/20261002101955_harden_provider_sync_secret_boundary.sql",
+  productionContract.supabase.expectedMigration.sourceFile,
   "utf8"
 );
 
