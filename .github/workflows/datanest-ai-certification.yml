@@ -36,21 +36,7 @@ jobs:
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             printf 'applicable=true\nreason=manual_dispatch\n' >> "$GITHUB_OUTPUT"
             mkdir -p certification-artifacts
-            node <<'NODE'
-            const fs=require("fs");
-            fs.writeFileSync(
-              "certification-artifacts/datanest-ai-classification.json",
-              JSON.stringify({
-                schemaVersion:"datanest-ai-certification-scope-v1",
-                candidateCommit:process.env.HEAD_SHA,
-                applicable:true,
-                reason:"manual_dispatch",
-                changedFiles:[],
-                relevantFiles:[],
-                completedAt:new Date().toISOString()
-              },null,2)+"\n"
-            );
-            NODE
+            node -e 'const fs=require("fs");fs.writeFileSync("certification-artifacts/datanest-ai-classification.json",JSON.stringify({schemaVersion:"datanest-ai-certification-scope-v1",candidateCommit:process.env.HEAD_SHA,applicable:true,reason:"manual_dispatch",changedFiles:[],relevantFiles:[],completedAt:new Date().toISOString()},null,2)+"\n");'
             exit 0
           fi
 
