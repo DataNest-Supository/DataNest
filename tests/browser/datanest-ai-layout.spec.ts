@@ -278,8 +278,11 @@ test("AI dial and readouts fit narrow screens in both themes", async ({page},tes
   await setupUiGovernanceFixture(page);
   await page.emulateMedia({reducedMotion:"reduce"});
   await page.goto(appPath+"?view=ai");
+  await page.locator(".workspaceOptions > summary").click();
+  const themeControl=page.locator(".workspaceOptions").getByLabel("Theme preference",{exact:true});
+  await expect(themeControl).toBeVisible();
   for(const theme of ["dark","light"]){
-    await page.getByLabel("Theme preference").first().selectOption(theme);
+    await themeControl.selectOption(theme);
     for(const width of [320,390,768,1440]){
       await page.setViewportSize({width,height:1000});
       await expect(page.locator(".aiReactor")).toHaveAttribute("data-core-state","ready");
