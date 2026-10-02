@@ -27,10 +27,9 @@
 
 .datanextExperience .navGroup button{
   position:relative;
-  overflow:hidden;
   transition:transform .2s var(--datanext-ease),background .2s ease,color .2s ease,border-color .2s ease,box-shadow .2s ease;
 }
-.datanextExperience .navGroup button::after{
+.datanextExperience .navGroup button:not(.aiHeroNav)::after{
   content:"";
   position:absolute;
   left:-35%;
@@ -43,8 +42,8 @@
   pointer-events:none;
 }
 .datanextExperience .navGroup button:hover{transform:translateX(2px)}
-.datanextExperience .navGroup button:hover::after,
-.datanextExperience .navGroup button:focus-visible::after{
+.datanextExperience .navGroup button:not(.aiHeroNav):hover::after,
+.datanextExperience .navGroup button:not(.aiHeroNav):focus-visible::after{
   opacity:1;
   animation:datanext-nav-sheen .65s var(--datanext-ease) both;
 }
@@ -56,25 +55,26 @@
 
 .datanextShellTopbar{
   position:sticky;
-  overflow:hidden;
   isolation:isolate;
 }
 .datanextShellTopbar::before{
   content:"";
   position:absolute;
-  inset:0 auto 0 -22%;
-  width:18%;
+  inset:0;
+  width:auto;
   background:linear-gradient(90deg,transparent,rgba(121,236,255,.065),transparent);
-  transform:skewX(-20deg);
+  background-repeat:no-repeat;
+  background-size:22% 100%;
+  background-position:-28% 0;
   opacity:.72;
   pointer-events:none;
   animation:datanext-topbar-scan 11s linear infinite;
 }
 @keyframes datanext-topbar-scan{
-  0%{transform:translateX(0) skewX(-20deg);opacity:0}
-  8%{opacity:.65}
-  26%{opacity:.42}
-  32%,100%{transform:translateX(760%) skewX(-20deg);opacity:0}
+  0%{background-position:-28% 0;opacity:0}
+  8%{background-position:-10% 0;opacity:.65}
+  26%{background-position:70% 0;opacity:.42}
+  32%,100%{background-position:128% 0;opacity:0}
 }
 .datanextShellTopbar .topbarTitle,
 .datanextShellTopbar .topActions,
@@ -156,13 +156,13 @@
   }
   .datanextShellTopbar::before,
   .datanextPulse,
-  .datanextExperience .navGroup button:hover::after{
+  .datanextExperience .navGroup button:not(.aiHeroNav):hover::after{
     animation:none!important;
   }
 }
 @media(forced-colors:active){
   .datanextShellTopbar::before,
-  .datanextExperience .navGroup button::after{display:none}
+  .datanextExperience .navGroup button:not(.aiHeroNav)::after{display:none}
 }
 .datanextTelemetry{
   display:flex;
