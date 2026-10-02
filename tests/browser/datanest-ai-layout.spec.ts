@@ -250,13 +250,17 @@ test("AI instrument respects motion preference, offscreen pause, and saved Focus
   await expect(ring).toHaveCSS("animation-play-state","paused");
 
   await page.locator(".workspaceOptions > summary").click();
-  await page.locator(".motionControl").click();
+  const motionControl = page.getByLabel("Motion preference", {exact:true});
+  await motionControl.selectOption("reduced");
+  await expect(motionControl).toHaveValue("reduced");
+  await expect(page.locator("html")).toHaveAttribute("data-motion-paused", "true");
   await expect(ring).toHaveCSS("animation-name","none");
   await page.reload();
-  await expect(page.locator(".motionControl")).toHaveAttribute("aria-pressed","true");
+  await expect(page.getByLabel("Motion preference", {exact:true})).toHaveValue("reduced");
+  await expect(page.locator("html")).toHaveAttribute("data-motion-paused", "true");
   await expect(ring).toHaveCSS("animation-name","none");
   await page.locator(".workspaceOptions > summary").click();
-  await page.locator(".motionControl").click();
+  await page.getByLabel("Motion preference", {exact:true}).selectOption("full");
   await composer.fill("Keep my command while the AI core is hidden.");
   await page.getByRole("button",{name:"Focus mode",exact:true}).click();
   await expect(core).toHaveCount(0);

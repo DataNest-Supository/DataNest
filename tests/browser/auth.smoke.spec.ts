@@ -113,7 +113,7 @@ test("theme defaults to Sovereign Dark and persists explicit light selection", a
   await page.goto(appPath);
 
   const root = page.locator("html");
-  const themeControl = page.getByRole("combobox", { name: "Theme preference" });
+  const themeControl = page.getByRole("main").getByRole("combobox", { name: "Theme preference" });
   await expect(root).toHaveAttribute("data-theme", "dark");
   await expect(themeControl).toHaveValue("dark");
 
@@ -132,7 +132,7 @@ test("invalid stored theme normalizes to system and follows system color scheme"
   await page.goto(appPath);
 
   const root = page.locator("html");
-  const themeControl = page.getByRole("combobox", { name: "Theme preference" });
+  const themeControl = page.getByRole("main").getByRole("combobox", { name: "Theme preference" });
   await expect(root).toHaveAttribute("data-theme", "light");
   await expect(themeControl).toHaveValue("system");
   await expect.poll(() => page.evaluate(() => localStorage.getItem("datanest-theme"))).toBe("system");
@@ -143,7 +143,7 @@ test("theme layer honors reduced effects and high contrast without hiding sign-i
   await page.goto(appPath);
 
   await expect(page.getByLabel("Email")).toBeVisible();
-  await expect(page.getByRole("combobox", { name: "Theme preference" })).toBeVisible();
+  await expect(page.getByRole("main").getByRole("combobox", { name: "Theme preference" })).toBeVisible();
 
   const tokens = await page.locator("html").evaluate((element) => {
     const style = getComputedStyle(element);

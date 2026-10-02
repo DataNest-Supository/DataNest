@@ -6,6 +6,7 @@ import MotionControl from "./MotionControl";
 import ResonanceBrandLockup from "./platform/ResonanceBrandLockup";
 import GovernanceTrustMark from "./platform/GovernanceTrustMark";
 import PlatformFooter from "./platform/PlatformFooter";
+import ThemeControl from "./platform/ThemeControl";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
@@ -283,7 +284,7 @@ export default function AuthGate() {
       <a className="skipLink" href="#sign-in-email">Skip to sign in</a>
       <header className="landingHeader">
         <a className="landingBrand" href="#" aria-label="Resonance DataNest home"><ResonanceBrandLockup compact /></a>
-        <div className="landingHeaderActions"><GovernanceTrustMark/><a className="landingHubLink" href={RESON8_HUB_URL} target="_blank" rel="noreferrer">Reson8 Hub <span aria-hidden="true">↗</span></a><a className="landingHubLink" href="./transparency">Public Audit Library <span aria-hidden="true">↗</span></a><MotionControl/></div>
+        <div className="landingHeaderActions"><GovernanceTrustMark/><ThemeControl compact/><a className="landingHubLink" href={RESON8_HUB_URL} target="_blank" rel="noreferrer">Reson8 Hub <span aria-hidden="true">↗</span></a><a className="landingHubLink" href="./transparency">Public Audit Library <span aria-hidden="true">↗</span></a><MotionControl/></div>
       </header>
       <div className="landingLayout">
       <section className="landingStory" aria-labelledby="landing-title">
