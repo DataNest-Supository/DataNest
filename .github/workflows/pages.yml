@@ -171,7 +171,6 @@ jobs:
       DATANEST_UI_OWNER_TEST_MODE_REASON: ${{ inputs.owner_test_mode_reason }}
       DATANEST_UI_OWNER_TEST_MODE_ACTOR: ${{ github.actor }}
       DATANEST_EXPECTED_DB_MIGRATION_REFERENCE: ${{ inputs.database_migration_reference }}
-      DATANEST_PROGRESSIVE_LIVE_GAP_DEADLINE_HOURS: ${{ inputs.gate_timeframe_override_hours || '72' }}
     steps:
       - name: Checkout exact release SHA
         uses: actions/checkout@v7.0.1
@@ -210,10 +209,6 @@ jobs:
       - name: Verify live production database release attestation
         if: ${{ inputs.release_mode != 'progressive_live' }}
         run: node scripts/verify-production-release-attestation.mjs .datanest/release-attestation.json
-
-      - name: Record progressive-live assurance gaps
-        if: ${{ inputs.release_mode == 'progressive_live' }}
-        run: node scripts/write-progressive-live-gap-register.mjs public/progressive-live-gap-register.json
 
       - name: Download referenced governed Edge Function release evidence
         if: ${{ inputs.edge_function_release_reference != '' }}
