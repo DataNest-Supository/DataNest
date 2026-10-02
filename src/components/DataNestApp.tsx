@@ -1449,7 +1449,7 @@ export default function DataNestApp({session}:{session:Session}) {
 
   return <div
     data-workspace={view}
-    className={"appFrame "+(aiSidebarOpen?"aiDockOpen ":"")+(companionReserve>0?"companionRailReserved":"")}
+    className={"appFrame datanextExperience "+(aiSidebarOpen?"aiDockOpen ":"")+(companionReserve>0?"companionRailReserved":"")}
     style={companionReserve>0?({"--companion-reserve":companionReserve+"px"} as CSSProperties):undefined}
   >
     <PlatformShell
@@ -1566,7 +1566,7 @@ export default function DataNestApp({session}:{session:Session}) {
 
       </>}
       topbar={
-      <header className="topbar">
+      <header className="topbar datanextShellTopbar">
         <button className="menuButton" onClick={()=>setMobileOpen(true)} aria-label="Open menu" aria-controls="datanest-navigation" aria-expanded={mobileOpen}>☰</button>
         <div className="topbarTitle">
           <span className="workspaceEmblem"><WorkspaceGlyph view={view}/></span>
@@ -1818,6 +1818,15 @@ function Overview({project,tools,jobs,counts,setView,canOperate}:{project:Projec
           <button className="primaryButton compact" disabled={!canOperate} onClick={()=>setView("unifi")}>{canOperate ? "Create UNIFI job" : "Viewer mode"}</button>
           <button className="secondaryButton compact" onClick={()=>setView("ai")}>Open DataNest AI</button>
           <button className="secondaryButton compact" onClick={()=>setView("scheduler")}>Open TranScheduler</button>
+          <div className="datanextTelemetry" aria-label="DataNext live operating status">
+          <span className="datanextTelemetryItem"><i aria-hidden="true" className="datanextPulse" /> SYSTEM <b>ONLINE</b></span>
+          <span className="datanextTelemetryDivider" aria-hidden="true">/</span>
+          <span className="datanextTelemetryItem">WORK <b>{counts.active}</b> ACTIVE</span>
+          <span className="datanextTelemetryDivider" aria-hidden="true">/</span>
+          <span className={"datanextTelemetryItem "+(counts.blocked>0?"warn":"")} >BLOCKED <b>{counts.blocked}</b></span>
+          <span className="datanextTelemetryDivider" aria-hidden="true">/</span>
+          <span className="datanextTelemetryItem">MODE <b>{canOperate?"OPERATOR":"VIEWER"}</b></span>
+        </div>
         </div>
       </div>
 
