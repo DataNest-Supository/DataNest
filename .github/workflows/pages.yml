@@ -177,6 +177,10 @@ jobs:
           ref: ${{ inputs.release_sha }}
           fetch-depth: 0
 
+      - name: Validate canonical production contract
+        id: production_contract
+        run: node scripts/validate-production-contract.mjs --github-output "$GITHUB_OUTPUT"
+
       - name: Verify Owner Test Mode actor authority
         if: ${{ inputs.release_mode == 'owner_test_mode' }}
         env:
@@ -206,6 +210,8 @@ jobs:
           git merge-base --is-ancestor "$DATANEST_UI_RELEASE_SHA" origin/main
 
       - name: Verify live production database release attestation
+        env:
+          DATANEST_EXPECTED_DB_MIGRATION_REFERENCE: \${{ steps.production_contract.outputs.database_migration_reference }}
         run: node scripts/verify-production-release-attestation.mjs .datanest/release-attestation.json
 
       - name: Download referenced governed Edge Function release evidence
@@ -241,7 +247,6 @@ jobs:
       - name: Write release manifest
         env:
           DATANEST_RELEASE_SHA: ${{ inputs.release_sha }}
-          DATANEST_DB_RELEASE: link-transcheduler-job-requirements-user-interests
           DATANEST_EXTERNAL_AUDIT_DB_RELEASE: external-audit-production-v1
           DATANEST_BASELINE_RELEASE: reload-latest-v1
           DATANEST_BASELINE_SHA: 592149b0898f6703b28e9fa33e73bd0799cae3fd
@@ -412,11 +417,18 @@ jobs:
           }
           NODE
           grep -q "\"releaseSha\":\"$RELEASE_SHA\"" /tmp/release-manifest.json
-          grep -q '"databaseRelease":"link-transcheduler-job-requirements-user-interests"' /tmp/release-manifest.json
           grep -q '"projectInvitations":"send-project-member-invite@3"' /tmp/release-manifest.json
           node <<'NODE'
           const fs=require("fs");
+          const contract=JSON.parse(fs.readFileSync("config/production-contract.json","utf8"));
           const manifest=JSON.parse(fs.readFileSync("/tmp/release-manifest.json","utf8"));
+          const expected=contract.supabase.expectedMigration;
+          if(manifest.databaseMigration?.head!==expected.head || manifest.databaseMigration?.name!==expected.name){
+            throw new Error("Release manifest database migration identity disagrees with the canonical production contract");
+          }
+          if(manifest.databaseRelease!==expected.head+" · "+expected.name){
+            throw new Error("Release manifest databaseRelease is stale");
+          }
           if(manifest.productionInclusion?.inclusive!==true) throw new Error("Live release must declare production-inclusive mode");
           const requiredPublic=[
             "datanest",
