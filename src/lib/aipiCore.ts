@@ -111,10 +111,15 @@ export function validateChatPayload(
 
   let maxOutputTokens: number | undefined;
   if (input.max_output_tokens !== undefined) {
-    if (!Number.isInteger(input.max_output_tokens) || Number(input.max_output_tokens) < 1 || Number(input.max_output_tokens) > 16_384) {
+    if (
+      typeof input.max_output_tokens !== "number" ||
+      !Number.isInteger(input.max_output_tokens) ||
+      input.max_output_tokens < 1 ||
+      input.max_output_tokens > 16_384
+    ) {
       throw new AipiError("invalid_max_output_tokens", 400);
     }
-    maxOutputTokens = Number(input.max_output_tokens);
+    maxOutputTokens = input.max_output_tokens;
   }
 
   return {
