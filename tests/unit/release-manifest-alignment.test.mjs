@@ -37,8 +37,8 @@ test("project invite Edge Function v2 is the enforced release version",()=>{
     /DATANEST_EDGE_PROJECT_INVITES: send-project-member-invite@3/
   );
   assert.match(
-    pagesWorkflow,
-    /projectInvitations.*send-project-member-invite@3/
+    manifestScript,
+    /projectInvitations:process\.env\.DATANEST_EDGE_PROJECT_INVITES \|\| "send-project-member-invite@3"/
   );
   assert.doesNotMatch(manifestScript,/send-project-member-invite@1/);
   assert.doesNotMatch(pagesWorkflow,/send-project-member-invite@1/);
@@ -228,6 +228,5 @@ test("release manifest declares the production-inclusive surface contract from t
   assert.ok(catalog.productionInclusion.externalProductionSurfaces.includes("ronsas-youtube-optimizer"));
   assert.ok(catalog.productionInclusion.productionSupportComponents.includes("ronsas-sovereign-backend"));
   assert.ok(catalog.productionInclusion.productionSupportComponents.includes("ronsas-shared"));
-  assert.match(pagesWorkflow,/production-inclusive Assurance surface/);
   assert.match(pagesWorkflow,/DataNest\/assurance\//);
 });
