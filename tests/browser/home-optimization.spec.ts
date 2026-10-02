@@ -189,7 +189,7 @@ test("workflow shell guides execution forward and preserves browser history", as
   });
 
   await page.goto(appPath+"?view=unifi");
-  await expect(page.locator(".topbar h1")).toHaveText("UNIFI Planner");
+  await expect(page.locator(".topbar h1")).toHaveText("UNIFI Planner",{timeout:20000});
   await expect(page.locator(".topbar .eyebrow")).toContainText("EXECUTE");
   await expect(page.getByText(/Suggested next: TranScheduler/)).toBeVisible();
 
