@@ -17,7 +17,7 @@ async function exists(target) {
   }
 }
 
-function runNextBuild(): Promise<number> {
+function runNextBuild() {
   const nextBin = path.join(root, "node_modules", "next", "dist", "bin", "next");
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [nextBin, "build"], {
