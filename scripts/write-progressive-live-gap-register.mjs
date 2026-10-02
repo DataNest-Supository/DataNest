@@ -26,7 +26,8 @@ export function buildProgressiveLiveGapRegister(
   const ui=buildUiGovernanceEvidence({
     ...env,
     DATANEST_UI_RELEASE_SHA:releaseSha,
-    DATANEST_UI_RELEASE_STATE:releaseMode
+    DATANEST_UI_RELEASE_STATE:releaseMode,
+    DATANEST_UI_GENERATED_AT:generatedAt
   });
 
   const gaps=releaseMode==="progressive_live" ? [...(ui.gaps || [])] : [];
