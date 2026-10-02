@@ -28,6 +28,11 @@ const governanceSource = fs.readFileSync(path.join(repoRoot, "src/components/Gov
 const thinkTankSource = fs.readFileSync(path.join(repoRoot, "src/components/ThinkTankWorkspace.tsx"), "utf8");
 const productLabSource = fs.readFileSync(path.join(repoRoot, "src/components/ProductLab.tsx"), "utf8");
 const authGateSource = fs.readFileSync(path.join(repoRoot, "src/components/AuthGate.tsx"), "utf8");
+const legalDocumentLayoutSource = fs.readFileSync(path.join(repoRoot, "src/components/legal/LegalDocumentLayout.tsx"), "utf8");
+const legalCentreSource = fs.readFileSync(path.join(repoRoot, "src/components/legal/GovernanceLegalCentre.tsx"), "utf8");
+const transparencyPageSource = fs.readFileSync(path.join(repoRoot, "src/app/transparency/page.tsx"), "utf8");
+const assurancePageSource = fs.readFileSync(path.join(repoRoot, "src/app/assurance/page.tsx"), "utf8");
+const resonanceDesignSystemSource = fs.readFileSync(path.join(repoRoot, "src/app/resonance-design-system.css"), "utf8");
 const sparksSource = fs.readFileSync(path.join(repoRoot, "src/components/SparksWorkspace.tsx"), "utf8");
 const projectMembersSource = fs.readFileSync(path.join(repoRoot, "src/components/ProjectMembersPanel.tsx"), "utf8");
 const authoritySource = fs.readFileSync(path.join(repoRoot, "src/components/ExecutionAuthorityPanel.tsx"), "utf8");
@@ -274,6 +279,15 @@ test("workspace status metadata never claims READY before a project record exist
 test("public entry link surfaces follow the shared theme tokens", () => {
   assert.match(cssSource, /\.landingHubLink\{[^}]*background:var\(--surface-work\)/);
   assert.doesNotMatch(cssSource, /\.landingHubLink\{[^}]*background:rgba\(20,12,38/);
+});
+
+test("public document and evidence routes retain contextual theme access", () => {
+  assert.match(legalDocumentLayoutSource, /<ThemeControl compact \/>/);
+  assert.match(legalCentreSource, /<ThemeControl compact \/>/);
+  assert.match(transparencyPageSource, /<ThemeControl compact \/>/);
+  assert.match(assurancePageSource, /<ThemeControl compact \/>/);
+  assert.match(cssSource, /\.publicEvidenceHeaderActions/);
+  assert.match(resonanceDesignSystemSource, /\.legalDocumentHeader \{/);
 });
 
 test("theme control is contextual rather than a persistent signed-in overlay", () => {
