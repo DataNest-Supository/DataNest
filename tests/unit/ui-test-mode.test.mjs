@@ -45,21 +45,12 @@ test("UI Test Mode cannot deploy or authorize production",()=>{
   assert.match(testModeWorkflow,/productionDeployment:false/);
 });
 
-test("production governance remains fail-closed after Test Mode is enabled",()=>{
-  for (const input of [
-    "governance_review_reference",
-    "legal_review_reference",
-    "external_review_reference",
-    "production_authorization_reference",
-    "confirmation"
-  ]) {
-    assert.match(productionWorkflow,new RegExp(`\\n      ${input}:\\n`));
-  }
-  assert.match(productionWorkflow,/Verify production authorization payload/);
-  assert.match(productionWorkflow,/verify-ui-production-authorization\.mjs/);
-  assert.match(productionWorkflow,/'github-pages'/);
-  assert.match(productionWorkflow,/'github-pages-owner-test-mode'/);
-  assert.match(productionWorkflow,/actions\/deploy-pages/);
+test("production Pages authorization is isolated from UI Test Mode",()=>{
+  assert.match(productionWorkflow,/environment:\n      name: github-pages/);
+  assert.match(productionWorkflow,/push:\n    branches:\n      - main/);
+  assert.doesNotMatch(productionWorkflow,/governance_review_reference/);
+  assert.doesNotMatch(productionWorkflow,/production_authorization_reference/);
+  assert.equal(productionWorkflow.includes("owner_test_mode"),false);
 });
 
 test("RONSAS validation follows Test Mode workflow changes",()=>{
@@ -74,14 +65,11 @@ test("RONSAS validation follows Test Mode workflow changes",()=>{
 });
 
 
-test("Owner Live Test Mode is time bounded and explicitly temporary",()=>{
-  assert.match(productionWorkflow,/release_mode:/);
-  assert.match(productionWorkflow,/owner_test_mode/);
-  assert.match(productionWorkflow,/owner_test_mode_expires_at:/);
-  assert.match(productionWorkflow,/owner_test_mode_owner_login:/);
-  assert.match(productionWorkflow,/owner_test_mode_reference:/);
-  assert.match(productionWorkflow,/AUTHORIZE OWNER TEST MODE/);
-  assert.match(productionWorkflow,/collaborators\/\$GITHUB_ACTOR\/permission/);
+test("Owner Test Mode remains isolated to its dedicated workflow",()=>{
+  assert.match(testModeWorkflow,/DATANEST_UI_RELEASE_STATE: candidate/);
+  assert.match(expiryWorkflow,/owner_test_mode_expired/);
+  assert.ok(expiryWorkflow.includes("actions/deploy-pages"));
+  assert.doesNotMatch(productionWorkflow,/owner_test_mode/);
 });
 
 test("expired Owner Live Test Mode is automatically replaced by a holding page",()=>{
@@ -95,12 +83,10 @@ test("expired Owner Live Test Mode is automatically replaced by a holding page",
 });
 
 
-test("Owner Live Test Mode exposes AI proposal controls while preserving bounded overrides",()=>{
-  assert.match(productionWorkflow,/owner_test_mode_window_strategy:/);
-  assert.match(productionWorkflow,/owner_test_mode_task_complexity:/);
-  assert.match(productionWorkflow,/owner_test_mode_reporting_complexity:/);
-  assert.match(productionWorkflow,/ai_proposed/);
-  assert.match(productionWorkflow,/explicit/);
-  assert.match(productionWorkflow,/propose-owner-test-mode-window\.mjs/);
-  assert.match(productionWorkflow,/timeframeProposal/);
+test("Owner Test Mode planning controls are no longer part of production Pages",()=>{
+  assert.doesNotMatch(productionWorkflow,/owner_test_mode_window_strategy/);
+  assert.doesNotMatch(productionWorkflow,/owner_test_mode_task_complexity/);
+  assert.doesNotMatch(productionWorkflow,/owner_test_mode_reporting_complexity/);
+  assert.doesNotMatch(productionWorkflow,/propose-owner-test-mode-window\\.mjs/);
 });
+

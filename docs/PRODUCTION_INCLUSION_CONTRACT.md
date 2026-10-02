@@ -45,7 +45,9 @@ The canonical `/DataNest/` surface remains DataNest `main` plus its authorized p
 
 ## Release enforcement
 
-An authorized production release must:
+A **progressive-live** release may deploy when the workflow is manually dispatched and the automated technical deployment path succeeds. Human review and asynchronous evidence are tracked as non-blocking assurance gaps with proposed remedy deadlines.
+
+The progressive-live release must:
 
 1. Bind to an exact SHA reachable from `main`.
 2. Carry verified database and Edge Function attestations.

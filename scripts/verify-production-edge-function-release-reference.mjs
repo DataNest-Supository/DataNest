@@ -18,6 +18,7 @@ const githubToken=(process.env.GITHUB_TOKEN || "").trim();
 const repository=(process.env.GITHUB_REPOSITORY || "").trim();
 const projectRef=(process.env.DATANEST_SUPABASE_PROJECT || "sgqdmfgjbprsoqsmgigi").trim();
 const supabaseToken=(process.env.SUPABASE_ACCESS_TOKEN || "").trim();
+const connectorMaxAgeHours=Number(process.env.DATANEST_CONNECTOR_ATTESTATION_MAX_AGE_HOURS || 24);
 
 const requiredFunctions=[
   "datanest-ai-chat",
@@ -78,11 +79,8 @@ function validateFunctionSet(attestation,expectedSourceTree){
 }
 
 let attestation;
-try{
-  attestation=JSON.parse(readFileSync(artifactPath,"utf8"));
-}catch(error){
-  throw new Error("Unable to read the referenced Edge Function release attestation: "+error.message);
-}
+try{attestation=JSON.parse(readFileSync(artifactPath,"utf8"));}
+catch(error){throw new Error("Unable to read the referenced Edge Function release attestation: "+error.message);}
 
 let verifiedAttestation;
 

@@ -135,6 +135,15 @@ export default function ResonanceHome({
             {canOperate?"Create governed work":"Viewer mode"}
           </button>
         </div>
+        <div className="datanextTelemetry" aria-label="DataNest workspace status">
+          <span className="datanextTelemetryItem"><i aria-hidden="true" className="datanextPulse" /> WORKSPACE <b>READY</b></span>
+          <span className="datanextTelemetryDivider" aria-hidden="true">/</span>
+          <span className="datanextTelemetryItem">WORK <b>{counts.active}</b> ACTIVE</span>
+          <span className="datanextTelemetryDivider" aria-hidden="true">/</span>
+          <span className={"datanextTelemetryItem "+(counts.blocked>0?"warn":"")} >BLOCKED <b>{counts.blocked}</b></span>
+          <span className="datanextTelemetryDivider" aria-hidden="true">/</span>
+          <span className="datanextTelemetryItem">MODE <b>{canOperate?"OPERATOR":"VIEWER"}</b></span>
+        </div>
         <div className="aiIMicroStats" aria-label="Current DataNest operating state">
           <span><b>{counts.active}</b> active</span>
           <span><b>{counts.running}</b> running</span>

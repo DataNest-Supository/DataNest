@@ -2,6 +2,17 @@
 
 **DataNest** is the canonical Resonance AppDev web control plane. It governs product execution intent, promotion, evidence and lifecycle state while preserving separate source, backend and delivery authorities.
 
+### Declaration of Intent
+
+DataNest has published a proposed **Human + DataNest / Resonance Declaration of Intent v1.0**, explicitly subject to human approval and independent external AI assurance review.
+
+- Proposed declaration: docs/DECLARATION_OF_INTENT.md
+- External AI auditor call: Issue #388
+- Adoption/review PR: PR #389
+
+The declaration is a governance pledge, not a certification, statutory designation, production authorization or substitute for human accountability.
+
+
 
 ## Independent assurance services
 
@@ -62,6 +73,10 @@ Standalone Node/Docker runtimes continue to expose the server health endpoint at
 - AI compute: **replaceable approved HTTPS inference endpoints; no workstation is required**
 - AI architecture: [`docs/DATANEST_AI_ARCHITECTURE.md`](docs/DATANEST_AI_ARCHITECTURE.md)
 - Vercel dependency: **none**
+
+### Production contract
+
+The machine-readable release authority is maintained in [\`config/production-contract.json\`](config/production-contract.json). CI and Pages release verification validate that contract and derive the expected Supabase production migration identity from it rather than maintaining a separate hard-coded database-release literal.
 
 
 ## Delivery-provider metadata

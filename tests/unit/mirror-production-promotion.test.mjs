@@ -84,19 +84,12 @@ test("promotion manifest starts with zero production authority",()=>{
   assert.match(importWorkflow,/productionDeploymentAllowed:false/);
 });
 
-test("live Pages authorization requires Mirror package, live verification, staging certification, and Audit Optimizer evidence",()=>{
-  assert.match(pagesWorkflow,/mirror_promotion_reference:/);
-  assert.match(pagesWorkflow,/mirror_live_evidence_reference:/);
-  assert.match(pagesWorkflow,/datanest_ai_certification_reference:/);
-  assert.match(pagesWorkflow,/audit_optimizer_reference:/);
-  assert.match(pagesWorkflow,/DATANEST_UI_MIRROR_PROMOTION_REF/);
-  assert.match(pagesWorkflow,/DATANEST_UI_MIRROR_LIVE_EVIDENCE_REF/);
-  assert.match(pagesWorkflow,/DATANEST_UI_DATANEST_AI_CERTIFICATION_REF/);
-  assert.match(pagesWorkflow,/DATANEST_UI_AUDIT_OPTIMIZER_REF/);
-  assert.match(governanceWriter,/\["mirrorPromotion","DATANEST_UI_MIRROR_PROMOTION_REF"\]/);
-  assert.match(governanceWriter,/\["mirrorLiveEvidence","DATANEST_UI_MIRROR_LIVE_EVIDENCE_REF"\]/);
-  assert.match(governanceWriter,/\["datanestAiCertification","DATANEST_UI_DATANEST_AI_CERTIFICATION_REF"\]/);
-  assert.match(governanceWriter,/\["auditOptimizer","DATANEST_UI_AUDIT_OPTIMIZER_REF"\]/);
+test("production Pages release is environment-gated and no longer requires manual evidence IDs",()=>{
+  assert.match(pagesWorkflow,/push:\n    branches:\n      - main/);
+  assert.match(pagesWorkflow,/environment:\n      name: github-pages/);
+  assert.match(pagesWorkflow,/Verify live production database release attestation/);
+  assert.doesNotMatch(pagesWorkflow,/mirror_promotion_reference/);
+  assert.doesNotMatch(pagesWorkflow,/audit_optimizer_reference/);
 });
 
 test("canonical promotion PR explicitly requires audit and human governance",()=>{

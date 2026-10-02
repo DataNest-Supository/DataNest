@@ -108,7 +108,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html data-rdn-app="youtube-optimizer" lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
         <script data-ronsas-observability dangerouslySetInnerHTML={{ __html: POSTHOG_BOOTSTRAP_SCRIPT }} />

@@ -89,12 +89,16 @@ test("governed release wiring names the certified DataNest AI runtime", () => {
     assert.match(config,new RegExp("\\[functions\\."+fn.replaceAll("-","\\-")+"\\][\\s\\S]*?verify_jwt = true"));
   }
 
-  assert.match(manifest,/link-transcheduler-job-requirements-user-interests/);
+  assert.match(manifest,/validateProductionContract/);
+  assert.match(manifest,/databaseRelease:canonicalDatabaseRelease/);
+  assert.match(manifest,/productionInclusion:productionCatalog\.productionInclusion/);
+  assert.doesNotMatch(manifest,/link-transcheduler-job-requirements-user-interests/);
   assert.match(manifest,/datanest-ai-chat@2/);
   assert.match(manifest,/datanest-ai-intake@1/);
   assert.match(manifest,/datanest-ai-certification@1/);
   assert.match(manifest,/send-project-member-invite@3/);
-  assert.match(pages,/link-transcheduler-job-requirements-user-interests/);
+  assert.match(pages,/config\/production-contract\.json/);
+  assert.doesNotMatch(pages,/DATANEST_DB_RELEASE:/);
 });
 
 

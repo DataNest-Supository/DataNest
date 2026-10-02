@@ -19,11 +19,12 @@ test("every active worktree workflow gate is covered by the shared timeframe reg
       return !/^# worktree-gate:\s*false\s*$/m.test(source) && /\n  gate-timeframe:\n/.test(source);
     })
     .sort();
-  assert.deepEqual(Object.keys(profiles).sort(),files);
+  assert.deepEqual(Object.keys(profiles).filter((name)=>name!=="pages.yml").sort(),files);
 });
 
 test("every worktree gate invokes the reusable DataNest AI timeframe policy",()=>{
   for(const [workflowFile,profile] of Object.entries(profiles)){
+    if(workflowFile==="pages.yml") continue;
     const source=readFileSync(new URL(`../../.github/workflows/${workflowFile}`,import.meta.url),"utf8");
     assert.match(source,/\n  gate-timeframe:\n/,`${workflowFile} missing gate-timeframe job`);
     assert.match(source,/uses: \.\/\.github\/workflows\/worktree-gate-timeframe\.yml/);
@@ -88,7 +89,7 @@ test("shared workflow publishes summary and retained machine-readable evidence",
 });
 
 test("manual workflows expose bounded Owner override inputs",()=>{
-  for(const workflow of ["branch-cleaner.yml","datanest-ai-file-worker-deploy.yml","mirror-production-import.yml","pages.yml"]){
+  for(const workflow of ["branch-cleaner.yml","datanest-ai-file-worker-deploy.yml","mirror-production-import.yml"]){
     const source=readFileSync(new URL(`../../.github/workflows/${workflow}`,import.meta.url),"utf8");
     assert.match(source,/gate_timeframe_override_hours:/,`${workflow} missing override input`);
     assert.match(source,/override_hours: \$\{\{ inputs\.gate_timeframe_override_hours \|\| '' \}\}/);
