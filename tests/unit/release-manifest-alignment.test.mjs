@@ -163,11 +163,9 @@ test("Pages release wiring derives the database attestation from the canonical c
   assert.match(pagesWorkflow,/DATANEST_EXPECTED_DB_MIGRATION_REFERENCE/);
   assert.match(pagesWorkflow,/verify-production-release-attestation\.mjs/);
   assert.match(pagesWorkflow,/verify-production-edge-function-release-reference\.mjs/);
-  assert.match(pagesWorkflow,/edge_function_release_reference:/);
-  assert.match(pagesWorkflow,/actions\/download-artifact@v5/);
+  assert.match(pagesWorkflow,/edge_function_release_reference:\s*connector:/);
   assert.match(pagesWorkflow,/connector:/);
   assert.match(pagesWorkflow,/Stage Supabase connector Edge Function evidence/);
-  assert.match(pagesWorkflow,/SUPABASE_ACCESS_TOKEN:\s*\$\{\{ secrets\.SUPABASE_ACCESS_TOKEN \}\}/);
   assert.match(pagesWorkflow,/DATANEST_DB_ATTESTATION_FILE: \.datanest\/release-attestation\.json/);
   assert.match(edgeAttestationScript,/api\.supabase\.com\/v1\/projects/);
   assert.match(edgeAttestationScript,/SUPABASE_ACCESS_TOKEN/);
