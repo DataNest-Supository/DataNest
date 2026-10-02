@@ -20,7 +20,8 @@
     "region": "eu-central-1",
     "expectedMigration": {
       "head": "20261002101955",
-      "name": "harden_provider_sync_secret_boundary"
+      "name": "harden_provider_sync_secret_boundary",
+      "sourceFile": "supabase/migrations/20261002101955_harden_provider_sync_secret_boundary.sql"
     },
     "migrationLineage": [
       {
