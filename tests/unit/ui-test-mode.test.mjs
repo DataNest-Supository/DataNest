@@ -58,6 +58,7 @@ test("production governance remains fail-closed after Test Mode is enabled",()=>
   assert.match(productionWorkflow,/Verify production authorization payload/);
   assert.match(productionWorkflow,/verify-ui-production-authorization\.mjs/);
   assert.match(productionWorkflow,/'github-pages'/);
+  assert.match(productionWorkflow,/'github-pages-progressive-live'/);
   assert.match(productionWorkflow,/'github-pages-owner-test-mode'/);
   assert.match(productionWorkflow,/actions\/deploy-pages/);
 });
@@ -81,6 +82,7 @@ test("Owner Live Test Mode is time bounded and explicitly temporary",()=>{
   assert.match(productionWorkflow,/owner_test_mode_owner_login:/);
   assert.match(productionWorkflow,/owner_test_mode_reference:/);
   assert.match(productionWorkflow,/AUTHORIZE OWNER TEST MODE/);
+  assert.match(productionWorkflow,/release_mode/);
   assert.match(productionWorkflow,/collaborators\/\$GITHUB_ACTOR\/permission/);
 });
 
