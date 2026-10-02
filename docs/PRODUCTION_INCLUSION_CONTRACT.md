@@ -58,15 +58,19 @@ The progressive-live release must:
 7. Publish a release manifest whose `productionInclusion.inclusive` value is `true`.
 8. Preserve the lawful boundary of the Assurance service: independent private assurance/oversight, not statutory regulator authority or unauthorized surveillance.
 
-
 ## Supabase connector-attested Edge release
 
-When the repository does not hold a Supabase Management API access token, DataNest may use the authenticated Supabase connector as a free production deployment authority. This path is not a bypass: it must deploy from an exact canonical source commit and record a machine-readable `edge-function-connector-attestation-v1` containing the live function versions, deployment digests, ACTIVE/JWT state, and a SHA-256 digest of the complete `supabase/functions` source tree.
+When the repository does not hold a Supabase Management API access token, DataNest may use the authenticated Supabase connector as a free production deployment authority. This path is not a bypass: it must deploy from an exact canonical source commit and record a machine-readable `edge-function-connector-attestation-v1` containing the live function versions, deployment digests, ACTIVE/JWT state, a non-empty connector evidence reference, and a SHA-256 source-tree fingerprint.
 
-The Pages release accepts a `connector:<source-sha>` Edge reference only when:
+`sourceTreeSha256` is the SHA-256 fingerprint of the canonical Git-tracked `supabase/functions` tree, computed from sorted Git tree entries containing mode, object type, Git blob SHA, and relative path. This binds the attestation to the complete versioned source tree without copying Edge Function source into the attestation artifact.
+
+The Pages release derives `connector:<source-sha>` from the attestation's own `sourceCommit`; it does not substitute the Pages release SHA for the actual connector deployment source commit.
+
+The Pages release accepts the connector reference only when:
 - the connector deployment source commit is an ancestor of the Pages release SHA;
-- the complete Edge source-tree digest matches the Pages checkout;
+- no `supabase/functions` source changes exist between the connector source commit and the Pages release SHA;
+- the complete Edge source-tree fingerprint matches the Pages checkout;
 - all eight governed production functions are present, ACTIVE, JWT-protected, versioned, and digest-attested; and
-- the attestation carries a non-empty external connector evidence reference.
+- the attestation carries a non-empty `connectorEvidenceRef`.
 
 The existing GitHub-token production Edge release remains supported when `SUPABASE_ACCESS_TOKEN` is configured.
