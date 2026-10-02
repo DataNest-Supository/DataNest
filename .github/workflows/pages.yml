@@ -49,7 +49,7 @@ jobs:
 
           SHOULD_DEPLOY="true"
           if [ "$GITHUB_EVENT_NAME" = "push" ]; then
-            LAST_DEPLOYED_SHA="$(gh api               "repos/$GITHUB_REPOSITORY/deployments?environment=github-pages&per_page=20"               --jq '.[0].sha // empty' || true)"
+            LAST_DEPLOYED_SHA="$(gh api "repos/$GITHUB_REPOSITORY/deployments?environment=github-pages&per_page=20" --jq '.[0].sha // empty' || true)"
             if [ "$LAST_DEPLOYED_SHA" = "$RELEASE_SHA" ]; then
               SHOULD_DEPLOY="false"
             fi
@@ -129,14 +129,23 @@ jobs:
         run: |
           set -euo pipefail
           test -f "${{ runner.temp }}/datanest-edge-function-release/production-edge-function-connector-attestation.json"
-          mv "${{ runner.temp }}/datanest-edge-function-release/production-edge-function-connector-attestation.json" \
-            "${{ runner.temp }}/datanest-edge-function-release/edge-function-release.json"
+          mv "${{ runner.temp }}/datanest-edge-function-release/production-edge-function-connector-attestation.json"             "${{ runner.temp }}/datanest-edge-function-release/edge-function-release.json"
+
+      - name: Resolve connector Edge Function source reference
+        id: edge_attestation_reference
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_SHA="$(node -e 'const fs=require("fs"); const a=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.stdout.write(String(a.sourceCommit||""));' "${{ runner.temp }}/datanest-edge-function-release/edge-function-release.json")"
+          [[ "$SOURCE_SHA" =~ ^[0-9a-fA-F]{40}$ ]]
+          echo "reference=connector:$SOURCE_SHA" >> "$GITHUB_OUTPUT"
+
       - name: Verify connector-attested governed Edge Function release
         env:
           GITHUB_TOKEN: ${{ github.token }}
           DATANEST_RELEASE_SHA: ${{ steps.release.outputs.sha }}
-          edge_function_release_reference: connector:${{ steps.release.outputs.sha }}
-          DATANEST_EDGE_FUNCTION_RELEASE_REFERENCE: connector:${{ steps.release.outputs.sha }}
+          edge_function_release_reference: ${{ steps.edge_attestation_reference.outputs.reference }}
+          DATANEST_EDGE_FUNCTION_RELEASE_REFERENCE: ${{ steps.edge_attestation_reference.outputs.reference }}
           DATANEST_SUPABASE_PROJECT: sgqdmfgjbprsoqsmgigi
         run: node scripts/verify-production-edge-function-release-reference.mjs "${{ runner.temp }}/datanest-edge-function-release/edge-function-release.json"
 
@@ -201,7 +210,7 @@ jobs:
           for route in "" legal governance accessibility terms privacy disclaimers acceptable-use intellectual-property transparency system-charter architecture stress-test assurance; do
             suffix=""
             if [ -n "$route" ]; then suffix="$route/"; fi
-            curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors               "https://datanest-supository.github.io/DataNest/$suffix"               -o "/tmp/datanest-${route:-home}.html"
+            curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors "https://datanest-supository.github.io/DataNest/$suffix" -o "/tmp/datanest-${route:-home}.html"
             grep -qi "<html" "/tmp/datanest-${route:-home}.html"
           done
           grep -Eq '<title>DataNest([^<]*)</title>' /tmp/datanest-home.html
@@ -211,15 +220,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors             https://datanest-supository.github.io/DataNest/health.json             -o /tmp/datanest-health.json
+          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors https://datanest-supository.github.io/DataNest/health.json -o /tmp/datanest-health.json
           grep -q '"ok":true' /tmp/datanest-health.json
           grep -q '"project":"Resonance DataNest"' /tmp/datanest-health.json
 
-          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors             https://datanest-supository.github.io/DataNest/robots.txt             -o /tmp/datanest-robots.txt
+          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors https://datanest-supository.github.io/DataNest/robots.txt -o /tmp/datanest-robots.txt
           grep -qi '^User-agent:' /tmp/datanest-robots.txt
           grep -Fq 'Sitemap: https://datanest-supository.github.io/DataNest/sitemap.xml' /tmp/datanest-robots.txt
 
-          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors             https://datanest-supository.github.io/DataNest/sitemap.xml             -o /tmp/datanest-sitemap.xml
+          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors https://datanest-supository.github.io/DataNest/sitemap.xml -o /tmp/datanest-sitemap.xml
           grep -q '<urlset' /tmp/datanest-sitemap.xml
           grep -Fq '<loc>https://datanest-supository.github.io/DataNest/</loc>' /tmp/datanest-sitemap.xml
           grep -Fq '<loc>https://datanest-supository.github.io/DataNest/assurance/</loc>' /tmp/datanest-sitemap.xml
@@ -227,7 +236,7 @@ jobs:
       - name: Verify runtime configuration
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors             https://datanest-supository.github.io/DataNest/runtime-config.js             -o /tmp/runtime-config.js
+          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors https://datanest-supository.github.io/DataNest/runtime-config.js -o /tmp/runtime-config.js
           grep -q "https://sgqdmfgjbprsoqsmgigi.supabase.co" /tmp/runtime-config.js
           grep -q "sb_publishable_" /tmp/runtime-config.js
           grep -q "authoritative" /tmp/runtime-config.js
@@ -236,20 +245,20 @@ jobs:
         run: |
           set -euo pipefail
           for app in career-compass creative-studio epublisher lyricsync-studio scene-song-spark sovereign-forge syncvision; do
-            curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors               "https://datanest-supository.github.io/DataNest/apps/$app/"               -o "/tmp/$app.html"
+            curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors "https://datanest-supository.github.io/DataNest/apps/$app/" -o "/tmp/$app.html"
             grep -qi "<html" "/tmp/$app.html"
           done
 
       - name: Verify external governed target
         run: |
-          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors             https://youtubeoptimizer.life/             -o /tmp/youtube-optimizer.html
+          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors https://youtubeoptimizer.life/ -o /tmp/youtube-optimizer.html
           grep -qi "<html" /tmp/youtube-optimizer.html
 
       - name: Verify release manifest
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors             https://datanest-supository.github.io/DataNest/release-manifest.json             -o /tmp/release-manifest.json
+          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors https://datanest-supository.github.io/DataNest/release-manifest.json -o /tmp/release-manifest.json
           node <<'NODE'
           const fs=require("fs");
           const manifest=JSON.parse(fs.readFileSync("/tmp/release-manifest.json","utf8"));
