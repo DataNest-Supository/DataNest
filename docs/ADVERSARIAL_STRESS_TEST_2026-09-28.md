@@ -151,4 +151,3 @@ A DataNest AI action should remain governed by:
 **IDENTITY → PROJECT AUTHORITY → DATA POLICY → AI/MEMORY POLICY → RESOURCE/CAPABILITY → EXECUTION AUTHORITY → APPROVAL → EXECUTION → EVIDENCE → VERIFICATION → CERTIFICATION**
 
 Raw AI activity must not mint contribution value or certified memory.
-
