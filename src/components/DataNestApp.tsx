@@ -1573,7 +1573,7 @@ export default function DataNestApp({session}:{session:Session}) {
           <p className="eyebrow">{DATANEST_CANONICAL_NAME.toUpperCase()} · {currentGroup.toUpperCase()}</p>
           <h1 id="workspace-title" ref={workspaceTitleRef} tabIndex={-1}>{currentLabel}</h1>
           <p className="topbarContext">{currentDescription}</p>
-          <div className="topbarMeta" aria-label="Current workspace status"><span>{project?.name || DATANEST_CANONICAL_NAME}</span>{currentPhase&&<><i aria-hidden="true">·</i><span>{currentPhase.toUpperCase()}</span></>}<i aria-hidden="true">·</i><span>{project?.status || "READY"}</span></div>
+          <div className="topbarMeta" aria-label="Current workspace status"><span>{project?.name || DATANEST_CANONICAL_NAME}</span>{currentPhase&&<><i aria-hidden="true">·</i><span>{currentPhase.toUpperCase()}</span></>}<i aria-hidden="true">·</i><span>{project?.status?.toUpperCase() || (loadingCore ? "CHECKING" : "UNAVAILABLE")}</span></div>
         </div>
         <div className="topActions">
           {pendingRecoveries.length>0&&<button
