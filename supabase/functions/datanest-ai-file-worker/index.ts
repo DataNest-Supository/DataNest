@@ -497,7 +497,8 @@ Deno.serve(async(request:Request)=>{
   if(request.method!=="POST")return json({error:"Method not allowed."},405);
   const url=requireEnv("SUPABASE_URL");
   const serviceKey=requireEnv("SUPABASE_SERVICE_ROLE_KEY");
-  if(request.headers.get("x-datanest-worker-auth")!==serviceKey){
+  const workerToken=requireEnv("DATANEST_FILE_WORKER_TOKEN");
+  if(request.headers.get("x-datanest-worker-auth")!==workerToken){
     return json({error:"Worker authorization required."},401);
   }
 
