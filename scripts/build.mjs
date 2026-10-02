@@ -8,7 +8,7 @@ const apiSource = path.join(root, "src", "app", "api", "aipi");
 const excludedRoot = path.join(root, ".next-static-export");
 const excludedApi = path.join(excludedRoot, "aipi");
 
-async function exists(target: string): Promise<boolean> {
+async function exists(target) {
   try {
     await access(target);
     return true;
