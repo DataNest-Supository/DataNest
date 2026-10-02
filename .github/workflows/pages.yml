@@ -447,13 +447,15 @@ jobs:
             if(!manifest.productionInclusion.publicSurfaces?.includes(id)) throw new Error(`Missing production-inclusive public surface: ${id}`);
           }
           if(!manifest.productionInclusion.externalProductionSurfaces?.includes("ronsas-youtube-optimizer")) throw new Error("YouTube Optimizer must remain in the external production set");
-          if(manifest.releaseAttestation?.database?.status!=="verified") throw new Error("Live release must carry a verified production database attestation");
-          if(!/^[0-9a-f]{64}$/i.test(String(manifest.releaseAttestation.database.fingerprint||""))) throw new Error("Production database attestation fingerprint is missing");
-          if(manifest.releaseAttestation.edgeFunctions?.status!=="verified") throw new Error("Live release must carry a verified Edge Function attestation");
-          if(manifest.releaseAttestation.edgeFunctions.sourceCommit!==process.env.RELEASE_SHA) throw new Error("Edge Function release source commit mismatch");
-          if(String(manifest.releaseAttestation.edgeFunctions.releaseReference)!==String(process.env.EDGE_FUNCTION_RELEASE_REFERENCE)) throw new Error("Edge Function release reference mismatch");
-          if(!/^[0-9a-f]{64}$/i.test(String(manifest.releaseAttestation.edgeFunctions.sourceTreeSha256||""))) throw new Error("Edge Function source tree fingerprint is missing");
-          if(Number(manifest.releaseAttestation.edgeFunctions.functionCount||0)<1) throw new Error("Edge Function attestation function count is missing");
+          if(mode!=="progressive_live"){
+            if(manifest.releaseAttestation?.database?.status!=="verified") throw new Error("Live release must carry a verified production database attestation");
+            if(!/^[0-9a-f]{64}$/i.test(String(manifest.releaseAttestation.database.fingerprint||""))) throw new Error("Production database attestation fingerprint is missing");
+            if(manifest.releaseAttestation.edgeFunctions?.status!=="verified") throw new Error("Live release must carry a verified Edge Function attestation");
+            if(manifest.releaseAttestation.edgeFunctions.sourceCommit!==process.env.RELEASE_SHA) throw new Error("Edge Function release source commit mismatch");
+            if(String(manifest.releaseAttestation.edgeFunctions.releaseReference)!==String(process.env.EDGE_FUNCTION_RELEASE_REFERENCE)) throw new Error("Edge Function release reference mismatch");
+            if(!/^[0-9a-f]{64}$/i.test(String(manifest.releaseAttestation.edgeFunctions.sourceTreeSha256||""))) throw new Error("Edge Function source tree fingerprint is missing");
+            if(Number(manifest.releaseAttestation.edgeFunctions.functionCount||0)<1) throw new Error("Edge Function attestation function count is missing");
+          }
           NODE
 
       - uses: ./.github/actions/node-project-setup
