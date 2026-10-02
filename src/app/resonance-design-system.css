@@ -422,8 +422,24 @@ samp {
 }
 
 .legalDocumentHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
   margin-bottom: 16px;
 }
+.legalDocumentHeader > div:first-child {
+  min-width: 0;
+}
+.legalCentreHeroActions,
+.publicEvidenceHeaderActions,
+.publicReportHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 
 .legalDocumentHeader h1 {
   font-size: clamp(30px, 4vw, 48px);
