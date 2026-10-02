@@ -12,6 +12,15 @@ import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
 import { DATANEST_CANONICAL_NAME, DATANEST_PUBLIC_URL, RESON8_HUB_URL } from "@/lib/reson8";
 
+function friendlyAuthError(error:unknown,fallback:string):string {
+  const raw=error instanceof Error ? error.message.toLowerCase() : "";
+  if (raw.includes("invalid login credentials")) return "We couldn’t sign you in. Check your email and password.";
+  if (raw.includes("email not confirmed")) return "Your email has not been confirmed yet. Check your inbox for the confirmation message.";
+  if (raw.includes("rate limit") || raw.includes("too many requests")) return "Too many attempts. Please wait a moment and try again.";
+  if (raw.includes("network") || raw.includes("failed to fetch") || raw.includes("fetch")) return "DataNest could not reach the authentication service. Check your connection and try again.";
+  return fallback;
+}
+
 const DataNestApp = dynamic(() => import("@/components/DataNestApp"), {
   ssr: false,
   loading: () => (
@@ -22,7 +31,7 @@ const DataNestApp = dynamic(() => import("@/components/DataNestApp"), {
   )
 });
 
-type StartupState = "loading" | "signed-out" | "signed-in" | "set-password" | "config-error" | "connection-error";
+type StartupState = "signed-out" | "signed-in" | "set-password" | "config-error";
 const STARTUP_TIMEOUT_MS = 10000;
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
@@ -35,7 +44,8 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
 }
 
 export default function AuthGate() {
-  const [startup, setStartup] = useState<StartupState>("loading");
+  const [startup, setStartup] = useState<StartupState>("signed-out");
+  const [checkingSession, setCheckingSession] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [startupMessage, setStartupMessage] = useState("");
   const [email, setEmail] = useState("");
@@ -44,6 +54,9 @@ export default function AuthGate() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const initialize = useCallback(async () => {
     const supabase = getSupabase();
@@ -54,8 +67,8 @@ export default function AuthGate() {
       return;
     }
 
-    setStartup("loading");
     setStartupMessage("");
+    setCheckingSession(true);
 
     try {
       const result = await withTimeout(supabase.auth.getSession(), STARTUP_TIMEOUT_MS);
@@ -70,10 +83,12 @@ export default function AuthGate() {
       setStartup(result.data.session
         ? (flowType === "invite" || flowType === "recovery" ? "set-password" : "signed-in")
         : "signed-out");
-    } catch (error) {
+    } catch {
       setSession(null);
-      setStartup("connection-error");
-      setStartupMessage(error instanceof Error ? error.message : "Unable to initialize authentication.");
+      setStartup("signed-out");
+      setStartupMessage("We couldn’t verify an existing session. You can still sign in.");
+    } finally {
+      setCheckingSession(false);
     }
   }, []);
 
@@ -108,7 +123,7 @@ export default function AuthGate() {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to sign in.");
+      setMessage(friendlyAuthError(error,"We couldn’t sign you in. Please try again."));
     } finally {
       setBusy(false);
     }
@@ -138,7 +153,7 @@ export default function AuthGate() {
       setStartup("signed-in");
       setMessage("Password updated. Your DataNest session is ready.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to set your password.");
+      setMessage(friendlyAuthError(error,"We couldn’t update your password. Please try again."));
     } finally {
       setBusy(false);
     }
@@ -168,7 +183,7 @@ export default function AuthGate() {
       if (error) throw error;
       setMessage("Magic sign-in link sent.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to send a magic link.");
+      setMessage(friendlyAuthError(error,"We couldn’t send the magic link. Please try again."));
     } finally {
       setBusy(false);
     }
@@ -194,28 +209,10 @@ export default function AuthGate() {
       if (error) throw error;
       setMessage("If this email belongs to an authorized account, a password reset link has been sent.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to send a password reset email.");
+      setMessage(friendlyAuthError(error,"We couldn’t send the password reset email. Please try again."));
     } finally {
       setBusy(false);
     }
-  }
-
-  if (startup === "loading") {
-    return (
-      <main className="authShell" role="status" aria-live="polite" aria-busy="true">
-        <section className="authCard">
-          <ResonanceBrandLockup />
-          <h1>{DATANEST_CANONICAL_NAME}</h1>
-          <div className="bootRow">
-            <div className="bootPulse" aria-hidden="true" />
-            <p className="lede">Checking your secure DataNest session…</p>
-          </div>
-          <noscript>
-            <p className="authMessage">JavaScript is required to sign in at {DATANEST_PUBLIC_URL}.</p>
-          </noscript>
-        </section>
-      </main>
-    );
   }
 
   if (startup === "config-error") {
@@ -235,22 +232,6 @@ export default function AuthGate() {
     );
   }
 
-  if (startup === "connection-error") {
-    return (
-      <main className="authShell">
-        <section className="authCard" role="alert">
-          <ResonanceBrandLockup />
-          <h1>Connection problem</h1>
-          <p className="lede">{startupMessage || "DataNest could not reach the authentication service."}</p>
-          <button className="primaryButton" type="button" onClick={() => void initialize()}>
-            Retry startup
-          </button>
-          <p className="securityNote">Your session was not changed. Retry when connectivity is restored.</p>
-        </section>
-      </main>
-    );
-  }
-
   if (startup === "set-password" && session) {
     return (
       <main className="authShell">
@@ -261,11 +242,17 @@ export default function AuthGate() {
           <form onSubmit={submitNewPassword} className="authForm" aria-busy={busy}>
             <label>
               New password
-              <input type="password" required minLength={8} autoComplete="new-password" value={newPassword} onChange={(event) => setNewPasswordValue(event.target.value)} placeholder="At least 8 characters" />
+              <div className="passwordField">
+                <input type={showNewPassword ? "text" : "password"} required minLength={8} autoComplete="new-password" value={newPassword} onChange={(event) => setNewPasswordValue(event.target.value)} placeholder="At least 8 characters" />
+                <button className="passwordToggle" type="button" aria-pressed={showNewPassword} aria-label={showNewPassword ? "Hide new password" : "Show new password"} onClick={() => setShowNewPassword(value => !value)}>{showNewPassword ? "Hide" : "Show"}</button>
+              </div>
             </label>
             <label>
               Confirm password
-              <input type="password" required minLength={8} autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Re-enter your password" />
+              <div className="passwordField">
+                <input type={showConfirmPassword ? "text" : "password"} required minLength={8} autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Re-enter your password" />
+                <button className="passwordToggle" type="button" aria-pressed={showConfirmPassword} aria-label={showConfirmPassword ? "Hide confirmation password" : "Show confirmation password"} onClick={() => setShowConfirmPassword(value => !value)}>{showConfirmPassword ? "Hide" : "Show"}</button>
+              </div>
             </label>
             <button className="primaryButton" disabled={busy} type="submit">{busy ? "Saving…" : "Create password"}</button>
           </form>
@@ -284,7 +271,7 @@ export default function AuthGate() {
       <a className="skipLink" href="#sign-in-email">Skip to sign in</a>
       <header className="landingHeader">
         <a className="landingBrand" href="#" aria-label="Resonance DataNest home"><ResonanceBrandLockup compact /></a>
-        <div className="landingHeaderActions"><GovernanceTrustMark/><ThemeControl compact/><a className="landingHubLink" href={RESON8_HUB_URL} target="_blank" rel="noreferrer">Reson8 Hub <span aria-hidden="true">↗</span></a><a className="landingHubLink" href="./transparency">Public Audit Library <span aria-hidden="true">↗</span></a><MotionControl/></div>
+        <div className="landingHeaderActions"><GovernanceTrustMark/><span className="landingThemeControl"><ThemeControl compact /></span><a className="landingHubLink" href={RESON8_HUB_URL} target="_blank" rel="noreferrer">Reson8 Hub <span aria-hidden="true">↗</span></a><a className="landingHubLink" href="./transparency">Public Audit Library <span aria-hidden="true">↗</span></a><MotionControl/></div>
       </header>
       <div className="landingLayout">
       <section className="landingStory" aria-labelledby="landing-title">
@@ -319,23 +306,26 @@ export default function AuthGate() {
           </label>
           <label>
             Password
+            <div className="passwordField">
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               required
               autoComplete="current-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Password"
             />
+            <button className="passwordToggle" type="button" aria-pressed={showPassword} aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword(value => !value)}>{showPassword ? "Hide" : "Show"}</button>
+            </div>
           </label>
           <button className="primaryButton" disabled={busy} type="submit">
             {busy ? "Signing in…" : "Sign in"}
           </button>
-          <button className="secondaryButton" disabled={busy} type="button" onClick={sendMagicLink}>
-            Send magic link
+          <button className="secondaryButton authMagicLink" disabled={busy} type="button" onClick={sendMagicLink}>
+            Email me a magic link
           </button>
-          <button className="secondaryButton" disabled={busy} type="button" onClick={sendPasswordReset}>
-            Forgot password? Email reset link
+          <button className="authRecoveryButton" disabled={busy} type="button" onClick={sendPasswordReset}>
+            Forgot password?
           </button>
         </form>
 
@@ -343,6 +333,11 @@ export default function AuthGate() {
           {message && <div className="authMessage">{message}</div>}
         </div>
         <p className="securityNote">Sign in with your authorized account. Need access? Ask your project administrator for an invitation.</p>
+        <p className={"sessionCheckNote"+(startupMessage ? " sessionCheckError" : "")} role="status" aria-live="polite">
+          {checkingSession ? "Checking your existing session…" : startupMessage || ""}
+          {startupMessage && !checkingSession && <button className="sessionCheckRetry" type="button" onClick={() => void initialize()}>Retry session check</button>}
+        </p>
+        <noscript><p className="authMessage">JavaScript is required to sign in. Enable JavaScript and reload this page.</p></noscript>
       </section>
       </div>
       <PlatformFooter compact />

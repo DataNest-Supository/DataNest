@@ -13,6 +13,7 @@ import JobInviteForm from "@/components/JobInviteForm";
 import ResonanceHome from "@/components/ResonanceHome";
 import WorkspaceGlyph from "@/components/platform/WorkspaceGlyph";
 import MotionControl from "@/components/MotionControl";
+import ThemeControl from "@/components/platform/ThemeControl";
 import ExecutionAuthorityPanel from "@/components/ExecutionAuthorityPanel";
 import ResourceFabricPanel from "@/components/ResourceFabricPanel";
 import RecoveryDiagnosticsPanel from "@/components/RecoveryDiagnosticsPanel";
@@ -22,7 +23,6 @@ import RndDeviceAdministration from "@/components/RndDeviceAdministration";
 import AdminRndModeToggle from "@/components/AdminRndModeToggle";
 import GlobalNavigation from "@/components/platform/GlobalNavigation";
 import LifecycleRail from "@/components/platform/LifecycleRail";
-import ContextStrip from "@/components/platform/ContextStrip";
 import PlatformShell from "@/components/platform/PlatformShell";
 import PlatformFooter from "@/components/platform/PlatformFooter";
 import type { NavigationItem } from "@/components/platform/navigationTypes";
@@ -123,24 +123,24 @@ const finalStates = new Set(["COMPLETED","FAILED","CANCELLED"]);
 const jobColumns = "id,job_number,title,description,priority,status,required_capabilities,requirements,acceptance,created_at,updated_at,deadline";
 
 const nav:Array<NavigationItem & {key:ViewKey;glyph:string}> = [
-  {key:"dashboard",label:"Control Center",group:"Core",glyph:"▦",id:"dashboard",phase:null,keywords:["dashboard","control","operations","governance"]},
-  {key:"overview",label:"AI & I",group:"Core",glyph:"◎",id:"overview",phase:null,keywords:["home","intent","overview"]},
-  {key:"ai",label:"DataNest AI",group:"Core",glyph:"✦",id:"ai",phase:null,keywords:["ai","assistant","core"]},
-  {key:"stakeholder",label:"Stakeholder",group:"Discover",glyph:"◌",id:"stakeholder",phase:"discover",keywords:["stakeholder","contribution"]},
-  {key:"sparks",label:"Sparks",group:"Discover",glyph:"✧",id:"sparks",phase:"discover",keywords:["sparks","ideas"]},
-  {key:"impact",label:"Impact",group:"Discover",glyph:"◉",id:"impact",phase:null,keywords:["impact","verification","scoring"]},
-  {key:"thinktank",label:"Think Tanks",group:"Discover",glyph:"◈",id:"thinktank",phase:"discover",keywords:["think","research","collaboration"]},
-  {key:"governance",label:"Governance",group:"Govern & Build",glyph:"◆",id:"governance",phase:"govern",keywords:["governance","policy","decisions"]},
-  {key:"products",label:"Products",group:"Govern & Build",glyph:"◉",id:"products",phase:"build",keywords:["products","portfolio"]},
-  {key:"external_auditor",label:"External Auditor",group:"Govern & Build",glyph:"◫",id:"external_auditor",phase:null,keywords:["audit","external","review"]},
-  {key:"productlab",label:"Product Lab",group:"Govern & Build",glyph:"▣",id:"productlab",phase:"build",keywords:["product","lab","test"]},
-  {key:"unifi",label:"UNIFI Planner",group:"Execute",glyph:"◇",id:"unifi",phase:"execute",keywords:["unifi","plan","manifest"]},
-  {key:"scheduler",label:"TranScheduler",group:"Execute",glyph:"⌁",id:"scheduler",phase:"execute",keywords:["schedule","gantt","queue"]},
-  {key:"runs",label:"Runs",group:"Execute",glyph:"▶",id:"runs",phase:"execute",keywords:["runs","execution"]},
-  {key:"checkpoints",label:"Checkpoints",group:"Verify",glyph:"↺",id:"checkpoints",phase:"verify",keywords:["checkpoint","resume"]},
-  {key:"audit",label:"Audit",group:"Verify",glyph:"≡",id:"audit",phase:"verify",keywords:["audit","events"]},
-  {key:"transparency",label:"Transparency",group:"Verify",glyph:"◎",id:"transparency",phase:"verify",keywords:["transparency","evidence"]},
-  {key:"settings",label:"Settings",group:"System",glyph:"⚙",id:"settings",phase:null,keywords:["settings","administration"]}
+  {key:"dashboard",label:"Control Center",group:"HOME",glyph:"▦",id:"dashboard",phase:null,keywords:["dashboard","control","operations","governance"]},
+  {key:"overview",label:"AI & I",group:"HOME",glyph:"◎",id:"overview",phase:null,keywords:["home","intent","overview"]},
+  {key:"ai",label:"DataNest AI",group:"HOME",glyph:"✦",id:"ai",phase:null,keywords:["ai","assistant","core"]},
+  {key:"stakeholder",label:"Stakeholder",group:"THINK",glyph:"◌",id:"stakeholder",phase:"discover",keywords:["stakeholder","contribution"]},
+  {key:"sparks",label:"Sparks",group:"THINK",glyph:"✧",id:"sparks",phase:"discover",keywords:["sparks","ideas"]},
+  {key:"impact",label:"Impact",group:"PROVE",glyph:"◉",id:"impact",phase:null,keywords:["impact","verification","scoring"]},
+  {key:"thinktank",label:"Think Tanks",group:"THINK",glyph:"◈",id:"thinktank",phase:"discover",keywords:["think","research","collaboration"]},
+  {key:"governance",label:"Governance",group:"GOVERN",glyph:"◆",id:"governance",phase:"govern",keywords:["governance","policy","decisions"]},
+  {key:"products",label:"Products",group:"BUILD",glyph:"◉",id:"products",phase:"build",keywords:["products","portfolio"]},
+  {key:"external_auditor",label:"External Auditor",group:"GOVERN",glyph:"◫",id:"external_auditor",phase:null,keywords:["audit","external","review"]},
+  {key:"productlab",label:"Product Lab",group:"BUILD",glyph:"▣",id:"productlab",phase:"build",keywords:["product","lab","test"]},
+  {key:"unifi",label:"UNIFI Planner",group:"EXECUTE",glyph:"◇",id:"unifi",phase:"execute",keywords:["unifi","plan","manifest"]},
+  {key:"scheduler",label:"TranScheduler",group:"EXECUTE",glyph:"⌁",id:"scheduler",phase:"execute",keywords:["schedule","gantt","queue"]},
+  {key:"runs",label:"Runs",group:"EXECUTE",glyph:"▶",id:"runs",phase:"execute",keywords:["runs","execution"]},
+  {key:"checkpoints",label:"Checkpoints",group:"PROVE",glyph:"↺",id:"checkpoints",phase:"verify",keywords:["checkpoint","resume"]},
+  {key:"audit",label:"Audit",group:"PROVE",glyph:"≡",id:"audit",phase:"verify",keywords:["audit","events"]},
+  {key:"transparency",label:"Transparency",group:"PROVE",glyph:"◎",id:"transparency",phase:"verify",keywords:["transparency","evidence"]},
+  {key:"settings",label:"Settings",group:"ADMIN",glyph:"⚙",id:"settings",phase:null,keywords:["settings","administration"]}
 ]
 
 type CommandItem =
@@ -1427,7 +1427,7 @@ export default function DataNestApp({session}:{session:Session}) {
   const currentNavItem=nav.find(item=>item.key===view);
   const currentLabel=currentNavItem?.label||"Overview";
   const currentDescription=viewDescriptions[view];
-  const currentGroup=currentNavItem?.group||"Core";
+  const currentGroup=currentNavItem?.group||"HOME";
   const currentPhase=workflowPhaseForView(view);
   const activeContextAction=activeContextActionForView(view);
   const activeJobJourneyCurrent=activeJobJourneySteps.some(step=>step.key===view)?view:null;
@@ -1573,6 +1573,7 @@ export default function DataNestApp({session}:{session:Session}) {
           <p className="eyebrow">{DATANEST_CANONICAL_NAME.toUpperCase()} · {currentGroup.toUpperCase()}</p>
           <h1 id="workspace-title" ref={workspaceTitleRef} tabIndex={-1}>{currentLabel}</h1>
           <p className="topbarContext">{currentDescription}</p>
+          <div className="topbarMeta" aria-label="Current workspace status"><span>{project?.name || DATANEST_CANONICAL_NAME}</span>{currentPhase&&<><i aria-hidden="true">·</i><span>{currentPhase.toUpperCase()}</span></>}<i aria-hidden="true">·</i><span>{project?.status?.toUpperCase() || (loadingCore ? "CHECKING" : "UNAVAILABLE")}</span></div>
         </div>
         <div className="topActions">
           {pendingRecoveries.length>0&&<button
@@ -1608,6 +1609,7 @@ export default function DataNestApp({session}:{session:Session}) {
           }}>
             <summary className="secondaryButton compact">Options</summary>
             <div className="workspaceOptionsMenu">
+              <ThemeControl compact />
               <MotionControl/>
           <button
             className="secondaryButton compact"
@@ -1633,18 +1635,7 @@ export default function DataNestApp({session}:{session:Session}) {
       </header>
       }
       footer={<PlatformFooter compact/>}
-      context={project?<ContextStrip
-        projectName={project.name}
-        applicationName={currentLabel}
-        phase={currentPhase}
-        status={project.status}
-        nextAction={nextViewItem?.label}
-      />:undefined}
     >
-        {view!=="overview"&&<nav className="workspaceWayfinding" aria-label="Workspace location">
-          <button type="button" onClick={()=>setView("overview")}>← AI &amp; I home</button>
-          <span aria-hidden="true">/</span><span aria-current="page">{currentLabel}</span>
-        </nav>}
         {view!=="overview"&&view!=="settings"&&<LifecycleRail
           currentPhase={currentPhase}
           aiActive={view==="ai"}

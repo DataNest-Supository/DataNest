@@ -28,6 +28,11 @@ const governanceSource = fs.readFileSync(path.join(repoRoot, "src/components/Gov
 const thinkTankSource = fs.readFileSync(path.join(repoRoot, "src/components/ThinkTankWorkspace.tsx"), "utf8");
 const productLabSource = fs.readFileSync(path.join(repoRoot, "src/components/ProductLab.tsx"), "utf8");
 const authGateSource = fs.readFileSync(path.join(repoRoot, "src/components/AuthGate.tsx"), "utf8");
+const legalDocumentLayoutSource = fs.readFileSync(path.join(repoRoot, "src/components/legal/LegalDocumentLayout.tsx"), "utf8");
+const legalCentreSource = fs.readFileSync(path.join(repoRoot, "src/components/legal/GovernanceLegalCentre.tsx"), "utf8");
+const transparencyPageSource = fs.readFileSync(path.join(repoRoot, "src/app/transparency/page.tsx"), "utf8");
+const assurancePageSource = fs.readFileSync(path.join(repoRoot, "src/app/assurance/page.tsx"), "utf8");
+const resonanceDesignSystemSource = fs.readFileSync(path.join(repoRoot, "src/app/resonance-design-system.css"), "utf8");
 const sparksSource = fs.readFileSync(path.join(repoRoot, "src/components/SparksWorkspace.tsx"), "utf8");
 const projectMembersSource = fs.readFileSync(path.join(repoRoot, "src/components/ProjectMembersPanel.tsx"), "utf8");
 const authoritySource = fs.readFileSync(path.join(repoRoot, "src/components/ExecutionAuthorityPanel.tsx"), "utf8");
@@ -44,6 +49,7 @@ const durableRecoveryMigrationSource = fs.readFileSync(path.join(repoRoot, "supa
 const durableRecoveryHardeningSource = fs.readFileSync(path.join(repoRoot, "supabase/migrations/20260927203127_harden_durable_mutation_recovery_idempotency.sql"), "utf8");
 const durableRecoveryObservabilitySource = fs.readFileSync(path.join(repoRoot, "supabase/migrations/20260927213827_add_mutation_recovery_observability.sql"), "utf8");
 const cssSource = fs.readFileSync(path.join(repoRoot, "src/app/globals.css"), "utf8");
+const entryCssSource = fs.readFileSync(path.join(repoRoot, "src/app/entry.css"), "utf8");
 
 test("shared operational primitives require text-bearing semantic state and exact governed stages", () => {
   assert.notEqual(pageHeaderSource, "", "PageHeader must exist");
@@ -214,17 +220,85 @@ test("quick switch supports arrow-key result selection before Enter", () => {
 });
 
 
-test("workspace architecture follows the visible DataNest operating lifecycle", () => {
-  for (const group of ["Core","Discover","Govern & Build","Execute","Verify","System"]) {
-    assert.match(appSource, new RegExp('group:"'+group.replace("&","\\&")+'"'));
+test("workspace architecture follows the consolidated DataNest operating lifecycle", () => {
+  for (const group of ["HOME","THINK","GOVERN","BUILD","EXECUTE","PROVE","ADMIN"]) {
+    assert.match(appSource, new RegExp('group:"'+group+'"'));
   }
-  assert.match(appSource, /key:"ai",label:"DataNest AI",group:"Core"/);
-  assert.match(globalNavigationSource, /open=\{group==="Core"\|\|items\.some/);
+  assert.match(appSource, /key:"ai",label:"DataNest AI",group:"HOME"/);
+  assert.match(globalNavigationSource, /groupOrder=\["HOME","THINK","GOVERN","BUILD","EXECUTE","PROVE","ADMIN"\]/);
+  assert.match(globalNavigationSource, /open=\{group==="HOME"\|\|items\.some/);
   assert.match(globalNavigationSource, /item\.id==="ai"\?"aiHeroNav"/);
   assert.match(navigationTypesSource, /export type NavigationItem = \{/);
   assert.match(navigationTypesSource, /phase:WorkflowPhaseId\|null/);
   assert.match(navigationTypesSource, /keywords:readonly string\[\]/);
 });
+
+test("authentication password fields provide accessible visibility controls", () => {
+  assert.match(authGateSource, /showPassword \? "text" : "password"/);
+  assert.match(authGateSource, /aria-label=\{showPassword \? "Hide password" : "Show password"\}/);
+  assert.match(authGateSource, /showNewPassword \? "Hide new password" : "Show new password"/);
+  assert.match(authGateSource, /showConfirmPassword \? "Hide confirmation password" : "Show confirmation password"/);
+  assert.match(entryCssSource, /\.passwordField\{/);
+  assert.match(entryCssSource, /\.passwordToggle\{/);
+});
+
+test("session-check failures keep the sign-in shell usable", () => {
+  assert.doesNotMatch(authGateSource, /startup = "connection-error"/);
+  assert.match(authGateSource, /setStartup\("signed-out"\)/);
+  assert.match(authGateSource, /You can still sign in/);
+  assert.match(authGateSource, /Retry session check/);
+  assert.match(entryCssSource, /\.sessionCheckNote\.sessionCheckError/);
+});
+
+test("entry experience is usable before session resolution completes", () => {
+  assert.match(authGateSource, /useState<StartupState>\("signed-out"\)/);
+  assert.doesNotMatch(authGateSource, /if \(startup === "loading"\)/);
+  assert.match(authGateSource, /checkingSession/);
+  assert.match(authGateSource, /Email me a magic link/);
+  assert.match(authGateSource, /Forgot password\?/);
+  assert.match(authGateSource, /function friendlyAuthError\(/);
+  assert.match(authGateSource, /We couldn’t sign you in/);
+  assert.match(authGateSource, /JavaScript is required to sign in/);
+});
+
+test("signed-in home collapses duplicate navigation cards into one task-oriented intent bar", () => {
+  assert.match(homeSource, /className="panel homeIntentBar"/);
+  assert.match(homeSource, /aria-label="Current project intent"/);
+  assert.match(homeSource, /Review blocked work/);
+  assert.match(homeSource, /Create governed work/);
+  assert.doesNotMatch(homeSource, /aria-label="Continue your work"/);
+  assert.doesNotMatch(homeSource, /aria-label="Needs attention"/);
+  assert.doesNotMatch(homeSource, /aria-label="Applications"/);
+  assert.match(cssSource, /\.homeIntentBar\{/);
+});
+
+test("workspace status metadata never claims READY before a project record exists", () => {
+  assert.match(appSource, /project\?\.status\?\.toUpperCase\(\) \|\| \(loadingCore \? "CHECKING" : "UNAVAILABLE"\)/);
+  assert.doesNotMatch(appSource, /project\?\.status \|\| "READY"/);
+});
+
+test("public entry link surfaces follow the shared theme tokens", () => {
+  assert.match(entryCssSource, /\.landingHubLink\{[^}]*background:var\(--surface-work\)/);
+  assert.doesNotMatch(entryCssSource, /\.landingHubLink\{[^}]*background:rgba\(20,12,38/);
+});
+
+test("public document and evidence routes retain contextual theme access", () => {
+  assert.match(legalDocumentLayoutSource, /<ThemeControl compact \/>/);
+  assert.match(legalCentreSource, /<ThemeControl compact \/>/);
+  assert.match(transparencyPageSource, /<ThemeControl compact \/>/);
+  assert.match(assurancePageSource, /<ThemeControl compact \/>/);
+  assert.match(cssSource, /\.publicEvidenceHeaderActions/);
+  assert.match(resonanceDesignSystemSource, /\.legalDocumentHeader \{/);
+});
+
+test("theme control is contextual rather than a persistent signed-in overlay", () => {
+  const layoutSource = fs.readFileSync(path.join(repoRoot, "src/app/layout.tsx"), "utf8");
+  assert.doesNotMatch(layoutSource, /themeControlDock/);
+  assert.match(appSource, /<ThemeControl compact/);
+  assert.match(authGateSource, /<span className="landingThemeControl"><ThemeControl compact/);
+  assert.match(entryCssSource, /\.landingThemeControl/);
+});
+
 
 test("workflow continuity maps specialist workspaces without breaking direct navigation", () => {
   assert.match(appSource, /const workflowNext:Partial<Record<ViewKey,ViewKey>>/);
@@ -238,7 +312,7 @@ test("workflow continuity maps specialist workspaces without breaking direct nav
 });
 
 test("page header exposes current lifecycle phase and preserves quick switching", () => {
-  assert.match(appSource, /currentGroup=currentNavItem\?\.group\|\|"Core"/);
+  assert.match(appSource, /currentGroup=currentNavItem\?\.group\|\|"HOME"/);
   assert.match(appSource, /DATANEST_CANONICAL_NAME\.toUpperCase\(\)\} · \{currentGroup\.toUpperCase\(\)\}/);
   assert.match(appSource, /Ctrl\/Cmd \+ K to toggle/);
 });
@@ -330,14 +404,13 @@ test("specialist workspaces retain persistent lifecycle orientation", () => {
 test("platform shell extraction keeps layout display-only and phase-safe", () => {
   assert.match(appSource, /<PlatformShell/);
   assert.match(appSource, /<GlobalNavigation/);
-  assert.match(appSource, /<ContextStrip/);
+  assert.doesNotMatch(appSource, /<ContextStrip/);
+  assert.match(appSource, /className="topbarMeta"/);
   assert.match(platformShellSource, /navigation:ReactNode/);
   assert.match(platformShellSource, /topbar:ReactNode/);
   assert.match(platformShellSource, /context\?:ReactNode/);
   assert.doesNotMatch(platformShellSource, /useState|useEffect|getSupabase|window\.history/);
   assert.match(contextStripSource, /aria-label="Workspace context"/);
-  assert.match(contextStripSource, /"Cross-phase"/);
-  assert.match(contextStripSource, /"Next · "\+nextAction/);
   assert.match(globalNavigationSource, /onNavigate:\(view:string\)=>void/);
   assert.match(globalNavigationSource, /aria-current=\{currentView===item\.id\?"page":undefined\}/);
 });

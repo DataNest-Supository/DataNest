@@ -73,15 +73,9 @@ test("dashboard labels its sample and groups UTC days independently of local tim
     return route.fulfill({contentType:"application/json",body:JSON.stringify(body)});
   });
   await page.goto(appPath);
-  await expect(page.getByRole("region", {name:"Current objective"})).toBeVisible();
-  await expect(page.getByRole("region", {name:"Continue your work"})).toBeVisible();
-  await expect(page.getByRole("region", {name:"Needs attention"})).toBeVisible();
-  await expect(page.getByRole("region", {name:"Applications"})).toBeVisible();
-  const opportunity = page.getByRole("region", {name:"Business opportunity signal"});
-  await expect(opportunity).toHaveAttribute("data-opportunity-state","empty");
-  await expect(opportunity.getByText("No governed opportunity signal yet",{exact:true})).toBeVisible();
-  await expect(opportunity.getByText(/Estimated value|Projected revenue|Guaranteed/i)).toHaveCount(0);
-  await expect(page.getByRole("region", {name:"Workspace context"}).getByText("Next · TranScheduler",{exact:true})).toBeVisible();
+  await expect(page.getByRole("region", {name:"Current project intent"})).toBeVisible();
+  await expect(page.getByLabel("DataNest workspace status", {exact:true})).toBeVisible();
+  await expect(page.getByLabel("Current DataNest operating state")).toBeVisible();
   await expect(page.getByRole("heading", {name:"Recent creation signal"})).toBeVisible();
   await expect(page.getByText("LOADED SNAPSHOT · UTC")).toBeVisible();
   await expect(page.getByRole("img", {name:/Loaded jobs created/})).toHaveAttribute("aria-label", /2026-09-25 1, 2026-09-26 1/);
@@ -287,7 +281,7 @@ test("purpose guide previews each stage and opens the correct workspace without 
     await page.getByRole("button",{name:action,exact:true}).click();
     await expect(page).toHaveURL(new RegExp("view="+view));
     await expect(page.getByRole("heading",{name:title,level:1,exact:true})).toBeFocused();
-    await page.getByRole("button",{name:"← AI & I home"}).click();
+    await page.getByRole("navigation",{name:"Project workspaces"}).getByRole("button",{name:"AI & I",exact:true}).click();
     await expect(page.getByRole("heading",{name:"AI & I",level:1,exact:true})).toBeFocused();
   }
   expect(mutations).toEqual([]);
@@ -465,18 +459,15 @@ test("workspace context is phase-safe and wraps long project identity at 320px",
   });
 
   await page.goto(appPath+"?view=external_auditor");
-  const context = page.getByRole("region", {name:"Workspace context"});
-  await expect(context).toBeVisible();
-  await expect(context.getByText(longProjectName, {exact:true})).toBeVisible();
-  await expect(context.getByText("Cross-phase", {exact:true})).toBeVisible();
-  await expect(context.getByText("ACTIVE", {exact:true})).toBeVisible();
-  await expect(context.getByText("Next · Product Lab", {exact:true})).toBeVisible();
+  const workspaceMeta = page.locator(".topbarMeta");
+  await expect(workspaceMeta).toContainText(longProjectName);
+  await expect(workspaceMeta).toContainText("ACTIVE");
   await expect(page.getByRole("navigation", {name:"DataNest lifecycle phases"}).locator('[aria-current="step"]')).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 
   await page.goto(appPath+"?view=governance");
   await expect(page.getByRole("button", {name:"Govern phase · current"})).toHaveAttribute("aria-current","step");
-  await expect(page.getByRole("region", {name:"Workspace context"}).getByText("Govern", {exact:true})).toBeVisible();
+  await expect(page.locator(".topbarMeta")).toContainText("GOVERN");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
@@ -1634,7 +1625,7 @@ test("durable recovery hydrates a clean browser session without creating replace
   await expect(recovery).toContainText("request identity preserved");
 
   const projectNav=page.getByRole("navigation",{name:"Project workspaces"});
-  await projectNav.getByText("System",{exact:true}).click();
+  await projectNav.getByText("ADMIN",{exact:true}).click();
   await projectNav.getByRole("button",{name:"Settings"}).click();
   const diagnostics=page.getByRole("region",{name:"Recovery diagnostics"});
   await expect(diagnostics).toContainText("Durable mutation continuity");

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LEGAL_DOCUMENTS, LEGAL_IDENTITY, legalApprovalLabel } from "@/lib/legalRegistry";
 import GovernanceTrustMark from "@/components/platform/GovernanceTrustMark";
+import ThemeControl from "@/components/platform/ThemeControl";
 
 const LEGAL_IDS=new Set(["terms","privacy","disclaimers","acceptable-use","intellectual-property"]);
 
@@ -13,7 +14,10 @@ export default function GovernanceLegalCentre(){
         <h1>Governance &amp; Legal Centre</h1>
         <p>Operator identity, governance context, public policy status, accessibility, and traceability in one reviewable surface.</p>
       </div>
-      <GovernanceTrustMark/>
+      <div className="legalCentreHeroActions">
+        <ThemeControl compact />
+        <GovernanceTrustMark/>
+      </div>
     </header>
 
     <div className="legalCentreGrid">

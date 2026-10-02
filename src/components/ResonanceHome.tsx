@@ -5,7 +5,6 @@ import CollaborationVisual, { type ProductHeroTarget } from "./CollaborationVisu
 import PurposeJourney from "./PurposeJourney";
 import PageHeader from "@/components/platform/PageHeader";
 import StatusIndicator from "@/components/platform/StatusIndicator";
-import OpportunityProjectionCard from "@/components/platform/OpportunityProjectionCard";
 
 type HomeDestination = "ai" | "unifi" | "scheduler" | "governance" | "thinktank" | "sparks" | "products" | "transparency";
 type ProjectLike = { id:string; name:string; description:string|null };
@@ -78,44 +77,27 @@ export default function ResonanceHome({
       :"Review the current project state and continue governed work.";
 
   return <div className="resonanceHome">
-    <section className="panel" aria-label="Current objective">
+    <section className="panel homeIntentBar" aria-label="Current project intent">
       <PageHeader
         eyebrow="ACTIVE PROJECT"
         title={project.name}
         description={currentObjective}
-        primaryAction={<button className="primaryButton compact" type="button" onClick={()=>onNavigate("ai")}>Open DataNest AI</button>}
-        meta={<StatusIndicator label={canOperate?"Operator access":"Viewer access"} tone={canOperate?"success":"neutral"} detail="Human direction remains authoritative"/>}
+        primaryAction={<button className="primaryButton compact" type="button" onClick={()=>{
+          if(counts.blocked>0) onNavigate("scheduler");
+          else if(!counts.total && canOperate) onNavigate("unifi");
+          else onNavigate("ai");
+        }}>{counts.blocked>0?"Review blocked work":!counts.total&&canOperate?"Create governed work":"Open DataNest AI"}</button>}
+        meta={<StatusIndicator label={canOperate?"Operator access":"Viewer access"} tone={canOperate?"success":"neutral"} detail={counts.blocked>0?"Operational attention required":"Human direction remains authoritative"}/>}
       />
-    </section>
-
-    <section className="panel" aria-label="Continue your work">
-      <p className="eyebrow">CONTINUE YOUR WORK</p>
-      <h3>{jobs.length?"Resume governed project activity":"Start governed project activity"}</h3>
-      <p className="muted">{jobs.length?"Return to the active queue, AI context, or current project workflow without losing orientation.":"Create or discover governed work before execution begins."}</p>
-      <div className="rowActions">
-        <button className="secondaryButton compact" type="button" onClick={()=>onNavigate("ai")}>DataNest AI</button>
-        <button className="secondaryButton compact" type="button" onClick={()=>onNavigate("scheduler")}>TranScheduler</button>
+      <div className="homeIntentMeta">
+        <span>{counts.total} total manifests</span>
+        <i aria-hidden="true">·</i>
+        <span>{counts.running} running</span>
+        <i aria-hidden="true">·</i>
+        <span>{counts.blocked} blocked</span>
       </div>
     </section>
 
-    <section className="panel" aria-label="Needs attention">
-      <p className="eyebrow">NEEDS ATTENTION</p>
-      <h3>{counts.blocked?counts.blocked+" blocked Job"+(counts.blocked===1?"":"s"):"No blocked work in the loaded snapshot"}</h3>
-      <p className="muted">{counts.blocked?"Review dependencies and scheduling evidence before continuing execution.":"Continue monitoring governed work and evidence as the project changes."}</p>
-      {counts.blocked>0&&<button className="secondaryButton compact" type="button" onClick={()=>onNavigate("scheduler")}>Review blocked work</button>}
-    </section>
-
-    <section className="panel" aria-label="Applications">
-      <p className="eyebrow">APPLICATIONS</p>
-      <h3>Governed DataNest workspaces</h3>
-      <div className="rowActions">
-        <button className="secondaryButton compact" type="button" onClick={()=>onNavigate("ai")}>DataNest AI</button>
-        <button className="secondaryButton compact" type="button" disabled={!canOperate} onClick={()=>onNavigate("unifi")}>UNIFI Planner</button>
-        <button className="secondaryButton compact" type="button" onClick={()=>onNavigate("governance")}>Governance</button>
-      </div>
-    </section>
-
-    <OpportunityProjectionCard opportunity={null}/>
     <section className="aiIHero" aria-labelledby="ai-i-title">
       <div className="aiIAmbient" aria-hidden="true">
         <span className="ambientOrb orbOne"/>

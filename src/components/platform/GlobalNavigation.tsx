@@ -5,6 +5,8 @@ import Link from "next/link";
 import WorkspaceGlyph from "./WorkspaceGlyph";
 import type { NavigationItem } from "@/components/platform/navigationTypes";
 
+const groupOrder=["HOME","THINK","GOVERN","BUILD","EXECUTE","PROVE","ADMIN"] as const;
+
 const legalLinks=[
   {href:"/legal",label:"Legal Centre"},
   {href:"/governance",label:"Governance"},
@@ -22,10 +24,10 @@ export default function GlobalNavigation({
   onOpenQuickSwitch:()=>void;
 }) {
   void onOpenQuickSwitch;
-  const groups=Array.from(new Set(items.map(item=>item.group)));
+  const groups=Array.from(new Set(items.map(item=>item.group))).sort((a,b)=>groupOrder.indexOf(a as (typeof groupOrder)[number])-groupOrder.indexOf(b as (typeof groupOrder)[number]));
   const activeGroup=items.find(item=>item.id===currentView)?.group;
   const [openGroups,setOpenGroups]=useState<Set<string>>(
-    ()=>new Set(groups.filter(group=>group==="Core"||group===activeGroup))
+    ()=>new Set(groups.filter(group=>group==="HOME"||group===activeGroup))
   );
 
   useEffect(()=>{
@@ -43,7 +45,7 @@ export default function GlobalNavigation({
       {groups.map(group=><details
         className="navGroup navDisclosure"
         key={group}
-        open={group==="Core"||items.some(item=>item.group===group&&item.id===currentView)||openGroups.has(group)}
+        open={group==="HOME"||items.some(item=>item.group===group&&item.id===currentView)||openGroups.has(group)}
         onToggle={event=>{
           const isOpen=event.currentTarget.open;
           setOpenGroups(previous=>{
