@@ -27,6 +27,7 @@ test("keyboard skip link reaches email and motion preference persists", async ({
   await page.keyboard.press("Enter");
   await expect(page.getByLabel("Email")).toBeFocused();
   const motion = page.getByRole("button", { name: "Pause animations" });
+  await expect(motion).toBeVisible({ timeout: 10000 });
   await motion.click();
   await expect(motion).toHaveAttribute("aria-pressed", "true");
   expect(await page.locator(".orbitOuter").evaluate(el => getComputedStyle(el).animationPlayState)).toBe("paused");
@@ -326,7 +327,9 @@ test("workspace arrivals honor paused and reduced motion without hiding content"
   expect(await page.locator(".workspaceArrival").evaluate(el=>getComputedStyle(el).animationName)).toBe("none");
   await page.emulateMedia({reducedMotion:"no-preference"});
   await page.locator(".workspaceOptions > summary").click();
-  await page.getByRole("button",{name:"Pause animations"}).click();
+  const motion = page.getByRole("button",{name:"Pause animations"});
+  await expect(motion).toBeVisible({ timeout: 10000 });
+  await motion.click();
   await page.locator(".workspaceOptions > summary").click();
   await page.getByRole("tab",{name:"Execute",exact:true}).click();
   await expect(page.getByRole("heading",{name:"Give the next step a shape."})).toBeVisible();
