@@ -145,10 +145,13 @@ test("governed Edge Function deployment treats timeframe as advisory",()=>{
 });
 
 
-test("Pages workflow has a single automatic release path",()=>{
-  assert.match(pagesWorkflow,/workflow_run:/);
-  assert.match(pagesWorkflow,/CONDUCTOR Process Synchronization Tree/);
+test("Pages workflow has a simple protected-main release path",()=>{
+  assert.match(pagesWorkflow,/push:\n    branches:\n      - main/);
   assert.match(pagesWorkflow,/workflow_dispatch:/);
+  assert.match(pagesWorkflow,/github.event_name === 'push'/);
+  assert.match(pagesWorkflow,/GITHUB_EVENT_NAME" = "push"/);
+  assert.doesNotMatch(pagesWorkflow,/workflow_run:/);
+  assert.doesNotMatch(pagesWorkflow,/CONDUCTOR Process Synchronization Tree/);
   assert.match(pagesWorkflow,/environment:\n      name: github-pages/);
   assert.doesNotMatch(pagesWorkflow,/mirror_promotion_reference/);
   assert.doesNotMatch(pagesWorkflow,/database_migration_reference:/);
