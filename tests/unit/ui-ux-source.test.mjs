@@ -233,6 +233,9 @@ test("entry experience is usable before session resolution completes", () => {
   assert.match(authGateSource, /checkingSession/);
   assert.match(authGateSource, /Email me a magic link/);
   assert.match(authGateSource, /Forgot password\?/);
+  assert.match(authGateSource, /function friendlyAuthError\(/);
+  assert.match(authGateSource, /We couldn’t sign you in/);
+  assert.match(authGateSource, /JavaScript is required to sign in/);
 });
 
 test("theme control is contextual rather than a persistent signed-in overlay", () => {
