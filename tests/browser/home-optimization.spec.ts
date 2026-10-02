@@ -26,15 +26,17 @@ test("keyboard skip link reaches email and motion preference persists", async ({
   await expect(page.getByRole("link", { name: "Skip to sign in" })).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page.getByLabel("Email")).toBeFocused();
-  const motion = page.getByRole("button", { name: "Pause animations" });
+  const motion = page.getByLabel("Motion preference", {exact:true});
   await expect(motion).toBeVisible({ timeout: 10000 });
-  await motion.click();
-  await expect(motion).toHaveAttribute("aria-pressed", "true");
+  await motion.selectOption("reduced");
+  await expect(motion).toHaveValue("reduced");
+  expect(await page.locator("html").getAttribute("data-motion-paused")).toBe("true");
   expect(await page.locator(".orbitOuter").evaluate(el => getComputedStyle(el).animationPlayState)).toBe("paused");
   await page.reload();
-  await expect(motion).toHaveAttribute("aria-pressed", "true");
-  await motion.click();
-  await expect(motion).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByLabel("Motion preference", {exact:true})).toHaveValue("reduced");
+  expect(await page.locator("html").getAttribute("data-motion-paused")).toBe("true");
+  await motion.selectOption("full");
+  await expect(motion).toHaveValue("full");
 });
 
 test("entry respects system reduced motion", async ({ page }) => {
@@ -327,9 +329,10 @@ test("workspace arrivals honor paused and reduced motion without hiding content"
   expect(await page.locator(".workspaceArrival").evaluate(el=>getComputedStyle(el).animationName)).toBe("none");
   await page.emulateMedia({reducedMotion:"no-preference"});
   await page.locator(".workspaceOptions > summary").click();
-  const motion = page.getByRole("button",{name:"Pause animations"});
+  const motion = page.getByLabel("Motion preference",{exact:true});
   await expect(motion).toBeVisible({ timeout: 10000 });
-  await motion.click();
+  await motion.selectOption("reduced");
+  await expect(motion).toHaveValue("reduced");
   await page.locator(".workspaceOptions > summary").click();
   await page.getByRole("tab",{name:"Execute",exact:true}).click();
   await expect(page.getByRole("heading",{name:"Give the next step a shape."})).toBeVisible();
