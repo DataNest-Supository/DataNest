@@ -19,9 +19,17 @@
     "project": "sgqdmfgjbprsoqsmgigi",
     "region": "eu-central-1",
     "expectedMigration": {
-      "head": "20261001142117",
-      "name": "certification_business_bank_settlement_launch"
-    }
+      "head": "20261002101955",
+      "name": "harden_provider_sync_secret_boundary"
+    },
+    "migrationLineage": [
+      {
+        "databaseHead": "20261001142117",
+        "databaseName": "certification_business_bank_settlement_launch",
+        "repositoryEquivalentMigration": "20261001170000_certification_business_bank_settlement_launch.sql",
+        "note": "Production recorded the certification settlement migration under the 20261001142117 timestamp; repository source carries the same named migration content under 20261001170000."
+      }
+    ]
   },
   "productionCatalog": "config/supository.catalog.json",
   "deployment": {
