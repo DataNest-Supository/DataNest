@@ -138,6 +138,8 @@ test("Pages production deployment is manual exact-SHA and environment gated",()=
   assert.match(pagesWorkflow,/git merge-base --is-ancestor "\$DATANEST_UI_RELEASE_SHA" origin\/main/);
   assert.match(pagesWorkflow,/'github-pages'/);
   assert.match(pagesWorkflow,/'github-pages-owner-test-mode'/);
+  assert.match(pagesWorkflow,/'github-pages-progressive-live'/);
+  assert.match(pagesWorkflow,/default: progressive_live/);
   assert.match(pagesWorkflow,/DATANEST_UI_PRODUCTION_CONFIRMATION: \$\{\{ inputs\.confirmation \}\}/);
 });
 
