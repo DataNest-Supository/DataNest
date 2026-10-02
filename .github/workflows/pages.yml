@@ -329,7 +329,7 @@ jobs:
           curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors \
             https://datanest-supository.github.io/DataNest/robots.txt \
             -o /tmp/datanest-robots.txt
-          grep -q '^User-agent:' /tmp/datanest-robots.txt
+          grep -qi '^User-agent:' /tmp/datanest-robots.txt
           grep -Fq 'Sitemap: https://datanest-supository.github.io/DataNest/sitemap.xml' /tmp/datanest-robots.txt
           curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-all-errors \
             https://datanest-supository.github.io/DataNest/sitemap.xml \
