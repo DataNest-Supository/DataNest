@@ -74,7 +74,7 @@ test("dashboard labels its sample and groups UTC days independently of local tim
   });
   await page.goto(appPath);
   await expect(page.getByRole("region", {name:"Current project intent"})).toBeVisible();
-  await expect(page.getByRole("region", {name:"DataNest workspace status"})).toBeVisible();
+  await expect(page.getByLabel("DataNest workspace status", {exact:true})).toBeVisible();
   await expect(page.getByLabel("Current DataNest operating state")).toBeVisible();
   await expect(page.getByRole("heading", {name:"Recent creation signal"})).toBeVisible();
   await expect(page.getByText("LOADED SNAPSHOT · UTC")).toBeVisible();
