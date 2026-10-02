@@ -110,14 +110,27 @@ jobs:
           DATANEST_EXPECTED_DB_MIGRATION_REFERENCE: ${{ steps.production_contract.outputs.database_migration_reference }}
         run: node scripts/verify-production-release-attestation.mjs .datanest/release-attestation.json
 
+      - name: Publish Supabase connector Edge Function evidence
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: edge-function-release-attestation
+          path: config/production-edge-function-connector-attestation.json
+          if-no-files-found: error
+          retention-days: 90
+
       - name: Stage Supabase connector Edge Function evidence
+        uses: actions/download-artifact@v5
+        with:
+          name: edge-function-release-attestation
+          path: ${{ runner.temp }}/datanest-edge-function-release
+
+      - name: Normalize staged Edge Function evidence filename
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p "${{ runner.temp }}/datanest-edge-function-release"
-          cp config/production-edge-function-connector-attestation.json \
+          test -f "${{ runner.temp }}/datanest-edge-function-release/production-edge-function-connector-attestation.json"
+          mv "${{ runner.temp }}/datanest-edge-function-release/production-edge-function-connector-attestation.json" \
             "${{ runner.temp }}/datanest-edge-function-release/edge-function-release.json"
-
       - name: Verify connector-attested governed Edge Function release
         env:
           GITHUB_TOKEN: ${{ github.token }}
