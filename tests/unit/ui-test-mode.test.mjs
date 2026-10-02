@@ -81,7 +81,7 @@ test("Owner Live Test Mode is time bounded and explicitly temporary",()=>{
   assert.match(productionWorkflow,/owner_test_mode_expires_at:/);
   assert.match(productionWorkflow,/owner_test_mode_owner_login:/);
   assert.match(productionWorkflow,/owner_test_mode_reference:/);
-  assert.match(productionWorkflow,/AUTHORIZE OWNER TEST MODE/);
+  assert.match(productionWorkflow,/confirmation:/);
   assert.match(productionWorkflow,/release_mode/);
   assert.match(productionWorkflow,/collaborators\/\$GITHUB_ACTOR\/permission/);
 });
