@@ -188,6 +188,8 @@ test("workflow shell guides execution forward and preserves browser history", as
     return route.fulfill({contentType:"application/json",body:JSON.stringify(body)});
   });
 
+  await page.goto(appPath);
+  await expect(page.getByRole("heading",{name:"Find your next meaningful step."})).toBeVisible({timeout:20000});
   await page.goto(appPath+"?view=unifi");
   await expect(page.locator(".topbar h1")).toHaveText("UNIFI Planner",{timeout:20000});
   await expect(page.locator(".topbar .eyebrow")).toContainText("EXECUTE");
