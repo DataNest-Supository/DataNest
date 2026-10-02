@@ -70,9 +70,12 @@ const directInvocation=
   import.meta.url===pathToFileURL(resolve(process.argv[1])).href;
 
 if(directInvocation){
-  const contractPath=process.argv[2] || "config/production-contract.json";
-  const outputIndex=process.argv.indexOf("--github-output");
-  const outputPath=outputIndex>=0 ? process.argv[outputIndex+1] : null;
+  const args=process.argv.slice(2);
+  const outputIndex=args.indexOf("--github-output");
+  const outputPath=outputIndex>=0 ? args[outputIndex+1] : null;
+  const contractPath=args[0] && !args[0].startsWith("--")
+    ? args[0]
+    : "config/production-contract.json";
   const {contract}=validateProductionContract(contractPath);
   if(outputPath){
     if(!existsSync(outputPath)) writeFileSync(outputPath,"","utf8");
