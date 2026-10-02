@@ -120,7 +120,10 @@ test("file worker production deployment is bound to an exact SHA and protected e
   assert.match(workflow,/release_sha:/);
   assert.match(workflow,/ref: \$\{\{ inputs\.release_sha \}\}/);
   assert.match(workflow,/git merge-base --is-ancestor/);
-  assert.match(workflow,/environment:\n      name: github-pages/);
+  assert.match(
+    workflow,
+    /environment:\n      name: \$\{\{ inputs\.release_mode == 'progressive_live' && 'github-pages-progressive-live' \|\| 'github-pages' \}\}/
+  );
   assert.match(workflow,/--no-verify-jwt/);
   assert.match(workflow,/supabase\/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf/);
   assert.match(workflow,/version: 2\.118\.0/);
