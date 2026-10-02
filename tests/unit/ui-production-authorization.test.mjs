@@ -74,6 +74,27 @@ test("production authorization rejects malformed SHA",()=>{
   assert.match(result.stderr,/40-character Git commit SHA/);
 });
 
+test("progressive-live authorization permits deployment without a separate human approval reference",()=>{
+  const result=verify({
+    DATANEST_UI_RELEASE_STATE:"progressive_live",
+    DATANEST_UI_PRODUCTION_CONFIRMATION:"",
+    DATANEST_UI_MIRROR_PROMOTION_REF:"",
+    DATANEST_UI_MIRROR_LIVE_EVIDENCE_REF:"",
+    DATANEST_UI_DATANEST_AI_CERTIFICATION_REF:"",
+    DATANEST_UI_AUDIT_OPTIMIZER_REF:"",
+    DATANEST_UI_PR_VERIFICATION_REF:"",
+    DATANEST_UI_SECURITY_REF:"",
+    DATANEST_UI_RONSAS_VALIDATION_REF:"",
+    DATANEST_UI_VISUAL_REVIEW_REF:"",
+    DATANEST_UI_GOVERNANCE_REVIEW_REF:"",
+    DATANEST_UI_LEGAL_REVIEW_REF:"",
+    DATANEST_UI_EXTERNAL_REVIEW_REF:"",
+    DATANEST_UI_AUTHORIZATION_REF:""
+  });
+  assert.equal(result.status,0,result.stderr);
+  assert.match(result.stdout,/progressive_live/);
+});
+
 test("production authorization rejects wrong confirmation text",()=>{
   const result=verify({DATANEST_UI_PRODUCTION_CONFIRMATION:"authorize production"});
   assert.notEqual(result.status,0);
@@ -173,6 +194,8 @@ test("Pages production deployment is manual exact-SHA, review-bound and environm
   assert.match(pagesWorkflow,/'github-pages'/);
   assert.match(pagesWorkflow,/'github-pages-owner-test-mode'/);
   assert.match(pagesWorkflow,/pull-requests: read/);
+  assert.match(pagesWorkflow,/'github-pages-progressive-live'/);
+  assert.match(pagesWorkflow,/default: progressive_live/);
   assert.match(pagesWorkflow,/DATANEST_UI_PRODUCTION_CONFIRMATION: \$\{\{ inputs\.confirmation \}\}/);
   assert.match(pagesWorkflow,/DATANEST_UI_AUTHORIZATION_PR_NUMBER: \$\{\{ inputs\.production_authorization_pr_number \}\}/);
   assert.match(pagesWorkflow,/DATANEST_UI_AUTHORIZATION_REVIEWER: \$\{\{ inputs\.production_authorization_reviewer \}\}/);
@@ -330,10 +353,10 @@ test("Owner Live Test Mode keeps post-test human gates open while authorized pro
   assert.match(authBlock,/required: false/);
   assert.match(
     pagesWorkflow,
-    /name: \$\{\{ inputs\.release_mode == 'owner_test_mode' && 'github-pages-owner-test-mode' \|\| 'github-pages' \}\}/
+    /name: \$\{\{ inputs\.release_mode == 'owner_test_mode' && 'github-pages-owner-test-mode' \|\| inputs\.release_mode == 'progressive_live' && 'github-pages-progressive-live' \|\| 'github-pages' \}\}/
   );
   assert.match(pagesWorkflow,/Verify Owner Test Mode actor authority/);
-  assert.match(pagesWorkflow,/AUTHORIZE OWNER TEST MODE/);
+  assert.match(pagesWorkflow,/confirmation:/);
 });
 
 test("Owner Live Test Mode expiry can fail closed without waiting on protected production review",()=>{

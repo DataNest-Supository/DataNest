@@ -4,6 +4,7 @@ import {
   buildUiGovernanceEvidence,
   hasUiGovernanceEnvironment
 } from "./write-ui-governance-evidence.mjs";
+import { buildProgressiveLiveGapRegister } from "./write-progressive-live-gap-register.mjs";
 
 const target=resolve(process.argv[2] || "public/release-manifest.json");
 const uiGovernance=hasUiGovernanceEnvironment(process.env)
@@ -13,6 +14,10 @@ const dbAttestationFile=resolve(process.env.DATANEST_DB_ATTESTATION_FILE || ".da
 const edgeAttestationFile=resolve(process.env.DATANEST_EDGE_ATTESTATION_FILE || ".datanest/edge-function-attestation.json");
 const databaseAttestation=existsSync(dbAttestationFile)?JSON.parse(readFileSync(dbAttestationFile,"utf8")):null;
 const edgeFunctionAttestation=existsSync(edgeAttestationFile)?JSON.parse(readFileSync(edgeAttestationFile,"utf8")):null;
+
+const progressiveLiveGapRegister=hasUiGovernanceEnvironment(process.env)
+  ? buildProgressiveLiveGapRegister(process.env)
+  : null;
 
 const manifest={
   project:"Resonance DataNest",
@@ -60,6 +65,20 @@ const manifest={
     ]
   },
   ...(uiGovernance ? {uiGovernance} : {}),
+  ...(progressiveLiveGapRegister
+    ? {
+        releaseReadiness:{
+          mode:progressiveLiveGapRegister.releaseMode,
+          deploymentAllowed:progressiveLiveGapRegister.deploymentAllowed,
+          status:progressiveLiveGapRegister.gapCount
+            ? "deployed-with-open-gaps"
+            : "evidence-complete",
+          gapCount:progressiveLiveGapRegister.gapCount,
+          gaps:progressiveLiveGapRegister.gaps,
+          generatedAt:progressiveLiveGapRegister.generatedAt
+        }
+      }
+    : {}),
   releaseAttestation:{
     database:databaseAttestation
       ? {
