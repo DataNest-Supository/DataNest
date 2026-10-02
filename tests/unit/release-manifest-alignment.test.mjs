@@ -83,6 +83,18 @@ test("release manifest preserves legacy shape when no UI governance environment 
   assert.equal("uiGovernance" in json,false);
 });
 
+test("release manifest publishes progressive-live readiness and non-blocking gaps",()=>{
+  const {result,json}=writeManifest({
+    DATANEST_UI_RELEASE_SHA:"d".repeat(40),
+    DATANEST_UI_RELEASE_STATE:"progressive_live"
+  });
+  assert.equal(result.status,0,result.stderr);
+  assert.equal(json.releaseReadiness.mode,"progressive_live");
+  assert.equal(json.releaseReadiness.deploymentAllowed,true);
+  assert.ok(json.releaseReadiness.gapCount>0);
+  assert.ok(json.releaseReadiness.gaps.every((gap)=>gap.blocking===false));
+});
+
 test("release manifest embeds UI governance traceability when UI release environment is supplied",()=>{
   const {result,json}=writeManifest({
     DATANEST_UI_RELEASE_SHA:"b".repeat(40),
@@ -139,7 +151,7 @@ test("Pages workflow stays within GitHub workflow_dispatch input limit",()=>{
   assert.equal(inputs.length,25);
 });
 
-test("Pages release wiring requires live database and Edge Function attestation",()=>{
+test("Pages release wiring retains strict attestation for protected modes while allowing progressive-live gaps",()=>{
   assert.match(pagesWorkflow,/database_migration_reference:/);
   assert.match(pagesWorkflow,/default: '\{"head":"20261001142117","name":"certification_business_bank_settlement_launch"\}'/);
   assert.doesNotMatch(pagesWorkflow,/database_migration_head:/);
