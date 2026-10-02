@@ -1635,13 +1635,6 @@ export default function DataNestApp({session}:{session:Session}) {
       </header>
       }
       footer={<PlatformFooter compact/>}
-      context={project?<ContextStrip
-        projectName={project.name}
-        applicationName={currentLabel}
-        phase={currentPhase}
-        status={project.status}
-        nextAction={nextViewItem?.label}
-      />:undefined}
     >
         {view!=="overview"&&view!=="settings"&&<LifecycleRail
           currentPhase={currentPhase}
