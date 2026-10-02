@@ -63,6 +63,10 @@ Standalone Node/Docker runtimes continue to expose the server health endpoint at
 - AI architecture: [`docs/DATANEST_AI_ARCHITECTURE.md`](docs/DATANEST_AI_ARCHITECTURE.md)
 - Vercel dependency: **none**
 
+### Production contract
+
+The machine-readable release authority is maintained in [\`config/production-contract.json\`](config/production-contract.json). CI and Pages release verification validate that contract and derive the expected Supabase production migration identity from it rather than maintaining a separate hard-coded database-release literal.
+
 
 ## Delivery-provider metadata
 
