@@ -29,7 +29,10 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: datanest-conductor
+  # Coalesce all automation events for the same canonical SHA into one
+  # synchronization pass. Scheduled fallback and workflow_run events must not
+  # create competing coordinator runs for identical source state.
+  group: datanest-conductor-${{ github.event.workflow_run.head_sha || github.sha }}
   cancel-in-progress: true
 
 jobs:
@@ -40,7 +43,8 @@ jobs:
         (github.event.workflow_run.head_branch == 'main' &&
          github.event.workflow_run.head_repository.full_name == github.repository &&
          github.event.workflow_run.event != 'pull_request' &&
-         github.event.workflow_run.event != 'workflow_run'))
+         github.event.workflow_run.event != 'workflow_run' &&
+         github.event.workflow_run.conclusion == 'success'))
     name: Synchronize tree timing and commands
     runs-on: ubuntu-24.04
     timeout-minutes: 15
