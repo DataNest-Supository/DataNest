@@ -30,6 +30,15 @@ test("exclusions match both the directory itself and descendants", () => {
   assert.equal(isExcluded("src/index.ts", ["node_modules"]), false);
 });
 
+test("workflow directory exclusion forms a complete autonomous mutation boundary", () => {
+  const rules = [".github/workflows"];
+  assert.equal(isExcluded(".github/workflows", rules), true);
+  assert.equal(isExcluded(".github/workflows/guardian.yml", rules), true);
+  assert.equal(isExcluded(".github/workflows/nested/reusable.yml", rules), true);
+  assert.equal(isExcluded(".github/actions/automation-x-annotation/action.yml", rules), false);
+  assert.equal(isExcluded("scripts/workflow-reviewer.mjs", rules), false);
+});
+
 test("long functions become medium-priority refactor findings", () => {
   const body = Array.from({ length: 100 }, (_, index) => `  const x${index} = ${index};`).join("\n");
   const text = `function oversized() {\n${body}\n}\n`;
