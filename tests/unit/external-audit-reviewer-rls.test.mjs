@@ -25,7 +25,7 @@ test("external audit reviewer RLS keeps project-member read access and splits wr
 });
 
 const hardening=fs.readFileSync(
-  "supabase/migrations/20261002120000_harden_external_audit_write_boundaries.sql",
+  "supabase/migrations/20261002101924_harden_external_audit_write_boundaries.sql",
   "utf8"
 );
 
