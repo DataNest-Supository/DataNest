@@ -50,7 +50,7 @@ test("production Pages authorization is isolated from UI Test Mode",()=>{
   assert.match(productionWorkflow,/workflow_run:/);
   assert.doesNotMatch(productionWorkflow,/governance_review_reference/);
   assert.doesNotMatch(productionWorkflow,/production_authorization_reference/);
-  assert.doesNotMatch(productionWorkflow,/owner_test_mode/);
+  assert.equal(productionWorkflow.includes("owner_test_mode"),false);
 });
 
 test("RONSAS validation follows Test Mode workflow changes",()=>{
@@ -68,7 +68,7 @@ test("RONSAS validation follows Test Mode workflow changes",()=>{
 test("Owner Test Mode remains isolated to its dedicated workflow",()=>{
   assert.match(testModeWorkflow,/DATANEST_UI_RELEASE_STATE: candidate/);
   assert.match(expiryWorkflow,/owner_test_mode_expired/);
-  assert.match(expiryWorkflow,/actions\\/deploy-pages/);
+  assert.ok(expiryWorkflow.includes("actions/deploy-pages"));
   assert.doesNotMatch(productionWorkflow,/owner_test_mode/);
 });
 
