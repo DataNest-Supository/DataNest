@@ -159,7 +159,7 @@ test("Pages release wiring derives the database attestation from the canonical c
   assert.match(pagesWorkflow,/Validate canonical production contract/);
   assert.match(pagesWorkflow,/DATANEST_EXPECTED_DB_MIGRATION_REFERENCE/);
   assert.match(pagesWorkflow,/verify-production-release-attestation\.mjs/);
-  assert.match(pagesWorkflow,/DATANEST_DB_ATTESTATION_FILE: \.datanest\\/release-attestation\\.json/);
+  assert.ok(pagesWorkflow.includes("DATANEST_DB_ATTESTATION_FILE: .datanest/release-attestation.json"));
   assert.match(pagesWorkflow,/databaseMigration/);
   assert.match(manifestScript,/databaseRelease:canonicalDatabaseRelease/);
   assert.doesNotMatch(pagesWorkflow,/edge_function_release_reference:/);
