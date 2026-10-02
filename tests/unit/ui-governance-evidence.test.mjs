@@ -8,6 +8,24 @@ import { spawnSync } from "node:child_process";
 
 const writer=fileURLToPath(new URL("../../scripts/write-ui-governance-evidence.mjs",import.meta.url));
 const sha="a".repeat(40);
+const candidateSha="b".repeat(40);
+const reviewId=9101;
+const authorizationRef=`github:DataNest-Supository/DataNest#405:review:${reviewId}@${candidateSha}`;
+const githubApprovalFixture=JSON.stringify({
+  pr:{
+    number:405,
+    base:{ref:"main",repo:{full_name:"DataNest-Supository/DataNest"}},
+    head:{sha:candidateSha},
+    merged_at:"2026-10-02T03:37:29Z",
+    merge_commit_sha:sha
+  },
+  reviews:[{
+    id:reviewId,
+    state:"APPROVED",
+    commit_id:candidateSha,
+    user:{login:"ReleaseReviewer"}
+  }]
+});
 const reviewRefs={
   DATANEST_UI_MIRROR_PROMOTION_REF:"Mirror-DataNest candidate run #42 @ abcdef1234567890abcdef1234567890abcdef12",
   DATANEST_UI_MIRROR_LIVE_EVIDENCE_REF:"Mirror live verification #42",
@@ -20,20 +38,24 @@ const reviewRefs={
   DATANEST_UI_GOVERNANCE_REVIEW_REF:"DN-GOV-REVIEW-001",
   DATANEST_UI_LEGAL_REVIEW_REF:"DN-LEGAL-REVIEW-001",
   DATANEST_UI_EXTERNAL_REVIEW_REF:"DN-EXTERNAL-REVIEW-001",
-  DATANEST_UI_AUTHORIZATION_REF:"DN-PROD-AUTH-001"
+  DATANEST_UI_AUTHORIZATION_REF:authorizationRef,
+  DATANEST_UI_TEST_FIXTURES:"1",
+  DATANEST_UI_GITHUB_APPROVAL_FIXTURE:githubApprovalFixture,
+  GITHUB_REPOSITORY:"DataNest-Supository/DataNest",
+  GITHUB_ACTIONS:"false"
 };
 
 function runWriter(extraEnv){
   const dir=mkdtempSync(join(tmpdir(),"datanest-ui-evidence-"));
   const target=join(dir,"ui-governance-release.json");
-    const env={...process.env};
+  const env={...process.env};
   for (const key of Object.keys(env)) {
     if (key.startsWith("DATANEST_UI_")) delete env[key];
   }
   Object.assign(env,extraEnv);
   const result=spawnSync(process.execPath,[writer,target],{
     env,
-  encoding:"utf8"
+    encoding:"utf8"
   });
   const json=result.status===0 ? JSON.parse(readFileSync(target,"utf8")) : null;
   rmSync(dir,{recursive:true,force:true});
@@ -103,18 +125,27 @@ test("authorized evidence fails closed on placeholder review references",()=>{
   assert.match(result.stderr,/DATANEST_UI_LEGAL_REVIEW_REF/);
 });
 
-test("authorized evidence requires and records the complete review chain",()=>{
+test("authorized evidence records canonical GitHub-verified production authorization",()=>{
   const {result,json}=runWriter({
     DATANEST_UI_RELEASE_SHA:sha,
     DATANEST_UI_RELEASE_STATE:"authorized",
     ...reviewRefs
   });
   assert.equal(result.status,0,result.stderr);
+  assert.equal(json.schemaVersion,"ui-governance-release-v3");
   assert.equal(json.authorized,true);
-  for (const item of Object.values(json.evidence)) {
+  assert.equal(json.fullyGoverned,true);
+  assert.equal(json.authorizationIntegrity,"github-verified-commit-bound-review");
+  for (const [key,item] of Object.entries(json.evidence)) {
+    if(key==="productionAuthorization") continue;
     assert.equal(item.status,"supplied");
     assert.ok(item.reference);
   }
+  assert.equal(json.evidence.productionAuthorization.status,"verified");
+  assert.equal(json.evidence.productionAuthorization.reference,authorizationRef);
+  assert.equal(json.evidence.productionAuthorization.verification.reviewer,"ReleaseReviewer");
+  assert.equal(json.evidence.productionAuthorization.verification.reviewCommitSha,candidateSha);
+  assert.equal(json.evidence.productionAuthorization.verification.releaseSha,sha);
 });
 
 
