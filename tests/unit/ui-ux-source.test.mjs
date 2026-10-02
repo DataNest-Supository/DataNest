@@ -49,6 +49,7 @@ const durableRecoveryMigrationSource = fs.readFileSync(path.join(repoRoot, "supa
 const durableRecoveryHardeningSource = fs.readFileSync(path.join(repoRoot, "supabase/migrations/20260927203127_harden_durable_mutation_recovery_idempotency.sql"), "utf8");
 const durableRecoveryObservabilitySource = fs.readFileSync(path.join(repoRoot, "supabase/migrations/20260927213827_add_mutation_recovery_observability.sql"), "utf8");
 const cssSource = fs.readFileSync(path.join(repoRoot, "src/app/globals.css"), "utf8");
+const entryCssSource = fs.readFileSync(path.join(repoRoot, "src/app/entry.css"), "utf8");
 
 test("shared operational primitives require text-bearing semantic state and exact governed stages", () => {
   assert.notEqual(pageHeaderSource, "", "PageHeader must exist");
@@ -237,8 +238,8 @@ test("authentication password fields provide accessible visibility controls", ()
   assert.match(authGateSource, /aria-label=\{showPassword \? "Hide password" : "Show password"\}/);
   assert.match(authGateSource, /showNewPassword \? "Hide new password" : "Show new password"/);
   assert.match(authGateSource, /showConfirmPassword \? "Hide confirmation password" : "Show confirmation password"/);
-  assert.match(cssSource, /\.passwordField\{/);
-  assert.match(cssSource, /\.passwordToggle\{/);
+  assert.match(entryCssSource, /\.passwordField\{/);
+  assert.match(entryCssSource, /\.passwordToggle\{/);
 });
 
 test("session-check failures keep the sign-in shell usable", () => {
@@ -246,7 +247,7 @@ test("session-check failures keep the sign-in shell usable", () => {
   assert.match(authGateSource, /setStartup\("signed-out"\)/);
   assert.match(authGateSource, /You can still sign in/);
   assert.match(authGateSource, /Retry session check/);
-  assert.match(cssSource, /\.sessionCheckNote\.sessionCheckError/);
+  assert.match(entryCssSource, /\.sessionCheckNote\.sessionCheckError/);
 });
 
 test("entry experience is usable before session resolution completes", () => {
@@ -277,8 +278,8 @@ test("workspace status metadata never claims READY before a project record exist
 });
 
 test("public entry link surfaces follow the shared theme tokens", () => {
-  assert.match(cssSource, /\.landingHubLink\{[^}]*background:var\(--surface-work\)/);
-  assert.doesNotMatch(cssSource, /\.landingHubLink\{[^}]*background:rgba\(20,12,38/);
+  assert.match(entryCssSource, /\.landingHubLink\{[^}]*background:var\(--surface-work\)/);
+  assert.doesNotMatch(entryCssSource, /\.landingHubLink\{[^}]*background:rgba\(20,12,38/);
 });
 
 test("public document and evidence routes retain contextual theme access", () => {
@@ -295,7 +296,7 @@ test("theme control is contextual rather than a persistent signed-in overlay", (
   assert.doesNotMatch(layoutSource, /themeControlDock/);
   assert.match(appSource, /<ThemeControl compact/);
   assert.match(authGateSource, /<span className="landingThemeControl"><ThemeControl compact/);
-  assert.match(cssSource, /\.landingThemeControl/);
+  assert.match(entryCssSource, /\.landingThemeControl/);
 });
 
 
