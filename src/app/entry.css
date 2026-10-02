@@ -30,6 +30,10 @@
 .landingSignIn .brandMark { width: 44px; height: 44px; font-size: 14px; }
 .landingSignIn .lede { font-size: 14px; color: var(--text-secondary); }
 .landingSignIn .authForm label { font-size: 13px; color: var(--text-primary); }
+.passwordField{position:relative;display:flex;align-items:center}
+.passwordField input{padding-right:64px!important}
+.passwordToggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);min-height:32px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface-work-soft);color:var(--text-subtle);font-size:10px;font-weight:800;cursor:pointer}
+.passwordToggle:hover,.passwordToggle:focus-visible{border-color:rgba(66,231,255,.32);color:var(--text-primary);outline:none}
 .landingSignIn input { font-size: 16px; min-height: 48px; }
 .landingSignIn button { min-height: 48px; font-size: 13px; }
 .landingSignIn .securityNote { font-size: 12px; line-height: 1.7; color: var(--text-secondary); }
