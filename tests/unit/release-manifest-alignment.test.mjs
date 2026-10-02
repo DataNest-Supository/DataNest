@@ -154,7 +154,7 @@ test("Pages workflow stays within GitHub workflow_dispatch input limit",()=>{
 
 test("Pages release wiring retains strict attestation for protected modes while allowing progressive-live gaps",()=>{
   assert.match(pagesWorkflow,/database_migration_reference:/);
-  assert.match(pagesWorkflow,/default: '\{"head":"20261001142117","name":"certification_business_bank_settlement_launch"\}'/);
+  assert.match(pagesWorkflow,/database_migration_reference:[\s\S]*?required: false[\s\S]*?default: ''/);
   assert.doesNotMatch(pagesWorkflow,/database_migration_head:/);
   assert.doesNotMatch(pagesWorkflow,/database_migration_name:/);
   assert.match(pagesWorkflow,/verify-production-release-attestation\.mjs/);
