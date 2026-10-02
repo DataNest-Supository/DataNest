@@ -82,7 +82,7 @@ html[data-motion-paused="true"] *, html[data-motion-paused="true"] *::before, ht
 
 /* Reson8 ecosystem ingress */
 .landingHeaderActions{display:flex;align-items:center;gap:10px}
-.landingHubLink{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:rgba(20,12,38,.72);color:var(--text-primary);text-decoration:none;font-size:12px;font-weight:800}
+.landingHubLink{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-work);color:var(--text-primary);text-decoration:none;font-size:12px;font-weight:800}
 .landingHubLink:hover,.landingHubLink:focus-visible{border-color:rgba(66,231,255,.38);color:var(--text-primary);background:rgba(66,231,255,.07)}
 @media (max-width:700px){.landingHeaderActions{gap:6px}.landingHubLink{min-height:40px;padding:8px 9px;font-size:10px}}
 @media (max-width:430px){.landingHeaderActions{gap:6px}.landingHubLink{font-size:10px;min-height:38px;padding:7px 9px}.landingHubLink span{font-size:10px}.landingThemeControl{min-width:105px}}
