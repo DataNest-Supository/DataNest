@@ -240,31 +240,18 @@ test("Owner Live Test Mode AI-proposed strategy does not require an explicit exp
   assert.match(result.stdout,/owner_test_mode/);
 });
 
-test("Pages workflow exposes AI timeframe complexity controls",()=>{
-  for(const input of [
-    "owner_test_mode_window_strategy",
-    "owner_test_mode_task_complexity",
-    "owner_test_mode_reporting_complexity"
-  ]){
-    assert.match(pagesWorkflow,new RegExp(`\\n      ${input}:\\n`));
-  }
-  assert.match(pagesWorkflow,/Show DataNest AI proposed Owner Test Mode timeframe/);
-  assert.match(pagesWorkflow,/propose-owner-test-mode-window\.mjs/);
-  assert.match(pagesWorkflow,/proposal\.strategy==="ai_proposed"/);
+test("Pages workflow omits legacy Owner Test Mode timeframe inputs",()=>{
+  assert.doesNotMatch(pagesWorkflow,/owner_test_mode_window_strategy/);
+  assert.doesNotMatch(pagesWorkflow,/owner_test_mode_task_complexity/);
+  assert.doesNotMatch(pagesWorkflow,/owner_test_mode_reporting_complexity/);
+  assert.doesNotMatch(pagesWorkflow,/propose-owner-test-mode-window\\.mjs/);
 });
 
-
-test("Owner Live Test Mode keeps post-test human gates open while authorized production remains protected",()=>{
-  const visualBlock=pagesWorkflow.match(/visual_review_reference:\n([\s\S]*?)(?=\n      governance_review_reference:)/)?.[1]||"";
-  const authBlock=pagesWorkflow.match(/production_authorization_reference:\n([\s\S]*?)(?=\n      owner_test_mode_reference:)/)?.[1]||"";
-  assert.match(visualBlock,/required: false/);
-  assert.match(authBlock,/required: false/);
-  assert.match(
-    pagesWorkflow,
-    /name: \$\{\{ inputs\.release_mode == 'owner_test_mode' && 'github-pages-owner-test-mode' \|\| inputs\.release_mode == 'progressive_live' && 'github-pages-progressive-live' \|\| 'github-pages' \}\}/
-  );
-  assert.match(pagesWorkflow,/Verify Owner Test Mode actor authority/);
-  assert.match(pagesWorkflow,/confirmation:/);
+test("Pages production keeps authorization in the protected environment",()=>{
+  assert.match(pagesWorkflow,/environment:\n      name: github-pages/);
+  assert.doesNotMatch(pagesWorkflow,/visual_review_reference/);
+  assert.doesNotMatch(pagesWorkflow,/production_authorization_reference/);
+  assert.doesNotMatch(pagesWorkflow,/owner_test_mode/);
 });
 
 test("Owner Live Test Mode expiry can fail closed without waiting on protected production review",()=>{
