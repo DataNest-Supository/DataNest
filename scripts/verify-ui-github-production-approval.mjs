@@ -3,6 +3,7 @@ import { pathToFileURL } from "node:url";
 
 const SHA_RE=/^[0-9a-f]{40}$/i;
 const DECISIVE_REVIEW_STATES=new Set(["APPROVED","CHANGES_REQUESTED","DISMISSED"]);
+const AUTH_REF_RE=/^github:([^/\s]+)\/([^#\s]+)#(\d+):review:(\d+)@([0-9a-f]{40})$/i;
 
 function clean(value){
   return typeof value==="string" ? value.trim() : "";
@@ -18,6 +19,22 @@ function parsePositiveInteger(value,label){
   const parsed=Number(raw);
   requireValue(Number.isSafeInteger(parsed) && parsed>0,`${label} must be a positive integer`);
   return parsed;
+}
+
+function parseAuthorizationReference(env){
+  const raw=clean(env.DATANEST_UI_AUTHORIZATION_REF);
+  const match=AUTH_REF_RE.exec(raw);
+  requireValue(
+    match,
+    "DATANEST_UI_AUTHORIZATION_REF must be a canonical GitHub review reference: github:owner/repo#PR:review:REVIEW_ID@PR_HEAD_SHA"
+  );
+  return {
+    raw,
+    repository:`${match[1]}/${match[2]}`,
+    prNumber:Number(match[3]),
+    reviewId:Number(match[4]),
+    candidateSha:match[5]
+  };
 }
 
 function latestDecisiveReview(reviews){
@@ -42,17 +59,15 @@ function normalizeFixture(env){
 }
 
 async function githubJson(path,env,fetchImpl){
-  const token=clean(env.GITHUB_TOKEN)||clean(env.GH_TOKEN);
-  requireValue(token,"GITHUB_TOKEN or GH_TOKEN is required to verify production authorization");
   requireValue(typeof fetchImpl==="function","A fetch implementation is required to verify GitHub review evidence");
+  const token=clean(env.GITHUB_TOKEN)||clean(env.GH_TOKEN);
   const apiBase=(clean(env.GITHUB_API_URL)||"https://api.github.com").replace(/\/$/,"");
-  const response=await fetchImpl(`${apiBase}${path}`,{
-    headers:{
-      Accept:"application/vnd.github+json",
-      Authorization:`Bearer ${token}`,
-      "X-GitHub-Api-Version":"2022-11-28"
-    }
-  });
+  const headers={
+    Accept:"application/vnd.github+json",
+    "X-GitHub-Api-Version":"2022-11-28"
+  };
+  if(token) headers.Authorization=`Bearer ${token}`;
+  const response=await fetchImpl(`${apiBase}${path}`,{headers});
   if(!response.ok){
     throw new Error(`GitHub evidence lookup failed (${response.status}) for ${path}`);
   }
@@ -65,13 +80,23 @@ export function validateGithubProductionApprovalEvidence({env=process.env,pr,rev
 
   const repository=clean(env.GITHUB_REPOSITORY);
   requireValue(/^[^/\s]+\/[^/\s]+$/.test(repository),"GITHUB_REPOSITORY must identify the release repository as owner/name");
+  const authorization=parseAuthorizationReference(env);
+  requireValue(
+    authorization.repository.toLowerCase()===repository.toLowerCase(),
+    "Production authorization reference belongs to a different repository"
+  );
 
-  const prNumber=parsePositiveInteger(env.DATANEST_UI_AUTHORIZATION_PR_NUMBER,"DATANEST_UI_AUTHORIZATION_PR_NUMBER");
-  const reviewer=clean(env.DATANEST_UI_AUTHORIZATION_REVIEWER);
-  requireValue(reviewer,"DATANEST_UI_AUTHORIZATION_REVIEWER is required");
+  const explicitPr=clean(env.DATANEST_UI_AUTHORIZATION_PR_NUMBER);
+  if(explicitPr){
+    requireValue(
+      parsePositiveInteger(explicitPr,"DATANEST_UI_AUTHORIZATION_PR_NUMBER")===authorization.prNumber,
+      "Production authorization PR number conflicts with DATANEST_UI_AUTHORIZATION_REF"
+    );
+  }
+  const expectedReviewer=clean(env.DATANEST_UI_AUTHORIZATION_REVIEWER);
 
   requireValue(pr && typeof pr==="object","GitHub production-authorization PR evidence is missing");
-  requireValue(Number(pr.number)===prNumber,"Production authorization PR number does not match the requested PR");
+  requireValue(Number(pr.number)===authorization.prNumber,"Production authorization PR number does not match the reference");
   requireValue(pr.base?.ref==="main","Production authorization PR must target main");
   if(pr.base?.repo?.full_name){
     requireValue(
@@ -87,17 +112,36 @@ export function validateGithubProductionApprovalEvidence({env=process.env,pr,rev
 
   const candidateSha=clean(pr.head?.sha);
   requireValue(SHA_RE.test(candidateSha),"Production authorization PR head SHA is unavailable");
+  requireValue(
+    candidateSha.toLowerCase()===authorization.candidateSha.toLowerCase(),
+    "Production authorization reference is not bound to the current PR head commit"
+  );
   requireValue(Array.isArray(reviews),"GitHub production-authorization review evidence is missing");
 
   const currentHeadReviews=reviews.filter(review=>clean(review?.commit_id).toLowerCase()===candidateSha.toLowerCase());
+  const referencedReview=currentHeadReviews.find(review=>Number(review?.id)===authorization.reviewId);
+  requireValue(referencedReview,"Referenced GitHub review was not found on the current PR head commit");
+  requireValue(
+    String(referencedReview.state||"").toUpperCase()==="APPROVED",
+    "Referenced GitHub review is not APPROVED"
+  );
+  const reviewer=clean(referencedReview?.user?.login);
+  requireValue(reviewer,"Referenced GitHub review has no reviewer identity");
+  if(expectedReviewer){
+    requireValue(
+      reviewer.toLowerCase()===expectedReviewer.toLowerCase(),
+      "Referenced GitHub review was submitted by a different reviewer"
+    );
+  }
+
   const reviewerReviews=currentHeadReviews.filter(
     review=>clean(review?.user?.login).toLowerCase()===reviewer.toLowerCase()
   );
-  const approval=latestDecisiveReview(reviewerReviews);
-  requireValue(approval,"No commit-bound review decision was found for the required production reviewer");
+  const latestReviewerDecision=latestDecisiveReview(reviewerReviews);
   requireValue(
-    String(approval.state||"").toUpperCase()==="APPROVED",
-    "The required production reviewer has not approved the current PR head commit"
+    latestReviewerDecision && Number(latestReviewerDecision.id)===authorization.reviewId &&
+      String(latestReviewerDecision.state||"").toUpperCase()==="APPROVED",
+    "Referenced approval is stale or was superseded by a later reviewer decision"
   );
 
   const latestByReviewer=new Map();
@@ -113,20 +157,17 @@ export function validateGithubProductionApprovalEvidence({env=process.env,pr,rev
     }
   }
 
-  const reviewId=Number(approval.id);
-  requireValue(Number.isSafeInteger(reviewId) && reviewId>0,"Verified production approval review ID is invalid");
-
   return {
     verified:true,
     source:"github_pull_request_review",
     repository,
-    prNumber,
-    reviewer:clean(approval.user?.login),
-    reviewId,
+    prNumber:authorization.prNumber,
+    reviewer,
+    reviewId:authorization.reviewId,
     reviewCommitSha:candidateSha,
     releaseSha,
     mergedAt:clean(pr.merged_at),
-    reference:`github:${repository}#${prNumber}:review:${reviewId}@${candidateSha}`
+    reference:`github:${repository}#${authorization.prNumber}:review:${authorization.reviewId}@${candidateSha}`
   };
 }
 
@@ -140,9 +181,13 @@ export async function verifyGithubProductionApproval(env=process.env,{fetchImpl=
 
   const repository=clean(env.GITHUB_REPOSITORY);
   requireValue(/^[^/\s]+\/[^/\s]+$/.test(repository),"GITHUB_REPOSITORY must identify the release repository as owner/name");
-  const prNumber=parsePositiveInteger(env.DATANEST_UI_AUTHORIZATION_PR_NUMBER,"DATANEST_UI_AUTHORIZATION_PR_NUMBER");
-  const pr=await githubJson(`/repos/${repository}/pulls/${prNumber}`,env,fetchImpl);
-  const reviews=await githubJson(`/repos/${repository}/pulls/${prNumber}/reviews?per_page=100`,env,fetchImpl);
+  const authorization=parseAuthorizationReference(env);
+  requireValue(
+    authorization.repository.toLowerCase()===repository.toLowerCase(),
+    "Production authorization reference belongs to a different repository"
+  );
+  const pr=await githubJson(`/repos/${repository}/pulls/${authorization.prNumber}`,env,fetchImpl);
+  const reviews=await githubJson(`/repos/${repository}/pulls/${authorization.prNumber}/reviews?per_page=100`,env,fetchImpl);
   return validateGithubProductionApprovalEvidence({env,pr,reviews});
 }
 
