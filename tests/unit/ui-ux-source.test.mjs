@@ -238,6 +238,17 @@ test("entry experience is usable before session resolution completes", () => {
   assert.match(authGateSource, /JavaScript is required to sign in/);
 });
 
+test("signed-in home collapses duplicate navigation cards into one task-oriented intent bar", () => {
+  assert.match(homeSource, /className="panel homeIntentBar"/);
+  assert.match(homeSource, /aria-label="Current project intent"/);
+  assert.match(homeSource, /Review blocked work/);
+  assert.match(homeSource, /Create governed work/);
+  assert.doesNotMatch(homeSource, /aria-label="Continue your work"/);
+  assert.doesNotMatch(homeSource, /aria-label="Needs attention"/);
+  assert.doesNotMatch(homeSource, /aria-label="Applications"/);
+  assert.match(cssSource, /\.homeIntentBar\{/);
+});
+
 test("theme control is contextual rather than a persistent signed-in overlay", () => {
   const layoutSource = fs.readFileSync(path.join(repoRoot, "src/app/layout.tsx"), "utf8");
   assert.doesNotMatch(layoutSource, /themeControlDock/);
