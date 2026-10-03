@@ -1,7 +1,16 @@
 export const DATANEST_PLATFORM_NAME = "Resonance DataNest";
-export const RONSAS_PRODUCT_NAME = "RONSAS";
-export const RONSAS_FULL_NAME = "Resonance Open Nova Sovereign Application Suite";
-export const RONSAS_PRODUCT_PATH = "DataNest > Products > RONSAS";
+export const RESONANCE_PRODUCT_NAME = "Resonance";
+export const RESONANCE_FULL_NAME = "Resonance Application Suite";
+
+/**
+ * Stable technical aliases retained for migration-safe internal consumers.
+ * Customer-facing surfaces should use the Resonance names above.
+ */
+export const RONSAS_PRODUCT_NAME = RESONANCE_PRODUCT_NAME;
+export const RONSAS_FULL_NAME = RESONANCE_FULL_NAME;
+export const RONSAS_TECHNICAL_IDENTIFIER = "RONSAS";
+export const RONSAS_PRODUCT_PATH = "DataNest > Products > Resonance";
+
 export const FREE_PROMOTION_LABEL = "FREE PROMOTION · BILLING OFF";
 
 export const SPARKS_WORKSPACE_DESCRIPTION = "Use earned contribution utility for approved project services.";
