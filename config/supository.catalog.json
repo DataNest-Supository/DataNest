@@ -476,7 +476,82 @@
         "ronsas-shared"
       ]
     },
-    "transitionRule": "Do not delete or disable an existing Resonance application solely because its commercial role is being consolidated. Promotion to independent product status requires demonstrated demand, differentiated value, and evidence-backed operating capacity."
+    "transitionRule": "Do not delete or disable an existing Resonance application solely because its commercial role is being consolidated. Promotion to independent product status requires demonstrated demand, differentiated value, and evidence-backed operating capacity.",
+    "pricingArchitecture": {
+      "principle": "Price primary journeys, not every implementation surface. Modules expand a primary product rather than create competing purchase decisions.",
+      "families": {
+        "career": {
+          "primaryProduct": "ronsas-career-compass",
+          "model": "independent-subscription",
+          "priceBaselineRequired": true
+        },
+        "create": {
+          "primaryProduct": "ronsas-creative-studio",
+          "model": "creator-workspace-subscription",
+          "modules": [
+            "ronsas-lyricsync-studio",
+            "ronsas-syncvision",
+            "ronsas-epublisher"
+          ],
+          "priceBaselineRequired": true
+        },
+        "grow": {
+          "primaryProduct": "ronsas-creative-studio",
+          "model": "growth-add-on-or-included-tier",
+          "acquisitionTool": "ronsas-scene-song-spark",
+          "module": "ronsas-youtube-optimizer",
+          "priceBaselineRequired": true
+        },
+        "build": {
+          "primaryProduct": "ronsas-sovereign-forge",
+          "model": "professional-or-b2b",
+          "priceBaselineRequired": true
+        }
+      },
+      "numericPrices": "not_asserted_without_explicit_commercial_baseline_and_conversion_evidence"
+    },
+    "acquisitionFunnel": {
+      "sequence": [
+        "discovery",
+        "product-page-visit",
+        "demo-or-free-use",
+        "registration",
+        "activation",
+        "first-value",
+        "repeat-use",
+        "subscription-intent",
+        "subscription",
+        "expansion",
+        "referral"
+      ],
+      "acquisitionEntryPoints": [
+        "ronsas-scene-song-spark",
+        "ronsas-career-compass",
+        "ronsas-creative-studio",
+        "ronsas-sovereign-forge"
+      ],
+      "conversionDestinations": [
+        "ronsas-career-compass",
+        "ronsas-creative-studio",
+        "ronsas-sovereign-forge"
+      ]
+    },
+    "publicInformationArchitecture": {
+      "topLevelFamilies": [
+        "career",
+        "create",
+        "grow",
+        "build"
+      ],
+      "creatorJourney": [
+        "create",
+        "lyrics-and-sync",
+        "media-sync",
+        "publish",
+        "grow"
+      ],
+      "rule": "Customer-facing navigation should show family and journey context before exposing implementation-level module names."
+    }
   },
   "portfolioBranding": {
     "customerFacingName": "Resonance",
