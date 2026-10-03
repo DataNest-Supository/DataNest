@@ -110,8 +110,14 @@ export default function AuthGate() {
     setMessage("");
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
+      if (data.session) {
+        setSession(data.session);
+        setStartup("signed-in");
+        setCheckingSession(false);
+        setStartupMessage("");
+      }
     } catch (error) {
       setMessage(friendlyAuthError(error,"We couldn’t sign you in. Please try again."));
     } finally {
