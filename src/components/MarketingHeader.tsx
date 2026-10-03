@@ -17,8 +17,8 @@ export default function MarketingHeader(){
       </nav>
       <div className="marketingHeaderActions">
         <ThemeControl compact />
-        <Link href="/workspace/" className="marketingSignIn">Workspace</Link>
-        <Link href="/contact/" className="marketingCta">Request assessment</Link>
+        <Link href="/workspace/" className="marketingSignIn" data-commercial-event="workspace_access_started" data-commercial-cta="header-workspace">Workspace</Link>
+        <Link href="/contact/" className="marketingCta" data-commercial-event="lead_started" data-commercial-service="assessment" data-commercial-cta="header-request-assessment">Request assessment</Link>
       </div>
     </header>
   );
