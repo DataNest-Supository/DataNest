@@ -4,17 +4,19 @@ export type RonsasHostedApp = {
   aliases:readonly string[];
   launchKind:"datanest-pages"|"external-ssr";
   href?:string;
+  family:"career"|"create"|"grow"|"build";
+  role:"primary"|"module"|"acquisition";
 };
 
 export const RONSAS_HOSTED_APPS:readonly RonsasHostedApp[] = [
-  {slug:"career-compass",name:"Career Compass",aliases:[],launchKind:"datanest-pages"},
-  {slug:"creative-studio",name:"Creative Studio",aliases:[],launchKind:"datanest-pages"},
-  {slug:"epublisher",name:"ePublisher",aliases:["Epublisher","e Publisher"],launchKind:"datanest-pages"},
-  {slug:"lyricsync-studio",name:"LyricSync Studio",aliases:["Lyric Sync Studio"],launchKind:"datanest-pages"},
-  {slug:"scene-song-spark",name:"Scene Song Spark",aliases:[],launchKind:"datanest-pages"},
-  {slug:"sovereign-forge",name:"SovereignForge",aliases:["Sovereign Forge"],launchKind:"datanest-pages"},
-  {slug:"syncvision",name:"Sync Vision",aliases:["SyncVision"],launchKind:"datanest-pages"},
-  {slug:"youtube-optimizer",name:"YouTube Optimizer",aliases:["YouTubeOptimizer"],launchKind:"external-ssr",href:"https://youtubeoptimizer.life"},
+  {slug:"career-compass",name:"Career Compass",aliases:["Resonance Career Compass"],launchKind:"datanest-pages",family:"career",role:"primary"},
+  {slug:"creative-studio",name:"Resonance Creator Studio",aliases:["Creative Studio","RONSAS Creator Studio"],launchKind:"datanest-pages",family:"create",role:"primary"},
+  {slug:"epublisher",name:"Resonance Publish",aliases:["ePublisher","Epublisher","e Publisher","Publish"],launchKind:"datanest-pages",family:"create",role:"module"},
+  {slug:"lyricsync-studio",name:"Resonance Lyrics & Sync",aliases:["LyricSync Studio","Lyric Sync Studio","Lyrics & Sync"],launchKind:"datanest-pages",family:"create",role:"module"},
+  {slug:"scene-song-spark",name:"SongSpark",aliases:["Scene Song Spark","SceneSongSpark"],launchKind:"datanest-pages",family:"grow",role:"acquisition"},
+  {slug:"sovereign-forge",name:"Sovereign Forge",aliases:["SovereignForge"],launchKind:"datanest-pages",family:"build",role:"primary"},
+  {slug:"syncvision",name:"Resonance Media Sync",aliases:["Sync Vision","SyncVision","Media Sync"],launchKind:"datanest-pages",family:"create",role:"module"},
+  {slug:"youtube-optimizer",name:"Resonance Creator Growth",aliases:["YouTube Optimizer","YouTubeOptimizer","Creator Growth"],launchKind:"external-ssr",href:"https://youtubeoptimizer.life",family:"grow",role:"module"},
 ];
 
 function normalizeAppName(value:string){
