@@ -395,6 +395,52 @@ Career Compass and Sovereign Forge retain independent commercial journeys becaus
 
 Portfolio optimization must distinguish between **commercial consolidation** and **technical retirement**. No Resonance application is to be deleted, disabled or removed from production solely because its commercial positioning becomes a module, acquisition tool or infrastructure capability. Retirement requires separate evidence of redundancy, migration readiness, dependency closure, user-impact assessment and explicit authorization.
 
+### 11.1 Commercial packaging and growth model
+
+Resonance presents a consolidated commercial portfolio while preserving separate technical implementation surfaces for governance and delivery.
+
+| Family | Primary customer surface | Module / acquisition treatment |
+| --- | --- | --- |
+| Career | Career Compass | Independent journey |
+| Create | Resonance Creator Studio | Resonance Lyrics & Sync, Resonance Media Sync, Resonance Publish |
+| Grow | Creator growth pathway | SongSpark is the acquisition utility; Resonance Creator Growth is the growth module |
+| Build | Sovereign Forge | Resonance AppDev, Resonance Control Center and shared backend capabilities remain infrastructure |
+
+The creator journey is intentionally sequential:
+
+```
+discovery / SongSpark or public content
+        → Resonance identity / registration
+        → Resonance Creator Studio
+        → create → lyrics & sync → media sync → publish → grow
+        → repeat use / paid capability
+        → professional expansion where applicable
+```
+
+### 11.2 Pricing and commercial evidence rules
+
+Resonance pricing is organized at the family/primary-product level. Modules should normally expand the value of an existing customer relationship rather than create separate purchase decisions. Numeric pricing is not treated as established until supported by an explicit commercial baseline, capability evidence, unit economics or conversion evidence, defined period and human review.
+
+### 11.3 Acquisition and conversion instrumentation
+
+Commercial analytics should use one canonical funnel across public Resonance surfaces:
+
+```
+impression
+  → product-page visit
+  → demo or free use
+  → registration
+  → activation
+  → first value
+  → repeat use
+  → subscription intent
+  → subscription
+  → expansion
+  → referral
+```
+
+Technical application events may retain stable RONSAS identifiers for compatibility, but customer-facing analytics dimensions should use the Resonance product names and four commercial families.
+
 ### 11.1 Platform capabilities
 
 DataNest currently includes or governs capabilities for:
