@@ -16,8 +16,8 @@ DataNest is structured to convert market need into governed, evidence-backed dig
 
 ### Assess
 
-- Regulatory & Controls Baseline — R7,500 once-off
-- Compliance Readiness Review — R15,000 once-off
+- Regulatory & Controls Baseline — R8,500 once-off
+- Compliance Readiness Review — R17,500 once-off
 - Technical Audit & Evidence Pack — R25,000 once-off
 
 ### Build / improve
@@ -30,10 +30,10 @@ Verification, retest, evidence packaging, executive reporting and implementation
 
 ### Operate
 
-- Continuous Digital Oversight — R6,500/month
-- Enterprise Oversight — R15,000/month
+- Continuous Digital Oversight — R7,500/month
+- Enterprise Oversight — R18,500/month
 - Specialist Advisory — R1,850/hour
-- Specialist Day — R12,500/day
+- Specialist Day — R14,800/day
 
 These are the currently published launch prices. They are not forecasts or guarantees; final scope, taxes, third-party costs and regulated-activity boundaries remain subject to written agreement.
 
@@ -109,3 +109,36 @@ DataNest must continue to distinguish:
 **claim → evidence → readiness → independent verification → formal status**
 
 A management-system mapping is not certification. A readiness review is not statutory approval. An AI recommendation is not human authorization.
+
+
+## Financial claim initiation
+
+The current commercial price book is the authoritative public list-price basis for DataNest services.
+
+### Published annualized list-price values
+
+| Offer | Monthly price | Annualized list-price value |
+|---|---:|---:|
+| Continuous Digital Oversight | R7,500 | R90,000 |
+| Enterprise Oversight | R18,500 | R222,000 |
+
+These are contract-price arithmetic, not realised revenue.
+
+### Illustrative order-book arithmetic
+
+At the current list prices, a hypothetical month containing:
+- 1 Regulatory & Controls Baseline;
+- 1 Compliance Readiness Review;
+- 1 Technical Audit & Evidence Pack; and
+- 1 month of Continuous Digital Oversight
+
+has a list-price value of **R58,500 before VAT and other excluded costs**.
+
+This is an arithmetic scenario only. It does not assert capacity, demand, conversion, collection, profitability or future revenue.
+
+### Claim controls
+
+- Price claims must match the published price book and effective date.
+- Revenue claims must identify the accounting/invoicing period and evidence source.
+- Forecasts require a historical baseline, explicit assumptions, capacity constraints, pipeline/conversion evidence and uncertainty.
+- VAT, tax, third-party costs, discounts, write-offs, refunds and bad debt must not be omitted when describing realised revenue.
