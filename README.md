@@ -1,6 +1,6 @@
 # DataNest
 
-**DataNest** is the master brand and canonical **DataNest Platform** operating/control system. It governs product intent, AppDev execution, evidence, lifecycle, promotion and delivery while preserving separate source, backend and delivery authorities.
+**Resonance AppDev** is the master brand of **Resonance Sole Proprietorship**. **DataNest** is its canonical operating/control system: it governs product intent, AppDev execution, evidence, lifecycle, promotion and delivery while preserving separate source, backend and delivery authorities.
 
 ### Declaration of Intent
 
@@ -14,9 +14,9 @@ The declaration is a governance pledge, not a certification, statutory designati
 
 
 
-## DataNest Assurance Services
+## Resonance AppDev Assurance Services
 
-DataNest Assurance Services provide **regulatory/readiness support, technical assurance, evidence preparation, remediation support and authorized digital oversight** within the authority actually established for each engagement.
+Resonance AppDev Assurance Services provide **regulatory/readiness support, technical assurance, evidence preparation, remediation support and authorized digital oversight** through DataNest, within the authority actually established for each engagement.
 
 - Public service page: **https://datanest-supository.github.io/DataNest/assurance/**
 - Commercial charter: [`docs/INDEPENDENT_REGULATORY_ASSURANCE_SERVICES.md`](docs/INDEPENDENT_REGULATORY_ASSURANCE_SERVICES.md)
@@ -61,15 +61,16 @@ DataNest separates the operating system from the businesses and products it gove
 
 | Layer | Public name | Role |
 | --- | --- | --- |
-| Master brand | **DataNest** | Business umbrella and public identity |
-| Operating system | **DataNest Platform** | Governance, AppDev control, orchestration, evidence, security, continuity and delivery |
+| Business | **Resonance Sole Proprietorship** | Legal/operating business identity |
+| Master brand | **Resonance AppDev** | Public master brand |
+| Operating system | **DataNest** | Governance, AppDev control, orchestration, evidence, security, continuity and delivery |
 | Portfolio registry | **DataNest Portfolio Registry** | Canonical catalog of products, services, routes, components and authorities |
 | Customer suite | **Resonance** | Career, Create and Grow customer applications |
-| Professional line | **Sovereign Forge** | Professional/B2B engineering and sovereignty capability |
-| Service line | **DataNest Assurance Services** | Readiness, assurance, evidence and authorized professional services |
+| Professional line | **Sovereign Forge** | Professional/B2B engineering and sovereignty capability under Resonance AppDev |
+| Service line | **Resonance AppDev Assurance Services** | Readiness, assurance, evidence and authorized professional services |
 | Technical identifier | **RONSAS** | Stable identifier for the Resonance implementation estate |
 
-Customer-facing pages should lead with customer intent and outcome. Repository names, internal control-tree names, technical slugs and historical identifiers remain implementation details.
+Customer-facing pages should lead with the Resonance AppDev master brand and customer intent. Repository names, internal control-tree names, technical slugs and historical identifiers remain implementation details.
 
 ## Canonical stack
 
@@ -135,7 +136,7 @@ The Portfolio Registry scope includes source/provenance, lifecycle state, delive
 - Mirror promotion contract: [`docs/MIRROR_DATANEST_PROMOTION.md`](docs/MIRROR_DATANEST_PROMOTION.md)
 - Target Forge namespace: `git.reson8.life/DataNest-Supository/DataNest`
 
-New products, services and AppDev projects should be registered through the Portfolio Registry even when their source or runtime lives in a separate repository or provider.
+New products, services and AppDev projects should be registered through the Portfolio Registry even when their source or runtime lives in a separate repository or provider, under the Resonance AppDev master-brand hierarchy.
 
 ## Target-state architecture concepts
 
