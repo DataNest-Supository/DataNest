@@ -96,7 +96,7 @@ function resonanceCommercialLabel(slug:string){
     "scene-song-spark":"Grow · Acquisition utility",
     "syncvision":"Create · Media Sync module",
     "youtube-optimizer":"Grow · Creator Growth module",
-    "sovereign-forge":"Build · Primary product",
+    "sovereign-forge":"Professional · Independent product",
   };
   return labels[slug]||"Resonance product";
 }
@@ -105,7 +105,7 @@ function resonanceCommercialGroup(slug:string){
   if(slug==="career-compass")return "Career";
   if(slug==="creative-studio"||slug==="epublisher"||slug==="lyricsync-studio"||slug==="syncvision")return "Create";
   if(slug==="scene-song-spark"||slug==="youtube-optimizer")return "Grow";
-  if(slug==="sovereign-forge")return "Build";
+  if(slug==="sovereign-forge")return "Professional";
   return "Platform";
 }
 
