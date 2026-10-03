@@ -9,14 +9,14 @@ export const metadata={
 };
 
 const products=[
-  ["DataNest","Platform","Governed planning, AI collaboration, execution, evidence, transparency and product governance.","See platform →"],
-  ["Career Compass","RONSAS app","Career-planning workflow designed as a low-friction recurring utility.","Standard R149/mo · Pro R299/mo"],
-  ["Creative Studio","RONSAS app","Creative generation, studio workflows, moodboards, product work and library.","Creator R249/mo · Studio R699/mo · Team R1,499/mo"],
-  ["ePublisher","RONSAS app","Publishing/export workflow with hosted premium features and quota-aware operation.","Creator R149/mo · Publisher R399/mo · Studio R899/mo"],
-  ["LyricSync Studio","RONSAS app","Deterministic lyric timing and LRC export without an external service dependency.","Standard R99/mo · Studio R199/mo"],
-  ["Scene Song Spark","RONSAS app","Deterministic scene/song ideation from concept, mood, duration and scene count.","Creator R79/mo · Studio R199/mo"],
-  ["Sovereign Forge","RONSAS app","Governed project manifest/build tooling with DataNest as source authority.","Community free · Pro R499/mo · Team R1,499/mo · Enterprise"],
-  ["SyncVision","RONSAS app","Music-video treatment, scene direction, rendering, vocal sync and delivery workflow.","Creator R299/mo · Studio R799/mo · Pro R1,499/mo"],
+  ["DataNest","Platform","Governed planning, AI collaboration, execution, evidence, transparency and product governance.","Workspace access","datanest"],
+  ["Career Compass","RONSAS app","Career-planning workflow designed as a low-friction recurring utility.","Standard R149/mo · Pro R299/mo","career-compass"],
+  ["Creative Studio","RONSAS app","Creative generation, studio workflows, moodboards, product work and library.","Creator R249/mo · Studio R699/mo · Team R1,499/mo","creative-studio"],
+  ["ePublisher","RONSAS app","Publishing/export workflow with hosted premium features and quota-aware operation.","Creator R149/mo · Publisher R399/mo · Studio R899/mo","epublisher"],
+  ["LyricSync Studio","RONSAS app","Deterministic lyric timing and LRC export without an external service dependency.","Standard R99/mo · Studio R199/mo","lyricsync-studio"],
+  ["Scene Song Spark","RONSAS app","Deterministic scene/song ideation from concept, mood, duration and scene count.","Creator R79/mo · Studio R199/mo","scene-song-spark"],
+  ["Sovereign Forge","RONSAS app","Governed project manifest/build tooling with DataNest as source authority.","Community free · Pro R499/mo · Team R1,499/mo · Enterprise","sovereign-forge"],
+  ["SyncVision","RONSAS app","Music-video treatment, scene direction, rendering, vocal sync and delivery workflow.","Creator R299/mo · Studio R799/mo · Pro R1,499/mo","syncvision"],
   ["YouTube Optimizer","RONSAS app","YouTube channel audits, content ideas, trends, monetisation and scheduling.","Creator R249/mo · Growth R649/mo · Agency R1,499/mo · Enterprise","youtube-optimizer"]
 ];
 
