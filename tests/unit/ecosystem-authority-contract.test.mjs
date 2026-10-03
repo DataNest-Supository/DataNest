@@ -16,10 +16,10 @@ test("canonical ecosystem authority constants are exported with exact approved v
     "src/lib/ecosystemAuthority.ts must define the canonical authority copy"
   );
   const authority=await import(pathToFileURL(authorityPath).href);
-  assert.equal(authority.DATANEST_PLATFORM_NAME,"Resonance DataNest");
-  assert.equal(authority.RONSAS_PRODUCT_NAME,"RONSAS");
-  assert.equal(authority.RONSAS_FULL_NAME,"Resonance Open Nova Sovereign Application Suite");
-  assert.equal(authority.RONSAS_PRODUCT_PATH,"DataNest > Products > RONSAS");
+  assert.equal(authority.DATANEST_PLATFORM_NAME,"DataNest");
+  assert.equal(authority.RONSAS_PRODUCT_NAME,"Resonance");
+  assert.equal(authority.RONSAS_FULL_NAME,"Resonance Application Suite");
+  assert.equal(authority.RONSAS_PRODUCT_PATH,"Resonance AppDev > DataNest > Products > Resonance");
   assert.equal(authority.FREE_PROMOTION_LABEL,"FREE PROMOTION · BILLING OFF");
   assert.equal(authority.SPARKS_WORKSPACE_DESCRIPTION,"Use earned contribution utility for approved project services.");
   assert.equal(authority.SPARKS_TASK_START,"Review earned Sparks and approved project services before reserving utility for a governed service.");
@@ -29,9 +29,9 @@ test("canonical ecosystem authority constants are exported with exact approved v
 
 test("Products consumes the canonical RONSAS and free-promotion authority copy",()=>{
   assert.match(products,/from "@\/lib\/ecosystemAuthority"/);
-  assert.match(products,/RONSAS_FULL_NAME/);
+  assert.match(products,/RESONANCE_FULL_NAME/);
   assert.match(products,/FREE_PROMOTION_LABEL/);
-  assert.doesNotMatch(products,/const RONSAS_FULL_NAME=/);
+  assert.doesNotMatch(products,/const RESONANCE_FULL_NAME=/);
 });
 
 test("Sparks workspace guidance consumes canonical internal-utility copy",()=>{
