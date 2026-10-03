@@ -91,7 +91,7 @@ test("Portfolio Registry preserves pending ownership, composition, and product c
   await expect(page.locator(".resonancePortfolioDetails")).toContainText("maintained");
   await expect(page.getByRole("region",{name:"Resonance Product Structure"})).toContainText("Transcription Capability");
   await expect(page.getByRole("region",{name:"Resonance Product Structure"})).toContainText("Provider X");
-  await expect(page.getByRole("region",{name:"Resonance Product Structure"})).toContainText("Sync Vision");
+  await expect(page.getByRole("region",{name:"Resonance Product Structure"})).toContainText("Resonance Media Sync");
 
   await page.getByRole("button",{name:"Portfolio Registry",exact:true}).click();
   await page.getByRole("button",{name:/Candidate Studio/}).click();
