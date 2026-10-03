@@ -668,6 +668,16 @@ test("Think Tank message drafts are isolated per selected thread", () => {
 });
 
 
+test("authentication startup follows Supabase auth lifecycle without a competing getSession request", () => {
+  assert.match(authGateSource, /onAuthStateChange\(\(event, nextSession\)/);
+  assert.match(authGateSource, /if\(event === "PASSWORD_RECOVERY" \|\| flowType === "invite" \|\| flowType === "recovery"\)/);
+  assert.match(authGateSource, /window\.setTimeout\(\(\) => \{/);
+  assert.match(authGateSource, /window\.clearTimeout\(timeoutId\)/);
+  assert.doesNotMatch(authGateSource, /auth\.getSession\(/);
+  assert.doesNotMatch(authGateSource, /withTimeout\(supabase\.auth/);
+  assert.match(authGateSource, /onClick=\{retrySessionCheck\}/);
+});
+
 test("authentication credentials are excluded from browser-session draft persistence", () => {
   assert.match(authGateSource, /const \[password, setPassword\] = useState\(""\)/);
   assert.match(authGateSource, /const \[newPassword, setNewPasswordValue\] = useState\(""\)/);
