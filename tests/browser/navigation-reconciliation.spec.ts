@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { setupUiGovernanceFixture } from "./ui-governance-fixture";
 
 const appPath=process.env.DATANEST_APP_PATH||"/";
+const appViewPath=(view:string)=>appPath+(appPath.includes("?")?"&":"?")+"view="+view;
 
 test("sidebar workspace finder restores focus and preserves deep-link navigation",async({page})=>{
   await setupUiGovernanceFixture(page);
@@ -38,6 +39,7 @@ test("mobile navigation contains focus, isolates the workspace and restores its 
   const menu=page.getByRole("button",{name:"Open menu",exact:true});
   const sidebar=page.locator("#datanest-navigation");
   const main=page.locator("main.mainPane");
+  const skipLink=page.locator(".skipLink");
 
   await expect(sidebar).toHaveAttribute("inert","");
   await menu.click();
@@ -47,6 +49,8 @@ test("mobile navigation contains focus, isolates the workspace and restores its 
   const signOut=dialog.getByRole("button",{name:"Sign out",exact:true});
   await expect(close).toBeFocused();
   await expect(main).toHaveAttribute("inert","");
+  await expect(skipLink).toHaveAttribute("inert","");
+  await expect(skipLink).toHaveAttribute("aria-hidden","true");
   await expect.poll(()=>page.evaluate(()=>document.body.style.overflow)).toBe("hidden");
 
   await close.press("Shift+Tab");
@@ -58,6 +62,8 @@ test("mobile navigation contains focus, isolates the workspace and restores its 
   await expect(menu).toBeFocused();
   await expect(sidebar).toHaveAttribute("inert","");
   await expect(main).not.toHaveAttribute("inert");
+  await expect(skipLink).not.toHaveAttribute("inert");
+  await expect(skipLink).not.toHaveAttribute("aria-hidden");
   await expect.poll(()=>page.evaluate(()=>document.body.style.overflow)).not.toBe("hidden");
 
   await menu.click();
@@ -75,6 +81,29 @@ test("mobile navigation contains focus, isolates the workspace and restores its 
   await expect(sidebar).not.toHaveAttribute("inert");
   await expect(main).not.toHaveAttribute("inert");
   await expect.poll(()=>page.evaluate(()=>document.body.style.overflow)).not.toBe("hidden");
+});
+
+test("mobile same-view sidebar shortcuts restore focus to safe destinations",async({page})=>{
+  await setupUiGovernanceFixture(page);
+  await page.addInitScript(()=>window.localStorage.setItem("datanest:admin-rd-test-mode","enabled"));
+  await page.setViewportSize({width:390,height:844});
+
+  await page.goto(appViewPath("settings"));
+  const menu=page.getByRole("button",{name:"Open menu",exact:true});
+  const sidebar=page.locator("#datanest-navigation");
+
+  await menu.click();
+  await page.locator(".accountSecurityShortcut").click();
+  await expect(sidebar).toHaveAttribute("inert","");
+  await expect(page.locator("#account-security")).toBeFocused();
+
+  await page.goto(appViewPath("productlab"));
+  await menu.click();
+  const productLabShortcut=page.getByRole("button",{name:"Review in Product Lab",exact:true});
+  await expect(productLabShortcut).toBeVisible();
+  await productLabShortcut.click();
+  await expect(sidebar).toHaveAttribute("inert","");
+  await expect(menu).toBeFocused();
 });
 
 test("R&D Test Mode exposes a disabled busy state and announces mirror sync failure",async({page,context})=>{
