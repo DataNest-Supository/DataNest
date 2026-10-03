@@ -149,3 +149,17 @@ This is an arithmetic scenario only. It does not assert capacity, demand, conver
 RONSAS standard list pricing is maintained separately in `docs/RONSAS_COMMERCIAL_PRICE_BOOK.md`. The machine-readable Supository catalog mirrors the product price/status metadata.
 
 Current free-access promotions remain R0 where explicitly enabled. Standard list prices are commercial price-book claims and are not treated as realised revenue. Paid activation requires the relevant product entitlement and billing implementation.
+
+
+## Rollout strategy
+
+The executable acquisition-to-revenue sequence is maintained in [docs/DATANEST_RONSAS_ROLLOUT_STRATEGY.md](DATANEST_RONSAS_ROLLOUT_STRATEGY.md).
+
+The rollout operates two engines:
+
+- **RONSAS Product-Led Growth:** discovery → registration → activation → pricing intent → subscription → expansion.
+- **DataNest Sales-Assisted Revenue:** lead → qualification → assessment → implementation → evidence → recurring oversight → expansion.
+
+RONSAS remains in free-promotion/pre-billing states until product-specific activation, cost, entitlement, checkout, support and financial-control gates are satisfied. The current free period is therefore an acquisition and measurement mechanism, not a realised revenue claim.
+
+The assurance catalogue provides the immediate human-assisted commercial engine while RONSAS subscription economics mature.
