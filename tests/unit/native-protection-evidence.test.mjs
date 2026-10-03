@@ -46,7 +46,7 @@ test("native protection audit exposes deep canonical and automation observations
 test("native protection reconciliation requires an explicit administration credential",()=>{
   const workflow=fs.readFileSync(".github/workflows/native-protection-reconcile.yml","utf8");
   assert.match(workflow,/DATANEST_GITHUB_ADMIN_TOKEN/);
-  assert.match(workflow,/Administration/);
+  assert.match(workflow,/administration credential/i);
   assert.match(workflow,/rulesets/);
   assert.match(workflow,/-X POST/);
   assert.match(workflow,/-X PUT/);
