@@ -12,7 +12,8 @@ DECLARE
 BEGIN
   SELECT id INTO v_project_id FROM public.projects WHERE slug = 'resonance-datanest' LIMIT 1;
   IF v_project_id IS NULL THEN
-    RAISE EXCEPTION 'Project resonance-datanest not found';
+    RAISE NOTICE 'Skipping Resonance alignment: prerequisite project resonance-datanest is absent in this replay database.';
+    RETURN;
   END IF;
 
   SELECT id INTO v_product_id
@@ -20,7 +21,8 @@ BEGIN
   WHERE project_id = v_project_id AND slug = 'ronsas'
   LIMIT 1;
   IF v_product_id IS NULL THEN
-    RAISE EXCEPTION 'Resonance product (technical slug ronsas) not found';
+    RAISE NOTICE 'Skipping Resonance alignment: prerequisite governed product ronsas is absent in this replay database.';
+    RETURN;
   END IF;
 
   SELECT user_id INTO v_proposed_by
@@ -29,7 +31,8 @@ BEGIN
   ORDER BY created_at
   LIMIT 1;
   IF v_proposed_by IS NULL THEN
-    RAISE EXCEPTION 'No active project owner available for proposed portfolio changes';
+    RAISE NOTICE 'Skipping Resonance alignment: no active project owner exists in this replay database.';
+    RETURN;
   END IF;
 
   SELECT id INTO v_ronsas_item_id
@@ -37,7 +40,8 @@ BEGIN
   WHERE project_id = v_project_id AND slug = 'ronsas'
   LIMIT 1;
   IF v_ronsas_item_id IS NULL THEN
-    RAISE EXCEPTION 'Resonance portfolio item (technical slug ronsas) not found';
+    RAISE NOTICE 'Skipping Resonance alignment: prerequisite portfolio item ronsas is absent in this replay database.';
+    RETURN;
   END IF;
 
   UPDATE public.products
