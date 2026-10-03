@@ -23,7 +23,7 @@ export default function PricingPage(){
     <section className="marketingSection">
       <div className="marketingSectionHead"><span className="marketingTag">Launch pricing · ZAR · effective 3 October 2026</span><h1>Defined commercial entry points.</h1><p>Published starting prices make it easier to understand the engagement. Prices are exclusive of VAT; final scope, authorisation, exclusions and applicable taxes or third-party costs are agreed in writing.</p></div>
       <div className="marketingGrid3">
-        {packages.map(([name,price,cadence,scope,summary])=><article className="marketingCard" key={name}><h3>{name}</h3><div className="marketingPrice">{price} <small>{cadence}</small></div><p><strong>Scope:</strong> {scope}</p><p style={{marginTop:8}}>{summary}</p><Link href="/contact/">Request this engagement →</Link></article>)}
+        {packages.map(([name,price,cadence,scope,summary])=><article className="marketingCard" key={name}><h3>{name}</h3><div className="marketingPrice">{price} <small>{cadence}</small></div><p><strong>Scope:</strong> {scope}</p><p style={{marginTop:8}}>{summary}</p><Link href={`/contact/?service=${encodeURIComponent(name)}`} data-commercial-event="pricing_intent" data-commercial-service={name} data-commercial-cta="pricing-request-engagement">Request this engagement →</Link></article>)}
       </div>
     </section>
     <section className="marketingSection">
@@ -43,6 +43,6 @@ export default function PricingPage(){
       </div>
       <div className="marketingNotice" style={{marginTop:18}}><strong>Financial-claim boundary:</strong> published prices and arithmetic list values are factual commercial terms. Realised revenue, profit, demand and forecasts require actual accounting, pipeline and capacity evidence.</div>
     </section>
-    <section className="marketingSection"><div className="marketingBand"><div><h2>Not sure which package fits?</h2><p>Start with a no-cost fit and scope screen.</p></div><Link className="marketingPrimary" href="/contact/">Request assessment</Link></div></section>
+    <section className="marketingSection"><div className="marketingBand"><div><h2>Not sure which package fits?</h2><p>Start with a no-cost fit and scope screen.</p></div><Link className="marketingPrimary" href="/contact/?service=assessment" data-commercial-event="lead_started" data-commercial-service="assessment" data-commercial-cta="pricing-assessment">Request assessment</Link></div></section>
   </main><MarketingFooter/></div>;
 }
