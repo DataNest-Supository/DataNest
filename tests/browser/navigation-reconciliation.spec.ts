@@ -3,16 +3,24 @@ import { setupUiGovernanceFixture } from "./ui-governance-fixture";
 
 const appPath=process.env.DATANEST_APP_PATH||"/";
 
-test("sidebar workspace finder opens quick switch and preserves deep-link navigation",async({page})=>{
+test("sidebar workspace finder restores focus and preserves deep-link navigation",async({page})=>{
   await setupUiGovernanceFixture(page);
   await page.setViewportSize({width:1440,height:1000});
   await page.goto(appPath);
 
-  await page.getByRole("button",{name:"Find a workspace"}).click();
+  const launcher=page.getByRole("button",{name:"Find a workspace"});
+  await launcher.click();
   const dialog=page.getByRole("dialog",{name:"Quick switch DataNest workspace"});
   await expect(dialog).toBeVisible();
 
   const search=dialog.getByRole("searchbox",{name:"Search DataNest workspaces"});
+  await expect(search).toBeFocused();
+  await search.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(launcher).toBeFocused();
+
+  await launcher.click();
+  await expect(dialog).toBeVisible();
   await expect(search).toBeFocused();
   await search.fill("TranScheduler");
   await search.press("Enter");
