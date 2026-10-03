@@ -58,11 +58,12 @@ export default function MobileNavigationA11yGuard(){
       if(workspaceAtOpen&&workspaceNow&&workspaceNow!==workspaceAtOpen)return;
 
       const accountSecurityAction=Boolean(lastSidebarAction?.closest(".accountSecurityShortcut"));
-      const accountSecurityTarget=accountSecurityAction
-        ? document.getElementById("account-security")
-        : null;
-      const menuLauncher=document.querySelector<HTMLElement>(MENU_LAUNCHER_SELECTOR);
-      const destination=accountSecurityTarget||menuLauncher;
+      // Account security owns a pending focus request inside DataNestApp. Let the
+      // owning component consume that request so it cannot replay on a later
+      // return to Settings.
+      if(accountSecurityAction)return;
+
+      const destination=document.querySelector<HTMLElement>(MENU_LAUNCHER_SELECTOR);
       if(!destination?.isConnected)return;
 
       window.cancelAnimationFrame(restoreFrame);

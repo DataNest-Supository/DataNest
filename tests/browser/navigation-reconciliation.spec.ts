@@ -85,6 +85,32 @@ test("mobile navigation contains focus, isolates the workspace and restores its 
 
 test("mobile same-view sidebar shortcuts restore focus to safe destinations",async({page})=>{
   await setupUiGovernanceFixture(page);
+  await page.route("https://fixture.supabase.co/rest/v1/rpc/get_owner_optimizer_workspace_v1",route=>route.fulfill({
+    status:200,
+    json:{
+      role:"owner",
+      can_manage:true,
+      can_approve:true,
+      settings:{
+        project_id:"00000000-0000-4000-8000-000000000010",
+        enabled:false,
+        cadence_hours:6,
+        max_suggestions:5,
+        last_run_at:null,
+        last_success_at:null,
+        next_run_after:null,
+        updated_at:"2026-10-03T00:00:00.000Z"
+      },
+      runs:[],
+      suggestions:[],
+      pending_count:0,
+      boundaries:{}
+    }
+  }));
+  await page.route("https://fixture.supabase.co/rest/v1/rpc/get_owner_governance_control_monitor_v1",route=>route.fulfill({
+    status:200,
+    json:{latest_run:null,runs:[],alerts:[],runtime_events:[],open_alert_count:0,boundaries:{}}
+  }));
   await page.addInitScript(()=>window.localStorage.setItem("datanest:admin-rd-test-mode","enabled"));
   await page.setViewportSize({width:390,height:844});
 
@@ -96,6 +122,15 @@ test("mobile same-view sidebar shortcuts restore focus to safe destinations",asy
   await page.locator(".accountSecurityShortcut").click();
   await expect(sidebar).toHaveAttribute("inert","");
   await expect(page.locator("#account-security")).toBeFocused();
+
+  // The same-view Account security focus request must be consumed immediately.
+  // Returning to Settings later should therefore use normal workspace-title focus.
+  await menu.click();
+  await page.getByRole("dialog",{name:"DataNest navigation"}).getByRole("button",{name:"DataNest AI",exact:true}).click();
+  await expect(page.locator("#workspace-title")).toBeFocused();
+  await menu.click();
+  await page.getByRole("dialog",{name:"DataNest navigation"}).getByRole("button",{name:"Settings",exact:true}).click();
+  await expect(page.locator("#workspace-title")).toBeFocused();
 
   await page.goto(appViewPath("productlab"));
   await menu.click();

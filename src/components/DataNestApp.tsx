@@ -1249,14 +1249,7 @@ export default function DataNestApp({session}:{session:Session}) {
   useEffect(()=>{ if(view==="settings") void loadPolicies(); },[view,loadPolicies]);
   useEffect(()=>{
     if(view!=="settings"||!pendingSettingsFocusRef.current)return;
-    const targetId=pendingSettingsFocusRef.current;
-    const frame=window.requestAnimationFrame(()=>{
-      const target=document.getElementById(targetId);
-      if(!target)return;
-      pendingSettingsFocusRef.current=null;
-      target.scrollIntoView({behavior:"smooth",block:"start"});
-      target.focus({preventScroll:true});
-    });
+    const frame=window.requestAnimationFrame(()=>focusPendingSettingsTarget());
     return()=>window.cancelAnimationFrame(frame);
   },[view]);
   useEffect(()=>{
@@ -1367,10 +1360,23 @@ export default function DataNestApp({session}:{session:Session}) {
     setMobileOpen(false);
   }
 
+  function focusPendingSettingsTarget(){
+    const targetId=pendingSettingsFocusRef.current;
+    if(!targetId)return false;
+    const target=document.getElementById(targetId);
+    if(!target)return false;
+    pendingSettingsFocusRef.current=null;
+    target.scrollIntoView({behavior:"smooth",block:"start"});
+    target.focus({preventScroll:true});
+    return true;
+  }
+
   function openAccountSecurity(){
+    const alreadyInSettings=view==="settings";
     pendingSettingsFocusRef.current="account-security";
     setView("settings");
     setMobileOpen(false);
+    if(alreadyInSettings)window.requestAnimationFrame(()=>focusPendingSettingsTarget());
   }
 
   async function signOut(){

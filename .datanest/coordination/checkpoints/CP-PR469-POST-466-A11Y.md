@@ -18,20 +18,28 @@ Codex added two P2 accessibility findings to #466 after #466 had already merged:
 
 These findings are intentionally handled in PR #469 rather than rewriting #466.
 
+## Final-head review remediation
+Codex reviewed head `c32f9a16ae7131dc98c1fa8e6eb3d78902c07c76` and surfaced one additional P2 before merge: same-view Account security restored visible focus without consuming `pendingSettingsFocusRef`, allowing that stale request to replay after navigating away and later returning to Settings. The remediation moves same-view Account security focus consumption into `DataNestApp`, where the pending request is cleared before focus is applied, and extends the browser regression to prove normal workspace-title focus on a later Settings return.
+
 ## Implemented scope
 - `src/components/platform/MobileNavigationA11yGuard.tsx`
   - isolates `.skipLink` with `inert` and `aria-hidden="true"` only while `#datanest-navigation` is the active modal dialog;
   - detects focus stranded in a closing mobile sidebar;
   - does not override cross-view focus reconciliation;
   - does not override focus ownership when another modal opens;
-  - sends same-view Account security to `#account-security`;
+  - defers Account security focus ownership to `DataNestApp` so its pending request is consumed;
   - sends other same-view stranded closures to the mobile menu launcher.
+- `src/components/DataNestApp.tsx`
+  - consumes the pending Account security focus request both when entering Settings and when Settings is already current;
+  - clears the request before focusing `#account-security`, preventing stale focus replay on a later return to Settings.
 - `src/app/layout.tsx`
   - mounts the guard once at the application root.
 - `tests/browser/navigation-reconciliation.spec.ts`
   - verifies skip-link isolation and release;
-  - verifies same-view Account security destination focus;
+  - verifies same-view Account security destination focus and that the request does not replay after leaving and returning to Settings;
   - verifies same-view Product Lab returns focus to the menu launcher.
+- `.github/workflows/pr-verification.yml`
+  - includes `navigation-reconciliation.spec.ts` in governed browser verification so the final PR head must prove these regressions in CI.
 
 ## Required validation before merge
 - `npm run check`
