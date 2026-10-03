@@ -238,7 +238,7 @@ function validateLaunchRegistry(root, failures) {
       failures.push(`Canonical Resonance app registry is missing DataNest Pages launch for ${slug}`);
     }
   }
-  if (!/slug:"youtube-optimizer"[\\s\\S]*?launchKind:"external-ssr"[\\s\\S]*?href:"https:\\/\\/youtubeoptimizer\\.life"/.test(source)) {
+  if (!/slug:"youtube-optimizer"[\\s\\S]*?launchKind:"external-ssr"[\\s\\S]*?href:"https:\/\/youtubeoptimizer\.life"/.test(source)) {
     failures.push("YouTube Optimizer must remain a governed external SSR launch at https://youtubeoptimizer.life");
   }
 }
