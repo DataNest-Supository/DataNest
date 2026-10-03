@@ -181,7 +181,7 @@ Initial activation definitions:
 | SyncVision | First completed treatment/storyboard ready for render |
 | YouTube Optimizer | First completed channel audit/report |
 
-The onboarding goal is to get the user to the relevant value event in minutes, not merely to complete registration. Current SaaS CRO guidance consistently treats activation and time-to-value as central conversion levers. citeturn820447search0turn820447search4
+The onboarding goal is to get the user to the relevant value event in minutes, not merely to complete registration. Current SaaS CRO guidance likewise treats activation and time-to-value as central conversion levers (Paddle, 25 March 2026: https://www.paddle.com/blog/saas-conversion-rate-optimization-fltr; Paddle onboarding guidance: https://www.paddle.com/resources/saas-onboarding).
 
 ### Stage 4 — Monetise proven demand
 **Days 46–75**
@@ -312,20 +312,20 @@ enterprise contract
 
 Do not force enterprise buyers through a consumer-style checkout.
 
-SaaS guidance similarly distinguishes simple self-serve B2C/B2B motions from higher-touch enterprise sales. citeturn820447search3turn820447search11
+SaaS guidance similarly distinguishes simple self-serve B2C/B2B motions from higher-touch enterprise sales (Paddle, 13 March 2026: https://www.paddle.com/blog/saas-pricing-models-strategies-fltr; HubSpot B2B SaaS guidance: https://blog.hubspot.com/marketing/b2b-saas-marketing).
 
 ## 6. Initial operating targets
 
 These are **internal optimisation targets, not forecasts or market guarantees**.
 
 ### Activation
-Aim to move product activation into an initial **25–40% operating band**, consistent with published PLG guidance that 20–40% activation is a common reference range. citeturn820447search9
+Aim to move product activation into an initial **25–40% operating band**, consistent with published PLG guidance that 20–40% activation is a common reference range (OpenView: https://openviewpartners.com/product-led-growth/).
 
 ### Paid conversion
-Once billing is activated, initially test a **10–20% free/trial-to-paid range among activated cohorts**, rather than applying a target to all registrations. Published SaaS sources commonly cite trial-to-paid ranges around 10–25%, but product type and onboarding materially change the result. citeturn820447search0
+Once billing is activated, initially test a **10–20% free/trial-to-paid range among activated cohorts**, rather than applying a target to all registrations. Published SaaS sources commonly cite trial-to-paid ranges around 10–25%, but product type and onboarding materially change the result (Paddle, 25 March 2026: https://www.paddle.com/blog/saas-conversion-rate-optimization-fltr).
 
 ### Onboarding
-Design for a first meaningful result within approximately **15 minutes or less**, then measure actual completion time and drop-off by product. citeturn820447search4
+Design for a first meaningful result within approximately **15 minutes or less**, then measure actual completion time and drop-off by product (Paddle onboarding guidance: https://www.paddle.com/resources/saas-onboarding).
 
 ### Commercial pipeline
 Track:
@@ -404,7 +404,7 @@ The exit condition for each product is evidence of:
 
 **activation → repeat usage → measurable unit cost → viable price → working checkout → working entitlement → working support/refund path.**
 
-This approach is particularly important for AI-heavy products because subscription pricing should account for marginal model/provider cost and usage behaviour. citeturn820447search1
+This approach is particularly important for AI-heavy products because subscription pricing should account for marginal model/provider cost and usage behaviour (Paddle pricing guidance for AI subscriptions: https://www.paddle.com/resources/phil-carter-pricing-guide-2026).
 
 ## 10. Management dashboard
 
