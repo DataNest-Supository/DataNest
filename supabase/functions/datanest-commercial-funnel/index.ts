@@ -84,6 +84,11 @@ function cleanUtm(value: unknown): string | null {
 
 function checkRateLimit(key: string): boolean {
   const now = Date.now();
+  if (rateBuckets.size > 10_000) {
+    for (const [bucketKey, bucket] of rateBuckets) {
+      if (bucket.expiresAt <= now) rateBuckets.delete(bucketKey);
+    }
+  }
   const current = rateBuckets.get(key);
   if (!current || current.expiresAt <= now) {
     rateBuckets.set(key, { count: 1, expiresAt: now + RATE_WINDOW_MS });
@@ -104,7 +109,7 @@ Deno.serve(async (req: Request) => {
     return response({ ok: false, error: "POST required" }, 405, origin);
   }
 
-  if (origin && !allowedOrigins.has(origin)) {
+  if (!origin || !allowedOrigins.has(origin)) {
     return response({ ok: false, error: "Origin not allowed" }, 403, origin);
   }
 
