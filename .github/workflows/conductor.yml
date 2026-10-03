@@ -12,10 +12,9 @@ permissions:
   pull-requests: read
 
 concurrency:
-  # Coalesce all automation events for the same canonical SHA into one
-  # synchronization pass. Scheduled fallback and workflow_run events must not
-  # create competing coordinator runs for identical source state.
-  group: datanest-conductor-${{ github.event.workflow_run.head_sha || github.sha }}
+  # Coalesce scheduler/manual automation for the canonical source SHA into one
+  # synchronization pass. CONDUCTOR does not listen to workflow_run events.
+  group: datanest-conductor-${{ github.sha }}
   cancel-in-progress: true
 
 jobs:
