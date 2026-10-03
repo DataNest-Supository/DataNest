@@ -38,11 +38,13 @@ test("R&D Test Mode exposes a disabled busy state and announces mirror sync fail
   await page.setViewportSize({width:1440,height:1000});
   await page.goto(appPath);
 
-  const toggle=page.getByRole("switch",{name:/Enable R&D Test Mode/});
+  const toggle=page.getByRole("switch");
   const control=toggle.locator("xpath=ancestor::section");
+  await expect(toggle).toHaveAccessibleName(/Enable R&D Test Mode/);
   await toggle.click();
   await manifestStarted;
   await expect(toggle).toBeDisabled();
+  await expect(toggle).toHaveAccessibleName(/Disable R&D Test Mode/);
 
   finishManifest();
   await expect(control.getByRole("status")).toContainText("Live Mirror release manifest is not available yet.");
