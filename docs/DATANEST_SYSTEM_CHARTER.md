@@ -122,7 +122,7 @@ DataNest provides:
 - a governed optimization backlog;
 - visibility and market intelligence without autonomous commercial commitments.
 
-### 5.3 For developers and AI agents
+### 5.4 For developers and AI agents
 
 DataNest provides:
 
