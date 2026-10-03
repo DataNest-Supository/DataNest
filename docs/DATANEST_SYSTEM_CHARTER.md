@@ -347,7 +347,7 @@ The loop is intentionally cyclical for learning but **not circular in authority*
 
 ## 11. Products and services
 
-The Supository currently catalogs DataNest plus governed RONSAS application/service surfaces including:
+The Supository currently catalogs DataNest plus governed Resonance application/service surfaces including:
 
 - DataNest platform;
 - Career Compass;
@@ -359,13 +359,13 @@ The Supository currently catalogs DataNest plus governed RONSAS application/serv
 - SyncVision;
 - YouTube Optimizer;
 - Sovereign Backend;
-- shared RONSAS packages.
+- shared Resonance packages.
 
 Catalog presence indicates governance/source registration. It does not by itself mean every product is commercially launched, independently certified, or generally available.
 
 ### 11.1 Commercial product architecture
 
-DataNest catalogs implemented RONSAS applications individually for governance, routing and evidence purposes, while commercial presentation is consolidated to reduce customer decision complexity.
+DataNest catalogs implemented Resonance applications individually (technical portfolio identifier: RONSAS) for governance, routing and evidence purposes, while commercial presentation is consolidated to reduce customer decision complexity.
 
 The target commercial architecture is:
 
@@ -374,7 +374,7 @@ The target commercial architecture is:
 | Career | Career Compass | — |
 | Create | Creative Studio | LyricSync Studio, SyncVision, ePublisher |
 | Grow | Creator growth pathway | Scene Song Spark (acquisition), YouTube Optimizer (growth module) |
-| Build | Sovereign Forge | Sovereign Backend and shared RONSAS packages remain infrastructure |
+| Build | Sovereign Forge | Sovereign Backend and shared Resonance packages remain infrastructure |
 
 This is a packaging change, not an instruction to delete working applications. Existing production routes may remain available while navigation, pricing, onboarding and analytics are progressively consolidated. A capability should regain independent commercial-product status only when differentiated customer demand, product evidence and operating capacity justify the separation.
 
@@ -382,7 +382,7 @@ The intended creator journey is:
 
 ```
 discovery / free utility
-        → RONSAS identity
+        → Resonance identity
         → Creative Studio
         → create → sync → publish → grow
         → recurring use / paid capability
@@ -393,7 +393,7 @@ Career Compass and Sovereign Forge retain independent commercial journeys becaus
 
 ### 11.2 Product transition and retirement rule
 
-Portfolio optimization must distinguish between **commercial consolidation** and **technical retirement**. No RONSAS application is to be deleted, disabled or removed from production solely because its commercial positioning becomes a module, acquisition tool or infrastructure capability. Retirement requires separate evidence of redundancy, migration readiness, dependency closure, user-impact assessment and explicit authorization.
+Portfolio optimization must distinguish between **commercial consolidation** and **technical retirement**. No Resonance application is to be deleted, disabled or removed from production solely because its commercial positioning becomes a module, acquisition tool or infrastructure capability. Retirement requires separate evidence of redundancy, migration readiness, dependency closure, user-impact assessment and explicit authorization.
 
 ### 11.1 Platform capabilities
 
@@ -455,7 +455,7 @@ Market-presence evidence can include:
 VISIBILITY-UTILITY evaluates routes such as:
 
 1. owned search and public evidence;
-2. Reson8/RONSAS ecosystem cross-promotion;
+2. Reson8/Resonance ecosystem cross-promotion;
 3. product-led public proof and demonstrations;
 4. partnerships and referrals;
 5. community/educational content;
