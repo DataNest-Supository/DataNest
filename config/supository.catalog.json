@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "catalogId": "resonance-appdev-supository",
-  "name": "DataNest Supository",
+  "name": "DataNest Portfolio Registry",
   "canonicalRepository": "DataNest-Supository/DataNest",
   "canonicalPublicUrl": "https://datanest-supository.github.io/DataNest/",
   "authority": {
@@ -28,7 +28,7 @@
     },
     {
       "id": "datanest-assurance",
-      "name": "DataNest Independent Regulatory Assurance & Audit Services",
+      "name": "DataNest Assurance Services",
       "type": "service-surface",
       "sourcePath": "src/app/assurance",
       "deliveryPath": "/DataNest/assurance/",
@@ -37,7 +37,7 @@
     },
     {
       "id": "ronsas-career-compass",
-      "name": "Career Compass",
+      "name": "Resonance Career Compass",
       "type": "app",
       "portfolio": "Resonance",
       "sourcePath": "apps/ronsas/career-compass",
@@ -127,11 +127,14 @@
       "lifecycle": "production",
       "productionInclusion": "public",
       "commercial": {
-        "family": "build",
+        "family": "professional",
         "surfaceRole": "primary-product",
         "commercialVisibility": "primary",
-        "customerJourney": "professional-and-b2b"
-      }
+        "customerJourney": "professional-and-b2b",
+        "businessLine": "DataNest Professional",
+        "parentSuite": null
+      },
+      "technicalPortfolio": "Resonance"
     },
     {
       "id": "ronsas-syncvision",
@@ -176,7 +179,7 @@
       "lifecycle": "governed",
       "productionInclusion": "production-support",
       "commercial": {
-        "family": "build",
+        "family": "internal",
         "surfaceRole": "infrastructure",
         "commercialVisibility": "internal",
         "infrastructureRole": "shared-backend-authority"
@@ -191,7 +194,7 @@
       "lifecycle": "governed",
       "productionInclusion": "production-support",
       "commercial": {
-        "family": "build",
+        "family": "internal",
         "surfaceRole": "infrastructure",
         "commercialVisibility": "internal",
         "infrastructureRole": "shared-ronsas-packages"
@@ -411,74 +414,86 @@
     "rule": "Every approved production-capable surface must be represented in the release manifest and verified by the canonical production release. Staging/R&D surfaces never gain canonical production authority by inclusion."
   },
   "commercialArchitecture": {
-    "version": "2026-10-03",
-    "strategy": "consolidated-portfolio",
-    "rule": "Preserve implemented product capabilities and production routes while reducing commercial complexity. Public runtime presence does not by itself imply independent commercial positioning.",
-    "customerFacingFamilies": [
+    "version": "2026-10-03-scope-v2",
+    "strategy": "business-line-and-suite-boundaries",
+    "businessLines": [
       {
-        "id": "career",
-        "name": "Career",
-        "positioning": "Career and workforce outcomes",
-        "primaryProducts": [
-          "ronsas-career-compass"
-        ]
+        "id": "platform",
+        "name": "DataNest Platform",
+        "positioning": "Governance, AppDev control, orchestration, evidence, security, continuity and delivery"
       },
       {
-        "id": "create",
-        "name": "Create",
-        "positioning": "Integrated creator production workflow",
-        "primaryProducts": [
+        "id": "resonance",
+        "name": "Resonance",
+        "positioning": "Customer digital products across Career, Create and Grow",
+        "products": [
+          "ronsas-career-compass",
           "ronsas-creative-studio"
-        ],
-        "modules": [
-          "ronsas-lyricsync-studio",
-          "ronsas-syncvision",
-          "ronsas-epublisher"
         ]
       },
       {
-        "id": "grow",
-        "name": "Grow",
-        "positioning": "Creator discovery, optimization and audience growth",
-        "acquisitionTools": [
-          "ronsas-scene-song-spark"
-        ],
-        "modules": [
-          "ronsas-youtube-optimizer"
-        ]
-      },
-      {
-        "id": "build",
-        "name": "Build",
-        "positioning": "Sovereign engineering and infrastructure",
-        "primaryProducts": [
+        "id": "professional",
+        "name": "Sovereign Forge",
+        "positioning": "Professional and B2B engineering capability",
+        "products": [
           "ronsas-sovereign-forge"
+        ]
+      },
+      {
+        "id": "assurance",
+        "name": "DataNest Assurance Services",
+        "positioning": "Readiness, assurance, evidence and authorized professional services",
+        "products": [
+          "datanest-assurance"
         ]
       }
     ],
-    "commercialPackaging": {
-      "primaryProducts": [
-        "ronsas-career-compass",
-        "ronsas-creative-studio",
-        "ronsas-sovereign-forge"
+    "suiteBoundary": "Resonance commercially covers Career, Create and Grow. Sovereign Forge is a sibling DataNest professional offer.",
+    "transitionRule": "Preserve implemented capabilities and technical routes while separating customer journeys and business ownership. Commercial reclassification does not itself change lifecycle or production authority.",
+    "publicInformationArchitecture": {
+      "topLevelBusinessLines": [
+        "resonance",
+        "professional",
+        "assurance"
       ],
-      "modules": [
-        "ronsas-epublisher",
+      "resonanceFamilies": [
+        "career",
+        "create",
+        "grow"
+      ],
+      "creatorJourney": [
+        "create",
+        "lyrics-and-sync",
+        "media-sync",
+        "publish",
+        "grow"
+      ],
+      "rule": "Lead with customer intent and outcome; expose implementation-level module names after the customer journey is clear."
+    },
+    "commercialPackaging": {
+      "resonancePrimaryProducts": [
+        "ronsas-career-compass",
+        "ronsas-creative-studio"
+      ],
+      "resonanceModules": [
         "ronsas-lyricsync-studio",
         "ronsas-syncvision",
+        "ronsas-epublisher",
         "ronsas-youtube-optimizer"
       ],
-      "acquisitionTools": [
+      "resonanceAcquisitionTools": [
         "ronsas-scene-song-spark"
       ],
-      "infrastructure": [
+      "professionalProducts": [
+        "ronsas-sovereign-forge"
+      ],
+      "internalInfrastructure": [
         "ronsas-sovereign-backend",
         "ronsas-shared"
       ]
     },
-    "transitionRule": "Do not delete or disable an existing Resonance application solely because its commercial role is being consolidated. Promotion to independent product status requires demonstrated demand, differentiated value, and evidence-backed operating capacity.",
     "pricingArchitecture": {
-      "principle": "Price primary journeys, not every implementation surface. Modules expand a primary product rather than create competing purchase decisions.",
+      "principle": "Price customer journeys and business lines, not every implementation surface.",
       "families": {
         "career": {
           "primaryProduct": "ronsas-career-compass",
@@ -488,74 +503,37 @@
         "create": {
           "primaryProduct": "ronsas-creative-studio",
           "model": "creator-workspace-subscription",
-          "modules": [
-            "ronsas-lyricsync-studio",
-            "ronsas-syncvision",
-            "ronsas-epublisher"
-          ],
           "priceBaselineRequired": true
         },
         "grow": {
           "primaryProduct": "ronsas-creative-studio",
           "model": "growth-add-on-or-included-tier",
-          "acquisitionTool": "ronsas-scene-song-spark",
-          "module": "ronsas-youtube-optimizer",
           "priceBaselineRequired": true
         },
-        "build": {
+        "professional": {
           "primaryProduct": "ronsas-sovereign-forge",
           "model": "professional-or-b2b",
           "priceBaselineRequired": true
         }
       },
       "numericPrices": "not_asserted_without_explicit_commercial_baseline_and_conversion_evidence"
-    },
-    "acquisitionFunnel": {
-      "sequence": [
-        "discovery",
-        "product-page-visit",
-        "demo-or-free-use",
-        "registration",
-        "activation",
-        "first-value",
-        "repeat-use",
-        "subscription-intent",
-        "subscription",
-        "expansion",
-        "referral"
-      ],
-      "acquisitionEntryPoints": [
-        "ronsas-scene-song-spark",
-        "ronsas-career-compass",
-        "ronsas-creative-studio",
-        "ronsas-sovereign-forge"
-      ],
-      "conversionDestinations": [
-        "ronsas-career-compass",
-        "ronsas-creative-studio",
-        "ronsas-sovereign-forge"
-      ]
-    },
-    "publicInformationArchitecture": {
-      "topLevelFamilies": [
-        "career",
-        "create",
-        "grow",
-        "build"
-      ],
-      "creatorJourney": [
-        "create",
-        "lyrics-and-sync",
-        "media-sync",
-        "publish",
-        "grow"
-      ],
-      "rule": "Customer-facing navigation should show family and journey context before exposing implementation-level module names."
     }
   },
   "portfolioBranding": {
+    "masterBrand": "DataNest",
+    "systemName": "DataNest Platform",
+    "registryName": "DataNest Portfolio Registry",
     "customerFacingName": "Resonance",
     "technicalIdentifier": "RONSAS",
-    "namingRule": "Use Resonance in customer-facing copy, navigation, product positioning and commercial presentation. Retain RONSAS in stable technical identifiers, slugs, paths and migration-safe internal references unless a separate technical rename is approved."
+    "legacyAlias": "Supository",
+    "namingRule": "Use DataNest as the master brand, DataNest Platform for the operating/control system, DataNest Portfolio Registry for catalog functions, Resonance for the customer application suite, Sovereign Forge for the sibling professional/B2B line, and RONSAS only as the stable technical identifier."
+  },
+  "publicIdentity": {
+    "masterBrand": "DataNest",
+    "systemName": "DataNest Platform",
+    "registryName": "DataNest Portfolio Registry",
+    "customerSuite": "Resonance",
+    "technicalIdentifier": "RONSAS",
+    "legacyTechnicalAlias": "Supository"
   }
 }
