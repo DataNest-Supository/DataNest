@@ -16,6 +16,7 @@ import "./datanest-ai-command-center.css";
 import "./datanest-ai-zoom.css";
 import "./datanext-next.css";
 import "./cinematic-workspaces.css";
+import "./supository-ux.css";
 import type { ReactNode } from "react";
 
 const interTight=Inter_Tight({

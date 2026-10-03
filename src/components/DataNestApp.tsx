@@ -438,6 +438,9 @@ export default function DataNestApp({session}:{session:Session}) {
   const workspaceTitleRef=useRef<HTMLHeadingElement|null>(null);
   const previousViewRef=useRef<ViewKey>("overview");
   const [mobileOpen,setMobileOpen]=useState(false);
+  const [compactNavigation,setCompactNavigation]=useState(false);
+  const navigationRef=useRef<HTMLElement|null>(null);
+  const menuButtonRef=useRef<HTMLButtonElement|null>(null);
   const [commandOpen,setCommandOpen]=useState(false);
   const [commandQuery,setCommandQuery]=useState("");
   const [commandActiveIndex,setCommandActiveIndex]=useState(-1);
@@ -1142,13 +1145,33 @@ export default function DataNestApp({session}:{session:Session}) {
     return()=>window.cancelAnimationFrame(frame);
   },[view,viewReady,commandOpen]);
   useEffect(()=>{
-    if(!mobileOpen)return;
+    const media=window.matchMedia("(max-width: 900px)");
+    const update=()=>{
+      setCompactNavigation(media.matches);
+      if(!media.matches)setMobileOpen(false);
+    };
+    update();
+    media.addEventListener("change",update);
+    return()=>media.removeEventListener("change",update);
+  },[]);
+  useEffect(()=>{
+    if(!mobileOpen||!compactNavigation)return;
+    const previousOverflow=document.body.style.overflow;
+    document.body.style.overflow="hidden";
+    const frame=window.requestAnimationFrame(()=>navigationRef.current?.querySelector<HTMLButtonElement>(".closeMenu")?.focus());
     const closeOnEscape=(event:KeyboardEvent)=>{
-      if(event.key==="Escape")setMobileOpen(false);
+      if(event.key==="Escape"){
+        event.preventDefault();
+        closeMobileNavigation();
+      }
     };
     window.addEventListener("keydown",closeOnEscape);
-    return()=>window.removeEventListener("keydown",closeOnEscape);
-  },[mobileOpen]);
+    return()=>{
+      window.cancelAnimationFrame(frame);
+      document.body.style.overflow=previousOverflow;
+      window.removeEventListener("keydown",closeOnEscape);
+    };
+  },[mobileOpen,compactNavigation]);
   useEffect(()=>{
     const handleCommandShortcut=(event:KeyboardEvent)=>{
       const isQuickSwitch=(event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==="k";
@@ -1248,6 +1271,27 @@ export default function DataNestApp({session}:{session:Session}) {
     const timer=window.setInterval(()=>void checkControlPlane(project.id),60000);
     return ()=>window.clearInterval(timer);
   },[project,checkControlPlane]);
+
+  function closeMobileNavigation(){
+    setMobileOpen(false);
+    window.requestAnimationFrame(()=>menuButtonRef.current?.focus({preventScroll:true}));
+  }
+
+  function trapNavigationFocus(event:import("react").KeyboardEvent<HTMLElement>){
+    if(!compactNavigation||!mobileOpen||event.key!=="Tab")return;
+    const focusable=Array.from(event.currentTarget.querySelectorAll<HTMLElement>(
+      'button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),summary,[tabindex]:not([tabindex="-1"])'
+    )).filter(element=>element.getClientRects().length>0);
+    const first=focusable[0];
+    const last=focusable[focusable.length-1];
+    if(event.shiftKey&&document.activeElement===first){
+      event.preventDefault();
+      last?.focus();
+    }else if(!event.shiftKey&&document.activeElement===last){
+      event.preventDefault();
+      first?.focus();
+    }
+  }
 
   function openCommandPalette(){
     commandReturnFocusRef.current=quickSwitchButtonRef.current ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
@@ -1453,19 +1497,29 @@ export default function DataNestApp({session}:{session:Session}) {
     style={companionReserve>0?({"--companion-reserve":companionReserve+"px"} as CSSProperties):undefined}
   >
     <PlatformShell
+      navigationOpen={compactNavigation&&mobileOpen}
       navigation={<>
     <a className="skipLink" href="#workspace-title" onClick={event=>{event.preventDefault();workspaceTitleRef.current?.focus();}}>Skip to workspace</a>
-    <aside id="datanest-navigation" aria-label="DataNest navigation" className={"sidebar "+(mobileOpen?"open":"")}>
+    <aside id="datanest-navigation" aria-label="DataNest navigation" className={"sidebar "+(mobileOpen?"open":"")}
+      ref={navigationRef}
+      role={compactNavigation&&mobileOpen?"dialog":undefined}
+      aria-modal={compactNavigation&&mobileOpen?true:undefined}
+      inert={compactNavigation&&!mobileOpen}
+      onKeyDown={trapNavigationFocus}
+    >
       <div className="sidebarTop">
         <div className="logo" aria-label="Resonance AppDev"><img src={DATANEST_LOGO_SRC} alt="Resonance AppDev"/></div>
-        <div><b>Resonance Data Nest</b></div>
-        <button className="closeMenu" onClick={()=>setMobileOpen(false)} aria-label="Close menu" aria-controls="datanest-navigation">×</button>
+        <div><b>Resonance DataNest</b><small className="sidebarIdentity">AppDev Supository</small></div>
+        <button className="closeMenu" type="button" onClick={closeMobileNavigation} aria-label="Close menu" aria-controls="datanest-navigation">×</button>
       </div>
       <div className="projectPill"><span className="liveDot"/><div><small>PROJECT</small><strong>{project?.name||DATANEST_CANONICAL_NAME}</strong></div></div>
       <GlobalNavigation
         items={nav}
         currentView={view}
-        onNavigate={next=>{setView(next as ViewKey);setMobileOpen(false);}}
+        onNavigate={next=>{
+          if(next===view&&mobileOpen)closeMobileNavigation();
+          else {setView(next as ViewKey);setMobileOpen(false);}
+        }}
         onOpenQuickSwitch={openCommandPalette}
       />
       {ronsasHubUrl&&<a
@@ -1510,7 +1564,7 @@ export default function DataNestApp({session}:{session:Session}) {
         <button className="textButton" onClick={signOut}>Sign out</button>
       </div>
     </aside>
-    {mobileOpen&&<button className="scrim" onClick={()=>setMobileOpen(false)} aria-label="Close navigation"/>}
+    {mobileOpen&&<button className="scrim" type="button" tabIndex={-1} onClick={closeMobileNavigation} aria-label="Close navigation"/>}
 
     {commandOpen&&<div className="commandPaletteBackdrop" onMouseDown={()=>closeCommandPalette()}>
       <section
@@ -1567,7 +1621,7 @@ export default function DataNestApp({session}:{session:Session}) {
       </>}
       topbar={
       <header className="topbar datanextShellTopbar">
-        <button className="menuButton" onClick={()=>setMobileOpen(true)} aria-label="Open menu" aria-controls="datanest-navigation" aria-expanded={mobileOpen}>☰</button>
+        <button className="menuButton" ref={menuButtonRef} type="button" onClick={()=>setMobileOpen(true)} aria-label="Open menu" aria-controls="datanest-navigation" aria-expanded={mobileOpen}>☰</button>
         <div className="topbarTitle">
           <span className="workspaceEmblem"><WorkspaceGlyph view={view}/></span>
           <p className="eyebrow">{DATANEST_CANONICAL_NAME.toUpperCase()} · {currentGroup.toUpperCase()}</p>
