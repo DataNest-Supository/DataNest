@@ -25,7 +25,7 @@ test("CONDUCTOR coordinate and timeframe jobs share the same bounded trigger pol
 test("CONDUCTOR concurrency coalesces automation for the same canonical SHA",()=>{
   assert.match(
     workflow,
-    /group: datanest-conductor-\$\{\{ github\.event\.workflow_run\.head_sha \|\| github\.sha \}\}/
+    /group: datanest-conductor-\$\{\{ github\.sha \}\}/
   );
   assert.match(workflow,/cancel-in-progress: true/);
 });
