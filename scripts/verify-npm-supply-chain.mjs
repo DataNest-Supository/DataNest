@@ -16,7 +16,7 @@ if(lock.lockfileVersion!==3){
   findings.push(`Expected npm lockfileVersion 3, found ${lock.lockfileVersion}.`);
 }
 
-const exactSemver=/^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$/;
+const exactSemver=/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 
 for(const [name,spec] of Object.entries(direct)){
   if(typeof spec!=="string"||!exactSemver.test(spec)){
