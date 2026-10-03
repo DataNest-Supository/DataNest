@@ -18,15 +18,16 @@
 }
 
 .copy small {
-  line-height: 1.35;
-  opacity: .72;
+  font-size: .75rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
 }
 
 .eyebrow {
   font-size: .65rem;
   font-weight: 800;
   letter-spacing: .12em;
-  opacity: .62;
+  color: var(--text-secondary);
 }
 
 .switch {
@@ -34,7 +35,7 @@
   align-items: center;
   gap: .55rem;
   width: fit-content;
-  min-height: 34px;
+  min-height: 44px;
   padding: .25rem .5rem .25rem .3rem;
   border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
   border-radius: 999px;
@@ -44,7 +45,8 @@
 }
 
 .switch:focus-visible,
-.openLink:focus-visible {
+.openLink:focus-visible,
+.inlineButton:focus-visible {
   outline: 2px solid currentColor;
   outline-offset: 3px;
 }
@@ -85,6 +87,10 @@
 }
 
 .openLink {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  min-height: 44px;
   width: fit-content;
   font-size: .78rem;
   font-weight: 700;
@@ -95,9 +101,9 @@
 
 .previewNote {
   display: block;
-  font-size: .68rem;
-  line-height: 1.35;
-  opacity: .6;
+  font-size: .75rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
   overflow-wrap: anywhere;
 }
 
@@ -107,9 +113,11 @@
 }
 
 .inlineButton {
+  min-height: 44px;
   width: fit-content;
   border: 0;
-  padding: 0;
+  padding: .35rem 0;
+  text-align: left;
   background: transparent;
   color: inherit;
   font: inherit;
@@ -119,7 +127,8 @@
   border-bottom: 1px solid color-mix(in srgb, currentColor 30%, transparent);
 }
 
-.inlineButton:disabled {
+.inlineButton:disabled,
+.switch:disabled {
   cursor: wait;
   opacity: .55;
 }
@@ -128,15 +137,20 @@
 .status,
 .error {
   display: block;
-  font-size: .68rem;
-  line-height: 1.35;
+  font-size: .75rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .release,
 .status {
-  opacity: .72;
+  color: var(--text-secondary);
 }
 
 .error {
-  opacity: .9;
+  color: var(--text-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track, .thumb { transition: none; }
 }
