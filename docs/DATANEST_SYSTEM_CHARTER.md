@@ -11,7 +11,7 @@
 
 ## 1. Executive statement
 
-DataNest is the master brand and operating authority for a governed digital-product environment. The **DataNest Platform** is the control system for planning, developing, testing, validating, promoting, operating, learning from and transparently improving products and services. Its customer-facing portfolio is broader than the operating system itself: **Resonance** is the customer application suite, **Sovereign Forge** is a sibling professional/B2B line, and **DataNest Assurance Services** is a professional service line.
+**Resonance Sole Proprietorship** is the business. **Resonance AppDev** is the master brand. **DataNest** is the canonical operating/control platform beneath that brand for planning, developing, testing, validating, promoting, operating, learning from and transparently improving products and services. Its market-facing portfolio is broader than DataNest itself: **Resonance** is the customer application suite, **Sovereign Forge** is a sibling professional/B2B line, and **Resonance AppDev Assurance Services** is a professional service line.
 
 The system is designed around a simple operating principle:
 
@@ -27,7 +27,7 @@ DataNest uses GitHub as canonical source/history/CI/evidence authority, GitHub P
 
 ### 2.1 System scope
 
-The DataNest Platform governs or catalogs:
+DataNest governs or catalogs:
 
 - product and service intent, requirements and portfolio registration;
 - AppDev planning, orchestration and scheduling through UNIFI and TranScheduler;
@@ -45,10 +45,12 @@ DataNest's market-facing scope is organized by customer intent:
 
 | Business line | Canonical offer | Commercial role |
 | --- | --- | --- |
-| Platform | DataNest Platform | Operating/control system and governed digital-product infrastructure |
+| Business | Resonance Sole Proprietorship | Legal/operating business identity |
+| Master brand | Resonance AppDev | Market-facing umbrella brand |
+| Operating platform | DataNest | Governance, AppDev control, orchestration, evidence, security, continuity and delivery |
 | Customer software | Resonance | Career, Create and Grow applications |
-| Professional engineering | Sovereign Forge | Professional/B2B engineering and sovereignty capability |
-| Assurance | DataNest Assurance Services | Readiness, technical assurance, evidence, remediation and authorized oversight |
+| Professional engineering | Sovereign Forge | Professional/B2B engineering and sovereignty capability under Resonance AppDev |
+| Assurance | Resonance AppDev Assurance Services | Readiness, technical assurance, evidence, remediation and authorized oversight through DataNest |
 | Specialist products | Legal Eagle and other approved products | Focused problem-specific journeys |
 
 ### 2.3 Boundary conditions
@@ -133,7 +135,7 @@ DataNest provides:
 
 ### 5.4 For the business
 
-DataNest is intended to improve:
+The DataNest operating platform is intended to improve:
 
 - time-to-understanding;
 - time-to-reviewed-change;
@@ -149,7 +151,7 @@ DataNest is intended to improve:
 
 ## 6. Operating principles
 
-DataNest applies these principles across all trees and services:
+DataNest applies these principles across all operating trees and services under the Resonance AppDev master brand:
 
 1. **Human agency** — consequential decisions remain reviewable and reversible.
 2. **Evidence before authority** — evidence can support a decision but does not itself become authorization.
