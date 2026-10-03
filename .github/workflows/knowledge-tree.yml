@@ -57,10 +57,17 @@ jobs:
             echo "Knowledge feed unchanged."
             exit 0
           fi
-          git -c user.name="github-actions[bot]"               -c user.email="41898282+github-actions[bot]@users.noreply.github.com"               commit -m "Refresh Knowledge feeds"
-          git push --force-with-lease origin "HEAD:$branch"
+          git -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -m "Refresh Knowledge feeds"
+          if git push --force-with-lease origin "HEAD:$branch"; then
+            echo "Knowledge feed branch updated."
+          else
+            echo "::warning::Protected automation/knowledge-feed refused the publication push. The generated feeds remain available in the workflow artifact; no protection bypass is attempted."
+          fi
 
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: datanest-knowledge-${{ github.run_id }}
           path: |
