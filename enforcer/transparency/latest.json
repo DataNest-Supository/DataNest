@@ -1,0 +1,126 @@
+{
+  "schemaVersion": "datanest-enforcer-transparency-v1",
+  "generatedAt": "2026-10-03T05:43:41.722Z",
+  "status": "block",
+  "productionAuthorization": false,
+  "defensiveAuthority": "check-enforcement-only",
+  "checks": [
+    {
+      "id": "knowledge-access",
+      "status": "pass",
+      "detail": "Approved Knowledge corpus is consumed without category/topic filtering."
+    },
+    {
+      "id": "knowledge-feed-state",
+      "status": "pass",
+      "detail": "ENFORCER loaded 136 approved Knowledge item(s)."
+    },
+    {
+      "id": "boundaries-loaded",
+      "status": "pass",
+      "detail": "Loaded 18 Boundaries scopes and 10 hard rules."
+    },
+    {
+      "id": "security-workflow",
+      "status": "block",
+      "detail": "Latest Security scan concluded cancelled."
+    },
+    {
+      "id": "environment",
+      "status": "pass",
+      "detail": "Current ENFORCER ENVIRONMENT feed has no material-review requirements."
+    },
+    {
+      "id": "authority",
+      "status": "pass",
+      "detail": "ENFORCER remains defensive and non-producing."
+    },
+    {
+      "id": "transparency-audit-index",
+      "status": "pass",
+      "detail": "8 published transparency audit document(s) are indexed."
+    }
+  ],
+  "blockers": [
+    "security-workflow-cancelled"
+  ],
+  "reviews": [],
+  "boundaries": {
+    "scopeCount": 18,
+    "hardRuleCount": 10,
+    "scopeIds": [
+      "production_authority",
+      "destructive_maintenance",
+      "knowledge_learning",
+      "ai_provider",
+      "data_change",
+      "repository_sync",
+      "verification",
+      "functional_change",
+      "botsquad_ai_advisory",
+      "environment_adaptation",
+      "enforcer_defence",
+      "guardian_health_healing",
+      "conductor_synchronization",
+      "suggester_optimization",
+      "calmer_governance_softening",
+      "regulator_harmony",
+      "visibility_market_intelligence",
+      "liberty_in_all_traceability"
+    ]
+  },
+  "securityWorkflow": {
+    "available": true,
+    "status": "completed",
+    "conclusion": "cancelled",
+    "id": 37100537451,
+    "url": "https://github.com/DataNest-Supository/DataNest/actions/runs/37100537451",
+    "headSha": "ea21986b6c6ce46e13f61591b2cbfdb00a5f6a3b",
+    "createdAt": "2026-10-03T05:39:46Z",
+    "updatedAt": "2026-10-03T05:41:30Z",
+    "targetSha": "ea21986b6c6ce46e13f61591b2cbfdb00a5f6a3b"
+  },
+  "knowledge": {
+    "restrictionMode": "none-on-approved-knowledge-corpus",
+    "itemCount": 136,
+    "categoryCounts": {
+      "ai": 69,
+      "reliability": 49,
+      "deployment": 41,
+      "data": 13,
+      "testing": 57,
+      "ux": 37,
+      "other": 2,
+      "security": 42,
+      "governance": 53,
+      "architecture": 77,
+      "maintenance": 3
+    }
+  },
+  "environment": {
+    "compatible": true,
+    "reviewRequiredCount": 0
+  },
+  "transparency": {
+    "publishedAuditDocumentCount": 8,
+    "auditDocumentIds": [
+      "external-full-system-audit-brief-v1",
+      "external-full-system-audit-return-2026-09-25",
+      "enforcer-continuous-defence",
+      "regulator-continuous-harmony",
+      "datanest-system-charter-v1",
+      "visibility-utility-continuous-market-intelligence",
+      "liberty-in-all-continuous-traceability",
+      "pr-365-liberty-in-all-final-validation"
+    ],
+    "rawSecretValuesPublished": false,
+    "findingsSuppressed": false
+  },
+  "disclosure": {
+    "secretValues": false,
+    "privateAuthenticationMaterial": false,
+    "rawSensitiveScannerPayloads": false,
+    "evidenceLineage": true,
+    "findingStatus": true
+  }
+}

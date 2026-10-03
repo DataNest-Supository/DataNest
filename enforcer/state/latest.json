@@ -1,0 +1,2332 @@
+{
+  "schemaVersion": "datanest-enforcer-assessment-v1",
+  "generatedAt": "2026-10-03T05:43:41.722Z",
+  "authority": "defensive-enforcement",
+  "productionAuthorization": false,
+  "status": "block",
+  "checks": [
+    {
+      "id": "knowledge-access",
+      "status": "pass",
+      "detail": "Approved Knowledge corpus is consumed without category/topic filtering."
+    },
+    {
+      "id": "knowledge-feed-state",
+      "status": "pass",
+      "detail": "ENFORCER loaded 136 approved Knowledge item(s)."
+    },
+    {
+      "id": "boundaries-loaded",
+      "status": "pass",
+      "detail": "Loaded 18 Boundaries scopes and 10 hard rules."
+    },
+    {
+      "id": "security-workflow",
+      "status": "block",
+      "detail": "Latest Security scan concluded cancelled."
+    },
+    {
+      "id": "environment",
+      "status": "pass",
+      "detail": "Current ENFORCER ENVIRONMENT feed has no material-review requirements."
+    },
+    {
+      "id": "authority",
+      "status": "pass",
+      "detail": "ENFORCER remains defensive and non-producing."
+    },
+    {
+      "id": "transparency-audit-index",
+      "status": "pass",
+      "detail": "8 published transparency audit document(s) are indexed."
+    }
+  ],
+  "blockers": [
+    "security-workflow-cancelled"
+  ],
+  "reviews": [],
+  "boundaries": {
+    "scopeCount": 18,
+    "hardRuleCount": 10,
+    "scopeIds": [
+      "production_authority",
+      "destructive_maintenance",
+      "knowledge_learning",
+      "ai_provider",
+      "data_change",
+      "repository_sync",
+      "verification",
+      "functional_change",
+      "botsquad_ai_advisory",
+      "environment_adaptation",
+      "enforcer_defence",
+      "guardian_health_healing",
+      "conductor_synchronization",
+      "suggester_optimization",
+      "calmer_governance_softening",
+      "regulator_harmony",
+      "visibility_market_intelligence",
+      "liberty_in_all_traceability"
+    ]
+  },
+  "securityWorkflow": {
+    "available": true,
+    "status": "completed",
+    "conclusion": "cancelled",
+    "id": 37100537451,
+    "url": "https://github.com/DataNest-Supository/DataNest/actions/runs/37100537451",
+    "headSha": "ea21986b6c6ce46e13f61591b2cbfdb00a5f6a3b",
+    "createdAt": "2026-10-03T05:39:46Z",
+    "updatedAt": "2026-10-03T05:41:30Z",
+    "targetSha": "ea21986b6c6ce46e13f61591b2cbfdb00a5f6a3b"
+  },
+  "knowledge": {
+    "restrictionMode": "none-on-approved-knowledge-corpus",
+    "itemCount": 136,
+    "categoryCounts": {
+      "ai": 69,
+      "reliability": 49,
+      "deployment": 41,
+      "data": 13,
+      "testing": 57,
+      "ux": 37,
+      "other": 2,
+      "security": 42,
+      "governance": 53,
+      "architecture": 77,
+      "maintenance": 3
+    },
+    "items": [
+      {
+        "id": "commit:DataNest-Supository/DataNest@f46c310a30c1dc9952b0663c57a3c092695fe2fd",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "f46c310a30c1dc9952b0663c57a3c092695fe2fd",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/f46c310a30c1dc9952b0663c57a3c092695fe2fd",
+        "observedAt": "2026-10-02T17:52:43+02:00",
+        "summary": "feat: add Resonance AiPI Core v0.1 (#439)",
+        "categories": [
+          "ai"
+        ],
+        "evidenceHash": "sha256:4b48ba63c35e4168b5bb181a0225a40162ecf750f48c9393edaa74dd40e188cf"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@382118b37e59b1a5b59b1506892c93a7589abd01",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "382118b37e59b1a5b59b1506892c93a7589abd01",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/382118b37e59b1a5b59b1506892c93a7589abd01",
+        "observedAt": "2026-10-02T17:37:39+02:00",
+        "summary": "fix(release): cancel stale Pages deployments (#440)",
+        "categories": [
+          "reliability",
+          "deployment"
+        ],
+        "evidenceHash": "sha256:9e5440388bbdd0a31fc4c084141ed1c62e5857c46b691a369226d3e3df8522cf"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@ba26c1ddeb9532222b9c24bd2c8d08f3edc1ca21",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "ba26c1ddeb9532222b9c24bd2c8d08f3edc1ca21",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/ba26c1ddeb9532222b9c24bd2c8d08f3edc1ca21",
+        "observedAt": "2026-10-02T17:18:42+02:00",
+        "summary": "Fix motion preference migration and control styling (#438)",
+        "categories": [
+          "reliability",
+          "data"
+        ],
+        "evidenceHash": "sha256:72e5dd5b11e42e82a882974272727d451937fc1e20c55131bc608ef9c9000304"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@019c4cad6800ae08e328b7bef3ed92528a5ac5c9",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "019c4cad6800ae08e328b7bef3ed92528a5ac5c9",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/019c4cad6800ae08e328b7bef3ed92528a5ac5c9",
+        "observedAt": "2026-10-02T17:00:17+02:00",
+        "summary": "Merge pull request #436 from DataNest-Supository/fix/browser-hydration-test-stability",
+        "categories": [
+          "reliability",
+          "testing"
+        ],
+        "evidenceHash": "sha256:971564c3c52c4a8d5f7b7c385074c85b6c1c556c94f04a2f2dcd685d9449c05d"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@f4a45bd133813018504d42da3ddcb60a3272599f",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "f4a45bd133813018504d42da3ddcb60a3272599f",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/f4a45bd133813018504d42da3ddcb60a3272599f",
+        "observedAt": "2026-10-02T16:54:16+02:00",
+        "summary": "Merge branch 'main' into fix/browser-hydration-test-stability",
+        "categories": [
+          "reliability",
+          "testing",
+          "ai"
+        ],
+        "evidenceHash": "sha256:55d5833551505ebcf35bb06985901c1fcd1ef16546636101fac8671e15e90faf"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@1c399ae981e6b953c5649f187a11b22ed30b677a",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "1c399ae981e6b953c5649f187a11b22ed30b677a",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/1c399ae981e6b953c5649f187a11b22ed30b677a",
+        "observedAt": "2026-10-02T16:52:39+02:00",
+        "summary": "chore: add evidence-gated GitHub readiness review skill (#437)",
+        "categories": [
+          "testing"
+        ],
+        "evidenceHash": "sha256:2c45a81bab594675deaf5088ebc66d5fefa60de585add7df64fc82d9ed790f94"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@df73fc08edc9aba35df527b97c4ed1b9f8d24c5e",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "df73fc08edc9aba35df527b97c4ed1b9f8d24c5e",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/df73fc08edc9aba35df527b97c4ed1b9f8d24c5e",
+        "observedAt": "2026-10-02T16:49:02+02:00",
+        "summary": "Merge branch 'main' into fix/browser-hydration-test-stability",
+        "categories": [
+          "reliability",
+          "testing",
+          "ai"
+        ],
+        "evidenceHash": "sha256:7ce29df48d8fa1bb59dd1506e5019e6c4e305540d3762f7d08b054173ff0ce5a"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@46fb2c07985af53f565e446ed188438c00693fee",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "46fb2c07985af53f565e446ed188438c00693fee",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/46fb2c07985af53f565e446ed188438c00693fee",
+        "observedAt": "2026-10-02T16:41:41+02:00",
+        "summary": "chore(release): trigger governed Pages deployment for latest UI/UX (#435)",
+        "categories": [
+          "testing",
+          "deployment",
+          "ux"
+        ],
+        "evidenceHash": "sha256:b9e857217627779b2027774cc4cc0bb51c516118cd96589737b3a7b81951f73f"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@5e8a5cd646972984282b04b61f60d0b02b900932",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "5e8a5cd646972984282b04b61f60d0b02b900932",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/5e8a5cd646972984282b04b61f60d0b02b900932",
+        "observedAt": "2026-10-02T16:40:29+02:00",
+        "summary": "test: initialize workspace navigation from hydrated home",
+        "categories": [
+          "testing",
+          "ux"
+        ],
+        "evidenceHash": "sha256:6796355055a34508ecc1e038ab34e91fa12220db3ed38131e95664db359b5c70"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@e8439403d101964d4903aac5acdcd1cfecea4f4b",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "e8439403d101964d4903aac5acdcd1cfecea4f4b",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/e8439403d101964d4903aac5acdcd1cfecea4f4b",
+        "observedAt": "2026-10-02T16:40:27+02:00",
+        "summary": "test: initialize AI workspace from hydrated home",
+        "categories": [
+          "testing",
+          "ai"
+        ],
+        "evidenceHash": "sha256:c296d3fc05ee129434d4d98bf83cfc881cddd1b00224503373d848189ef775d6"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@275c0af3aeea15919673e5d1a51848c65c69578a",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "275c0af3aeea15919673e5d1a51848c65c69578a",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/275c0af3aeea15919673e5d1a51848c65c69578a",
+        "observedAt": "2026-10-02T16:37:31+02:00",
+        "summary": "test: extend deep-link workspace startup timeout",
+        "categories": [
+          "testing"
+        ],
+        "evidenceHash": "sha256:d43b8b94861ce4543e6c3f75babaed5297511f585936e4cc0e1a9d701664125b"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@f70a23ced68ae9e7da4126002ac2fe82dd88ca7c",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "f70a23ced68ae9e7da4126002ac2fe82dd88ca7c",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/f70a23ced68ae9e7da4126002ac2fe82dd88ca7c",
+        "observedAt": "2026-10-02T16:37:27+02:00",
+        "summary": "test: gate AI workspace assertions on hydration readiness",
+        "categories": [
+          "testing",
+          "ai"
+        ],
+        "evidenceHash": "sha256:832a95e7343d99570a72e1cc0416a949c07cd84ef0bbe52af6e1182792002ff6"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@eaee0d5410c7e2a3d90c2119d78a089f633e6b75",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "eaee0d5410c7e2a3d90c2119d78a089f633e6b75",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/eaee0d5410c7e2a3d90c2119d78a089f633e6b75",
+        "observedAt": "2026-10-02T16:25:29+02:00",
+        "summary": "UX: consolidate DataNest entry, navigation, and responsive experience (#430)",
+        "categories": [
+          "ux"
+        ],
+        "evidenceHash": "sha256:ab70de2d53d77b4757f22aa51713364637c8b674fc618e1e3d71409a10da3b1b"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@b56ce07fd17c8ed038297f081a6a0e3c546fe261",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "b56ce07fd17c8ed038297f081a6a0e3c546fe261",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/b56ce07fd17c8ed038297f081a6a0e3c546fe261",
+        "observedAt": "2026-10-02T15:42:39+02:00",
+        "summary": "Refine DataNest cinematic entry experience (#431)",
+        "categories": [
+          "other"
+        ],
+        "evidenceHash": "sha256:8312107bf8a8b847438144082b7c74c1e2eea2ee448a05622f1b0999590918af"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@7956590c1205efef103006b3ce1e6047b1090cd6",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "7956590c1205efef103006b3ce1e6047b1090cd6",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/7956590c1205efef103006b3ce1e6047b1090cd6",
+        "observedAt": "2026-10-02T15:20:07+02:00",
+        "summary": "Fix/browser test stability (#434)",
+        "categories": [
+          "reliability",
+          "testing"
+        ],
+        "evidenceHash": "sha256:2d35f485bdbbb2e93ececad407aa6c408d7c977c8132788e7162ce722c998ceb"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@50d7a630c2d012a8c2b0f3a816606845397256f0",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "50d7a630c2d012a8c2b0f3a816606845397256f0",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/50d7a630c2d012a8c2b0f3a816606845397256f0",
+        "observedAt": "2026-10-02T13:33:01+02:00",
+        "summary": "chore: GUARDIAN safe source healing (#433)",
+        "categories": [
+          "other"
+        ],
+        "evidenceHash": "sha256:1b9a09cad772dc728507891df73ec0679b481c67c819915b56604ef3ad28c415"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@b3fe398027513b0e37a45f115974c6a3165cda04",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "b3fe398027513b0e37a45f115974c6a3165cda04",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/b3fe398027513b0e37a45f115974c6a3165cda04",
+        "observedAt": "2026-10-02T13:13:54+02:00",
+        "summary": "chore: refresh governed Edge connector attestation (#432)",
+        "categories": [
+          "testing"
+        ],
+        "evidenceHash": "sha256:bf2b077429f6bc7f7a8409274fa93d734878393d83b77c81cd22107fffeb020b"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@07582098e52fbffb2e3f5de1c0c92da0d3ffba30",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "07582098e52fbffb2e3f5de1c0c92da0d3ffba30",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/07582098e52fbffb2e3f5de1c0c92da0d3ffba30",
+        "observedAt": "2026-10-02T12:59:42+02:00",
+        "summary": "Security: close provider-secret and external-audit write boundaries (#428)",
+        "categories": [
+          "security",
+          "ai"
+        ],
+        "evidenceHash": "sha256:6792802cd27588b4bbfa5a4bfe8eb613fe26529353a3593402b84d7d486717e3"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@df164e5c335c6471e86c0f710b01e5c916815246",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "df164e5c335c6471e86c0f710b01e5c916815246",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/df164e5c335c6471e86c0f710b01e5c916815246",
+        "observedAt": "2026-10-02T12:23:31+02:00",
+        "summary": "Fix DataNest audit findings and automation reliability (#429)",
+        "categories": [
+          "security",
+          "reliability"
+        ],
+        "evidenceHash": "sha256:b3c2298c811b75f91814e295639e49cf12f5babe9ad38b81d366c133fcce3d2d"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@9e8b92cfaa5f28876109700fd8acca46c31ddc82",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "9e8b92cfaa5f28876109700fd8acca46c31ddc82",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/9e8b92cfaa5f28876109700fd8acca46c31ddc82",
+        "observedAt": "2026-10-02T11:22:16+02:00",
+        "summary": "Fix connector-attested Edge release integrity contract (#427)",
+        "categories": [
+          "reliability",
+          "testing",
+          "deployment"
+        ],
+        "evidenceHash": "sha256:f4295745d58337175d69c80aed490be98035696d06bc775f44e0411e33d564bb"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@649ea94e060e4a746c6d4d85cce57cdfb417af28",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "649ea94e060e4a746c6d4d85cce57cdfb417af28",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/649ea94e060e4a746c6d4d85cce57cdfb417af28",
+        "observedAt": "2026-10-02T10:36:20+02:00",
+        "summary": "Restore job-invite source and add free connector-attested Edge release (#395)",
+        "categories": [
+          "testing",
+          "deployment"
+        ],
+        "evidenceHash": "sha256:daaa240a07b54b69cf493e9055756538dc31dbfee71e7de4b65bce2d140a31e0"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@587734696d917f2d6660c8c35e6ee30fea11e62a",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "587734696d917f2d6660c8c35e6ee30fea11e62a",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/587734696d917f2d6660c8c35e6ee30fea11e62a",
+        "observedAt": "2026-10-02T10:19:49+02:00",
+        "summary": "Merge pull request #426 from DataNest-Supository/fix/environment-automation-review-gate-20261002",
+        "categories": [
+          "reliability"
+        ],
+        "evidenceHash": "sha256:93f12b516ce8c88f2d67e7aa45bcb9f655281843c32785e22523adcea25047d9"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@a8768289efe0079b410b03726dbb5337013d680d",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "a8768289efe0079b410b03726dbb5337013d680d",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/a8768289efe0079b410b03726dbb5337013d680d",
+        "observedAt": "2026-10-02T10:12:47+02:00",
+        "summary": "Merge branch 'main' into fix/environment-automation-review-gate-20261002",
+        "categories": [
+          "reliability",
+          "ai"
+        ],
+        "evidenceHash": "sha256:b1114721fbc1290ea1455ab4ab1ea8e28401140db9a2527f59e9815540bcf057"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@fa157951faeda92bad4be45d4d34be23c2495c62",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "fa157951faeda92bad4be45d4d34be23c2495c62",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/fa157951faeda92bad4be45d4d34be23c2495c62",
+        "observedAt": "2026-10-02T10:11:58+02:00",
+        "summary": "Finalize BRANCH-X native protection audit evidence (#376)",
+        "categories": [
+          "security",
+          "testing"
+        ],
+        "evidenceHash": "sha256:9dd150313c896f5dc4e4796b1d020668e969d910c11f45568aafe5aabec1969b"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@5e9cbcb10ffa802acc9cf14c988f370281e0479f",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "5e9cbcb10ffa802acc9cf14c988f370281e0479f",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/5e9cbcb10ffa802acc9cf14c988f370281e0479f",
+        "observedAt": "2026-10-02T10:03:58+02:00",
+        "summary": "feat: offer Resonance Certification as a business service (#380)",
+        "categories": [
+          "governance"
+        ],
+        "evidenceHash": "sha256:23ea525015c7bdd1dae2b8926bd48bac3b610f18f2c3d7299562def95e586fa2"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#63",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "8514f687563b09b0e1b0bdc80c13df94b5959cfb",
+        "sourceNumber": 63,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/63",
+        "observedAt": "2026-10-02T10:01:54Z",
+        "summary": "fix: accept GitHub native protection enforcement state",
+        "categories": [
+          "reliability",
+          "deployment",
+          "ai",
+          "ux",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:ed98966a0b0c59d6a0039391828a8656a722075c5bccd55bcfd159d9ff7f965d"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@8514f687563b09b0e1b0bdc80c13df94b5959cfb",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "8514f687563b09b0e1b0bdc80c13df94b5959cfb",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/8514f687563b09b0e1b0bdc80c13df94b5959cfb",
+        "observedAt": "2026-10-02T10:01:53Z",
+        "summary": "fix: accept GitHub native protection enforcement state (#63)",
+        "categories": [
+          "reliability"
+        ],
+        "evidenceHash": "sha256:0562d817bcc6945fa6af6965c02c0bb8692f4b5ae1ce74d5420aa260fd39d431"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@2cbac049adeb66ce573187cf70528a0d64b5a0c9",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "2cbac049adeb66ce573187cf70528a0d64b5a0c9",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/2cbac049adeb66ce573187cf70528a0d64b5a0c9",
+        "observedAt": "2026-10-02T10:00:40+02:00",
+        "summary": "Merge branch 'main' into fix/environment-automation-review-gate-20261002",
+        "categories": [
+          "reliability",
+          "ai"
+        ],
+        "evidenceHash": "sha256:5bd29ab060f97640bcbac55b9270bbdd7de5609799fb77a8a5a56220afa96e15"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#64",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "0fa1e5f1e6b4bafe415b6aebd4e716ade69d9962",
+        "sourceNumber": 64,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/64",
+        "observedAt": "2026-10-02T09:58:19Z",
+        "summary": "Fix/system charter page 20261002",
+        "categories": [
+          "reliability"
+        ],
+        "evidenceHash": "sha256:05b289d3ddc2960b364e8f7ebd3d161baae6ae6d4ceb4a07c0afc90994977b5f"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@0fa1e5f1e6b4bafe415b6aebd4e716ade69d9962",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "0fa1e5f1e6b4bafe415b6aebd4e716ade69d9962",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/0fa1e5f1e6b4bafe415b6aebd4e716ade69d9962",
+        "observedAt": "2026-10-02T09:58:18Z",
+        "summary": "Fix/system charter page 20261002 (#64) * fix: restore public system charter page * fix: remove duplicate DataNest AI hero section * fix: remove stale unavailable human review panel * fix: restore public system charter index * fix: close DataNest AI focus-mode fragment * fix: restore public visibility utility index * fix: remove incomplete Mirror focus-mode wrapper * test: exclude canonical edge release contract from Mirror suite * test: make system charter discovery Mirror-aware * fix: publish Mirror sitemap for system charter * fix: publish Mirror robots sitemap reference",
+        "categories": [
+          "reliability",
+          "testing",
+          "deployment",
+          "ai",
+          "ux",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:cb345ddfe7056f40caeb784fd1f63534c1683881e7885ad7afdb9985e1cbe8c2"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#61",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "183b2952117b01891a5f22fbd093d4b7b91724ec",
+        "sourceNumber": 61,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/61",
+        "observedAt": "2026-10-02T09:55:04Z",
+        "summary": "fix: accept GitHub native protection enforcement states",
+        "categories": [
+          "reliability",
+          "ai",
+          "data",
+          "ux",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:90e7010c6c0d007ce528443ce68d91144a487582968588a004842715b0eab62d"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@183b2952117b01891a5f22fbd093d4b7b91724ec",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "183b2952117b01891a5f22fbd093d4b7b91724ec",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/183b2952117b01891a5f22fbd093d4b7b91724ec",
+        "observedAt": "2026-10-02T09:55:03Z",
+        "summary": "fix: accept GitHub native protection enforcement states (#61)",
+        "categories": [
+          "reliability"
+        ],
+        "evidenceHash": "sha256:c83b034e858a41363c31990a04c6ef4ed6ce131878ce268a5541d137e4004c93"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@7f37abd0b023aa4f851db6030b2e68fad53ecbb6",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "7f37abd0b023aa4f851db6030b2e68fad53ecbb6",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/7f37abd0b023aa4f851db6030b2e68fad53ecbb6",
+        "observedAt": "2026-10-02T09:53:46+02:00",
+        "summary": "Publish PR #365 LIBERTY-IN-ALL validation evidence (#394)",
+        "categories": [
+          "testing"
+        ],
+        "evidenceHash": "sha256:79f71a18828f16110ac19bda2319cacf0f7c9775a4993837d425e6182ca59192"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@f7736929dc608039c72bb1db135dc0f2d94d60b5",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "f7736929dc608039c72bb1db135dc0f2d94d60b5",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/f7736929dc608039c72bb1db135dc0f2d94d60b5",
+        "observedAt": "2026-10-02T09:49:49+02:00",
+        "summary": "Fix ENVIRONMENT automation review contract",
+        "categories": [
+          "reliability"
+        ],
+        "evidenceHash": "sha256:56681a7195bddfce2a50d2694bd2e81f0fa1120663dfaa1b5116b87cc730f231"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@bd53c9338968bb3cfc887c40f0c654fde267879f",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "bd53c9338968bb3cfc887c40f0c654fde267879f",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/bd53c9338968bb3cfc887c40f0c654fde267879f",
+        "observedAt": "2026-10-02T09:37:51+02:00",
+        "summary": "Governance: publish proposed Declaration of Intent and external AI auditor call (#389)",
+        "categories": [
+          "security",
+          "governance",
+          "ai"
+        ],
+        "evidenceHash": "sha256:91745d2902abe5f30a9f5639c2d661b43cb1e917819507662d9cd55f7c638462"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@c6735c4e3acef7946f81013f3717c0645173fc36",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "c6735c4e3acef7946f81013f3717c0645173fc36",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/c6735c4e3acef7946f81013f3717c0645173fc36",
+        "observedAt": "2026-10-02T09:28:00+02:00",
+        "summary": "Merge pull request #392 from DataNest-Supository/governance/pledge-oath-honesty-transparency",
+        "categories": [
+          "governance"
+        ],
+        "evidenceHash": "sha256:a57a3a241ac2f5ba385f61dac915eb3d81f21d9b48d6449c9372dc832f690588"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@53d075a623074d107f15c8a04984cb8119644fbd",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "53d075a623074d107f15c8a04984cb8119644fbd",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/53d075a623074d107f15c8a04984cb8119644fbd",
+        "observedAt": "2026-10-02T09:21:01+02:00",
+        "summary": "Governance: add pledge review evidence and verification protocol",
+        "categories": [
+          "governance",
+          "testing"
+        ],
+        "evidenceHash": "sha256:d539da26b4fa200628de802b4615eb489628f6bc5714fa3e822ce646bf154e16"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@6761c849cf4c552410257c787e7d4769c6c0dfb1",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "6761c849cf4c552410257c787e7d4769c6c0dfb1",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/6761c849cf4c552410257c787e7d4769c6c0dfb1",
+        "observedAt": "2026-10-02T09:21:01+02:00",
+        "summary": "Governance: add proposed pledge of honesty, transparency and free will",
+        "categories": [
+          "governance"
+        ],
+        "evidenceHash": "sha256:7d899ebe81c90ccfd4ab17e8b981581f93a6fc8c18e8f57c3858a6c05f9ad721"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#60",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "d285d9e52995dffa26e78a14d97a78ee1e7f72dd",
+        "sourceNumber": 60,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/60",
+        "observedAt": "2026-10-02T09:13:08Z",
+        "summary": "Docs: publish DataNext Mirror guidelines inside Mirror-only boundary",
+        "categories": [
+          "security",
+          "governance",
+          "reliability",
+          "testing",
+          "ai",
+          "data",
+          "ux",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:eca41b44b5e19e03e1e645d497d97b056da091ab61cc18350e2cedce14dedf50"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@d285d9e52995dffa26e78a14d97a78ee1e7f72dd",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "d285d9e52995dffa26e78a14d97a78ee1e7f72dd",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/d285d9e52995dffa26e78a14d97a78ee1e7f72dd",
+        "observedAt": "2026-10-02T09:13:07Z",
+        "summary": "Docs: publish DataNext Mirror guidelines inside Mirror-only boundary (#60) * fix: avoid duplicate Mirror BRANCH-X gate diagnostics * Add Mirror-only DataNext operating guidelines * Test Mirror-only DataNext guideline boundary",
+        "categories": [
+          "governance",
+          "reliability",
+          "testing",
+          "ux",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:603923a31404630a9417dd4090076b5442cf5876c5276a4209e1b2e73a8b97bb"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@ac07a6d429eda6650759f28b2cdfed845c82ed7a",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "ac07a6d429eda6650759f28b2cdfed845c82ed7a",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/ac07a6d429eda6650759f28b2cdfed845c82ed7a",
+        "observedAt": "2026-10-02T09:11:41+02:00",
+        "summary": "Harden governance approval evidence and CONDUCTOR source guards",
+        "categories": [
+          "governance",
+          "testing"
+        ],
+        "evidenceHash": "sha256:012bffc93434dcfacce5afaf9a242255b4d5043daddf2aaff510e064fd846ce6"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@1b3e308bce963026e4f65b158b7af94622181b92",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "1b3e308bce963026e4f65b158b7af94622181b92",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/1b3e308bce963026e4f65b158b7af94622181b92",
+        "observedAt": "2026-10-02T09:09:51Z",
+        "summary": "Merge pull request #59 from DataNest-Supository/fix/branchx-gate-diagnostics-20261002 fix: avoid duplicate Mirror BRANCH-X gate diagnostics",
+        "categories": [
+          "reliability",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:36ac1253ad9bc1e2a1dd382154f5d9f6370ce5a10f068a330bb3b0d0c96ebc45"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#59",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "1b3e308bce963026e4f65b158b7af94622181b92",
+        "sourceNumber": 59,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/59",
+        "observedAt": "2026-10-02T09:09:51Z",
+        "summary": "fix: avoid duplicate Mirror BRANCH-X gate diagnostics",
+        "categories": [
+          "reliability",
+          "testing",
+          "ai",
+          "data",
+          "ux",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:1cc90a1ee4ffa1f18b3e501711652bb4bb49503c94f56175319bc7c22fc6fa5a"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@6ebd47840574e14441915c6f17f4be2bbac4d175",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "6ebd47840574e14441915c6f17f4be2bbac4d175",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/6ebd47840574e14441915c6f17f4be2bbac4d175",
+        "observedAt": "2026-10-02T09:07:34Z",
+        "summary": "fix: avoid duplicate Mirror BRANCH-X gate diagnostics",
+        "categories": [
+          "reliability",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:31222672141f195658b9e1d04edde697178fa5d72dffe207e2c05c738a85bc64"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@436cdab44dacb03bacf3f62c8e6d27da2882daa6",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "436cdab44dacb03bacf3f62c8e6d27da2882daa6",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/436cdab44dacb03bacf3f62c8e6d27da2882daa6",
+        "observedAt": "2026-10-02T09:06:31Z",
+        "summary": "Merge pull request #58 from DataNest-Supository/fix/governance-audit-current-main-20261002 Harden Mirror production verification (current-main rebuild)",
+        "categories": [
+          "security",
+          "governance",
+          "reliability",
+          "ai",
+          "ux",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:1156d303d03e2e4368cb433e2f786c458f69708e616d0c3e188a1545121c3473"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#58",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "436cdab44dacb03bacf3f62c8e6d27da2882daa6",
+        "sourceNumber": 58,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/58",
+        "observedAt": "2026-10-02T09:06:31Z",
+        "summary": "Harden Mirror production verification (current-main rebuild)",
+        "categories": [
+          "security",
+          "governance",
+          "testing",
+          "deployment",
+          "ai",
+          "data",
+          "ux",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:59f7c338b656f9c32c81a7f88dfb02e68dc151da6e8b843856f819c9784d4221"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@fa5604fb3f4b2dbe03b8a6172ac61f1db0fbc8e7",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "fa5604fb3f4b2dbe03b8a6172ac61f1db0fbc8e7",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/fa5604fb3f4b2dbe03b8a6172ac61f1db0fbc8e7",
+        "observedAt": "2026-10-02T09:03:53+02:00",
+        "summary": "Harden governance approval evidence and CONDUCTOR source guards",
+        "categories": [
+          "governance",
+          "testing"
+        ],
+        "evidenceHash": "sha256:07d268341f29338dd4235c5d1f02ada500e22b9d957eb60b5cd2ad5b422dbd57"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@aed8f54fd25e774b54b16d6fa2271ca0d4d00b63",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "aed8f54fd25e774b54b16d6fa2271ca0d4d00b63",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/aed8f54fd25e774b54b16d6fa2271ca0d4d00b63",
+        "observedAt": "2026-10-02T09:03:43Z",
+        "summary": "Harden Mirror production verification on current main",
+        "categories": [
+          "ai",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:c5bbd5ec187a1356ed719897e003159f43ea7d75f6d626f76845d50c282a3754"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#57",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "254db82f011b28d607c0664c07221e554aa055af",
+        "sourceNumber": 57,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/57",
+        "observedAt": "2026-10-02T09:02:51Z",
+        "summary": "test: align Mirror audit registry contract",
+        "categories": [
+          "security",
+          "governance",
+          "testing",
+          "deployment",
+          "ai",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:2f5f888d5b9221ca01e24d3a8a34767a99fd3b0844995451c86c80f1ba05c87a"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@254db82f011b28d607c0664c07221e554aa055af",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "254db82f011b28d607c0664c07221e554aa055af",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/254db82f011b28d607c0664c07221e554aa055af",
+        "observedAt": "2026-10-02T09:02:50Z",
+        "summary": "test: align Mirror audit registry contract (#57)",
+        "categories": [
+          "security",
+          "testing",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:3a5936cc1eee1e2989c4ad522f1375b0e5f399d196856b9e3fdf55f203fff9f0"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@e2799e42062f9eb615c6796e89534d8602d33b5c",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "e2799e42062f9eb615c6796e89534d8602d33b5c",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/e2799e42062f9eb615c6796e89534d8602d33b5c",
+        "observedAt": "2026-10-02T09:02:02+02:00",
+        "summary": "Rebase governance approval integrity on current main",
+        "categories": [
+          "governance",
+          "ai"
+        ],
+        "evidenceHash": "sha256:640a6a03c4b7d4b83aeb56a8c26207b68204f228f6d6a008ca0467b94f521bd9"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@9dbde33fb7ff356d5a19364288ee2acb6548667e",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "9dbde33fb7ff356d5a19364288ee2acb6548667e",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/9dbde33fb7ff356d5a19364288ee2acb6548667e",
+        "observedAt": "2026-10-02T09:01:56Z",
+        "summary": "Fix canonical refresh boundary classification Merge current-main boundary fix after fresh exact-head Mirror Production, BRANCH-X, and Mirror R&D checks passed. Classifies canonical evidence/schema roots durably while preserving fail-closed handling for unknown paths.",
+        "categories": [
+          "governance",
+          "reliability",
+          "testing",
+          "ai",
+          "data",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:03a29bfe5bd5eb5ed51d781dd7472dc78d26351ca646a638780193c59e1e7154"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#52",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "9dbde33fb7ff356d5a19364288ee2acb6548667e",
+        "sourceNumber": 52,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/52",
+        "observedAt": "2026-10-02T09:01:56Z",
+        "summary": "Fix canonical refresh boundary classification (current-main rebuild)",
+        "categories": [
+          "security",
+          "governance",
+          "reliability",
+          "testing",
+          "deployment",
+          "ai",
+          "data",
+          "ux",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:6ebfe83aae4fd6df286e0af2d1bba207d64e211cb9fa539ca74af9d4b3b5950a"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@6a9c326c259bdc7f5e67c361d3ab54ddf7623e91",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "6a9c326c259bdc7f5e67c361d3ab54ddf7623e91",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/6a9c326c259bdc7f5e67c361d3ab54ddf7623e91",
+        "observedAt": "2026-10-02T09:00:37+02:00",
+        "summary": "Simplify: trigger production Pages directly from protected main",
+        "categories": [
+          "deployment",
+          "ai"
+        ],
+        "evidenceHash": "sha256:241269e35f6b48d6510d9ed22f14d960d6497d3c6a8f89dbb32fb72c2259238d"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@345df5f65a78a9532cc42511e1e872f59a9a5916",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "345df5f65a78a9532cc42511e1e872f59a9a5916",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/345df5f65a78a9532cc42511e1e872f59a9a5916",
+        "observedAt": "2026-10-02T08:58:36Z",
+        "summary": "Reconcile canonical refresh boundary fix after Mirror test-contract convergence",
+        "categories": [
+          "governance",
+          "reliability",
+          "testing",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:b49e4d2cfe86cbfb344d38c27c39b56d5772f4ee3776862ea21a0f6d25756ffb"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@7adc5047516d8f94528c15a29a8aa0594f86de26",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "7adc5047516d8f94528c15a29a8aa0594f86de26",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/7adc5047516d8f94528c15a29a8aa0594f86de26",
+        "observedAt": "2026-10-02T08:58:08Z",
+        "summary": "test: reconcile Mirror unit-test contracts (#55) * test: exclude canonical edge release contract from Mirror suite * test: make system charter discovery Mirror-aware * fix: add Mirror public sitemap * fix: add Mirror robots sitemap reference",
+        "categories": [
+          "reliability",
+          "testing",
+          "deployment",
+          "ux",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:217b5f6ec15e8a56506d2c57c7dc1e9c1e008ef03667daeefb864a041f070748"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#55",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "7adc5047516d8f94528c15a29a8aa0594f86de26",
+        "sourceNumber": 55,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/55",
+        "observedAt": "2026-10-02T08:58:08Z",
+        "summary": "test: reconcile Mirror unit-test contracts",
+        "categories": [
+          "testing",
+          "deployment",
+          "ai",
+          "ux",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:f5c305112a31b566ff7f1320d1a432c291d638114920e8037385da4e140e4e1a"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@74343307936c1424f2a842985380fa912a1e0aff",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "74343307936c1424f2a842985380fa912a1e0aff",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/74343307936c1424f2a842985380fa912a1e0aff",
+        "observedAt": "2026-10-02T08:57:14Z",
+        "summary": "Reconcile canonical refresh boundary fix after JSX and RONSAS repairs",
+        "categories": [
+          "governance",
+          "reliability",
+          "ai",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:e712bbf8070d13c08fb12d170cc2e1a9f4cd4bd64cda77ec24d852a0f3118586"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@a8999f002f9e4ba7467e7d8ae9d132b77f3d363e",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "a8999f002f9e4ba7467e7d8ae9d132b77f3d363e",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/a8999f002f9e4ba7467e7d8ae9d132b77f3d363e",
+        "observedAt": "2026-10-02T08:56:45Z",
+        "summary": "fix: resolve DataNest AI workspace JSX syntax (#54) * fix: restore public system charter page * fix: close DataNest AI hero JSX section * fix: remove undefined focusMode wrapper * fix: remove unavailable human review panel * fix: retry RONSAS npm installs on transient network failures * fix: remove unavailable human review panel",
+        "categories": [
+          "reliability",
+          "ai"
+        ],
+        "evidenceHash": "sha256:5de1c704a1105b6b6862154e158a2542f2c834b3b2a6947f44183df9f2a6c7b3"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#54",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "a8999f002f9e4ba7467e7d8ae9d132b77f3d363e",
+        "sourceNumber": 54,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/54",
+        "observedAt": "2026-10-02T08:56:45Z",
+        "summary": "fix: resolve DataNest AI workspace JSX syntax",
+        "categories": [
+          "reliability",
+          "ai"
+        ],
+        "evidenceHash": "sha256:91679840e203014391cd1a64f70a686f9719c82779039ac7ce990d6eb8e32175"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@155aaf3ce94de780340b73ede6b53424aacb9b30",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "155aaf3ce94de780340b73ede6b53424aacb9b30",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/155aaf3ce94de780340b73ede6b53424aacb9b30",
+        "observedAt": "2026-10-02T08:54:44Z",
+        "summary": "Reconcile canonical refresh boundary fix after System Charter repair",
+        "categories": [
+          "governance",
+          "reliability",
+          "ai",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:fd4fb8b3f7c25f4b9913f7a74602002c285652682eab832da0e62ec53dacd036"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@47981188865a7c50bafbe2334a68c141a33a3310",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "47981188865a7c50bafbe2334a68c141a33a3310",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/47981188865a7c50bafbe2334a68c141a33a3310",
+        "observedAt": "2026-10-02T08:54:05+02:00",
+        "summary": "Test: isolate UI Test Mode from protected Pages push path",
+        "categories": [
+          "testing",
+          "deployment",
+          "ux"
+        ],
+        "evidenceHash": "sha256:62233e718c17ec0175da4187e7613fa184c375a50a22e6557d6c25432cf39171"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@0e169d905f5958d5d3aafbeaf7b776509b9b870f",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "0e169d905f5958d5d3aafbeaf7b776509b9b870f",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/0e169d905f5958d5d3aafbeaf7b776509b9b870f",
+        "observedAt": "2026-10-02T08:54:01+02:00",
+        "summary": "Test: match canonical Pages push condition",
+        "categories": [
+          "testing",
+          "deployment",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:eb59f3bd6d1926dfcc0c7f321789a788d4873712c2482eb28bee47a7f4549590"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@c7df10c425e4bc1caa2339e15bfee093a848b9ea",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "c7df10c425e4bc1caa2339e15bfee093a848b9ea",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/c7df10c425e4bc1caa2339e15bfee093a848b9ea",
+        "observedAt": "2026-10-02T08:53:58+02:00",
+        "summary": "Test: keep Owner Test Mode isolated from production Pages trigger",
+        "categories": [
+          "testing",
+          "deployment"
+        ],
+        "evidenceHash": "sha256:2847c918b6e93a659da986824a286ef43897000e3b0a7a14fb68ac49225bd624"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@fcb3e766ccdcef06dbc6e8734bf4ff067cc5836f",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "fcb3e766ccdcef06dbc6e8734bf4ff067cc5836f",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/fcb3e766ccdcef06dbc6e8734bf4ff067cc5836f",
+        "observedAt": "2026-10-02T08:53:55+02:00",
+        "summary": "Test: align Pages trigger contract with protected main push",
+        "categories": [
+          "testing",
+          "deployment",
+          "ai"
+        ],
+        "evidenceHash": "sha256:2b9fb8c201ded38488c224c94b88cdf06f51e6dd11545e7067885d0eb6c2cad6"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#53",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "63a4a36509dd5592ade00e7e0056edb50c09671e",
+        "sourceNumber": 53,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/53",
+        "observedAt": "2026-10-02T08:53:28Z",
+        "summary": "Fix: restore System Charter public page",
+        "categories": [
+          "reliability",
+          "testing",
+          "ai",
+          "data",
+          "ux",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:72bd7551213e4014b6152b7cf17e71aa02b3f349fab89cb5eb0fd937b02f1b2b"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@63a4a36509dd5592ade00e7e0056edb50c09671e",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "63a4a36509dd5592ade00e7e0056edb50c09671e",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/63a4a36509dd5592ade00e7e0056edb50c09671e",
+        "observedAt": "2026-10-02T08:53:27Z",
+        "summary": "Fix: restore System Charter public page (#53) * fix: restore public system charter page * fix: remove duplicate DataNest AI hero section * fix: remove stale unavailable human review panel * fix: restore public system charter index * fix: close DataNest AI focus-mode fragment * fix: restore public visibility utility index * fix: remove incomplete Mirror focus-mode wrapper",
+        "categories": [
+          "reliability",
+          "ai",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:7ca1a1431e6159f421f97a358c047306433c78eba3e22dfbe4d36d413c7a2d4d"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@4433d46e030c7ea2be4b5c922e20b84cd72e13a0",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "4433d46e030c7ea2be4b5c922e20b84cd72e13a0",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/4433d46e030c7ea2be4b5c922e20b84cd72e13a0",
+        "observedAt": "2026-10-02T08:51:31+02:00",
+        "summary": "Docs: clarify automatic Pages release trigger",
+        "categories": [
+          "deployment"
+        ],
+        "evidenceHash": "sha256:af5bb87a1ae72b2648cde6e366745c1397624443107fcba9622906a1c4ed18ed"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@4cb01871418fb962a6fe26212e8f72132957d83b",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "4cb01871418fb962a6fe26212e8f72132957d83b",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/4cb01871418fb962a6fe26212e8f72132957d83b",
+        "observedAt": "2026-10-02T08:51:28+02:00",
+        "summary": "Test: require protected-main Pages release trigger",
+        "categories": [
+          "testing",
+          "deployment",
+          "ai",
+          "ux"
+        ],
+        "evidenceHash": "sha256:cc4fb1a6b0960351d8b56a1b55e695aaf1064a685856fbd643dfe79fc37cd664"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@387944d92c6e1a7bbc4cde707710c1dd916baae5",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "387944d92c6e1a7bbc4cde707710c1dd916baae5",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/387944d92c6e1a7bbc4cde707710c1dd916baae5",
+        "observedAt": "2026-10-02T08:51:24+02:00",
+        "summary": "Test: cover push-based Pages release trigger",
+        "categories": [
+          "testing",
+          "deployment"
+        ],
+        "evidenceHash": "sha256:23d059dc5725774eedd609d51013d16a83926693c494baf312115ab0f90820c7"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@1583aafb7c61854459194c1b2689e700658c85f5",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "1583aafb7c61854459194c1b2689e700658c85f5",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/1583aafb7c61854459194c1b2689e700658c85f5",
+        "observedAt": "2026-10-02T08:51:21+02:00",
+        "summary": "Test: cover protected-main Pages trigger",
+        "categories": [
+          "testing",
+          "deployment",
+          "ai"
+        ],
+        "evidenceHash": "sha256:68d46b6955032e1f4fb311e69c8c26dfb03bd2ea03868a9e923f35659609615d"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@8cc488f873093b0a93cfb5141d0f33f14324bed5",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "8cc488f873093b0a93cfb5141d0f33f14324bed5",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/8cc488f873093b0a93cfb5141d0f33f14324bed5",
+        "observedAt": "2026-10-02T08:51:04+02:00",
+        "summary": "Fix: trigger Pages directly from protected main pushes",
+        "categories": [
+          "reliability",
+          "deployment",
+          "ai"
+        ],
+        "evidenceHash": "sha256:3603e947767c332f8c21641ab15aed9274b1135b027031a786151b91cef6e1db"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@a837e5f8240cc9f2b2a74f6fec4034a877027cc1",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "a837e5f8240cc9f2b2a74f6fec4034a877027cc1",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/a837e5f8240cc9f2b2a74f6fec4034a877027cc1",
+        "observedAt": "2026-10-02T08:48:48+02:00",
+        "summary": "Simplify production Pages release path",
+        "categories": [
+          "deployment"
+        ],
+        "evidenceHash": "sha256:a70890d8a988767dde88e8d23ff64e73336385f1a7002eca0dfac7cacda6bbd8"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@a1d40cbb43ca7f35c61338f328c37c7611dfbae6",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "a1d40cbb43ca7f35c61338f328c37c7611dfbae6",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/a1d40cbb43ca7f35c61338f328c37c7611dfbae6",
+        "observedAt": "2026-10-02T08:43:13Z",
+        "summary": "Rebase canonical refresh boundary fix on current Mirror main",
+        "categories": [
+          "governance",
+          "reliability",
+          "ai",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:134243c3e1bfe799c0d06b4ceec62be7480b248461703d229999da3577dbd81f"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@f16463ba7cd374088f5d84478e37d9363927dc80",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "f16463ba7cd374088f5d84478e37d9363927dc80",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/f16463ba7cd374088f5d84478e37d9363927dc80",
+        "observedAt": "2026-10-02T08:42:17Z",
+        "summary": "Test canonical refresh boundary classification",
+        "categories": [
+          "governance",
+          "testing",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:8bd2fdcdf53a41351a3706b1c752162f0b92c68b4be8ceaced90da109f9c081c"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@daf205a0e49db83ebbf38ee54642088ff2202164",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "daf205a0e49db83ebbf38ee54642088ff2202164",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/daf205a0e49db83ebbf38ee54642088ff2202164",
+        "observedAt": "2026-10-02T08:42:05Z",
+        "summary": "Fix canonical refresh boundary classification",
+        "categories": [
+          "governance",
+          "reliability",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:b3158cdfee4ec674572cacb45ac38985a6dbf1644626d9120a31a69c7a2f025f"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@46dbcc03e263170ff2c83ae52d4dea8103bc7dbf",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "46dbcc03e263170ff2c83ae52d4dea8103bc7dbf",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/46dbcc03e263170ff2c83ae52d4dea8103bc7dbf",
+        "observedAt": "2026-10-02T08:42:00+02:00",
+        "summary": "Merge branch 'main' into simplify/production-release-20261002-v2",
+        "categories": [
+          "deployment",
+          "ai"
+        ],
+        "evidenceHash": "sha256:251ab9f3b7f2eb4022ef853520e2ab5e2a96c4e0dbd6bd5f7df87dadce48ff7b"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@29a915721756b22822fc6b614570f841f02e131a",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "29a915721756b22822fc6b614570f841f02e131a",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/29a915721756b22822fc6b614570f841f02e131a",
+        "observedAt": "2026-10-02T08:41:55Z",
+        "summary": "Fix: fail-closed Mirror production publishing without native BRANCH-X protection (#48) * fix: fail closed production publishing without native BRANCH-X protection * fix: run native protection gate before dependency setup",
+        "categories": [
+          "reliability",
+          "ai",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:0d00da5f18c49df7697cedf695739ab9a571f0f9a914c8cb5d67814234f27ec4"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#48",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "29a915721756b22822fc6b614570f841f02e131a",
+        "sourceNumber": 48,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/48",
+        "observedAt": "2026-10-02T08:41:55Z",
+        "summary": "Fix: fail-closed Mirror production publishing without native BRANCH-X protection",
+        "categories": [
+          "governance",
+          "reliability",
+          "deployment",
+          "ai",
+          "ux",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:eac6a85c17744b11db08d6ee0d10771bf7ab9af3c3787ccd20ad2044ad982d36"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@78f1a5d92947c13d65e71d4baf76237020d5bd84",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "78f1a5d92947c13d65e71d4baf76237020d5bd84",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/78f1a5d92947c13d65e71d4baf76237020d5bd84",
+        "observedAt": "2026-10-02T08:39:59+02:00",
+        "summary": "Merge PR #422: Fix automation fan-out and duplicate run churn",
+        "categories": [
+          "reliability"
+        ],
+        "evidenceHash": "sha256:91d0b21ea49564def9c031d3ce8c28c447e23383af533a04a1fd38f5a6a76ec1"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@54eee48cfe215767a3715e93d66db12bdf850839",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "54eee48cfe215767a3715e93d66db12bdf850839",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/54eee48cfe215767a3715e93d66db12bdf850839",
+        "observedAt": "2026-10-02T08:35:28+02:00",
+        "summary": "Docs: add production Pages quick path",
+        "categories": [
+          "deployment",
+          "ux"
+        ],
+        "evidenceHash": "sha256:7bb1edfd86847041001cea8ea922bf8519dfffd518685f877898b36aa2f31b97"
+      },
+      {
+        "id": "commit:DataNest-Supository/DataNest@664fd45693f3c99733d051bdd628ef83159a1e90",
+        "repository": "DataNest-Supository/DataNest",
+        "sourceType": "commit",
+        "sourceSha": "664fd45693f3c99733d051bdd628ef83159a1e90",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/DataNest/commit/664fd45693f3c99733d051bdd628ef83159a1e90",
+        "observedAt": "2026-10-02T08:33:45+02:00",
+        "summary": "Rebase #408: deduplicate VISIBILITY-UTILITY runs on current main",
+        "categories": [
+          "ai"
+        ],
+        "evidenceHash": "sha256:70b56fd85eb792d01b9076360b122ad9aa11ca177bacce89f6cb2c98d2819454"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@deb730403c1bf94cfe992926d9c7444a43f9fd4f",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "deb730403c1bf94cfe992926d9c7444a43f9fd4f",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/deb730403c1bf94cfe992926d9c7444a43f9fd4f",
+        "observedAt": "2026-10-02T06:36:11Z",
+        "summary": "Merge pull request #46 from DataNest-Supository/sync/canonical-main-8f71814d1ad2-b5430e9 Sync canonical DataNest main into R&D mirror",
+        "categories": [
+          "ai",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:46f16efdfa69d6d300110e045feffe75d9d78f3cbc939b04a42dda68f8c15f2e"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#46",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "deb730403c1bf94cfe992926d9c7444a43f9fd4f",
+        "sourceNumber": 46,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/46",
+        "observedAt": "2026-10-02T06:36:11Z",
+        "summary": "Sync canonical DataNest main into R&D mirror",
+        "categories": [
+          "security",
+          "governance",
+          "ai",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:7f79891946faf9ccba126f41585c8fe8847d2826ab61f8f3948c022f0ee9f1f5"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@3bb7ab4b0b9ba3d729c1187ea0e5287ee5fd840c",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "3bb7ab4b0b9ba3d729c1187ea0e5287ee5fd840c",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/3bb7ab4b0b9ba3d729c1187ea0e5287ee5fd840c",
+        "observedAt": "2026-10-02T06:35:57Z",
+        "summary": "Merge branch 'main' into sync/canonical-main-8f71814d1ad2-b5430e9",
+        "categories": [
+          "ai",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:11a791e1de6677afc9fcfa33ffc2743ce1507c61e630273bfcb1e407b3abcb74"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#49",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "4550580494010ce2ac345e426a5b9a88a7a5d34b",
+        "sourceNumber": 49,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/49",
+        "observedAt": "2026-10-02T05:30:52Z",
+        "summary": "Sync canonical DataNest main into R&D mirror",
+        "categories": [
+          "security",
+          "governance",
+          "ai",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:b062295474d422ee0864e932c386a4e09934fec208d552e0453ad979449bd1b5"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@4550580494010ce2ac345e426a5b9a88a7a5d34b",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "4550580494010ce2ac345e426a5b9a88a7a5d34b",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/4550580494010ce2ac345e426a5b9a88a7a5d34b",
+        "observedAt": "2026-10-02T05:30:51Z",
+        "summary": "Merge pull request #49 from DataNest-Supository/sync/canonical-main-f445bc9aba39-381fde0 Sync canonical DataNest main into R&D mirror",
+        "categories": [
+          "ai",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:937768108b90986a419aae2f1d1e978640b7e173aa42ba1b5c6975a87b14414c"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@b74885a0202fc87b1880d8acf3e5f26e848741ff",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "b74885a0202fc87b1880d8acf3e5f26e848741ff",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/b74885a0202fc87b1880d8acf3e5f26e848741ff",
+        "observedAt": "2026-10-01T19:33:37Z",
+        "summary": "Record canonical sync lineage: f445bc9aba39",
+        "categories": [
+          "architecture"
+        ],
+        "evidenceHash": "sha256:aefb30295387d2159a2054224c7bdfcf9afbb363d3eb76536bf2b354e96e3c47"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@ad26e60f8213cb42baef2aa84fb32243f74736ca",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "ad26e60f8213cb42baef2aa84fb32243f74736ca",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/ad26e60f8213cb42baef2aa84fb32243f74736ca",
+        "observedAt": "2026-10-01T19:33:37Z",
+        "summary": "Sync canonical promotable paths: f445bc9aba39",
+        "categories": [
+          "architecture"
+        ],
+        "evidenceHash": "sha256:97b4d2746d310e10cfd0be0d89b197890429641e18eb4f55e54517836579fe24"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#47",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "381fde03cdb9efbf6c379f51e129710c3dae6ee6",
+        "sourceNumber": 47,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/47",
+        "observedAt": "2026-10-01T19:13:21Z",
+        "summary": "Cinematic AI core and function-specific workspace UX",
+        "categories": [
+          "security",
+          "reliability",
+          "testing",
+          "deployment",
+          "ai",
+          "ux",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:395102a717d35ceb18669ff50d3a3bfcf1b7ac829047d95f42f5e9e4401fbfe2"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@381fde03cdb9efbf6c379f51e129710c3dae6ee6",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "381fde03cdb9efbf6c379f51e129710c3dae6ee6",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/381fde03cdb9efbf6c379f51e129710c3dae6ee6",
+        "observedAt": "2026-10-01T19:13:20Z",
+        "summary": "Merge pull request #47 from DataNest-Supository/feat/cinematic-workspace-ux Cinematic AI core and function-specific workspace UX",
+        "categories": [
+          "ai",
+          "ux"
+        ],
+        "evidenceHash": "sha256:2d52711042fac352aa3bd02a2c62b7da99be067237cc59e6d322e6c3508a131a"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@d8175328487cb7890795a563fea979a22bd7209b",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "d8175328487cb7890795a563fea979a22bd7209b",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/d8175328487cb7890795a563fea979a22bd7209b",
+        "observedAt": "2026-10-01T18:56:09Z",
+        "summary": "Add cinematic AI instrument and function-aware workspace graphics Preserve owner-only Mirror access and existing Focus mode. Add adaptive AI state, motion safeguards, responsive readouts, workspace glyphs, and companion app motifs.",
+        "categories": [
+          "ai",
+          "ux",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:994a72bb43e67889b846367546da078f098beb6dd0652ebc0a8d8072ab185f98"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@101120a554b664ef62ac75997b543b6dccc2a362",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "101120a554b664ef62ac75997b543b6dccc2a362",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/101120a554b664ef62ac75997b543b6dccc2a362",
+        "observedAt": "2026-10-01T18:42:49Z",
+        "summary": "Re-run Mirror production evidence after shell quoting fix",
+        "categories": [
+          "reliability",
+          "testing",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:db65648dce79059c56054d0dac0cf5b3b489b3ae54421924e253288dfcaf333f"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@e336bf02fc4aa3551a5be0bed87dbe7976943f1b",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "e336bf02fc4aa3551a5be0bed87dbe7976943f1b",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/e336bf02fc4aa3551a5be0bed87dbe7976943f1b",
+        "observedAt": "2026-10-01T18:39:46Z",
+        "summary": "Record canonical sync lineage: 8f71814d1ad2",
+        "categories": [
+          "architecture"
+        ],
+        "evidenceHash": "sha256:999192860a0a742dd4770539ff4231e825c1b880778e306d1c08d6c95fb09c96"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@e7dc1b96da5b3a69b5639a33db35b37380cc3656",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "e7dc1b96da5b3a69b5639a33db35b37380cc3656",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/e7dc1b96da5b3a69b5639a33db35b37380cc3656",
+        "observedAt": "2026-10-01T18:39:46Z",
+        "summary": "Sync canonical promotable paths: 8f71814d1ad2",
+        "categories": [
+          "architecture"
+        ],
+        "evidenceHash": "sha256:6bca1b6240945fef4222dae149a1b15aaaaf3e382cef5ecdf4c857552191800a"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@b5430e968c67d52fcb8b272e87d85b42284b38b4",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "b5430e968c67d52fcb8b272e87d85b42284b38b4",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/b5430e968c67d52fcb8b272e87d85b42284b38b4",
+        "observedAt": "2026-10-01T18:38:59Z",
+        "summary": "Fix Mirror live verification summary shell quoting",
+        "categories": [
+          "reliability",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:f6552425cbbceba7976948fb159863106884a1d9f25538944482a8d74debc494"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@6d1e90a8c634044de5c0e2fdb4a00697e3cdb38c",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "6d1e90a8c634044de5c0e2fdb4a00697e3cdb38c",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/6d1e90a8c634044de5c0e2fdb4a00697e3cdb38c",
+        "observedAt": "2026-10-01T18:26:42Z",
+        "summary": "Merge pull request #45: Reconcile canonical lineage and peer authority wording Advance Mirror canonical lineage to the current peer-authority head and correct stale authority wording.",
+        "categories": [
+          "security",
+          "governance",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:1922b8225d2a5e9f7236edfc45cfc8c476d886f8d3ceab81b5c95d4099b2bcc5"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#45",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "6d1e90a8c634044de5c0e2fdb4a00697e3cdb38c",
+        "sourceNumber": 45,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/45",
+        "observedAt": "2026-10-01T18:26:42Z",
+        "summary": "Reconcile canonical lineage and peer authority wording",
+        "categories": [
+          "security",
+          "governance",
+          "ai",
+          "data",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:5d6182499cf6776be2f0a08e0c58b85348617fd0583b5ad2cfb50d08f1b20485"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@d76eb4adf73212689c9fbec5565e7c4a3d157ca6",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "d76eb4adf73212689c9fbec5565e7c4a3d157ca6",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/d76eb4adf73212689c9fbec5565e7c4a3d157ca6",
+        "observedAt": "2026-10-01T18:13:05Z",
+        "summary": "Advance canonical lineage to peer-authority head",
+        "categories": [
+          "security",
+          "governance",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:a680660188abd3a27c02e2d03b540f12295214d5e5b0ea4b7562635fab226a2c"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@ef43721b455d4d42b6a0d57303b0d451bf8e52b8",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "ef43721b455d4d42b6a0d57303b0d451bf8e52b8",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/ef43721b455d4d42b6a0d57303b0d451bf8e52b8",
+        "observedAt": "2026-10-01T18:13:02Z",
+        "summary": "Correct canonical refresh authority wording",
+        "categories": [
+          "security",
+          "governance",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:d6c2263209f939a2e5029e56718b2360739e1826bec6096e90c83c0269d68dc6"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#42",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "5ad1b037c51662cc24a8d0f5e94f49a479dcff8a",
+        "sourceNumber": 42,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/42",
+        "observedAt": "2026-10-01T17:13:51Z",
+        "summary": "Add governed Human Review panel to Owner R&D cockpit",
+        "categories": [
+          "governance",
+          "testing",
+          "deployment",
+          "ai",
+          "ux",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:dd3afe23e39047ac4bfe1b76babbaf4ccdec4a3ccb7e82f39ce99551a8717a07"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@5ad1b037c51662cc24a8d0f5e94f49a479dcff8a",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "5ad1b037c51662cc24a8d0f5e94f49a479dcff8a",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/5ad1b037c51662cc24a8d0f5e94f49a479dcff8a",
+        "observedAt": "2026-10-01T17:13:50Z",
+        "summary": "Add governed Human Review panel Expose live canonical review evidence in the Mirror Owner R&D cockpit while preserving formal GitHub review, merge, and deployment authority boundaries.",
+        "categories": [
+          "security",
+          "governance",
+          "testing",
+          "deployment",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:14beb1351204b406daf770f56ebc594d6fd11b261c09f60c6f11d2d075023d9c"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@a55872cd06727f4e64462756a28d8a2df6b1fef0",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "a55872cd06727f4e64462756a28d8a2df6b1fef0",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/a55872cd06727f4e64462756a28d8a2df6b1fef0",
+        "observedAt": "2026-10-01T17:10:16Z",
+        "summary": "Merge pull request #41: Align Mirror README with production authority Align top-level Mirror operator documentation with its peer production authority.",
+        "categories": [
+          "security",
+          "governance",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:c06fca4e8034d3cc53e01b252ff82c697a40a6c41610086a0ae4b74ba8dcc6aa"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#41",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "a55872cd06727f4e64462756a28d8a2df6b1fef0",
+        "sourceNumber": 41,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/41",
+        "observedAt": "2026-10-01T17:10:16Z",
+        "summary": "Align Mirror README with production authority",
+        "categories": [
+          "security",
+          "governance",
+          "deployment",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:23b154efc58cbaf62b195957e292dbea3d0d28cd3f04a862eb03311c79ed8850"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@e16bbfeccaee3eddd230a2d61d164960b342f1ea",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "e16bbfeccaee3eddd230a2d61d164960b342f1ea",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/e16bbfeccaee3eddd230a2d61d164960b342f1ea",
+        "observedAt": "2026-10-01T17:07:38Z",
+        "summary": "Align Mirror README with peer production authority",
+        "categories": [
+          "security",
+          "governance",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:89598e95f3c15b7fb1f589f65d78ff2d0aa30b8c4804f5b6b0d4305b5e17e5ca"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@382d613a34981713c98353b9ddb1c0e694d6ff99",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "382d613a34981713c98353b9ddb1c0e694d6ff99",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/382d613a34981713c98353b9ddb1c0e694d6ff99",
+        "observedAt": "2026-10-01T17:06:17Z",
+        "summary": "Merge pull request #40: Align Mirror production terminology Make Mirror workflow and operator documentation consistently describe the peer production surface.",
+        "categories": [
+          "architecture"
+        ],
+        "evidenceHash": "sha256:16e0fbf49887796cee9df96e37dc7153e4f94733776b71ab28fdf508655f7e1c"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#40",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "382d613a34981713c98353b9ddb1c0e694d6ff99",
+        "sourceNumber": 40,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/40",
+        "observedAt": "2026-10-01T17:06:17Z",
+        "summary": "Align Mirror production workflow terminology",
+        "categories": [
+          "security",
+          "governance",
+          "deployment",
+          "ai",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:9a574a0e893fd251dda4a229021904111d1b9fceae49a7149267738876a24e3c"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@cb9e114202e1612692445ca2722db891f58ed085",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "cb9e114202e1612692445ca2722db891f58ed085",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/cb9e114202e1612692445ca2722db891f58ed085",
+        "observedAt": "2026-10-01T17:03:46Z",
+        "summary": "Fix Mirror production workflow step label",
+        "categories": [
+          "reliability",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:9997bde95d6299fc7d32b01a2c175fde5c7cc0da3c6090a8d55856c150526acf"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@5f1598c66490fa5cc5b6efce09f96ca1c9f4b662",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "5f1598c66490fa5cc5b6efce09f96ca1c9f4b662",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/5f1598c66490fa5cc5b6efce09f96ca1c9f4b662",
+        "observedAt": "2026-10-01T17:00:58Z",
+        "summary": "Align Mirror Pages workflow with production authority",
+        "categories": [
+          "security",
+          "governance",
+          "deployment",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:8707c66fe712dd952d2b8e2bbd941b8d46b6e5a47d8af961a889748b50113755"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@7d384c1adc466784988837b26ff52cb65ea7ccf4",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "7d384c1adc466784988837b26ff52cb65ea7ccf4",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/7d384c1adc466784988837b26ff52cb65ea7ccf4",
+        "observedAt": "2026-10-01T17:00:54Z",
+        "summary": "Align Mirror production terminology in operator mode",
+        "categories": [
+          "architecture"
+        ],
+        "evidenceHash": "sha256:87d73ef1e87999bbc4bfcd79ca196061473c14beb3ebcc55b38c1e0e0012197b"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@6a80fa9a7bac5f9a2858a42cb108801d6bdad624",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "6a80fa9a7bac5f9a2858a42cb108801d6bdad624",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/6a80fa9a7bac5f9a2858a42cb108801d6bdad624",
+        "observedAt": "2026-10-01T17:00:44Z",
+        "summary": "Align Mirror workflow and documentation with peer production authority",
+        "categories": [
+          "security",
+          "governance",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:7a28fdd6386a25605f22b1be8ce069185c71b26cbe72a565f80d6322b0fdb43a"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@4199559c4b408a06515e89810ab0c0f4e35e7937",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "4199559c4b408a06515e89810ab0c0f4e35e7937",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/4199559c4b408a06515e89810ab0c0f4e35e7937",
+        "observedAt": "2026-10-01T15:43:31Z",
+        "summary": "Merge pull request #38: Establish Mirror peer production authority Make /Mirror-DataNest/ an independent peer production surface with exact-SHA release evidence and isolated backend authority.",
+        "categories": [
+          "security",
+          "governance",
+          "testing",
+          "deployment",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:3b524a256492aa5a689b5efaee6718ece600c074efe0f25b3e7cb99985fa4428"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#38",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "4199559c4b408a06515e89810ab0c0f4e35e7937",
+        "sourceNumber": 38,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/38",
+        "observedAt": "2026-10-01T15:43:31Z",
+        "summary": "Establish Mirror peer production authority",
+        "categories": [
+          "security",
+          "governance",
+          "testing",
+          "deployment",
+          "ai",
+          "data",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:2ef84008a5efca911807be75832a9c70a7dce0aeb06c4c51b45a3bacd1482978"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@8db76f1b2961c95d3013d90a0e8a5e66b533cc36",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "8db76f1b2961c95d3013d90a0e8a5e66b533cc36",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/8db76f1b2961c95d3013d90a0e8a5e66b533cc36",
+        "observedAt": "2026-10-01T15:40:48Z",
+        "summary": "Align Mirror production manifest with shared release-state validator",
+        "categories": [
+          "deployment",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:a11bd81015afe46d73236ac68f7ebe9b45c4a89120690adb085926eba9b624df"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@81556f9e46a8d4c9847f8ec5e23df0666fdf2bfa",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "81556f9e46a8d4c9847f8ec5e23df0666fdf2bfa",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/81556f9e46a8d4c9847f8ec5e23df0666fdf2bfa",
+        "observedAt": "2026-10-01T15:38:41Z",
+        "summary": "Make Mirror a peer production authority",
+        "categories": [
+          "security",
+          "governance",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:f05cc852f0c0965d59bf90c7d5c837c4ade904ca82897acba639d7cb3b209705"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@8442b8f5ad1caf44d0ba20cf8ccd208a91f3ee78",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "8442b8f5ad1caf44d0ba20cf8ccd208a91f3ee78",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/8442b8f5ad1caf44d0ba20cf8ccd208a91f3ee78",
+        "observedAt": "2026-10-01T15:32:09Z",
+        "summary": "Merge pull request #37 from DataNest-Supository/rd/ui-work-chat-alignment-v2-20261001 Validate work-chat UI optimization on repaired canonical baseline",
+        "categories": [
+          "ai",
+          "ux",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:84898a5f6231696071fcc6c5e9759facdb2e2d0a209efc0cb53224b38348a6eb"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#37",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "8442b8f5ad1caf44d0ba20cf8ccd208a91f3ee78",
+        "sourceNumber": 37,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/37",
+        "observedAt": "2026-10-01T15:32:09Z",
+        "summary": "Validate work-chat UI optimization on repaired canonical baseline",
+        "categories": [
+          "security",
+          "governance",
+          "reliability",
+          "ai",
+          "ux",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:780f358ca01ca840eb0bf35303c255c3ebdbde830b3b9473d7f4a239b9bd7ac3"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@c7a17384d2f2dd1b143a5faf0a47494be92b71b8",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "c7a17384d2f2dd1b143a5faf0a47494be92b71b8",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/c7a17384d2f2dd1b143a5faf0a47494be92b71b8",
+        "observedAt": "2026-10-01T15:29:57Z",
+        "summary": "Apply work-chat UI optimization: tests/unit/datanest-ai-ui.test.mjs",
+        "categories": [
+          "testing",
+          "ai",
+          "ux"
+        ],
+        "evidenceHash": "sha256:3e776871c7553d82cce5115db46c8fd2d5773b69dbd57049fe84abaa1eea61c5"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@27a56f343c7fd48923f137a9406893f1395921c2",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "27a56f343c7fd48923f137a9406893f1395921c2",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/27a56f343c7fd48923f137a9406893f1395921c2",
+        "observedAt": "2026-10-01T15:29:53Z",
+        "summary": "Apply work-chat UI optimization: tests/browser/datanest-ai-layout.spec.ts",
+        "categories": [
+          "testing",
+          "ai",
+          "ux"
+        ],
+        "evidenceHash": "sha256:dca4f750a499e9532350bbf3acdb6625a48f0848020ae689e024fc88b2262f5e"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@7e8feb1d84475852edf2117a39d80bab9a23a191",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "7e8feb1d84475852edf2117a39d80bab9a23a191",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/7e8feb1d84475852edf2117a39d80bab9a23a191",
+        "observedAt": "2026-10-01T15:29:50Z",
+        "summary": "Apply work-chat UI optimization: src/app/datanest-ai-optimized.css",
+        "categories": [
+          "ai",
+          "ux"
+        ],
+        "evidenceHash": "sha256:24afd1fdc256edd58b3daa60d29770a277d4130217c4f921c334b6225709f1cc"
+      },
+      {
+        "id": "commit:DataNest-Supository/Mirror-DataNest@2a97542297ae0d4bb89712337f1d4d0ab1fdddd7",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "commit",
+        "sourceSha": "2a97542297ae0d4bb89712337f1d4d0ab1fdddd7",
+        "sourceNumber": null,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/commit/2a97542297ae0d4bb89712337f1d4d0ab1fdddd7",
+        "observedAt": "2026-10-01T15:29:46Z",
+        "summary": "Apply work-chat UI optimization: src/components/DataNestAiWorkspace.tsx",
+        "categories": [
+          "ai",
+          "ux"
+        ],
+        "evidenceHash": "sha256:ed524e0ea1546265f91170e0e161f60da1a516674a72c898583903c8b051ee6e"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#36",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "597fb6bd73012824a7ab768e8138697827dfe44a",
+        "sourceNumber": 36,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/36",
+        "observedAt": "2026-10-01T15:28:57Z",
+        "summary": "Sync canonical DataNest main into R&D mirror",
+        "categories": [
+          "security",
+          "governance",
+          "testing",
+          "ai",
+          "ux",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:fd938ee01ed5826149b5156eea5f29eefdae40fab62e2807899dda2dbd25c4b5"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#34",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "2cc2a6d759bcf297fd92bde421f1e9ca92da8ea5",
+        "sourceNumber": 34,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/34",
+        "observedAt": "2026-10-01T15:25:16Z",
+        "summary": "Sync canonical DataNest release lineage 02ff0ad2ee44",
+        "categories": [
+          "security",
+          "governance",
+          "testing",
+          "deployment",
+          "ai",
+          "ux",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:83d7059c68ee0dd3107704d95518a1563b25ab342f989ae7f7aea3808d36ad4d"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#33",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "2f926e44dd889f33a75492d139dd3030883da558",
+        "sourceNumber": 33,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/33",
+        "observedAt": "2026-10-01T15:21:10Z",
+        "summary": "Restore Mirror parity dependencies after canonical refresh",
+        "categories": [
+          "governance",
+          "testing",
+          "ai",
+          "ux",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:7d5bc24f263a2ffb13621c09bef74a51422e5b0aaaefc4fbfc14468a7a34154e"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#31",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "a89c2e42fb9e8766501e5ea2b44f8d7b20621b18",
+        "sourceNumber": 31,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/31",
+        "observedAt": "2026-10-01T15:11:34Z",
+        "summary": "Sync canonical DataNest main into R&D mirror",
+        "categories": [
+          "security",
+          "governance",
+          "ai",
+          "ux",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:1330a89a331347de47622be339951e4fc8520b2e1755f0534f77baab653a024c"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#30",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "cafa8160e94d2620ac33d54e8c9143c5fc3da8d6",
+        "sourceNumber": 30,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/30",
+        "observedAt": "2026-10-01T14:53:30Z",
+        "summary": "Sync canonical DataNest main into R&D mirror",
+        "categories": [
+          "security",
+          "governance",
+          "ai",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:046766b3fbfd93a75edd16f169287441ca2163100c34ecf0dadadfaafaa6a44b"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#29",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "32523781d503ede84f8331df68192dd1562e16a9",
+        "sourceNumber": 29,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/29",
+        "observedAt": "2026-10-01T14:26:43Z",
+        "summary": "Align R&D UI with DataNest optimization work-chat baseline",
+        "categories": [
+          "security",
+          "reliability",
+          "testing",
+          "deployment",
+          "ai",
+          "ux",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:c8af9e29be44c1fe6ee74b09ee186e33d0b35e740d6429ee32773e3722e2eb4e"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#23",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "a0be4880d9d1dd26f9689d4b8812e32440c53178",
+        "sourceNumber": 23,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/23",
+        "observedAt": "2026-10-01T05:34:57Z",
+        "summary": "Add Knowledge feed, open AI plugin lab, FREETREE bootstrap, and maintenance",
+        "categories": [
+          "security",
+          "governance",
+          "testing",
+          "deployment",
+          "ai",
+          "ux",
+          "maintenance",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:56c7c3e04d45488846511017d790af9f6b478132f2edc13ecf8d88923371d30f"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#22",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "1b22da559af289b72c76f14310949e3c15dd686a",
+        "sourceNumber": 22,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/22",
+        "observedAt": "2026-10-01T05:06:59Z",
+        "summary": "Run canonical reconciliation hourly without sync token",
+        "categories": [
+          "security",
+          "governance",
+          "ai",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:8646686c060e413c51c5cac743eec503d1f90362e32402de8adde0110e96aae0"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#21",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "583a61dbbff5a2f94fbeb1395e47bf451ea7660d",
+        "sourceNumber": 21,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/21",
+        "observedAt": "2026-10-01T04:57:39Z",
+        "summary": "Sync canonical DataNest f626c4e0 into R&D Mirror",
+        "categories": [
+          "security",
+          "governance",
+          "testing",
+          "ai",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:ebc24a4383d7b9f0ac53ae43366a68b1558e037d9505beef15291e5d40261bae"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#20",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "898642561b11f0bad0a6e34231883300e40b1468",
+        "sourceNumber": 20,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/20",
+        "observedAt": "2026-10-01T04:32:13Z",
+        "summary": "Anchor candidates after canonical sync content",
+        "categories": [
+          "security",
+          "governance",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:a53359ff743dc38f6472660fc8521da4df8a58b98dff5fa674e648b2c8d3d325"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#18",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "d27f212a563df21e582b06d47d4f0ef765c4cab5",
+        "sourceNumber": 18,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/18",
+        "observedAt": "2026-10-01T04:24:52Z",
+        "summary": "Harden Mirror sync and production-candidate gates",
+        "categories": [
+          "security",
+          "governance",
+          "testing",
+          "deployment",
+          "ai",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:e2bae47143d0099f25e5fb51b1df4bf723f6ab9dae034b97268f4b61fb5e1735"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#17",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "15e608100ea07f2ae8ff2ddffddfa6b5487d5498",
+        "sourceNumber": 17,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/17",
+        "observedAt": "2026-10-01T03:52:57Z",
+        "summary": "Fix canonical refresh workflow YAML parsing",
+        "categories": [
+          "security",
+          "governance",
+          "reliability",
+          "data",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:b707a9171e8abb40e349e7bd46b6c17ac6adca314fc139a0704f293f49c930a1"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#16",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "17733f358d21ce0ddcf77dec0ac3edad1baea210",
+        "sourceNumber": 16,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/16",
+        "observedAt": "2026-10-01T03:43:48Z",
+        "summary": "Converge canonical refresh onto one current sync PR",
+        "categories": [
+          "security",
+          "governance",
+          "testing",
+          "deployment",
+          "ai",
+          "maintenance",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:7771bc7118a965b88032c251e9696555af86b58a0cf40eca75c03ff98c175310"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#15",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "6bb0ab35024a9dbe4d0448409a2ce03846791fee",
+        "sourceNumber": 15,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/15",
+        "observedAt": "2026-10-01T03:19:08Z",
+        "summary": "Restore Mirror owner workspace access and retry recovery",
+        "categories": [
+          "security",
+          "reliability",
+          "testing",
+          "deployment",
+          "ai",
+          "data",
+          "ux",
+          "maintenance",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:6c72287d464d7e0bd7b5ed249740c26acf19fd85a2950248bd944aa1b7b03e6c"
+      },
+      {
+        "id": "pull:DataNest-Supository/Mirror-DataNest#14",
+        "repository": "DataNest-Supository/Mirror-DataNest",
+        "sourceType": "merged_pull_request",
+        "sourceSha": "d138896f38fc43deca44f7ec797996fa4ca4fb20",
+        "sourceNumber": 14,
+        "sourceUrl": "https://github.com/DataNest-Supository/Mirror-DataNest/pull/14",
+        "observedAt": "2026-09-30T19:33:22Z",
+        "summary": "Optimize Mirror deployments, handoff isolation, and verification",
+        "categories": [
+          "security",
+          "governance",
+          "reliability",
+          "testing",
+          "deployment",
+          "ai",
+          "data",
+          "ux",
+          "architecture"
+        ],
+        "evidenceHash": "sha256:0ef458e6f0dcad36933d46e750a3c38885f654837564957c627d2996d096c640"
+      }
+    ]
+  },
+  "environment": {
+    "compatible": true,
+    "reviewRequiredCount": 0
+  },
+  "transparency": {
+    "publishedAuditDocumentCount": 8,
+    "auditDocumentIds": [
+      "external-full-system-audit-brief-v1",
+      "external-full-system-audit-return-2026-09-25",
+      "enforcer-continuous-defence",
+      "regulator-continuous-harmony",
+      "datanest-system-charter-v1",
+      "visibility-utility-continuous-market-intelligence",
+      "liberty-in-all-continuous-traceability",
+      "pr-365-liberty-in-all-final-validation"
+    ],
+    "rawSecretValuesPublished": false,
+    "findingsSuppressed": false
+  }
+}
