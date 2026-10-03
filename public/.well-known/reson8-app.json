@@ -14,7 +14,7 @@
   "operationalUrl": "https://datanest-supository.github.io/DataNest/",
   "hubRegistration": {
     "state": "pending",
-    "issue": "https://github.com/resonance36912-cell/resonance-hub/issues/136",
+    "issue": "https://github.com/Resonance-AppDev/resonance-hub/issues/136",
     "statusEndpoint": "https://reson8.life/api/public/app-status/health"
   },
   "readiness": {
