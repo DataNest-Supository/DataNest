@@ -669,8 +669,8 @@ test("Think Tank message drafts are isolated per selected thread", () => {
 
 
 test("authentication startup follows Supabase auth lifecycle without a competing getSession request", () => {
-  assert.match(authGateSource, /onAuthStateChange\(\(event, nextSession\)/);
-  assert.match(authGateSource, /if\(event === "PASSWORD_RECOVERY" \|\| flowType === "invite" \|\| flowType === "recovery"\)/);
+  assert.match(authGateSource, /onAuthStateChange\(\(event, nextSession\) => \{/);
+  assert.match(authGateSource, /setStartup\(nextSession && \(event === "PASSWORD_RECOVERY"/);
   assert.match(authGateSource, /window\.setTimeout\(\(\) => \{/);
   assert.match(authGateSource, /window\.clearTimeout\(timeoutId\)/);
   assert.doesNotMatch(authGateSource, /auth\.getSession\(/);
