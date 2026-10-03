@@ -122,7 +122,7 @@ Public information architecture should answer visitor intent in this order:
 
 **What capability delivers it?** → specific module, tool or service
 
-**How is it governed?** → DataNest Platform / evidence / security / lifecycle
+**How is it governed?** → DataNest / evidence / security / lifecycle
 
 This keeps search and user intent aligned with the actual commercial decision instead of exposing repository or implementation terminology first.
 
