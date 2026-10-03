@@ -1,18 +1,20 @@
-# RONSAS Portfolio Reconciliation — Commercial Consolidation
+# Resonance Portfolio Reconciliation — Commercial Consolidation
+
+**Technical identifier:** `RONSAS` (retained for stable paths, slugs and internal references).
 
 **Date:** 2026-10-03  
 **Status:** Proposed through canonical DataNest PR; no production application has been deleted or disabled.
 
 ## Objective
 
-Reduce customer-facing portfolio complexity while preserving existing RONSAS capabilities, production routes and source history.
+Reduce customer-facing portfolio complexity while preserving existing Resonance capabilities, production routes and source history.
 
 ## Target commercial architecture
 
 ### DataNest
 Canonical governance, evidence, orchestration and platform authority.
 
-### RONSAS
+### Resonance
 Application/product suite governed by DataNest.
 
 | Family | Primary surface | Consolidated capabilities |
@@ -20,7 +22,7 @@ Application/product suite governed by DataNest.
 | Career | Career Compass | — |
 | Create | Creative Studio | LyricSync Studio, SyncVision, ePublisher |
 | Grow | Creator growth pathway | Scene Song Spark acquisition utility; YouTube Optimizer growth capability |
-| Build | Sovereign Forge | Sovereign Backend and RONSAS Shared remain infrastructure |
+| Build | Sovereign Forge | Sovereign Backend and Resonance Shared remain infrastructure |
 
 ## Product treatment
 
@@ -48,7 +50,7 @@ Retain its capability and external production route while presenting it as part 
 ### Sovereign Forge — retain as independent B2B/professional product
 Keep a distinct product identity because its buyer, problem and commercial context are materially different from the creator workflow.
 
-### Sovereign Backend / RONSAS Shared — infrastructure only
+### Sovereign Backend / Resonance Shared — infrastructure only
 Keep operationally. Do not place them in the primary customer product grid.
 
 ## Customer journey
@@ -56,7 +58,7 @@ Keep operationally. Do not place them in the primary customer product grid.
 ```
 discovery / free utility
         ↓
-RONSAS identity / registration
+Resonance identity / registration
         ↓
 Creative Studio
         ↓
@@ -81,7 +83,7 @@ Career Compass follows an independent career/workforce journey. Sovereign Forge 
 ## Required next implementation layers
 
 ### Public information architecture
-Update DataNest/RONSAS navigation and product listings to show the four commercial families instead of presenting every implementation surface as an equal primary product.
+Update DataNest/Resonance navigation and product listings to show the four commercial families instead of presenting every implementation surface as an equal primary product.
 
 ### Pricing architecture
 Create a family-level pricing model:
@@ -94,7 +96,7 @@ Create a family-level pricing model:
 No numeric price should be asserted until supported by an explicit commercial baseline and product capability evidence.
 
 ### Portfolio data layer
-Reconcile the Supabase portfolio graph so that RONSAS contains the catalogued applications and each application's commercial role is represented separately from technical lifecycle.
+Reconcile the Supabase portfolio graph so that Resonance contains the catalogued applications and each application's commercial role is represented separately from technical lifecycle.
 
 ### Analytics
 Standardize the funnel:
