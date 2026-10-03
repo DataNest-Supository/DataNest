@@ -31,9 +31,9 @@ export default function Home(){
               environment under review.
             </p>
             <div className="marketingActions">
-              <Link className="marketingPrimary" href="/contact/">Request an assessment</Link>
+              <Link className="marketingPrimary" href="/contact/" data-commercial-event="lead_started" data-commercial-service="assessment" data-commercial-cta="hero-request-assessment">Request an assessment</Link>
               <Link className="marketingSecondary" href="/solutions/">Explore solutions</Link>
-              <Link className="marketingSecondary" href="/workspace/">Sign in to workspace</Link>
+              <Link className="marketingSecondary" href="/workspace/" data-commercial-event="workspace_access_started" data-commercial-cta="hero-workspace">Sign in to workspace</Link>
             </div>
           </div>
           <div className="marketingProof" aria-label="DataNest operating model">
@@ -105,7 +105,7 @@ export default function Home(){
         <section className="marketingContainer marketingSection">
           <div className="marketingBand">
             <div><h2>Need a defensible starting point?</h2><p>Request a fit and scope screen before committing to a paid engagement.</p></div>
-            <Link className="marketingPrimary" href="/contact/">Start a scope conversation</Link>
+            <Link className="marketingPrimary" href="/contact/" data-commercial-event="lead_started" data-commercial-service="assessment" data-commercial-cta="scope-conversation">Start a scope conversation</Link>
           </div>
         </section>
 
