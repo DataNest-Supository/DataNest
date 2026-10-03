@@ -54,8 +54,8 @@ jobs:
           elif [ "$http_code" = "403" ]; then
             subject="$(git log -1 --format=%s "$SHA")"
             cat > canonical-write/state/result.json <<JSON
-{"schemaVersion":"datanest-canonical-write-watchdog-v3","result":"verification-unavailable","reason":"github-associated-prs-api-returned-403","repository":"$REPO","ref":"$REF","sha":"$SHA","commitSubject":$(printf '%s' "$subject" | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))')}
-JSON
+            {"schemaVersion":"datanest-canonical-write-watchdog-v3","result":"verification-unavailable","reason":"github-associated-prs-api-returned-403","repository":"$REPO","ref":"$REF","sha":"$SHA","commitSubject":$(printf '%s' "$subject" | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))')}
+          JSON
             echo "::warning::BRANCH-X could not read commit-associated pull requests (HTTP 403). Recording indeterminate provenance evidence; native branch protection remains authoritative."
             exit 0
           else
