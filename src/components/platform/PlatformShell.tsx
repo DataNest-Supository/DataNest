@@ -12,7 +12,7 @@ export default function PlatformShell({
 }) {
   return <>
     {navigation}
-    <main className="mainPane" inert={navigationOpen}>
+    <main className="mainPane" inert={navigationOpen} aria-hidden={navigationOpen||undefined}>
       {topbar}
       <div className="contentPane">
         {context}
