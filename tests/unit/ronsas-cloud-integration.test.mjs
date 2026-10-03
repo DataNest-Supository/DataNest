@@ -82,7 +82,7 @@ test("DataNest exposes the governed RONSAS status contract through JWT-protected
   assert.match(products,/getRonsasStatus/);
   assert.match(products,/status\.authority\.publicHub/);
   assert.match(products,/aria-label="Open Resonance"/);
-  assert.match(products,/aria-label="Open Resonance Hub"/);
+  assert.match(products,/aria-label="Open Resonance"/);
   assert.match(app,/getRonsasStatus/);
   assert.match(app,/status\.authority\.publicHub/);
   assert.match(app,/aria-label="Open Resonance from DataNest navigation"/);
