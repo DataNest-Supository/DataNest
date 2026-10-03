@@ -6,6 +6,7 @@ import {
 } from "next/font/google";
 import ThemeBootstrapScript from "@/components/platform/ThemeBootstrapScript";
 import CinematicRuntime from "@/components/platform/CinematicRuntime";
+import MobileNavigationA11yGuard from "@/components/platform/MobileNavigationA11yGuard";
 import "./resonance-design-system.css";
 import "./globals.css";
 import "./external-auditor.css";
@@ -105,6 +106,7 @@ export default function RootLayout({children}:{children:ReactNode}) {
       </head>
       <body>
         <CinematicRuntime/>
+        <MobileNavigationA11yGuard/>
         {children}
       </body>
     </html>
