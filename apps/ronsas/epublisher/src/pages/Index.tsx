@@ -1,4 +1,4 @@
-// Resonance ePublisher main page
+// Resonance Publish main page
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Seo } from "@/components/Seo";
 import { useNavigate } from "react-router-dom";
@@ -39,7 +39,7 @@ function StoryForgeApp() {
   return (
     <div className="min-h-screen flex flex-col">
       <Seo
-        title="Workspace — Resonance ePublisher"
+        title="Workspace — Resonance Publish"
         description="Your AudioVisual eBook workspace. Research, structure, narrate, illustrate, and export ePubs, PDFs, and videos from any topic."
         path="/app"
       />
