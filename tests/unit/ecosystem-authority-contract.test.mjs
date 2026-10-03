@@ -53,7 +53,7 @@ test("authority documentation keeps target-state concepts honest and Sparks alig
 
   for(const source of [readme,architecture]){
     assert.match(source,/DataNest[\s\S]{0,120}(parent platform|control plane)/i);
-    assert.match(source,/RONSAS[\s\S]{0,160}governed product/i);
+    assert.match(source,/Resonance[\s\S]{0,240}customer applications/i);
     assert.match(source,/Cloud-Nest/);
     assert.match(source,/Supository/);
     assert.match(source,/\bILM\b/);
