@@ -38,8 +38,21 @@ const Pricing = () => {
           <h1 className="mt-2 font-display text-4xl font-bold tracking-tight sm:text-6xl">{FREE_PROMOTION.headline}</h1>
           <p className="mt-5 text-lg text-muted-foreground">{FREE_PROMOTION.description}</p>
           <p className="mt-3 text-sm text-muted-foreground">
-            No payment, pack, credit top-up, checkout, or subscription is required. Audit, thumbnail, AI, and
-            infrastructure usage remain measurable so future pricing can be based on validated cost.
+            No payment, pack, credit top-up, checkout, or subscription is required while the promotion is active.
+            Audit, thumbnail, AI, and infrastructure usage remain measurable for cost validation.
+          </p>
+          <div className="mt-8 grid gap-3 text-left sm:grid-cols-2 lg:grid-cols-4">
+            {[["Creator","R249/month","One channel"],["Growth","R649/month","Advanced channel intelligence"],["Agency","R1,499/month","Multi-channel workflow"],["Enterprise","Custom","Teams and larger channel portfolios"]].map(([name,price,scope]) => (
+              <article key={name} className="rounded-2xl border border-white/10 bg-background/30 p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-primary">{name}</p>
+                <p className="mt-2 text-2xl font-display font-bold">{price}</p>
+                <p className="mt-2 text-xs text-muted-foreground">{scope}</p>
+              </article>
+            ))}
+          </div>
+          <p className="mt-4 text-xs text-muted-foreground">
+            Standard list prices, effective 3 October 2026, are the post-promotion commercial basis and are not
+            currently charged while free promotion access remains enabled.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Button asChild variant="pill" size="pillLg"><a href={APP_START_URL}>Open YouTube Optimizer free</a></Button>
