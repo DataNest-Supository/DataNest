@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { FREE_PROMOTION_ACTIVE } from "../lib/promotion";
 
 describe("free promotion public metadata", () => {
-  it("publishes only free promotional acquisition metadata", () => {
+  it("publishes free acquisition metadata while keeping list prices informational", () => {
     expect(FREE_PROMOTION_ACTIVE).toBe(true);
     const html = readFileSync(resolve(process.cwd(), "index.html"), "utf8");
     const llms = readFileSync(resolve(process.cwd(), "public/llms.txt"), "utf8");
@@ -17,7 +17,9 @@ describe("free promotion public metadata", () => {
     expect(llms).not.toMatch(/R\s?\d/);
     expect(llms).not.toContain("/checkout");
     expect(llms).not.toContain("Hub checkout");
-    expect(pricing).not.toMatch(/R\s?\d/);
+    expect(pricing).toContain("Standard list prices");
+    expect(pricing).toContain("post-promotion commercial basis");
+    expect(pricing).toContain("not currently charged while free promotion access remains enabled");
     expect(pricing).not.toContain("hubPackCheckoutUrl");
     expect(landing).not.toMatch(/R\s?\d/);
     expect(landing).not.toContain("View pack");
