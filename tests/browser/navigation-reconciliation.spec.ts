@@ -30,6 +30,53 @@ test("sidebar workspace finder restores focus and preserves deep-link navigation
   await expect(page.locator("#workspace-title")).toBeFocused();
 });
 
+test("mobile navigation contains focus, isolates the workspace and restores its launcher",async({page})=>{
+  await setupUiGovernanceFixture(page);
+  await page.setViewportSize({width:390,height:844});
+  await page.goto(appPath);
+
+  const menu=page.getByRole("button",{name:"Open menu",exact:true});
+  const sidebar=page.locator("#datanest-navigation");
+  const main=page.locator("main.mainPane");
+
+  await expect(sidebar).toHaveAttribute("inert","");
+  await menu.click();
+
+  const dialog=page.getByRole("dialog",{name:"DataNest navigation"});
+  const close=dialog.getByRole("button",{name:"Close menu",exact:true});
+  const signOut=dialog.getByRole("button",{name:"Sign out",exact:true});
+  await expect(close).toBeFocused();
+  await expect(main).toHaveAttribute("inert","");
+  await expect.poll(()=>page.evaluate(()=>document.body.style.overflow)).toBe("hidden");
+
+  await close.press("Shift+Tab");
+  await expect(signOut).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(close).toBeFocused();
+
+  await page.keyboard.press("Escape");
+  await expect(menu).toBeFocused();
+  await expect(sidebar).toHaveAttribute("inert","");
+  await expect(main).not.toHaveAttribute("inert");
+  await expect.poll(()=>page.evaluate(()=>document.body.style.overflow)).not.toBe("hidden");
+
+  await menu.click();
+  await dialog.getByRole("button",{name:"AI & I",exact:true}).click();
+  await expect(menu).toBeFocused();
+
+  await menu.click();
+  await dialog.getByRole("button",{name:"DataNest AI",exact:true}).click();
+  await expect(page).toHaveURL(/view=ai/);
+  await expect(page.locator("#workspace-title")).toBeFocused();
+  await expect(sidebar).toHaveAttribute("inert","");
+
+  await menu.click();
+  await page.setViewportSize({width:1440,height:900});
+  await expect(sidebar).not.toHaveAttribute("inert");
+  await expect(main).not.toHaveAttribute("inert");
+  await expect.poll(()=>page.evaluate(()=>document.body.style.overflow)).not.toBe("hidden");
+});
+
 test("R&D Test Mode exposes a disabled busy state and announces mirror sync failure",async({page,context})=>{
   await setupUiGovernanceFixture(page);
   await context.route("https://datanest-supository.github.io/Mirror-DataNest/",route=>route.fulfill({body:"Mirror preview fixture"}));
