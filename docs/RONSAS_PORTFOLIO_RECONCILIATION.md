@@ -11,8 +11,11 @@ Separate the DataNest operating system from market-facing business offers while 
 
 ## Target commercial architecture
 
-### DataNest Platform
-Canonical governance, evidence, orchestration, AppDev control and delivery authority.
+### Resonance AppDev
+Master brand of Resonance Sole Proprietorship.
+
+### DataNest
+Canonical governance, evidence, orchestration, AppDev control and delivery authority beneath the Resonance AppDev master brand.
 
 ### Resonance
 Customer application suite governed by DataNest, commercially organized around Career, Create and Grow.
@@ -24,7 +27,7 @@ Customer application suite governed by DataNest, commercially organized around C
 | Grow | Creator growth pathway | SongSpark acquisition utility; Resonance Creator Growth |
 
 ### Sovereign Forge
-Sibling DataNest professional/B2B engineering offer. It may remain technically hosted in the RONSAS/Resonance estate without being presented as a Resonance customer family.
+Sibling Resonance AppDev professional/B2B engineering offer. It may remain technically hosted in the RONSAS/Resonance estate without being presented as a Resonance customer family.
 
 ## Product treatment
 
@@ -85,7 +88,7 @@ Career Compass follows an independent career/workforce journey. Sovereign Forge 
 ## Required next implementation layers
 
 ### Public information architecture
-Present DataNest first, then route visitors to Resonance, Sovereign Forge and Assurance Services by intent. Within Resonance, present Career / Create / Grow before exposing implementation modules.
+Present Resonance AppDev first, then route visitors to Resonance, Sovereign Forge and Resonance AppDev Assurance Services by intent; DataNest explains the operating system behind those offers. Within Resonance, present Career / Create / Grow before exposing implementation modules.
 
 ### Pricing architecture
 Create a family-level pricing model:
