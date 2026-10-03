@@ -681,6 +681,15 @@ test("authentication startup follows Supabase auth lifecycle without a competing
   assert.match(authGateSource, /onClick=\{retrySessionCheck\}/);
 });
 
+test("password sign-in commits the returned session directly", () => {
+  assert.match(authGateSource, /signInWithPassword\(\{ email, password \}\)/);
+  assert.match(authGateSource, /const \{ data, error \} = await supabase\.auth\.signInWithPassword/);
+  assert.match(authGateSource, /if \(data\.session\)/);
+  assert.match(authGateSource, /setSession\(data\.session\)/);
+  assert.match(authGateSource, /setStartup\("signed-in"\)/);
+  assert.match(authGateSource, /setCheckingSession\(false\)/);
+});
+
 test("authentication credentials are excluded from browser-session draft persistence", () => {
   assert.match(authGateSource, /const \[password, setPassword\] = useState\(""\)/);
   assert.match(authGateSource, /const \[newPassword, setNewPasswordValue\] = useState\(""\)/);
