@@ -176,6 +176,7 @@ jobs:
     if: >-
       needs.monitor.result == 'success' &&
       (
+        github.event_name == 'pull_request' ||
         github.event_name == 'push' ||
         github.event_name == 'schedule' ||
         (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
@@ -202,7 +203,16 @@ jobs:
           human_review_required: "true"
           human_review_reason: "GUARDIAN healing can mutate repository state or open a PR; require explicit human review in the automation contract."
 
+      - name: PR safety gate
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "GUARDIAN healing is intentionally non-mutating on pull requests."
+          echo "PR event: observe/verify only; mutation actions remain disabled."
+
       - name: Remove only branches proven to have no unique commits
+        if: github.event_name != 'pull_request'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
@@ -231,6 +241,7 @@ jobs:
           JSON
 
       - name: Apply only byte-safe non-workflow source streamlining
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           set -euo pipefail
@@ -245,6 +256,7 @@ jobs:
             --report-dir artifacts/guardian/source-healing
 
       - name: Enforce workflow-definition mutation boundary
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           set -euo pipefail
@@ -255,6 +267,7 @@ jobs:
           fi
 
       - name: Open reviewed healing PR for tracked source refinements
+        if: github.event_name != 'pull_request'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
