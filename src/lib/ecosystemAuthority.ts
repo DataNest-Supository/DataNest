@@ -1,5 +1,7 @@
-export const DATANEST_PLATFORM_NAME = "DataNest Platform";
-export const DATANEST_BUSINESS_NAME = "DataNest";
+export const RESONANCE_BUSINESS_NAME = "Resonance Sole Proprietorship";
+export const RESONANCE_APPDEV_MASTER_BRAND = "Resonance AppDev";
+export const DATANEST_PLATFORM_NAME = "DataNest";
+export const DATANEST_BUSINESS_NAME = RESONANCE_BUSINESS_NAME;
 export const DATANEST_REGISTRY_NAME = "DataNest Portfolio Registry";
 export const RESONANCE_PRODUCT_NAME = "Resonance";
 export const RESONANCE_FULL_NAME = "Resonance Application Suite";
@@ -12,7 +14,7 @@ export const SOVEREIGN_FORGE_PRODUCT_NAME = "Sovereign Forge";
 export const RONSAS_PRODUCT_NAME = RESONANCE_PRODUCT_NAME;
 export const RONSAS_FULL_NAME = RESONANCE_FULL_NAME;
 export const RONSAS_TECHNICAL_IDENTIFIER = "RONSAS";
-export const RONSAS_PRODUCT_PATH = "DataNest > Products > Resonance";
+export const RONSAS_PRODUCT_PATH = "Resonance AppDev > DataNest > Products > Resonance";
 
 export const FREE_PROMOTION_LABEL = "FREE PROMOTION · BILLING OFF";
 
