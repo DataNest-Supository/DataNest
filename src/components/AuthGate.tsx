@@ -58,58 +58,48 @@ export default function AuthGate() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const initialize = useCallback(async () => {
+  function retrySessionCheck() {
+    window.location.reload();
+  }
+
+  useEffect(() => {
     const supabase = getSupabase();
 
     if (!supabase) {
       setStartup("config-error");
       setStartupMessage("Public Supabase runtime configuration is missing.");
+      setCheckingSession(false);
       return;
     }
 
-    setStartupMessage("");
-    setCheckingSession(true);
-
-    try {
-      const result = await withTimeout(supabase.auth.getSession(), STARTUP_TIMEOUT_MS);
+    let startupSettled = false;
+    const applyAuthState = (event: string, nextSession: Session | null) => {
+      startupSettled = true;
       const flowType = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("type")
         || new URLSearchParams(window.location.search).get("type");
-
-      if (result.error) {
-        throw result.error;
-      }
-
-      setSession(result.data.session);
-      setStartup(result.data.session
-        ? (flowType === "invite" || flowType === "recovery" ? "set-password" : "signed-in")
-        : "signed-out");
-    } catch {
-      setSession(null);
-      setStartup("signed-out");
-      setStartupMessage("We couldn’t verify an existing session. You can still sign in.");
-    } finally {
-      setCheckingSession(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const supabase = getSupabase();
-    void initialize();
-
-    if (!supabase) return;
-
-    const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setSession(nextSession);
-      const flowType = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("type")
-        || new URLSearchParams(window.location.search).get("type");
       setStartup(nextSession && (event === "PASSWORD_RECOVERY" || flowType === "invite" || flowType === "recovery")
         ? "set-password"
         : nextSession ? "signed-in" : "signed-out");
       setStartupMessage("");
+      setCheckingSession(false);
+    };
+
+    const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      applyAuthState(event, nextSession);
     });
 
-    return () => listener.subscription.unsubscribe();
-  }, [initialize]);
+    const timeoutId = window.setTimeout(() => {
+      if (startupSettled) return;
+      setCheckingSession(false);
+      setStartupMessage("We couldn’t verify an existing session. You can still sign in.");
+    }, STARTUP_TIMEOUT_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      listener.subscription.unsubscribe();
+    };
+  }, []);
 
   async function signIn(event: FormEvent) {
     event.preventDefault();
@@ -335,7 +325,7 @@ export default function AuthGate() {
         <p className="securityNote">Sign in with your authorized account. Need access? Ask your project administrator for an invitation.</p>
         <p className={"sessionCheckNote"+(startupMessage ? " sessionCheckError" : "")} role="status" aria-live="polite">
           {checkingSession ? "Checking your existing session…" : startupMessage || ""}
-          {startupMessage && !checkingSession && <button className="sessionCheckRetry" type="button" onClick={() => void initialize()}>Retry session check</button>}
+          {startupMessage && !checkingSession && <button className="sessionCheckRetry" type="button" onClick={retrySessionCheck}>Retry session check</button>}
         </p>
         <noscript><p className="authMessage">JavaScript is required to sign in. Enable JavaScript and reload this page.</p></noscript>
       </section>
