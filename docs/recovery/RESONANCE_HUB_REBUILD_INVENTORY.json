@@ -1,0 +1,39 @@
+{
+  "recoveryDate": "2026-10-03",
+  "lovableUnavailable": true,
+  "hub": {
+    "repository": "Resonance-AppDev/resonance-hub",
+    "branch": "main",
+    "commit": "ff745cf4706ec21cf9f56cb3db7d5fcaf445d178",
+    "publicOrigin": "https://reson8.life"
+  },
+  "datanest": {
+    "repository": "DataNest-Supository/DataNest",
+    "branch": "main",
+    "commit": "afd2ce44e9150eceb0b6b254bec58aa4476e81d5",
+    "publicUrl": "https://datanest-supository.github.io/DataNest/",
+    "billing": "none",
+    "authority": "DataNest"
+  },
+  "sourcePins": {
+    "src/lib/app-registry.ts": "162db217ca5df5f069a015bbeb24df894e6116a0",
+    "src/routes/index.tsx": "fc6a4440017ac3d7cf328a8c663275dd70dd4171",
+    "src/routes/api/public/app-status.health.ts": "cd458cecd1ad086107c5f508fc476309f5742543",
+    "public/content/updates.json": "37f90e1752112e92e04e9cd4a2a2453bf15a1296",
+    "scripts/lib/app-status-health-contract.test.ts": "95a4c5f18e1735d28c1db0d31981caed7de762f4",
+    "scripts/verify-app-registry.ts": "f3dabe13699de25db5bd93230acb030ecec5e0b2",
+    "baselines/app-status.json": "99b23cd59c7f3ff1e7c44ee0917bc6aaeb865b51"
+  },
+  "missingHubWork": [
+    "ECOSYSTEM_REGISTRY.datanest",
+    "non-billable DataNest homepage CTA",
+    "DataNest latest-updates entry",
+    "explicit DataNest app-status contract assertion",
+    "Hub deployment/production verification"
+  ],
+  "completedDataNestWork": [
+    "canonical Hub issue URL aligned to Resonance-AppDev/resonance-hub#136",
+    "runtimeRegistration remains pending",
+    "DataNest/main CI merge completed"
+  ]
+}
