@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import WorkspaceGlyph from "./WorkspaceGlyph";
 import type { NavigationItem } from "@/components/platform/navigationTypes";
@@ -37,6 +37,8 @@ export default function GlobalNavigation({
   const [openGroups,setOpenGroups]=useState<Set<string>>(
     ()=>new Set(groups.filter(group=>group==="HOME"||group===activeGroup))
   );
+  const quickSwitchLauncherRef=useRef<HTMLButtonElement|null>(null);
+  const restoreSidebarFocusRef=useRef(false);
 
   useEffect(()=>{
     if(!activeGroup)return;
@@ -48,8 +50,35 @@ export default function GlobalNavigation({
     });
   },[activeGroup]);
 
+  useEffect(()=>{
+    const handleFocusIn=(event:FocusEvent)=>{
+      if(!restoreSidebarFocusRef.current)return;
+      const target=event.target;
+      if(!(target instanceof HTMLElement))return;
+      if(target.closest(".commandPalette"))return;
+      if(target.classList.contains("quickSwitchButton")){
+        const launcher=quickSwitchLauncherRef.current;
+        restoreSidebarFocusRef.current=false;
+        if(launcher?.isConnected)window.requestAnimationFrame(()=>launcher.focus({preventScroll:true}));
+        return;
+      }
+      restoreSidebarFocusRef.current=false;
+    };
+    document.addEventListener("focusin",handleFocusIn,true);
+    return()=>document.removeEventListener("focusin",handleFocusIn,true);
+  },[]);
+
   return <>
-    <button className="navWorkspaceSearch" type="button" onClick={onOpenQuickSwitch} aria-haspopup="dialog">
+    <button
+      ref={quickSwitchLauncherRef}
+      className="navWorkspaceSearch"
+      type="button"
+      onClick={()=>{
+        restoreSidebarFocusRef.current=true;
+        onOpenQuickSwitch();
+      }}
+      aria-haspopup="dialog"
+    >
       <span>Find a workspace</span><kbd aria-hidden="true">⌘ / Ctrl K</kbd>
     </button>
     <nav className="navStack" aria-label="Project workspaces">
