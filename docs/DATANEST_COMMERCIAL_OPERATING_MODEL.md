@@ -142,3 +142,10 @@ This is an arithmetic scenario only. It does not assert capacity, demand, conver
 - Revenue claims must identify the accounting/invoicing period and evidence source.
 - Forecasts require a historical baseline, explicit assumptions, capacity constraints, pipeline/conversion evidence and uncertainty.
 - VAT, tax, third-party costs, discounts, write-offs, refunds and bad debt must not be omitted when describing realised revenue.
+
+
+## RONSAS product pricing
+
+RONSAS standard list pricing is maintained separately in `docs/RONSAS_COMMERCIAL_PRICE_BOOK.md`. The machine-readable Supository catalog mirrors the product price/status metadata.
+
+Current free-access promotions remain R0 where explicitly enabled. Standard list prices are commercial price-book claims and are not treated as realised revenue. Paid activation requires the relevant product entitlement and billing implementation.
