@@ -1,0 +1,36 @@
+name: One-shot mobile navigation accessibility remediation
+
+on:
+  push:
+    branches:
+      - work/mobile-navigation-accessibility-20261003
+    paths:
+      - .github/workflows/mobile-nav-a11y-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-remediation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact branch head
+        uses: actions/checkout@v7.0.1
+
+      - name: Apply exact-anchor remediation
+        run: python3 .datanest/coordination/patches/apply-mobile-nav-a11y-fix.py
+
+      - name: Verify display-only shell source contract
+        run: node --test tests/unit/ui-ux-source.test.mjs
+
+      - name: Reject malformed diff
+        run: git diff --check
+
+      - name: Commit remediation to the PR branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/DataNestApp.tsx src/components/platform/PlatformShell.tsx .datanest/coordination/checkpoints/CP-MOBILE-NAV-A11Y-20261003.md
+          git diff --cached --quiet && { echo "No remediation diff produced"; exit 1; }
+          git commit -m "fix: keep mobile navigation state in app owner"
+          git push origin HEAD:${GITHUB_REF_NAME}
