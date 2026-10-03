@@ -43,7 +43,25 @@
       "sourcePath": "apps/ronsas/career-compass",
       "deliveryPath": "/DataNest/apps/career-compass/",
       "lifecycle": "production",
-      "productionInclusion": "public"
+      "productionInclusion": "public",
+      "commercialPricing": {
+        "effectiveDate": "2026-10-03",
+        "currency": "ZAR",
+        "billingActive": false,
+        "currentMode": "pre-billing",
+        "standardListPriceBasis": "monthly",
+        "standardPlans": [
+          {
+            "name": "Standard",
+            "monthlyZar": 149
+          },
+          {
+            "name": "Pro",
+            "monthlyZar": 299
+          }
+        ],
+        "priceBook": "docs/RONSAS_COMMERCIAL_PRICE_BOOK.md"
+      }
     },
     {
       "id": "ronsas-creative-studio",
@@ -53,7 +71,29 @@
       "sourcePath": "apps/ronsas/creative-studio",
       "deliveryPath": "/DataNest/apps/creative-studio/",
       "lifecycle": "production",
-      "productionInclusion": "public"
+      "productionInclusion": "public",
+      "commercialPricing": {
+        "effectiveDate": "2026-10-03",
+        "currency": "ZAR",
+        "billingActive": false,
+        "currentMode": "promotion-free",
+        "standardListPriceBasis": "monthly",
+        "standardPlans": [
+          {
+            "name": "Creator",
+            "monthlyZar": 249
+          },
+          {
+            "name": "Studio",
+            "monthlyZar": 699
+          },
+          {
+            "name": "Team",
+            "monthlyZar": 1499
+          }
+        ],
+        "priceBook": "docs/RONSAS_COMMERCIAL_PRICE_BOOK.md"
+      }
     },
     {
       "id": "ronsas-epublisher",
@@ -63,7 +103,29 @@
       "sourcePath": "apps/ronsas/epublisher",
       "deliveryPath": "/DataNest/apps/epublisher/",
       "lifecycle": "production",
-      "productionInclusion": "public"
+      "productionInclusion": "public",
+      "commercialPricing": {
+        "effectiveDate": "2026-10-03",
+        "currency": "ZAR",
+        "billingActive": false,
+        "currentMode": "promotion-free",
+        "standardListPriceBasis": "monthly",
+        "standardPlans": [
+          {
+            "name": "Creator",
+            "monthlyZar": 149
+          },
+          {
+            "name": "Publisher",
+            "monthlyZar": 399
+          },
+          {
+            "name": "Studio",
+            "monthlyZar": 899
+          }
+        ],
+        "priceBook": "docs/RONSAS_COMMERCIAL_PRICE_BOOK.md"
+      }
     },
     {
       "id": "ronsas-lyricsync-studio",
@@ -73,7 +135,25 @@
       "sourcePath": "apps/ronsas/lyricsync-studio",
       "deliveryPath": "/DataNest/apps/lyricsync-studio/",
       "lifecycle": "production",
-      "productionInclusion": "public"
+      "productionInclusion": "public",
+      "commercialPricing": {
+        "effectiveDate": "2026-10-03",
+        "currency": "ZAR",
+        "billingActive": false,
+        "currentMode": "pre-billing",
+        "standardListPriceBasis": "monthly",
+        "standardPlans": [
+          {
+            "name": "Standard",
+            "monthlyZar": 99
+          },
+          {
+            "name": "Studio",
+            "monthlyZar": 199
+          }
+        ],
+        "priceBook": "docs/RONSAS_COMMERCIAL_PRICE_BOOK.md"
+      }
     },
     {
       "id": "ronsas-scene-song-spark",
@@ -83,7 +163,25 @@
       "sourcePath": "apps/ronsas/scene-song-spark",
       "deliveryPath": "/DataNest/apps/scene-song-spark/",
       "lifecycle": "production",
-      "productionInclusion": "public"
+      "productionInclusion": "public",
+      "commercialPricing": {
+        "effectiveDate": "2026-10-03",
+        "currency": "ZAR",
+        "billingActive": false,
+        "currentMode": "pre-billing",
+        "standardListPriceBasis": "monthly",
+        "standardPlans": [
+          {
+            "name": "Creator",
+            "monthlyZar": 79
+          },
+          {
+            "name": "Studio",
+            "monthlyZar": 199
+          }
+        ],
+        "priceBook": "docs/RONSAS_COMMERCIAL_PRICE_BOOK.md"
+      }
     },
     {
       "id": "ronsas-sovereign-forge",
@@ -93,7 +191,30 @@
       "sourcePath": "apps/ronsas/sovereign-forge",
       "deliveryPath": "/DataNest/apps/sovereign-forge/",
       "lifecycle": "production",
-      "productionInclusion": "public"
+      "productionInclusion": "public",
+      "commercialPricing": {
+        "effectiveDate": "2026-10-03",
+        "currency": "ZAR",
+        "billingActive": false,
+        "currentMode": "pre-billing",
+        "standardListPriceBasis": "monthly",
+        "standardPlans": [
+          {
+            "name": "Community",
+            "monthlyZar": 0
+          },
+          {
+            "name": "Pro",
+            "monthlyZar": 499
+          },
+          {
+            "name": "Team",
+            "monthlyZar": 1499
+          }
+        ],
+        "enterprise": "custom",
+        "priceBook": "docs/RONSAS_COMMERCIAL_PRICE_BOOK.md"
+      }
     },
     {
       "id": "ronsas-syncvision",
@@ -103,7 +224,30 @@
       "sourcePath": "apps/ronsas/syncvision",
       "deliveryPath": "/DataNest/apps/syncvision/",
       "lifecycle": "production",
-      "productionInclusion": "public"
+      "productionInclusion": "public",
+      "commercialPricing": {
+        "effectiveDate": "2026-10-03",
+        "currency": "ZAR",
+        "billingActive": false,
+        "currentMode": "promotion-free",
+        "standardListPriceBasis": "monthly",
+        "standardPlans": [
+          {
+            "name": "Creator",
+            "monthlyZar": 299
+          },
+          {
+            "name": "Studio",
+            "monthlyZar": 799
+          },
+          {
+            "name": "Pro",
+            "monthlyZar": 1499
+          }
+        ],
+        "usageModel": "governed-credits",
+        "priceBook": "docs/RONSAS_COMMERCIAL_PRICE_BOOK.md"
+      }
     },
     {
       "id": "ronsas-youtube-optimizer",
@@ -113,7 +257,30 @@
       "sourcePath": "apps/ronsas/youtube-optimizer",
       "deliveryUrl": "https://youtubeoptimizer.life/",
       "lifecycle": "production",
-      "productionInclusion": "external-production"
+      "productionInclusion": "external-production",
+      "commercialPricing": {
+        "effectiveDate": "2026-10-03",
+        "currency": "ZAR",
+        "billingActive": false,
+        "currentMode": "promotion-free",
+        "standardListPriceBasis": "monthly",
+        "standardPlans": [
+          {
+            "name": "Creator",
+            "monthlyZar": 249
+          },
+          {
+            "name": "Growth",
+            "monthlyZar": 649
+          },
+          {
+            "name": "Agency",
+            "monthlyZar": 1499
+          }
+        ],
+        "enterprise": "custom",
+        "priceBook": "docs/RONSAS_COMMERCIAL_PRICE_BOOK.md"
+      }
     },
     {
       "id": "ronsas-sovereign-backend",
