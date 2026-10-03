@@ -28,11 +28,11 @@ export const metadata = {
 };
 
 const packages = [
-  ["Regulatory & Controls Baseline", "R7,500", "once-off", "Control inventory, priority findings and executive brief for one environment."],
-  ["Compliance Readiness Review", "R15,000", "once-off", "POPIA/PAIA and standards-aligned readiness mapping, evidence gaps and remediation plan."],
+  ["Regulatory & Controls Baseline", "R8,500", "once-off", "Control inventory, priority findings and executive brief for one environment."],
+  ["Compliance Readiness Review", "R17,500", "once-off", "POPIA/PAIA and standards-aligned readiness mapping, evidence gaps and remediation plan."],
   ["Technical Audit & Evidence Pack", "R25,000", "once-off", "Application, cloud or repository control review with risk-ranked evidence and implementation backlog."],
-  ["Continuous Digital Oversight", "R6,500", "per month", "Authorized drift/change monitoring, monthly control review and escalation register."],
-  ["Enterprise Oversight", "R15,000", "per month", "Multi-system governance dashboard, supplier evidence tracking and quarterly deep review."],
+  ["Continuous Digital Oversight", "R7,500", "per month", "Authorized drift/change monitoring, monthly control review and escalation register."],
+  ["Enterprise Oversight", "R18,500", "per month", "Multi-system governance dashboard, supplier evidence tracking and quarterly deep review."],
   ["Specialist Advisory", "R1,850", "per hour", "Architecture, governance, security, evidence, remediation and implementation advisory."]
 ] as const;
 
@@ -98,7 +98,7 @@ export default function AssurancePage() {
             ))}
           </div>
           <p className="muted">
-            Specialist day rate: R12,500. Taxes, travel, external certification/registration fees and specialist third-party
+            Specialist day rate: R14,800. Prices are exclusive of VAT. Taxes, travel, external certification/registration fees and specialist third-party
             tools are excluded unless quoted. Final scope and authorization are agreed in writing before work starts.
           </p>
           <p>
