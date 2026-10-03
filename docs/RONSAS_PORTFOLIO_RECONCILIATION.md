@@ -1,4 +1,4 @@
-# Resonance Portfolio Reconciliation — Commercial Consolidation
+# DataNest / Resonance Portfolio Reconciliation — Commercial Boundary & Naming
 
 **Technical identifier:** `RONSAS` (retained for stable paths, slugs and internal references).
 
@@ -7,26 +7,28 @@
 
 ## Objective
 
-Reduce customer-facing portfolio complexity while preserving existing Resonance capabilities, production routes and source history.
+Separate the DataNest operating system from market-facing business offers while preserving existing capabilities, production routes and source history.
 
 ## Target commercial architecture
 
-### DataNest
-Canonical governance, evidence, orchestration and platform authority.
+### DataNest Platform
+Canonical governance, evidence, orchestration, AppDev control and delivery authority.
 
 ### Resonance
-Application/product suite governed by DataNest.
+Customer application suite governed by DataNest, commercially organized around Career, Create and Grow.
 
-| Family | Primary surface | Consolidated capabilities |
+| Customer intent | Primary surface | Consolidated capabilities |
 | --- | --- | --- |
-| Career | Career Compass | — |
-| Create | Creative Studio | LyricSync Studio, SyncVision, ePublisher |
-| Grow | Creator growth pathway | Scene Song Spark acquisition utility; YouTube Optimizer growth capability |
-| Build | Sovereign Forge | Sovereign Backend and Resonance Shared remain infrastructure |
+| Career | Resonance Career Compass | — |
+| Create | Resonance Creator Studio | Lyrics & Sync, Media Sync, Publish |
+| Grow | Creator growth pathway | SongSpark acquisition utility; Resonance Creator Growth |
+
+### Sovereign Forge
+Sibling DataNest professional/B2B engineering offer. It may remain technically hosted in the RONSAS/Resonance estate without being presented as a Resonance customer family.
 
 ## Product treatment
 
-### Career Compass — retain as independent product
+### Resonance Career Compass — retain as independent product
 Independent customer problem, acquisition path and subscription journey.
 
 ### Creative Studio — make the principal creator surface
@@ -47,8 +49,8 @@ Use as a low-friction discovery/lead-generation entry into the creator funnel ra
 ### YouTube Optimizer — reposition to Creator Growth
 Retain its capability and external production route while presenting it as part of the creator growth pathway rather than a separate top-level product family.
 
-### Sovereign Forge — retain as independent B2B/professional product
-Keep a distinct product identity because its buyer, problem and commercial context are materially different from the creator workflow.
+### Sovereign Forge — sibling professional/B2B business line
+Keep a distinct product identity because its buyer, problem and commercial context are materially different from the Resonance creator and career journeys.
 
 ### Sovereign Backend / Resonance Shared — infrastructure only
 Keep operationally. Do not place them in the primary customer product grid.
@@ -83,7 +85,7 @@ Career Compass follows an independent career/workforce journey. Sovereign Forge 
 ## Required next implementation layers
 
 ### Public information architecture
-Update DataNest/Resonance navigation and product listings to show the four commercial families instead of presenting every implementation surface as an equal primary product.
+Present DataNest first, then route visitors to Resonance, Sovereign Forge and Assurance Services by intent. Within Resonance, present Career / Create / Grow before exposing implementation modules.
 
 ### Pricing architecture
 Create a family-level pricing model:
@@ -107,4 +109,4 @@ impression → visit → demo/use → registration → activation → first valu
 
 ## Decision rule
 
-The goal is not fewer capabilities. The goal is fewer customer decisions, clearer journeys, stronger cross-sell paths and a portfolio whose commercial structure matches the underlying system architecture.
+The goal is not fewer capabilities. The goal is fewer customer decisions, clearer journeys, stronger cross-sell paths and a nomenclature hierarchy that matches system authority, business ownership and delivery reality.
