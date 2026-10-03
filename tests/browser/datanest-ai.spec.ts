@@ -148,6 +148,7 @@ test("quick switch traps focus and restores the opening control",async({page})=>
   await expect(trigger).toBeFocused();
 });
 
+
 test("workspace deep links survive reload and follow browser history",async({page})=>{
   await signIn(page);
 
@@ -295,6 +296,7 @@ test("Sparks workspace exposes internal utility boundaries",async({page})=>{
   await expect(page.getByText(/platform spending is disabled in v1/i)).toBeVisible();
   await expect(page.getByText(/Ledger entries are append-only/i)).toBeVisible();
 });
+
 
 test("Sovereign Governance exposes project-scoped governance boundaries",async({page})=>{
   await signIn(page);
