@@ -1,0 +1,111 @@
+# DataNest Commercial Operating Model
+
+**Status:** Governed commercial architecture  
+**Canonical repository:** DataNest-Supository/DataNest  
+**Relationship:** Supports the DataNest System Charter; does not override governance, security, legal or production-authority controls.
+
+## Purpose
+
+DataNest is structured to convert market need into governed, evidence-backed digital and AI outcomes while preserving human authority over consequential commercial and operational decisions.
+
+## Customer-facing proposition
+
+**DataNest combines digital delivery, AI governance, technical assurance and continuous oversight so organisations can move from idea to operation with evidence at every step.**
+
+## Commercial entry points
+
+### Assess
+
+- Regulatory & Controls Baseline — R7,500 once-off
+- Compliance Readiness Review — R15,000 once-off
+- Technical Audit & Evidence Pack — R25,000 once-off
+
+### Build / improve
+
+Assessment findings or customer intent become separately scoped implementation, remediation and product-development work.
+
+### Evidence
+
+Verification, retest, evidence packaging, executive reporting and implementation traceability are delivered as part of the relevant scope.
+
+### Operate
+
+- Continuous Digital Oversight — R6,500/month
+- Enterprise Oversight — R15,000/month
+- Specialist Advisory — R1,850/hour
+- Specialist Day — R12,500/day
+
+These are the currently published launch prices. They are not forecasts or guarantees; final scope, taxes, third-party costs and regulated-activity boundaries remain subject to written agreement.
+
+## Customer lifecycle
+
+```
+discoverability
+  → interest
+  → qualification
+  → scope / assessment
+  → proposal
+  → delivery
+  → verification
+  → evidence
+  → ongoing oversight
+  → renewal / expansion / referral
+```
+
+## Business functions
+
+| Function | Primary responsibility |
+|---|---|
+| Market / Visibility | Discoverability, content, market intelligence and route-to-market analysis |
+| Commercial Operations | Lead capture, qualification, proposals, quoting, customer communications and pipeline |
+| Delivery | UNIFI, TranScheduler, product/service implementation and execution |
+| Assurance | Assessment, controls, technical evidence and readiness services |
+| Customer Success | Outcome review, renewal readiness, feedback and case-study capture |
+| Evidence | Provenance, verification, audit history and public-safe transparency |
+| Security / Governance | ENFORCER, Boundaries, REGULATOR and human approval gates |
+| Improvement | SUGGESTER, CALMER, GUARDIAN, Knowledge and continuous optimisation |
+
+Commercial Operations is not itself an autonomous authority. Financial commitments, contract execution, pricing changes, reserved professional activities and consequential decisions remain explicitly human-authorized.
+
+## Commercial KPIs
+
+The commercial operating layer should track:
+
+- qualified leads per month;
+- assessment requests;
+- proposal conversion;
+- average engagement value;
+- assessment-to-remediation conversion;
+- assessment-to-oversight conversion;
+- monthly recurring revenue;
+- renewal rate;
+- product activation;
+- referral rate;
+- case-study permissions and outcome evidence;
+- acquisition-channel performance.
+
+## Product portfolio model
+
+RONSAS products remain individually governed and should receive product-specific commercial pages, target users, use cases, pricing or access models, onboarding and support paths as evidence of commercial readiness matures.
+
+The Supository remains a provenance/catalog architecture. It is not itself a customer-facing product category.
+
+## Market-access sequence
+
+1. Public commercial homepage
+2. Solution-specific pages
+3. Published pricing and scope boundaries
+4. Evidence and transparency
+5. Low-friction assessment intake
+6. Human qualification
+7. Defined engagement
+8. Delivery and evidence
+9. Recurring oversight or product expansion
+
+## Trust boundary
+
+DataNest must continue to distinguish:
+
+**claim → evidence → readiness → independent verification → formal status**
+
+A management-system mapping is not certification. A readiness review is not statutory approval. An AI recommendation is not human authorization.
