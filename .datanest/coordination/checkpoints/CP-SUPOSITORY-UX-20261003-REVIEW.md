@@ -33,8 +33,9 @@ checkpoint is a subsequent documentation-only commit.
 The live `/DataNest/` entry screen was visually inspected. The candidate uses
 the current canonical source and preserves the Resonance design tokens, public
 GitHub Pages route, authentication operations, project-role checks, and release
-authority. No backend, database, dependency, workflow, or policy changes are
-included. No deployment or certification is claimed.
+authority. No backend, database, dependency, or policy changes are included.
+The existing PR browser verification job also runs the four new navigation
+cases. No release-workflow changes, deployment, or certification are claimed.
 
 ## Local validation
 
