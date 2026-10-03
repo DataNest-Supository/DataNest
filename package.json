@@ -37,6 +37,7 @@
     "branch-protection:verify": "node scripts/branch-protection-tree.mjs",
     "security:resonance-execution": "node scripts/verify-resonance-security-execution.mjs",
     "security:resonance-scan": "node scripts/resonance-secret-scan.mjs",
+    "check:resonance-optimization": "node scripts/validate-resonance-optimization.mjs",
     "security:supply-chain": "node scripts/verify-npm-supply-chain.mjs"
   },
   "dependencies": {

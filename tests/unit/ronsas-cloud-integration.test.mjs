@@ -67,7 +67,7 @@ test("DataNest exposes the governed RONSAS status contract through JWT-protected
   assert.match(panel,/DataNest authority<\/dt><dd>/);
   assert.match(panel,/DataNest-Supository\/DataNest/);
   assert.match(panel,/status\?\.authority\.publicHub/);
-  assert.match(panel,/Open RONSAS ↗/);
+  assert.match(panel,/Open Resonance ↗/);
   assert.match(panel,/Canonical name<\/dt><dd>/);
   assert.match(panel,/Branded URL<\/dt><dd>/);
   assert.match(panel,/Hub wire<\/dt><dd>/);
@@ -81,26 +81,28 @@ test("DataNest exposes the governed RONSAS status contract through JWT-protected
   assert.match(panel,/Open DataNest ↗/);
   assert.match(products,/getRonsasStatus/);
   assert.match(products,/status\.authority\.publicHub/);
-  assert.match(products,/aria-label="Open RONSAS"/);
-  assert.match(products,/aria-label="Open RONSAS Hub"/);
+  assert.match(products,/aria-label="Open Resonance"/);
+  assert.match(products,/aria-label="Open Resonance"/);
   assert.match(app,/getRonsasStatus/);
   assert.match(app,/status\.authority\.publicHub/);
-  assert.match(app,/aria-label="Open RONSAS from DataNest navigation"/);
-  assert.match(app,/label:"RONSAS"/);
-  assert.match(app,/description:"Open governed RONSAS application hub\."/);
+  assert.match(app,/aria-label="Open Resonance from DataNest navigation"/);
+  assert.match(app,/label:"Resonance"/);
+  assert.match(app,/description:"Open the governed Resonance application suite\."/);
   assert.match(app,/window\.open\(item\.href,"_blank","noopener,noreferrer"\)/);
-  assert.match(app,/aria-label=\{item\.kind==="external"\?"Open RONSAS application hub":undefined\}/);
+  assert.match(app,/aria-label=\{item\.kind==="external"\?"Open Resonance application suite":undefined\}/);
   assert.match(app,/RonsasIntegrationPanel/);
   assert.match(manifest,/ronsasStatus:process\.env\.DATANEST_EDGE_RONSAS_STATUS \|\| "ronsas-status@1"/);
 });
 
 
-const appRegistry=readFileSync(new URL("../../src/lib/ronsasApps.ts",import.meta.url),"utf8");
+const appRegistry=readFileSync(new URL("../../src/lib/resonanceAppRegistry.ts",import.meta.url),"utf8");
 
 test("RONSAS launch registry distinguishes seven DataNest Pages apps from YouTube Optimizer SSR",()=>{
-  assert.match(appRegistry,/launchKind:"datanest-pages"\|"external-ssr"/);
+  assert.match(appRegistry,/launchKind:"datanest-pages"|launchKind:"external-ssr"/);
   assert.match(appRegistry,/slug:"youtube-optimizer"[\s\S]*launchKind:"external-ssr"[\s\S]*href:/);
-  assert.equal((appRegistry.match(/\{slug:"[^"]+"[^}\n]*launchKind:"datanest-pages"/g)||[]).length,7);
+  for(const slug of ["career-compass","creative-studio","lyricsync-studio","syncvision","epublisher","scene-song-spark","sovereign-forge"]){
+    assert.match(appRegistry,new RegExp(`slug:"${slug}"[\\s\\S]*?launchKind:"datanest-pages"`));
+  }
   assert.match(appRegistry,/YouTube Optimizer/);
   assert.match(panel,/External SSR|SSR runtime/);
   assert.match(panel,/YouTube Optimizer/);

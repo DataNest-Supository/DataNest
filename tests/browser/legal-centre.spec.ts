@@ -7,15 +7,19 @@ test("Governance and Legal Centre is public and exposes governed business identi
 
   await expect(page.getByRole("heading",{name:"Governance & Legal Centre",exact:true})).toBeVisible();
   await expect(page.getByText("Resonance Sole Proprietorship",{exact:true})).toBeVisible();
-  await expect(page.getByText("Resonance App Development",{exact:true})).toBeVisible();
+  await expect(page.getByText("Resonance App Development",{exact:true}).first()).toBeVisible();
   await expect(page.getByText("Resonance DataNest",{exact:true})).toBeVisible();
   await expect(page.getByText("RSGP Governed",{exact:true}).first()).toBeVisible();
 
-  for(const label of ["Platform Governance","Legal","Transparency","Accessibility","Business Identity"]){
+  for(const label of ["Platform Governance","Legal","Transparency","Accessibility","Authorship & Publications","Business Identity"]){
     await expect(page.getByRole("heading",{name:label,exact:true})).toBeVisible();
   }
 
   await expect(page.getByText(/RSGP\s+(?:means|stands for|is short for)/i)).toHaveCount(0);
+  await expect(page.getByText("17 Simonsvlei Street, Kuilsriver, 7580, Cape Town, South Africa",{exact:true})).toBeVisible();
+  await expect(page.getByText("ashleyuys@medi-tech.life",{exact:true})).toBeVisible();
+  await expect(page.getByText("https://reson8.life",{exact:true})).toBeVisible();
+  await expect(page.getByText("@resonanceappdev",{exact:true})).toBeVisible();
   await expect(page.getByText(/checkout|subscribe|pricing|buy now/i)).toHaveCount(0);
 });
 

@@ -1,6 +1,6 @@
 # DataNest
 
-**DataNest** is the canonical Resonance AppDev web control plane. It governs product execution intent, promotion, evidence and lifecycle state while preserving separate source, backend and delivery authorities.
+**Resonance AppDev** is the master brand of **Resonance Sole Proprietorship**. **DataNest** is its canonical operating/control system: it governs product intent, AppDev execution, evidence, lifecycle, promotion and delivery while preserving separate source, backend and delivery authorities.
 
 ### Declaration of Intent
 
@@ -14,9 +14,9 @@ The declaration is a governance pledge, not a certification, statutory designati
 
 
 
-## Independent assurance services
+## Resonance AppDev Assurance Services
 
-DataNest offers **private independent regulatory-readiness, technical-audit support, evidence, remediation and authorized digital-oversight services**.
+Resonance AppDev Assurance Services provide **regulatory/readiness support, technical assurance, evidence preparation, remediation support and authorized digital oversight** through DataNest, within the authority actually established for each engagement.
 
 - Public service page: **https://datanest-supository.github.io/DataNest/assurance/**
 - Commercial charter: [`docs/INDEPENDENT_REGULATORY_ASSURANCE_SERVICES.md`](docs/INDEPENDENT_REGULATORY_ASSURANCE_SERVICES.md)
@@ -54,6 +54,23 @@ Static health marker:
 GitHub Pages is the **current public delivery target** for the DataNest-managed production path. Supabase supplies the governed auth, database, storage and backend-function services.
 
 Standalone Node/Docker runtimes continue to expose the server health endpoint at `/api/health`, but local machines are development, controlled-test, and specialized execution surfaces only. They are not backup hosts or continuity authorities. Dropbox `/DataNest-AI-Backups` is the governed backup-artifact host.
+
+## System and business scope
+
+DataNest separates the operating system from the businesses and products it governs:
+
+| Layer | Public name | Role |
+| --- | --- | --- |
+| Business | **Resonance Sole Proprietorship** | Legal/operating business identity |
+| Master brand | **Resonance AppDev** | Public master brand |
+| Operating system | **DataNest** | Governance, AppDev control, orchestration, evidence, security, continuity and delivery |
+| Portfolio registry | **DataNest Portfolio Registry** | Canonical catalog of products, services, routes, components and authorities |
+| Customer suite | **Resonance** | Career, Create and Grow customer applications |
+| Professional line | **Sovereign Forge** | Professional/B2B engineering and sovereignty capability under Resonance AppDev |
+| Service line | **Resonance AppDev Assurance Services** | Readiness, assurance, evidence and authorized professional services |
+| Technical identifier | **RONSAS** | Stable identifier for the Resonance implementation estate |
+
+Customer-facing pages should lead with the Resonance AppDev master brand and customer intent. Repository names, internal control-tree names, technical slugs and historical identifiers remain implementation details.
 
 ## Canonical stack
 
@@ -106,11 +123,11 @@ Scheduled noise deletion and decluttering are defined in [`docs/MAINTENANCE_PROT
 
 GitHub and Supabase remain the required source/CI and backend authorities. Dropbox is continuity storage for governed release and recovery artifacts; it is not the request-serving production web runtime. Hosting remains replaceable delivery infrastructure, not system authority.
 
-## Resonance AppDev Supository scope
+## DataNest Portfolio Registry scope
 
-`DataNest-Supository/DataNest` is the canonical Resonance AppDev **Supository**: the governed parent index for Resonance application-development projects, products and services.
+`DataNest-Supository/DataNest` is the canonical DataNest **Portfolio Registry**: the governed parent index for products, services, application-development projects, components and delivery authorities. **Supository** remains a legacy technical term/path only.
 
-The Supository scope includes source/provenance, lifecycle state, delivery routes, release evidence, service relationships and future sovereign Git/registry replication. The current peer production authority model is GitHub + GitHub Pages + separate Supabase services: DataNest governs `/DataNest/`, while Mirror governs `/Mirror-DataNest/`. Deploying Reson8 Forge does not silently replace either surface.
+The Portfolio Registry scope includes source/provenance, lifecycle state, delivery routes, release evidence, service relationships and future sovereign Git/registry replication. The current peer production authority model is GitHub + GitHub Pages + separate Supabase services: DataNest governs `/DataNest/`, while Mirror governs `/Mirror-DataNest/`. Deploying Reson8 Forge does not silently replace either surface.
 
 - Architecture contract: [`docs/DATANEST_SUPOSITORY_ARCHITECTURE.md`](docs/DATANEST_SUPOSITORY_ARCHITECTURE.md)
 - Machine-readable catalog: [`config/supository.catalog.json`](config/supository.catalog.json)
@@ -119,30 +136,30 @@ The Supository scope includes source/provenance, lifecycle state, delivery route
 - Mirror promotion contract: [`docs/MIRROR_DATANEST_PROMOTION.md`](docs/MIRROR_DATANEST_PROMOTION.md)
 - Target Forge namespace: `git.reson8.life/DataNest-Supository/DataNest`
 
-New Resonance AppDev projects, products and services should be registered through the Supository catalog even when their source or runtime lives in a separate repository or provider.
+New products, services and AppDev projects should be registered through the Portfolio Registry even when their source or runtime lives in a separate repository or provider, under the Resonance AppDev master-brand hierarchy.
 
 ## Target-state architecture concepts
 
 The approved 27 Sep 2026 ecosystem design extends DataNest with target-state concepts that are intentionally separate from current production capability claims:
 
 - **Cloud-Nest** — planned governed workspace abstraction for identity, projects, knowledge, permissions and resources.
-- **Supository** — planned governed knowledge and provenance abstraction linking source, evidence, lineage and reuse policy.
+- **Portfolio Registry** — governed catalog and provenance abstraction linking source, evidence, lineage, ownership and reuse policy; Supository is retained only as a legacy technical alias.
 - **ILM (Inclusive Language Model)** — planned governed intelligence abstraction that begins as orchestration across approved models, tools, people and certified knowledge rather than a claim that Resonance has trained a proprietary foundation model.
 
 These concepts require separate implementation and evidence before DataNest presents them as available product capabilities.
 
 
-## RONSAS cloud integration
+## Resonance technical integration (RONSAS)
 
-DataNest integrates with **RONSAS (Resonance Open Nova Sovereign Application Suite)** as a governed product through the authenticated Supabase Edge Function contract `ronsas-status@1`.
+DataNest integrates with **Resonance** as a governed customer suite through the authenticated Supabase Edge Function contract `ronsas-status@1`; **RONSAS** is the stable technical identifier.
 
-- RONSAS is governed through DataNest; it is not the parent platform or DataNest AI authority.
+- Resonance is governed through DataNest; it is not the parent platform or DataNest AI authority.
 - No local workstation, loopback service, desktop launcher, or Ealiophin interaction is required by the DataNest web control plane.
 - Ealiophin, Spider, Weed, and other local PCs are not backup hosts or continuity authorities.
 - Dropbox `/DataNest-AI-Backups` is the governed backup-artifact host.
 - The integration is cloud-only and rejects localhost, loopback, and `.local` origins.
 - RONSAS health is non-blocking: DataNest remains usable when the public RONSAS Hub is unavailable.
-- Resonance AppDev source authority is explicit: `resonance36912-cell/RONSAS` is the control-source repository and `resonance36912-cell/resonance-hub` is the public Hub source.
+- The Resonance implementation estate retains its stable technical source identifiers; those identifiers are not the public business name.
 - The canonical public Hub probe is `https://reson8.life/`.
 
 ## Web UI

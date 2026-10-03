@@ -102,7 +102,8 @@ export function validateLaunchRegistryText(launchRegistry) {
   if (staticLaunches.length !== 7) {
     failures.push(`RONSAS launch registry must expose exactly seven DataNest Pages apps; found ${staticLaunches.length}`);
   }
-  if (!/slug:"youtube-optimizer"[\s\S]*launchKind:"external-ssr"[\s\S]*href:"https:\/\/youtubeoptimizer\.life"/.test(launchRegistry)) {
+  const youtubeEntry = launchRegistry.match(/\{[^}]*slug:"youtube-optimizer"[^}]*\}/)?.[0] || "";
+  if (!/launchKind:"external-ssr"/.test(youtubeEntry) || !youtubeEntry.includes('href:"https://youtubeoptimizer.life"')) {
     failures.push("YouTube Optimizer must remain a governed external SSR launch at https://youtubeoptimizer.life");
   }
   return failures;
@@ -217,9 +218,31 @@ export function validateLegalContract(raw) {
 }
 
 function validateLaunchRegistry(root, failures) {
-  const file = resolve(root, "src/lib/ronsasApps.ts");
-  if (!existsSync(file)) return;
-  failures.push(...validateLaunchRegistryText(readFileSync(file, "utf8")));
+  const file = resolve(root, "src/lib/resonanceAppRegistry.ts");
+  if (!existsSync(file)) {
+    failures.push("missing canonical Resonance app registry: src/lib/resonanceAppRegistry.ts");
+    return;
+  }
+  const source = readFileSync(file, "utf8");
+  const requiredPages = [
+    "career-compass",
+    "creative-studio",
+    "lyricsync-studio",
+    "syncvision",
+    "epublisher",
+    "scene-song-spark",
+    "sovereign-forge",
+  ];
+  for (const slug of requiredPages) {
+    const pattern = new RegExp(`slug:"${slug}"[\\s\\S]*?launchKind:"datanest-pages"`);
+    if (!pattern.test(source)) {
+      failures.push(`Canonical Resonance app registry is missing DataNest Pages launch for ${slug}`);
+    }
+  }
+  const youtubeEntry = source.match(/\{[^}]*slug:"youtube-optimizer"[^}]*\}/)?.[0] || "";
+  if (!/launchKind:"external-ssr"/.test(youtubeEntry) || !youtubeEntry.includes('href:"https://youtubeoptimizer.life"')) {
+    failures.push("YouTube Optimizer must remain a governed external SSR launch at https://youtubeoptimizer.life");
+  }
 }
 
 function validateRequiredFiles(root, failures) {

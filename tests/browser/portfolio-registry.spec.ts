@@ -30,7 +30,7 @@ async function setup(page:Page,role:"viewer"|"operator"|"owner"){
   },{userId});
 
   const items=[
-    {id:ids.ronsas,project_id:projectId,slug:"ronsas",name:"RONSAS",item_kind:"governed_product",review_state:"classified",current_lifecycle:"maintained",linked_product_id:productId,source_authority:"products",source_reference:productId,metadata:{},active_classification_id:"c1",active_classification:"independent_datanest_product",target_product_id:null,target_product_slug:null,target_product_name:null,outgoing_relationship_count:2,incoming_relationship_count:0,product_lab_surface_count:0,product_lab_test_run_count:0},
+    {id:ids.ronsas,project_id:projectId,slug:"ronsas",name:"Resonance",item_kind:"governed_product",review_state:"classified",current_lifecycle:"maintained",linked_product_id:productId,source_authority:"products",source_reference:productId,metadata:{},active_classification_id:"c1",active_classification:"independent_datanest_product",target_product_id:null,target_product_slug:null,target_product_name:null,outgoing_relationship_count:2,incoming_relationship_count:0,product_lab_surface_count:0,product_lab_test_run_count:0},
     {id:ids.sync,project_id:projectId,slug:"sync-vision",name:"Sync Vision",item_kind:"application",review_state:"pending_review",current_lifecycle:null,linked_product_id:null,source_authority:"product_records",source_reference:"legacy-sync",metadata:{historical_catalog:{parent_product_id:productId,ownership_claim:"RONSAS"}},active_classification_id:null,active_classification:null,target_product_id:null,target_product_slug:null,target_product_name:null,outgoing_relationship_count:0,incoming_relationship_count:0,product_lab_surface_count:0,product_lab_test_run_count:0},
     {id:ids.shared,project_id:projectId,slug:"transcription",name:"Transcription Capability",item_kind:"capability",review_state:"classified",current_lifecycle:"active",linked_product_id:null,source_authority:"registry",source_reference:null,metadata:{},active_classification_id:"c3",active_classification:"shared_datanest_capability",target_product_id:null,target_product_slug:null,target_product_name:null,outgoing_relationship_count:0,incoming_relationship_count:1,product_lab_surface_count:0,product_lab_test_run_count:0},
     {id:ids.external,project_id:projectId,slug:"provider-x",name:"Provider X",item_kind:"external_capability",review_state:"classified",current_lifecycle:"active",linked_product_id:null,source_authority:"registry",source_reference:null,metadata:{},active_classification_id:"c4",active_classification:"registered_external_capability",target_product_id:null,target_product_slug:null,target_product_name:null,outgoing_relationship_count:0,incoming_relationship_count:1,product_lab_surface_count:0,product_lab_test_run_count:0},
@@ -45,7 +45,7 @@ async function setup(page:Page,role:"viewer"|"operator"|"owner"){
     let body:unknown=[];
     if(path.endsWith("/projects"))body={id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE",created_at:"2026-09-26T00:00:00Z"};
     if(path.endsWith("/project_members"))body={project_id:projectId,user_id:userId,role,status:"active"};
-    if(path.endsWith("/products"))body=[{id:productId,slug:"ronsas",name:"RONSAS",full_name:"Resonance Open Nova Application Suite",category:"sovereign application suite",lifecycle_status:"active",mission:"Governed suite.",operating_model:"governed",primary_runtime:"Windows local environment",commercial_mode:"free promotion / no billing until pricing is established",billing_enabled:false,as_of_date:"2026-09-26",metadata:{parent_platform:"Resonance DataNest",execution_authority:"DataNest"}}];
+    if(path.endsWith("/products"))body=[{id:productId,slug:"ronsas",name:"RONSAS",full_name:"Resonance Application Suite",category:"sovereign application suite",lifecycle_status:"active",mission:"Governed suite.",operating_model:"governed",primary_runtime:"Windows local environment",commercial_mode:"free promotion / no billing until pricing is established",billing_enabled:false,as_of_date:"2026-09-26",metadata:{parent_platform:"Resonance DataNest",execution_authority:"DataNest"}}];
     if(path.endsWith("/product_records"))body=[];
     if(path.endsWith("/portfolio_registry_view"))body=items;
     if(path.endsWith("/portfolio_classifications"))body=[
@@ -84,14 +84,14 @@ test("Portfolio Registry preserves pending ownership, composition, and product c
   await expect(page.getByRole("heading",{name:"Sync Vision",exact:true})).toBeVisible();
 
   await page.getByRole("button",{name:"Governed Products",exact:true}).click();
-  await expect(page.getByText("Resonance Open Nova Sovereign Application Suite",{exact:true})).toBeVisible();
+  await expect(page.locator(".catalogProduct .catalogFullName")).toHaveText("Resonance Application Suite");
   await expect(page.getByText("FREE PROMOTION · BILLING OFF",{exact:true} )).toBeVisible();
   await expect(page.locator(".catalogProduct .productStatus")).toHaveText("MAINTAINED");
   await page.getByRole("button",{name:"Review governed detail",exact:true}).click();
   await expect(page.locator(".resonancePortfolioDetails")).toContainText("maintained");
-  await expect(page.getByRole("region",{name:"RONSAS Composition"})).toContainText("Transcription Capability");
-  await expect(page.getByRole("region",{name:"RONSAS Composition"})).toContainText("Provider X");
-  await expect(page.getByRole("region",{name:"RONSAS Composition"})).toContainText("Sync Vision");
+  await expect(page.getByRole("region",{name:"Resonance Product Structure"})).toContainText("Transcription Capability");
+  await expect(page.getByRole("region",{name:"Resonance Product Structure"})).toContainText("Provider X");
+  await expect(page.getByRole("region",{name:"Resonance Product Structure"})).toContainText("Resonance Media Sync");
 
   await page.getByRole("button",{name:"Portfolio Registry",exact:true}).click();
   await page.getByRole("button",{name:/Candidate Studio/}).click();

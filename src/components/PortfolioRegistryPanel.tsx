@@ -351,7 +351,7 @@ export default function PortfolioRegistryPanel({
             <dl className="portfolioFacts">
               <div><dt>Source authority</dt><dd>{selected.source_authority||"Registry"}</dd></div>
               <div><dt>Source reference</dt><dd>{selected.source_reference||"—"}</dd></div>
-              <div><dt>Historical RONSAS link</dt><dd>{historicalRonsasProductId&&historicalParent?"Recorded historically":"Not asserted"}</dd></div>
+              <div><dt>Historical technical RONSAS link</dt><dd>{historicalRonsasProductId&&historicalParent?"Recorded historically":"Not asserted"}</dd></div>
             </dl>
           </section>
 

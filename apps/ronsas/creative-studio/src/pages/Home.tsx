@@ -38,14 +38,14 @@ const Home = () => {
           {
             "@context": "https://schema.org",
             "@type": "Organization",
-            name: "Resonance Creative Studio",
+            name: "Resonance Creator Studio",
             url: "https://resonancestudio.lovable.app/",
             description: "AI-powered creative studio for posters, brochures, advertisements, social posts, and cinematic videos. Brief-first workflow — uploads and product details drive generation, URL is optional.",
           },
           {
             "@context": "https://schema.org",
             "@type": "WebSite",
-            name: "Resonance Creative Studio",
+            name: "Resonance Creator Studio",
             url: "https://resonancestudio.lovable.app/",
           },
         ]}
@@ -56,7 +56,7 @@ const Home = () => {
           <Link to="/" className="flex items-center gap-2.5 min-w-0">
             <img
               src="/logo-icon.jpg"
-              alt="Resonance Creative Studio logo"
+              alt="Resonance Creator Studio logo"
               className="h-8 w-8 object-cover shrink-0"
               width={32}
               height={32}
@@ -64,7 +64,7 @@ const Home = () => {
               decoding="async"
             />
             <span className="font-display text-sm sm:text-base font-bold studio-gradient-text truncate">
-              Resonance Creative Studio
+              Resonance Creator Studio
             </span>
           </Link>
           <div className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
@@ -193,7 +193,7 @@ const Home = () => {
             className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-card/60 px-4 py-1.5 text-xs text-muted-foreground mb-8"
           >
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-            RONSAS governed · Creative expression · 🇿🇦 Built in South Africa · Free promotional access
+            Resonance governed · Creative expression · 🇿🇦 Built in South Africa · Free promotional access
           </motion.div>
 
           <motion.div
@@ -205,7 +205,7 @@ const Home = () => {
             <div className="flex items-center justify-center gap-3 mb-6">
               <motion.img
                 src="/logo-icon.jpg"
-                alt="Resonance Creative Studio logo"
+                alt="Resonance Creator Studio logo"
                 className="h-14 w-14 object-cover"
                 width={56}
                 height={56}
@@ -215,7 +215,7 @@ const Home = () => {
                 transition={{ duration: 3, ease: "easeInOut", repeat: Infinity }}
               />
               <span className="font-display text-sm font-bold uppercase tracking-[0.3em] studio-gradient-text glitch-flicker-loop">
-                Creative Studio
+                Creator Studio
               </span>
             </div>
           </motion.div>
@@ -276,7 +276,7 @@ const Home = () => {
               href="https://www.resonanceonline.life"
               className="inline-flex items-center gap-2 border border-border bg-card/60 text-foreground font-display font-semibold text-base px-8 py-3.5 rounded-xl hover:bg-card transition-colors"
             >
-              Explore ePublisher
+              Open Resonance Publish
               <ArrowRight className="w-4 h-4" />
             </a>
           </motion.div>
@@ -325,7 +325,7 @@ const Home = () => {
       </main>
 
       {/* Shared cross-app footer (v3 brand pack) — keeps every Resonance spoke linked. */}
-      <ResonanceFooter currentApp="Creative Studio" />
+      <ResonanceFooter currentApp="Creator Studio" />
     </div>
   );
 };
