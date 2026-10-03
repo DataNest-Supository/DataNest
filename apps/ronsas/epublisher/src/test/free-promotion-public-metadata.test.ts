@@ -19,7 +19,7 @@ describe("free promotion public metadata", () => {
     expect(llms).not.toContain("Hub checkout");
     expect(pricing).toContain("Standard list prices");
     expect(pricing).toContain("post-promotion commercial basis");
-    expect(pricing).toContain("not currently charged while free promotion access remains enabled");
+    expect(pricing).toMatch(/are not\s+currently charged while free promotion access remains enabled/);
     expect(pricing).not.toContain("hubPackCheckoutUrl");
     expect(landing).not.toMatch(/R\s?\d/);
     expect(landing).not.toContain("View pack");
