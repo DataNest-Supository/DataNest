@@ -61,6 +61,8 @@
   },
   "runtimeRegistration": {
     "state": "pending",
+    "issue": "https://github.com/Resonance-AppDev/resonance-hub/issues/136",
+    "statusEndpoint": "https://reson8.life/api/public/app-status/health",
     "note": "Repository-level alignment is explicit; live Hub registration remains a separate runtime verification step."
   }
 }
