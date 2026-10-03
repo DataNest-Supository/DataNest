@@ -59,11 +59,11 @@ The current implementation is a governed development/build-tooling surface that 
 
 ### SyncVision
 
-Current implementation evidence shows a compute-sensitive workflow covering storyboard/timing, visual generation, vocal sync, rendering, storage and provider usage measurement. International AI-video products are strongly credit-based: Kaiber lists $10/month Starter, $29/month Creator and $99/month Pro, while Pika lists $10/month Starter, $35/month Creator and $95/month Fancy, with credits and one-time top-ups. RONSAS therefore uses R299/R799/R1,499 as a South African list-price structure while retaining governed usage/credit controls rather than promising unlimited compute. citeturn519101search3turn519101search0
+Current implementation evidence shows a compute-sensitive workflow covering storyboard/timing, visual generation, vocal sync, rendering, storage and provider usage measurement. International AI-video products are strongly credit-based: Kaiber lists $10/month Starter, $29/month Creator and $99/month Pro, while Pika lists $10/month Starter, $35/month Creator and $95/month Fancy, with credits and one-time top-ups. RONSAS therefore uses R299/R799/R1,499 as a South African list-price structure while retaining governed usage/credit controls rather than promising unlimited compute.
 
 ### YouTube Optimizer
 
-The current implementation provides channel audits, content ideas, trends, connections, monetisation and scheduling. vidIQ's current public plans use a free tier and credit-based paid tiers; its Max plan is listed at $39/month and Enterprise starts at $799/month. RONSAS uses R249/R649/R1,499 plus custom Enterprise as a local list-price ladder rather than claiming feature parity or a direct currency equivalence. citeturn825962search3turn825962search0
+The current implementation provides channel audits, content ideas, trends, connections, monetisation and scheduling. vidIQ's current public plans use a free tier and credit-based paid tiers; its Max plan is listed at $39/month and Enterprise starts at $799/month. RONSAS uses R249/R649/R1,499 plus custom Enterprise as a local list-price ladder rather than claiming feature parity or a direct currency equivalence.
 
 ## Annualized list-price values
 
@@ -101,3 +101,17 @@ Annualized figures are simple 12-month list-price arithmetic, not revenue foreca
 5. Usage-heavy products must preserve measurable provider/infrastructure cost evidence before promising unlimited paid usage.
 6. Discounts, VAT, refunds, credits, write-offs and excluded third-party costs must be separately disclosed where material.
 7. No product may claim commercial availability beyond its actual entitlement/billing implementation state.
+
+## Benchmark sources
+
+- My Job Concierge pricing: https://za.myjobconcierge.com/pricing/
+- RoleAlign pricing: https://role-align.com/pricing
+- GrowVert career development: https://www.growvert.co.za/career-development
+- Suubi pricing: https://www.suubi.co.za/
+- GOAT Creative Solutions: https://network.goatcreatives.co.za/
+- Kaiber plan guidance: https://helpcenter.kaiber.ai/en/articles/6291249-kaiber-plans-what-you-need-to-know
+- Pika pricing: https://pika.art/pricing
+- vidIQ plans: https://vidiq.com/plans/
+- vidIQ enterprise: https://support.vidiq.com/en/articles/8058473-vidiq-enterprise-introduction
+
+These are public market-reference sources. They are not endorsements, market averages, or evidence that RONSAS has identical features or cost structure.
