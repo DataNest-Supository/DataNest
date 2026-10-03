@@ -84,8 +84,12 @@ jobs:
           git switch -C "$branch"
           git add calmer/state/latest.json calmer/feeds/datanest.json
           if git diff --cached --quiet; then exit 0; fi
-          git -c user.name="DataNest CALMER"               -c user.email="41898282+github-actions[bot]@users.noreply.github.com"               commit -m "Refresh CALMER governance softening"
-          git push --force-with-lease origin HEAD:"$branch"
+          git -c user.name="DataNest CALMER"             -c user.email="41898282+github-actions[bot]@noreply.github.com"             commit -m "Refresh CALMER governance softening"
+          if git push --force-with-lease origin HEAD:"$branch"; then
+            echo "CALMER state branch updated."
+          else
+            echo "::warning::Protected automation/calmer refused the state publication push. The generated proposal remains available in the workflow artifact; no protection bypass is attempted."
+          fi
 
       - uses: actions/upload-artifact@v4
         if: always()

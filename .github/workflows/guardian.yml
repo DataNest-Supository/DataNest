@@ -138,8 +138,14 @@ jobs:
             echo "GUARDIAN snapshot unchanged."
             exit 0
           fi
-          git -c user.name="DataNest GUARDIAN"               -c user.email="41898282+github-actions[bot]@users.noreply.github.com"               commit -m "Refresh GUARDIAN health snapshot"
-          git push --force-with-lease origin HEAD:"$branch"
+          git -c user.name="DataNest GUARDIAN" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -m "Refresh GUARDIAN health snapshot"
+          if git push --force-with-lease origin HEAD:"$branch"; then
+            echo "GUARDIAN snapshot branch updated."
+          else
+            echo "::warning::Protected automation/guardian refused the snapshot publication push. The generated snapshot remains available in the workflow artifact; no protection bypass is attempted."
+          fi
 
       - uses: actions/upload-artifact@v4
         if: always()

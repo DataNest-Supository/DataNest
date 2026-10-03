@@ -74,7 +74,11 @@ jobs:
           git add enforcer/state/latest.json enforcer/feeds/knowledge-learning.json enforcer/transparency/latest.json
           if ! git diff --cached --quiet; then
             git -c user.name="DataNest ENFORCER" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "Refresh ENFORCER defensive evidence"
-            git push --force-with-lease origin HEAD:automation/enforcer
+            if git push --force-with-lease origin HEAD:automation/enforcer; then
+              echo "ENFORCER evidence branch updated."
+            else
+              echo "::warning::Protected automation/enforcer refused the evidence publication push. The generated evidence remains available in the workflow artifact; no protection bypass is attempted."
+            fi
           fi
 
       - uses: actions/upload-artifact@v4

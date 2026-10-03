@@ -83,8 +83,14 @@ jobs:
             echo "SUGGESTER feed unchanged."
             exit 0
           fi
-          git -c user.name="DataNest SUGGESTER"               -c user.email="41898282+github-actions[bot]@users.noreply.github.com"               commit -m "Refresh SUGGESTER optimization feed"
-          git push --force-with-lease origin HEAD:automation/suggester
+          git -c user.name="DataNest SUGGESTER" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -m "Refresh SUGGESTER optimization feed"
+          if git push --force-with-lease origin HEAD:automation/suggester; then
+            echo "SUGGESTER feed branch updated."
+          else
+            echo "::warning::Protected automation/suggester refused the feed publication push. The generated feed remains available in the workflow artifact; no protection bypass is attempted."
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
