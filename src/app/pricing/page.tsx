@@ -14,13 +14,14 @@ const packages=[
   ["Technical Audit & Evidence Pack","R25,000","once-off","App, cloud or repository","Control review, evidence register, risk-ranked findings and implementation backlog."],
   ["Continuous Digital Oversight","R7,500","per month","1 defined environment","Authorised monitoring, monthly control review, drift/change detection and escalation register."],
   ["Enterprise Oversight","R18,500","per month","Multi-system","Governance dashboard, supplier/control evidence tracking and quarterly deep review."],
-  ["Specialist Advisory","R1,850","per hour","Advisory scope","Architecture, governance, security, evidence, remediation and implementation advisory."]
+  ["Specialist Advisory","R1,850","per hour","Advisory scope","Architecture, governance, security, evidence, remediation and implementation advisory."],
+  ["Specialist Day","R14,800","per day","Focused advisory or implementation","Eight-hour equivalent at the standard specialist advisory rate."]
 ];
 
 export default function PricingPage(){
   return <div className="marketingShell"><MarketingHeader/><main className="marketingContainer">
     <section className="marketingSection">
-      <div className="marketingSectionHead"><span className="marketingTag">Launch pricing · ZAR</span><h1>Defined commercial entry points.</h1><p>Published starting prices make it easier to understand the engagement. Prices are exclusive of VAT; final scope, authorisation, exclusions and applicable taxes or third-party costs are agreed in writing.</p></div>
+      <div className="marketingSectionHead"><span className="marketingTag">Launch pricing · ZAR · effective 3 October 2026</span><h1>Defined commercial entry points.</h1><p>Published starting prices make it easier to understand the engagement. Prices are exclusive of VAT; final scope, authorisation, exclusions and applicable taxes or third-party costs are agreed in writing.</p></div>
       <div className="marketingGrid3">
         {packages.map(([name,price,cadence,scope,summary])=><article className="marketingCard" key={name}><h3>{name}</h3><div className="marketingPrice">{price} <small>{cadence}</small></div><p><strong>Scope:</strong> {scope}</p><p style={{marginTop:8}}>{summary}</p><Link href="/contact/">Request this engagement →</Link></article>)}
       </div>
