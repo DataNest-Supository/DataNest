@@ -7,19 +7,25 @@ const workflow=readFileSync(
   "utf8"
 );
 
-test("CONDUCTOR runs on bounded scheduled/manual control paths only",()=>{
-  assert.match(workflow,/workflow_dispatch:/);
-  assert.match(workflow,/cron: "0 \* \* \* \*"/);
+const mainDispatchGuard=/github\.event_name == 'workflow_dispatch'[\s\S]*?github\.ref == 'refs\/heads\/main'/;
+const scheduleGuard=/github\.event_name == 'schedule'/;
+
+test("CONDUCTOR coordinate and timeframe jobs share the same bounded trigger policy",()=>{
+  const coordinate=workflow.match(/\n  coordinate:\n([\s\S]*?)(?=\n  gate-timeframe:)/)?.[1]||"";
+  const timeframe=workflow.match(/\n  gate-timeframe:\n([\s\S]*)$/)?.[1]||"";
+
+  for(const section of [coordinate,timeframe]){
+    assert.match(section,mainDispatchGuard);
+    assert.match(section,scheduleGuard);
+  }
+
   assert.doesNotMatch(workflow,/workflow_run:/);
-  assert.match(workflow,/github\.event_name == 'workflow_dispatch' && github\.ref == 'refs\/heads\/main'/);
-  assert.match(workflow,/github\.event_name == 'schedule'/);
-  assert.match(workflow,/cancel-in-progress: true/);
 });
 
 test("CONDUCTOR concurrency coalesces automation for the same canonical SHA",()=>{
   assert.match(
     workflow,
-    /group: datanest-conductor-\$\{\{ github\.event\.workflow_run\.head_sha \|\| github\.sha \}\}/
+    /group: datanest-conductor-\$\{\{ github\.sha \}\}/
   );
   assert.match(workflow,/cancel-in-progress: true/);
 });
