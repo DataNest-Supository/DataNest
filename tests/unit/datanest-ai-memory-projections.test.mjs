@@ -50,15 +50,16 @@ test("projection-aware retrieval enforces product and jurisdiction boundaries",(
   assert.match(migration,/'strategy','verified-memory-ranked-v3'/);
 });
 
-test("DataNest AI selects the projection for each reasoning mode and falls back safely",()=>{
+test("DataNest AI selects the projection for each reasoning mode and fails closed when projection retrieval is unavailable",()=>{
   assert.match(chat,/const projectionKey=legalMode/);
   assert.match(chat,/"legal_eagle"/);
   assert.match(chat,/"development_command"/);
   assert.match(chat,/"datanest_ai"/);
   assert.match(chat,/get_ranked_certified_memory_context_v3/);
   assert.match(chat,/target_projection_key:input\.projectionKey/);
-  assert.match(chat,/get_ranked_certified_memory_context_v2/);
-  assert.match(chat,/get_certified_memory_context/);
+  assert.match(chat,/certified_memory_projection_unavailable/);
+  assert.doesNotMatch(chat,/get_ranked_certified_memory_context_v2/);
+  assert.doesNotMatch(chat,/get_certified_memory_context/);
 });
 
 test("usage receipts preserve projection key and version",()=>{
