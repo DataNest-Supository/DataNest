@@ -1,6 +1,9 @@
-export const DATANEST_PLATFORM_NAME = "Resonance DataNest";
+export const DATANEST_PLATFORM_NAME = "DataNest Platform";
+export const DATANEST_BUSINESS_NAME = "DataNest";
+export const DATANEST_REGISTRY_NAME = "DataNest Portfolio Registry";
 export const RESONANCE_PRODUCT_NAME = "Resonance";
 export const RESONANCE_FULL_NAME = "Resonance Application Suite";
+export const SOVEREIGN_FORGE_PRODUCT_NAME = "Sovereign Forge";
 
 /**
  * Stable technical aliases retained for migration-safe internal consumers.
