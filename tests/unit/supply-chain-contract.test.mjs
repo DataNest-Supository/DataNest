@@ -5,9 +5,9 @@ import { readFileSync } from "node:fs";
 test("direct npm dependencies are exact-pinned",()=>{
   const pkg=JSON.parse(readFileSync("package.json","utf8"));
   const direct={...(pkg.dependencies||{}),...(pkg.devDependencies||{})};
-  const exact=/^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$/;
+  const exact=/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
   for(const [name,version] of Object.entries(direct)){
-    assert.match(version,exact,`${name} must be exact-pinned`);
+    assert.match(version,exact,name+" must be exact-pinned");
   }
 });
 
