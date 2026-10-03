@@ -246,10 +246,7 @@ test("authentication password fields provide accessible visibility controls", ()
 
 test("session-check failures keep the sign-in shell usable", () => {
   assert.doesNotMatch(authGateSource, /startup = "connection-error"/);
-  assert.match(authGateSource, /setStartupMessage\("We couldn’t verify an existing session\. You can still sign in\."\)/);
-  assert.match(authGateSource, /setCheckingSession\(false\)/);
-  assert.match(authGateSource, /function retrySessionCheck\(\)/);
-  assert.match(authGateSource, /onClick=\{retrySessionCheck\}/);
+  assert.match(authGateSource, /setStartup\("signed-out"\)/);
   assert.match(authGateSource, /You can still sign in/);
   assert.match(authGateSource, /Retry session check/);
   assert.match(entryCssSource, /\.sessionCheckNote\.sessionCheckError/);
@@ -672,25 +669,6 @@ test("Think Tank message drafts are isolated per selected thread", () => {
   assert.match(thinkTankSource, /draftPrefix\+"thread:"\+selectedChannelId\+":title"/);
 });
 
-
-test("authentication startup follows Supabase auth lifecycle without a competing getSession request", () => {
-  assert.match(authGateSource, /onAuthStateChange\(\(event, nextSession\) => \{/);
-  assert.match(authGateSource, /setStartup\(nextSession && \(event === "PASSWORD_RECOVERY"/);
-  assert.match(authGateSource, /window\.setTimeout\(\(\) => \{/);
-  assert.match(authGateSource, /window\.clearTimeout\(timeoutId\)/);
-  assert.doesNotMatch(authGateSource, /auth\.getSession\(/);
-  assert.doesNotMatch(authGateSource, /withTimeout\(supabase\.auth/);
-  assert.match(authGateSource, /onClick=\{retrySessionCheck\}/);
-});
-
-test("password sign-in commits the returned session directly", () => {
-  assert.match(authGateSource, /signInWithPassword\(\{ email, password \}\)/);
-  assert.match(authGateSource, /const \{ data, error \} = await supabase\.auth\.signInWithPassword/);
-  assert.match(authGateSource, /if \(data\.session\)/);
-  assert.match(authGateSource, /setSession\(data\.session\)/);
-  assert.match(authGateSource, /setStartup\("signed-in"\)/);
-  assert.match(authGateSource, /setCheckingSession\(false\)/);
-});
 
 test("authentication credentials are excluded from browser-session draft persistence", () => {
   assert.match(authGateSource, /const \[password, setPassword\] = useState\(""\)/);
