@@ -1,6 +1,8 @@
 # DataNest Independent Regulatory Assurance & Audit Services
 
 **Status:** Commercial service catalogue — private independent service, not a statutory regulator.
+**Price-book effective date:** 3 October 2026
+**Price basis:** South African rand (ZAR), exclusive of VAT unless a written quotation states otherwise.
 
 ## Market position
 
@@ -101,6 +103,13 @@ Observed public reference points included:
 - Public Johannesburg managed-IT pricing guides place commodity/ad hoc technical work below specialist governance and assurance work.
 
 These references are **market samples, not a representative market average, endorsement or guarantee**. Service scope differs materially between providers.
+
+Reference pages:
+- Oriole Consulting — https://www.oriole.co.za/plans-pricing
+- HeartGuard — https://heartguard.co.za/
+- Randcore — https://randcore.co.za/services/cybersecurity/
+- QuantumBerry AI — https://quantumberryai.co.za/ai-cyber-security-johannesburg/
+- SARS VAT guidance — https://www.sars.gov.za/types-of-tax/value-added-tax/
 
 ### DataNest pricing decision
 
