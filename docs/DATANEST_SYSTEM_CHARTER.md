@@ -286,11 +286,39 @@ Continuously assesses:
 
 It produces evidence-labelled market scenarios and projected relative outcomes for consideration. It does not guarantee outcomes and does not authorize advertising spend, pricing, sales commitments or unverified public claims.
 
-### 8.12 Mirror-DataNest
+### 8.12 COMMERCIAL OPERATIONS
+
+Commercial Operations is a **human-authorized business function**, not an autonomous production authority. It connects market demand to governed service and product delivery:
+
+```
+market / visibility
+      ↓
+lead capture
+      ↓
+qualification
+      ↓
+assessment / discovery
+      ↓
+proposal / scope
+      ↓
+delivery
+      ↓
+verification / evidence
+      ↓
+customer success
+      ↓
+renewal / expansion / referral
+```
+
+Commercial Operations may coordinate CRM, proposals, quotations, customer communications, case studies, renewal processes and commercial metrics. It may use VISIBILITY-UTILITY, BOTSQUAD, Knowledge and other evidence feeds for analysis and recommendations.
+
+It may not autonomously spend funds, sign contracts, change approved pricing, make warranties or guarantees, claim certification, or create binding commercial commitments.
+
+### 8.13 Mirror-DataNest
 
 Ungated/rapid R&D and production-parity candidate environment. Mirror may test and produce candidate evidence, but it cannot silently replace canonical DataNest production authority.
 
-### 8.13 FREETREE
+### 8.14 FREETREE
 
 Isolated open-development tree/repository. It remains outside automatic DataNest/Mirror synchronization and does not obtain canonical production authority.
 
