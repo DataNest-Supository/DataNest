@@ -363,6 +363,38 @@ The Supository currently catalogs DataNest plus governed RONSAS application/serv
 
 Catalog presence indicates governance/source registration. It does not by itself mean every product is commercially launched, independently certified, or generally available.
 
+### 11.1 Commercial product architecture
+
+DataNest catalogs implemented RONSAS applications individually for governance, routing and evidence purposes, while commercial presentation is consolidated to reduce customer decision complexity.
+
+The target commercial architecture is:
+
+| Family | Primary commercial surface | Consolidated modules / acquisition surfaces |
+| --- | --- | --- |
+| Career | Career Compass | — |
+| Create | Creative Studio | LyricSync Studio, SyncVision, ePublisher |
+| Grow | Creator growth pathway | Scene Song Spark (acquisition), YouTube Optimizer (growth module) |
+| Build | Sovereign Forge | Sovereign Backend and shared RONSAS packages remain infrastructure |
+
+This is a packaging change, not an instruction to delete working applications. Existing production routes may remain available while navigation, pricing, onboarding and analytics are progressively consolidated. A capability should regain independent commercial-product status only when differentiated customer demand, product evidence and operating capacity justify the separation.
+
+The intended creator journey is:
+
+```
+discovery / free utility
+        → RONSAS identity
+        → Creative Studio
+        → create → sync → publish → grow
+        → recurring use / paid capability
+        → professional or B2B expansion where applicable
+```
+
+Career Compass and Sovereign Forge retain independent commercial journeys because their customer problems and buyer contexts differ materially from the creator workflow.
+
+### 11.2 Product transition and retirement rule
+
+Portfolio optimization must distinguish between **commercial consolidation** and **technical retirement**. No RONSAS application is to be deleted, disabled or removed from production solely because its commercial positioning becomes a module, acquisition tool or infrastructure capability. Retirement requires separate evidence of redundancy, migration readiness, dependency closure, user-impact assessment and explicit authorization.
+
 ### 11.1 Platform capabilities
 
 DataNest currently includes or governs capabilities for:
