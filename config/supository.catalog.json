@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "catalogId": "resonance-appdev-supository",
   "name": "DataNest Supository",
   "canonicalRepository": "DataNest-Supository/DataNest",
@@ -43,7 +43,13 @@
       "sourcePath": "apps/ronsas/career-compass",
       "deliveryPath": "/DataNest/apps/career-compass/",
       "lifecycle": "production",
-      "productionInclusion": "public"
+      "productionInclusion": "public",
+      "commercial": {
+        "family": "career",
+        "surfaceRole": "primary-product",
+        "commercialVisibility": "primary",
+        "customerJourney": "independent-acquisition-and-subscription"
+      }
     },
     {
       "id": "ronsas-creative-studio",
@@ -53,7 +59,13 @@
       "sourcePath": "apps/ronsas/creative-studio",
       "deliveryPath": "/DataNest/apps/creative-studio/",
       "lifecycle": "production",
-      "productionInclusion": "public"
+      "productionInclusion": "public",
+      "commercial": {
+        "family": "create",
+        "surfaceRole": "primary-product",
+        "commercialVisibility": "primary",
+        "customerJourney": "creator-acquisition-to-paid-workspace"
+      }
     },
     {
       "id": "ronsas-epublisher",
@@ -63,7 +75,14 @@
       "sourcePath": "apps/ronsas/epublisher",
       "deliveryPath": "/DataNest/apps/epublisher/",
       "lifecycle": "production",
-      "productionInclusion": "public"
+      "productionInclusion": "public",
+      "commercial": {
+        "family": "create",
+        "surfaceRole": "module",
+        "commercialVisibility": "module",
+        "parentSurface": "ronsas-creative-studio",
+        "moduleFunction": "publishing-and-distribution"
+      }
     },
     {
       "id": "ronsas-lyricsync-studio",
@@ -73,7 +92,14 @@
       "sourcePath": "apps/ronsas/lyricsync-studio",
       "deliveryPath": "/DataNest/apps/lyricsync-studio/",
       "lifecycle": "production",
-      "productionInclusion": "public"
+      "productionInclusion": "public",
+      "commercial": {
+        "family": "create",
+        "surfaceRole": "module",
+        "commercialVisibility": "module",
+        "parentSurface": "ronsas-creative-studio",
+        "moduleFunction": "lyrics-and-synchronization"
+      }
     },
     {
       "id": "ronsas-scene-song-spark",
@@ -83,7 +109,13 @@
       "sourcePath": "apps/ronsas/scene-song-spark",
       "deliveryPath": "/DataNest/apps/scene-song-spark/",
       "lifecycle": "production",
-      "productionInclusion": "public"
+      "productionInclusion": "public",
+      "commercial": {
+        "family": "grow",
+        "surfaceRole": "acquisition-tool",
+        "commercialVisibility": "acquisition",
+        "acquisitionFunction": "free-or-low-friction-entry-to-creator-funnel"
+      }
     },
     {
       "id": "ronsas-sovereign-forge",
@@ -93,7 +125,13 @@
       "sourcePath": "apps/ronsas/sovereign-forge",
       "deliveryPath": "/DataNest/apps/sovereign-forge/",
       "lifecycle": "production",
-      "productionInclusion": "public"
+      "productionInclusion": "public",
+      "commercial": {
+        "family": "build",
+        "surfaceRole": "primary-product",
+        "commercialVisibility": "primary",
+        "customerJourney": "professional-and-b2b"
+      }
     },
     {
       "id": "ronsas-syncvision",
@@ -103,7 +141,14 @@
       "sourcePath": "apps/ronsas/syncvision",
       "deliveryPath": "/DataNest/apps/syncvision/",
       "lifecycle": "production",
-      "productionInclusion": "public"
+      "productionInclusion": "public",
+      "commercial": {
+        "family": "create",
+        "surfaceRole": "module",
+        "commercialVisibility": "module",
+        "parentSurface": "ronsas-creative-studio",
+        "moduleFunction": "media-synchronization"
+      }
     },
     {
       "id": "ronsas-youtube-optimizer",
@@ -113,7 +158,14 @@
       "sourcePath": "apps/ronsas/youtube-optimizer",
       "deliveryUrl": "https://youtubeoptimizer.life/",
       "lifecycle": "production",
-      "productionInclusion": "external-production"
+      "productionInclusion": "external-production",
+      "commercial": {
+        "family": "grow",
+        "surfaceRole": "module",
+        "commercialVisibility": "module",
+        "parentSurface": "ronsas-creative-studio",
+        "moduleFunction": "creator-growth-and-channel-optimization"
+      }
     },
     {
       "id": "ronsas-sovereign-backend",
@@ -122,7 +174,13 @@
       "portfolio": "RONSAS",
       "sourcePath": "apps/ronsas/sovereign-backend",
       "lifecycle": "governed",
-      "productionInclusion": "production-support"
+      "productionInclusion": "production-support",
+      "commercial": {
+        "family": "build",
+        "surfaceRole": "infrastructure",
+        "commercialVisibility": "internal",
+        "infrastructureRole": "shared-backend-authority"
+      }
     },
     {
       "id": "ronsas-shared",
@@ -131,7 +189,13 @@
       "portfolio": "RONSAS",
       "sourcePath": "apps/ronsas/shared",
       "lifecycle": "governed",
-      "productionInclusion": "production-support"
+      "productionInclusion": "production-support",
+      "commercial": {
+        "family": "build",
+        "surfaceRole": "infrastructure",
+        "commercialVisibility": "internal",
+        "infrastructureRole": "shared-ronsas-packages"
+      }
     }
   ],
   "rdMirror": {
@@ -345,5 +409,73 @@
       "mirror-promotion/*"
     ],
     "rule": "Every approved production-capable surface must be represented in the release manifest and verified by the canonical production release. Staging/R&D surfaces never gain canonical production authority by inclusion."
+  },
+  "commercialArchitecture": {
+    "version": "2026-10-03",
+    "strategy": "consolidated-portfolio",
+    "rule": "Preserve implemented product capabilities and production routes while reducing commercial complexity. Public runtime presence does not by itself imply independent commercial positioning.",
+    "customerFacingFamilies": [
+      {
+        "id": "career",
+        "name": "Career",
+        "positioning": "Career and workforce outcomes",
+        "primaryProducts": [
+          "ronsas-career-compass"
+        ]
+      },
+      {
+        "id": "create",
+        "name": "Create",
+        "positioning": "Integrated creator production workflow",
+        "primaryProducts": [
+          "ronsas-creative-studio"
+        ],
+        "modules": [
+          "ronsas-lyricsync-studio",
+          "ronsas-syncvision",
+          "ronsas-epublisher"
+        ]
+      },
+      {
+        "id": "grow",
+        "name": "Grow",
+        "positioning": "Creator discovery, optimization and audience growth",
+        "acquisitionTools": [
+          "ronsas-scene-song-spark"
+        ],
+        "modules": [
+          "ronsas-youtube-optimizer"
+        ]
+      },
+      {
+        "id": "build",
+        "name": "Build",
+        "positioning": "Sovereign engineering and infrastructure",
+        "primaryProducts": [
+          "ronsas-sovereign-forge"
+        ]
+      }
+    ],
+    "commercialPackaging": {
+      "primaryProducts": [
+        "ronsas-career-compass",
+        "ronsas-creative-studio",
+        "ronsas-sovereign-forge"
+      ],
+      "modules": [
+        "ronsas-epublisher",
+        "ronsas-lyricsync-studio",
+        "ronsas-syncvision",
+        "ronsas-youtube-optimizer"
+      ],
+      "acquisitionTools": [
+        "ronsas-scene-song-spark"
+      ],
+      "infrastructure": [
+        "ronsas-sovereign-backend",
+        "ronsas-shared"
+      ]
+    },
+    "transitionRule": "Do not delete or disable an existing RONSAS application solely because its commercial role is being consolidated. Promotion to independent product status requires demonstrated demand, differentiated value, and evidence-backed operating capacity."
   }
 }
