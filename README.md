@@ -103,6 +103,8 @@ Public system scope, mission, vision, governance, architecture, products/service
 
 Commercial positioning and the governed revenue lifecycle are documented in [`docs/DATANEST_COMMERCIAL_OPERATING_MODEL.md`](docs/DATANEST_COMMERCIAL_OPERATING_MODEL.md). The public market entry is `/DataNest/`; the authenticated operating workspace is `/DataNest/workspace/`.
 
+RONSAS standard list pricing and promotional/billing status are documented in [`docs/RONSAS_COMMERCIAL_PRICE_BOOK.md`](docs/RONSAS_COMMERCIAL_PRICE_BOOK.md) and mirrored into `config/supository.catalog.json`.
+
 Scheduled noise deletion and decluttering are defined in [`docs/MAINTENANCE_PROTOCOL.md`](docs/MAINTENANCE_PROTOCOL.md).
 
 
