@@ -270,8 +270,8 @@ export default function AuthGate() {
     <main className="authShell authLanding">
       <a className="skipLink" href="#sign-in-email">Skip to sign in</a>
       <header className="landingHeader">
-        <a className="landingBrand" href="#" aria-label="Resonance DataNest home"><ResonanceBrandLockup compact /></a>
-        <div className="landingHeaderActions"><GovernanceTrustMark/><span className="landingThemeControl"><ThemeControl compact /></span><a className="landingHubLink" href={RESON8_HUB_URL} target="_blank" rel="noreferrer">Reson8 Hub <span aria-hidden="true">↗</span></a><a className="landingHubLink" href="./transparency">Public Audit Library <span aria-hidden="true">↗</span></a><MotionControl/></div>
+        <a className="landingBrand" href={DATANEST_PUBLIC_URL} aria-label="DataNest public home"><ResonanceBrandLockup compact /></a>
+        <div className="landingHeaderActions"><GovernanceTrustMark/><span className="landingThemeControl"><ThemeControl compact /></span><a className="landingHubLink" href={RESON8_HUB_URL} target="_blank" rel="noreferrer">Reson8 Hub <span aria-hidden="true">↗</span></a><a className="landingHubLink" href={`${DATANEST_PUBLIC_URL}transparency/`}>Public Audit Library <span aria-hidden="true">↗</span></a><MotionControl/></div>
       </header>
       <div className="landingLayout">
       <section className="landingStory" aria-labelledby="landing-title">
