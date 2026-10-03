@@ -27,7 +27,10 @@ test("R&D Test Mode exposes a disabled busy state and announces mirror sync fail
   await context.route("https://datanest-supository.github.io/Mirror-DataNest/",route=>route.fulfill({body:"Mirror preview fixture"}));
 
   let finishManifest:()=>void=()=>{};
+  let markManifestStarted:()=>void=()=>{};
+  const manifestStarted=new Promise<void>(resolve=>{markManifestStarted=resolve;});
   await page.route("**/mirror-release.json",async route=>{
+    markManifestStarted();
     await new Promise<void>(resolve=>{finishManifest=resolve;});
     await route.fulfill({status:503,body:"Unavailable fixture"});
   });
@@ -38,6 +41,7 @@ test("R&D Test Mode exposes a disabled busy state and announces mirror sync fail
   const toggle=page.getByRole("switch",{name:/Enable R&D Test Mode/});
   const control=toggle.locator("xpath=ancestor::section");
   await toggle.click();
+  await manifestStarted;
   await expect(toggle).toBeDisabled();
 
   finishManifest();
