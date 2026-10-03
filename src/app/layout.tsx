@@ -6,6 +6,7 @@ import {
 } from "next/font/google";
 import ThemeBootstrapScript from "@/components/platform/ThemeBootstrapScript";
 import CinematicRuntime from "@/components/platform/CinematicRuntime";
+import CommercialFunnelTracker from "@/components/CommercialFunnelTracker";
 import "./resonance-design-system.css";
 import "./globals.css";
 import "./external-auditor.css";
@@ -104,6 +105,7 @@ export default function RootLayout({children}:{children:ReactNode}) {
       </head>
       <body>
         <CinematicRuntime/>
+        <CommercialFunnelTracker />
         {children}
       </body>
     </html>
