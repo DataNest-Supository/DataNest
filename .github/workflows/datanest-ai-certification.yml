@@ -265,7 +265,7 @@ jobs:
       - name: Run canonical DataNest AI browser acceptance
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
-          DATANEST_APP_PATH: /
+          DATANEST_APP_PATH: /workspace/
         shell: bash
         run: |
           python3 -m http.server 4173 --directory out >/tmp/datanest-ai-http.log 2>&1 &
