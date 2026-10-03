@@ -101,9 +101,12 @@ test("AI Companion intake uses the same Job-scoped project-learning policy",()=>
   assert.match(source,/policy_version:learningPolicy\.policy_version/);
 });
 
-test("certified memory remains on the existing governed retrieval path",()=>{
+test("certified memory uses the projection-aware fail-closed retrieval path",()=>{
   const source=fs.readFileSync(aiPath,"utf8");
-  assert.match(source,/get_certified_memory_context/);
+  assert.match(source,/get_ranked_certified_memory_context_v3/);
+  assert.match(source,/certified_memory_projection_unavailable/);
+  assert.doesNotMatch(source,/get_ranked_certified_memory_context_v2/);
+  assert.doesNotMatch(source,/get_certified_memory_context/);
   assert.doesNotMatch(source,/from\("trust_manifests"\)[\s\S]*normalized_knowledge/);
   assert.doesNotMatch(source,/from\("certified_memory"\)\s*\.insert\(/);
 });
