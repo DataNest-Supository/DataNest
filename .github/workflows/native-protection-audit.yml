@@ -22,14 +22,19 @@ jobs:
         env:
           REPO: ${{ github.repository }}
           GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_ADMIN_TOKEN: ${{ secrets.DATANEST_GITHUB_ADMIN_TOKEN }}
         run: |
           set -euo pipefail
           mkdir -p native-protection/state
           api="https://api.github.com/repos/${REPO}"
+          token="${GITHUB_TOKEN}"
+          if [ -n "${GITHUB_ADMIN_TOKEN:-}" ]; then
+            token="${GITHUB_ADMIN_TOKEN}"
+          fi
           headers=(
             -H "Accept: application/vnd.github+json"
-            -H "Authorization: Bearer ${GITHUB_TOKEN}"
-            -H "X-GitHub-Api-Version: 2022-11-28"
+            -H "Authorization: Bearer ${token}"
+            -H "X-GitHub-Api-Version: 2026-03-10"
           )
 
           curl --silent --show-error --location "${headers[@]}"             -o native-protection/state/main.json             -w "%{http_code}"             "${api}/branches/main"             > native-protection/state/main.http
