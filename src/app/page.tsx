@@ -53,7 +53,7 @@ export default function Home(){
           <div className="marketingGrid3">
             <article className="marketingCard"><h3>Assess</h3><p>AI governance, readiness, technical controls, evidence and risk discovery for a defined environment.</p><Link href="/assurance/">View assurance services →</Link></article>
             <article className="marketingCard"><h3>Build &amp; improve</h3><p>Governed digital-product, AI workflow and operational improvement work from intent through verified release.</p><Link href="/solutions/">See delivery solutions →</Link></article>
-            <article className="marketingCard"><h3>Operate</h3><p>Continuous oversight, drift detection and evidence maintenance for teams that need ongoing control.</p><Link href="/pricing/">View recurring options →</Link></article>
+            <article className="marketingCard"><h3>Operate</h3><p>Continuous oversight, drift detection and evidence maintenance for teams that need ongoing control.</p><Link href="/pricing/" data-commercial-event="pricing_intent" data-commercial-service="recurring-oversight" data-commercial-cta="home-recurring-options">View recurring options →</Link></article>
           </div>
         </section>
 
@@ -69,7 +69,7 @@ export default function Home(){
                 <h3>{name}</h3>
                 <div className="marketingPrice">{price}</div>
                 <p>{summary}</p>
-                <Link href="/pricing/">Pricing &amp; scope →</Link>
+                <Link href="/pricing/" data-commercial-event="pricing_intent" data-commercial-service="assurance" data-commercial-cta="home-price-scope">Pricing &amp; scope →</Link>
               </article>
             ))}
           </div>
