@@ -53,7 +53,7 @@
     },
     {
       "id": "ronsas-creative-studio",
-      "name": "Creative Studio",
+      "name": "Resonance Creator Studio",
       "type": "app",
       "portfolio": "Resonance",
       "sourcePath": "apps/ronsas/creative-studio",
@@ -69,7 +69,7 @@
     },
     {
       "id": "ronsas-epublisher",
-      "name": "ePublisher",
+      "name": "Resonance Publish",
       "type": "app",
       "portfolio": "Resonance",
       "sourcePath": "apps/ronsas/epublisher",
@@ -86,7 +86,7 @@
     },
     {
       "id": "ronsas-lyricsync-studio",
-      "name": "LyricSync Studio",
+      "name": "Resonance Lyrics & Sync",
       "type": "app",
       "portfolio": "Resonance",
       "sourcePath": "apps/ronsas/lyricsync-studio",
@@ -103,7 +103,7 @@
     },
     {
       "id": "ronsas-scene-song-spark",
-      "name": "Scene Song Spark",
+      "name": "SongSpark",
       "type": "app",
       "portfolio": "Resonance",
       "sourcePath": "apps/ronsas/scene-song-spark",
@@ -135,7 +135,7 @@
     },
     {
       "id": "ronsas-syncvision",
-      "name": "SyncVision",
+      "name": "Resonance Media Sync",
       "type": "app",
       "portfolio": "Resonance",
       "sourcePath": "apps/ronsas/syncvision",
@@ -152,7 +152,7 @@
     },
     {
       "id": "ronsas-youtube-optimizer",
-      "name": "YouTube Optimizer",
+      "name": "Resonance Creator Growth",
       "type": "app",
       "portfolio": "Resonance",
       "sourcePath": "apps/ronsas/youtube-optimizer",
