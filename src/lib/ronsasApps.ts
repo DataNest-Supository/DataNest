@@ -9,7 +9,7 @@ export type RonsasHostedApp = {
 };
 
 export const RONSAS_HOSTED_APPS:readonly RonsasHostedApp[] = [
-  {slug:"career-compass",name:"Career Compass",aliases:["Resonance Career Compass"],launchKind:"datanest-pages",family:"career",role:"primary"},
+  {slug:"career-compass",name:"Resonance Career Compass",aliases:["Career Compass"],launchKind:"datanest-pages",family:"career",role:"primary"},
   {slug:"creative-studio",name:"Resonance Creator Studio",aliases:["Creative Studio","RONSAS Creator Studio"],launchKind:"datanest-pages",family:"create",role:"primary"},
   {slug:"epublisher",name:"Resonance Publish",aliases:["ePublisher","Epublisher","e Publisher","Publish"],launchKind:"datanest-pages",family:"create",role:"module"},
   {slug:"lyricsync-studio",name:"Resonance Lyrics & Sync",aliases:["LyricSync Studio","Lyric Sync Studio","Lyrics & Sync"],launchKind:"datanest-pages",family:"create",role:"module"},
