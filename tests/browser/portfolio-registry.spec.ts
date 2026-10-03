@@ -84,7 +84,7 @@ test("Portfolio Registry preserves pending ownership, composition, and product c
   await expect(page.getByRole("heading",{name:"Sync Vision",exact:true})).toBeVisible();
 
   await page.getByRole("button",{name:"Governed Products",exact:true}).click();
-  await expect(page.getByText("Resonance Application Suite",{exact:true})).toBeVisible();
+  await expect(page.locator(".catalogProduct .catalogFullName")).toHaveText("Resonance Application Suite");
   await expect(page.getByText("FREE PROMOTION · BILLING OFF",{exact:true} )).toBeVisible();
   await expect(page.locator(".catalogProduct .productStatus")).toHaveText("MAINTAINED");
   await page.getByRole("button",{name:"Review governed detail",exact:true}).click();
