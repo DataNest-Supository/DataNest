@@ -1,5 +1,5 @@
 # DataNest System Charter
-## Scope, Mission, Vision, Governance, Architecture, Products, Services, Assurance and Growth
+## System Scope, Business Scope, Mission, Vision, Governance, Architecture, Products, Services, Assurance and Growth
 
 **Document status:** Public system charter and assurance map  
 **Canonical authority:** DataNest-Supository/DataNest  
@@ -11,7 +11,7 @@
 
 ## 1. Executive statement
 
-DataNest is the canonical Resonance AppDev control plane and Supository: a governed environment for planning, developing, testing, validating, promoting, operating, learning from, and transparently improving Resonance applications, products, services, packages and supporting infrastructure.
+**Resonance Sole Proprietorship** is the business. **Resonance AppDev** is the master brand. **DataNest** is the canonical operating/control platform beneath that brand for planning, developing, testing, validating, promoting, operating, learning from and transparently improving products and services. Its market-facing portfolio is broader than DataNest itself: **Resonance** is the customer application suite, **Sovereign Forge** is a sibling professional/B2B line, and **Resonance AppDev Assurance Services** is a professional service line.
 
 The system is designed around a simple operating principle:
 
@@ -25,28 +25,39 @@ DataNest uses GitHub as canonical source/history/CI/evidence authority, GitHub P
 
 ## 2. Scope intent
 
-### 2.1 In scope
+### 2.1 System scope
 
 DataNest governs or catalogs:
 
-- Resonance application-development projects;
-- products, applications, services and packages;
-- source and deployment intent;
-- AI-assisted planning and development;
-- user and stakeholder journeys;
-- testing, certification evidence and release promotion;
-- environment compatibility;
-- security and defensive evidence;
-- system health and maintenance;
-- learning and optimization;
-- workflow synchronization;
-- transparency and audit evidence;
-- SEO, visibility, market presence and route-to-market modelling;
-- continuity, backup and recovery evidence;
-- public governance, legal and accessibility disclosures;
-- current and future sovereign Forge replication.
+- product and service intent, requirements and portfolio registration;
+- AppDev planning, orchestration and scheduling through UNIFI and TranScheduler;
+- development, testing, validation and release promotion;
+- source/history, deployment intent and evidence lineage;
+- security, privacy, quality, accessibility and environment controls;
+- AI-assisted planning, analysis, optimization and bounded maintenance;
+- system health, continuity, backup, recovery and provider replaceability;
+- visibility, discoverability and route-to-market intelligence;
+- audit, assurance and transparent evidence publishing.
 
-### 2.2 Out of scope unless separately authorized
+### 2.2 Business scope
+
+DataNest's market-facing scope is organized by customer intent:
+
+| Business line | Canonical offer | Commercial role |
+| --- | --- | --- |
+| Business | Resonance Sole Proprietorship | Legal/operating business identity |
+| Master brand | Resonance AppDev | Market-facing umbrella brand |
+| Operating platform | DataNest | Governance, AppDev control, orchestration, evidence, security, continuity and delivery |
+| Customer software | Resonance | Career, Create and Grow applications |
+| Professional engineering | Sovereign Forge | Professional/B2B engineering and sovereignty capability under Resonance AppDev |
+| Assurance | Resonance AppDev Assurance Services | Readiness, technical assurance, evidence, remediation and authorized oversight through DataNest |
+| Specialist products | Legal Eagle and other approved products | Focused problem-specific journeys |
+
+### 2.3 Boundary conditions
+
+A commercial reclassification does not itself change production lifecycle, route, backend authority, source authority, user access or technical ownership. Technical implementation may remain consolidated even when business ownership or customer positioning is separate.
+
+### 2.4 Out of scope unless separately authorized
 
 The system does not infer authority to:
 
@@ -65,21 +76,21 @@ The system does not infer authority to:
 
 ## 3. Mission
 
-**To provide a transparent, evidence-led human-AI operating system for building and improving Resonance digital products and services with lower friction, stronger quality, safer automation, resilient infrastructure, and continuously improving user and stakeholder value.**
+**To provide a transparent, evidence-led human-AI operating system for building, governing, delivering and improving DataNest products and services with lower friction, stronger quality, safer automation, resilient infrastructure and continuously improving user and stakeholder value.**
 
 ---
 
 ## 4. Vision
 
-DataNest aims to become a sovereign, interoperable AppDev environment in which:
+DataNest aims to become a sovereign, interoperable product operating environment in which:
 
-1. projects move from intent to validated production through an explicit evidence chain;
+1. products and services move from intent to validated delivery through an explicit evidence chain;
 2. humans retain final authority for consequential decisions;
 3. AI systems continuously improve quality, usability, health, security and market fit without obscuring provenance;
 4. infrastructure remains replaceable and provider-independent where practical;
-5. users and stakeholders can inspect how the system works, what it claims, and what evidence supports those claims;
+5. users and stakeholders can distinguish the operating system from the products and services it governs;
 6. market visibility and route-to-market decisions are data-informed, scenario-modelled and reviewable;
-7. learning compounds across projects without converting provisional observations into unquestioned institutional truth.
+7. learning compounds across products without converting provisional observations into unquestioned institutional truth.
 
 ---
 
@@ -124,7 +135,7 @@ DataNest provides:
 
 ### 5.4 For the business
 
-DataNest is intended to improve:
+The DataNest operating platform is intended to improve:
 
 - time-to-understanding;
 - time-to-reviewed-change;
@@ -140,7 +151,7 @@ DataNest is intended to improve:
 
 ## 6. Operating principles
 
-DataNest applies these principles across all trees and services:
+DataNest applies these principles across all operating trees and services under the Resonance AppDev master brand:
 
 1. **Human agency** — consequential decisions remain reviewable and reversible.
 2. **Evidence before authority** — evidence can support a decision but does not itself become authorization.
@@ -347,7 +358,7 @@ The loop is intentionally cyclical for learning but **not circular in authority*
 
 ## 11. Products and services
 
-The Supository currently catalogs DataNest plus governed RONSAS application/service surfaces including:
+The Supository currently catalogs DataNest plus governed Resonance application/service surfaces including:
 
 - DataNest platform;
 - Career Compass;
@@ -359,9 +370,87 @@ The Supository currently catalogs DataNest plus governed RONSAS application/serv
 - SyncVision;
 - YouTube Optimizer;
 - Sovereign Backend;
-- shared RONSAS packages.
+- shared Resonance packages.
 
 Catalog presence indicates governance/source registration. It does not by itself mean every product is commercially launched, independently certified, or generally available.
+
+### 11.1 Commercial product architecture
+
+DataNest catalogs implemented Resonance applications individually (technical portfolio identifier: RONSAS) for governance, routing and evidence purposes, while commercial presentation is consolidated to reduce customer decision complexity.
+
+The target commercial architecture is:
+
+| Family | Primary commercial surface | Consolidated modules / acquisition surfaces |
+| --- | --- | --- |
+| Career | Career Compass | — |
+| Create | Creative Studio | LyricSync Studio, SyncVision, ePublisher |
+| Grow | Creator growth pathway | Scene Song Spark (acquisition), YouTube Optimizer (growth module) |
+| Build | Sovereign Forge | Sovereign Backend and shared Resonance packages remain infrastructure |
+
+This is a packaging change, not an instruction to delete working applications. Existing production routes may remain available while navigation, pricing, onboarding and analytics are progressively consolidated. A capability should regain independent commercial-product status only when differentiated customer demand, product evidence and operating capacity justify the separation.
+
+The intended creator journey is:
+
+```
+discovery / free utility
+        → Resonance identity
+        → Creative Studio
+        → create → sync → publish → grow
+        → recurring use / paid capability
+        → professional or B2B expansion where applicable
+```
+
+Career Compass and Sovereign Forge retain independent commercial journeys because their customer problems and buyer contexts differ materially from the creator workflow.
+
+### 11.2 Product transition and retirement rule
+
+Portfolio optimization must distinguish between **commercial consolidation** and **technical retirement**. No Resonance application is to be deleted, disabled or removed from production solely because its commercial positioning becomes a module, acquisition tool or infrastructure capability. Retirement requires separate evidence of redundancy, migration readiness, dependency closure, user-impact assessment and explicit authorization.
+
+### 11.1 Commercial packaging and growth model
+
+Resonance presents a consolidated commercial portfolio while preserving separate technical implementation surfaces for governance and delivery.
+
+| Family | Primary customer surface | Module / acquisition treatment |
+| --- | --- | --- |
+| Career | Career Compass | Independent journey |
+| Create | Resonance Creator Studio | Resonance Lyrics & Sync, Resonance Media Sync, Resonance Publish |
+| Grow | Creator growth pathway | SongSpark is the acquisition utility; Resonance Creator Growth is the growth module |
+| Build | Sovereign Forge | Resonance AppDev, Resonance Control Center and shared backend capabilities remain infrastructure |
+
+The creator journey is intentionally sequential:
+
+```
+discovery / SongSpark or public content
+        → Resonance identity / registration
+        → Resonance Creator Studio
+        → create → lyrics & sync → media sync → publish → grow
+        → repeat use / paid capability
+        → professional expansion where applicable
+```
+
+### 11.2 Pricing and commercial evidence rules
+
+Resonance pricing is organized at the family/primary-product level. Modules should normally expand the value of an existing customer relationship rather than create separate purchase decisions. Numeric pricing is not treated as established until supported by an explicit commercial baseline, capability evidence, unit economics or conversion evidence, defined period and human review.
+
+### 11.3 Acquisition and conversion instrumentation
+
+Commercial analytics should use one canonical funnel across public Resonance surfaces:
+
+```
+impression
+  → product-page visit
+  → demo or free use
+  → registration
+  → activation
+  → first value
+  → repeat use
+  → subscription intent
+  → subscription
+  → expansion
+  → referral
+```
+
+Technical application events may retain stable RONSAS identifiers for compatibility, but customer-facing analytics dimensions should use the Resonance product names and four commercial families.
 
 ### 11.1 Platform capabilities
 
@@ -423,7 +512,7 @@ Market-presence evidence can include:
 VISIBILITY-UTILITY evaluates routes such as:
 
 1. owned search and public evidence;
-2. Reson8/RONSAS ecosystem cross-promotion;
+2. Reson8/Resonance ecosystem cross-promotion;
 3. product-led public proof and demonstrations;
 4. partnerships and referrals;
 5. community/educational content;

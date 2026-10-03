@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 import ResonancePortfolioPulse from "@/components/ResonancePortfolioPulse";
-import { FREE_PROMOTION_LABEL, RONSAS_FULL_NAME } from "@/lib/ecosystemAuthority";
+import { FREE_PROMOTION_LABEL, RESONANCE_FULL_NAME } from "@/lib/ecosystemAuthority";
 import PortfolioRegistryPanel from "@/components/PortfolioRegistryPanel";
 import { type PortfolioRegistryRow, type PortfolioRole } from "@/lib/portfolioRegistry";
 import { getRonsasAppLaunch } from "@/lib/ronsasApps";
@@ -63,8 +63,8 @@ const catalogRecordOrder = [
 
 
 function governedProductFullName(product:CatalogProduct){
-  return product.slug==="ronsas"||product.name.trim().toUpperCase()==="RONSAS"
-    ?RONSAS_FULL_NAME
+  return product.slug==="ronsas"||product.name.trim().toUpperCase()==="RONSAS"||product.name.trim().toLowerCase()==="resonance"
+    ?RESONANCE_FULL_NAME
     :product.full_name;
 }
 
@@ -84,6 +84,29 @@ function payloadText(payload:Record<string,unknown>,...keys:string[]) {
 function metadataText(metadata:Record<string,unknown>,key:string,fallback:string) {
   const value=metadata[key];
   return typeof value==="string"&&value.trim()?value:fallback;
+}
+
+
+function resonanceCommercialLabel(slug:string){
+  const labels:Record<string,string>={
+    "career-compass":"Career · Primary product",
+    "creative-studio":"Create · Primary product",
+    "epublisher":"Create · Publish module",
+    "lyricsync-studio":"Create · Lyrics & Sync module",
+    "scene-song-spark":"Grow · Acquisition utility",
+    "syncvision":"Create · Media Sync module",
+    "youtube-optimizer":"Grow · Creator Growth module",
+    "sovereign-forge":"Professional · Independent product",
+  };
+  return labels[slug]||"Resonance product";
+}
+
+function resonanceCommercialGroup(slug:string){
+  if(slug==="career-compass")return "Career";
+  if(slug==="creative-studio"||slug==="epublisher"||slug==="lyricsync-studio"||slug==="syncvision")return "Create";
+  if(slug==="scene-song-spark"||slug==="youtube-optimizer")return "Grow";
+  if(slug==="sovereign-forge")return "Professional";
+  return "Platform";
 }
 
 type LegalTask = {
@@ -670,8 +693,8 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
               <div className="catalogIdentity">
                 <span className="catalogOrdinal">{String(index+1).padStart(2,"0")}</span>
                 <div>
-                  <p className="productKicker">{product.category||"RESONANCE PRODUCT"}</p>
-                  <h3>{product.name}</h3>
+                  <p className="productKicker">{resonanceCommercialLabel(product.slug)}</p>
+                  <h3>{product.slug==="ronsas"?"Resonance":product.name}</h3>
                   <p className="catalogFullName">{governedProductFullName(product)}</p>
                 </div>
               </div>
@@ -684,8 +707,8 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
                   href={ronsasHubUrl}
                   target="_blank"
                   rel="noreferrer"
-                  aria-label="Open RONSAS"
-                >Open RONSAS ↗</a>}
+                  aria-label="Open Resonance"
+                >Open Resonance ↗</a>}
                 {product.slug==="legal-eagle"&&<button
                   className="catalogRecordLaunch"
                   type="button"
@@ -714,20 +737,23 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
               const shared=portfolioItems.filter(item=>item.active_classification==="shared_datanest_capability"&&hasRelationship(item,["uses","depends_on"]));
               const external=portfolioItems.filter(item=>item.active_classification==="registered_external_capability"&&hasRelationship(item,["uses","integrates_with"]));
               const pending=portfolioItems.filter(item=>item.review_state==="pending_review"&&item.active_classification===null&&historicalParentProductId(item)===product.id);
+              const recognizedApps=portfolioItems.filter(item=>getRonsasAppLaunch(item.name));
               const names=(items:PortfolioRegistryRow[])=>items.length?items.map((item,index)=>{
                 const launch=getRonsasAppLaunch(item.name);
                 return <span key={item.id}>
                   {index>0?", ":""}
-                  {launch?<a className="ronsasCompositionLaunch" href={launch.href} aria-label={`Open ${item.name} in DataNest`}>{item.name}</a>:item.name}
+                  {launch?<a className="ronsasCompositionLaunch" href={launch.href} aria-label={`Open ${launch.name} in DataNest`}>{launch.name}</a>:item.name}
                 </span>;
               }):"None recorded";
-              return <section className="ronsasComposition" aria-label="RONSAS Composition">
-                <div className="catalogRecordGroupHead"><h4>RONSAS Composition</h4><span>{owned.length+shared.length+external.length+pending.length}</span></div>
+              const byGroup=(group:string)=>recognizedApps.filter(item=>resonanceCommercialGroup(getRonsasAppLaunch(item.name)?.slug||"")===group);
+              return <section className="ronsasComposition" aria-label="Resonance Product Structure">
+                <div className="catalogRecordGroupHead"><h4>Resonance Product Structure</h4><span>{recognizedApps.length}</span></div>
                 <div className="ronsasCompositionGrid">
-                  <div><small>Owned</small><p>{names(owned)}</p></div>
-                  <div><small>Shared</small><p>{names(shared)}</p></div>
-                  <div><small>External</small><p>{names(external)}</p></div>
-                  <div><small>Pending Review</small><p>{names(pending)}</p></div>
+                  <div><small>Career</small><p>{names(byGroup("Career"))}</p></div>
+                  <div><small>Create</small><p>{names(byGroup("Create"))}</p></div>
+                  <div><small>Grow</small><p>{names(byGroup("Grow"))}</p></div>
+                  <div><small>Build</small><p>{names(byGroup("Build"))}</p></div>
+                  <div><small>Governed but not customer-facing</small><p>{names([...shared,...external,...pending])}</p></div>
                 </div>
               </section>;
             })()}
@@ -797,8 +823,8 @@ export default function ProductsWorkspace({projectId,currentUserId,role}:Props){
                               href={ronsasHubLaunch}
                               target="_blank"
                               rel="noreferrer"
-                              aria-label="Open RONSAS Hub"
-                            >Open RONSAS ↗</a>:launch&&<a
+                              aria-label="Open Resonance"
+                            >Open Resonance ↗</a>:launch&&<a
                               className="catalogRecordLaunch"
                               href={launch.href}
                               aria-label={`Open ${record.name||launch.name} in DataNest`}

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { LEGAL_DOCUMENTS, LEGAL_IDENTITY, legalApprovalLabel } from "@/lib/legalRegistry";
 import GovernanceTrustMark from "@/components/platform/GovernanceTrustMark";
 import ThemeControl from "@/components/platform/ThemeControl";
+import AuthorshipPublicationsDisclosure from "@/components/legal/AuthorshipPublicationsDisclosure";
 
 const LEGAL_IDS=new Set(["terms","privacy","disclaimers","acceptable-use","intellectual-property"]);
 
@@ -53,6 +54,8 @@ export default function GovernanceLegalCentre(){
         <p>Keyboard operation, visible focus, motion controls, contrast behavior, and theme preferences are documented separately.</p>
         <Link href="/accessibility" className="legalCentreLink">Open accessibility →</Link>
       </section>
+
+      <AuthorshipPublicationsDisclosure/>
 
       <section className="legalCentreSection legalCentreSectionWide" aria-labelledby="legal-identity-heading">
         <p className="eyebrow">OPERATOR HIERARCHY</p>

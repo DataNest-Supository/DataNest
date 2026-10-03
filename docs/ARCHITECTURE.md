@@ -2,7 +2,7 @@
 
 ## Platform authority
 
-**Resonance DataNest** is the parent platform and web control plane. **RONSAS** is a governed product under `DataNest > Products > RONSAS`; it is not DataNest's parent or DataNest AI authority.
+**Resonance DataNest** is the parent platform and web control plane. **Resonance** is the governed customer application suite under DataNest; **RONSAS** remains the stable technical identifier for that implementation estate and is not DataNest's parent or DataNest AI authority.
 
 The current target-state architecture authority is `docs/superpowers/specs/2026-09-27-datanest-ecosystem-business-operating-architecture-design.md`. Design approval does not itself prove implementation status.
 

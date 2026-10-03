@@ -78,14 +78,14 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
 
     if (path.endsWith("/projects")) body = {id:projectId,slug:"resonance-datanest",name:"Fixture project",description:null,status:"ACTIVE",created_at:"2026-09-26T00:00:00Z"};
     if (path.endsWith("/products")) body = [{
-      id:"24f2fa75-18b8-5b45-b624-b5dab381de9e",slug:"ronsas",name:"RONSAS",full_name:"Resonance Open Nova Application Suite",
+      id:"24f2fa75-18b8-5b45-b624-b5dab381de9e",slug:"ronsas",name:"Resonance",full_name:"Resonance Application Suite",
       category:"sovereign application suite",lifecycle_status:"active development and integration",
       mission:"Unify the Resonance application estate under governed local-first operations.",operating_model:"governed",
       primary_runtime:"Windows local environment",commercial_mode:"free promotion / no billing until pricing is established",
       billing_enabled:false,as_of_date:"2026-09-26",metadata:{parent_platform:"Resonance DataNest",product_role:"governed_product",execution_authority:"DataNest",promotion_authority:"DataNest",hosting_model:"replaceable_delivery_infrastructure"}
     }];
     if (path.endsWith("/portfolio_registry_view")) body = [
-      {id:"00000000-0000-4000-8000-000000000401",project_id:projectId,slug:"ronsas",name:"RONSAS",item_kind:"governed_product",review_state:"classified",current_lifecycle:"active",linked_product_id:"24f2fa75-18b8-5b45-b624-b5dab381de9e",source_authority:"products",source_reference:"24f2fa75-18b8-5b45-b624-b5dab381de9e",metadata:{},active_classification_id:"00000000-0000-4000-8000-000000000501",active_classification:"product_owned",target_product_id:"24f2fa75-18b8-5b45-b624-b5dab381de9e",target_product_slug:"ronsas",target_product_name:"RONSAS",outgoing_relationship_count:0,incoming_relationship_count:0,product_lab_surface_count:0,product_lab_test_run_count:0},
+      {id:"00000000-0000-4000-8000-000000000401",project_id:projectId,slug:"ronsas",name:"Resonance",item_kind:"governed_product",review_state:"classified",current_lifecycle:"active",linked_product_id:"24f2fa75-18b8-5b45-b624-b5dab381de9e",source_authority:"products",source_reference:"24f2fa75-18b8-5b45-b624-b5dab381de9e",metadata:{},active_classification_id:"00000000-0000-4000-8000-000000000501",active_classification:"product_owned",target_product_id:"24f2fa75-18b8-5b45-b624-b5dab381de9e",target_product_slug:"ronsas",target_product_name:"Resonance",outgoing_relationship_count:0,incoming_relationship_count:0,product_lab_surface_count:0,product_lab_test_run_count:0},
       {id:"00000000-0000-4000-8000-000000000402",project_id:projectId,slug:"sync-vision",name:"Sync Vision",item_kind:"application",review_state:"pending_review",current_lifecycle:null,linked_product_id:null,source_authority:"product_records",source_reference:"00000000-0000-4000-8000-000000000303",metadata:{historical_catalog:{parent_product_id:"24f2fa75-18b8-5b45-b624-b5dab381de9e"}},active_classification_id:null,active_classification:null,target_product_id:null,target_product_slug:null,target_product_name:null,outgoing_relationship_count:0,incoming_relationship_count:0,product_lab_surface_count:0,product_lab_test_run_count:0}
     ];
     if (path.endsWith("/portfolio_relationships")) body = [];
@@ -107,21 +107,21 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
   await expect(page.getByRole("region",{name:"Product evidence"})).toBeVisible();
   await expect(page.getByRole("heading", {name:"Products that carry their architecture, evidence and decisions with them."})).toBeVisible();
   await expect(page.getByRole("heading",{name:"Live ecosystem state, derived from governed DataNest records."})).toBeVisible();
-  await expect(page.getByRole("region",{name:"Products that carry their architecture, evidence and decisions with them."}).getByRole("heading",{name:"RONSAS",exact:true})).toBeVisible();
-  await expect(page.getByText("Resonance Open Nova Sovereign Application Suite",{exact:true})).toBeVisible();
+  await expect(page.getByRole("region",{name:"Products that carry their architecture, evidence and decisions with them."}).getByRole("heading",{name:"Resonance",exact:true})).toBeVisible();
+  await expect(page.locator(".catalogProduct .catalogFullName")).toHaveText("Resonance Application Suite");
   await expect(page.locator(".catalogProduct").getByText("RESONANCE DATANEST",{exact:true})).toBeVisible();
   await expect(page.locator(".catalogProduct").getByText("DataNest",{exact:true})).toBeVisible();
   await expect(page.getByText("DATANEST MANAGED",{exact:true})).toBeVisible();
   await expect(page.getByText("Windows local environment",{exact:true})).toBeVisible();
   await expect(page.getByText("FREE PROMOTION · BILLING OFF",{exact:true})).toBeVisible();
-  const navRonsasLaunch=page.getByRole("link",{name:"Open RONSAS from DataNest navigation"});
+  const navRonsasLaunch=page.getByRole("link",{name:"Open Resonance from DataNest navigation"});
   await expect(navRonsasLaunch).toBeVisible();
   await expect(navRonsasLaunch).toHaveAttribute("href","https://reson8.life/");
   await page.keyboard.press("Control+K");
-  await page.getByRole("searchbox",{name:"Search DataNest workspaces"}).fill("ronsas");
-  await expect(page.getByRole("option",{name:"Open RONSAS application hub"})).toBeVisible();
+  await page.getByRole("searchbox",{name:"Search DataNest workspaces"}).fill("Resonance");
+  await expect(page.locator(".commandResult").filter({hasText:"Resonance"}).first()).toBeVisible();
   await page.keyboard.press("Escape");
-  const ronsasLaunch=page.getByRole("link",{name:"Open RONSAS",exact:true});
+  const ronsasLaunch=page.getByRole("link",{name:"Open Resonance",exact:true});
   await expect(ronsasLaunch).toBeVisible();
   await expect(ronsasLaunch).toHaveAttribute("href","https://reson8.life/");
   await expect(page.getByLabel("Filter governed record type")).toHaveValue("risk");
@@ -142,7 +142,7 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
   await page.getByLabel("Filter governed record type").selectOption("all");
   await expect(page).toHaveURL(/product=ronsas/);
 
-  const ronsasHubRecord=page.locator(".catalogRecord").filter({hasText:"RONSAS Hub"}).getByRole("link",{name:"Open RONSAS Hub"});
+  const ronsasHubRecord=page.locator(".catalogRecord").filter({hasText:"RONSAS Hub"}).getByRole("link",{name:"Open Resonance"});
   await expect(ronsasHubRecord).toBeVisible();
   await expect(ronsasHubRecord).toHaveAttribute("href","https://reson8.life/");
 
@@ -150,7 +150,7 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
   await expect(syncVisionLaunch).toBeVisible();
   await expect(syncVisionLaunch).toHaveAttribute("href",/\/apps\/syncvision\/$/);
 
-  const compositionLaunch=page.getByLabel("RONSAS Composition").getByRole("link",{name:"Open Sync Vision in DataNest"});
+  const compositionLaunch=page.getByLabel("Resonance Product Structure").getByRole("link",{name:"Open Resonance Media Sync in DataNest"}).first();
   await expect(compositionLaunch).toBeVisible();
   await expect(compositionLaunch).toHaveAttribute("href",/\/apps\/syncvision\/$/);
 

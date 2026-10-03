@@ -13,14 +13,14 @@ export default function RonsasIntegrationPanel() {
   const [state, setState] = useState<State>({
     kind: "checking",
     status: null,
-    message: "Checking RONSAS DataNest integration…",
+    message: "Checking Resonance DataNest integration…",
   });
 
   const refresh = useCallback(async () => {
     setState({
       kind: "checking",
       status: null,
-      message: "Checking RONSAS DataNest integration…",
+      message: "Checking Resonance DataNest integration…",
     });
 
     try {
@@ -29,8 +29,8 @@ export default function RonsasIntegrationPanel() {
         kind: "ready",
         status,
         message: status.hub.ok
-          ? "DataNest-managed RONSAS status is reachable."
-          : "DataNest-managed RONSAS is available but the public Hub is currently degraded.",
+          ? "DataNest-managed Resonance status is reachable."
+          : "DataNest-managed Resonance is available but the public Hub is currently degraded.",
       });
     } catch (error) {
       setState({
@@ -39,7 +39,7 @@ export default function RonsasIntegrationPanel() {
         message:
           error instanceof Error
             ? error.message
-            : "RONSAS DataNest integration is unavailable.",
+            : "Resonance DataNest integration is unavailable.",
       });
     }
   }, []);
@@ -63,10 +63,10 @@ export default function RonsasIntegrationPanel() {
       : "PENDING";
 
   return (
-    <div className="panel fullWidth" aria-label="RONSAS integration">
+    <div className="panel fullWidth" aria-label="Resonance integration">
       <div className="panelHead">
         <div>
-          <p className="eyebrow">RONSAS · RESONANCE APPDEV</p>
+          <p className="eyebrow">RESONANCE · APPDEV SUITE</p>
           <h3>DataNest integration</h3>
           <p className="muted">{state.message}</p>
         </div>
@@ -82,7 +82,7 @@ export default function RonsasIntegrationPanel() {
         <div><dt>DataNest authority</dt><dd>Managed · required</dd></div>
         <div><dt>Commercial mode</dt><dd>{status?.billingState || "free-promotion"}</dd></div>
         <div><dt>YouTube Optimizer</dt><dd>External SSR runtime · {youtubeOptimizer ? <a className="catalogRecordLaunch" href={youtubeOptimizer.href} target="_blank" rel="noreferrer" aria-label="Open YouTube Optimizer external SSR application">Open YouTube Optimizer ↗</a> : "Unavailable"}</dd></div>
-        <div><dt>RONSAS Hub</dt><dd>{hubState}{status?.hub.status ? ` · HTTP ${status.hub.status}` : ""}{status?.authority.publicHub&&<> · <a className="catalogRecordLaunch" href={status.authority.publicHub} target="_blank" rel="noreferrer" aria-label="Open RONSAS from integration settings">Open RONSAS ↗</a></>}</dd></div>
+        <div><dt>Resonance Hub</dt><dd>{hubState}{status?.hub.status ? ` · HTTP ${status.hub.status}` : ""}{status?.authority.publicHub&&<> · <a className="catalogRecordLaunch" href={status.authority.publicHub} target="_blank" rel="noreferrer" aria-label="Open Resonance from integration settings">Open Resonance ↗</a></>}</dd></div>
         <div><dt>Canonical name</dt><dd>{status?.delivery.canonicalName || "reson8.datanest.life"}</dd></div>
         <div><dt>Branded URL</dt><dd>{status?.delivery.brandedUrl || "https://reson8.datanest.life/"} · {status?.delivery.brandedState || "wire-ready"}</dd></div>
         <div><dt>Hub wire</dt><dd>{status?.delivery.wire ? `${status.delivery.wire.source} → ${status.delivery.wire.target} · ${status.delivery.wire.networkState}` : "https://reson8.datanest.life/ → https://reson8.life/ · dns-pending"}</dd></div>

@@ -76,7 +76,7 @@ export default function Index() {
   return (
     <Layout>
       <SeoHead
-        title="Sync Vision — Direct Your AI Music Video Before You Render"
+        title="Resonance Media Sync — Direct Your AI Music Video Before You Render"
         description="Turn one track into a verified, timed music-video treatment with consistent characters, scene previews, vocal sync, and master-ready exports."
         path="/"
         preload={[
@@ -85,7 +85,7 @@ export default function Index() {
         ]}
       />
 
-      <title>Sync Vision — Direct Your AI Music Video Before You Render</title>
+      <title>Resonance Media Sync — Direct Your AI Music Video Before You Render</title>
       <meta name="description" content="Verify the song, direct every scene, approve provider usage, and export a consistent music-video master without wasting generation spend." />
 
       {/* Hero */}
@@ -103,16 +103,16 @@ export default function Index() {
               <span className="absolute inset-0 animate-ping rounded-full bg-accent/60" />
               <span className="relative h-2 w-2 rounded-full bg-accent" />
             </span>
-            RONSAS governed · Cinematic direction · delivery
+            Resonance governed · Cinematic direction · delivery
           </div>
 
           {/* Logo + wordmark */}
           <div
             className="mb-6 flex items-center gap-3"
           >
-            <img src={logoIcon} alt="Sync Vision" width={64} height={64} decoding="async" className="h-14 w-14 rounded-2xl shadow-[0_0_40px_-5px_hsl(325_90%_65%/0.7)] sm:h-16 sm:w-16" />
+            <img src={logoIcon} alt="Resonance Media Sync" width={64} height={64} decoding="async" className="h-14 w-14 rounded-2xl shadow-[0_0_40px_-5px_hsl(325_90%_65%/0.7)] sm:h-16 sm:w-16" />
             <span className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">
-              <span className="gradient-text">Sync Vision</span>
+              <span className="gradient-text">Resonance Media Sync</span>
               <span className="ml-2 text-xs sm:text-sm font-mono uppercase tracking-[0.22em] text-muted-foreground">
                 by The Resonance
               </span>
@@ -212,7 +212,7 @@ export default function Index() {
               </h2>
             </div>
             <div className="rounded-2xl border border-primary/20 bg-card/60 p-5 text-sm leading-relaxed text-muted-foreground backdrop-blur-xl">
-              Sync Vision separates creative decisions from provider execution. You can correct the
+              Resonance Media Sync separates creative decisions from provider execution. You can correct the
               transcript, timing, character, and shot plan first. Provider estimates remain visible
               for the promotion costing study, every provider batch requires approval, and failed
               video jobs wait for you instead of retrying themselves.
