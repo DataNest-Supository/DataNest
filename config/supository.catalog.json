@@ -28,7 +28,7 @@
     },
     {
       "id": "datanest-assurance",
-      "name": "DataNest Assurance Services",
+      "name": "Resonance AppDev Assurance Services",
       "type": "service-surface",
       "sourcePath": "src/app/assurance",
       "deliveryPath": "/DataNest/assurance/",
@@ -131,7 +131,7 @@
         "surfaceRole": "primary-product",
         "commercialVisibility": "primary",
         "customerJourney": "professional-and-b2b",
-        "businessLine": "DataNest Professional",
+        "businessLine": "Resonance AppDev Professional",
         "parentSuite": null
       },
       "technicalPortfolio": "Resonance"
@@ -414,14 +414,9 @@
     "rule": "Every approved production-capable surface must be represented in the release manifest and verified by the canonical production release. Staging/R&D surfaces never gain canonical production authority by inclusion."
   },
   "commercialArchitecture": {
-    "version": "2026-10-03-scope-v2",
+    "version": "2026-10-03-scope-v3",
     "strategy": "business-line-and-suite-boundaries",
     "businessLines": [
-      {
-        "id": "platform",
-        "name": "DataNest Platform",
-        "positioning": "Governance, AppDev control, orchestration, evidence, security, continuity and delivery"
-      },
       {
         "id": "resonance",
         "name": "Resonance",
@@ -434,23 +429,25 @@
       {
         "id": "professional",
         "name": "Sovereign Forge",
-        "positioning": "Professional and B2B engineering capability",
+        "positioning": "Professional and B2B engineering capability under Resonance AppDev",
         "products": [
           "ronsas-sovereign-forge"
         ]
       },
       {
         "id": "assurance",
-        "name": "DataNest Assurance Services",
-        "positioning": "Readiness, assurance, evidence and authorized professional services",
+        "name": "Resonance AppDev Assurance Services",
+        "positioning": "Readiness, assurance, evidence and authorized professional services delivered through DataNest",
         "products": [
           "datanest-assurance"
         ]
       }
     ],
-    "suiteBoundary": "Resonance commercially covers Career, Create and Grow. Sovereign Forge is a sibling DataNest professional offer.",
+    "suiteBoundary": "Resonance commercially covers Career, Create and Grow. Sovereign Forge is a sibling Resonance AppDev professional offer. DataNest is the operating platform.",
     "transitionRule": "Preserve implemented capabilities and technical routes while separating customer journeys and business ownership. Commercial reclassification does not itself change lifecycle or production authority.",
     "publicInformationArchitecture": {
+      "masterBrand": "resonance-appdev",
+      "operatingPlatform": "datanest",
       "topLevelBusinessLines": [
         "resonance",
         "professional",
@@ -468,7 +465,7 @@
         "publish",
         "grow"
       ],
-      "rule": "Lead with customer intent and outcome; expose implementation-level module names after the customer journey is clear."
+      "rule": "Lead with Resonance AppDev and customer intent/outcome; expose DataNest as the operating platform and technical modules after the customer journey is clear."
     },
     "commercialPackaging": {
       "resonancePrimaryProducts": [
@@ -517,20 +514,28 @@
         }
       },
       "numericPrices": "not_asserted_without_explicit_commercial_baseline_and_conversion_evidence"
+    },
+    "businessIdentity": {
+      "legalBusiness": "Resonance Sole Proprietorship",
+      "masterBrand": "Resonance AppDev",
+      "operatingPlatform": "DataNest",
+      "portfolioRegistry": "DataNest Portfolio Registry"
     }
   },
   "portfolioBranding": {
-    "masterBrand": "DataNest",
-    "systemName": "DataNest Platform",
+    "businessEntity": "Resonance Sole Proprietorship",
+    "masterBrand": "Resonance AppDev",
+    "systemName": "DataNest",
     "registryName": "DataNest Portfolio Registry",
     "customerFacingName": "Resonance",
     "technicalIdentifier": "RONSAS",
     "legacyAlias": "Supository",
-    "namingRule": "Use DataNest as the master brand, DataNest Platform for the operating/control system, DataNest Portfolio Registry for catalog functions, Resonance for the customer application suite, Sovereign Forge for the sibling professional/B2B line, and RONSAS only as the stable technical identifier."
+    "namingRule": "Use Resonance Sole Proprietorship for business/legal identity, Resonance AppDev as the master brand, DataNest as the operating/control platform, DataNest Portfolio Registry for catalog functions, Resonance for the customer application suite, Sovereign Forge for the sibling professional/B2B line, and RONSAS only as the stable technical identifier."
   },
   "publicIdentity": {
-    "masterBrand": "DataNest",
-    "systemName": "DataNest Platform",
+    "businessEntity": "Resonance Sole Proprietorship",
+    "masterBrand": "Resonance AppDev",
+    "operatingPlatform": "DataNest",
     "registryName": "DataNest Portfolio Registry",
     "customerSuite": "Resonance",
     "technicalIdentifier": "RONSAS",
