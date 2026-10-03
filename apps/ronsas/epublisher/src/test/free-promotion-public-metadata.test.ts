@@ -21,6 +21,6 @@ describe("free promotion public metadata", () => {
     expect(pricing).not.toContain("hubPackCheckoutUrl");
     expect(landing).not.toMatch(/R\s?\d/);
     expect(landing).not.toContain("View pack");
-    expect(landing).toContain("Open ePublisher free");
+    expect(landing).toContain("Open Resonance Publish free");
   });
 });

@@ -338,7 +338,7 @@ const ExternalAiSidebar = dynamic(() => import("@/components/ExternalAiSidebar")
 
 const RonsasIntegrationPanel = dynamic(() => import("@/components/RonsasIntegrationPanel"), {
   ssr: false,
-  loading: () => <section className="panel fullWidth"><p className="muted">Loading RONSAS cloud integration…</p></section>
+  loading: () => <section className="panel fullWidth"><p className="muted">Loading Resonance cloud integration…</p></section>
 });
 
 function formatDate(value:string|null) {
@@ -763,10 +763,10 @@ export default function DataNestApp({session}:{session:Session}) {
         kind:"external",
         id:"ronsas",
         href:ronsasHubUrl,
-        label:"RONSAS",
+        label:"Resonance",
         group:"Applications",
         glyph:"◉",
-        description:"Open governed RONSAS application hub."
+        description:"Open the governed Resonance application suite."
       });
     }
     const query=commandQuery.trim().toLowerCase();
@@ -1473,8 +1473,8 @@ export default function DataNestApp({session}:{session:Session}) {
         href={ronsasHubUrl}
         target="_blank"
         rel="noreferrer"
-        aria-label="Open RONSAS from DataNest navigation"
-      ><span aria-hidden="true">◉</span><span><b>RONSAS</b><small>Open governed application hub</small></span><strong aria-hidden="true">↗</strong></a>}
+        aria-label="Open Resonance from DataNest navigation"
+      ><span aria-hidden="true">◉</span><span><b>Resonance</b><small>Open governed application suite</small></span><strong aria-hidden="true">↗</strong></a>}
       <div className="sidebarFooter">
         <div className="userMini"><div className="avatar">{(session.user.email||"U").slice(0,1).toUpperCase()}</div><div><b>{session.user.email?.split("@")[0]||"Authorized user"}</b><small>{membership ? membership.role.toUpperCase()+" · Authenticated" : "Authenticated"}</small></div></div>
         {project&&membership&&(membership.role==="owner"||membership.role==="admin")&&<AdminRndModeToggle
@@ -1548,7 +1548,7 @@ export default function DataNestApp({session}:{session:Session}) {
             type="button"
             role="option"
             aria-selected={commandActiveIndex===index}
-            aria-label={item.kind==="external"?"Open RONSAS application hub":undefined}
+            aria-label={item.kind==="external"?"Open Resonance application suite":undefined}
             key={item.id}
             onClick={()=>chooseCommandItem(item)}
           >

@@ -107,14 +107,14 @@ const Index = () => {
     <LazyMotionProvider>
     <div className="min-h-screen bg-background grid-bg">
       <SEO
-        title="YouTube Optimizer — Tools in tune with you · The Resonance"
+        title="Creator Growth — Tools in tune with you · The Resonance"
         description="AI-powered YouTube channel audits, titles, thumbnails and growth analytics. Full access is temporarily free while Resonance measures real usage costs and establishes sustainable pricing."
         path="/"
         jsonLd={[
           {
             "@context": "https://schema.org",
             "@type": "Organization",
-            name: "Resonance YouTube Optimizer",
+            name: "Resonance Creator Growth",
             url: "https://youtubeoptimizer.life/",
             parentOrganization: {
               "@type": "Organization",
@@ -132,7 +132,7 @@ const Index = () => {
             "@type": "WebSite",
             "@id": "https://youtubeoptimizer.life/#website",
             url: "https://youtubeoptimizer.life/",
-            name: "Resonance YouTube Optimizer",
+            name: "Resonance Creator Growth",
             description:
               "AI-powered YouTube channel audits, titles, thumbnails and growth analytics — part of The Resonance Hub.",
             inLanguage: "en",
@@ -142,7 +142,7 @@ const Index = () => {
             "@context": "https://schema.org",
             "@type": "SoftwareApplication",
             "@id": "https://youtubeoptimizer.life/#software",
-            name: "Resonance YouTube Optimizer",
+            name: "Resonance Creator Growth",
             applicationCategory: "BusinessApplication",
             operatingSystem: "Web",
             url: "https://youtubeoptimizer.life/",
@@ -288,7 +288,7 @@ const Index = () => {
                           <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
                         </span>
                         <span className="text-[10px] sm:text-[11px] font-mono font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                          RONSAS governed · Growth intelligence
+                          Resonance governed · Growth intelligence
                         </span>
                       </motion.div>
 
@@ -471,8 +471,8 @@ const Index = () => {
                       <div className="flex flex-wrap justify-center gap-2">
                         {[
                           { label: "reson8.life", href: "https://reson8.life" },
-                          { label: "ePublisher", href: "https://epublisher.reson8.life/" },
-                          { label: "Creative Studio", href: "https://creative.reson8.life/" },
+                          { label: "Resonance Publish", href: "https://epublisher.reson8.life/" },
+                          { label: "Resonance Creator Studio", href: "https://creative.reson8.life/" },
                           { label: "Podcast", href: "https://www.resonance-podcast.com/" },
                         ].map((l) => (
                           <a
@@ -645,8 +645,8 @@ const Index = () => {
             <div className="flex flex-wrap gap-2">
               {[
                 { label: "🧠 Hub · reson8.life", href: "https://reson8.life" },
-                { label: "📚 ePublisher", href: "https://epublisher.reson8.life/" },
-                { label: "🎨 Creative Studio", href: "https://creative.reson8.life/" },
+                { label: "📚 Resonance Publish", href: "https://epublisher.reson8.life/" },
+                { label: "🎨 Resonance Creator Studio", href: "https://creative.reson8.life/" },
                 { label: "🎙️ Podcast", href: "https://www.resonance-podcast.com/" },
                 { label: "▶ @resonance36912", href: "https://www.youtube.com/@resonance36912" },
               ].map((l) => (
