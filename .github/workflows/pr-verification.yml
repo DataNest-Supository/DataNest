@@ -94,6 +94,7 @@ jobs:
           tests/browser/execution-authority.spec.ts
           tests/browser/external-auditor.spec.ts
           tests/browser/legal-centre.spec.ts
+          tests/browser/navigation-reconciliation.spec.ts
           tests/browser/ui-governance-accessibility.spec.ts
           tests/browser/resource-fabric.spec.ts
           tests/browser/intelligence-fabric.spec.ts
