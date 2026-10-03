@@ -1,5 +1,5 @@
 # DataNest System Charter
-## Scope, Mission, Vision, Governance, Architecture, Products, Services, Assurance and Growth
+## System Scope, Business Scope, Mission, Vision, Governance, Architecture, Products, Services, Assurance and Growth
 
 **Document status:** Public system charter and assurance map  
 **Canonical authority:** DataNest-Supository/DataNest  
@@ -11,7 +11,7 @@
 
 ## 1. Executive statement
 
-DataNest is the canonical Resonance AppDev control plane and Supository: a governed environment for planning, developing, testing, validating, promoting, operating, learning from, and transparently improving Resonance applications, products, services, packages and supporting infrastructure.
+DataNest is the master brand and operating authority for a governed digital-product environment. The **DataNest Platform** is the control system for planning, developing, testing, validating, promoting, operating, learning from and transparently improving products and services. Its customer-facing portfolio is broader than the operating system itself: **Resonance** is the customer application suite, **Sovereign Forge** is a sibling professional/B2B line, and **DataNest Assurance Services** is a professional service line.
 
 The system is designed around a simple operating principle:
 
@@ -25,28 +25,37 @@ DataNest uses GitHub as canonical source/history/CI/evidence authority, GitHub P
 
 ## 2. Scope intent
 
-### 2.1 In scope
+### 2.1 System scope
 
-DataNest governs or catalogs:
+The DataNest Platform governs or catalogs:
 
-- Resonance application-development projects;
-- products, applications, services and packages;
-- source and deployment intent;
-- AI-assisted planning and development;
-- user and stakeholder journeys;
-- testing, certification evidence and release promotion;
-- environment compatibility;
-- security and defensive evidence;
-- system health and maintenance;
-- learning and optimization;
-- workflow synchronization;
-- transparency and audit evidence;
-- SEO, visibility, market presence and route-to-market modelling;
-- continuity, backup and recovery evidence;
-- public governance, legal and accessibility disclosures;
-- current and future sovereign Forge replication.
+- product and service intent, requirements and portfolio registration;
+- AppDev planning, orchestration and scheduling through UNIFI and TranScheduler;
+- development, testing, validation and release promotion;
+- source/history, deployment intent and evidence lineage;
+- security, privacy, quality, accessibility and environment controls;
+- AI-assisted planning, analysis, optimization and bounded maintenance;
+- system health, continuity, backup, recovery and provider replaceability;
+- visibility, discoverability and route-to-market intelligence;
+- audit, assurance and transparent evidence publishing.
 
-### 2.2 Out of scope unless separately authorized
+### 2.2 Business scope
+
+DataNest's market-facing scope is organized by customer intent:
+
+| Business line | Canonical offer | Commercial role |
+| --- | --- | --- |
+| Platform | DataNest Platform | Operating/control system and governed digital-product infrastructure |
+| Customer software | Resonance | Career, Create and Grow applications |
+| Professional engineering | Sovereign Forge | Professional/B2B engineering and sovereignty capability |
+| Assurance | DataNest Assurance Services | Readiness, technical assurance, evidence, remediation and authorized oversight |
+| Specialist products | Legal Eagle and other approved products | Focused problem-specific journeys |
+
+### 2.3 Boundary conditions
+
+A commercial reclassification does not itself change production lifecycle, route, backend authority, source authority, user access or technical ownership. Technical implementation may remain consolidated even when business ownership or customer positioning is separate.
+
+### 2.4 Out of scope unless separately authorized
 
 The system does not infer authority to:
 
@@ -65,21 +74,21 @@ The system does not infer authority to:
 
 ## 3. Mission
 
-**To provide a transparent, evidence-led human-AI operating system for building and improving Resonance digital products and services with lower friction, stronger quality, safer automation, resilient infrastructure, and continuously improving user and stakeholder value.**
+**To provide a transparent, evidence-led human-AI operating system for building, governing, delivering and improving DataNest products and services with lower friction, stronger quality, safer automation, resilient infrastructure and continuously improving user and stakeholder value.**
 
 ---
 
 ## 4. Vision
 
-DataNest aims to become a sovereign, interoperable AppDev environment in which:
+DataNest aims to become a sovereign, interoperable product operating environment in which:
 
-1. projects move from intent to validated production through an explicit evidence chain;
+1. products and services move from intent to validated delivery through an explicit evidence chain;
 2. humans retain final authority for consequential decisions;
 3. AI systems continuously improve quality, usability, health, security and market fit without obscuring provenance;
 4. infrastructure remains replaceable and provider-independent where practical;
-5. users and stakeholders can inspect how the system works, what it claims, and what evidence supports those claims;
+5. users and stakeholders can distinguish the operating system from the products and services it governs;
 6. market visibility and route-to-market decisions are data-informed, scenario-modelled and reviewable;
-7. learning compounds across projects without converting provisional observations into unquestioned institutional truth.
+7. learning compounds across products without converting provisional observations into unquestioned institutional truth.
 
 ---
 
