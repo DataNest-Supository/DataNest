@@ -48,18 +48,18 @@ export const metadata = {
   metadataBase: new URL("https://datanest-supository.github.io"),
   applicationName: "DataNest",
   title: {
-    default: "DataNest · Resonance AppDev Control Plane",
+    default: "DataNest · Governed Digital & AI Operations",
     template: "%s · DataNest"
   },
-  description: "Governed Resonance AppDev planning, AI collaboration, execution, evidence, transparency, product governance and market-intelligence platform.",
+  description: "DataNest helps organisations build, govern and continuously improve digital and AI operations with evidence at every step.",
   keywords: [
     "DataNest",
-    "Resonance AppDev",
     "AI governance",
+    "digital operations",
+    "technical assurance",
+    "technical audit",
     "software delivery",
-    "product operations",
-    "project orchestration",
-    "transparent AI",
+    "AI readiness",
     "route to market"
   ],
   alternates: {
@@ -69,8 +69,8 @@ export const metadata = {
     type: "website",
     url: "https://datanest-supository.github.io/DataNest/",
     siteName: "DataNest",
-    title: "DataNest · Resonance AppDev Control Plane",
-    description: "Governed AppDev, AI collaboration, evidence, transparency and product/market intelligence."
+    title: "DataNest · Governed Digital & AI Operations",
+    description: "Governed digital delivery, AI governance, evidence, assurance and continuous oversight."
   },
   twitter: {
     card: "summary",
