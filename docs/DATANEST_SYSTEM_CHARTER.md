@@ -65,27 +65,38 @@ The system does not infer authority to:
 
 ## 3. Mission
 
-**To provide a transparent, evidence-led human-AI operating system for building and improving Resonance digital products and services with lower friction, stronger quality, safer automation, resilient infrastructure, and continuously improving user and stakeholder value.**
+**To help organisations build, govern and continuously improve digital and AI operations with lower friction, strong evidence, human oversight, resilient infrastructure and measurable user and stakeholder value.**
 
 ---
 
 ## 4. Vision
 
-DataNest aims to become a sovereign, interoperable AppDev environment in which:
+DataNest aims to become a sovereign, interoperable operating environment in which:
 
-1. projects move from intent to validated production through an explicit evidence chain;
+1. digital and AI work moves from intent to validated operation through an explicit evidence chain;
 2. humans retain final authority for consequential decisions;
-3. AI systems continuously improve quality, usability, health, security and market fit without obscuring provenance;
+3. AI improves quality, usability, health, security and market fit without obscuring provenance;
 4. infrastructure remains replaceable and provider-independent where practical;
-5. users and stakeholders can inspect how the system works, what it claims, and what evidence supports those claims;
-6. market visibility and route-to-market decisions are data-informed, scenario-modelled and reviewable;
+5. users, customers and stakeholders can inspect what the system does, what it claims and what evidence supports those claims;
+6. commercial and route-to-market decisions are evidence-informed, reviewable and attributable;
 7. learning compounds across projects without converting provisional observations into unquestioned institutional truth.
 
 ---
 
 ## 5. Core value proposition
 
-### 5.1 For users
+### 5.1 For customers
+
+**DataNest combines digital delivery, AI governance, technical assurance and continuous oversight so organisations can move from idea to operation with evidence at every step.**
+
+The customer-facing entry points are:
+
+- **Assess** — understand AI, software, data, cloud and governance risk;
+- **Build / improve** — turn approved findings or intent into governed implementation;
+- **Evidence** — verify what changed and preserve attributable evidence;
+- **Operate** — maintain visibility through continuous oversight.
+
+### 5.2 For users
 
 DataNest seeks to reduce friction between need, planning, execution and usable output by combining:
 
@@ -98,7 +109,7 @@ DataNest seeks to reduce friction between need, planning, execution and usable o
 - accessible and human-centred interfaces;
 - visible product/service routes.
 
-### 5.2 For stakeholders and operators
+### 5.3 For stakeholders and operators
 
 DataNest provides:
 
@@ -122,7 +133,7 @@ DataNest provides:
 - fail-closed synchronization;
 - clear separation between advice, verification, authorization and production.
 
-### 5.4 For the business
+### 5.5 For the business
 
 DataNest is intended to improve:
 
@@ -131,7 +142,9 @@ DataNest is intended to improve:
 - product quality;
 - operating resilience;
 - discoverability and market presence;
-- user/stakeholder acquisition readiness;
+- qualified lead and customer acquisition readiness;
+- assessment-to-implementation conversion;
+- recurring oversight retention;
 - reuse of validated components and evidence;
 - continuity of knowledge and source history;
 - cost discipline through free/open or replaceable infrastructure where viable.
