@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "datanest-knowledge-index-v1",
+  "generatedAt": "2026-10-03T04:38:03.415Z",
+  "sourceRepositories": [
+    "DataNest-Supository/DataNest",
+    "DataNest-Supository/Mirror-DataNest"
+  ],
+  "excludedRepositories": [
+    "DataNest-Supository/FREETREE",
+    "DataNest-Supository/Mirror-DataNest-Empty"
+  ],
+  "itemCount": 136,
+  "categoryCounts": {
+    "ai": 69,
+    "architecture": 77,
+    "data": 13,
+    "deployment": 41,
+    "governance": 53,
+    "maintenance": 3,
+    "other": 2,
+    "reliability": 49,
+    "security": 42,
+    "testing": 57,
+    "ux": 37
+  },
+  "controls": {
+    "provisionalOnly": true,
+    "certifiedMemoryPromotion": false,
+    "productionAuthorization": false,
+    "humanReviewForCanonicalAdoption": true,
+    "boundariesAssessmentRequired": true
+  }
+}
