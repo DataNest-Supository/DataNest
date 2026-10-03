@@ -7,7 +7,7 @@ async function signIn(page:import("@playwright/test").Page){
 
   await page.goto(process.env.DATANEST_APP_PATH||"/");
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
+  await page.getByPlaceholder("Password",{exact:true}).fill(password);
   await page.getByRole("button",{name:"Sign in"}).click();
   await expect(page.getByRole("button",{name:/Quick switch/})).toBeVisible({timeout:15000});
 }
@@ -24,10 +24,10 @@ async function openWorkspace(page:import("@playwright/test").Page,label:string){
   // Dynamic workspace bundles can resolve after the quick-switch dialog closes.
   // Wait for the target surface before interacting with controls inside it.
   if(label==="DataNest AI"){
-    await expect(page).toHaveURL(/(?:\\?|&)view=ai(?:&|$)/,{timeout:15000});
+    await expect(page).toHaveURL(/(?:\?|&)view=ai(?:&|$)/,{timeout:15000});
     await expect(page.getByLabel("Active Job context",{exact:true})).toBeVisible({timeout:15000});
   }else if(label==="Governance"){
-    await expect(page).toHaveURL(/(?:\\?|&)view=governance(?:&|$)/,{timeout:15000});
+    await expect(page).toHaveURL(/(?:\?|&)view=governance(?:&|$)/,{timeout:15000});
     await expect(page.getByText("Project members and invitations",{exact:true})).toBeVisible({timeout:15000});
   }
 }
@@ -85,10 +85,10 @@ test("companion launch arms session auto-return when clipboard permission alread
   });
   const handoff=page.locator("details.externalAiHandoff textarea");
   const handoffText=await handoff.inputValue();
-  const traceMatch=handoffText.match(/Trace Key: (DN-[^\\n]+)/);
+  const traceMatch=handoffText.match(/Trace Key: (DN-[^\n]+)/);
   if(!traceMatch)throw new Error("Active tracked trace key is required for clipboard capture.");
   const traceKey=traceMatch[1];
-  const initial=traceKey+"\\nInitial governed clipboard response.";
+  const initial=traceKey+"\nInitial governed clipboard response.";
   await page.evaluate(async text=>navigator.clipboard.writeText(text),initial);
   const readsBeforeReturn=Number(await page.locator("html").getAttribute("data-clipboard-reads")||"0");
   await page.evaluate(()=>window.dispatchEvent(new Event("focus")));
@@ -127,7 +127,7 @@ test("switching jobs replaces the tracked handoff with the newly selected manife
   await expect(page.getByPlaceholder(/Copy the completed external AI response/i)).toBeEnabled();
 
   const handoff=page.locator("details.externalAiHandoff textarea");
-  await expect(handoff).toHaveValue(/Job Manifest: JOB-\d+ \u00b7 DataNest AI E2E Job\n/);
+  await expect(handoff).toHaveValue(/Job Manifest: JOB-\d+ · DataNest AI E2E Job\n/);
   const jobSelect=page.getByRole("combobox",{name:/^Job Manifest/});
   const target=jobSelect.locator("option").filter({hasText:"DataNest AI E2E Job B"}).first();
   const switchJobId=await target.getAttribute("value");
@@ -135,8 +135,8 @@ test("switching jobs replaces the tracked handoff with the newly selected manife
   await jobSelect.selectOption(switchJobId);
 
   await expect(jobSelect).toHaveValue(switchJobId);
-  await expect(handoff).toHaveValue(/Job Manifest: JOB-\d+ \u00b7 DataNest AI E2E Job B\n/);
-  await expect(handoff).not.toHaveValue(/Job Manifest: JOB-\d+ \u00b7 DataNest AI E2E Job\n/);
+  await expect(handoff).toHaveValue(/Job Manifest: JOB-\d+ · DataNest AI E2E Job B\n/);
+  await expect(handoff).not.toHaveValue(/Job Manifest: JOB-\d+ · DataNest AI E2E Job\n/);
   await expect(page.locator(".externalAiReturnDock textarea")).toBeDisabled();
   await expect(page.getByRole("button",{name:"Enable session auto-return",exact:true})).toBeDisabled();
 });
