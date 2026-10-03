@@ -65,14 +65,17 @@ test("verified memory migration adds scope, ageing, ranking and relation graph",
   assert.match(migration,/service_promote_certified_memory_v2/);
 });
 
-test("DataNest AI retrieves scoped ranked verified memory with deployment fallback",()=>{
-  assert.match(chat,/get_ranked_certified_memory_context_v2/);
+test("DataNest AI keeps projection identity fail-closed when the ranked v3 contract is unavailable",()=>{
+  assert.match(chat,/get_ranked_certified_memory_context_v3/);
+  assert.match(chat,/target_projection_key:input\.projectionKey/);
   assert.match(chat,/target_query:input\.query/);
   assert.match(chat,/target_product_scope:input\.productScope/);
   assert.match(chat,/target_jurisdiction:input\.jurisdiction/);
   assert.match(chat,/target_visibility_class:input\.visibilityClass/);
   assert.match(chat,/PGRST202/);
-  assert.match(chat,/get_certified_memory_context/);
+  assert.match(chat,/certified_memory_projection_unavailable/);
+  assert.doesNotMatch(chat,/get_ranked_certified_memory_context_v2/);
+  assert.doesNotMatch(chat,/get_certified_memory_context/);
   assert.match(chat,/productScope:legalMode\?"legal_eagle":developmentMode\?"development_command":"datanest_ai"/);
 });
 
