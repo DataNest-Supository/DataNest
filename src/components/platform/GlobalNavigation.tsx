@@ -6,6 +6,15 @@ import WorkspaceGlyph from "./WorkspaceGlyph";
 import type { NavigationItem } from "@/components/platform/navigationTypes";
 
 const groupOrder=["HOME","THINK","GOVERN","BUILD","EXECUTE","PROVE","ADMIN"] as const;
+const groupDescriptions:Record<string,string>={
+  HOME:"Your workspace",
+  THINK:"Ideas & research",
+  GOVERN:"Decisions & review",
+  BUILD:"Products & testing",
+  EXECUTE:"Planning & delivery",
+  PROVE:"Evidence & impact",
+  ADMIN:"Project settings"
+};
 
 const legalLinks=[
   {href:"/legal",label:"Legal Centre"},
@@ -23,7 +32,6 @@ export default function GlobalNavigation({
   onNavigate:(view:string)=>void;
   onOpenQuickSwitch:()=>void;
 }) {
-  void onOpenQuickSwitch;
   const groups=Array.from(new Set(items.map(item=>item.group))).sort((a,b)=>groupOrder.indexOf(a as (typeof groupOrder)[number])-groupOrder.indexOf(b as (typeof groupOrder)[number]));
   const activeGroup=items.find(item=>item.id===currentView)?.group;
   const [openGroups,setOpenGroups]=useState<Set<string>>(
@@ -41,6 +49,9 @@ export default function GlobalNavigation({
   },[activeGroup]);
 
   return <>
+    <button className="navWorkspaceSearch" type="button" onClick={onOpenQuickSwitch} aria-haspopup="dialog">
+      <span>Find a workspace</span><kbd aria-hidden="true">⌘ / Ctrl K</kbd>
+    </button>
     <nav className="navStack" aria-label="Project workspaces">
       {groups.map(group=><details
         className="navGroup navDisclosure"
@@ -56,9 +67,13 @@ export default function GlobalNavigation({
           });
         }}
       >
-        <summary>{group}</summary>
+        <summary>
+          <span className="navGroupCopy"><b>{group}</b><small>{groupDescriptions[group]}</small></span>
+          <span className="navGroupIndicator" aria-hidden="true">⌄</span>
+        </summary>
         {items.filter(item=>item.group===group).map(item=><button
           key={item.id}
+          type="button"
           className={(currentView===item.id?"active ":"")+(item.id==="ai"?"aiHeroNav":"")}
           aria-label={item.label}
           aria-current={currentView===item.id?"page":undefined}

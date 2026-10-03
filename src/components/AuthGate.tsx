@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import CollaborationVisual from "./CollaborationVisual";
 import MotionControl from "./MotionControl";
 import ResonanceBrandLockup from "./platform/ResonanceBrandLockup";
@@ -275,9 +276,14 @@ export default function AuthGate() {
       </header>
       <div className="landingLayout">
       <section className="landingStory" aria-labelledby="landing-title">
-        <p className="aiIEyebrow">AI &amp; I · A SHARED WORKSPACE</p>
+        <p className="aiIEyebrow">DATANEST-SUPOSITORY · RESONANCE APPDEV</p>
         <h2 id="landing-title">Your intent.<br/><span>Amplified.</span></h2>
-        <p className="landingLede">Bring human direction and AI intelligence together. Turn ideas into governed work, with a clear path from first spark to execution.</p>
+        <p className="landingLede">One governed workspace for Resonance AppDev projects, products, and services. Bring human direction and AI intelligence together, from first spark to reviewed release.</p>
+        <div className="landingStartActions">
+          <a className="primaryButton" href="#sign-in-email">Go to sign in <span aria-hidden="true">→</span></a>
+          <Link className="secondaryButton" href="/system-charter">Explore DataNest</Link>
+        </div>
+        <p className="landingPublicNote">Explore the platform and public evidence before signing in.</p>
         <CollaborationVisual/>
         <ol className="landingSteps" aria-label="The Resonance workflow">
           <li><span>01</span><b>Spark</b><small>Capture intent</small></li>
