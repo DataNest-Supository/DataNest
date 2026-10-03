@@ -102,7 +102,7 @@ export function validateLaunchRegistryText(launchRegistry) {
   if (staticLaunches.length !== 7) {
     failures.push(`RONSAS launch registry must expose exactly seven DataNest Pages apps; found ${staticLaunches.length}`);
   }
-  const youtubeEntry = source.match(/\{[^}]*slug:"youtube-optimizer"[^}]*\}/)?.[0] || "";
+  const youtubeEntry = launchRegistry.match(/\{[^}]*slug:"youtube-optimizer"[^}]*\}/)?.[0] || "";
   if (!/launchKind:"external-ssr"/.test(youtubeEntry) || !youtubeEntry.includes('href:"https://youtubeoptimizer.life"')) {
     failures.push("YouTube Optimizer must remain a governed external SSR launch at https://youtubeoptimizer.life");
   }
@@ -239,7 +239,8 @@ function validateLaunchRegistry(root, failures) {
       failures.push(`Canonical Resonance app registry is missing DataNest Pages launch for ${slug}`);
     }
   }
-  if (!/slug:"youtube-optimizer"[\\s\\S]*?launchKind:"external-ssr"[\\s\\S]*?href:"https:\/\/youtubeoptimizer\.life"/.test(source)) {
+  const youtubeEntry = source.match(/\{[^}]*slug:"youtube-optimizer"[^}]*\}/)?.[0] || "";
+  if (!/launchKind:"external-ssr"/.test(youtubeEntry) || !youtubeEntry.includes('href:"https://youtubeoptimizer.life"')) {
     failures.push("YouTube Optimizer must remain a governed external SSR launch at https://youtubeoptimizer.life");
   }
 }
