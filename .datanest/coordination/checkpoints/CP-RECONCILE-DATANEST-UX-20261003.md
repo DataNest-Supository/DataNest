@@ -10,8 +10,11 @@ Resume the October 3 DataNest workspace UX work from current protected `main` af
 - Base branch: `main`
 - Base commit: `66cc6ae19df375321772656c0cab12a7db341a03`
 - Continuation branch: `work/reconcile-supository-ux-20261003`
+- Review PR: #465
 - Historical sources: PR #443 and PR #444
 - Retired source: PR #442 was closed without merge and is not an authority for this continuation.
+- Candidate head immediately before this checkpoint refresh: `337092f8fb4d507b300a1feb1596e51d87df9c09`.
+- For resumption, use the branch tip / PR #465 head containing this checkpoint rather than assuming the preceding SHA is still current.
 
 ## Current identity boundary
 
@@ -44,12 +47,17 @@ Carry historical UX changes only when the current `main` blob is byte-for-byte e
   - retain responsive/navigation accessibility overrides as an internal legacy-named stylesheet.
 - `src/app/layout.tsx`
   - load the UX override stylesheet after the current cinematic shell styles while preserving all current metadata and runtime configuration.
+- `tests/browser/navigation-reconciliation.spec.ts`
+  - verify the current authenticated-root workspace finder / deep-link flow;
+  - verify R&D Test Mode busy-state and live failure announcement behavior without depending on the retired `/workspace/` route.
+- `.github/workflows/pr-verification.yml`
+  - include the reconciliation regression in protected-main browser verification.
 
 ## Explicitly not carried forward yet
 
 `src/components/DataNestApp.tsx` has materially evolved since the historical branch. Do not replace it with the old blob. The remaining mobile navigation dialog/focus-trap/focus-restoration delta requires a surgical reconciliation against the current file.
 
-The old PR #444 browser specification is also not transplanted because it was adapted to the retired `/workspace/` route boundary. Any new regression test must target the current authenticated-root architecture.
+The old PR #444 browser specification is not transplanted because it was adapted to the retired `/workspace/` route boundary. The replacement regression in this candidate targets the current authenticated-root architecture and intentionally excludes the still-pending mobile-dialog assertions.
 
 ## Verification and promotion
 
@@ -58,12 +66,12 @@ This checkpoint is a continuation trigger, not release authority.
 Before merge to `main`:
 
 1. Run protected-main PR verification against the exact candidate head.
-2. Confirm TypeScript/build/unit/browser checks.
-3. Add or update browser coverage for the current root navigation behavior.
+2. Confirm TypeScript/build/unit/browser checks, including `navigation-reconciliation.spec.ts`.
+3. Review failures against the exact head rather than retrying stale workflow runs.
 4. Complete the remaining `DataNestApp` mobile accessibility reconciliation or explicitly scope it to a follow-up checkpoint.
 5. Preserve Mirror-DataNest evidence/certification requirements where applicable.
 6. Require human review and repository governance before protected-main synchronization.
 
 ## Resume instruction
 
-Resume from the exact head of `work/reconcile-supository-ux-20261003`. Inspect workflow results first. If the safe carry-forward checks pass, reconcile only the remaining mobile navigation accessibility hunks in the current `DataNestApp.tsx`; do not revive PR #442 or its retired route assumptions.
+Resume from PR #465 and its current branch tip. Inspect exact-head workflow results first. If the safe carry-forward and current-root regression pass, reconcile only the remaining mobile navigation accessibility hunks in the current `DataNestApp.tsx`; do not revive PR #442 or its retired route assumptions. If that surgical reconciliation is deferred, leave PR #465 scoped to the verified safe carry-forward and create the next checkpoint from its exact reviewed head.
