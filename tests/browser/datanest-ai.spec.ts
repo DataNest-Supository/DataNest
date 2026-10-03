@@ -7,7 +7,7 @@ async function signIn(page:import("@playwright/test").Page){
 
   await page.goto(process.env.DATANEST_APP_PATH||"/");
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
+  await page.getByPlaceholder("Password",{exact:true}).fill(password);
   await page.getByRole("button",{name:"Sign in"}).click();
   await expect(page.getByRole("button",{name:/Quick switch/})).toBeVisible({timeout:15000});
 }
