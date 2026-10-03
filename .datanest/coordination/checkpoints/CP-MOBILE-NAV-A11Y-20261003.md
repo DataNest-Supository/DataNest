@@ -4,6 +4,8 @@ Date: 2026-10-03
 Branch: `work/mobile-navigation-accessibility-20261003`
 Base protected `main`: `068372247da65f3028bb9b509dca44b5b42bb87a`
 Current test-first head: `f7859b172b214421285cd198ac3170e7efdb3cb7`
+Current synchronized failing head: `6c5b74a7fccb429dd04159733ce07d18ea4b153f`
+Current PR base observed during diagnosis: `8a0e1e46d83c36f180c340ffbb28c513164b3e40`
 Predecessor: PR #465 (merged)
 
 ## Intent
@@ -27,6 +29,22 @@ Continue the October 3 UX reconciliation as a separate, reviewable accessibility
 
 The test is intentionally added before the product implementation so the follow-up has a precise failing/passing acceptance boundary.
 
+## Proven exact-head blocker
+
+On synchronized head `6c5b74a7fccb429dd04159733ce07d18ea4b153f`, CI and PR Verification fail in the shared `npm test` lane before browser verification.
+
+The exact failing source-contract test is:
+
+- `tests/unit/ui-ux-source.test.mjs:406`
+- `platform shell extraction keeps layout display-only and phase-safe`
+- assertion contract: `PlatformShell.tsx` must not contain `useState`, `useEffect`, `getSupabase`, or `window.history`.
+
+The current branch violates that contract because the compact-navigation observer, focus trap, scroll lock, and modal-state logic were implemented inside `src/components/platform/PlatformShell.tsx` using `useState` and `useEffect`.
+
+This is an implementation-placement defect, not evidence that the unit contract should be weakened. The checkpoint's original implementation target already places compact-navigation ownership in `DataNestApp.tsx` and passes only `navigationOpen` into the display-only `PlatformShell`.
+
+Do not repair this by deleting or relaxing the source-contract assertion, and do not hide the behavior behind another stateful child of `PlatformShell` merely to satisfy the regex.
+
 ## Implementation target
 
 Reconcile only the mobile navigation accessibility delta into the current `src/components/DataNestApp.tsx`.
@@ -47,6 +65,7 @@ Expected design, adapted from the retired #444 hunk but applied to current code 
    - selecting the current view while the mobile dialog is open should use the close helper and restore menu focus;
    - selecting a different view should retain the existing view-change/title-focus flow.
 9. Add `type="button"` to mobile menu/close/scrim controls where needed.
+10. Restore `src/components/platform/PlatformShell.tsx` to display-only rendering; it may consume `navigationOpen` but must not own navigation state/effects.
 
 Do not replace the full historical `DataNestApp.tsx`; preserve all newer recovery, workspace, AI-context, and command-palette logic.
 
@@ -68,4 +87,4 @@ This checkpoint does not authorize protected-main merge or deployment. Human/cod
 
 ## Resume instruction
 
-Resume from branch `work/mobile-navigation-accessibility-20261003`. Treat `tests/browser/navigation-reconciliation.spec.ts` as the executable acceptance contract. Implement the mobile dialog/focus-trap/focus-restoration behavior against the current `DataNestApp.tsx`, then rerun exact-head protected-main verification. Do not revive the retired #442 route model.
+Resume from branch `work/mobile-navigation-accessibility-20261003`. First restore `PlatformShell.tsx` to its display-only contract and move the compact-navigation state/effects into the current `DataNestApp.tsx` without replacing newer app logic. Treat `tests/browser/navigation-reconciliation.spec.ts` as the executable acceptance contract. Then rerun exact-head protected-main verification. Do not weaken `tests/unit/ui-ux-source.test.mjs`, do not revive the retired #442 route model, and do not merge or deploy until required checks and human/code-owner approval are complete.
