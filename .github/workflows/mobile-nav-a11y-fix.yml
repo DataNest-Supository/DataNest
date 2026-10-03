@@ -30,13 +30,7 @@ jobs:
           new='''      id="datanest-navigation" aria-label="DataNest navigation"'''
           if source.count(old)!=1:
               raise SystemExit("expected one navigation identity formatting anchor")
-          source=source.replace(old,new,1)
-          old='''    const focusable=Array.from(event.currentTarget.querySelectorAll<HTMLElement>('''
-          new='''    const navigationElement=navigationRef.current||event.currentTarget;\n    const focusable=Array.from(navigationElement.querySelectorAll<HTMLElement>('''
-          if source.count(old)!=1:
-              raise SystemExit("expected one mobile focus-container anchor")
-          source=source.replace(old,new,1)
-          path.write_text(source)
+          path.write_text(source.replace(old,new,1))
           PY
 
       - name: Verify display-only shell source contract
