@@ -371,7 +371,7 @@ function WatchDemoSection() {
   }
 
   const mailto = `mailto:${DEMO_SUBMIT_EMAIL}?subject=${encodeURIComponent(
-    "Resonance ePublisher — demo walkthrough video",
+    "Resonance Publish — demo walkthrough video",
   )}&body=${encodeURIComponent(
     "Hi Resonance team,\n\nHere's a walkthrough video to feature on the homepage:\n\nVideo URL: \n\nCreator name & role (optional): \n\nThanks!",
   )}`;
@@ -392,7 +392,7 @@ function WatchDemoSection() {
           tabIndex={-1}
           className="text-2xl md:text-3xl font-display font-bold focus:outline-none"
         >
-          See Resonance ePublisher in Action
+          See Resonance Publish in Action
         </h2>
         <p className="text-muted-foreground text-sm md:text-base max-w-2xl mx-auto">
           Watch how a simple topic becomes a researched, narrated, illustrated AudioVisual eBook — ready for PDF, HTML, or ePub export.
@@ -403,9 +403,9 @@ function WatchDemoSection() {
               typeof window !== "undefined"
                 ? `${window.location.origin}${import.meta.env.BASE_URL}#watch-demo`
                 : "#watch-demo";
-            const shareText = "See Resonance ePublisher in action — watch the demo:";
+            const shareText = "See Resonance Publish in action — watch the demo:";
             const emailHref = `mailto:?subject=${encodeURIComponent(
-              "Watch the Resonance ePublisher demo",
+              "Watch the Resonance Publish demo",
             )}&body=${encodeURIComponent(`${shareText}\n\n${deepLink}`)}`;
             const twitterHref = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
               shareText,
@@ -527,8 +527,8 @@ function WatchDemoSection() {
             <iframe
               key={liveUrl}
               src={liveUrl}
-              title="Resonance ePublisher product walkthrough video"
-              aria-label="Resonance ePublisher product walkthrough video player"
+              title="Resonance Publish product walkthrough video"
+              aria-label="Resonance Publish product walkthrough video player"
               tabIndex={0}
               loading="lazy"
               className="absolute inset-0 w-full h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -773,7 +773,7 @@ function WatchDemoSection() {
             Have a walkthrough to submit?
           </span>
           <p className="text-xs text-muted-foreground flex-1">
-            Created a great walkthrough of Resonance ePublisher? Send us the link and we'll review it for the official homepage demo or our community gallery.
+            Created a great walkthrough of Resonance Publish? Send us the link and we'll review it for the official homepage demo or our community gallery.
           </p>
           <Button asChild size="sm" variant="outline" className="gap-2 mt-1 self-start">
             <a href={mailto}>
@@ -830,7 +830,7 @@ export default function Landing() {
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <Seo
-        title="Resonance ePublisher — AI AudioVisual eBook Creator"
+        title="Resonance Publish — AI AudioVisual eBook Creator"
         description="Turn any topic, script, or recording into a researched, narrated, illustrated AudioVisual eBook. Export to PDF, HTML, ePub, or MP4 video."
         path="/"
         jsonLd={[
@@ -838,23 +838,23 @@ export default function Landing() {
             "@context": "https://schema.org",
             "@type": "FAQPage",
             mainEntity: [
-              { "@type": "Question", name: "Can I create an eBook from any topic?", acceptedAnswer: { "@type": "Answer", text: "Yes. Start from a topic, idea, title, script, podcast, or educational theme and Resonance ePublisher will research and structure it for you." } },
+              { "@type": "Question", name: "Can I create an eBook from any topic?", acceptedAnswer: { "@type": "Answer", text: "Yes. Start from a topic, idea, title, script, podcast, or educational theme and Resonance Publish will research and structure it for you." } },
               { "@type": "Question", name: "Can I export the final book?", acceptedAnswer: { "@type": "Answer", text: "Yes. Finished books can export as PDF, HTML eBook, or ePub, with narrated audiovisual output where the current workspace capabilities support it. Promotional access does not require payment." } },
               { "@type": "Question", name: "Does the AI research the topic for me?", acceptedAnswer: { "@type": "Answer", text: "Yes. The platform performs structured AI research, but users should verify factual, medical, legal, financial, or technical content before publishing." } },
-              { "@type": "Question", name: "Can I use this for business or education?", acceptedAnswer: { "@type": "Answer", text: "Yes. Resonance ePublisher is suitable for training material, lead magnets, product guides, educational content, and creator products." } },
+              { "@type": "Question", name: "Can I use this for business or education?", acceptedAnswer: { "@type": "Answer", text: "Yes. Resonance Publish is suitable for training material, lead magnets, product guides, educational content, and creator products." } },
               { "@type": "Question", name: "Can I add narration and music?", acceptedAnswer: { "@type": "Answer", text: "Yes. Books can include voice narration plus background music for a full AudioVisual experience." } },
             ],
           },
           {
             "@context": "https://schema.org",
             "@type": "VideoObject",
-            name: "Resonance ePublisher walkthrough",
-            description: "A short walkthrough showing how Resonance ePublisher turns a topic into a researched, narrated, illustrated AudioVisual eBook ready for PDF, HTML, or ePub export.",
+            name: "Resonance Publish walkthrough",
+            description: "A short walkthrough showing how Resonance Publish turns a topic into a researched, narrated, illustrated AudioVisual eBook ready for PDF, HTML, or ePub export.",
             thumbnailUrl: ["https://img.youtube.com/vi/-1SjoH9KFVg/maxresdefault.jpg"],
             uploadDate: "2025-01-01",
             embedUrl: "https://www.youtube-nocookie.com/embed/-1SjoH9KFVg",
             contentUrl: "https://www.youtube.com/watch?v=-1SjoH9KFVg",
-            publisher: { "@type": "Organization", name: "Resonance ePublisher", url: "https://www.resonanceonline.life/" },
+            publisher: { "@type": "Organization", name: "Resonance Publish", url: "https://www.resonanceonline.life/" },
           },
         ]}
       />
@@ -864,14 +864,14 @@ export default function Landing() {
           <div className="flex items-center gap-0">
             <motion.img
               src={resonanceLogo}
-              alt="Resonance ePublisher"
+              alt="Resonance Publish"
               className="w-[50px] h-[50px] object-contain"
               animate={{ rotateY: [0, -30, 0, 30, 0], scaleX: [1, 0.85, 1, 0.85, 1] }}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
               style={{ perspective: 600 } as any}
             />
             <span className="font-display text-xl font-semibold tracking-tight gradient-text">
-              Resonance ePublisher
+              Resonance Publish
             </span>
           </div>
           <div className="flex items-center gap-3">
@@ -946,7 +946,7 @@ export default function Landing() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
             </span>
-            RONSAS governed · Editorial intelligence
+            Resonance governed · Editorial intelligence
           </div>
 
           <h1 className="text-4xl md:text-6xl font-display font-bold leading-[0.98] tracking-tight">
@@ -1021,7 +1021,7 @@ export default function Landing() {
             </Button>
           </div>
 
-          {/* Attribute block — Resonance ePublisher = Intelligence (IQ) */}
+          {/* Attribute block — Resonance Publish = Intelligence (IQ) */}
           <div className="flex justify-center pt-2">
             <div className="inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-card/60 backdrop-blur-xl px-4 py-2.5 max-w-xl">
               <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-lg" aria-hidden="true">
@@ -1040,7 +1040,7 @@ export default function Landing() {
 
           {/* Trust strip */}
           <p className="text-xs text-muted-foreground/80 pt-2">
-            🇿🇦 Built in South Africa · RONSAS governed · Free promotional access · No payment required · POPIA-conscious
+            🇿🇦 Built in South Africa · Resonance governed · Free promotional access · No payment required · POPIA-conscious
           </p>
 
           {/* Hero illustration – animated floating + glow */}
@@ -1057,7 +1057,7 @@ export default function Landing() {
             >
               <img
                 src={heroIllustration}
-                alt="AudioVisual eBook by Resonance ePublisher"
+                alt="AudioVisual eBook by Resonance Publish"
                 width={1280}
                 height={720}
                 className="w-full h-auto"
@@ -1254,7 +1254,7 @@ export default function Landing() {
             Free Access Promotion
           </p>
           <h2 className="text-2xl md:text-4xl font-display font-bold">
-            Full ePublisher access is free while we establish real operating costs
+            Full Resonance Publish access is free while we establish real operating costs
           </h2>
           <p className="text-muted-foreground text-sm md:text-base mt-4 max-w-2xl mx-auto">
             No payment, pack, top-up, checkout, or subscription is required. Generation, narration,
@@ -1262,7 +1262,7 @@ export default function Landing() {
           </p>
           <Button asChild className="mt-6 rounded-full glow-primary">
             <Link to="/app" onClick={() => trackEvent("promotion_open_app_click", { source: "landing" })}>
-              Open ePublisher free
+              Open Resonance Publish free
             </Link>
           </Button>
         </div>
@@ -1303,7 +1303,7 @@ export default function Landing() {
             <div className="space-y-1">
               <h3 className="font-display font-semibold text-lg">Responsible AI Publishing</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Resonance ePublisher uses AI to research, narrate, and illustrate your content. AI-generated material can contain inaccuracies — please verify any educational, medical, legal, spiritual, or business content before publishing or distributing it. Imagery is generated for illustrative purposes; review for copyright and likeness concerns before commercial use.
+                Resonance Publish uses AI to research, narrate, and illustrate your content. AI-generated material can contain inaccuracies — please verify any educational, medical, legal, spiritual, or business content before publishing or distributing it. Imagery is generated for illustrative purposes; review for copyright and likeness concerns before commercial use.
               </p>
             </div>
           </div>
