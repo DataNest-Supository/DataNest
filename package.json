@@ -36,7 +36,8 @@
     "liberty:index": "node scripts/liberty-in-all-indexer.mjs",
     "branch-protection:verify": "node scripts/branch-protection-tree.mjs",
     "security:resonance-execution": "node scripts/verify-resonance-security-execution.mjs",
-    "security:resonance-scan": "node scripts/resonance-secret-scan.mjs"
+    "security:resonance-scan": "node scripts/resonance-secret-scan.mjs",
+    "security:supply-chain": "node scripts/verify-npm-supply-chain.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.117.1",
