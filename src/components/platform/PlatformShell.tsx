@@ -1,17 +1,18 @@
 import type { ReactNode } from "react";
 
 export default function PlatformShell({
-  navigation,topbar,context,children,footer
+  navigation,topbar,context,children,footer,navigationOpen=false
 }:{
   navigation:ReactNode;
   topbar:ReactNode;
   context?:ReactNode;
   children:ReactNode;
   footer?:ReactNode;
+  navigationOpen?:boolean;
 }) {
   return <>
     {navigation}
-    <main className="mainPane">
+    <main className="mainPane" inert={navigationOpen}>
       {topbar}
       <div className="contentPane">
         {context}

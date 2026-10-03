@@ -237,7 +237,7 @@ export default function AdminRndModeToggle({
     <div className={styles.copy}>
       <span className={styles.eyebrow}>ADMIN · R&D LIVE MIRROR</span>
       <b>R&D Test Mode</b>
-      <small>Open the production-parity Mirror UI against isolated staging data. The exact build is synchronized into Product Lab and governance evidence for certification review.</small>
+      <small>Open Mirror-DataNest in a new tab. Review its exact build in Product Lab using the separate Mirror environment.</small>
     </div>
 
     <button
@@ -247,6 +247,7 @@ export default function AdminRndModeToggle({
       aria-checked={enabled}
       aria-label={enabled?"Disable R&D Test Mode shortcut":"Enable R&D Test Mode and open live Mirror"}
       title={role.toUpperCase()+" access · Mirror-DataNest"}
+      disabled={syncState==="syncing"}
       onClick={()=>setMode(!enabled)}
     >
       <span className={styles.track} data-enabled={enabled?"true":"false"}>
@@ -268,7 +269,9 @@ export default function AdminRndModeToggle({
       {release&&<small className={styles.release}>
         {release.releaseId} · {shortCommit(release.commit)} · {release.backend?.mode||"isolated-staging"}
       </small>}
-      {message&&<small className={syncState==="error"?styles.error:styles.status}>{message}</small>}
+      <div role="status" aria-live="polite" aria-atomic="true">
+        {message&&<small className={syncState==="error"?styles.error:styles.status}>{message}</small>}
+      </div>
       <small className={styles.previewNote}>Canonical production remains DataNest-Supository/DataNest; Mirror evidence supports certification but does not authorize release.</small>
       {syncState==="error"&&<a className={styles.openLink} href={MIRROR_DATANEST_REPOSITORY_URL} target="_blank" rel="noreferrer">Open Mirror repository <span aria-hidden="true">↗</span></a>}
     </div>}
