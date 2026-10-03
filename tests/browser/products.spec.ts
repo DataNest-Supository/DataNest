@@ -146,11 +146,11 @@ test("Products runs Legal Eagle through the governed DataNest AI route", async (
   await expect(ronsasHubRecord).toBeVisible();
   await expect(ronsasHubRecord).toHaveAttribute("href","https://reson8.life/");
 
-  const syncVisionLaunch=page.locator(".catalogRecord").getByRole("link",{name:"Open Sync Vision in DataNest"});
+  const syncVisionLaunch=page.locator(".catalogRecord").getByRole("link",{name:"Open Resonance Media Sync in DataNest"});
   await expect(syncVisionLaunch).toBeVisible();
   await expect(syncVisionLaunch).toHaveAttribute("href",/\/apps\/syncvision\/$/);
 
-  const compositionLaunch=page.getByLabel("Resonance Product Structure").getByRole("link",{name:"Open Sync Vision in DataNest"});
+  const compositionLaunch=page.getByLabel("Resonance Product Structure").getByRole("link",{name:"Open Resonance Media Sync in DataNest"});
   await expect(compositionLaunch).toBeVisible();
   await expect(compositionLaunch).toHaveAttribute("href",/\/apps\/syncvision\/$/);
 
