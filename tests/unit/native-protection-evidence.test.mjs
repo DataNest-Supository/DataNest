@@ -48,8 +48,8 @@ test("native protection reconciliation requires an explicit administration crede
   assert.match(workflow,/DATANEST_GITHUB_ADMIN_TOKEN/);
   assert.match(workflow,/Administration/);
   assert.match(workflow,/rulesets/);
-  assert.match(workflow,/--method POST/);
-  assert.match(workflow,/--method PUT/);
+  assert.match(workflow,/-X POST/);
+  assert.match(workflow,/-X PUT/);
   assert.match(workflow,/X-GitHub-Api-Version: 2026-03-10/);
   assert.match(workflow,/active-rules-main\.json/);
 });
