@@ -22,7 +22,7 @@ test("canonical policy retains hard non-human protection floors", () => {
   assert.doesNotThrow(assertPolicyShape);
   const policy = classifyBranch("main").policy;
   assert.equal(policy.pullRequestRequired, true);
-  assert.equal(policy.requiredApprovingReviews, 0);
+  assert.equal(policy.requiredApprovingReviews, 1);
   assert.equal(policy.dismissStaleReviews, true);
   assert.equal(policy.requireConversationResolution, true);
   assert.equal(policy.requireLinearHistory, true);

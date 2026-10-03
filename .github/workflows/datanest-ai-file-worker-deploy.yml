@@ -58,6 +58,7 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      DATANEST_FILE_WORKER_TOKEN: ${{ secrets.DATANEST_FILE_WORKER_TOKEN }}
       SUPABASE_PROJECT_ID: sgqdmfgjbprsoqsmgigi
     steps:
       - uses: actions/checkout@v7.0.1
@@ -73,6 +74,24 @@ jobs:
         run: |
           test -n "$SUPABASE_ACCESS_TOKEN" || {
             echo "SUPABASE_ACCESS_TOKEN is required to deploy datanest-ai-file-worker."
+            exit 1
+          }
+      - name: Synchronize dedicated worker authentication secret
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$DATANEST_FILE_WORKER_TOKEN" || {
+            echo "::error::DATANEST_FILE_WORKER_TOKEN is required before file-worker deployment."
+            exit 1
+          }
+
+          secret_file="$(mktemp)"
+          trap 'rm -f "$secret_file"' EXIT
+          umask 077
+          printf 'DATANEST_FILE_WORKER_TOKEN=%s\n' "$DATANEST_FILE_WORKER_TOKEN" > "$secret_file"
+          supabase secrets set --env-file "$secret_file" --project-ref "$SUPABASE_PROJECT_ID"
+          supabase secrets list --project-ref "$SUPABASE_PROJECT_ID" | grep -F "DATANEST_FILE_WORKER_TOKEN" >/dev/null || {
+            echo "::error::Supabase did not report DATANEST_FILE_WORKER_TOKEN after synchronization."
             exit 1
           }
       - name: Deploy locally bundled file worker

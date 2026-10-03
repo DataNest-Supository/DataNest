@@ -25,7 +25,7 @@
         "release/**"
       ],
       "pullRequestRequired": true,
-      "requiredApprovingReviews": 0,
+      "requiredApprovingReviews": 1,
       "dismissStaleReviews": true,
       "requireConversationResolution": true,
       "requireLinearHistory": true,
@@ -85,7 +85,7 @@
     "canonical branches cannot be force-pushed",
     "canonical branches cannot be deleted",
     "canonical changes enter through pull requests",
-    "canonical branches do not require an approving review; automated status checks remain required",
+    "canonical branches require at least one approving review; automated status checks remain required",
     "stale approvals are dismissed after new commits",
     "unresolved review conversations block canonical adoption",
     "canonical history remains linear",

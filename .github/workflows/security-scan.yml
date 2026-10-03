@@ -60,8 +60,28 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: ./.github/actions/node-project-setup
-      - name: npm audit (high+)
-        run: npm audit --omit=dev --audit-level=high
+      - name: Verify exact dependency pins and lockfile alignment
+        run: npm run security:supply-chain
+      - name: npm audit (high+ across production and development dependencies)
+        run: npm audit --audit-level=high
+      - name: Generate SPDX SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610
+        with:
+          output-file: datanest-sbom.spdx.json
+          upload-artifact: true
+          artifact-name: datanest-sbom-${{ github.run_id }}-${{ github.sha }}
+          upload-artifact-retention: ${{ env.SARIF_RETENTION_DAYS }}
+
+  dependency-review:
+    name: Dependency review (introduced risk)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: false
 
   sast-semgrep:
     name: SAST (semgrep)

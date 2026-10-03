@@ -42,3 +42,14 @@ test("native protection audit exposes deep canonical and automation observations
   assert.match(workflow, /"refs": sorted\(automation_refs\)/);
   assert.match(workflow, /"ruleTypes": sorted\(automation_types\)/);
 });
+
+test("native protection reconciliation requires an explicit administration credential",()=>{
+  const workflow=fs.readFileSync(".github/workflows/native-protection-reconcile.yml","utf8");
+  assert.match(workflow,/DATANEST_GITHUB_ADMIN_TOKEN/);
+  assert.match(workflow,/administration credential/i);
+  assert.match(workflow,/rulesets/);
+  assert.match(workflow,/-X POST/);
+  assert.match(workflow,/-X PUT/);
+  assert.match(workflow,/X-GitHub-Api-Version: 2026-03-10/);
+  assert.match(workflow,/active-rules-main\.json/);
+});

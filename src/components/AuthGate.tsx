@@ -243,14 +243,14 @@ export default function AuthGate() {
             <label>
               New password
               <div className="passwordField">
-                <input type={showNewPassword ? "text" : "password"} required minLength={8} autoComplete="new-password" value={newPassword} onChange={(event) => setNewPasswordValue(event.target.value)} placeholder="At least 8 characters" />
+                <input type={showNewPassword ? "text" : "password"} required minLength={8} autoComplete="new-password" aria-label="New password" value={newPassword} onChange={(event) => setNewPasswordValue(event.target.value)} placeholder="At least 8 characters" />
                 <button className="passwordToggle" type="button" aria-pressed={showNewPassword} aria-label={showNewPassword ? "Hide new password" : "Show new password"} onClick={() => setShowNewPassword(value => !value)}>{showNewPassword ? "Hide" : "Show"}</button>
               </div>
             </label>
             <label>
               Confirm password
               <div className="passwordField">
-                <input type={showConfirmPassword ? "text" : "password"} required minLength={8} autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Re-enter your password" />
+                <input type={showConfirmPassword ? "text" : "password"} required minLength={8} autoComplete="new-password" aria-label="Confirm password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Re-enter your password" />
                 <button className="passwordToggle" type="button" aria-pressed={showConfirmPassword} aria-label={showConfirmPassword ? "Hide confirmation password" : "Show confirmation password"} onClick={() => setShowConfirmPassword(value => !value)}>{showConfirmPassword ? "Hide" : "Show"}</button>
               </div>
             </label>
@@ -311,6 +311,7 @@ export default function AuthGate() {
               type={showPassword ? "text" : "password"}
               required
               autoComplete="current-password"
+              aria-label="Password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Password"

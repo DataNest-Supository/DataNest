@@ -1,27 +1,10 @@
 name: CONDUCTOR Process Synchronization Tree
 
 on:
-  push:
-    branches: [main]
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "0 * * * *"
       timezone: Africa/Johannesburg
   workflow_dispatch:
-  workflow_run:
-    workflows:
-      - "Knowledge Tree"
-      - "ENVIRONMENT Tree"
-      - "Security scan"
-      - "DataNest Boundaries"
-      - "ENFORCER Defence Tree"
-      - "BOTSQUAD AI Tree"
-      - "GUARDIAN Health & Healing Tree"
-      - "DataNest Maintenance"
-      - "SUGGESTER Optimization Tree"
-      - "CALMER Governance Softening Tree"
-      - "REGULATOR Harmony Tree"
-      - "VISIBILITY-UTILITY Market Presence Tree"
-    types: [completed]
 
 permissions:
   contents: write
@@ -29,27 +12,21 @@ permissions:
   pull-requests: read
 
 concurrency:
-  # Coalesce all automation events for the same canonical SHA into one
-  # synchronization pass. Scheduled fallback and workflow_run events must not
-  # create competing coordinator runs for identical source state.
-  group: datanest-conductor-${{ github.event.workflow_run.head_sha || github.sha }}
+  # Coalesce scheduler/manual automation for the canonical source SHA into one
+  # synchronization pass. CONDUCTOR does not listen to workflow_run events.
+  group: datanest-conductor-${{ github.sha }}
   cancel-in-progress: true
 
 jobs:
   coordinate:
     if: >-
-      (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main') &&
-      (github.event_name != 'workflow_run' ||
-        (github.event.workflow_run.head_branch == 'main' &&
-         github.event.workflow_run.head_repository.full_name == github.repository &&
-         github.event.workflow_run.event != 'pull_request' &&
-         github.event.workflow_run.event != 'workflow_run' &&
-         github.event.workflow_run.conclusion == 'success'))
+      github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' ||
+      github.event_name == 'schedule'
     name: Synchronize tree timing and commands
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
         with:
           ref: main
           fetch-depth: 0
@@ -145,13 +122,8 @@ jobs:
 
   gate-timeframe:
     if: >-
-      (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main') &&
-      (github.event_name != 'workflow_run' ||
-        (github.event.workflow_run.head_branch == 'main' &&
-         github.event.workflow_run.head_repository.full_name == github.repository &&
-         github.event.workflow_run.event != 'pull_request' &&
-         github.event.workflow_run.event != 'workflow_run' &&
-         github.event.workflow_run.conclusion == 'success'))
+      github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' ||
+      github.event_name == 'schedule'
     name: DataNest AI worktree gate timeframe
     uses: ./.github/workflows/worktree-gate-timeframe.yml
     with:
