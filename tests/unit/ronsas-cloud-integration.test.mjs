@@ -87,7 +87,7 @@ test("DataNest exposes the governed RONSAS status contract through JWT-protected
   assert.match(app,/status\.authority\.publicHub/);
   assert.match(app,/aria-label="Open Resonance from DataNest navigation"/);
   assert.match(app,/label:"Resonance"/);
-  assert.match(app,/description:"Open governed Resonance application suite\."/);
+  assert.match(app,/description:"Open the governed Resonance application suite\."/);
   assert.match(app,/window\.open\(item\.href,"_blank","noopener,noreferrer"\)/);
   assert.match(app,/aria-label=\{item\.kind==="external"\?"Open Resonance application suite":undefined\}/);
   assert.match(app,/RonsasIntegrationPanel/);
