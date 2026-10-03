@@ -299,67 +299,9 @@ async function loadCertifiedMemory(input:{
       String((rankedV3.error as {message?:unknown}).message||"")
     );
   if(!missingV3)throw rankedV3.error;
-
-  const ranked=await input.client.rpc("get_ranked_certified_memory_context_v2",{
-    target_project:input.projectId,
-    target_job:input.jobId,
-    target_query:input.query,
-    target_purpose:input.purpose,
-    target_product_scope:input.productScope,
-    target_jurisdiction:input.jurisdiction,
-    target_visibility_class:input.visibilityClass,
-    target_limit:input.limit||24
-  });
-  if(!ranked.error){
-    const payload=(ranked.data||{}) as Record<string,unknown>;
-    const rawItems=Array.isArray(payload.items)?payload.items:[];
-    const items=rawItems as Array<Record<string,unknown>>;
-    const rawSummary=
-      payload.summary&&typeof payload.summary==="object"&&!Array.isArray(payload.summary)
-        ?payload.summary as Record<string,unknown>
-        :{};
-    return {
-      items,
-      strategy:String(payload.strategy||"verified-memory-ranked-v2"),
-      projection:null,
-      summary:{
-        active_count:nonNegativeCount(rawSummary.active_count,items.length),
-        projected_count:nonNegativeCount(rawSummary.applicable_count,items.length),
-        applicable_count:nonNegativeCount(rawSummary.applicable_count,items.length),
-        selected_count:items.length,
-        review_due_count:nonNegativeCount(rawSummary.review_due_count,0)
-      }
-    };
-  }
-
-  const missingRankedFunction=
-    String((ranked.error as {code?:unknown}).code||"")==="PGRST202" ||
-    /get_ranked_certified_memory_context_v2|could not find the function/i.test(
-      String((ranked.error as {message?:unknown}).message||"")
-    );
-  if(!missingRankedFunction)throw ranked.error;
-
-  const fallback=await input.client.rpc("get_certified_memory_context",{
-    target_project:input.projectId,
-    target_job:input.jobId,
-    target_limit:Math.min(input.limit||24,50)
-  });
-  if(fallback.error)throw fallback.error;
-  const rawItems=(fallback.data as {items?:unknown[]}|null)?.items;
-  const items=Array.isArray(rawItems)?rawItems as Array<Record<string,unknown>>:[];
-  return {
-    items,
-    strategy:"legacy-recency-fallback",
-    projection:null,
-    summary:{
-      active_count:items.length,
-      projected_count:items.length,
-      applicable_count:items.length,
-      selected_count:items.length,
-      review_due_count:0
-    }
-  };
+  throw new Error("certified_memory_projection_unavailable");
 }
+
 
 async function recordCertifiedMemoryUsage(input:{
   serviceClient:AnyClient;

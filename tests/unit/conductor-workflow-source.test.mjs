@@ -7,19 +7,25 @@ const workflow=readFileSync(
   "utf8"
 );
 
-const workflowRunGuard=/github\.event\.workflow_run\.head_branch == 'main'[\s\S]*?github\.event\.workflow_run\.head_repository\.full_name == github\.repository[\s\S]*?github\.event\.workflow_run\.event != 'pull_request'[\s\S]*?github\.event\.workflow_run\.event != 'workflow_run'[\s\S]*?github\.event\.workflow_run\.conclusion == 'success'/;
+const mainDispatchGuard=/github\.event_name == 'workflow_dispatch'[\s\S]*?github\.ref == 'refs\/heads\/main'/;
+const scheduleGuard=/github\.event_name == 'schedule'/;
 
-test("CONDUCTOR coordinate and timeframe jobs share the same workflow-run guard",()=>{
+test("CONDUCTOR coordinate and timeframe jobs share the same bounded trigger policy",()=>{
   const coordinate=workflow.match(/\n  coordinate:\n([\s\S]*?)(?=\n  gate-timeframe:)/)?.[1]||"";
   const timeframe=workflow.match(/\n  gate-timeframe:\n([\s\S]*)$/)?.[1]||"";
-  assert.match(coordinate,workflowRunGuard);
-  assert.match(timeframe,workflowRunGuard);
+
+  for(const section of [coordinate,timeframe]){
+    assert.match(section,mainDispatchGuard);
+    assert.match(section,scheduleGuard);
+  }
+
+  assert.doesNotMatch(workflow,/workflow_run:/);
 });
 
 test("CONDUCTOR concurrency coalesces automation for the same canonical SHA",()=>{
   assert.match(
     workflow,
-    /group: datanest-conductor-\$\{\{ github\.event\.workflow_run\.head_sha \|\| github\.sha \}\}/
+    /group: datanest-conductor-\$\{\{ github\.sha \}\}/
   );
   assert.match(workflow,/cancel-in-progress: true/);
 });
