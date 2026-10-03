@@ -244,7 +244,10 @@ test("authentication password fields provide accessible visibility controls", ()
 
 test("session-check failures keep the sign-in shell usable", () => {
   assert.doesNotMatch(authGateSource, /startup = "connection-error"/);
-  assert.match(authGateSource, /setStartup\("signed-out"\)/);
+  assert.match(authGateSource, /setStartupMessage\("We couldn’t verify an existing session\. You can still sign in\."\)/);
+  assert.match(authGateSource, /setCheckingSession\(false\)/);
+  assert.match(authGateSource, /function retrySessionCheck\(\)/);
+  assert.match(authGateSource, /onClick=\{retrySessionCheck\}/);
   assert.match(authGateSource, /You can still sign in/);
   assert.match(authGateSource, /Retry session check/);
   assert.match(entryCssSource, /\.sessionCheckNote\.sessionCheckError/);
