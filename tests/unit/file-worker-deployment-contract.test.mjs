@@ -17,5 +17,9 @@ test("heavy file worker keeps governed validation and dedicated local-bundle dep
   assert.match(workflow,/--no-verify-jwt/);
   assert.match(workflow,/--use-docker/);
   assert.match(workflow,/SUPABASE_ACCESS_TOKEN/);
+  assert.match(workflow,/DATANEST_FILE_WORKER_TOKEN/);
+  assert.match(workflow,/supabase secrets set --env-file/);
+  assert.match(workflow,/supabase secrets list --project-ref/);
+  assert.match(workflow,/DATANEST_FILE_WORKER_TOKEN is required before file-worker deployment/);
   assert.match(workflow,/sgqdmfgjbprsoqsmgigi/);
 });
