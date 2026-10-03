@@ -26,7 +26,7 @@ describe("free-promotion commercial guard", () => {
 
     expect(pricing).toContain("Standard list prices");
     expect(pricing).toContain("post-promotion commercial basis");
-    expect(pricing).toContain("not currently charged while free promotion access remains enabled");
+    expect(pricing).toMatch(/are not\s+currently charged while free promotion access remains enabled/);
     expect(pricing).not.toContain("Project pack");
     expect(locked).not.toContain("HUB_PRICING_URL");
     expect(locked).not.toContain("View hub pricing");
