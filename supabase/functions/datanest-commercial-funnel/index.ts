@@ -1,4 +1,9 @@
-import { createClient } from "npm:@supabase/supabase-js@2.57.4";
+import { createClient } from "@supabase/supabase-js";
+
+declare const Deno: {
+  env: { get: (name: string) => string | undefined };
+  serve: (handler: (request: Request) => Response | Promise<Response>) => void;
+};
 
 const PROJECT_ID = "c2aa30c1-fc82-4524-8510-021ac0fef967";
 const allowedOrigins = new Set([
@@ -153,11 +158,11 @@ Deno.serve(async (req: Request) => {
     service: boundedText(body.service, 160),
     plan: boundedText(body.plan, 120),
     cta: boundedText(body.cta, 120),
-    source: cleanUtm(body.source),
-    medium: cleanUtm(body.medium),
-    campaign: cleanUtm(body.campaign),
-    content: cleanUtm(body.content),
-    term: cleanUtm(body.term)
+    utm_source: cleanUtm(body.source),
+    utm_medium: cleanUtm(body.medium),
+    utm_campaign: cleanUtm(body.campaign),
+    utm_content: cleanUtm(body.content),
+    utm_term: cleanUtm(body.term)
   };
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
