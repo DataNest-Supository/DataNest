@@ -61,7 +61,7 @@ test("Products exposes governed product and portfolio registry modes without red
 
 test("RONSAS composition keeps pending historical applications separate from ownership",()=>{
   const products=fs.readFileSync(productsPath,"utf8");
-  assert.match(products,/RONSAS Composition/);
+  assert.match(products,/Resonance Product Structure/);
   assert.match(products,/Owned/);
   assert.match(products,/Shared/);
   assert.match(products,/External/);
