@@ -85,7 +85,7 @@ test("DataNest exposes the governed RONSAS status contract through JWT-protected
   assert.match(products,/aria-label="Open Resonance Hub"/);
   assert.match(app,/getRonsasStatus/);
   assert.match(app,/status\.authority\.publicHub/);
-  assert.match(app,/aria-label="Open RONSAS from DataNest navigation"/);
+  assert.match(app,/aria-label="Open Resonance from DataNest navigation"/);
   assert.match(app,/label:"Resonance"/);
   assert.match(app,/description:"Open governed Resonance application suite\."/);
   assert.match(app,/window\.open\(item\.href,"_blank","noopener,noreferrer"\)/);
@@ -100,7 +100,9 @@ const appRegistry=readFileSync(new URL("../../src/lib/resonanceAppRegistry.ts",i
 test("RONSAS launch registry distinguishes seven DataNest Pages apps from YouTube Optimizer SSR",()=>{
   assert.match(appRegistry,/launchKind:"datanest-pages"|launchKind:"external-ssr"/);
   assert.match(appRegistry,/slug:"youtube-optimizer"[\s\S]*launchKind:"external-ssr"[\s\S]*href:/);
-  for(const slug of ["career-compass","creative-studio","lyricsync-studio","syncvision","epublisher","scene-song-spark","sovereign-forge"]){\n  assert.match(appRegistry,new RegExp(`slug:"${slug}"[\\s\\S]*?launchKind:"datanest-pages"`));\n}
+  for(const slug of ["career-compass","creative-studio","lyricsync-studio","syncvision","epublisher","scene-song-spark","sovereign-forge"]){
+    assert.match(appRegistry,new RegExp(`slug:"${slug}"[\\s\\S]*?launchKind:"datanest-pages"`));
+  }
   assert.match(appRegistry,/YouTube Optimizer/);
   assert.match(panel,/External SSR|SSR runtime/);
   assert.match(panel,/YouTube Optimizer/);
