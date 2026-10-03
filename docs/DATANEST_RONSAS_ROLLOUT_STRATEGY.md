@@ -16,7 +16,8 @@ The current platform already provides the main components required for a two-eng
 
 ### Registration and access
 - Supabase-backed authentication in the DataNest workspace and multiple RONSAS applications
-- Product-specific sign-in/sign-up flows
+- RONSAS product-specific sign-in/sign-up flows where the spoke supports self-service access
+- DataNest workspace access is currently authorised/invite-based rather than open self-service registration
 - Account, entitlement and session-management surfaces
 - Entitlement history in Creative Studio
 - Account and plan/credit surfaces in ePublisher
@@ -103,8 +104,10 @@ Required funnel events:
 - `solution_view`
 - `pricing_view`
 - `lead_started`
+- `lead_handoff_started`
 - `lead_submitted`
 - `signup_started`
+- `workspace_access_started`
 - `signup_completed`
 - `activation_completed`
 - `core_feature_used`
@@ -134,7 +137,7 @@ commercial state
 event metadata
 ```
 
-The existing product-specific tracking is useful, but the portfolio needs one common event vocabulary so acquisition and monetisation can be compared across RONSAS applications.
+The existing product-specific tracking is useful, but the portfolio needs one common event vocabulary so acquisition and monetisation can be compared across RONSAS applications. Public DataNest marketing telemetry should remain anonymous/session-based and must not collect secrets or confidential form content. DataNest workspace access should be measured as an access-intent flow until self-service registration is deliberately enabled.
 
 ### Stage 2 — Acquire and register
 **Days 15–30**
@@ -370,7 +373,7 @@ The same evidence can feed DataNest assurance sales and RONSAS trust content.
 1. Request assessment
 2. Explore solution
 3. View pricing
-4. Workspace
+4. Workspace / access request
 
 **RONSAS**
 1. Start free
@@ -442,7 +445,7 @@ AI may analyse funnel data, suggest experiments, draft campaigns and prioritise 
 
 ## 12. Recommended priority order
 
-**Priority 1:** instrumentation and unified funnel events.
+**Priority 1:** instrumentation and unified funnel events, including the public commercial funnel collector and contextual lead handoff.
 
 **Priority 2:** fix activation/onboarding for the two or three RONSAS products with the strongest existing usage/cost evidence.
 
