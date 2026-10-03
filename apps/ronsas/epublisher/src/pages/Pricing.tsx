@@ -28,8 +28,21 @@ export default function Pricing() {
           <h1 className="text-4xl md:text-6xl font-display font-extrabold tracking-tight">{FREE_PROMOTION.headline}</h1>
           <p className="mt-5 text-lg text-muted-foreground">{FREE_PROMOTION.description}</p>
           <p className="mt-3 text-sm text-muted-foreground">
-            No payment, credit pack, checkout, or subscription is required. Sign in so real generation, provider,
-            storage, and support usage can help establish sustainable future pricing.
+            No payment, credit pack, checkout, or subscription is required while the promotion is active. Sign in so
+            real generation, provider, storage, and support usage can continue to inform sustainable pricing.
+          </p>
+          <div className="mt-8 grid gap-3 text-left sm:grid-cols-3">
+            {[["Creator","R149/month","Individual publishing"],["Publisher","R399/month","Higher-volume publishing"],["Studio","R899/month","Professional publishing workflow"]].map(([name,price,scope]) => (
+              <article key={name} className="rounded-2xl border border-white/10 bg-background/30 p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-primary">{name}</p>
+                <p className="mt-2 text-2xl font-display font-bold">{price}</p>
+                <p className="mt-2 text-xs text-muted-foreground">{scope}</p>
+              </article>
+            ))}
+          </div>
+          <p className="mt-4 text-xs text-muted-foreground">
+            Standard list prices, effective 3 October 2026, are the post-promotion commercial basis and are not
+            currently charged while free promotion access remains enabled.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Button asChild size="lg" className="bg-gradient-brand text-white rounded-full">
