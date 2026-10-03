@@ -19,12 +19,14 @@ describe("free-promotion commercial guard", () => {
     }
   });
 
-  it("ships no paid pricing branch or pricing lock CTA", () => {
+  it("keeps list prices informational while shipping no paid pricing lock CTA", () => {
     const pricing = readFileSync(resolve(process.cwd(), "src/pages/Pricing.tsx"), "utf8");
     const locked = readFileSync(resolve(process.cwd(), "src/components/LockedSection.tsx"), "utf8");
     const llms = readFileSync(resolve(process.cwd(), "public/llms.txt"), "utf8");
 
-    expect(pricing).not.toMatch(/R\s?\d/);
+    expect(pricing).toContain("Standard list prices");
+    expect(pricing).toContain("post-promotion commercial basis");
+    expect(pricing).toContain("not currently charged while free promotion access remains enabled");
     expect(pricing).not.toContain("Project pack");
     expect(locked).not.toContain("HUB_PRICING_URL");
     expect(locked).not.toContain("View hub pricing");
