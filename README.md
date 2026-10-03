@@ -101,6 +101,8 @@ DataNest does not require Vercel. GitHub Pages is the active public delivery tar
 
 Public system scope, mission, vision, governance, architecture, products/services, projections and standards alignment are documented in [`docs/DATANEST_SYSTEM_CHARTER.md`](docs/DATANEST_SYSTEM_CHARTER.md) and rendered publicly at **/DataNest/system-charter/**. The standards mapping is an alignment reference, not a claim of ISO certification.
 
+Commercial positioning and the governed revenue lifecycle are documented in [`docs/DATANEST_COMMERCIAL_OPERATING_MODEL.md`](docs/DATANEST_COMMERCIAL_OPERATING_MODEL.md). The public market entry is `/DataNest/`; the authenticated operating workspace is `/DataNest/workspace/`.
+
 Scheduled noise deletion and decluttering are defined in [`docs/MAINTENANCE_PROTOCOL.md`](docs/MAINTENANCE_PROTOCOL.md).
 
 
