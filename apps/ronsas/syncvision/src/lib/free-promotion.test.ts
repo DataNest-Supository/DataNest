@@ -17,9 +17,11 @@ describe("free-promotion commercial guard", () => {
     }
   });
 
-  it("ships a promotion-only pricing section", () => {
+  it("keeps list prices informational while the free promotion remains active", () => {
     const source = readFileSync(resolve(process.cwd(), "src/components/landing/PricingSection.tsx"), "utf8");
-    expect(source).not.toMatch(/R\s?\d/);
+    expect(source).toContain("Standard list prices");
+    expect(source).toContain("post-promotion commercial basis");
+    expect(source).toContain("paid access is not activated while the promotion is enabled");
     expect(source).not.toContain("hubCheckoutUrl");
     expect(source).not.toContain("Buy Creator");
     expect(source).toContain("Open Sync Vision free");
