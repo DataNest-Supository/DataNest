@@ -88,3 +88,10 @@ This checkpoint does not authorize protected-main merge or deployment. Human/cod
 ## Resume instruction
 
 Resume from branch `work/mobile-navigation-accessibility-20261003`. First restore `PlatformShell.tsx` to its display-only contract and move the compact-navigation state/effects into the current `DataNestApp.tsx` without replacing newer app logic. Treat `tests/browser/navigation-reconciliation.spec.ts` as the executable acceptance contract. Then rerun exact-head protected-main verification. Do not weaken `tests/unit/ui-ux-source.test.mjs`, do not revive the retired #442 route model, and do not merge or deploy until required checks and human/code-owner approval are complete.
+
+
+## Remediation applied
+
+The branch-head remediation moves compact-navigation state and effects into `DataNestApp.tsx`, restores `PlatformShell.tsx` to display-only rendering, and leaves the browser acceptance contract unchanged. Exact source anchors must match before any write occurs.
+
+Resume by checking exact-head CI and PR Verification. Do not weaken the source-contract test and do not merge until all protected-main gates and fresh human/code-owner approval are satisfied.
